@@ -22,8 +22,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-1 text-xl font-bold tracking-tight">
-              <span className="text-cyan">OMA</span>
+            <Link href="/" className="inline-flex items-center gap-1 text-xl font-bold tracking-tight logo-hover">
+              <span className="text-cyan logo-text transition-colors">OMA</span>
               <span className="text-base text-text-dim">.AI</span>
             </Link>
             <p className="mt-3 text-xs leading-relaxed text-text-dim">
@@ -42,7 +42,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan"
+                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
                   >
                     {link.label}
                   </Link>
@@ -60,7 +60,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan"
+                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
                     {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   >
                     {link.label}
@@ -77,7 +77,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan"
+                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
                   >
                     {link.label}
                   </Link>

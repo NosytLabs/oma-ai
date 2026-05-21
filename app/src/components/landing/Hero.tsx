@@ -46,7 +46,7 @@ export function Hero() {
   }, [])
 
   return (
-    <section className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden py-20">
+    <section className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden py-20 hero-shimmer">
       {/* Enhanced animated gradient accents */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-cyan/8 blur-[120px] animate-pulse-slow" />
@@ -105,7 +105,7 @@ export function Hero() {
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/dashboard"
-                className="group relative inline-flex items-center gap-2 rounded-xl border border-cyan/50 bg-cyan/10 px-7 py-4 text-sm font-bold text-cyan transition-all duration-300 hover:border-cyan hover:bg-cyan hover:text-void hover:shadow-[0_0_30px_rgba(0,255,200,0.25)] hover:scale-105 active:scale-100 min-h-[52px] overflow-hidden"
+                className="group relative inline-flex items-center gap-2 rounded-xl border border-cyan/50 bg-cyan/10 px-7 py-4 text-sm font-bold text-cyan transition-all duration-300 hover:border-cyan hover:bg-cyan hover:text-void hover:shadow-[0_0_30px_rgba(0,255,200,0.25)] hover:scale-105 active:scale-100 min-h-[52px] overflow-hidden btn-tactile"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/20 to-cyan-500/0 group-hover:animate-pulse" />
                 <Key className="h-5 w-5 group-hover:scale-110 transition-transform" />
@@ -114,14 +114,14 @@ export function Hero() {
               </Link>
               <Link
                 href="/deposit"
-                className="group inline-flex items-center gap-2 rounded-xl border border-green/40 bg-green/8 px-6 py-4 text-sm font-semibold text-green transition-all duration-300 hover:border-green/60 hover:bg-green hover:text-void hover:shadow-[0_0_25px_rgba(0,255,140,0.2)] hover:scale-105 active:scale-100 min-h-[52px]"
+                className="group inline-flex items-center gap-2 rounded-xl border border-green/40 bg-green/8 px-6 py-4 text-sm font-semibold text-green transition-all duration-300 hover:border-green/60 hover:bg-green hover:text-void hover:shadow-[0_0_25px_rgba(0,255,140,0.2)] hover:scale-105 active:scale-100 min-h-[52px] btn-tactile"
               >
                 <Coins className="h-5 w-5 group-hover:scale-110 transition-transform" />
                 Deposit & Start
               </Link>
               <Link
                 href="/playground"
-                className="group inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-4 text-sm font-semibold text-text transition-all duration-300 hover:border-cyan/50 hover:bg-cyan/10 hover:text-cyan min-h-[52px]"
+                className="group inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-4 text-sm font-semibold text-text transition-all duration-300 hover:border-cyan/50 hover:bg-cyan/10 hover:text-cyan min-h-[52px] btn-tactile"
               >
                 <Play className="h-4 w-4" />
                 Try Playground
@@ -132,7 +132,7 @@ export function Hero() {
           {/* Right side - Get API Key component */}
           <div className={`lg:pl-8 transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {/* OMA Token Price Display */}
-            <div className="mb-6 rounded-xl border border-amber/30 bg-gradient-to-r from-amber/8 to-transparent p-4">
+            <div className="mb-6 rounded-xl border border-amber/30 bg-gradient-to-r from-amber/8 to-transparent p-4 token-price-card">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/20">

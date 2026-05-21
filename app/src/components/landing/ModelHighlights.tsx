@@ -25,7 +25,7 @@ function ModelCardComponent({
 }) {
   return (
     <div
-      className={`model-card card-glow card flex flex-col gap-3 transition-all duration-500 ${
+      className={`model-card card-glow card card-border-glow card-hover-lift flex flex-col gap-3 transition-all duration-500 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
       style={{ transitionDelay: `${delay}ms` }}
@@ -254,7 +254,7 @@ export function ModelHighlights() {
         >
           <Link
             href="/models"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan transition-colors hover:text-text"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan transition-colors hover:text-text arrow-animate"
           >
             View all 50+ models
             <ArrowRight className="h-3.5 w-3.5" />

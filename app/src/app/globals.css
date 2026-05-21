@@ -517,6 +517,18 @@ textarea::placeholder {
   transform: translateY(-2px);
 }
 
+/* Arrow animation for View all link */
+@keyframes arrow-slide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+.arrow-animate {
+  transition: transform 0.2s ease;
+}
+.arrow-animate:hover {
+  animation: arrow-slide 0.6s ease-in-out infinite;
+}
+
 .model-card {
   transition: all 0.3s ease;
 }
@@ -524,10 +536,56 @@ textarea::placeholder {
 .model-card:hover {
   border-color: var(--color-border-bright);
   box-shadow: 0 0 30px rgba(0, 255, 200, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Card border glow on hover */
+.card-border-glow:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 200, 0.12), 0 0 40px rgba(0, 255, 200, 0.06);
 }
 
 .glow-text-animated {
   animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Enhanced heading gradient for h1 */
+.hero-heading {
+  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-text-bright) 50%, var(--color-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 200, 0.3));
+}
+
+/* Animated dashed connector lines */
+@keyframes dash-flow {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.connector-line {
+  stroke-dasharray: 8 4;
+  animation: dash-flow 1s linear infinite;
+}
+
+/* Pulse ring effect for step icons */
+@keyframes ring-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.step-icon-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--color-cyan);
+  opacity: 0;
+  animation: ring-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+/* Icon glow effect */
+.icon-glow {
+  filter: drop-shadow(0 0 8px var(--color-cyan));
 }
 
 .step-number {
@@ -567,7 +625,41 @@ textarea::placeholder {
   animation: pulse-slow 4s ease-in-out infinite;
 }
 
-/* Animation delay utilities */
+/* Footer link underline animation */
+.footer-link {
+  position: relative;
+  display: inline-block;
+}
+.footer-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-cyan);
+  transition: width 0.3s ease;
+}
+.footer-link:hover::after {
+  width: 100%;
+}
+
+/* Logo hover color shift */
+.logo-hover {
+  transition: color 0.3s ease;
+}
+.logo-hover:hover .logo-text {
+  color: var(--color-cyan-bright);
+}
+
+/* Cross-chain connector animation */
+@keyframes connector-draw {
+  from { width: 0; }
+  to { width: 100%; }
+}
+.connector-animated {
+  animation: connector-draw 1s ease-out forwards;
+}
 .animation-delay-300 {
   animation-delay: 300ms;
 }
@@ -580,7 +672,67 @@ textarea::placeholder {
   animation-delay: 900ms;
 }
 
-/* 8dp grid spacing */
+/* Hover lift effect for cards */
+.card-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 255, 200, 0.1);
+}
+
+/* Button press effect */
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(0,255,200,0.05) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Hero section shimmer gradient */
+.hero-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.hero-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 200, 0.03) 50%,
+    transparent 100%
+  );
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Token price card hover effect */
+.token-price-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.token-price-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(255, 184, 0, 0.15);
+}
+
+/* CTA button press effect */
+.btn-tactile:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
 .space-8 > * + * {
   margin-top: 8px;
 }

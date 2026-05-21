@@ -4,14 +4,14 @@ import ModelsPage from './page'
 
 const originalIntersectionObserver = global.IntersectionObserver
 
-const mockIntersectionObserver = vi.fn(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockIntersectionObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
 
 beforeEach(() => {
-  global.IntersectionObserver = mockIntersectionObserver as unknown as typeof IntersectionObserver
+  global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 })
 
 afterEach(() => {
@@ -66,7 +66,7 @@ describe('ModelsPage', () => {
     const searchInput = screen.getByPlaceholderText(/search models/i)
     fireEvent.change(searchInput, { target: { value: 'claude' } })
     await waitFor(() => {
-      expect(screen.getByText(/claude/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/claude/i).length).toBeGreaterThan(0)
     })
   })
 
@@ -82,9 +82,9 @@ describe('ModelsPage', () => {
   it('renders provider legend with Venice AI, AntSeed P2P, and Both', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      expect(screen.getByText(/venice ai/i)).toBeInTheDocument()
-      expect(screen.getByText(/antseed p2p/i)).toBeInTheDocument()
-      expect(screen.getByText(/both/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/venice ai/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/antseed p2p/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/both/i).length).toBeGreaterThan(0)
     })
   })
 

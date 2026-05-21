@@ -42,7 +42,7 @@ function StepIcon({
 }) {
   return (
     <div
-      className={`relative z-10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl border border-border bg-panel text-cyan transition-all duration-500 step-icon ${
+      className={`relative z-10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl border border-border bg-panel text-cyan transition-all duration-500 step-icon icon-glow ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       }`}
       style={{ transitionDelay: `${index * 150}ms` }}
@@ -56,6 +56,7 @@ function StepIcon({
       >
         {index + 1}
       </span>
+      {isVisible && <div className="step-icon-ring" />}
       <div
         className={`absolute inset-0 rounded-xl bg-cyan/5 opacity-0 transition-opacity duration-300 ${isVisible ? 'opacity-100' : ''}`}
         style={{ transitionDelay: `${index * 150 + 300}ms` }}
@@ -83,7 +84,7 @@ export function HowItWorks() {
             <div key={step.title} className="relative text-center">
               {i < steps.length - 1 && (
                 <div
-                  className={`absolute right-0 top-12 hidden h-px w-full translate-x-1/2 border-t border-dashed border-border transition-all duration-500 md:block ${
+                  className={`absolute right-0 top-12 hidden h-px w-full translate-x-1/2 border-t border-dashed border-border transition-all duration-500 md:block connector-line ${
                     isVisible ? 'opacity-100' : 'opacity-0'
                   }`}
                   style={{ transitionDelay: `${i * 150 + 400}ms` }}
