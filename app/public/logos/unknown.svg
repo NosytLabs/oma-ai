@@ -1,0 +1,24 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="unknownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#666666" />
+      <stop offset="100%" stop-color="#444444" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="#1A1A1F" stroke="#555555" stroke-width="2"/>
+  
+  <!-- Question Mark -->
+  <text x="100" y="125" 
+        font-family="Arial, sans-serif" 
+        font-size="80" 
+        font-weight="bold" 
+        fill="#888888"
+        text-anchor="middle">
+    ?
+  </text>
+  
+  <!-- Decorative Ring -->
+  <circle cx="100" cy="100" r="80" fill="none" stroke="#444444" stroke-width="1" stroke-dasharray="8 4"/>
+</svg>

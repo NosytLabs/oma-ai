@@ -1,0 +1,49 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="omaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00FFCC" />
+      <stop offset="100%" stop-color="#00B4D8" />
+    </linearGradient>
+    <linearGradient id="omaGradientDark" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0088AA" />
+      <stop offset="100%" stop-color="#005577" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="#0A0A0F" stroke="url(#omaGradient)" stroke-width="2"/>
+  
+  <!-- Inner Ring -->
+  <circle cx="100" cy="100" r="80" fill="none" stroke="url(#omaGradient)" stroke-width="1" stroke-opacity="0.3"/>
+  
+  <!-- OMA Text -->
+  <text x="100" y="115" 
+        font-family="Arial, sans-serif" 
+        font-size="72" 
+        font-weight="bold" 
+        fill="url(#omaGradient)"
+        text-anchor="middle"
+        filter="url(#glow)">
+    OMA
+  </text>
+  
+  <!-- AI Indicator Dots -->
+  <circle cx="70" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
+  <circle cx="85" cy="155" r="4" fill="#00FFCC" fill-opacity="0.6"/>
+  <circle cx="100" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
+  <circle cx="115" cy="155" r="4" fill="#00FFCC" fill-opacity="0.6"/>
+  <circle cx="130" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
+  
+  <!-- Decorative Corner Accents -->
+  <path d="M20 40 L20 20 L40 20" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
+  <path d="M160 20 L180 20 L180 40" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
+  <path d="M180 160 L180 180 L160 180" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
+  <path d="M40 180 L20 180 L20 160" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
+</svg>

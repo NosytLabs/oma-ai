@@ -1,0 +1,338 @@
+# OMA-AI Coolify Deployment - Complete Stack
+# Single-server deployment with PostgreSQL, Redis, API, and Frontend
+# Optimized for: Ryzen 5 1400 (4c/8t) / 16GB DDR4 / 931GB Storage
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your values
+#   2. Configure only DATABASE_URL and REDIS_URL to use external services
+#      OR let Docker Compose manage local PostgreSQL and Redis
+#   3. docker-compose up -d
+
+version: '3.9'
+
+services:
+  # =============================================================================
+  # PostgreSQL Database (Local - disable if using external DB)
+  # Optimized for 16GB RAM total server
+  # =============================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: oma-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-oma}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-oma}
+      # PostgreSQL Production Tuning (optimized for 512MB-1GB container limit)
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - max_connections=50
+      - -c
+      - log_min_duration_statement=1000
+      # NOTE: Removing fsync/synchronous_commit overrides for production safety.
+      # Default PostgreSQL settings ensure data integrity on crash.
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-oma} -d ${DB_NAME:-oma}"]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # Redis Cache (Local - disable if using external Redis)
+  # Optimized for memory efficiency and persistence
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: oma-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:-changeme}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - "everysec"
+      - --maxmemory
+      - "384mb"
+      - --maxmemory-policy
+      - "allkeys-lru"
+      - --maxmemory-reservation
+      - "32mb"
+      - --save
+      - ""
+      - --hash-max-ziplist-entries
+      - "512"
+      - --hash-max-ziplist-value
+      - "64"
+      - --list-max-ziplist-size
+      - "64"
+      - --set-max-intset-entries
+      - "512"
+      - --activerehashing
+      - "yes"
+      - --lazyfree-lazy-eviction
+      - "yes"
+      - --lazyfree-lazy-expire
+      - "yes"
+      - --lazyfree-lazy-delivery
+      - "yes"
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # OMA API Server
+  # Node.js optimized with memory and garbage collection tuning
+  # =============================================================================
+  api:
+    build:
+      context: ../../
+      dockerfile: server/Dockerfile
+    container_name: oma-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-3001}:3001"
+    environment:
+      # Application
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3001
+
+      # Database Connection
+      # Use external: postgresql://user:pass@host:5432/oma
+      # Use local: postgresql://oma:changeme@db:5432/oma
+      - DATABASE_URL=${DATABASE_URL:-postgresql://oma:changeme@db:5432/oma?sslmode=disable}
+
+      # Redis Connection
+      # Use external: redis://user:pass@host:6379
+      # Use local: redis://:changeme@redis:6379
+      - REDIS_URL=${REDIS_URL:-redis://:changeme@redis:6379}
+
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://your-domain.com}
+
+      # AI Provider
+      - VENICE_API_KEY=${VENICE_API_KEY}
+      - VENICE_API_URL=${VENICE_API_URL:-https://api.venice.ai}
+      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL:-}
+
+      # Facilitator Mode
+      - FACILITATOR_MODE=${FACILITATOR_MODE:-mock}
+      - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY:-}
+
+      # Blockchain / Payments
+      - CHAIN_RPC_URL=${CHAIN_RPC_URL:-https://mainnet.base.org}
+      - HOUDINI_API_KEY=${HOUDINI_API_KEY:-}
+      - HOUDINI_API_SECRET=${HOUDINI_API_SECRET:-}
+      - HOUDINI_PARTNER_ID=${HOUDINI_PARTNER_ID:-}
+      - HOUDINI_WEBHOOK_SECRET=${HOUDINI_WEBHOOK_SECRET:-}
+      - HOUDINI_ADDRESS_TO=${HOUDINI_ADDRESS_TO:-}
+      - HOUDINI_WS_URL=${HOUDINI_WS_URL:-wss://partner-api.houdiniswap.com/v2/ws}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      - TREASURY_SOLANA_ADDRESS=${TREASURY_SOLANA_ADDRESS:-}
+
+      # Credit System
+      - SPEND_LIMIT_DAILY_CENTS=${SPEND_LIMIT_DAILY_CENTS:-10000}
+      - OMA_PRICE_OVERRIDE=${OMA_PRICE_OVERRIDE:-}
+
+      # CCTP / Cross-chain
+      - CCTP_CIRCLE_API_URL=${CCTP_CIRCLE_API_URL:-https://iris-api.circle.com}
+      - CCTP_SOURCE_CHAINS=${CCTP_SOURCE_CHAINS:-solana,ethereum,arbitrum,optimism,polygon,avalanche}
+      - CCTP_BASE_DOMAIN=${CCTP_BASE_DOMAIN:-6}
+      - LIFI_API_URL=${LIFI_API_URL:-https://li.quest/v1}
+      - LIFI_INTEGRATOR=${LIFI_INTEGRATOR:-oma-ai}
+      - LIFI_SOURCE_CHAINS=${LIFI_SOURCE_CHAINS:-ethereum,arbitrum,optimism,polygon,avalanche,base,solana,bsc}
+
+      # Advanced (optional)
+      - AERODROME_POOL_ADDRESS=${AERODROME_POOL_ADDRESS:-}
+
+      # Node.js Memory Optimization
+      # Limits V8 heap to 1.5GB to leave room for OS and other overhead
+      - NODE_OPTIONS=--max-old-space-size=1536
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # OMA Frontend (Next.js)
+  # Optimized with memory limits for production build
+  # =============================================================================
+  frontend:
+    build:
+      context: ../../
+      dockerfile: app/Dockerfile
+      args:
+        # Node.js memory for Next.js build
+        NODE_OPTIONS: --max-old-space-size=768
+    container_name: oma-frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://your-domain.com}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.your-domain.com}
+      - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-}
+      # Next.js production optimizations
+      - NODE_OPTIONS=--max-old-space-size=768
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # Certbot Init - Obtain SSL Certificates (runs once)
+  # =============================================================================
+  certbot-init:
+    image: certbot/certbot:latest
+    container_name: oma-certbot-init
+    profiles: ["certbot"]
+    restart: "no"
+    entrypoint: [
+      "certonly", "--webroot",
+      "-w", "/var/www/certbot",
+      "--email", "${LETSENCRYPT_EMAIL:-admin@your-domain.com}",
+      "-d", "${DOMAIN:-your-domain.com}",
+      "-d", "api.${DOMAIN:-your-domain.com}",
+      "--agree-tos",
+      "--non-interactive",
+      "--no-eff-email"
+    ]
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_data:/etc/letsencrypt
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # Certbot Renew - Automated Certificate Renewal (cron)
+  # =============================================================================
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: oma-certbot-renew
+    profiles: ["certbot"]
+    restart: unless-stopped
+    entrypoint: [
+      "/bin/sh", "-c",
+      "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 43200; done"
+    ]
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_data:/etc/letsencrypt
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =============================================================================
+# Volumes for persistent data
+# =============================================================================
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  certbot_www:
+    driver: local
+  certbot_data:
+    driver: local
+
+# =============================================================================
+# Network configuration
+# =============================================================================
+networks:
+  default:
+    name: oma-network
+    driver: bridge

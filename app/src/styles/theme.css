@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Core Colors - Dark Web3 Theme */
+  --color-void: #0a0a0f;
+  --color-panel: #0f0f1a;
+  --color-surface: #141424;
+  --color-surface-elevated: #1a1a2e;
+  
+  /* Borders */
+  --color-border: #1e1e3a;
+  --color-border-bright: #2d2d5a;
+  --color-border-glow: #00ffc840;
+  
+  /* Primary - Cyan/Neon */
+  --color-cyan: #00ffc8;
+  --color-cyan-bright: #00ffd4;
+  --color-cyan-dim: #00ffc820;
+  --color-cyan-glow: #00ffc850;
+  
+  /* Secondary - Amber/Gold */
+  --color-amber: #ffb800;
+  --color-amber-bright: #ffc833;
+  --color-amber-dim: #ffb80030;
+  
+  /* Accent - Pink/Magenta */
+  --color-pink: #ff2266;
+  --color-pink-bright: #ff4477;
+  --color-pink-dim: #ff226630;
+  
+  /* Status Colors */
+  --color-green: #00ff66;
+  --color-green-dim: #00ff6640;
+  --color-red: #ff3344;
+  --color-red-dim: #ff334440;
+  
+  /* Text Colors */
+  --color-text: #c8c8e6;
+  --color-text-bright: #e8e8f0;
+  --color-text-dim: #6868a0;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-cyan), #00a8ff);
+  --gradient-secondary: linear-gradient(135deg, var(--color-amber), #ff6600);
+  --gradient-accent: linear-gradient(135deg, var(--color-pink), #8844ff);
+  --gradient-dark: linear-gradient(180deg, var(--color-surface) 0%, var(--color-void) 100%);
+  
+  /* Fonts */
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code",
+    monospace;
+  --font-display: "JetBrains Mono", monospace;
+}

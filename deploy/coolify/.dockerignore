@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build output
+dist
+build
+
+# TypeScript
+*.ts
+!*.d.ts
+tsconfig.json
+tsconfig.*.json
+
+# Environment files
+.env
+.env.*
+.env.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage
+.nyc_output
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp

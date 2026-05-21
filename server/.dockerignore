@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+.pnpm-store/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript build output
+dist/
+
+# Test
+__tests__/
+*.test.ts
+*.spec.ts
+coverage/
+
+# Docker
+Dockerfile
+.dockerignore
