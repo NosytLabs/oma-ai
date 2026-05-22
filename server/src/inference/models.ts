@@ -816,6 +816,64 @@ export const MODEL_CATALOG: Record<string, ModelDef> = {
   },
 };
 
+export interface VideoModelDef {
+  id: string;
+  provider: "venice";
+  price: number;
+  duration: string;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}
+
+export const VIDEO_MODELS: Record<string, VideoModelDef> = {
+  "seedance-2-0-text-to-video": {
+    id: "seedance-2-0-text-to-video",
+    provider: "venice",
+    price: 0.90,
+    duration: "5s",
+    displayName: "Seedance 2.0 Text-to-Video",
+    capabilities: ["text-to-video", "5s"],
+    description: "High-quality text-to-video generation with Seedance 2.0",
+  },
+  "seedance-2-0-image-to-video": {
+    id: "seedance-2-0-image-to-video",
+    provider: "venice",
+    price: 1.20,
+    duration: "5s",
+    displayName: "Seedance 2.0 Image-to-Video",
+    capabilities: ["image-to-video", "5s"],
+    description: "Animate images into videos with Seedance 2.0",
+  },
+  "kling-v3-pro-text-to-video": {
+    id: "kling-v3-pro-text-to-video",
+    provider: "venice",
+    price: 0.92,
+    duration: "5s",
+    displayName: "Kling V3 Pro Text-to-Video",
+    capabilities: ["text-to-video", "5s"],
+    description: "Professional-grade text-to-video with Kling V3 Pro",
+  },
+  "kling-v3-pro-image-to-video": {
+    id: "kling-v3-pro-image-to-video",
+    provider: "venice",
+    price: 1.40,
+    duration: "5s",
+    displayName: "Kling V3 Pro Image-to-Video",
+    capabilities: ["image-to-video", "5s"],
+    description: "Transform images into videos with Kling V3 Pro",
+  },
+  "grok-imagine-text-to-video": {
+    id: "grok-imagine-text-to-video",
+    provider: "venice",
+    price: 0.85,
+    duration: "5s",
+    displayName: "Grok Imagine Text-to-Video",
+    capabilities: ["text-to-video", "5s"],
+    description: "Creative text-to-video generation via Grok Imagine",
+  },
+};
+
 export function calculateCost(
   modelId: string,
   inputTokens: number,
@@ -868,6 +926,26 @@ export function listModels(): Array<{
     inputPricePer1M: m.inputPricePer1M,
     outputPricePer1M: m.outputPricePer1M,
     maxTokens: m.maxTokens,
+    displayName: m.displayName,
+    capabilities: m.capabilities,
+    description: m.description,
+  }));
+}
+
+export function listVideoModels(): Array<{
+  id: string;
+  provider: string;
+  price: number;
+  duration: string;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}> {
+  return Object.values(VIDEO_MODELS).map((m) => ({
+    id: m.id,
+    provider: m.provider,
+    price: m.price,
+    duration: m.duration,
     displayName: m.displayName,
     capabilities: m.capabilities,
     description: m.description,

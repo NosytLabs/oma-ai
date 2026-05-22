@@ -20,6 +20,7 @@ import {
   X,
   Coins,
   Mic,
+  Play,
   Wallet,
   ChevronRight,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ type DocsSection =
   | 'models-endpoint'
   | 'embeddings'
   | 'image-generation'
+  | 'video-generation'
   | 'audio-speech'
   | 'payments'
   | 'error-codes'
@@ -45,6 +47,7 @@ const SECTIONS: { id: DocsSection; label: string; icon: React.ReactNode }[] = [
   { id: 'models-endpoint', label: 'Models', icon: <Cpu className="h-4 w-4" /> },
   { id: 'embeddings', label: 'Embeddings', icon: <FileCode2 className="h-4 w-4" /> },
   { id: 'image-generation', label: 'Image Generation', icon: <ImageIcon className="h-4 w-4" /> },
+  { id: 'video-generation', label: 'Video Generation', icon: <Play className="h-4 w-4" /> },
   { id: 'audio-speech', label: 'Audio / Speech', icon: <Mic className="h-4 w-4" /> },
   { id: 'payments', label: 'Payments', icon: <Coins className="h-4 w-4" /> },
   { id: 'error-codes', label: 'Error Codes', icon: <AlertCircle className="h-4 w-4" /> },
@@ -170,6 +173,7 @@ export default function DocsPage() {
             <section id="models-endpoint"><ModelsEndpointSection /></section>
             <section id="embeddings"><EmbeddingsSection /></section>
             <section id="image-generation"><ImageGenerationSection /></section>
+            <section id="video-generation"><VideoGenerationSection /></section>
             <section id="audio-speech"><AudioSpeechSection /></section>
             <section id="payments"><PaymentsSection /></section>
             <section id="error-codes"><ErrorCodesSection /></section>
@@ -957,6 +961,144 @@ function ImageGenerationSection() {
     "n": 1,
     "size": "1024x1024"
   }'`}
+      />
+    </div>
+  )
+}
+
+function VideoGenerationSection() {
+  return (
+    <div>
+      <SectionHeader
+        icon={<Play className="h-5 w-5" />}
+        title="Video Generation"
+        subtitle="POST /v1/videos/generations + GET /v1/videos/retrieve -- Generate videos from text prompts or images."
+      />
+
+      <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+        <div className="mb-1 flex items-center gap-2 font-semibold text-indigo-700">
+          <Zap className="h-4 w-4" />
+          Live
+        </div>
+        <p className="text-sm text-slate-600">
+          Powered by Venice AI (Seedance 2.0, Kling V3 Pro, Grok Imagine). Async queue-based generation.
+          Videos are generated asynchronously -- submit a job then poll for completion.
+          Flat rate per video: $0.85 - $1.40 depending on model.
+        </p>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="rounded-md bg-indigo-100 px-2 py-1 text-xs font-bold text-indigo-700">POST</span>
+          <span className="font-mono text-sm text-slate-900">/v1/videos/generations</span>
+        </div>
+        <h4 className="mb-3 font-semibold text-slate-900">Request Body</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="pb-3 pr-4 font-medium text-slate-500">Parameter</th>
+                <th className="pb-3 pr-4 font-medium text-slate-500">Type</th>
+                <th className="pb-3 pr-4 font-medium text-slate-500">Required</th>
+                <th className="pb-3 font-medium text-slate-500">Description</th>
+              </tr>
+            </thead>
+            <tbody className="font-mono text-sm">
+              <tr className="border-b border-slate-100">
+                <td className="py-3 pr-4 text-indigo-600">prompt</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-amber-600">yes</td>
+                <td className="py-3 text-slate-600">Text description of the video</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 pr-4 text-indigo-600">model</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-amber-600">yes</td>
+                <td className="py-3 text-slate-600">seedance-2-0-*, kling-v3-pro-*, grok-imagine-text-to-video</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 pr-4 text-indigo-600">duration</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-slate-500">no</td>
+                <td className="py-3 text-slate-600">5s (default), 10s</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 pr-4 text-indigo-600">aspect_ratio</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-slate-500">no</td>
+                <td className="py-3 text-slate-600">16:9 (default), 9:16, 1:1</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 pr-4 text-indigo-600">resolution</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-slate-500">no</td>
+                <td className="py-3 text-slate-600">720p (default), 1080p</td>
+              </tr>
+              <tr>
+                <td className="py-3 pr-4 text-indigo-600">image_url</td>
+                <td className="py-3 pr-4 text-slate-500">string (URL)</td>
+                <td className="py-3 pr-4 text-slate-500">no</td>
+                <td className="py-3 text-slate-600">Image URL for image-to-video (seedance/kling image models)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <CodeBlock
+        lang="bash"
+        title="cURL -- Submit Generation"
+        code={`curl https://api.oma-ai.com/v1/videos/generations \\
+  -H "Authorization: Bearer oma_sk_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "seedance-2-0-text-to-video",
+    "prompt": "A serene mountain lake at sunset with flowing water",
+    "duration": "5s",
+    "aspect_ratio": "16:9",
+    "resolution": "720p"
+  }'`}
+      />
+
+      <div className="mt-8 mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700">GET</span>
+          <span className="font-mono text-sm text-slate-900">/v1/videos/retrieve?queue_id=...</span>
+        </div>
+        <h4 className="mb-3 font-semibold text-slate-900">Query Parameters</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="pb-3 pr-4 font-medium text-slate-500">Parameter</th>
+                <th className="pb-3 pr-4 font-medium text-slate-500">Type</th>
+                <th className="pb-3 pr-4 font-medium text-slate-500">Required</th>
+                <th className="pb-3 font-medium text-slate-500">Description</th>
+              </tr>
+            </thead>
+            <tbody className="font-mono text-sm">
+              <tr>
+                <td className="py-3 pr-4 text-indigo-600">queue_id</td>
+                <td className="py-3 pr-4 text-slate-500">string</td>
+                <td className="py-3 pr-4 text-amber-600">yes</td>
+                <td className="py-3 text-slate-600">Queue ID returned from POST /v1/videos/generations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <CodeBlock
+        lang="bash"
+        title="cURL -- Poll for Completion"
+        code={`curl "https://api.oma-ai.com/v1/videos/retrieve?queue_id=YOUR_QUEUE_ID" \\
+  -H "Authorization: Bearer oma_sk_your_key_here"
+
+# Response when processing:
+# { "id": "vid_abc123", "object": "video", "status": "processing" }
+
+# Response when complete:
+# { "id": "vid_abc123", "object": "video", "status": "completed", "video_url": "https://..." }`}
       />
     </div>
   )

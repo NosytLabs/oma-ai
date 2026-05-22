@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { bearerAuth } from "../auth/middleware.js";
 import { handleChatCompletion } from "../inference/router.js";
-import { MODEL_CATALOG, getModel } from "../inference/models.js";
+import { MODEL_CATALOG, getModel, VIDEO_MODELS } from "../inference/models.js";
 import * as venice from "../inference/venice.js";
 import { getBalance, deductCredits } from "../credits/balance.js";
 import { estimateTokens } from "../inference/models.js";
@@ -53,6 +53,10 @@ chatRoutes.use("/v1/images/generations", bearerAuth);
 chatRoutes.use("/v1/images/generations", tokenBucket({ refillRate: 5, bucketSize: 10, rpmLimit: 10 }));
 chatRoutes.use("/v1/audio/speech", bearerAuth);
 chatRoutes.use("/v1/audio/speech", tokenBucket({ refillRate: 10, bucketSize: 20, rpmLimit: 20 }));
+chatRoutes.use("/v1/videos/generations", bearerAuth);
+chatRoutes.use("/v1/videos/generations", tokenBucket({ refillRate: 2, bucketSize: 5, rpmLimit: 5 }));
+chatRoutes.use("/v1/videos/retrieve", bearerAuth);
+chatRoutes.use("/v1/videos/retrieve", tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }));
 
 chatRoutes.post("/v1/chat/completions", async (c) => {
   const userId = c.get("userId");
@@ -293,6 +297,85 @@ chatRoutes.post("/v1/audio/speech", async (c) => {
     const audioBuffer = await resp.arrayBuffer();
     const contentType = resp.headers.get("content-type") ?? "audio/mpeg";
     return c.body(audioBuffer, 200, { "Content-Type": contentType });
+  } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
+    const errType = (err as { type?: string }).type ?? "inference_error";
+    return c.json({ error: { message: (err as Error).message, type: errType } }, status as Parameters<typeof c.json>[1]);
+  }
+});
+
+const videoGenerationSchema = z.object({
+  model: z.string().min(1),
+  prompt: z.string().min(1),
+  duration: z.string().optional(),
+  aspect_ratio: z.string().optional(),
+  resolution: z.string().optional(),
+  image_url: z.string().url().optional(),
+});
+
+chatRoutes.post("/v1/videos/generations", async (c) => {
+  const userId = c.get("userId");
+  const apiKey = c.get("apiKey");
+
+  const parsed = videoGenerationSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { model, prompt, duration, aspect_ratio, resolution, image_url } = parsed.data;
+
+  const videoModel = VIDEO_MODELS[model];
+  if (!videoModel) {
+    return c.json({ error: { message: `Invalid video model '${model}'. Available: ${Object.keys(VIDEO_MODELS).join(", ")}`, type: "invalid_request_error" } }, 400);
+  }
+
+  const bal = await getBalance(userId);
+  if (Number(bal.balanceCents) <= 0) {
+    return c.json({ error: { message: "Insufficient credits", type: "insufficient_quota" } }, 402);
+  }
+
+  const totalCents = Math.round(videoModel.price * 100);
+
+  try {
+    const { queueId, status } = await venice.videoGeneration({
+      model,
+      prompt,
+      duration,
+      aspect_ratio,
+      resolution,
+      image_url,
+    });
+
+    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0);
+
+    if (apiKey) {
+      trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+    }
+
+    return c.json({
+      id: `vid_${queueId}`,
+      object: "video",
+      status,
+      queue_id: queueId,
+    });
+  } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
+    const errType = (err as { type?: string }).type ?? "inference_error";
+    return c.json({ error: { message: (err as Error).message, type: errType } }, status as Parameters<typeof c.json>[1]);
+  }
+});
+
+chatRoutes.get("/v1/videos/retrieve", async (c) => {
+  const queueId = c.req.query("queue_id");
+  if (!queueId) {
+    return c.json({ error: { message: "queue_id required", type: "invalid_request_error" } }, 400);
+  }
+
+  try {
+    const result = await venice.retrieveVideo(queueId);
+    return c.json({
+      id: `vid_${queueId}`,
+      object: "video",
+      status: result.status === "COMPLETED" ? "completed" : "processing",
+      video_url: result.video_url || result.download_url,
+    });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "inference_error";

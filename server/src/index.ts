@@ -54,6 +54,7 @@ const corsOptions = {
   credentials: true,
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowHeaders: ["Content-Type", "Authorization", "X-Houdini-Order-Id", "X-Houdini-Signature"],
+  exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
   maxAge: 86400,
 };
 

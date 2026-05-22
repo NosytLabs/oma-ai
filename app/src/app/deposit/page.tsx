@@ -4,6 +4,7 @@ import { useWallet } from '@/components/wallet-provider'
 import { api, type DepositStatus } from '@/lib/api'
 import { useCryptoPrices, calculateUsdValue } from '@/lib/prices'
 import { CryptoLogo } from '@/components/ui/CryptoLogo'
+import { useToast } from '@/components/ui/Toast'
 import {
   Wallet,
   Coins,
@@ -313,6 +314,7 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
   const [processingStep, setProcessingStep] = useState('')
   const [txHash, setTxHash] = useState('')
   const [error, setError] = useState('')
+  const toast = useToast()
 
   const { writeContractAsync } = useWriteContract()
   const publicClient = usePublicClient()
@@ -352,8 +354,9 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
         setTxHash(tx)
         await publicClient!.waitForTransactionReceipt({ hash: tx })
         setProcessingStep('Crediting your account...')
-        const result = await api.depositUsdc(parseFloat(amount), tx)
+        const result = await api.oma.depositUsdc(parseFloat(amount), tx)
         onDeposit({ id: result.id, status: result.status, amountCents: result.amountCents ?? '0', coin: 'USDC', createdAt: result.createdAt })
+        toast.success(`Successfully deposited $${amount} USDC`)
         setStep('complete')
       } else if (selectedCoin?.id === 'oma-base') {
         setProcessingStep('Approving OMA token...')
@@ -375,14 +378,17 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
         setTxHash(stakeTx)
         await publicClient!.waitForTransactionReceipt({ hash: stakeTx })
         setProcessingStep('Crediting with bonus...')
-        const result = await api.depositOma(parseFloat(amount), stakeTx)
+        const result = await api.oma.depositOma(parseFloat(amount), stakeTx)
         onDeposit({ id: result.id, status: result.status, amountCents: result.amountCents ?? '0', coin: 'OMA', createdAt: result.createdAt })
+        toast.success(`Successfully deposited $${amount} OMA (5% bonus applied!)`)
         setStep('complete')
       } else {
         setStep('route')
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Deposit failed')
+      const errMsg = e instanceof Error ? e.message : 'Deposit failed'
+      setError(errMsg)
+      toast.error(errMsg)
       setStep('error')
     }
   }

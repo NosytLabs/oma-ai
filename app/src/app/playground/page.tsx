@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useToast } from '@/components/ui/Toast'
 import {
   Send,
   X,
@@ -16,7 +17,10 @@ import {
   Check,
   Plus,
   Settings2,
-  Zap
+  Zap,
+  Loader2,
+  Volume2,
+  Loader
 } from 'lucide-react'
 
 interface Message {
@@ -155,7 +159,7 @@ function ModelSelector({ model, setModel, sidebarOpen, setSidebarOpen }: {
   )
 }
 
-function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, setTemperature, maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, clearChat, messages, connectionStatus }: {
+function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, setTemperature, maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, clearChat, messages, connectionStatus, voice, setVoice }: {
   sidebarOpen: boolean
   setSidebarOpen: (o: boolean) => void
   apiKey: string
@@ -169,6 +173,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, 
   clearChat: () => void
   messages: Message[]
   connectionStatus: string
+  voice: string
+  setVoice: (v: string) => void
 }) {
   const [apiKeyInput, setApiKeyInput] = useState(apiKey)
 
@@ -281,6 +287,24 @@ function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, 
             </div>
 
             <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-zinc-700">TTS Voice</label>
+              </div>
+              <select
+                value={voice}
+                onChange={(e) => setVoice(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+              >
+                <option value="alloy">Alloy</option>
+                <option value="echo">Echo</option>
+                <option value="fable">Fable</option>
+                <option value="onyx">Onyx</option>
+                <option value="nova">Nova</option>
+                <option value="shimmer">Shimmer</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">System Prompt</label>
               <textarea
                 value={systemPrompt}
@@ -308,10 +332,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, 
   )
 }
 
-function ChatMessage({ msg, loading, streaming }: {
+function ChatMessage({ msg, loading, streaming, speaking, onSpeak }: {
   msg: Message
   loading: boolean
   streaming: boolean
+  speaking: boolean
+  onSpeak: (text: string) => void
 }) {
   const isUser = msg.role === 'user'
 
@@ -355,54 +381,6 @@ function ChatMessage({ msg, loading, streaming }: {
                       </CodeBlock>
                     )
                   },
-                  pre({ children }: React.ComponentProps<'pre'>) {
-                    return <>{children}</>
-                  },
-                  p({ children }: React.ComponentProps<'p'>) {
-                    return <p className="mb-4 last:mb-0">{children}</p>
-                  },
-                  ul({ children }: React.ComponentProps<'ul'>) {
-                    return <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>
-                  },
-                  ol({ children }: React.ComponentProps<'ol'>) {
-                    return <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>
-                  },
-                  li({ children }: React.ComponentProps<'li'>) {
-                    return <li className="text-zinc-700">{children}</li>
-                  },
-                  h1({ children }: React.ComponentProps<'h1'>) {
-                    return <h1 className="text-xl font-bold mb-3 text-zinc-900">{children}</h1>
-                  },
-                  h2({ children }: React.ComponentProps<'h2'>) {
-                    return <h2 className="text-lg font-bold mb-2 text-zinc-900">{children}</h2>
-                  },
-                  h3({ children }: React.ComponentProps<'h3'>) {
-                    return <h3 className="text-base font-bold mb-2 text-zinc-900">{children}</h3>
-                  },
-                  blockquote({ children }: React.ComponentProps<'blockquote'>) {
-                    return <blockquote className="border-l-4 border-indigo-300 pl-4 italic text-zinc-600 my-4">{children}</blockquote>
-                  },
-                  a({ href, children }: React.ComponentProps<'a'>) {
-                    return <a href={href} className="text-indigo-600 hover:text-indigo-700 underline" target="_blank" rel="noopener noreferrer">{children}</a>
-                  },
-                  strong({ children }: React.ComponentProps<'strong'>) {
-                    return <strong className="font-semibold text-zinc-900">{children}</strong>
-                  },
-                  em({ children }: React.ComponentProps<'em'>) {
-                    return <em className="italic">{children}</em>
-                  },
-                  table({ children }: React.ComponentProps<'table'>) {
-                    return <table className="w-full border-collapse my-4">{children}</table>
-                  },
-                  th({ children }: React.ComponentProps<'th'>) {
-                    return <th className="border border-zinc-200 px-4 py-2 bg-zinc-50 font-semibold text-left">{children}</th>
-                  },
-                  td({ children }: React.ComponentProps<'td'>) {
-                    return <td className="border border-zinc-200 px-4 py-2">{children}</td>
-                  },
-                  hr() {
-                    return <hr className="border-zinc-200 my-6" />
-                  }
                 }}
               >
                 {msg.content || (loading && streaming && msg.role === 'assistant' ? '' : '')}
@@ -420,6 +398,16 @@ function ChatMessage({ msg, loading, streaming }: {
             </div>
           )}
         </div>
+        {!isUser && msg.content && !loading && (
+          <button
+            onClick={() => onSpeak(msg.content)}
+            disabled={speaking}
+            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+          >
+            {speaking ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {speaking ? 'Playing...' : 'Speak'}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -454,6 +442,9 @@ export default function PlaygroundPage() {
   const [maxTokens, setMaxTokens] = useState(2048)
   const [systemPrompt, setSystemPrompt] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'error'>('disconnected')
+  const [voice, setVoice] = useState('alloy')
+  const [speakingMsgIndex, setSpeakingMsgIndex] = useState<number | null>(null)
+  const toast = useToast()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -587,6 +578,7 @@ export default function PlaygroundPage() {
       } else {
         const message = err instanceof Error ? err.message : 'Unknown error occurred'
         setError(message)
+        toast.error(message)
         if (message.includes('401') || message.includes('authentication')) {
           setConnectionStatus('error')
         }
@@ -604,11 +596,59 @@ export default function PlaygroundPage() {
       abortRef.current = null
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [input, apiKey, loading, messages, model, temperature, maxTokens, systemPrompt])
+  }, [input, apiKey, loading, messages, model, temperature, maxTokens, systemPrompt, toast])
 
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort()
   }, [])
+
+  const handleSpeak = useCallback(async (text: string, index: number) => {
+    const storedKey = localStorage.getItem('oma_api_key')
+    const effectiveKey = storedKey || apiKey
+    if (!effectiveKey) {
+      toast.error('Enter your API key to use TTS')
+      return
+    }
+
+    setSpeakingMsgIndex(index)
+    try {
+      const resp = await fetch('/api/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${effectiveKey}`,
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          input: text,
+          voice,
+        }),
+      })
+
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => null)
+        throw new Error(errBody?.error?.message || `HTTP ${resp.status}`)
+      }
+
+      const blob = await resp.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audio.onended = () => {
+        setSpeakingMsgIndex(null)
+        URL.revokeObjectURL(url)
+      }
+      audio.onerror = () => {
+        setSpeakingMsgIndex(null)
+        URL.revokeObjectURL(url)
+        toast.error('Audio playback failed')
+      }
+      await audio.play()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'TTS failed'
+      toast.error(msg)
+      setSpeakingMsgIndex(null)
+    }
+  }, [apiKey, voice, toast])
 
   const clearChat = useCallback(() => {
     setMessages([])
@@ -682,63 +722,6 @@ export default function PlaygroundPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex">
-      <style jsx>{`
-        @keyframes messageIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes bounce-send {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        .animate-message-in {
-          animation: messageIn 300ms ease-out forwards;
-        }
-        .animate-fade-in {
-          animation: fadeIn 500ms ease-out forwards;
-        }
-        .animate-slide-up {
-          animation: slideUp 500ms ease-out forwards;
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        .animate-bounce-send {
-          animation: bounce-send 300ms ease-in-out;
-        }
-        .animate-pulse-dot {
-          animation: pulse-dot 1.5s ease-in-out infinite;
-        }
-      `}</style>
-
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -753,6 +736,8 @@ export default function PlaygroundPage() {
         clearChat={clearChat}
         messages={messages}
         connectionStatus={connectionStatus}
+        voice={voice}
+        setVoice={setVoice}
       />
 
       <div className="flex-1 flex flex-col min-h-screen">
@@ -789,6 +774,8 @@ export default function PlaygroundPage() {
                     msg={msg}
                     loading={loading}
                     streaming={streaming}
+                    speaking={speakingMsgIndex === i}
+                    onSpeak={(text) => handleSpeak(text, i)}
                   />
                 ))}
                 <div ref={messagesEndRef} />
@@ -839,7 +826,11 @@ export default function PlaygroundPage() {
                     disabled={!input.trim()}
                     className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white transition-all hover:from-indigo-600 hover:to-indigo-700 hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none animate-bounce-send"
                   >
-                    <Send className="w-5 h-5" />
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
                   </button>
                 )}
               </div>

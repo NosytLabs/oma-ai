@@ -126,7 +126,7 @@ export function Hero() {
               <div className="flex-1">
                 <h3 className="font-hanken text-xl font-semibold text-[#151c27] mb-2">Top up with crypto</h3>
                 <p className="text-[#464555] leading-relaxed">
-                  OMA AI supports crypto-friendly account credits using Houdini-powered payment flows.
+                  Add funds using USDC on Base or Solana. Or choose from 100+ tokens via HoudiniSwap.
                 </p>
               </div>
             </div>
@@ -144,7 +144,7 @@ export function Hero() {
               <div className="flex-1">
                 <h3 className="font-hanken text-xl font-semibold text-[#151c27] mb-2">Private by design</h3>
                 <p className="text-[#464555] leading-relaxed">
-                  OMA routes inference through Venice, a privacy-focused AI provider with zero data retention. OMA minimizes stored data.
+                  OMA routes inference through Venice, which keeps minimal logs. OMA stores almost nothing.
                 </p>
               </div>
             </div>

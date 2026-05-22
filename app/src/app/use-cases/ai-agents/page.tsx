@@ -47,10 +47,10 @@ const tabs = [
 ]
 
 const features = [
-  { icon: <Brain className="h-5 w-5" />, title: 'Autonomous Reasoning', desc: 'Chain-of-thought prompting with large context windows for complex agentic tasks.' },
-  { icon: <Shield className="h-5 w-5" />, title: 'No KYC Required', desc: 'Build and deploy agents without identity verification or account requirements.' },
-  { icon: <Globe className="h-5 w-5" />, title: 'Global Infrastructure', desc: 'Venice-powered inference with global edge deployment for low-latency responses.' },
-  { icon: <Cpu className="h-5 w-5" />, title: 'Tool Calling', desc: 'Function calling and structured outputs for multi-step agent workflows.' },
+  { icon: <Brain className="h-5 w-5" />, title: 'Autonomous Reasoning', desc: 'Chain-of-thought prompting with large context windows for complex tasks.' },
+  { icon: <Shield className="h-5 w-5" />, title: 'No KYC Required', desc: 'Build agents without identity verification or account requirements.' },
+  { icon: <Globe className="h-5 w-5" />, title: 'Global Infrastructure', desc: 'Venice-powered inference with global edge deployment for low-latency.' },
+  { icon: <Cpu className="h-5 w-5" />, title: 'Tool Calling', desc: 'Function calling and structured outputs for multi-step workflows.' },
 ]
 
 const integrations = [
@@ -86,7 +86,7 @@ export default function AIAgentsPage() {
             Power Your AI Agents with Permissionless Inference
           </h1>
           <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-            Build autonomous agents that research, reason, and act. No KYC, no accounts, no limits. Pay with crypto and deploy agents globally.
+            Build agents that research, reason, and act. No KYC, no accounts. Pay with crypto, deploy globally.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700">

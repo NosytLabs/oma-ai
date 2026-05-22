@@ -209,8 +209,8 @@ export default function PricingPage() {
               </div>
               <p className="mt-4 text-sm text-slate-500">{filtered.length} models</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="overflow-x-auto -mx-4 px-4 sm:overflow-visible sm:mx-0 sm:px-0">
+              <table className="w-full min-w-[600px] text-left">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Model</th>

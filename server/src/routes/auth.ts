@@ -8,6 +8,24 @@ import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
+import { createHash } from "crypto";
+
+function generateAccountNumber(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const segments = [];
+  for (let i = 0; i < 3; i++) {
+    let segment = "";
+    for (let j = 0; j < 4; j++) {
+      segment += chars[Math.floor(Math.random() * chars.length)];
+    }
+    segments.push(segment);
+  }
+  return `OMA-${segments.join("-")}`;
+}
+
+function hashAccountNumber(accountNumber: string): string {
+  return createHash("sha256").update(accountNumber.toUpperCase()).digest("hex");
+}
 
 export const authRoutes = new Hono<OmaEnv>();
 
@@ -94,9 +112,10 @@ authRoutes.get("/user", sessionAuth, async (c) => {
     id: users.id,
     address: users.address,
     solanaAddress: users.solanaAddress,
+    accountNumber: users.accountNumber,
     createdAt: users.createdAt,
   }).from(users).where(eq(users.id, userId));
-  if (!user) return c.json({ error: { message: "User not found", type: "not_found_error" } }, 404);
+  if (!user) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
   return c.json(user);
 });
 
@@ -107,6 +126,46 @@ authRoutes.delete("/account", sessionAuth, async (c) => {
 });
 
 authRoutes.post("/auth/logout", sessionAuth, async (c) => c.json({ success: true }));
+
+// Account-number auth (Mullvad-style)
+authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
+  // Create account number for existing user
+  const userId = c.get("userId");
+  if (!userId) return c.json({ error: { message: "Not authenticated", type: "authentication_error" } }, 401);
+  
+  const [user] = await db.select({ accountNumber: users.accountNumber }).from(users).where(eq(users.id, userId));
+  if (user?.accountNumber) {
+    return c.json({ error: { message: "Account number already exists", type: "invalid_request_error" } }, 400);
+  }
+  
+  let accountNumber = generateAccountNumber();
+  let attempts = 0;
+  while (attempts < 10) {
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.accountNumberHash, hashAccountNumber(accountNumber))).limit(1);
+    if (existing.length === 0) break;
+    accountNumber = generateAccountNumber();
+    attempts++;
+  }
+  
+  const accountNumberHash = hashAccountNumber(accountNumber);
+  await db.update(users).set({ accountNumber, accountNumberHash }).where(eq(users.id, userId));
+  return c.json({ accountNumber });
+});
+
+authRoutes.post("/auth/account/login", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
+  const schema = z.object({ accountNumber: z.string().min(1) });
+  const parsed = schema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  
+  const { accountNumber } = parsed.data;
+  const accountNumberHash = hashAccountNumber(accountNumber.toUpperCase());
+  
+  const [user] = await db.select({ id: users.id, address: users.address }).from(users).where(eq(users.accountNumberHash, accountNumberHash)).limit(1);
+  if (!user) return c.json({ error: { message: "Invalid account number", type: "authentication_error" } }, 401);
+  
+  const token = await generateSessionToken(user.id);
+  return c.json({ token, address: user.address, hasApiKey: true });
+});
 
 authRoutes.get("/keys", sessionAuth, async (c) => {
   const userId = c.get("userId");
@@ -127,6 +186,6 @@ authRoutes.delete("/keys/:id", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const keyId = c.req.param("id") ?? "";
   const result = await revokeApiKey(String(userId), keyId);
-  if (!result) return c.json({ error: { message: "API key not found", type: "not_found_error" } }, 404);
+  if (!result) return c.json({ error: { message: "API key not found", type: "not_found" } }, 404);
   return c.json({ success: true });
 });

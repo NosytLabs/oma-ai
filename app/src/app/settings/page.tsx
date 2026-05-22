@@ -2,6 +2,7 @@
 
 import { useWallet } from '@/components/wallet-provider'
 import { api, type User, type ApiKey } from '@/lib/api'
+import { useToast } from '@/components/ui/Toast'
 import {
   Wallet,
   Hexagon,
@@ -37,6 +38,7 @@ function formatDate(iso: string): string {
 
 export default function SettingsPage() {
   const { isConnected, connectEvm, evmAddress, disconnect } = useWallet()
+  const toast = useToast()
 
   const [user, setUser] = useState<User | null>(null)
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
@@ -78,9 +80,10 @@ export default function SettingsPage() {
 
   const handleCopy = useCallback((text: string, id: string) => {
     navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard')
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
-  }, [])
+  }, [toast])
 
   const handleUnlinkEvm = async () => {
     setUnlinkingEvm(true)

@@ -225,8 +225,8 @@ export default function ModelsPage() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <AnimatedSection>
           <div className="mb-2 text-sm font-medium text-indigo-600">OMA AI Gateway</div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               AI Models API — Access Multiple LLMs Through One Gateway
             </h1>
             <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 border border-emerald-200">

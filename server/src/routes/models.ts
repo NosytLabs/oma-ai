@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
-import { listModels, getModel } from "../inference/models.js";
+import { listModels, getModel, listVideoModels } from "../inference/models.js";
 import { getStakingDiscount } from "../credits/balance.js";
 import type { OmaEnv } from "../types.js";
 
@@ -11,20 +11,34 @@ modelRoutes.use("/v1/models/*", optionalAuth);
 modelRoutes.get("/v1/models", async (c) => {
   const userId = c.get("userId");
   const catalog = listModels();
+  const videoCatalog = listVideoModels();
   const created = Math.floor(Date.now() / 1000);
 
-  const data = catalog.map((m) => ({
-    id: m.id,
-    object: "model" as const,
-    created,
-    owned_by: "oma",
-    pricing: {
-      prompt: (m.inputPricePer1M / 1_000_000).toFixed(8),
-      completion: (m.outputPricePer1M / 1_000_000).toFixed(8),
-    },
-    category: m.category,
-    context_length: m.maxTokens,
-  }));
+  const data = [
+    ...catalog.map((m) => ({
+      id: m.id,
+      object: "model" as const,
+      created,
+      owned_by: "oma",
+      pricing: {
+        prompt: (m.inputPricePer1M / 1_000_000).toFixed(8),
+        completion: (m.outputPricePer1M / 1_000_000).toFixed(8),
+      },
+      category: m.category,
+      context_length: m.maxTokens,
+    })),
+    ...videoCatalog.map((m) => ({
+      id: m.id,
+      object: "model" as const,
+      created,
+      owned_by: "oma",
+      pricing: {
+        prompt: m.price.toFixed(8),
+      },
+      category: "video",
+      duration: m.duration,
+    })),
+  ];
 
   if (userId) {
     const discount = await getStakingDiscount(userId);

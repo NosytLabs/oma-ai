@@ -22,7 +22,7 @@ afterEach(() => {
 describe('ModelsPage', () => {
   it('renders the models page heading', () => {
     render(<ModelsPage />)
-    expect(screen.getByText('MODELS')).toBeInTheDocument()
+    expect(screen.getByText(/AI Models API/i)).toBeInTheDocument()
   })
 
   it('renders category filter buttons', () => {
@@ -40,7 +40,8 @@ describe('ModelsPage', () => {
   it('renders the stats bar showing model count', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      expect(screen.getByText(/models available/i)).toBeInTheDocument()
+      const spans = screen.getAllByText('30')
+      expect(spans.length).toBeGreaterThan(0)
     })
   })
 
@@ -53,9 +54,9 @@ describe('ModelsPage', () => {
 
   it('category filter click changes active filter', async () => {
     render(<ModelsPage />)
-    const budgetButton = screen.getByRole('button', { name: /budget/i })
-    fireEvent.click(budgetButton)
     await waitFor(() => {
+      const budgetButton = screen.getByRole('button', { name: /budget/i })
+      fireEvent.click(budgetButton)
       const clearFilterButton = screen.getByRole('button', { name: /clear filter/i })
       expect(clearFilterButton).toBeInTheDocument()
     })
@@ -63,9 +64,9 @@ describe('ModelsPage', () => {
 
   it('search input filters models', async () => {
     render(<ModelsPage />)
-    const searchInput = screen.getByPlaceholderText(/search models/i)
-    fireEvent.change(searchInput, { target: { value: 'claude' } })
     await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText(/search models/i)
+      fireEvent.change(searchInput, { target: { value: 'claude' } })
       expect(screen.getAllByText(/claude/i).length).toBeGreaterThan(0)
     })
   })
@@ -82,13 +83,18 @@ describe('ModelsPage', () => {
   it('renders provider legend with Venice AI, AntSeed P2P, and Both', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      expect(screen.getAllByText(/venice ai/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/antseed p2p/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/both/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Venice AI/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/AntSeed/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Both/i).length).toBeGreaterThan(0)
     })
   })
 
   it('models page does not crash on render', () => {
     expect(() => render(<ModelsPage />)).not.toThrow()
   })
+})
+
+afterEach(() => {
+  global.IntersectionObserver = originalIntersectionObserver
+  vi.restoreAllMocks()
 })

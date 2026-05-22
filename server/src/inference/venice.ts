@@ -325,4 +325,59 @@ export async function veniceModels(): Promise<any[]> {
   return data.data ?? data;
 }
 
+export async function videoGeneration(body: {
+  model: string;
+  prompt: string;
+  duration?: string;
+  aspect_ratio?: string;
+  resolution?: string;
+  image_url?: string;
+}): Promise<{ queueId: string; status: string }> {
+  const response = await fetch(veniceUrl("/api/v1/video/queue"), {
+    method: "POST",
+    headers: veniceHeaders(),
+    body: JSON.stringify({
+      model: body.model,
+      prompt: body.prompt,
+      duration: body.duration || "5s",
+      aspect_ratio: body.aspect_ratio || "16:9",
+      resolution: body.resolution || "720p",
+      ...(body.image_url && { image_url: body.image_url }),
+    }),
+    signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw Object.assign(
+      new Error(`Video generation failed: ${response.status} - ${text.slice(0, 500)}`),
+      { status: response.status, type: "venice_api_error" }
+    );
+  }
+
+  const data = await response.json();
+  return { queueId: data.queue_id, status: "queued" };
+}
+
+export async function retrieveVideo(queueId: string): Promise<{
+  status: string;
+  video_url?: string;
+  download_url?: string;
+}> {
+  const response = await fetch(
+    veniceUrl(`/api/v1/video/retrieve?queue_id=${queueId}`),
+    { headers: veniceHeaders(), signal: AbortSignal.timeout(VENICE_TIMEOUT_MS) }
+  );
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw Object.assign(
+      new Error(`Video retrieval failed: ${response.status} - ${text.slice(0, 500)}`),
+      { status: response.status, type: "venice_api_error" }
+    );
+  }
+
+  return response.json();
+}
+
 export { chatCompletion as veniceChatCompletion };

@@ -181,10 +181,10 @@ depositRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
   const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
 
   if (signature.length !== expectedSig.length) {
-    return c.json({ error: { message: "Invalid signature", type: "unauthorized" } }, 401);
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
   if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
-    return c.json({ error: { message: "Invalid signature", type: "unauthorized" } }, 401);
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 
   const body = JSON.parse(rawBody);
@@ -470,110 +470,116 @@ depositRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
   if (!depositId) {
     return c.json({ error: { message: "Missing deposit id", type: "validation_error" } }, 400);
   }
-  const rows = await db.select().from(deposits).where(
-    and(eq(deposits.id, depositId), eq(deposits.userId, userId))
-  ).limit(1);
-  if (!rows.length) {
-    return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
-  }
-  const depositRecord = rows[0];
 
-  const deposit = depositRecord;
-  if (deposit.userId !== userId) {
-    return c.json({ error: { message: "Unauthorized", type: "unauthorized" } }, 403);
-  }
+  try {
+    const rows = await db.select().from(deposits).where(
+      and(eq(deposits.id, depositId), eq(deposits.userId, userId))
+    ).limit(1);
+    if (!rows.length) {
+      return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
+    }
+    const deposit = rows[0];
 
-  if (deposit.status === "completed" || deposit.status === "failed" || deposit.status === "refunded" || deposit.status === "expired") {
-    return c.json({
-      id: deposit.id,
-      type: deposit.type,
-      status: deposit.status,
-      amountUsd: deposit.amountUsd,
-      creditsIssued: deposit.creditsIssued,
-      txHash: deposit.txHash,
-    });
-  }
-
-  if (deposit.type === "houdini_swap" && deposit.houdiniId) {
-    if (deposit.houdiniId.startsWith("mock-order")) {
-      const createdMs = new Date(deposit.createdAt).getTime();
-      const elapsedSec = (Date.now() - createdMs) / 1000;
-      let mockStatus: "pending" | "settling" | "completed" = "pending";
-      
-      if (elapsedSec > 30) {
-        mockStatus = "completed";
-      } else if (elapsedSec > 10) {
-        mockStatus = "settling";
-      }
-
-      if (mockStatus !== deposit.status) {
-        await db.update(deposits)
-          .set({ status: mockStatus })
-          .where(eq(deposits.id, depositId!));
-        if (mockStatus === "completed" && !deposit.txHash) {
-          const toAmount = 99.5; // Mock 99.5 USDC out of 100.0
-          const mockTxHash = "0xmocktx" + crypto.randomBytes(28).toString("hex");
-          await completeHoudiniDeposit(depositId!, toAmount, mockTxHash, deposit.userId);
-        }
-      }
-
-      const displayAmount = (deposit.amountUsd && deposit.amountUsd !== "0") ? deposit.amountUsd : "100.0";
-
-      return c.json({
-        id: deposit.id,
-        type: deposit.type,
-        status: mockStatus,
-        houdiniStatus: mockStatus === "completed" ? "FINISHED" : (mockStatus === "settling" ? "EXCHANGING" : "WAITING"),
-        amountUsd: deposit.amountUsd,
-        creditsIssued: deposit.creditsIssued,
-        fromAmount: displayAmount,
-        toAmount: String(Number(displayAmount) * 0.995),
-        txHash: deposit.txHash || "0xmocktx" + crypto.randomBytes(28).toString("hex"),
-      });
+    if (deposit.userId !== userId) {
+      return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
     }
 
-    try {
-      const order = await houdiniClient.getDepositStatus(deposit.houdiniId);
-      const mappedStatus = mapHoudiniStatus(order.status);
-      if (mappedStatus !== deposit.status) {
-        await db.update(deposits)
-          .set({ status: mappedStatus })
-          .where(eq(deposits.id, depositId!));
-      }
-      if (order.status === "FINISHED" && order.toAmount && !deposit.txHash) {
-        await completeHoudiniDeposit(depositId!, Number(order.toAmount), order.transactionHash ?? "", deposit.userId);
-      }
-      return c.json({
-        id: deposit.id,
-        type: deposit.type,
-        status: mappedStatus,
-        houdiniStatus: order.status,
-        amountUsd: deposit.amountUsd,
-        creditsIssued: deposit.creditsIssued,
-        fromAmount: order.fromAmount,
-        toAmount: order.toAmount,
-        txHash: deposit.txHash || order.transactionHash,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+    if (deposit.status === "completed" || deposit.status === "failed" || deposit.status === "refunded" || deposit.status === "expired") {
       return c.json({
         id: deposit.id,
         type: deposit.type,
         status: deposit.status,
         amountUsd: deposit.amountUsd,
         creditsIssued: deposit.creditsIssued,
-        pollError: message,
+        txHash: deposit.txHash,
       });
     }
-  }
 
-  return c.json({
-    id: deposit.id,
-    type: deposit.type,
-    status: deposit.status,
-    amountUsd: deposit.amountUsd,
-    creditsIssued: deposit.creditsIssued,
-  });
+    if (deposit.type === "houdini_swap" && deposit.houdiniId) {
+      if (deposit.houdiniId.startsWith("mock-order")) {
+        const createdMs = new Date(deposit.createdAt).getTime();
+        const elapsedSec = (Date.now() - createdMs) / 1000;
+        let mockStatus: "pending" | "settling" | "completed" = "pending";
+
+        if (elapsedSec > 30) {
+          mockStatus = "completed";
+        } else if (elapsedSec > 10) {
+          mockStatus = "settling";
+        }
+
+        if (mockStatus !== deposit.status) {
+          await db.update(deposits)
+            .set({ status: mockStatus })
+            .where(eq(deposits.id, depositId!));
+          if (mockStatus === "completed" && !deposit.txHash) {
+            const toAmount = 99.5;
+            const mockTxHash = "0xmocktx" + crypto.randomBytes(28).toString("hex");
+            await completeHoudiniDeposit(depositId!, toAmount, mockTxHash, deposit.userId);
+          }
+        }
+
+        const displayAmount = (deposit.amountUsd && deposit.amountUsd !== "0") ? deposit.amountUsd : "100.0";
+
+        return c.json({
+          id: deposit.id,
+          type: deposit.type,
+          status: mockStatus,
+          houdiniStatus: mockStatus === "completed" ? "FINISHED" : (mockStatus === "settling" ? "EXCHANGING" : "WAITING"),
+          amountUsd: deposit.amountUsd,
+          creditsIssued: deposit.creditsIssued,
+          fromAmount: displayAmount,
+          toAmount: String(Number(displayAmount) * 0.995),
+          txHash: deposit.txHash || "0xmocktx" + crypto.randomBytes(28).toString("hex"),
+        });
+      }
+
+      try {
+        const order = await houdiniClient.getDepositStatus(deposit.houdiniId);
+        const mappedStatus = mapHoudiniStatus(order.status);
+        if (mappedStatus !== deposit.status) {
+          await db.update(deposits)
+            .set({ status: mappedStatus })
+            .where(eq(deposits.id, depositId!));
+        }
+        if (order.status === "FINISHED" && order.toAmount && !deposit.txHash) {
+          await completeHoudiniDeposit(depositId!, Number(order.toAmount), order.transactionHash ?? "", deposit.userId);
+        }
+        return c.json({
+          id: deposit.id,
+          type: deposit.type,
+          status: mappedStatus,
+          houdiniStatus: order.status,
+          amountUsd: deposit.amountUsd,
+          creditsIssued: deposit.creditsIssued,
+          fromAmount: order.fromAmount,
+          toAmount: order.toAmount,
+          txHash: deposit.txHash || order.transactionHash,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return c.json({
+          id: deposit.id,
+          type: deposit.type,
+          status: deposit.status,
+          amountUsd: deposit.amountUsd,
+          creditsIssued: deposit.creditsIssued,
+          pollError: message,
+        });
+      }
+    }
+
+    return c.json({
+      id: deposit.id,
+      type: deposit.type,
+      status: deposit.status,
+      amountUsd: deposit.amountUsd,
+      creditsIssued: deposit.creditsIssued,
+    });
+  } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
+    const errType = (err as { type?: string }).type ?? "server_error";
+    return c.json({ error: { message: (err as Error).message, type: errType } }, status as Parameters<typeof c.json>[1]);
+  }
 });
 
 depositRoutes.get("/v1/deposit/coins", async (c) => {

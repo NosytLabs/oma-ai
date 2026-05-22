@@ -7,12 +7,12 @@ const steps = [
   {
     icon: <Wallet className="h-6 w-6" />,
     title: 'CONNECT WALLET',
-    desc: 'EVM or Solana -- MetaMask, Phantom, Coinbase, any wallet.',
+    desc: 'EVM or Solana -- MetaMask, Phantom, Coinbase Wallet.',
   },
   {
     icon: <ArrowDownUp className="h-6 w-6" />,
-    title: 'CROSS-CHAIN DEPOSIT',
-    desc: 'USDC on Base/Solana, or 100+ coins via HoudiniSwap. No bridging needed.',
+    title: 'ADD FUNDS',
+    desc: 'USDC on Base or Solana. Or use HoudiniSwap for 100+ other tokens.',
   },
   {
     icon: <Coins className="h-6 w-6" />,
@@ -79,12 +79,12 @@ export function HowItWorks() {
           HOW IT WORKS
         </h2>
 
-        <div className="relative grid grid-cols-1 gap-8 md:grid-cols-5">
+        <div className="relative grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
           {steps.map((step, i) => (
             <div key={step.title} className="relative text-center">
               {i < steps.length - 1 && (
                 <div
-                  className={`absolute right-0 top-12 hidden h-px w-full translate-x-1/2 border-t border-dashed border-border transition-all duration-500 md:block connector-line ${
+                  className={`absolute right-0 top-12 h-px w-full translate-x-1/2 border-t border-dashed border-border transition-all duration-500 connector-line ${
                     isVisible ? 'opacity-100' : 'opacity-0'
                   }`}
                   style={{ transitionDelay: `${i * 150 + 400}ms` }}

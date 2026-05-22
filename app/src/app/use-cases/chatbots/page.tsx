@@ -96,7 +96,7 @@ export default function ChatbotsPage() {
             Build Smart Chatbots with OpenAI-Compatible API
           </h1>
           <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-            Create conversational AI experiences for customer support, sales, and engagement. Pay with crypto, no KYC required.
+            Create conversational AI experiences for customer support, sales, and engagement. Pay with crypto, low-friction access.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700">

@@ -95,7 +95,7 @@ export default function StakePage() {
     const fetch = async () => {
       setLoading(true)
       try {
-        const bal = await api.getBalance()
+        const bal = await api.oma.getBalance()
         if (!cancelled) setBalance(bal)
       } catch (e) {
         if (!cancelled) console.error(e instanceof Error ? e.message : 'Failed to load')

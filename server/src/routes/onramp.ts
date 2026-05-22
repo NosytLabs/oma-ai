@@ -129,10 +129,10 @@ onrampRoutes.post("/v1/onramp/webhook", async (c) => {
   }
   const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
   if (signature.length !== expectedSig.length) {
-    return c.json({ error: { message: "Invalid signature", type: "unauthorized" } }, 401);
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
   if (!crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expectedSig, "utf8"))) {
-    return c.json({ error: { message: "Invalid signature", type: "unauthorized" } }, 401);
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 
   const body = JSON.parse(rawBody);

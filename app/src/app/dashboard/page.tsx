@@ -2,6 +2,8 @@
 
 import { useWallet } from '@/components/wallet-provider'
 import { api, type ApiKey, type ApiKeyWithSecret, type BalanceResponse, type UsageRecord } from '@/lib/api'
+import { useToast } from '@/components/ui/Toast'
+import { SkeletonStatsRow, SkeletonKeyList } from '@/components/ui/Skeleton'
 import {
   Wallet,
   Key,
@@ -18,6 +20,8 @@ import {
   Zap,
   ArrowRight,
   CreditCard,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -69,12 +73,15 @@ function maskKey(prefix: string): string {
 
 export default function DashboardPage() {
   const { isConnected, connectEvm } = useWallet()
+  const toast = useToast()
 
   const [balance, setBalance] = useState<BalanceResponse | null>(null)
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [usage, setUsage] = useState<UsageRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const limit = 20
 
   const [creating, setCreating] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
@@ -84,14 +91,14 @@ export default function DashboardPage() {
   const [revokingId, setRevokingId] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
-  const loadData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const [bal, keyList, usageData] = await Promise.all([
-        api.getBalance(),
-        api.getApiKeys(),
-        api.getUsage(),
+        api.oma.getBalance(),
+        api.oma.getApiKeys(),
+        api.oma.getUsage(),
       ])
       setBalance(bal)
       setKeys(keyList)
@@ -106,43 +113,33 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isConnected) return
-    let cancelled = false
-    const fetch = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const [bal, keyList, usageData] = await Promise.all([
-          api.getBalance(),
-          api.getApiKeys(),
-          api.getUsage(),
-        ])
-        if (cancelled) return
-        setBalance(bal)
-        setKeys(keyList)
-        setUsage(usageData.usage)
-      } catch (e: unknown) {
-        if (cancelled) return
-        const msg = e instanceof Error ? e.message : 'Failed to load dashboard data'
-        setError(msg)
-      } finally {
-        if (!cancelled) setLoading(false)
+    fetchData()
+  }, [isConnected, fetchData])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && page > 1) {
+        setPage(p => p - 1)
+      } else if (e.key === 'ArrowRight' && usage.length > page * limit) {
+        setPage(p => p + 1)
       }
     }
-    fetch()
-    return () => { cancelled = true }
-  }, [isConnected])
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [page, limit, usage.length])
 
   const handleCopy = useCallback((text: string, id: string) => {
     navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard')
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
-  }, [])
+  }, [toast])
 
   const handleCreateKey = useCallback(async () => {
     if (!newKeyName.trim()) return
     setCreating(true)
     try {
-      const key = await api.createApiKey(newKeyName.trim())
+      const key = await api.oma.createApiKey(newKeyName.trim())
       setCreatedKey(key)
       setNewKeyName('')
       setShowCreateForm(false)
@@ -158,7 +155,7 @@ export default function DashboardPage() {
   const handleRevokeKey = useCallback(async (keyId: string) => {
     setRevokingId(keyId)
     try {
-      await api.revokeApiKey(keyId)
+      await api.oma.revokeApiKey(keyId)
       setKeys((prev) => prev.filter((k) => k.id !== keyId))
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to revoke key'
@@ -230,7 +227,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <motion.button
-          onClick={loadData}
+          onClick={fetchData}
           disabled={loading}
           className="btn-secondary flex items-center gap-2 py-2 px-4"
           whileHover={{ scale: 1.02 }}
@@ -260,125 +257,129 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* Stats Cards Row */}
-      <motion.div 
-        className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-      >
-        {/* Balance Card */}
-        <motion.div 
-          className="card shadow-floating relative overflow-hidden"
-          whileHover={{ y: -2 }}
-          transition={{ type: 'spring', stiffness: 300 }}
+      {loading ? (
+        <SkeletonStatsRow />
+      ) : (
+        <motion.div
+          className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
-          <div className="flex items-start justify-between relative">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
-                <CreditCard className="h-4 w-4" />
-                Credit Balance
-              </div>
-              <motion.div 
-                className="text-4xl font-bold text-gradient"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                {loading ? '---' : balance ? formatCents(balance.balanceCents) : '$0.00'}
-              </motion.div>
-              <div className="mt-1 text-xs text-text-secondary">USD Credits</div>
-            </div>
-          </div>
-          <motion.div 
-            className="mt-4"
-            whileHover={{ scale: 1.02 }}
+          {/* Balance Card */}
+          <motion.div
+            className="card shadow-floating relative overflow-hidden"
+            whileHover={{ y: -2 }}
+            transition={{ type: 'spring', stiffness: 300 }}
           >
-            <a href="/deposit" className="btn-primary w-full flex items-center justify-center gap-2 py-2">
-              <Plus className="h-4 w-4" />
-              Deposit
-            </a>
-          </motion.div>
-        </motion.div>
-
-        {/* Staking Tier Card */}
-        <motion.div 
-          className="card shadow-floating relative overflow-hidden"
-          whileHover={{ y: -2 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
-          <div className="flex items-start gap-3 relative">
-            <motion.div 
-              className={`flex h-12 w-12 items-center justify-center rounded-xl ${tier.color} bg-opacity-20 border border-${tier.color}/30`}
-              initial={{ rotate: -10 }}
-              animate={{ rotate: 0 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+            <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
+            <div className="flex items-start justify-between relative">
+              <div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
+                  <CreditCard className="h-4 w-4" />
+                  Credit Balance
+                </div>
+                <motion.div
+                  className="text-4xl font-bold text-gradient"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {balance ? formatCents(balance.balanceCents) : '$0.00'}
+                </motion.div>
+                <div className="mt-1 text-xs text-text-secondary">USD Credits</div>
+              </div>
+            </div>
+            <motion.div
+              className="mt-4"
+              whileHover={{ scale: 1.02 }}
             >
-              <ShieldCheck className="h-6 w-6 text-indigo-500" />
+              <a href="/deposit" className="btn-primary w-full flex items-center justify-center gap-2 py-2">
+                <Plus className="h-4 w-4" />
+                Deposit
+              </a>
             </motion.div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold">{tier.label} Tier</span>
-                {tier.discount > 0 && (
-                  <motion.span 
-                    className="text-sm font-bold text-indigo-500"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring' }}
-                  >
-                    -{tier.discount}%
-                  </motion.span>
+          </motion.div>
+
+          {/* Staking Tier Card */}
+          <motion.div
+            className="card shadow-floating relative overflow-hidden"
+            whileHover={{ y: -2 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
+            <div className="flex items-start gap-3 relative">
+              <motion.div
+                className={`flex h-12 w-12 items-center justify-center rounded-xl ${tier.color} bg-opacity-20 border border-${tier.color}/30`}
+                initial={{ rotate: -10 }}
+                animate={{ rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+              >
+                <ShieldCheck className="h-6 w-6 text-indigo-500" />
+              </motion.div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold">{tier.label} Tier</span>
+                  {tier.discount > 0 && (
+                    <motion.span
+                      className="text-sm font-bold text-indigo-500"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring' }}
+                    >
+                      -{tier.discount}%
+                    </motion.span>
+                  )}
+                </div>
+                {nextTier && (
+                  <>
+                    <div className="mt-2 text-xs text-text-secondary">
+                      Next: {nextTier.label} ({nextTier.stake.toLocaleString()} OMA)
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${tierProgress}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
-              {nextTier && (
-                <>
-                  <div className="mt-2 text-xs text-text-secondary">
-                    Next: {nextTier.label} ({nextTier.stake.toLocaleString()} OMA)
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface">
-                    <motion.div 
-                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${tierProgress}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                    />
-                  </div>
-                </>
-              )}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Quick Stats Card */}
-        <motion.div 
-          className="card shadow-floating"
-          whileHover={{ y: -2 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="h-4 w-4 text-indigo-500" />
-            <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">Today&apos;s Usage</span>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-text-secondary">API Calls</span>
-              <span className="font-bold">{loading ? '---' : usage.length}</span>
+          {/* Quick Stats Card */}
+          <motion.div
+            className="card shadow-floating"
+            whileHover={{ y: -2 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-4 w-4 text-indigo-500" />
+              <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">Today&apos;s Usage</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-text-secondary">Total Cost</span>
-              <span className="font-bold text-indigo-500">
-                {loading ? '---' : `$${(usage.reduce((a, u) => a + parseFloat(String(u.costCents)), 0) / 100).toFixed(2)}`}
-              </span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">API Calls</span>
+                <span className="font-bold">{usage.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">Total Cost</span>
+                <span className="font-bold text-indigo-500">
+                  {`$${(usage.reduce((a, u) => a + parseFloat(String(u.costCents)), 0) / 100).toFixed(2)}`}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-border">
-            <a href="/stake" className="flex items-center justify-center gap-2 text-sm text-indigo-500 hover:text-indigo-400 transition-colors">
-              Stake more for better rates <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
+            <div className="mt-4 pt-4 border-t border-border">
+              <a href="/stake" className="flex items-center justify-center gap-2 text-sm text-indigo-500 hover:text-indigo-400 transition-colors">
+                Stake more for better rates <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
 
       {/* API Keys Section */}
       <motion.div 
@@ -452,7 +453,9 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         {/* Key List */}
-        {keys.length === 0 && !loading ? (
+        {loading ? (
+          <SkeletonKeyList count={2} />
+        ) : keys.length === 0 ? (
           <div className="card flex items-center justify-center py-12 text-text-secondary">
             <div className="text-center">
               <Key className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -543,7 +546,7 @@ export default function DashboardPage() {
           transition={{ delay: 0.4 }}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[600px] text-left">
               <thead>
                 <tr className="border-b border-border bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
                   <th className="px-6 py-4 text-xs font-medium text-text-secondary">Model</th>
@@ -567,7 +570,7 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  usage.slice(0, 20).map((row, i) => (
+                  usage.slice((page - 1) * limit, page * limit).map((row, i) => (
                     <motion.tr
                       key={row.id}
                       className="border-b border-border/50 transition-colors hover:bg-indigo-500/5"
@@ -587,6 +590,34 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+            {!loading && usage.length > 0 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                <span className="text-sm text-text-secondary">
+                  Showing {(page - 1) * limit + 1}-{Math.min(page * limit, usage.length)} of {usage.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-lg border border-border hover:bg-indigo-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </motion.button>
+                  <span className="text-sm font-medium px-2">{page}</span>
+                  <motion.button
+                    onClick={() => setPage(p => Math.min(Math.ceil(usage.length / limit), p + 1))}
+                    disabled={page >= Math.ceil(usage.length / limit)}
+                    className="p-2 rounded-lg border border-border hover:bg-indigo-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </motion.button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>

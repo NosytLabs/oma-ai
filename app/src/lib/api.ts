@@ -398,18 +398,17 @@ export const api = {
     return request<HealthResponse>('/health');
   },
 
-  circuitBreaker() {
-    return request<{ omaBonusPercent: number; omaDepositsAllowed: boolean; reason?: string }>('/v1/circuit-breaker');
+  oma: {
+    health: () => api.health(),
+    getBalance: () => api.balance(),
+    getApiKeys: () => api.auth.listKeys(),
+    createApiKey: (name: string) => request<ApiKeyWithSecret>('/keys', { method: 'POST', body: JSON.stringify({ name }) }),
+    revokeApiKey: (id: string) => request<void>(`/keys/${id}`, { method: 'DELETE' }),
+    getUsage: () => api.usage(),
+    depositUsdc: (amount: number, txHash: string) => api.deposit.usdc(amount, txHash),
+    depositOma: (amount: number, txHash: string) => api.deposit.oma(amount, txHash),
+    depositHoudini: (fromCoin: string, amount: string, quoteId?: string, swapType?: string) => api.deposit.houdini(fromCoin, amount, quoteId, swapType) as Promise<HoudiniDepositResult>,
+    getDepositStatus: (id: string) => api.deposit.status(id),
+    getSupportedCoins: (blockchain?: string) => api.deposit.houdiniTokens(blockchain),
   },
-
-getBalance: () => api.balance(),
-  getApiKeys: () => api.auth.listKeys(),
-  createApiKey: (name: string) => request<ApiKeyWithSecret>('/keys', { method: 'POST', body: JSON.stringify({ name }) }),
-  revokeApiKey: (id: string) => request<void>(`/keys/${id}`, { method: 'DELETE' }),
-  getUsage: () => api.usage(),
-  depositUsdc: (amount: number, txHash: string) => api.deposit.usdc(amount, txHash),
-  depositOma: (amount: number, txHash: string) => api.deposit.oma(amount, txHash),
-  depositHoudini: (fromCoin: string, amount: string, quoteId?: string, swapType?: string) => api.deposit.houdini(fromCoin, amount, quoteId, swapType) as Promise<HoudiniDepositResult>,
-  getDepositStatus: (id: string) => api.deposit.status(id),
-  getSupportedCoins: (blockchain?: string) => api.deposit.houdiniTokens(blockchain),
 };

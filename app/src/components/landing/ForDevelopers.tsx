@@ -48,11 +48,11 @@ const tabs = [
   { label: 'cURL', code: curlCode, filename: 'terminal' },
 ]
 
-const features = [
+  const features = [
   {
     icon: <Zap className="h-4 w-4" />,
     title: 'OpenAI-Compatible',
-    desc: 'Works with VS Code Copilot, Cursor, LangChain, any OpenAI SDK.',
+    desc: 'Use VS Code Copilot, Cursor, LangChain, any OpenAI SDK. Just change the base URL.',
     color: 'text-cyan',
   },
   {

@@ -68,50 +68,52 @@ export function PricingPayments() {
           }`}
           style={{ transitionDelay: '200ms' }}
         >
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-border bg-surface">
-                <th className="px-4 py-3 font-medium text-text-dim">METHOD</th>
-                <th className="px-4 py-3 font-medium text-text-dim">SETTLEMENT</th>
-                <th className="px-4 py-3 font-medium text-text-dim">FEE</th>
-              </tr>
-            </thead>
-            <tbody>
-              {methods.map((m, i) => (
-                <tr
-                  key={m.method}
-                  className={`border-b border-border/50 transition-colors duration-300 hover:bg-panel ${
-                    isVisible ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  style={{ transitionDelay: `${250 + i * 50}ms` }}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {m.icon}
-                      <span className="text-text">{m.method}</span>
-                      {m.badge && (
-                        <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          m.badge === 'Best Value' 
-                            ? 'bg-cyan/20 text-cyan' 
-                            : 'bg-blue-500/20 text-blue-400'
-                        }`}>
-                          {m.badge}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-text-dim">{m.settlement}</td>
-                  <td
-                    className={`px-4 py-3 ${
-                      m.fee === '0%' || m.fee === '+5% bonus' ? 'text-cyan font-semibold' : 'text-text-dim'
-                    }`}
-                  >
-                    {m.fee}
-                  </td>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[560px] text-left text-xs">
+              <thead>
+                <tr className="border-b border-border bg-surface">
+                  <th className="px-4 py-3 font-medium text-text-dim">METHOD</th>
+                  <th className="px-4 py-3 font-medium text-text-dim">SETTLEMENT</th>
+                  <th className="px-4 py-3 font-medium text-text-dim">FEE</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {methods.map((m, i) => (
+                  <tr
+                    key={m.method}
+                    className={`border-b border-border/50 transition-colors duration-300 hover:bg-panel ${
+                      isVisible ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    style={{ transitionDelay: `${250 + i * 50}ms` }}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {m.icon}
+                        <span className="text-text">{m.method}</span>
+                        {m.badge && (
+                          <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            m.badge === 'Best Value'
+                              ? 'bg-cyan/20 text-cyan'
+                              : 'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {m.badge}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-text-dim">{m.settlement}</td>
+                    <td
+                      className={`px-4 py-3 ${
+                        m.fee === '0%' || m.fee === '+5% bonus' ? 'text-cyan font-semibold' : 'text-text-dim'
+                      }`}
+                    >
+                      {m.fee}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div

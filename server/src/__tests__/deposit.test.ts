@@ -384,7 +384,7 @@ describe('Deposit Routes', () => {
       })
       expect(res.status).toBe(401)
       const body = await res.json()
-      expect(body.error.type).toBe('unauthorized')
+      expect(body.error.type).toBe('authentication_error')
     })
   })
 

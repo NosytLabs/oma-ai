@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   address: text("address").notNull().unique(),
   solanaAddress: text("solana_address"),
+  accountNumber: text("account_number"), // Mullvad-style: OMA-XXXX-XXXX-XXXX (unique, nullable)
+  accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
   nonce: text("nonce").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

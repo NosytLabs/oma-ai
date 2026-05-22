@@ -74,7 +74,7 @@ export default function CheapTokensAlternativePage() {
           <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">Why OMA Beats CheapTokens</h2>
           <div className="space-y-4">
             {[
-              { title: 'No Account Required', desc: 'Connect your wallet and start inferring in seconds. No email, no KYC, no waiting period.' },
+              { title: 'No Account Required', desc: 'Connect your wallet and start inferring in seconds. No email, no waiting period. Low-friction access for builders.' },
               { title: '100+ Crypto Tokens', desc: 'Pay with any supported cryptocurrency via Houdini Swap integration.' },
               { title: 'Credit System', desc: 'Pre-purchase credits and pay as you go without per-request blockchain overhead.' },
               { title: 'Staking Discounts', desc: 'Up to 20% discount when you stake OMA tokens for inference credits.' },

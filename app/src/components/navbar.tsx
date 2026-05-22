@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useWallet } from '@/components/wallet-provider'
 import { ConnectButton } from '@/components/connect-button'
-import { Menu, X, LogOut, ChevronDown, Hexagon, Key, ArrowRightLeft } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, Hexagon, Key, ArrowRightLeft, Image as ImageIcon, Play } from 'lucide-react'
 
 const OMA_LOGO_SVG = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-8 w-8">
@@ -38,6 +38,8 @@ export function Navbar() {
   const navLinks = [
     { href: '/llms', label: 'Models' },
     { href: '/pricing', label: 'Pricing' },
+    { href: '/image-generation', label: 'Images', icon: ImageIcon },
+    { href: '/video-generation', label: 'Video', icon: Play },
     { href: '/docs', label: 'Docs' },
     { href: '/playground', label: 'Playground' },
     { href: '/swap', label: 'Swap', icon: ArrowRightLeft },

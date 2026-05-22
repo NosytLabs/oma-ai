@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { ArrowLeft, Shield, EyeOff, Lock, Server, ArrowRight, CheckCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Private AI API - Low-Retention AI Inference Gateway',
-  description: 'Experience truly private AI inference with OMA. Venice-powered backend with minimal data logging, no account required, and privacy-first architecture.',
-  keywords: ['private AI API', 'zero retention AI', 'privacy AI inference', 'no log AI API', 'anonymous AI'],
+  title: 'Private AI API - Minimal Data Retention AI Inference',
+  description: 'OMA routes inference through Venice AI, which keeps minimal logs. No account required.',
+  keywords: ['private AI API', 'zero retention AI', 'privacy AI inference', 'low retention AI API', 'privacy-first AI'],
   openGraph: {
-    title: 'Private AI API - Low-Retention AI Inference Gateway | OMA AI',
+    title: 'Private AI API - Minimal Data Retention AI Inference | OMA AI',
     description: 'Privacy-first AI inference with minimal data retention. No account required.',
     type: 'website',
   },
@@ -17,22 +17,22 @@ const PRIVACY_FEATURES = [
   {
     icon: EyeOff,
     title: 'Minimal Data Logging',
-    desc: 'We log only what\'s essential for service delivery. No persistent storage of prompts or responses.',
+    desc: 'We log only what\'s essential. No persistent storage of prompts or responses.',
   },
   {
     icon: Lock,
     title: 'No Account Required',
-    desc: 'Connect your wallet and start inferring immediately. No email, no phone number, no identity verification.',
+    desc: 'Connect your wallet and start. No email, no phone, no KYC.',
   },
   {
     icon: Server,
     title: 'Venice Backend',
-    desc: 'Powered by Venice AI, which shares our commitment to privacy-respecting inference infrastructure.',
+    desc: 'Powered by Venice AI, which shares our commitment to privacy.',
   },
   {
     icon: Shield,
-    title: 'Low-Friction Access',
-    desc: 'Privacy doesn\'t mean bureaucracy. Get started in seconds without sacrificing your data.',
+    title: 'Get Started Fast',
+    desc: 'No paperwork. Just connect and start inferring.',
   },
 ]
 
@@ -57,7 +57,7 @@ export default function PrivateAIAPIPage() {
             Private AI API - <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Low-Retention AI Inference Gateway</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-slate-600">
-            Your AI inference shouldn&apos;t require sharing personal data. OMA delivers powerful AI access with minimal logging and zero account requirements.
+            No personal data needed. OMA gives you AI access with minimal logging and zero account requirements.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function PrivateAIAPIPage() {
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">What We Log (And Why)</h2>
+          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">What We Log</h2>
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="space-y-4">
               <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
@@ -130,7 +130,7 @@ export default function PrivateAIAPIPage() {
                 </div>
                 <div>
                   <h3 className="mb-1 font-semibold text-slate-900">Transaction Hashes</h3>
-                  <p className="text-sm text-slate-600">We record blockchain transaction hashes for credit deposits to enable refund dispute resolution.</p>
+                  <p className="text-sm text-slate-600">Blockchain hashes for credit deposits. Lets us handle refund disputes.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
@@ -139,7 +139,7 @@ export default function PrivateAIAPIPage() {
                 </div>
                 <div>
                   <h3 className="mb-1 font-semibold text-slate-900">Credit Balances</h3>
-                  <p className="text-sm text-slate-600">We maintain credit balances per wallet address to enable pay-as-you-go inference.</p>
+                  <p className="text-sm text-slate-600">We track your credit balance so you can pay per request.</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
@@ -148,13 +148,13 @@ export default function PrivateAIAPIPage() {
                 </div>
                 <div>
                   <h3 className="mb-1 font-semibold text-slate-900">API Request Metadata</h3>
-                  <p className="text-sm text-slate-600">Timestamps and model identifiers (not content) are logged for debugging and rate limiting.</p>
+                  <p className="text-sm text-slate-600">Timestamps and model IDs only. No prompt or response content.</p>
                 </div>
               </div>
             </div>
             <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm text-slate-600">
-                <span className="font-semibold text-indigo-700">What we don&apos;t log:</span> Prompts, responses, or any content from your inference requests. The actual AI generation happens entirely on Venice&apos;s infrastructure.
+                <span className="font-semibold text-indigo-700">What we don&apos;t log:</span> Your prompts and responses stay private. AI generation runs entirely on Venice&apos;s infrastructure.
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function PrivateAIAPIPage() {
           <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">Built on Venice</h2>
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p className="mb-4 text-slate-600">
-              OMA routes your inference requests to Venice AI, which operates under their own privacy policy. Venice is known for:
+              OMA routes inference to Venice AI, which operates under their own privacy policy. Venice offers:
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
@@ -188,9 +188,9 @@ export default function PrivateAIAPIPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Start Privately</h2>
+          <h2 className="mb-4 text-2xl font-bold text-slate-900">Start Now</h2>
           <p className="mb-6 text-slate-600">
-            No account. No KYC. Just connect your wallet and start inferring with minimal data footprint.
+            No account needed. Connect your wallet, add credits, and start inferring.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700">
