@@ -70,7 +70,7 @@ export function MessageContent({ content, role, onRegenerate, onEdit, streaming 
   if (role === 'assistant') {
     return (
       <div className="relative group">
-        <div className="prose prose-sm max-w-none prose-invert prose-p:text-text prose-pre:bg-void prose-pre:border prose-pre:border-border prose-code:text-pink prose-code:bg-surface prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-a:text-cyan prose-a:no-underline hover:prose-a:underline">
+        <div className="prose prose-sm max-w-none prose-p:text-text prose-pre:bg-surface prose-pre:border prose-pre:border-border prose-code:text-pink prose-code:bg-surface prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-a:text-cyan prose-a:no-underline hover:prose-a:underline">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>

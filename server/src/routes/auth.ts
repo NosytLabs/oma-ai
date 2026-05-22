@@ -4,6 +4,9 @@ import { getOrCreateUser, verifySiweMessage, getNonce, generateSessionToken } fr
 import { createApiKey, listApiKeys, revokeApiKey } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 
 export const authRoutes = new Hono<OmaEnv>();
@@ -83,6 +86,24 @@ authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 })
     name: apiKey.name,
     createdAt: apiKey.createdAt
   }, 201);
+});
+
+authRoutes.get("/user", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const [user] = await db.select({
+    id: users.id,
+    address: users.address,
+    solanaAddress: users.solanaAddress,
+    createdAt: users.createdAt,
+  }).from(users).where(eq(users.id, userId));
+  if (!user) return c.json({ error: { message: "User not found", type: "not_found_error" } }, 404);
+  return c.json(user);
+});
+
+authRoutes.delete("/account", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  await db.delete(users).where(eq(users.id, userId));
+  return c.json({ success: true });
 });
 
 authRoutes.post("/auth/logout", sessionAuth, async (c) => c.json({ success: true }));

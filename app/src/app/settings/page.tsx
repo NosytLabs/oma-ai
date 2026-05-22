@@ -1,7 +1,7 @@
 'use client'
 
 import { useWallet } from '@/components/wallet-provider'
-import { api, type User } from '@/lib/api'
+import { api, type User, type ApiKey } from '@/lib/api'
 import {
   Wallet,
   Hexagon,
@@ -11,8 +11,6 @@ import {
   AlertTriangle,
   Loader2,
   LogOut,
-  Monitor,
-  Smartphone,
   Clock,
   Trash2,
   X,
@@ -22,16 +20,10 @@ import {
   Calendar,
   User as UserIcon,
   ShieldOff,
+  Key,
 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
-
-interface Session {
-  id: string
-  device: string
-  ip: string
-  lastActive: string
-  current: boolean
-}
+import { motion, AnimatePresence } from 'framer-motion'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -47,48 +39,40 @@ export default function SettingsPage() {
   const { isConnected, connectEvm, evmAddress, disconnect } = useWallet()
 
   const [user, setUser] = useState<User | null>(null)
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [sessions, setSessions] = useState<Session[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [loggingOutAll, setLoggingOutAll] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [unlinkingEvm, setUnlinkingEvm] = useState(false)
 
   useEffect(() => {
     if (!isConnected) return
     let cancelled = false
-    const fetch = async () => {
+    const fetchData = async () => {
       setLoading(true)
       setError(null)
       try {
-        const sessionToken = localStorage.getItem('oma_session')
-        if (sessionToken) {
-          const payload = JSON.parse(atob(sessionToken.split('.')[1]))
-          setUser({
-            id: payload.sub || payload.userId || 'unknown',
-            address: payload.address || '',
-            createdAt: payload.iat ? new Date(payload.iat * 1000).toISOString() : new Date().toISOString(),
-          })
-        }
-        setSessions([
-          {
-            id: 'current',
-            device: navigator.userAgent.includes('Chrome') ? 'Chrome Desktop' : 'Browser',
-            ip: '***.***.***.***',
-            lastActive: new Date().toISOString(),
-            current: true,
-          },
+        const [userData, keysData] = await Promise.all([
+          api.auth.getUser(),
+          api.auth.listKeys(),
         ])
-      } catch {
-        if (!cancelled) setError('Failed to load settings')
+        if (!cancelled) {
+          setUser(userData)
+          setApiKeys(keysData)
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Failed to load settings')
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
-    fetch()
+    fetchData()
     return () => { cancelled = true }
   }, [isConnected])
 
@@ -110,24 +94,22 @@ export default function SettingsPage() {
     }
   }
 
-
-
-  const handleLogoutAll = async () => {
-    setLoggingOutAll(true)
+  const handleLogout = async () => {
+    setLoggingOut(true)
     try {
       await api.auth.logout()
       disconnect()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Logout failed')
     } finally {
-      setLoggingOutAll(false)
+      setLoggingOut(false)
     }
   }
 
   const handleDeleteAccount = async () => {
     setDeleting(true)
     try {
-      await new Promise((r) => setTimeout(r, 2000))
+      await api.auth.deleteAccount()
       setShowDeleteConfirm(false)
       disconnect()
     } catch (e: unknown) {
@@ -140,259 +122,361 @@ export default function SettingsPage() {
   if (!isConnected) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-panel">
-            <Wallet className="h-8 w-8 text-cyan" />
-          </div>
-          <h2 className="mono mb-2 text-xl font-bold">CONNECT WALLET</h2>
-          <p className="mono mb-6 text-sm text-text-dim">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <motion.div 
+            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/5"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
+            <Wallet className="h-8 w-8 text-primary" />
+          </motion.div>
+          <h2 className="mb-2 text-xl font-bold tracking-tight">Connect Wallet</h2>
+          <p className="mb-6 text-sm text-on-surface-variant">
             Authenticate to access account settings.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <button onClick={() => connectEvm()} className="btn-primary mono text-sm">
-              EVM / BASE
-            </button>
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => connectEvm()} 
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+            >
+              <Hexagon className="h-4 w-4" />
+              EVM / Base
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 font-mono">
-      <div className="mb-8">
-        <h1 className="mono text-2xl font-bold tracking-tight">SETTINGS</h1>
-        <p className="mono mt-1 text-xs text-text-dim">
-          ACCOUNT TERMINAL -- STATUS: {loading ? 'SYNCING' : error ? 'DEGRADED' : 'NOMINAL'}
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <p className="mt-1 text-xs text-on-surface-variant">
+          Account {loading ? 'Syncing...' : error ? 'Degraded' : 'Nominal'}
         </p>
-      </div>
+      </motion.div>
 
-      {error && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-pink/30 bg-pink/5 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-pink" />
-          <span className="mono text-xs text-pink">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto text-text-dim hover:text-text">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 flex items-center gap-3 rounded-xl border border-error/30 bg-error/5 px-4 py-3"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
+            <span className="text-sm text-on-surface">{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto text-on-surface-variant hover:text-on-surface">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Connected Wallets */}
-      <div className="card mb-6">
-        <div className="mb-4 flex items-center gap-2 text-xs text-text-dim">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+      >
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
           <Wallet className="h-3.5 w-3.5" />
-          CONNECTED WALLETS
+          Connected Wallets
         </div>
 
         <div className="space-y-3">
-          {/* EVM Wallet */}
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-400/30 bg-blue-500/10">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low p-4"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/10">
               <Hexagon className="h-5 w-5 text-blue-400" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="mono text-sm font-bold">EVM Wallet</span>
-                <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">BASE</span>
+                <span className="text-sm font-bold">EVM Wallet</span>
+                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-400">Base</span>
               </div>
               {evmAddress ? (
                 <div className="flex items-center gap-2">
-                  <span className="mono text-xs text-cyan break-all">{evmAddress}</span>
-                  <button
+                  <span className="font-mono text-xs text-primary break-all">{evmAddress}</span>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handleCopy(evmAddress, 'evm')}
-                    className="shrink-0 rounded p-1 transition-colors hover:text-cyan"
+                    className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-surface-container-high"
                   >
                     {copied === 'evm' ? (
-                      <Check className="h-3 w-3 text-cyan" />
+                      <Check className="h-3.5 w-3.5 text-green-500" />
                     ) : (
-                      <Copy className="h-3 w-3 text-text-dim" />
+                      <Copy className="h-3.5 w-3.5 text-on-surface-variant" />
                     )}
-                  </button>
+                  </motion.button>
                 </div>
               ) : (
-                <span className="mono text-xs text-text-dim">Not connected</span>
+                <span className="text-xs text-on-surface-variant">Not connected</span>
               )}
             </div>
             {evmAddress ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleUnlinkEvm}
                 disabled={unlinkingEvm}
-                className="btn-secondary flex items-center gap-1.5 py-1.5 text-[10px] border-pink/30 text-pink hover:border-pink/60 hover:bg-pink/5 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 px-3 py-1.5 text-[10px] font-semibold text-secondary transition-all hover:bg-secondary/5 disabled:opacity-40"
               >
                 {unlinkingEvm ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <Unlink className="h-3 w-3" />
                 )}
-                UNLINK
-              </button>
+                Unlink
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => connectEvm()}
-                className="btn-secondary flex items-center gap-1.5 py-1.5 text-[10px]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[10px] font-semibold text-white"
               >
                 <Link2 className="h-3 w-3" />
-                CONNECT
-              </button>
+                Connect
+              </motion.button>
             )}
-          </div>
-
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Account Info */}
-      <div className="card mb-6">
-        <div className="mb-4 flex items-center gap-2 text-xs text-text-dim">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+      >
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
           <UserIcon className="h-3.5 w-3.5" />
-          ACCOUNT INFORMATION
+          Account Information
         </div>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-            <Fingerprint className="h-4 w-4 shrink-0 text-text-dim" />
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.25 }}
+            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+          >
+            <Fingerprint className="h-4 w-4 shrink-0 text-on-surface-variant" />
             <div className="flex-1">
-              <span className="mono text-[10px] uppercase text-text-dim">User ID</span>
-              <div className="mono text-sm text-text">
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">User ID</span>
+              <div className="text-sm text-on-surface font-mono">
                 {user?.id || '---'}
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-            <Calendar className="h-4 w-4 shrink-0 text-text-dim" />
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+          >
+            <Calendar className="h-4 w-4 shrink-0 text-on-surface-variant" />
             <div className="flex-1">
-              <span className="mono text-[10px] uppercase text-text-dim">Account Created</span>
-              <div className="mono text-sm text-text">
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">Account Created</span>
+              <div className="text-sm text-on-surface">
                 {user?.createdAt ? formatDate(user.createdAt) : '---'}
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-            <Shield className="h-4 w-4 shrink-0 text-text-dim" />
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35 }}
+            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+          >
+            <Shield className="h-4 w-4 shrink-0 text-on-surface-variant" />
             <div className="flex-1">
-              <span className="mono text-[10px] uppercase text-text-dim">Authentication</span>
-              <div className="mono text-sm text-text">
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">Authentication</span>
+              <div className="text-sm text-on-surface">
                 SIWE (EIP-4361) Wallet Auth
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Session Management */}
-      <div className="card mb-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-text-dim">
-            <Monitor className="h-3.5 w-3.5" />
-            ACTIVE SESSIONS
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+            <Key className="h-3.5 w-3.5" />
+            API Keys
           </div>
-          <button
-            onClick={handleLogoutAll}
-            disabled={loggingOutAll}
-            className="btn-secondary flex items-center gap-1.5 py-1.5 text-[10px] border-amber/30 text-amber hover:border-amber/60 hover:bg-amber/5 disabled:opacity-40"
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 transition-all hover:bg-amber-500/5 disabled:opacity-40"
           >
-            {loggingOutAll ? (
+            {loggingOut ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <LogOut className="h-3 w-3" />
             )}
-            LOGOUT ALL
-          </button>
+            Logout
+          </motion.button>
         </div>
 
         <div className="space-y-2">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3"
-            >
-              {session.device.toLowerCase().includes('mobile') ? (
-                <Smartphone className="h-4 w-4 shrink-0 text-text-dim" />
-              ) : (
-                <Monitor className="h-4 w-4 shrink-0 text-text-dim" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="mono text-sm font-medium">{session.device}</span>
-                  {session.current && (
-                    <span className="badge border-cyan/30 text-cyan text-[9px]">
-                      <span className="status-dot status-dot--online" style={{ width: 6, height: 6 }} />
-                      CURRENT
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mono text-[10px] text-text-dim mt-0.5">
-                  <span>IP: {session.ip}</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-2.5 w-2.5" />
-                    {formatDate(session.lastActive)}
-                  </span>
-                </div>
-              </div>
+          {apiKeys.length === 0 ? (
+            <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-6 text-center">
+              <p className="text-sm text-on-surface-variant">No API keys yet. Connect your wallet to generate one.</p>
             </div>
-          ))}
+          ) : (
+            apiKeys.map((key, index) => (
+              <motion.div
+                key={key.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 + index * 0.05 }}
+                className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+              >
+                <Key className="h-4 w-4 shrink-0 text-on-surface-variant" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{key.name}</span>
+                    {key.name === 'Default wallet key' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[9px] font-bold text-blue-600">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-on-surface-variant mt-0.5">
+                    <span className="font-mono">{key.prefix}***</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-2.5 w-2.5" />
+                      {formatDate(key.createdAt)}
+                    </span>
+                    {key.lastUsedAt && (
+                      <span className="flex items-center gap-1">
+                        Last used: {formatDate(key.lastUsedAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleCopy(key.prefix + '...', key.id)}
+                  className="rounded-lg p-1.5 transition-colors hover:bg-surface-container-high"
+                >
+                  {copied === key.id ? (
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-on-surface-variant" />
+                  )}
+                </motion.button>
+              </motion.div>
+            ))
+          )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Danger Zone */}
-      <div className="card border-pink/20">
-        <div className="mb-4 flex items-center gap-2 text-xs text-pink">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="rounded-2xl border border-error/20 bg-error/5 p-6"
+      >
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-error">
           <ShieldOff className="h-3.5 w-3.5" />
-          DANGER ZONE
+          Danger Zone
         </div>
 
-        <div className="rounded-lg border border-pink/20 bg-pink/5 p-4">
+        <div className="rounded-xl border border-error/20 bg-white p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-pink" />
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-error" />
             <div className="flex-1">
-              <h3 className="mono text-sm font-bold text-pink mb-1">DELETE ACCOUNT</h3>
-              <p className="mono text-xs text-text-dim mb-4">
+              <h3 className="text-sm font-bold text-error mb-1">Delete Account</h3>
+              <p className="text-xs text-on-surface-variant mb-4">
                 Permanently delete your OMA account, all API keys, credits, and staking positions.
                 This action cannot be undone. Credits are non-redeemable and will be forfeited.
               </p>
 
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="btn-danger flex items-center gap-1.5 py-1.5 text-xs"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  DELETE ACCOUNT
-                </button>
-              ) : (
-                <div className="rounded-lg border border-pink/40 bg-void p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="h-4 w-4 text-pink" />
-                    <span className="mono text-sm font-bold text-pink">FINAL CONFIRMATION</span>
-                  </div>
-                  <p className="mono text-xs text-text-dim mb-4">
-                    Are you absolutely sure? All data will be permanently destroyed.
-                    Remaining credits will be burned. Staked OMA will be returned after cooldown.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={deleting}
-                      className="btn-danger flex-1 disabled:opacity-40"
-                    >
-                      {deleting ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin inline" /> DELETING...</>
-                      ) : (
-                        'YES, DELETE EVERYTHING'
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      disabled={deleting}
-                      className="btn-secondary flex-1"
-                    >
-                      CANCEL
-                    </button>
-                  </div>
-                </div>
-              )}
+              <AnimatePresence mode="wait">
+                {!showDeleteConfirm ? (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-error px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-error/90"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete Account
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="rounded-xl border border-error/40 bg-surface-container-low p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="h-4 w-4 text-error" />
+                      <span className="text-sm font-bold text-error">Final Confirmation</span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant mb-4">
+                      Are you absolutely sure? All data will be permanently destroyed.
+                      Remaining credits will be burned. Staked OMA will be returned after cooldown.
+                    </p>
+                    <div className="flex gap-2">
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleDeleteAccount}
+                        disabled={deleting}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-error py-3 text-xs font-semibold text-white disabled:opacity-40"
+                      >
+                        {deleting ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</>
+                        ) : (
+                          'Yes, Delete Everything'
+                        )}
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setShowDeleteConfirm(false)}
+                        disabled={deleting}
+                        className="flex-1 rounded-full border border-outline-variant py-3 text-xs font-semibold transition-all hover:bg-surface-container-low"
+                      >
+                        Cancel
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

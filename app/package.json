@@ -15,6 +15,7 @@
     "@solana/web3.js": "^1.98.4",
     "@tanstack/react-query": "^5.100.11",
     "dompurify": "^3.4.5",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
@@ -24,7 +25,7 @@
     "siwe": "^3.0.0",
     "valtio": "^2.3.2",
     "viem": "^2.50.4",
-    "wagmi": "^2.19.5"
+    "wagmi": "^3.6.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -9,7 +9,7 @@ import { CtaFooter } from '@/components/landing/CtaFooter'
 
 export default function LandingPage() {
   return (
-    <div className="font-mono">
+    <div>
       <Hero />
       <HowItWorks />
       <ModelHighlights />

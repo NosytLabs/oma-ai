@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Search, Cpu, Zap, Brain, ArrowRight } from 'lucide-react'
+import { Search, Cpu, Zap, Brain, ArrowRight, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 
 type Category = 'all' | 'budget' | 'mid' | 'premium' | 'frontier' | 'coding' | 'reasoning' | 'uncensored'
@@ -50,7 +50,7 @@ const MODELS: Model[] = [
   { id: 'venice-uncensored', name: 'Venice Uncensored', category: 'premium', provider: 'Venice', input: 0.07, output: 0.35, ctx: '32K', caps: ['chat','uncensored','vision'] },
 ]
 
-const CATEGORIES: { key: Category; label: string; icon?: React.ReactNode }[] = [
+const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'budget', label: 'Budget' },
   { key: 'mid', label: 'Mid' },
@@ -61,33 +61,21 @@ const CATEGORIES: { key: Category; label: string; icon?: React.ReactNode }[] = [
   { key: 'uncensored', label: 'Uncensored' },
 ]
 
-const CATEGORY_COLORS: Record<string, string> = {
-  budget: 'bg-green/15 text-green border-green/30',
-  mid: 'bg-cyan/15 text-cyan border-cyan/30',
-  premium: 'bg-amber/15 text-amber border-amber/30',
-  frontier: 'bg-pink/15 text-pink border-pink/30',
+const CATEGORY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  budget: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  mid: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+  premium: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
+  frontier: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
 }
 
-const CAP_COLORS: Record<string, string> = {
-  chat: 'text-text-dim',
-  coding: 'text-cyan',
-  reasoning: 'bg-amber/10 text-amber',
-  vision: 'bg-purple-500/15 text-purple-400',
-  fast: 'bg-green/10 text-green',
-  math: 'bg-blue-500/15 text-blue-400',
-  cheap: 'text-green',
-  agents: 'bg-pink/10 text-pink',
-  uncensored: 'bg-pink/10 text-pink',
-}
-
-const PROVIDER_STYLES: Record<string, string> = {
-  Venice: 'bg-cyan/10 text-cyan border-cyan/20',
-  AntSeed: 'bg-green/10 text-green border-green/20',
-  Both: 'bg-amber/10 text-amber border-amber/20',
+const PROVIDER_STYLES: Record<string, { bg: string; text: string }> = {
+  Venice: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  AntSeed: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  Both: { bg: 'bg-amber-100', text: 'text-amber-700' },
 }
 
 function formatPrice(price: number): string {
-  if (price < 0.01) return `$${price.toFixed(2)}`
+  if (price < 0.01) return `$${price.toFixed(3)}`
   if (price < 1) return `$${price.toFixed(2)}`
   return `$${price.toFixed(2)}`
 }
@@ -101,6 +89,84 @@ function matchesFilter(model: Model, category: Category): boolean {
 }
 
 function ModelCard({ model, delay }: { model: Model; delay: number }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <div
+      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100/50"
+      style={{ animationDelay: `${delay}ms` }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="mb-4 flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium text-slate-500">{model.id}</p>
+          <p className="mt-1 text-lg font-semibold text-slate-900">{model.name}</p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${PROVIDER_STYLES[model.provider].bg} ${PROVIDER_STYLES[model.provider].text}`}
+          >
+            {model.provider}
+          </span>
+          {model.provider === 'Venice' && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-200" title="Zero data retention on Venice-hosted inference">
+              <Shield className="h-3 w-3" />
+              Privacy
+            </span>
+          )}
+          {model.provider === 'AntSeed' && (
+            <span className="flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 border border-cyan-200" title="P2P decentralized inference">
+              <Users className="h-3 w-3" />
+              P2P
+            </span>
+          )}
+        </div>
+      </div>
+
+      <span
+        className={`inline-block rounded-lg border px-3 py-1 text-xs font-medium uppercase tracking-wide ${CATEGORY_STYLES[model.category].bg} ${CATEGORY_STYLES[model.category].text} ${CATEGORY_STYLES[model.category].border}`}
+      >
+        {model.category}
+      </span>
+
+      <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4">
+        <div>
+          <p className="text-xs text-slate-500">Input / 1M tokens</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">{formatPrice(model.input)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Output / 1M tokens</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">{formatPrice(model.output)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+        <Brain className="h-4 w-4 text-indigo-500" />
+        <span>Context: <span className="font-semibold text-slate-900">{model.ctx}</span></span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {model.caps.map((cap) => (
+          <span
+            key={cap}
+            className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600"
+          >
+            {cap}
+          </span>
+        ))}
+      </div>
+
+      <div
+        className={`absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </div>
+  )
+}
+
+function AnimatedSection({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const [isVisible, setIsVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -125,61 +191,12 @@ function ModelCard({ model, delay }: { model: Model; delay: number }) {
   return (
     <div
       ref={ref}
-      className={`card-glow card flex flex-col gap-3 transition-all duration-500 ${
+      className={`transition-all duration-500 ease-out ${className} ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-bold text-cyan">{model.id}</p>
-          <p className="mt-0.5 text-sm font-semibold text-text">{model.name}</p>
-        </div>
-        <span
-          className={`shrink-0 rounded border px-2 py-0.5 text-[10px] font-bold uppercase ${PROVIDER_STYLES[model.provider]}`}
-        >
-          {model.provider}
-        </span>
-      </div>
-
-      <div>
-        <span
-          className={`inline-block rounded border px-2 py-0.5 text-[10px] font-bold uppercase ${CATEGORY_COLORS[model.category]}`}
-        >
-          {model.category}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 rounded border border-border bg-void/50 p-2.5">
-        <div>
-          <p className="text-[10px] uppercase text-text-dim">Input / 1M</p>
-          <p className="text-sm font-bold text-text">{formatPrice(model.input)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase text-text-dim">Output / 1M</p>
-          <p className="text-sm font-bold text-text">{formatPrice(model.output)}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Brain className="h-3 w-3 text-text-dim" />
-        <span className="text-[11px] text-text-dim">
-          Context: <span className="font-semibold text-text">{model.ctx}</span>
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5 border-t border-border pt-3">
-        {model.caps.map((cap) => (
-          <span
-            key={cap}
-            className={`rounded border border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-              CAP_COLORS[cap] || 'text-text-dim'
-            }`}
-          >
-            {cap}
-          </span>
-        ))}
-      </div>
+      {children}
     </div>
   )
 }
@@ -187,26 +204,6 @@ function ModelCard({ model, delay }: { model: Model; delay: number }) {
 export default function ModelsPage() {
   const [activeCategory, setActiveCategory] = useState<Category>('all')
   const [search, setSearch] = useState('')
-  const [isVisible, setIsVisible] = useState(false)
-  const headerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const element = headerRef.current
-    if (!element) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.unobserve(element)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
 
   const filtered = useMemo(() => {
     return MODELS.filter((m) => {
@@ -224,173 +221,148 @@ export default function ModelsPage() {
   }, [activeCategory, search])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 font-mono">
-      {/* Header */}
-      <div ref={headerRef} className="mb-8">
-        <h1
-          className={`text-3xl font-bold tracking-tight transition-all duration-500 sm:text-4xl ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          <span className="glow-text text-cyan">MODELS</span>
-        </h1>
-        <p
-          className={`mt-2 text-sm text-text-dim transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '100ms' }}
-        >
-          {MODELS.length}+ models. OpenAI-compatible. Pay per token.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <AnimatedSection>
+          <div className="mb-2 text-sm font-medium text-indigo-600">OMA AI Gateway</div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              AI Models API — Access Multiple LLMs Through One Gateway
+            </h1>
+            <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 border border-emerald-200">
+              <Shield className="h-4 w-4" />
+              Privacy-first
+            </span>
+          </div>
+          <p className="mt-4 max-w-2xl text-lg text-slate-600">
+            {MODELS.length}+ models via OpenAI-compatible API. Privacy-first with Venice-hosted inference. Pay per token, no subscriptions.
+          </p>
+        </AnimatedSection>
 
-      {/* Filter Bar */}
-      <div
-        className={`mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-all duration-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={{ transitionDelay: '200ms' }}
-      >
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => setActiveCategory(cat.key)}
-              className={`rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
-                activeCategory === cat.key
-                  ? 'bg-cyan text-void border border-cyan'
-                  : 'bg-panel text-text-dim border border-border hover:border-cyan/50 hover:text-cyan'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        <AnimatedSection delay={100} className="mt-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => setActiveCategory(cat.key)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    activeCategory === cat.key
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-dim" />
-          <input
-            type="text"
-            placeholder="Search models..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded border border-border bg-panel py-2 pl-9 pr-4 text-xs text-text placeholder:text-text-dim focus:border-cyan focus:outline-none focus:ring-1 focus:ring-cyan/30 sm:w-64"
-          />
-        </div>
-      </div>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search models..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 lg:w-72"
+              />
+            </div>
+          </div>
+        </AnimatedSection>
 
-      {/* Stats Bar */}
-      <div
-        className={`mb-6 flex items-center gap-4 rounded border border-border bg-panel px-4 py-2.5 transition-all duration-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={{ transitionDelay: '300ms' }}
-      >
-        <div className="flex items-center gap-2">
-          <Cpu className="h-3.5 w-3.5 text-cyan" />
-          <span className="text-xs text-text-dim">
-            <span className="font-bold text-text">{filtered.length}</span> models available
-          </span>
-        </div>
-        <span className="text-border">|</span>
-        <div className="flex items-center gap-2">
-          <Zap className="h-3.5 w-3.5 text-cyan" />
-          <span className="text-xs text-text-dim">Venice AI + AntSeed P2P</span>
-        </div>
-        {activeCategory !== 'all' && (
-          <>
-            <span className="text-border">|</span>
-            <button
-              onClick={() => setActiveCategory('all')}
-              className="text-xs text-cyan hover:underline"
-            >
-              Clear filter
-            </button>
-          </>
+        <AnimatedSection delay={200} className="mt-6">
+          <div className="flex items-center gap-4 rounded-xl bg-white border border-slate-200 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-indigo-500" />
+              <span className="text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">{filtered.length}</span> models
+              </span>
+            </div>
+            <span className="text-slate-300">|</span>
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-indigo-500" />
+              <span className="text-sm text-slate-600">Venice AI + AntSeed P2P</span>
+            </div>
+            {activeCategory !== 'all' && (
+              <>
+                <span className="text-slate-300">|</span>
+                <button
+                  onClick={() => setActiveCategory('all')}
+                  className="text-sm text-indigo-600 hover:underline"
+                >
+                  Clear filter
+                </button>
+              </>
+            )}
+          </div>
+        </AnimatedSection>
+
+        {filtered.length === 0 ? (
+          <AnimatedSection delay={300}>
+            <div className="flex flex-col items-center justify-center py-20">
+              <Search className="mb-4 h-12 w-12 text-slate-300" />
+              <p className="text-lg font-medium text-slate-600">No models match your criteria</p>
+              <button
+                onClick={() => { setActiveCategory('all'); setSearch('') }}
+                className="mt-4 text-sm text-indigo-600 hover:underline"
+              >
+                Reset filters
+              </button>
+            </div>
+          </AnimatedSection>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((model, i) => (
+              <ModelCard key={model.id} model={model} delay={i * 50} />
+            ))}
+          </div>
         )}
-      </div>
 
-      {/* Model Cards Grid */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-text-dim">
-          <Search className="mb-4 h-8 w-8 opacity-30" />
-          <p className="text-sm">No models match your criteria.</p>
-          <button
-            onClick={() => { setActiveCategory('all'); setSearch('') }}
-            className="mt-3 text-xs text-cyan hover:underline"
+        <AnimatedSection delay={500} className="mt-16">
+          <h3 className="mb-6 text-lg font-semibold text-slate-900">Provider Legend</h3>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="flex h-3 w-3 rounded-full bg-blue-500" />
+                <span className="font-semibold text-slate-900">Venice AI</span>
+              </div>
+              <p className="text-sm text-slate-600">
+                Privacy-first (zero data retention on certain models). Hosted inference for proprietary models (GPT, Claude, Gemini, Mistral). Low-latency, high-availability.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="flex h-3 w-3 rounded-full bg-emerald-500" />
+                <span className="font-semibold text-slate-900">AntSeed P2P</span>
+              </div>
+              <p className="text-sm text-slate-600">
+                P2P decentralized inference for open-source models. 50-60% cheaper. Community-run compute nodes.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="flex h-3 w-3 rounded-full bg-amber-500" />
+                <span className="font-semibold text-slate-900">Both</span>
+              </div>
+              <p className="text-sm text-slate-600">
+                Available via either provider. Automatic failover ensures maximum uptime for critical workloads.
+              </p>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection delay={700} className="mt-16 text-center">
+          <p className="mb-6 text-slate-600">
+            All models accessible via OpenAI-compatible API. OMA stakers get up to 15% discount.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-200/50"
           >
-            Reset filters
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((model, i) => (
-            <ModelCard key={model.id} model={model} delay={i * 50} />
-          ))}
-        </div>
-      )}
-
-      {/* Provider Legend */}
-      <div
-        className={`mt-12 border-t border-border pt-8 transition-all duration-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={{ transitionDelay: '500ms' }}
-      >
-        <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-text-dim">
-          Provider Legend
-        </h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="card-glow card">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-cyan" />
-              <span className="text-xs font-bold uppercase text-cyan">Venice AI</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-text-dim">
-              Hosted inference for proprietary models (GPT, Claude, Gemini, Mistral).
-              Low-latency, high-availability. 0-10% markup.
-            </p>
-          </div>
-          <div className="card-glow card">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-green" />
-              <span className="text-xs font-bold uppercase text-green">AntSeed P2P</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-text-dim">
-              Decentralized peer-to-peer inference for open-source models.
-              50-60% cheaper. Community-run compute nodes.
-            </p>
-          </div>
-          <div className="card-glow card">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber" />
-              <span className="text-xs font-bold uppercase text-amber">Both</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-text-dim">
-              Available via both providers. Automatic failover ensures
-              maximum uptime for critical workloads.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div
-        className={`mt-12 border-t border-border py-8 text-center transition-all duration-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-        style={{ transitionDelay: '700ms' }}
-      >
-        <p className="mb-4 text-sm text-text-dim">
-          All models accessible via OpenAI-compatible API. OMA stakers get up to 15% discount.
-        </p>
-        <Link
-          href="/dashboard"
-          className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-sm font-mono"
-        >
-          Get API Key
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+            Get API Key
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </AnimatedSection>
       </div>
     </div>
   )

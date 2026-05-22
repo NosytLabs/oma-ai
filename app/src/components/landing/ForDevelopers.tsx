@@ -91,7 +91,7 @@ export function ForDevelopers() {
   }
 
   return (
-    <section ref={ref} className="border-t border-border py-20 sm:py-24">
+    <section ref={ref} className="border-t border-zinc-200 py-20 sm:py-24">
       <div className="mx-auto max-w-4xl px-4">
         <h2
           className={`mb-4 text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl ${
@@ -101,7 +101,7 @@ export function ForDevelopers() {
           FOR DEVELOPERS
         </h2>
         <p
-          className={`mb-12 text-center text-sm text-text-dim transition-all duration-500 ${
+          className={`mb-12 text-center text-sm text-slate-500 transition-all duration-500 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '100ms' }}
@@ -116,7 +116,7 @@ export function ForDevelopers() {
           style={{ transitionDelay: '200ms' }}
         >
           {/* Tab Headers */}
-          <div className="flex items-center justify-between border-b border-border">
+          <div className="flex items-center justify-between border-b border-zinc-200">
             <div className="flex">
               {tabs.map((tab, i) => (
                 <button
@@ -124,14 +124,14 @@ export function ForDevelopers() {
                   onClick={() => setActiveTab(i)}
                   className={`group relative px-5 py-3 text-xs font-medium transition-all duration-200 ${
                     activeTab === i
-                      ? 'text-cyan'
-                      : 'text-text-dim hover:text-text'
+                      ? 'text-indigo-600'
+                      : 'text-slate-500 hover:text-zinc-900'
                   }`}
                 >
                   <Code2 className="mr-1.5 inline h-3.5 w-3.5" />
                   {tab.label}
                   {activeTab === i && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan" />
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />
                   )}
                 </button>
               ))}
@@ -163,15 +163,15 @@ export function ForDevelopers() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`card-glow flex items-start gap-4 rounded-xl border border-border bg-panel p-5 transition-all duration-500 ${
+              className={`card-glow flex items-start gap-4 rounded-xl border border-zinc-200 bg-white p-5 transition-all duration-500 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
               style={{ transitionDelay: `${300 + i * 80}ms` }}
             >
               <div className={`mt-0.5 ${f.color}`}>{f.icon}</div>
               <div>
-                <p className="text-sm font-bold text-text">{f.title}</p>
-                <p className="mt-1 text-xs text-text-dim">{f.desc}</p>
+                <p className="text-sm font-bold text-zinc-900">{f.title}</p>
+                <p className="mt-1 text-xs text-slate-500">{f.desc}</p>
               </div>
             </div>
           ))}
@@ -185,16 +185,16 @@ export function ForDevelopers() {
         >
           <Link
             href="/dashboard"
-            className="group relative inline-flex items-center gap-2 rounded-xl border border-cyan/50 bg-cyan/10 px-7 py-4 text-sm font-bold text-cyan transition-all duration-300 hover:border-cyan hover:bg-cyan hover:text-void hover:shadow-[0_0_30px_rgba(0,255,200,0.25)] hover:scale-105 active:scale-100 min-h-[52px] overflow-hidden"
+            className="group relative inline-flex items-center gap-2 rounded-xl border border-indigo-400/50 bg-indigo-50 px-7 py-4 text-sm font-bold text-indigo-600 transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-500 hover:text-white hover:shadow-[0_0_30px_rgba(99,102,241,0.25)] hover:scale-105 active:scale-100 min-h-[52px] overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/20 to-cyan-500/0 group-hover:animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/20 to-indigo-500/0 group-hover:animate-pulse" />
             <Key className="h-5 w-5 group-hover:scale-110 transition-transform" />
             Start Building
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             href="/playground"
-            className="group inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-6 py-4 text-sm font-semibold text-text transition-all duration-300 hover:border-cyan/50 hover:bg-cyan/10 hover:text-cyan min-h-[52px]"
+            className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-4 text-sm font-semibold text-zinc-900 transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 min-h-[52px]"
           >
             <Activity className="h-5 w-5" />
             Try Playground

@@ -22,6 +22,23 @@ function validationError(err: z.ZodError) {
   return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
 }
 
+const isHoudiniConfigured = !!config.HOUDINI_API_KEY && !!config.HOUDINI_API_SECRET;
+
+const MOCK_HOUDINI_CHAINS = [
+  { id: "BASE", name: "Base", blockchain: "BASE" },
+  { id: "ETHEREUM", name: "Ethereum", blockchain: "ETHEREUM" },
+  { id: "SOLANA", name: "Solana", blockchain: "SOLANA" }
+];
+
+const MOCK_HOUDINI_TOKENS = [
+  { id: "USDC-BASE", name: "USD Coin (Base)", symbol: "USDC", blockchain: "BASE", decimals: 6, address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", logoUrl: "https://oma-ai.com/logos/usdc.png" },
+  { id: "ETH-BASE", name: "Ethereum (Base)", symbol: "ETH", blockchain: "BASE", decimals: 18, address: "0x4200000000000000000000000000000000000006", logoUrl: "https://oma-ai.com/logos/eth.png" },
+  { id: "USDC-ETH", name: "USD Coin", symbol: "USDC", blockchain: "ETHEREUM", decimals: 6, address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", logoUrl: "https://oma-ai.com/logos/usdc.png" },
+  { id: "ETH-ETH", name: "Ethereum", symbol: "ETH", blockchain: "ETHEREUM", decimals: 18, logoUrl: "https://oma-ai.com/logos/eth.png" },
+  { id: "USDT-ETH", name: "Tether USD", symbol: "USDT", blockchain: "ETHEREUM", decimals: 6, address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", logoUrl: "https://oma-ai.com/logos/usdt.png" },
+  { id: "SOL-SOL", name: "Solana", symbol: "SOL", blockchain: "SOLANA", decimals: 9, logoUrl: "https://oma-ai.com/logos/sol.png" }
+];
+
 const usdcDepositSchema = z.object({
   amount: z.number().positive().max(100000),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
@@ -120,6 +137,15 @@ depositRoutes.post("/v1/deposit/houdini", sessionAuth, async (c) => {
   const parsed = houdiniDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { fromCoin, amount, quoteId, swapType } = parsed.data;
+
+  if (!isHoudiniConfigured) {
+    const mockOrderId = "mock-order-" + crypto.randomBytes(4).toString("hex");
+    const mockDepositAddress = "0xMockDepositAddress" + crypto.randomBytes(12).toString("hex");
+    const exchangeQuoteId = quoteId ?? "mock-quote-" + crypto.randomBytes(4).toString("hex");
+    const result = await processHoudiniDeposit(userId, exchangeQuoteId, fromCoin, amount, mockOrderId, mockDepositAddress);
+    return c.json({ depositAddress: result.depositAddress, depositId: result.depositId, orderId: mockOrderId });
+  }
+
   const allowedCoins = await houdiniClient.getTokens()
     .then((t) => t.map((x: Token) => x.symbol))
     .catch((err: unknown) => {
@@ -183,6 +209,22 @@ depositRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
   const parsed = houdiniQuoteSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { fromToken, toToken, amount, swapType } = parsed.data;
+
+  if (!isHoudiniConfigured) {
+    const mockQuote = [{
+      quoteId: "mock-quote-" + crypto.randomBytes(4).toString("hex"),
+      fromToken,
+      toToken,
+      fromAmount: amount,
+      toAmount: String(Number(amount) * 0.995), // Mock 0.5% fee
+      rate: "0.995",
+      estimatedTime: 120,
+      swapType: swapType ?? "standard",
+      slippage: 1,
+    }];
+    return c.json(mockQuote);
+  }
+
   try {
     const quotes = await houdiniClient.getQuotes(fromToken, toToken, amount, swapType as SwapType | undefined);
     const mapped = quotes.map((q) => ({
@@ -205,6 +247,14 @@ depositRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
 
 depositRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
   const blockchain = c.req.query("blockchain");
+
+  if (!isHoudiniConfigured) {
+    const filtered = blockchain
+      ? MOCK_HOUDINI_TOKENS.filter((t) => t.blockchain.toUpperCase() === blockchain.toUpperCase())
+      : MOCK_HOUDINI_TOKENS;
+    return c.json({ tokens: filtered });
+  }
+
   try {
     const tokens = await houdiniClient.getTokens(blockchain);
     return c.json({ tokens });
@@ -215,6 +265,10 @@ depositRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
 });
 
 depositRoutes.get("/v1/deposit/houdini/chains", async (c) => {
+  if (!isHoudiniConfigured) {
+    return c.json({ chains: MOCK_HOUDINI_CHAINS });
+  }
+
   try {
     const chains = await houdiniClient.getChains();
     return c.json({ chains });
@@ -229,6 +283,22 @@ depositRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
   const parsed = houdiniExchangeSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { quoteId, fromCoin, fromAmount, refundAddress } = parsed.data;
+
+  if (!isHoudiniConfigured) {
+    const mockOrderId = "mock-order-" + crypto.randomBytes(4).toString("hex");
+    const mockDepositAddress = "0xMockDepositAddress" + crypto.randomBytes(12).toString("hex");
+    const result = await processHoudiniDeposit(userId, quoteId, fromCoin, fromAmount, mockOrderId, mockDepositAddress);
+    return c.json({
+      depositId: result.depositId,
+      depositAddress: mockDepositAddress,
+      orderId: mockOrderId,
+      fromAmount,
+      toAmount: String(Number(fromAmount) * 0.995),
+      status: "pending",
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+    });
+  }
+
   try {
     const order = await houdiniClient.createExchange(quoteId, undefined, refundAddress);
     const result = await processHoudiniDeposit(userId, quoteId, fromCoin, fromAmount, order.id, order.depositAddress);
@@ -246,6 +316,7 @@ depositRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
     return c.json({ error: { message: `Exchange failed: ${message}`, type: "exchange_error" } }, 502);
   }
 });
+
 
 depositRoutes.post("/v1/deposit/cctp", sessionAuth, async (c) => {
   const userId = c.get("userId");
@@ -424,6 +495,43 @@ depositRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
   }
 
   if (deposit.type === "houdini_swap" && deposit.houdiniId) {
+    if (deposit.houdiniId.startsWith("mock-order")) {
+      const createdMs = new Date(deposit.createdAt).getTime();
+      const elapsedSec = (Date.now() - createdMs) / 1000;
+      let mockStatus: "pending" | "settling" | "completed" = "pending";
+      
+      if (elapsedSec > 30) {
+        mockStatus = "completed";
+      } else if (elapsedSec > 10) {
+        mockStatus = "settling";
+      }
+
+      if (mockStatus !== deposit.status) {
+        await db.update(deposits)
+          .set({ status: mockStatus })
+          .where(eq(deposits.id, depositId!));
+        if (mockStatus === "completed" && !deposit.txHash) {
+          const toAmount = 99.5; // Mock 99.5 USDC out of 100.0
+          const mockTxHash = "0xmocktx" + crypto.randomBytes(28).toString("hex");
+          await completeHoudiniDeposit(depositId!, toAmount, mockTxHash, deposit.userId);
+        }
+      }
+
+      const displayAmount = (deposit.amountUsd && deposit.amountUsd !== "0") ? deposit.amountUsd : "100.0";
+
+      return c.json({
+        id: deposit.id,
+        type: deposit.type,
+        status: mockStatus,
+        houdiniStatus: mockStatus === "completed" ? "FINISHED" : (mockStatus === "settling" ? "EXCHANGING" : "WAITING"),
+        amountUsd: deposit.amountUsd,
+        creditsIssued: deposit.creditsIssued,
+        fromAmount: displayAmount,
+        toAmount: String(Number(displayAmount) * 0.995),
+        txHash: deposit.txHash || "0xmocktx" + crypto.randomBytes(28).toString("hex"),
+      });
+    }
+
     try {
       const order = await houdiniClient.getDepositStatus(deposit.houdiniId);
       const mappedStatus = mapHoudiniStatus(order.status);

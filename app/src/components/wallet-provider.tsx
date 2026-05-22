@@ -108,8 +108,12 @@ function InnerProvider({ children }: { children: ReactNode }) {
         }
 
         siweDoneRef.current = address
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('SIWE login failed:', err)
+        const error = err as { code?: number; message?: string }
+        if (error.code === 4001 || error.message?.includes('User denied') || error.message?.includes('rejected')) {
+          evmDisconnect()
+        }
       } finally {
         if (!cancelled) setSiweLoading(false)
       }
@@ -120,7 +124,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [evmConnected, address, signMessageAsync, siweLoading])
+  }, [evmConnected, address, signMessageAsync, siweLoading, evmDisconnect])
 
   const connectEvm = useCallback(
     (connectorId?: string) => {

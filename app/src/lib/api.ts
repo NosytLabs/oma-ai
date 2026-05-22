@@ -1,4 +1,4 @@
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003');
 
 class ApiError extends Error {
   status: number;
@@ -31,10 +31,16 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   const res = await fetch(`${API}${path}`, {
     ...opts,
     headers,
+    signal: controller.signal,
   });
+
+  clearTimeout(timeoutId);
 
   if (!res.ok) {
     let message = res.statusText;
@@ -59,6 +65,7 @@ export interface NonceResponse {
 export interface User {
   id: string;
   address: string;
+  solanaAddress: string | null;
   createdAt: string;
 }
 
@@ -85,6 +92,7 @@ export interface BalanceResponse {
   totalUsedCents: string;
   stakingDiscount: number;
   lastActivityAt: string | null;
+  stakedOma?: string;
 }
 
 export interface UsageRecord {
@@ -225,6 +233,14 @@ export interface WalletResponse {
   warning?: string;
 }
 
+export interface Session {
+  id: string;
+  device: string;
+  ip: string;
+  lastActive: string;
+  current: boolean;
+}
+
 export const api = {
   auth: {
     getNonce(address: string) {
@@ -255,22 +271,17 @@ export const api = {
     unlinkWallet(type: 'evm') {
       return request<void>(`/auth/wallet/${type}`, { method: 'DELETE' });
     },
-  },
 
-  keys: {
-    list() {
-      return request<ApiKey[]>('/auth/keys');
+    getUser() {
+      return request<User>('/user');
     },
 
-    create(name: string) {
-      return request<ApiKeyWithSecret>('/auth/keys', {
-        method: 'POST',
-        body: JSON.stringify({ name }),
-      });
+    deleteAccount() {
+      return request<void>('/account', { method: 'DELETE' });
     },
 
-    revoke(id: string) {
-      return request<void>(`/auth/keys/${id}`, { method: 'DELETE' });
+    listKeys() {
+      return request<{ keys: ApiKey[] }>('/keys').then(res => res.keys);
     },
   },
 
@@ -391,10 +402,10 @@ export const api = {
     return request<{ omaBonusPercent: number; omaDepositsAllowed: boolean; reason?: string }>('/v1/circuit-breaker');
   },
 
-  getBalance: () => api.balance(),
-  getApiKeys: () => api.keys.list(),
-  createApiKey: (name: string) => api.keys.create(name),
-  revokeApiKey: (id: string) => api.keys.revoke(id),
+getBalance: () => api.balance(),
+  getApiKeys: () => api.auth.listKeys(),
+  createApiKey: (name: string) => request<ApiKeyWithSecret>('/keys', { method: 'POST', body: JSON.stringify({ name }) }),
+  revokeApiKey: (id: string) => request<void>(`/keys/${id}`, { method: 'DELETE' }),
   getUsage: () => api.usage(),
   depositUsdc: (amount: number, txHash: string) => api.deposit.usdc(amount, txHash),
   depositOma: (amount: number, txHash: string) => api.deposit.oma(amount, txHash),

@@ -46,8 +46,8 @@ function ModelCardComponent({
           <p className="font-semibold text-text">{model.output}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 border-t border-border pt-2">
-        <Server className="h-3 w-3 text-text-dim" />
+      <div className="flex items-center gap-1.5 border-t border-zinc-200 pt-2">
+        <Server className="h-3 w-3 text-slate-400" />
         <span className={`text-[10px] font-semibold uppercase ${model.providerColor}`}>
           {model.provider}
         </span>
@@ -199,7 +199,7 @@ export function ModelHighlights() {
   const { ref, isVisible } = useAnimatedSection()
 
   return (
-    <section ref={ref} className="border-t border-border py-20 sm:py-24">
+    <section ref={ref} className="border-t border-zinc-200 py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
         <h2
           className={`mb-4 text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl ${
@@ -230,7 +230,7 @@ export function ModelHighlights() {
           <ModelSection
             title="OPEN-SOURCE VALUE"
             icon={<Zap className="h-4 w-4" />}
-            colorClass="text-green"
+            colorClass="text-emerald-600"
             models={openSource}
             isVisible={isVisible}
             baseDelay={400}
@@ -239,7 +239,7 @@ export function ModelHighlights() {
           <ModelSection
             title="SPECIALIZED"
             icon={<Brain className="h-4 w-4" />}
-            colorClass="text-amber"
+            colorClass="text-amber-600"
             models={specialized}
             isVisible={isVisible}
             baseDelay={600}
@@ -254,7 +254,7 @@ export function ModelHighlights() {
         >
           <Link
             href="/models"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan transition-colors hover:text-text arrow-animate"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:text-zinc-900 arrow-animate"
           >
             View all 50+ models
             <ArrowRight className="h-3.5 w-3.5" />

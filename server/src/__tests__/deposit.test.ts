@@ -197,6 +197,8 @@ vi.mock('../config.js', () => ({
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',
+    HOUDINI_API_KEY: 'test-houdini-key',
+    HOUDINI_API_SECRET: 'test-houdini-secret',
     HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
     TREASURY_SOLANA_ADDRESS: 'TreasurySolAddress1111111111111111111',
     SOLANA_RPC_URL: 'https://api.mainnet-beta.solana.com',

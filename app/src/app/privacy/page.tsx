@@ -5,7 +5,7 @@ import { ArrowLeft, Shield, Eye, Database, Lock, Info, CreditCard } from 'lucide
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 font-mono">
+    <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-8">
         <Link
           href="/"

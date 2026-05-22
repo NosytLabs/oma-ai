@@ -1,14 +1,20 @@
 import type { Metadata } from 'next'
-import { JetBrains_Mono } from 'next/font/google'
+import { Syne, Inter } from 'next/font/google'
 import { WalletProvider } from '@/components/wallet-provider'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
 
-const jetbrainsMono = JetBrains_Mono({
+const syne = Syne({
   subsets: ['latin'],
-  variable: '--font-jetbrains',
+  variable: '--font-syne',
+  display: 'swap',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -68,11 +74,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${jetbrainsMono.variable} antialiased`}>
+    <html lang="en" className={`${syne.variable} ${inter.variable}`}>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className="min-h-screen bg-void text-text">
+      <body className="min-h-screen bg-void text-text font-sans antialiased">
         <WalletProvider>
           <Navbar />
           <main className="pt-18">

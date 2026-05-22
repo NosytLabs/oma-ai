@@ -1,20 +1,22 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   Send,
-  Settings,
   X,
-  Key,
-  Cpu,
-  Clock,
-  Hash,
   ChevronDown,
-  ChevronUp,
-  AlertCircle,
   Trash2,
-  Zap,
-  Terminal,
+  Sparkles,
+  User,
+  Bot,
+  Copy,
+  Check,
+  Plus,
+  Settings2,
+  Zap
 } from 'lucide-react'
 
 interface Message {
@@ -49,33 +51,408 @@ const MODELS: ModelOption[] = [
   { id: 'qwen3-235b', name: 'Qwen3 235B', category: 'Mid' },
   { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'Mid' },
   { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', category: 'Budget' },
-  { id: 'glm-5.1', name: 'GLM-5.1', category: 'Mid' },
-  { id: 'kimi-k2-6', name: 'Kimi K2.6', category: 'Mid' },
-  { id: 'mistral-large', name: 'Mistral Large', category: 'Frontier' },
-  { id: 'mistral-small-3.2', name: 'Mistral Small 3.2', category: 'Mid' },
-  { id: 'gemma-3-27b', name: 'Gemma 3 27B', category: 'Mid' },
-  { id: 'gemma4-31b', name: 'Gemma 4 31B', category: 'Budget' },
   { id: 'venice-uncensored', name: 'Venice Uncensored', category: 'Uncensored' },
 ]
 
-const API_URL = 'https://oma-ai.com/v1/chat/completions'
+const API_URL = '/api/v1/chat/completions'
+
+function CodeBlock({ children, className }: { children: string; className?: string }) {
+  const [copied, setCopied] = useState(false)
+  const code = String(children).replace(/\n$/, '')
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [code])
+
+  return (
+    <div className="relative group my-4">
+      <pre className="bg-zinc-900 text-zinc-100 rounded-2xl p-4 overflow-x-auto text-sm leading-relaxed shadow-lg">
+        <code className={className}>{code}</code>
+      </pre>
+      <button
+        onClick={handleCopy}
+        className="absolute top-3 right-3 p-2 rounded-xl bg-zinc-800/80 text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-zinc-700"
+      >
+        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+      </button>
+    </div>
+  )
+}
+
+function ModelSelector({ model, setModel, sidebarOpen, setSidebarOpen }: {
+  model: string
+  setModel: (m: string) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (o: boolean) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const selectedModel = MODELS.find(m => m.id === model)
+
+  return (
+    <div className="flex items-center gap-3">
+      <div ref={dropdownRef} className="relative">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-3 px-4 py-2.5 bg-white/80 backdrop-blur-xl border border-zinc-200/50 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:border-zinc-300/80 group"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="font-semibold text-zinc-900">{selectedModel?.name || 'Select Model'}</span>
+          <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
+
+        {open && (
+          <div className="absolute top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-zinc-200/50 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="p-2 max-h-80 overflow-y-auto">
+              {['Frontier', 'Premium', 'Mid', 'Reasoning', 'Coding', 'Budget', 'Uncensored'].map(category => (
+                <div key={category}>
+                  <div className="px-3 py-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                    {category}
+                  </div>
+                  {MODELS.filter(m => m.category === category).map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => { setModel(m.id); setOpen(false) }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors duration-150 ${
+                        m.id === model
+                          ? 'bg-indigo-50 text-indigo-600'
+                          : 'text-zinc-700 hover:bg-zinc-50'
+                      }`}
+                    >
+                      <span className="font-medium">{m.name}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="p-2.5 bg-white/80 backdrop-blur-xl border border-zinc-200/50 rounded-full shadow-md hover:shadow-lg transition-all duration-300 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300/80"
+      >
+        {sidebarOpen ? <X className="w-5 h-5" /> : <Settings2 className="w-5 h-5" />}
+      </button>
+    </div>
+  )
+}
+
+function Sidebar({ sidebarOpen, setSidebarOpen, apiKey, setApiKey, temperature, setTemperature, maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, clearChat, messages, connectionStatus }: {
+  sidebarOpen: boolean
+  setSidebarOpen: (o: boolean) => void
+  apiKey: string
+  setApiKey: (k: string) => void
+  temperature: number
+  setTemperature: (t: number) => void
+  maxTokens: number
+  setMaxTokens: (t: number) => void
+  systemPrompt: string
+  setSystemPrompt: (s: string) => void
+  clearChat: () => void
+  messages: Message[]
+  connectionStatus: string
+}) {
+  const [apiKeyInput, setApiKeyInput] = useState(apiKey)
+
+  const handleSaveApiKey = () => {
+    const key = apiKeyInput.trim()
+    if (key) {
+      setApiKey(key)
+      localStorage.setItem('oma_api_key', key)
+    }
+  }
+
+  return (
+    <>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-sm transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-80 bg-white/95 backdrop-blur-xl border-r border-zinc-200/50 shadow-xl transform transition-transform duration-300 ease-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full p-6">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-syne font-bold text-zinc-900">Settings</h3>
+                <p className="text-xs text-zinc-500">Configure your experience</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-xl hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 space-y-6 overflow-y-auto">
+            <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-200/50">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-zinc-700">API Connection</span>
+                <span className={`flex items-center gap-1.5 text-xs font-medium ${
+                  connectionStatus === 'connected' ? 'text-emerald-600' : 'text-zinc-400'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-300'
+                  }`} />
+                  {connectionStatus === 'connected' ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
+              <div className="mb-3 text-xs text-zinc-500">
+                Privacy-first inference via Venice AI
+              </div>
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveApiKey()}
+                placeholder="oma_sk_..."
+                className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+              />
+              {apiKey !== apiKeyInput && (
+                <button
+                  onClick={handleSaveApiKey}
+                  className="mt-2 w-full py-2 bg-indigo-500 text-white rounded-xl text-sm font-semibold hover:bg-indigo-600 transition-colors shadow-md"
+                >
+                  Save Key
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Parameters</h4>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-700">Temperature</label>
+                  <span className="text-sm font-mono text-indigo-600">{temperature.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.05"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-zinc-700">Max Tokens</label>
+                  <span className="text-sm font-mono text-indigo-600">{maxTokens}</span>
+                </div>
+                <input
+                  type="number"
+                  value={maxTokens}
+                  onChange={(e) => setMaxTokens(Math.max(1, Math.min(128000, parseInt(e.target.value) || 2048)))}
+                  className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-2">System Prompt</label>
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                placeholder="You are a helpful assistant..."
+                rows={4}
+                className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-zinc-200/50">
+            <button
+              onClick={clearChat}
+              disabled={messages.length === 0}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-rose-200 bg-rose-50 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear Conversation
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function ChatMessage({ msg, loading, streaming }: {
+  msg: Message
+  loading: boolean
+  streaming: boolean
+}) {
+  const isUser = msg.role === 'user'
+
+  return (
+    <div className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} animate-message-in`}>
+      <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-md ${
+        isUser
+          ? 'bg-gradient-to-br from-indigo-500 to-indigo-600'
+          : 'bg-white border border-zinc-200/50'
+      }`}>
+        {isUser ? (
+          <User className="w-5 h-5 text-white" />
+        ) : (
+          <Bot className="w-5 h-5 text-zinc-600" />
+        )}
+      </div>
+
+      <div className={`flex flex-col max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className={`px-5 py-4 leading-relaxed transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+          isUser
+            ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-2xl rounded-tr-sm shadow-lg'
+            : 'bg-white border border-zinc-200/50 text-zinc-900 rounded-2xl rounded-tl-sm shadow-md'
+        }`}>
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+          ) : (
+            <div className="markdown-content">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ className, children, ...props }: { className?: string; children?: React.ReactNode }) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    const isInline = !match && !className
+                    return isInline ? (
+                      <code className="px-1.5 py-0.5 bg-zinc-100 text-indigo-600 rounded-lg font-mono text-sm" {...props}>
+                        {children}
+                      </code>
+                    ) : (
+                      <CodeBlock className={className}>
+                        {String(children).replace(/\n$/, '')}
+                      </CodeBlock>
+                    )
+                  },
+                  pre({ children }: React.ComponentProps<'pre'>) {
+                    return <>{children}</>
+                  },
+                  p({ children }: React.ComponentProps<'p'>) {
+                    return <p className="mb-4 last:mb-0">{children}</p>
+                  },
+                  ul({ children }: React.ComponentProps<'ul'>) {
+                    return <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>
+                  },
+                  ol({ children }: React.ComponentProps<'ol'>) {
+                    return <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>
+                  },
+                  li({ children }: React.ComponentProps<'li'>) {
+                    return <li className="text-zinc-700">{children}</li>
+                  },
+                  h1({ children }: React.ComponentProps<'h1'>) {
+                    return <h1 className="text-xl font-bold mb-3 text-zinc-900">{children}</h1>
+                  },
+                  h2({ children }: React.ComponentProps<'h2'>) {
+                    return <h2 className="text-lg font-bold mb-2 text-zinc-900">{children}</h2>
+                  },
+                  h3({ children }: React.ComponentProps<'h3'>) {
+                    return <h3 className="text-base font-bold mb-2 text-zinc-900">{children}</h3>
+                  },
+                  blockquote({ children }: React.ComponentProps<'blockquote'>) {
+                    return <blockquote className="border-l-4 border-indigo-300 pl-4 italic text-zinc-600 my-4">{children}</blockquote>
+                  },
+                  a({ href, children }: React.ComponentProps<'a'>) {
+                    return <a href={href} className="text-indigo-600 hover:text-indigo-700 underline" target="_blank" rel="noopener noreferrer">{children}</a>
+                  },
+                  strong({ children }: React.ComponentProps<'strong'>) {
+                    return <strong className="font-semibold text-zinc-900">{children}</strong>
+                  },
+                  em({ children }: React.ComponentProps<'em'>) {
+                    return <em className="italic">{children}</em>
+                  },
+                  table({ children }: React.ComponentProps<'table'>) {
+                    return <table className="w-full border-collapse my-4">{children}</table>
+                  },
+                  th({ children }: React.ComponentProps<'th'>) {
+                    return <th className="border border-zinc-200 px-4 py-2 bg-zinc-50 font-semibold text-left">{children}</th>
+                  },
+                  td({ children }: React.ComponentProps<'td'>) {
+                    return <td className="border border-zinc-200 px-4 py-2">{children}</td>
+                  },
+                  hr() {
+                    return <hr className="border-zinc-200 my-6" />
+                  }
+                }}
+              >
+                {msg.content || (loading && streaming && msg.role === 'assistant' ? '' : '')}
+              </ReactMarkdown>
+              {loading && streaming && msg.role === 'assistant' && !msg.content && (
+                <span className="inline-block h-5 w-5 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+              )}
+              {loading && streaming && msg.role === 'assistant' && msg.content && (
+                <span className="inline-block ml-1">
+                  <span className="inline-block h-2 w-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="inline-block h-2 w-2 bg-indigo-400 rounded-full animate-bounce ml-1" style={{ animationDelay: '150ms' }} />
+                  <span className="inline-block h-2 w-2 bg-indigo-400 rounded-full animate-bounce ml-1" style={{ animationDelay: '300ms' }} />
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center px-4 py-16 animate-fade-in">
+      <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center mb-8 shadow-xl animate-float">
+        <Sparkles className="w-12 h-12 text-white" />
+      </div>
+      <h1 className="text-4xl font-syne font-bold text-zinc-900 mb-4 animate-slide-up">
+        What would you like to create?
+      </h1>
+      <p className="text-zinc-500 text-lg max-w-md animate-slide-up" style={{ animationDelay: '100ms' }}>
+        Ask any question, brainstorm ideas, or explore new concepts together. Powered by Venice AI.
+      </p>
+    </div>
+  )
+}
 
 export default function PlaygroundPage() {
   const [apiKey, setApiKey] = useState('')
-  const [apiKeyInput, setApiKeyInput] = useState('')
-  const [model, setModel] = useState('deepseek-v4-flash')
+  const [model, setModel] = useState('deepseek-v4-pro')
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [temperature, setTemperature] = useState(0.7)
   const [maxTokens, setMaxTokens] = useState(2048)
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [totalTokens, setTotalTokens] = useState(0)
-  const [lastLatency, setLastLatency] = useState<number | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'error'>('disconnected')
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -86,7 +463,6 @@ export default function PlaygroundPage() {
     const stored = localStorage.getItem('oma_api_key')
     if (stored) {
       setApiKey(stored)
-      setApiKeyInput(stored)
       setConnectionStatus('connected')
     }
   }, [])
@@ -95,21 +471,12 @@ export default function PlaygroundPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streaming])
 
-  const saveApiKey = useCallback(() => {
-    const key = apiKeyInput.trim()
-    if (key) {
-      setApiKey(key)
-      localStorage.setItem('oma_api_key', key)
-      setConnectionStatus('connected')
-      setError(null)
-    }
-  }, [apiKeyInput])
-
   const sendMessage = useCallback(async () => {
     if (!input.trim() || loading) return
 
     if (!apiKey) {
       setError('Enter your API key in the sidebar to start.')
+      setSidebarOpen(true)
       return
     }
 
@@ -209,18 +576,14 @@ export default function PlaygroundPage() {
             }
 
             if (parsed.usage) {
-              setTotalTokens(parsed.usage.total_tokens || 0)
             }
           } catch {
-            // skip malformed chunks
           }
         }
       }
 
-      setLastLatency(Date.now() - startTime)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
-        // user cancelled
       } else {
         const message = err instanceof Error ? err.message : 'Unknown error occurred'
         setError(message)
@@ -239,6 +602,7 @@ export default function PlaygroundPage() {
       setLoading(false)
       setStreaming(false)
       abortRef.current = null
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [input, apiKey, loading, messages, model, temperature, maxTokens, systemPrompt])
 
@@ -248,9 +612,8 @@ export default function PlaygroundPage() {
 
   const clearChat = useCallback(() => {
     setMessages([])
-    setTotalTokens(0)
-    setLastLatency(null)
     setError(null)
+    setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -260,378 +623,233 @@ export default function PlaygroundPage() {
     }
   }, [sendMessage])
 
-  const categoryColor = (cat: string) => {
-    switch (cat) {
-      case 'Frontier': return 'bg-pink/15 text-pink'
-      case 'Reasoning': return 'bg-amber/15 text-amber'
-      case 'Coding': return 'bg-cyan/15 text-cyan'
-      case 'Premium': return 'bg-amber/15 text-amber'
-      case 'Mid': return 'bg-cyan/15 text-cyan'
-      case 'Budget': return 'bg-green/15 text-green'
-      case 'Uncensored': return 'bg-pink/15 text-pink'
-      default: return 'bg-surface text-text-dim'
-    }
-  }
+  const allowAnonymousChat = true
 
-  const statusColor = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'status-dot--online'
-      case 'error': return 'status-dot--offline'
-      default: return 'status-dot--offline'
-    }
-  }
-
-  if (!apiKey) {
+  if (!apiKey && !allowAnonymousChat) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-xl border border-border bg-panel p-8">
-          <div className="mb-6 flex items-center justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-cyan/30 bg-cyan/10 text-cyan">
-              <Key className="h-8 w-8" />
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-3xl border border-zinc-200/50 shadow-xl p-10 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-syne font-bold text-text mb-3">Welcome to the Playground</h2>
+            <p className="text-text-secondary mb-8">
+              Connect your wallet or enter your API key to start chatting with AI models.
+            </p>
+            <Link
+              href="/dashboard"
+              className="w-full py-4 bg-gradient-to-r from-accent to-accent-hover text-white rounded-2xl font-semibold text-lg hover:shadow-lg transition-all shadow-lg mb-4 inline-block text-center"
+            >
+              Connect Wallet
+            </Link>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-zinc-200/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-zinc-400">Or continue with API key</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <input
+                type="password"
+                value={apiKey || ''}
+                onChange={(e) => setApiKey(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && apiKey && localStorage.setItem('oma_api_key', apiKey)}
+                placeholder="oma_sk_..."
+                className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-center font-mono text-lg mb-4 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+                autoFocus
+              />
+              <button
+                onClick={() => {
+                  if (apiKey) {
+                    localStorage.setItem('oma_api_key', apiKey)
+                    setConnectionStatus('connected')
+                  }
+                }}
+                disabled={!apiKey.trim()}
+                className="w-full py-4 bg-white border border-zinc-200 text-zinc-900 rounded-2xl font-semibold text-lg hover:bg-zinc-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Use API Key
+              </button>
             </div>
           </div>
-          <h2 className="mb-2 text-center text-xl font-bold">Enter API Key</h2>
-          <p className="mb-6 text-center text-sm text-text-dim">
-            Connect to the OMA API with your key. Get one from the dashboard.
-          </p>
-          <div className="mb-4">
-            <input
-              type="password"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveApiKey()}
-              placeholder="oma_sk_..."
-              className="w-full font-mono text-sm"
-            />
-          </div>
-          <button
-            onClick={saveApiKey}
-            disabled={!apiKeyInput.trim()}
-            className="btn-primary w-full"
-          >
-            Connect
-          </button>
-          <p className="mt-4 text-center text-xs text-text-dim">
-            Key is stored in localStorage. Never shared.
-          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Sidebar */}
-      <div className={`shrink-0 border-r border-border bg-panel transition-all duration-200 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
-        <div className="flex h-full flex-col p-4">
-          {/* Model Selector */}
-          <div className="mb-4">
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-dim">
-              <Cpu className="h-3.5 w-3.5" />
-              Model
-            </label>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full text-xs"
-            >
-              {MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${categoryColor(MODELS.find(m => m.id === model)?.category || '')}`}>
-                {MODELS.find(m => m.id === model)?.category}
-              </span>
-              <span className="font-mono text-[10px] text-text-dim">{model}</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-zinc-50 flex">
+      <style jsx>{`
+        @keyframes messageIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes bounce-send {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-message-in {
+          animation: messageIn 300ms ease-out forwards;
+        }
+        .animate-fade-in {
+          animation: fadeIn 500ms ease-out forwards;
+        }
+        .animate-slide-up {
+          animation: slideUp 500ms ease-out forwards;
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-bounce-send {
+          animation: bounce-send 300ms ease-in-out;
+        }
+        .animate-pulse-dot {
+          animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+      `}</style>
 
-          {/* API Key */}
-          <div className="mb-4">
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-dim">
-              <Key className="h-3.5 w-3.5" />
-              API Key
-            </label>
-            <div className="flex items-center gap-1.5">
-              <span className={`status-dot ${statusColor()}`} />
-              <span className="font-mono text-[10px] text-text-dim truncate">
-                {apiKey.slice(0, 10)}...{apiKey.slice(-4)}
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                setApiKey('')
-                setApiKeyInput('')
-                localStorage.removeItem('oma_api_key')
-                setConnectionStatus('disconnected')
-              }}
-              className="mt-1 text-[10px] text-pink hover:underline"
-            >
-              Remove key
-            </button>
-          </div>
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+        temperature={temperature}
+        setTemperature={setTemperature}
+        maxTokens={maxTokens}
+        setMaxTokens={setMaxTokens}
+        systemPrompt={systemPrompt}
+        setSystemPrompt={setSystemPrompt}
+        clearChat={clearChat}
+        messages={messages}
+        connectionStatus={connectionStatus}
+      />
 
-          {/* Status */}
-          <div className="mb-4">
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-dim">
-              <Zap className="h-3.5 w-3.5" />
-              Status
-            </label>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-text-dim">Connection</span>
-                <div className="flex items-center gap-1.5">
-                  <span className={`status-dot ${statusColor()}`} />
-                  <span className={connectionStatus === 'connected' ? 'text-green' : connectionStatus === 'error' ? 'text-pink' : 'text-text-dim'}>
-                    {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'error' ? 'Error' : 'Offline'}
-                  </span>
-                </div>
-              </div>
-              {totalTokens > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Tokens</span>
-                  <span className="font-mono text-cyan">{totalTokens.toLocaleString()}</span>
-                </div>
-              )}
-              {lastLatency !== null && (
-                <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Latency</span>
-                  <span className="font-mono text-amber">{(lastLatency / 1000).toFixed(1)}s</span>
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <header className="sticky top-0 z-20 bg-zinc-50/80 backdrop-blur-xl border-b border-zinc-200/50">
+          <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+            <ModelSelector
+              model={model}
+              setModel={setModel}
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+            />
 
-          {/* Settings Toggle */}
-          <div className="mb-4">
-            <button
-              onClick={() => setSettingsOpen(!settingsOpen)}
-              className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-dim transition-colors hover:border-cyan/30 hover:text-cyan"
-            >
-              <span className="flex items-center gap-1.5">
-                <Settings className="h-3.5 w-3.5" />
-                Settings
-              </span>
-              {settingsOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </button>
-
-            {settingsOpen && (
-              <div className="mt-3 space-y-4 rounded-lg border border-border bg-void p-3">
-                <div>
-                  <label className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-text-dim">
-                    <span>Temperature</span>
-                    <span className="font-mono text-cyan">{temperature.toFixed(2)}</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={temperature}
-                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="w-full accent-cyan"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-text-dim">
-                    <span>Max Tokens</span>
-                    <span className="font-mono text-cyan">{maxTokens}</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={maxTokens}
-                    onChange={(e) => setMaxTokens(Math.max(1, Math.min(128000, parseInt(e.target.value) || 2048)))}
-                    min={1}
-                    max={128000}
-                    className="w-full text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 flex text-[10px] font-bold uppercase tracking-wider text-text-dim">
-                    System Prompt
-                  </label>
-                  <textarea
-                    value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)}
-                    placeholder="You are a helpful assistant..."
-                    rows={3}
-                    className="w-full text-xs resize-none"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Clear Chat */}
-          <div className="mt-auto">
-            <button
-              onClick={clearChat}
-              disabled={messages.length === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-dim transition-colors hover:border-pink/30 hover:text-pink disabled:opacity-30"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear Chat
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between border-b border-border bg-panel/50 px-4 py-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded p-1 text-text-dim transition-colors hover:text-cyan"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-            <span className="font-mono text-xs text-text-dim">
-              {model}
-            </span>
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${categoryColor(MODELS.find(m => m.id === model)?.category || '')}`}>
-              {MODELS.find(m => m.id === model)?.category}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-[10px] text-text-dim">
-            {totalTokens > 0 && (
-              <span className="flex items-center gap-1">
-                <Hash className="h-3 w-3" />
-                {totalTokens.toLocaleString()} tokens
-              </span>
-            )}
-            {lastLatency !== null && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {(lastLatency / 1000).toFixed(1)}s
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 && (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-cyan/30 bg-cyan/10 text-cyan">
-                    <Terminal className="h-8 w-8" />
-                  </div>
-                </div>
-                <h3 className="mb-2 text-lg font-bold">OMA Playground</h3>
-                <p className="text-sm text-text-dim">Send a message to start chatting with {model}.</p>
-                <p className="mt-2 text-xs text-text-dim">Streaming enabled. Shift+Enter for new lines.</p>
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] rounded-lg border px-4 py-3 text-sm ${
-                  msg.role === 'user'
-                    ? 'border-cyan/30 bg-cyan/10 text-cyan'
-                    : 'border-border bg-panel text-text'
-                }`}
+            {messages.length > 0 && (
+              <button
+                onClick={clearChat}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full transition-all"
               >
-                <div className="whitespace-pre-wrap break-words leading-relaxed">
-                  {msg.content || (loading && streaming && msg.role === 'assistant' ? '' : '')}
-                  {loading && streaming && msg.role === 'assistant' && !msg.content && (
-                    <span className="inline-block h-4 w-2 animate-pulse bg-cyan" />
-                  )}
-                  {loading && streaming && msg.role === 'assistant' && msg.content && (
-                    <span className="inline-block h-4 w-0.5 animate-pulse bg-cyan ml-0.5" />
-                  )}
-                </div>
-                {msg.role === 'assistant' && msg.content && (msg.tokens || msg.latency) && (
-                  <div className="mt-2 flex items-center gap-3 border-t border-border/50 pt-2 text-[10px] text-text-dim">
-                    {msg.tokens && (
-                      <span className="flex items-center gap-1">
-                        <Hash className="h-2.5 w-2.5" />
-                        {msg.tokens} chunks
-                      </span>
-                    )}
-                    {msg.latency && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {(msg.latency / 1000).toFixed(1)}s
-                      </span>
-                    )}
-                  </div>
+                <Plus className="w-4 h-4" />
+                New Chat
+              </button>
+            )}
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-6 py-8">
+            {messages.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="space-y-8">
+                {messages.map((msg, i) => (
+                  <ChatMessage
+                    key={i}
+                    msg={msg}
+                    loading={loading}
+                    streaming={streaming}
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+        </main>
+
+        <footer className="sticky bottom-0 bg-zinc-50/80 backdrop-blur-xl border-t border-zinc-200/50">
+          <div className="max-w-3xl mx-auto px-6 py-4">
+            {error && (
+              <div className="mb-4 flex items-center justify-between px-4 py-3 bg-rose-50 border border-rose-200 rounded-2xl text-sm text-rose-600">
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="p-1 hover:bg-rose-100 rounded-lg">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="relative flex items-end bg-white rounded-2xl border border-zinc-200/50 shadow-lg px-2 py-2 transition-all focus-within:border-indigo-300 focus-within:shadow-xl">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask anything..."
+                rows={1}
+                className="flex-1 resize-none bg-transparent px-4 py-3 text-zinc-900 placeholder-zinc-400 outline-none text-[15px] leading-relaxed"
+                disabled={loading}
+                style={{ minHeight: '52px', maxHeight: '200px' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 200) + 'px'
+                }}
+              />
+              <div className="p-1">
+                {loading ? (
+                  <button
+                    onClick={stopGeneration}
+                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600 hover:bg-rose-100 hover:text-rose-600 transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={sendMessage}
+                    disabled={!input.trim()}
+                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white transition-all hover:from-indigo-600 hover:to-indigo-700 hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none animate-bounce-send"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
                 )}
               </div>
             </div>
-          ))}
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="border-t border-pink/30 bg-pink/5 px-4 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-pink">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                <span>{error}</span>
-              </div>
-              <button onClick={() => setError(null)} className="text-text-dim hover:text-text">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <p className="mt-3 text-center text-xs text-zinc-400">
+              Press Enter to send. AI models can make mistakes.
+            </p>
           </div>
-        )}
-
-        {/* Input Area */}
-        <div className="border-t border-border bg-panel/50 p-4">
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={`Message ${model}...`}
-              rows={1}
-              className="flex-1 resize-none text-sm"
-              disabled={loading}
-              style={{ minHeight: '40px', maxHeight: '120px' }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement
-                target.style.height = 'auto'
-                target.style.height = Math.min(target.scrollHeight, 120) + 'px'
-              }}
-            />
-            {loading ? (
-              <button
-                onClick={stopGeneration}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-pink bg-pink/10 text-pink transition-colors hover:bg-pink/20"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cyan bg-cyan/10 text-cyan transition-colors hover:bg-cyan/20 disabled:opacity-30"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[10px] text-text-dim">
-            <span>Shift+Enter for new line. Streaming enabled.</span>
-            <span>Base URL: oma-ai.com/v1</span>
-          </div>
-        </div>
+        </footer>
       </div>
     </div>
   )

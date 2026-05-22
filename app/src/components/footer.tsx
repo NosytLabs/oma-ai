@@ -1,10 +1,11 @@
 import Link from 'next/link'
 
 const PRODUCT_LINKS = [
-  { label: 'Models', href: '/models' },
+  { label: 'Models', href: '/llms' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Docs', href: '/docs' },
   { label: 'Playground', href: '/playground' },
+  { label: 'Swap', href: '/swap' },
 ]
 
 const COMPANY_LINKS = [
@@ -23,10 +24,10 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-1">
             <Link href="/" className="inline-flex items-center gap-1 text-xl font-bold tracking-tight logo-hover">
-              <span className="text-cyan logo-text transition-colors">OMA</span>
-              <span className="text-base text-text-dim">.AI</span>
+              <span className="text-accent logo-text transition-colors">OMA</span>
+              <span className="text-base text-text-secondary">.AI</span>
             </Link>
-            <p className="mt-3 text-xs leading-relaxed text-text-dim">
+            <p className="mt-3 text-sm text-text-secondary leading-relaxed">
               Permissionless inference.
               <br />
               Pay with crypto.
@@ -42,7 +43,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
+                    className="text-sm text-text-secondary transition-colors hover:text-accent footer-link"
                   >
                     {link.label}
                   </Link>
@@ -60,7 +61,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
+                    className="text-sm text-text-secondary transition-colors hover:text-accent footer-link"
                     {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   >
                     {link.label}
@@ -77,7 +78,7 @@ export function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-xs text-text-dim transition-colors hover:text-cyan footer-link"
+                    className="text-sm text-text-secondary transition-colors hover:text-accent footer-link"
                   >
                     {link.label}
                   </Link>

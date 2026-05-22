@@ -42,14 +42,14 @@ function StepIcon({
 }) {
   return (
     <div
-      className={`relative z-10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl border border-border bg-panel text-cyan transition-all duration-500 step-icon icon-glow ${
+      className={`relative z-10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl border border-zinc-200 bg-white text-indigo-600 transition-all duration-500 step-icon icon-glow ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       }`}
       style={{ transitionDelay: `${index * 150}ms` }}
     >
       {step.icon}
       <span
-        className={`step-number absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-cyan text-xs font-bold text-void transition-all duration-300 ${
+        className={`step-number absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white transition-all duration-300 ${
           isVisible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
         }`}
         style={{ transitionDelay: `${index * 150 + 200}ms` }}
@@ -58,7 +58,7 @@ function StepIcon({
       </span>
       {isVisible && <div className="step-icon-ring" />}
       <div
-        className={`absolute inset-0 rounded-xl bg-cyan/5 opacity-0 transition-opacity duration-300 ${isVisible ? 'opacity-100' : ''}`}
+        className={`absolute inset-0 rounded-xl bg-indigo-500/5 opacity-0 transition-opacity duration-300 ${isVisible ? 'opacity-100' : ''}`}
         style={{ transitionDelay: `${index * 150 + 300}ms` }}
       />
     </div>
@@ -93,7 +93,7 @@ export function HowItWorks() {
               )}
               <StepIcon step={step} index={i} isVisible={isVisible} />
               <h3
-                className={`mb-2 text-xs font-bold tracking-wider transition-all duration-500 ${
+                className={`mb-2 text-xs font-bold tracking-wider text-zinc-900 transition-all duration-500 ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 }`}
                 style={{ transitionDelay: `${i * 150 + 100}ms` }}
@@ -101,7 +101,7 @@ export function HowItWorks() {
                 {step.title}
               </h3>
               <p
-                className={`text-xs text-text-dim transition-all duration-500 ${
+                className={`text-xs text-slate-500 transition-all duration-500 ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 }`}
                 style={{ transitionDelay: `${i * 150 + 200}ms` }}
@@ -119,29 +119,29 @@ export function HowItWorks() {
           }`}
           style={{ transitionDelay: '800ms' }}
         >
-          <div className="rounded-xl border border-border bg-panel p-6">
-            <h4 className="mb-4 text-center text-xs font-bold tracking-widest text-text-dim">
+          <div className="rounded-xl border border-zinc-200 bg-white p-6">
+            <h4 className="mb-4 text-center text-xs font-bold tracking-widest text-slate-500">
               CROSS-CHAIN DEPOSIT FLOW
             </h4>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <div className="flex items-center gap-2 rounded-lg bg-surface px-4 py-2 text-xs font-semibold text-text">
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-900">
                 <div className="h-2 w-2 rounded-full bg-blue-400" />
                 Base
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-surface px-4 py-2 text-xs font-semibold text-text">
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-900">
                 <div className="h-2 w-2 rounded-full bg-purple-400" />
                 Solana
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-surface px-4 py-2 text-xs font-semibold text-text">
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-900">
                 <div className="h-2 w-2 rounded-full bg-amber" />
                 OMA Token
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-surface px-4 py-2 text-xs font-semibold text-text">
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-900">
                 <div className="h-2 w-2 rounded-full bg-pink" />
                 100+ Coins
               </div>
-              <span className="text-text-dim">→</span>
-              <div className="flex items-center gap-2 rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-xs font-bold text-cyan">
+              <span className="text-slate-500">→</span>
+              <div className="flex items-center gap-2 rounded-lg border border-indigo-400/40 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-600">
                 <Key className="h-3.5 w-3.5" />
                 Credits
               </div>

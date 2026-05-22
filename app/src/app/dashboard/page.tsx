@@ -9,22 +9,25 @@ import {
   Copy,
   Check,
   Trash2,
-  Coins,
   ShieldCheck,
-  Terminal,
   AlertTriangle,
   Loader2,
   RefreshCw,
   X,
+  Activity,
+  Zap,
+  ArrowRight,
+  CreditCard,
 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const STAKING_TIERS = [
-  { stake: 0, discount: 0, label: 'None' },
-  { stake: 1000, discount: 3, label: 'Bronze' },
-  { stake: 10000, discount: 6, label: 'Silver' },
-  { stake: 50000, discount: 10, label: 'Gold' },
-  { stake: 100000, discount: 15, label: 'Platinum' },
+  { stake: 0, discount: 0, label: 'None', color: 'bg-zinc-500' },
+  { stake: 1000, discount: 3, label: 'Bronze', color: 'bg-amber-600' },
+  { stake: 10000, discount: 6, label: 'Silver', color: 'bg-slate-400' },
+  { stake: 50000, discount: 10, label: 'Gold', color: 'bg-yellow-500' },
+  { stake: 100000, discount: 15, label: 'Platinum', color: 'bg-indigo-500' },
 ]
 
 function getTier(discount: number) {
@@ -167,22 +170,36 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-bg-card">
-            <Wallet className="h-8 w-8 text-accent" />
-          </div>
-          <h2 className="mono mb-2 text-xl font-bold">CONNECT WALLET</h2>
-          <p className="mono mb-6 text-sm text-text-secondary">
-            Authenticate to access the OMA terminal.
+      <motion.div 
+        className="flex min-h-[calc(100vh-4rem)] items-center justify-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="text-center max-w-md px-4">
+          <motion.div 
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10"
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring' }}
+          >
+            <Wallet className="h-10 w-10 text-indigo-500" />
+          </motion.div>
+          <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
+          <p className="mb-6 text-text-secondary">
+            Sign in to view your account balance, manage API keys, and stake OMA.
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <button onClick={() => connectEvm()} className="btn-primary mono text-sm">
-              EVM / BASE
-            </button>
-          </div>
+          <motion.button
+            onClick={() => connectEvm()}
+            className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Zap className="h-4 w-4" />
+            Connect EVM Wallet
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -193,330 +210,450 @@ export default function DashboardPage() {
     : 100
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 font-mono">
+    <motion.div 
+      className="mx-auto max-w-6xl px-4 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <motion.div 
+        className="mb-8 flex items-center justify-between"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div>
-          <h1 className="mono text-2xl font-bold tracking-tight">DASHBOARD</h1>
-          <p className="mono mt-1 text-xs text-text-secondary">
-            OMA TERMINAL -- STATUS: {loading ? 'SYNCING' : error ? 'DEGRADED' : 'NOMINAL'}
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Manage your credits and API keys
           </p>
         </div>
-        <button
+        <motion.button
           onClick={loadData}
           disabled={loading}
-          className="btn-secondary mono flex items-center gap-2 py-1.5 text-xs"
+          className="btn-secondary flex items-center gap-2 py-2 px-4"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          REFRESH
-        </button>
-      </div>
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </motion.button>
+      </motion.div>
 
       {/* Error Banner */}
-      {error && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
-          <span className="mono text-xs text-danger">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto text-text-secondary hover:text-text-primary">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+            <span className="text-sm text-red-400">{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto text-text-secondary hover:text-text-primary">
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Top Row: Balance + Quick Start */}
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {/* Stats Cards Row */}
+      <motion.div 
+        className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         {/* Balance Card */}
-        <div className="card glow lg:col-span-2">
-          <div className="flex items-start justify-between">
+        <motion.div 
+          className="card shadow-floating relative overflow-hidden"
+          whileHover={{ y: -2 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
+          <div className="flex items-start justify-between relative">
             <div>
-              <div className="mb-1 flex items-center gap-2 text-xs text-text-secondary">
-                <Coins className="h-3.5 w-3.5" />
-                CREDIT BALANCE
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-text-secondary">
+                <CreditCard className="h-4 w-4" />
+                Credit Balance
               </div>
-              <div className="mono text-4xl font-bold text-accent">
+              <motion.div 
+                className="text-4xl font-bold text-gradient"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
                 {loading ? '---' : balance ? formatCents(balance.balanceCents) : '$0.00'}
-              </div>
-              <div className="mono mt-1 text-xs text-text-secondary">USD CREDITS</div>
+              </motion.div>
+              <div className="mt-1 text-xs text-text-secondary">USD Credits</div>
             </div>
-            <a
-              href="/deposit"
-              className="btn-primary mono flex items-center gap-1.5 py-1.5 text-xs"
+          </div>
+          <motion.div 
+            className="mt-4"
+            whileHover={{ scale: 1.02 }}
+          >
+            <a href="/deposit" className="btn-primary w-full flex items-center justify-center gap-2 py-2">
+              <Plus className="h-4 w-4" />
+              Deposit
+            </a>
+          </motion.div>
+        </motion.div>
+
+        {/* Staking Tier Card */}
+        <motion.div 
+          className="card shadow-floating relative overflow-hidden"
+          whileHover={{ y: -2 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl" />
+          <div className="flex items-start gap-3 relative">
+            <motion.div 
+              className={`flex h-12 w-12 items-center justify-center rounded-xl ${tier.color} bg-opacity-20 border border-${tier.color}/30`}
+              initial={{ rotate: -10 }}
+              animate={{ rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 200 }}
             >
-              <Plus className="h-3.5 w-3.5" />
-              DEPOSIT
+              <ShieldCheck className="h-6 w-6 text-indigo-500" />
+            </motion.div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold">{tier.label} Tier</span>
+                {tier.discount > 0 && (
+                  <motion.span 
+                    className="text-sm font-bold text-indigo-500"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring' }}
+                  >
+                    -{tier.discount}%
+                  </motion.span>
+                )}
+              </div>
+              {nextTier && (
+                <>
+                  <div className="mt-2 text-xs text-text-secondary">
+                    Next: {nextTier.label} ({nextTier.stake.toLocaleString()} OMA)
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface">
+                    <motion.div 
+                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${tierProgress}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Quick Stats Card */}
+        <motion.div 
+          className="card shadow-floating"
+          whileHover={{ y: -2 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-4 w-4 text-indigo-500" />
+            <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">Today&apos;s Usage</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-text-secondary">API Calls</span>
+              <span className="font-bold">{loading ? '---' : usage.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-text-secondary">Total Cost</span>
+              <span className="font-bold text-indigo-500">
+                {loading ? '---' : `$${(usage.reduce((a, u) => a + parseFloat(String(u.costCents)), 0) / 100).toFixed(2)}`}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-border">
+            <a href="/stake" className="flex items-center justify-center gap-2 text-sm text-indigo-500 hover:text-indigo-400 transition-colors">
+              Stake more for better rates <ArrowRight className="h-4 w-4" />
             </a>
           </div>
-
-          {/* Staking Tier */}
-          <div className="mt-6 border-t border-border pt-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
-                <ShieldCheck className="h-4.5 w-4.5 text-accent" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="mono text-sm font-semibold">
-                      {tier.label.toUpperCase()} TIER
-                    </span>
-                    {tier.discount > 0 && (
-                      <span className="mono ml-2 text-sm text-accent">
-                        -{tier.discount}%
-                      </span>
-                    )}
-                  </div>
-                  {nextTier && (
-                    <span className="mono text-xs text-text-secondary">
-                      NEXT: {nextTier.label.toUpperCase()} ({nextTier.stake.toLocaleString()} OMA)
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-secondary">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all duration-500"
-                    style={{ width: `${tierProgress}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Start Card */}
-        <div className="card">
-          <div className="mb-3 flex items-center gap-2 text-xs text-text-secondary">
-            <Terminal className="h-3.5 w-3.5" />
-            QUICK START
-          </div>
-          <div className="rounded-lg border border-border bg-bg-primary p-3">
-            <pre className="mono overflow-x-auto text-xs leading-relaxed text-text-secondary">
-              <span className="text-accent">curl</span> https://api.oma-ai.com/v1/chat/completions {'\n'}
-              <span className="text-accent">-H</span> <span className="text-warning">&quot;Authorization: Bearer oma_sk_...&quot;</span>{' \n'}
-              <span className="text-accent">-H</span> <span className="text-warning">&quot;Content-Type: application/json&quot;</span>{' \n'}
-              <span className="text-accent">-d</span> <span className="text-warning">{`'{"model":"deepseek-r1",`}</span>{'\n'}
-              <span className="text-warning">{`  "messages":[{"role":"user",`}</span>{'\n'}
-              <span className="text-warning">{`  "content":"Hello"}]}'`}</span>
-            </pre>
-          </div>
-          <p className="mono mt-2 text-[10px] text-text-secondary">
-            OpenAI-compatible endpoint. Use any SDK.
-          </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* API Keys Section */}
-      <div className="mb-6">
+      <motion.div 
+        className="mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="mono text-lg font-bold tracking-tight">API KEYS</h2>
+          <h2 className="text-lg font-bold tracking-tight">API Keys</h2>
           {!showCreateForm && (
-            <button
+            <motion.button
               onClick={() => setShowCreateForm(true)}
-              className="btn-primary mono flex items-center gap-1.5 py-1.5 text-xs"
+              className="btn-primary flex items-center gap-2 py-2 px-4"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Plus className="h-3.5 w-3.5" />
-              CREATE KEY
-            </button>
+              <Plus className="h-4 w-4" />
+              Create Key
+            </motion.button>
           )}
         </div>
 
         {/* Create Key Inline Form */}
-        {showCreateForm && (
-          <div className="card mb-4 border-accent/30 bg-bg-card">
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateKey()}
-                placeholder="Key name (e.g. production)"
-                className="mono flex-1 text-sm"
-                autoFocus
-                disabled={creating}
-              />
-              <button
-                onClick={handleCreateKey}
-                disabled={creating || !newKeyName.trim()}
-                className="btn-primary mono flex items-center gap-1.5 py-1.5 text-xs disabled:opacity-50"
-              >
-                {creating ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Key className="h-3.5 w-3.5" />
-                )}
-                GENERATE
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateForm(false)
-                  setNewKeyName('')
-                }}
-                className="btn-secondary mono py-1.5 text-xs"
-                disabled={creating}
-              >
-                CANCEL
-              </button>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showCreateForm && (
+            <motion.div 
+              className="card mb-4 border-indigo-500/30 bg-surface/50"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateKey()}
+                  placeholder="Key name (e.g. production)"
+                  className="flex-1 text-sm bg-transparent border-0 focus:outline-none"
+                  autoFocus
+                  disabled={creating}
+                />
+                <motion.button
+                  onClick={handleCreateKey}
+                  disabled={creating || !newKeyName.trim()}
+                  className="btn-primary flex items-center gap-2 py-2 px-4 disabled:opacity-50"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {creating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Key className="h-4 w-4" />
+                  )}
+                  Generate
+                </motion.button>
+                <button
+                  onClick={() => {
+                    setShowCreateForm(false)
+                    setNewKeyName('')
+                  }}
+                  className="btn-secondary py-2 px-4"
+                  disabled={creating}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Key List */}
         {keys.length === 0 && !loading ? (
-          <div className="card flex items-center justify-center py-8 text-text-secondary">
-            <span className="mono text-sm">No API keys. Create one above.</span>
+          <div className="card flex items-center justify-center py-12 text-text-secondary">
+            <div className="text-center">
+              <Key className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <span className="text-sm">No API keys yet. Create one to get started.</span>
+            </div>
           </div>
         ) : (
-          <div className="space-y-2">
-            {keys.map((key) => (
-              <div
-                key={key.id}
-                className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-bg-secondary">
-                    <Key className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <div className="mono text-sm font-medium">{key.name}</div>
-                    <div className="mono text-xs text-text-secondary">
-                      {maskKey(key.prefix)}
+          <div className="space-y-3">
+            <AnimatePresence>
+              {keys.map((key, index) => (
+                <motion.div
+                  key={key.id}
+                  className="card shadow-floating flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="flex items-center gap-4">
+                    <motion.div 
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-gradient-to-br from-indigo-500/10 to-purple-500/10"
+                      initial={{ rotate: -5 }}
+                      animate={{ rotate: 0 }}
+                    >
+                      <Key className="h-5 w-5 text-indigo-500" />
+                    </motion.div>
+                    <div>
+                      <div className="font-bold">{key.name}</div>
+                      <div className="text-sm text-text-secondary">
+                        {maskKey(key.prefix)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="mono text-[10px] text-text-secondary">
-                    CREATED {key.createdAt ? new Date(key.createdAt).toLocaleDateString() : 'N/A'}
-                  </span>
-                  {key.lastUsedAt && (
-                    <span className="mono text-[10px] text-text-secondary">
-                      USED {formatTime(key.lastUsedAt)}
+                  <div className="flex items-center gap-6">
+                    <span className="text-xs text-text-secondary">
+                      Created {key.createdAt ? new Date(key.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
-                  )}
-                  <button
-                    onClick={() => handleCopy(key.prefix, `prefix-${key.id}`)}
-                    className="rounded p-1.5 transition-colors hover:bg-bg-secondary hover:text-accent"
-                    title="Copy prefix"
-                  >
-                    {copied === `prefix-${key.id}` ? (
-                      <Check className="h-3.5 w-3.5 text-accent" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
+                    {key.lastUsedAt && (
+                      <span className="text-xs text-text-secondary">
+                        Used {formatTime(key.lastUsedAt)}
+                      </span>
                     )}
-                  </button>
-                  <button
-                    onClick={() => handleRevokeKey(key.id)}
-                    disabled={revokingId === key.id}
-                    className="rounded p-1.5 transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-                    title="Revoke key"
-                  >
-                    {revokingId === key.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <motion.button
+                      onClick={() => handleCopy(key.prefix, `prefix-${key.id}`)}
+                      className="rounded-lg p-2 transition-colors hover:bg-indigo-500/10 hover:text-indigo-500"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {copied === `prefix-${key.id}` ? (
+                        <Check className="h-4 w-4 text-indigo-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </motion.button>
+                    <motion.button
+                      onClick={() => handleRevokeKey(key.id)}
+                      disabled={revokingId === key.id}
+                      className="rounded-lg p-2 transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {revokingId === key.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Usage Table */}
-      <div className="mb-8">
-        <h2 className="mono mb-4 text-lg font-bold tracking-tight">RECENT USAGE</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
+      <motion.div 
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <h2 className="mb-4 text-lg font-bold tracking-tight">Recent Usage</h2>
+        <motion.div 
+          className="overflow-hidden rounded-2xl border border-border bg-panel"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-border bg-bg-secondary">
-                  <th className="mono px-4 py-3 text-xs font-medium text-text-secondary">MODEL</th>
-                  <th className="mono px-4 py-3 text-xs font-medium text-text-secondary">INPUT</th>
-                  <th className="mono px-4 py-3 text-xs font-medium text-text-secondary">OUTPUT</th>
-                  <th className="mono px-4 py-3 text-xs font-medium text-text-secondary">COST</th>
-                  <th className="mono px-4 py-3 text-xs font-medium text-text-secondary">TIME</th>
+                <tr className="border-b border-border bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
+                  <th className="px-6 py-4 text-xs font-medium text-text-secondary">Model</th>
+                  <th className="px-6 py-4 text-xs font-medium text-text-secondary">Input</th>
+                  <th className="px-6 py-4 text-xs font-medium text-text-secondary">Output</th>
+                  <th className="px-6 py-4 text-xs font-medium text-text-secondary">Cost</th>
+                  <th className="px-6 py-4 text-xs font-medium text-text-secondary">Time</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
-                      <Loader2 className="mx-auto h-5 w-5 animate-spin text-text-secondary" />
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-indigo-500" />
                     </td>
                   </tr>
                 ) : usage.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="mono px-4 py-8 text-center text-sm text-text-secondary">
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-text-secondary">
                       No inference calls yet.
                     </td>
                   </tr>
                 ) : (
                   usage.slice(0, 20).map((row, i) => (
-                    <tr
+                    <motion.tr
                       key={row.id}
-                      className={`border-b border-border/50 transition-colors hover:bg-bg-card ${i % 2 === 1 ? 'bg-bg-secondary/30' : ''}`}
+                      className="border-b border-border/50 transition-colors hover:bg-indigo-500/5"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
                     >
-                      <td className="mono px-4 py-3 text-xs text-accent">{row.model}</td>
-                      <td className="mono px-4 py-3 text-xs">{row.promptTokens.toLocaleString()}</td>
-                      <td className="mono px-4 py-3 text-xs">{row.completionTokens.toLocaleString()}</td>
-                      <td className="mono px-4 py-3 text-xs">{formatCents(row.costCents)}</td>
-                      <td className="mono px-4 py-3 text-xs text-text-secondary">
+                      <td className="px-6 py-4 text-sm font-medium text-indigo-500">{row.model}</td>
+                      <td className="px-6 py-4 text-sm">{row.promptTokens.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm">{row.completionTokens.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm">{formatCents(row.costCents)}</td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">
                         {formatTime(row.createdAt)}
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* New Key Modal */}
-      {createdKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="card glow mx-4 w-full max-w-lg border-accent/30">
-            <div className="mb-4 flex items-center gap-2">
-              <Key className="h-5 w-5 text-accent" />
-              <h3 className="mono text-lg font-bold">API KEY CREATED</h3>
-            </div>
-
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
-              <span className="mono text-xs text-warning">
-                This key will only be shown once. Copy it now.
-              </span>
-            </div>
-
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-bg-primary p-3">
-              <code className="mono flex-1 break-all text-sm text-accent">
-                {createdKey.key}
-              </code>
-              <button
-                onClick={() => handleCopy(createdKey.key, `full-${createdKey.id}`)}
-                className="shrink-0 rounded p-2 transition-colors hover:bg-bg-secondary hover:text-accent"
-                title="Copy key"
-              >
-                {copied === `full-${createdKey.id}` ? (
-                  <Check className="h-4 w-4 text-accent" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-
-            <div className="mono mb-4 text-xs text-text-secondary">
-              Name: {createdKey.name} | Prefix: {createdKey.prefix}
-            </div>
-
-            <button
-              onClick={() => setCreatedKey(null)}
-              className="btn-primary mono w-full text-sm"
+      <AnimatePresence>
+        {createdKey && (
+          <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="card mx-4 w-full max-w-lg border-indigo-500/30"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25 }}
             >
-              I HAVE COPIED THIS KEY -- DISMISS
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10">
+                  <Key className="h-6 w-6 text-indigo-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">API Key Created</h3>
+                  <p className="text-xs text-text-secondary">Copy this key now - it won&apos;t be shown again</p>
+                </div>
+              </div>
+
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                <span className="text-sm text-amber-500">
+                  This key will only be shown once. Copy it now.
+                </span>
+              </div>
+
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-surface p-4">
+                <code className="flex-1 break-all text-sm text-indigo-500 font-mono">
+                  {createdKey.key}
+                </code>
+                <motion.button
+                  onClick={() => handleCopy(createdKey.key, `full-${createdKey.id}`)}
+                  className="shrink-0 rounded-lg p-2 transition-colors hover:bg-indigo-500/10 hover:text-indigo-500"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {copied === `full-${createdKey.id}` ? (
+                    <Check className="h-5 w-5 text-indigo-500" />
+                  ) : (
+                    <Copy className="h-5 w-5" />
+                  )}
+                </motion.button>
+              </div>
+
+              <motion.button
+                onClick={() => setCreatedKey(null)}
+                className="btn-primary w-full py-3"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                I Have Copied This Key
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

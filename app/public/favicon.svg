@@ -1,5 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#0a0a0f"/>
-  <rect x="2" y="2" width="28" height="28" rx="4" fill="none" stroke="#00ffc8" stroke-width="1.5"/>
-  <text x="16" y="22" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle" fill="#00ffc8">OMA</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <title>OMA AI Gateway Icon</title>
+  <desc>OMA icon with stylized AI brain circuit mark for favicon and navbar</desc>
+  
+  <g transform="translate(0, 0) scale(0.42)">
+    <path d="M32 0 C56 0 76 16 76 38 C76 58 58 72 36 72 C18 72 0 58 0 38 C0 18 16 0 36 0" fill="none" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="18" cy="28" r="4" fill="#6366f1"/>
+    <circle cx="12" cy="42" r="3" fill="#6366f1"/>
+    <circle cx="22" cy="52" r="3.5" fill="#6366f1"/>
+    <circle cx="54" cy="24" r="3.5" fill="#6366f1"/>
+    <circle cx="60" cy="38" r="4" fill="#6366f1"/>
+    <circle cx="52" cy="54" r="3" fill="#6366f1"/>
+    <circle cx="36" cy="36" r="6" fill="#6366f1"/>
+    <circle cx="36" cy="36" r="3" fill="#fafafa"/>
+    <path d="M18 28 L30 34 M22 52 L30 40 M54 24 L42 32 M52 54 L42 40 M36 30 L36 42 M30 36 L42 36" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    <circle cx="62" cy="18" r="4" fill="#f43f5e"/>
+  </g>
 </svg>
