@@ -116,39 +116,67 @@ export abstract class BaseInferenceProvider {
     },
     path?: string
   ): Promise<Response> {
-    this.config.checkConfig();
+    const tracer = trace.getTracer(this.tracerName);
+    const endpoint = path ?? this.config.completionPath;
 
-    const timeout = body.stream ? this.streamTimeoutMs : this.timeoutMs;
-    const start = Date.now();
+    return tracer.startActiveSpan(`${this.spanName}`, { kind: SpanKind.CLIENT }, async (span) => {
+      try {
+        span.setAttribute("llm.provider", this.config.name);
+        span.setAttribute("llm.model", body.model);
+        span.setAttribute("llm.streaming", body.stream ?? false);
+        span.setAttribute("http.method", "POST");
+        span.setAttribute("http.url", this.config.getUrl(endpoint));
 
-    let resp: Response;
-    try {
-      resp = await fetch(this.config.getUrl(path ?? this.config.completionPath), {
-        method: "POST",
-        headers: this.config.getHeaders(),
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeout),
-      });
-    } catch (err) {
-      if (this.config.reportHealth !== false) {
-        await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+        this.config.checkConfig();
+
+        const timeout = body.stream ? this.streamTimeoutMs : this.timeoutMs;
+        const start = Date.now();
+
+        let resp: Response;
+        try {
+          resp = await fetch(this.config.getUrl(endpoint), {
+            method: "POST",
+            headers: this.config.getHeaders(),
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(timeout),
+          });
+        } catch (err) {
+          if (this.config.reportHealth !== false) {
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+          }
+          span.setAttribute("error", true);
+          span.setAttribute("error.type", "connection_error");
+          const message = err instanceof Error ? err.message : String(err);
+          throw Object.assign(
+            new Error(`${this.config.name} connection failed: ${message}`),
+            { status: 502 }
+          );
+        }
+
+        span.setAttribute("http.status_code", resp.status);
+
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => "");
+          if (resp.status >= 500 && this.config.reportHealth !== false) {
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+          }
+          span.setAttribute("error", true);
+          this.config.mapError(resp.status, text);
+        }
+
+        span.setStatus({ code: SpanStatusCode.OK });
+        return resp;
+      } catch (err) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err instanceof Error ? err.message : "Unknown error",
+        });
+        span.recordException(err instanceof Error ? err : new Error(String(err)));
+        throw err;
+      } finally {
+        span.end();
       }
-      const message = err instanceof Error ? err.message : String(err);
-      throw Object.assign(
-        new Error(`${this.config.name} connection failed: ${message}`),
-        { status: 502 }
-      );
-    }
-
-    if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      if (resp.status >= 500 && this.config.reportHealth !== false) {
-        await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
-      }
-      this.config.mapError(resp.status, text);
-    }
-
-    return resp;
+    });
   }
 
   public async chatCompletion(body: {
