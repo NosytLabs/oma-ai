@@ -136,11 +136,6 @@ export async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 // PRICE CACHE & DEDUP
 // =============================================================================
 
-interface PriceCache {
-  data: CryptoPrice[]
-  timestamp: number
-}
-
 let priceCache: PriceCache | null = null
 let ongoingFetch: Promise<PriceData> | null = null
 
