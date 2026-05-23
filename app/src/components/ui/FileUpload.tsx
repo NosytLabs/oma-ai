@@ -62,6 +62,7 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
         <Image src={preview} alt="Upload preview" fill className="object-cover" />
         <button
           onClick={handleClear}
+          aria-label="Remove image"
           className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-xl text-zinc-600 hover:text-rose-600 hover:bg-white shadow-lg transition-all"
         >
           <X className="w-4 h-4" />
@@ -100,6 +101,7 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
         type="file"
         accept={accept}
         onChange={handleChange}
+        aria-label="File upload"
         className="hidden"
       />
       {error && (

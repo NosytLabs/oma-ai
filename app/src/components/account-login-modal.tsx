@@ -112,6 +112,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close modal"
             className="rounded-lg p-2 text-text-secondary hover:bg-surface hover:text-text transition-colors"
           >
             <X className="h-5 w-5" />
@@ -119,7 +120,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
         </div>
 
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+          <div id="account-error" role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
             <span className="text-sm text-red-400">{error}</span>
           </div>
@@ -137,6 +138,9 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
                 onChange={e => setAccountNumber(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
                 placeholder="OMA-XXXX-XXXX-XXXX"
+                aria-label="Account number"
+                aria-invalid={!!error}
+                aria-describedby="account-error"
                 className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-dim focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 autoFocus
                 disabled={loading}
@@ -217,6 +221,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
               </code>
               <button
                 onClick={handleCopy}
+                aria-label={copied ? 'Copied' : 'Copy to clipboard'}
                 className="shrink-0 rounded-lg p-2 transition-colors hover:bg-indigo-500/10 hover:text-indigo-500"
               >
                 {copied ? (

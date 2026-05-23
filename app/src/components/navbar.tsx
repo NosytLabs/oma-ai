@@ -114,6 +114,9 @@ export function Navbar() {
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 border border-cyan-500/30 rounded-xl hover:border-cyan-400/50 hover:bg-cyan-500/15 transition-all duration-200"
+                  aria-label="User menu"
+                  aria-expanded={showUserMenu}
+                  aria-haspopup="true"
                 >
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -162,6 +165,9 @@ export function Navbar() {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label={mobileOpen ? 'Close mobile menu' : 'Open mobile menu'}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
             >
               {mobileOpen ? (
                 <X className="w-5 h-5" />
@@ -173,7 +179,7 @@ export function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-200">
+          <div id="mobile-menu" className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-200">
             <div className="pt-4 pb-2 border-t border-zinc-800/50 space-y-1">
               {navLinks.map((link) => (
                 <Link

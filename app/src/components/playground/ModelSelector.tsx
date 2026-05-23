@@ -51,6 +51,9 @@ export function ModelSelector({ model, setModel }: ModelSelectorProps) {
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label="Select AI model"
         className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-border rounded-full hover:border-accent transition-all duration-200 group"
       >
         <span className="relative flex h-2 w-2">
@@ -69,6 +72,8 @@ export function ModelSelector({ model, setModel }: ModelSelectorProps) {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
             className="absolute top-full left-0 mt-2 w-80 bg-panel border border-border rounded-xl shadow-xl overflow-hidden z-50"
+            role="listbox"
+            aria-label="Available AI models"
           >
             <div className="p-3 border-b border-border">
               <div className="relative">

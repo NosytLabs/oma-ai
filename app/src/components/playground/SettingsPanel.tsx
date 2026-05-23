@@ -72,6 +72,7 @@ function MCPConnector() {
     <div className="pt-4 border-t border-border">
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="flex items-center justify-between w-full text-xs font-medium text-zinc-400 hover:text-accent transition-colors"
       >
         <span className="flex items-center gap-2">
@@ -169,6 +170,7 @@ export function SettingsPanel({
 
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
+        aria-expanded={showAdvanced}
         className="flex items-center gap-2 text-xs text-zinc-500 hover:text-accent transition-colors"
       >
         {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -187,6 +189,9 @@ export function SettingsPanel({
               <label className="text-xs font-medium text-zinc-400">Stream responses</label>
               <button
                 onClick={() => setStream(!stream)}
+                role="switch"
+                aria-checked={stream}
+                aria-label="Stream responses"
                 className={`relative w-10 h-5 rounded-full transition-colors ${stream ? 'bg-accent' : 'bg-zinc-700'}`}
               >
                 <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${stream ? 'translate-x-5' : ''}`} />

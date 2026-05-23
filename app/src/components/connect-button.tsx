@@ -39,6 +39,8 @@ export function ConnectButton() {
         <button
           onClick={() => setOpen(!open)}
           className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-400 transition-all hover:border-cyan-400/50 hover:bg-cyan-500/15"
+          aria-expanded={open}
+          aria-label="Wallet menu"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -74,6 +76,8 @@ export function ConnectButton() {
       <button
         onClick={() => setOpen(!open)}
         disabled={isConnecting}
+        aria-expanded={open}
+        aria-label="Connect wallet"
         className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-5 py-2.5 text-sm font-semibold text-cyan-400 transition-all hover:border-cyan-400/50 hover:bg-cyan-500/15"
       >
         <Wallet className="h-4 w-4" />

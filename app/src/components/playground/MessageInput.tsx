@@ -50,6 +50,7 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
         {loading ? (
           <button
             onClick={onStop}
+            aria-label="Stop generation"
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
           >
             <X className="w-5 h-5" />
@@ -58,6 +59,7 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
           <button
             onClick={onSubmit}
             disabled={!input.trim()}
+            aria-label="Send message"
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-void transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none animate-pulse-glow"
           >
             <Send className="w-5 h-5" />
