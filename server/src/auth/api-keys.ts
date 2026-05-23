@@ -7,12 +7,12 @@ import { eq, and } from "drizzle-orm";
 function timingSafeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a, "utf8");
   const bufB = Buffer.from(b, "utf8");
-  if (bufA.length !== bufB.length) {
-    const dummy = Buffer.alloc(Math.max(bufA.length, bufB.length), 0);
-    crypto.timingSafeEqual(dummy, dummy);
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
+  const len = Math.max(bufA.length, bufB.length);
+  const aPadded = Buffer.alloc(len);
+  const bPadded = Buffer.alloc(len);
+  bufA.copy(aPadded);
+  bufB.copy(bPadded);
+  return crypto.timingSafeEqual(aPadded, bPadded);
 }
 
 export async function createApiKey(userId: string, name: string) {
@@ -37,9 +37,9 @@ export async function createApiKey(userId: string, name: string) {
 
 export async function validateApiKey(rawKey: string) {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
-  const results = await db.select().from(apiKeys).where(
+  const results = await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(
     and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.active, true))
-  ).limit(1);
+  ).returning();
   if (results.length === 0) return null;
   const apiKey = results[0];
   const storedPrefix = apiKey.keyPrefix;

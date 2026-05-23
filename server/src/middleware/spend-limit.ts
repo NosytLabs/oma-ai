@@ -1,27 +1,7 @@
 import type { Context, Next } from "hono";
-import { createClient } from "redis";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
-
-let redisClient: ReturnType<typeof createClient> | null = null;
-let redisReady = false;
-
-async function getRedis() {
-  if (redisClient && redisReady) return redisClient;
-  try {
-    if (!redisClient) {
-      redisClient = createClient({ url: config.REDIS_URL ?? "redis://localhost:6379" });
-      redisClient.on("error", () => { redisReady = false; });
-      redisClient.on("ready", () => { redisReady = true; });
-      await redisClient.connect();
-      redisReady = true;
-    }
-    return redisClient;
-  } catch {
-    redisReady = false;
-    return null;
-  }
-}
+import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 
 function todayKey(keyHash: string): string {
   const date = new Date().toISOString().slice(0, 10);
@@ -32,8 +12,12 @@ export async function trackSpend(
   keyHash: string,
   costCents: number,
 ): Promise<void> {
-  const redis = await getRedis();
-  if (!redis || !redisReady) return;
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  if (!redis || !ready) {
+    console.error("Redis not available for trackSpend");
+    return;
+  }
   const key = todayKey(keyHash);
   const val = await redis.incrByFloat(key, costCents);
   if (typeof val === "number" && val === costCents) {
@@ -50,11 +34,14 @@ export function spendLimit() {
     }
 
     const limit = config.SPEND_LIMIT_DAILY_CENTS;
-    const redis = await getRedis();
-    if (!redis || !redisReady) {
-      console.warn("[spend-limit] Redis unavailable -- skipping spend limit check, allowing request");
-      await next();
-      return;
+    const redis = await getRedisClient();
+    const ready = isRedisReady();
+    if (!redis || !ready) {
+      console.error("[spend-limit] CRITICAL: Redis unavailable -- failing closed for spend limiting");
+      return c.json(
+        { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "rate_limit_unavailable" } },
+        503,
+      );
     }
 
     const key = todayKey(apiKey.keyHash);

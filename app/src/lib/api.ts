@@ -249,6 +249,35 @@ export interface HealthResponse {
   uptime: number;
 }
 
+export interface X402VerifyResponse {
+  valid: boolean;
+  address?: string;
+  error?: string;
+}
+
+export interface X402SettleResponse {
+  settled: boolean;
+  receipt?: string;
+  error?: string;
+}
+
+export interface ChatCompletionsResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: { role: string; content: string };
+    finish_reason: string;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
 export { ApiError };
 
 export interface WalletResponse {
@@ -422,7 +451,7 @@ export const api = {
 
   inference: {
     chatCompletions(body: unknown) {
-      return request<unknown>('/v1/chat/completions', {
+      return request<ChatCompletionsResponse>('/v1/chat/completions', {
         method: 'POST',
         body: JSON.stringify(body),
       });
@@ -431,11 +460,11 @@ export const api = {
 
   x402: {
     verify() {
-      return request<unknown>('/x402/verify', { method: 'POST' });
+      return request<X402VerifyResponse>('/x402/verify', { method: 'POST' });
     },
 
     settle() {
-      return request<unknown>('/x402/settle', { method: 'POST' });
+      return request<X402SettleResponse>('/x402/settle', { method: 'POST' });
     },
   },
 

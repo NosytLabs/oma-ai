@@ -22,15 +22,15 @@ export const depositStatusEnum = pgEnum("deposit_status", [
 export const depositTypeEnum = pgEnum("deposit_type", [
   "usdc_direct",
   "usdc_solana",
-  "oma_token",
   "houdini_swap",
   "cctp_crosschain",
   "lifi_swap",
   "jupiter_swap",
   "solana_direct",
+  "payment_link",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm"]);
+export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -54,6 +54,7 @@ export const apiKeys = pgTable(
     keyHash: text("key_hash").notNull(),
     name: text("name").notNull(),
     active: boolean("active").default(true).notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId)]
@@ -101,6 +102,7 @@ export const usageRecords = pgTable(
   "usage_records",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    requestId: text("request_id").notNull(), // Unique request identifier for audit trail
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
@@ -119,20 +121,12 @@ export const usageRecords = pgTable(
   },
   (t) => [
     index("idx_usage_user").on(t.userId),
+    index("idx_usage_api_key").on(t.apiKeyId),
     index("idx_usage_model").on(t.model),
     index("idx_usage_created").on(t.createdAt),
+    index("idx_usage_request").on(t.requestId),
   ]
 );
-
-export const stakingTiers = pgTable("staking_tiers", {
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .primaryKey(),
-  omaStaked: numeric("oma_staked", { precision: 18, scale: 8 }).default("0").notNull(),
-  discountPercent: integer("discount_percent").default(0).notNull(),
-  cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
 
 export const providerHealth = pgTable("provider_health", {
   provider: providerEnum("provider").primaryKey(),
@@ -150,9 +144,11 @@ export const creditBatches = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
-    remainingCents: numeric("remaining_cents", { precision: 18, scale: 2 }).notNull(),
+amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
+  remainingCents: numeric("remaining_cents", { precision: 18, scale: 2 }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    paymentMethod: text("payment_method").default("usdc"),
     depositId: uuid("deposit_id")
       .references(() => deposits.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -160,8 +156,46 @@ export const creditBatches = pgTable(
   (t) => [
     index("idx_credit_batches_user").on(t.userId),
     index("idx_credit_batches_expiry").on(t.expiresAt),
+    index("idx_credit_batches_user_remaining").on(t.userId, t.remainingCents),
     index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
   ]
+);
+
+export const creditTransfers = pgTable(
+  "credit_transfers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fromUserId: uuid("from_user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    toUserId: uuid("to_user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    amountDollars: numeric("amount_dollars", { precision: 18, scale: 2 }).notNull(),
+    status: text("status").default("pending").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("idx_credit_transfers_from").on(t.fromUserId),
+    index("idx_credit_transfers_to").on(t.toUserId),
+  ]
+);
+
+export const autoReloadSettings = pgTable(
+  "auto_reload_settings",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .primaryKey(),
+    enabled: boolean("enabled").default(false).notNull(),
+    thresholdCents: numeric("threshold_cents", { precision: 18, scale: 2 }).default("500").notNull(),
+    reloadAmountCents: numeric("reload_amount_cents", { precision: 18, scale: 2 }).default("10000").notNull(),
+    spendLimitCents: numeric("spend_limit_cents", { precision: 18, scale: 2 }).default("100000").notNull(),
+    paymentMethod: text("payment_method").default("usdc"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  }
 );
 
 import { relations } from "drizzle-orm";
@@ -171,9 +205,29 @@ export const usersRelations = relations(users, ({ many }) => ({
   deposits: many(deposits),
   creditBalances: many(creditBalances),
   usageRecords: many(usageRecords),
-  stakingTiers: many(stakingTiers),
   creditBatches: many(creditBatches),
+  creditTransfersFrom: many(creditTransfers, { relationName: "fromUser" }),
+  creditTransfersTo: many(creditTransfers, { relationName: "toUser" }),
+  autoReloadSettings: many(autoReloadSettings),
 }));
+
+export const settlements = pgTable(
+  "settlements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    txHash: text("tx_hash").notNull(),
+    amount: text("amount").notNull(),
+    networkId: text("network_id").notNull(),
+    payee: text("payee").notNull(),
+    receipt: text("receipt").notNull(),
+    settledAt: timestamp("settled_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_settlements_txhash").on(t.txHash),
+    index("idx_settlements_network").on(t.networkId),
+    index("idx_settlements_payee").on(t.payee),
+  ]
+);
 
 export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
   user: one(users, { fields: [apiKeys.userId], references: [users.id] }),
@@ -194,13 +248,18 @@ export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
   apiKey: one(apiKeys, { fields: [usageRecords.apiKeyId], references: [apiKeys.id] }),
 }));
 
-export const stakingTiersRelations = relations(stakingTiers, ({ one }) => ({
-  user: one(users, { fields: [stakingTiers.userId], references: [users.id] }),
-}));
-
 export const creditBatchesRelations = relations(creditBatches, ({ one }) => ({
   user: one(users, { fields: [creditBatches.userId], references: [users.id] }),
   deposit: one(deposits, { fields: [creditBatches.depositId], references: [deposits.id] }),
+}));
+
+export const creditTransfersRelations = relations(creditTransfers, ({ one }) => ({
+  fromUser: one(users, { fields: [creditTransfers.fromUserId], references: [users.id], relationName: "fromUser" }),
+  toUser: one(users, { fields: [creditTransfers.toUserId], references: [users.id], relationName: "toUser" }),
+}));
+
+export const autoReloadSettingsRelations = relations(autoReloadSettings, ({ one }) => ({
+  user: one(users, { fields: [autoReloadSettings.userId], references: [users.id] }),
 }));
 
 export const oraclePrices = pgTable(
@@ -214,4 +273,18 @@ export const oraclePrices = pgTable(
     capturedAt: timestamp("captured_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("idx_oracle_source").on(t.source), index("idx_oracle_captured").on(t.capturedAt)]
+);
+
+export const stakingTiers = pgTable(
+  "staking_tiers",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .primaryKey(),
+    omaStaked: numeric("oma_staked", { precision: 18, scale: 2 }).default("0").notNull(),
+    discountPercent: integer("discount_percent").default(0).notNull(),
+    cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  }
 );

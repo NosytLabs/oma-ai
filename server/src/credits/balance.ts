@@ -1,25 +1,22 @@
 import { db } from '../db/client.js'
-import { creditBalances, usageRecords, stakingTiers, creditBatches } from '../db/schema.js'
+import { creditBalances, usageRecords, creditBatches } from '../db/schema.js'
 import { eq, sql, and, gt, asc, lt } from 'drizzle-orm'
 
 const CREDIT_EXPIRY_DAYS = 90
 const ACTIVE_EXTENSION_DAYS = 90
 
+export function getExpiryDate(): Date {
+  const d = new Date()
+  d.setDate(d.getDate() + CREDIT_EXPIRY_DAYS)
+  return d
+}
+
 export async function getBalance(userId: string) {
-  const [sumRow] = await db.select({ total: sql`COALESCE(SUM(${creditBatches.remainingCents}), 0)` })
-    .from(creditBatches)
-    .where(and(
-      eq(creditBatches.userId, userId),
-      gt(creditBatches.expiresAt, new Date()),
-    ))
-
-  const batchTotal = String(sumRow?.total ?? '0')
-
   const rows = await db.select().from(creditBalances).where(eq(creditBalances.userId, userId))
 
   if (!rows.length) {
     return {
-      balanceCents: batchTotal,
+      balanceCents: '0',
       totalDepositedCents: '0',
       totalUsedCents: '0',
       lastActivityAt: null,
@@ -28,17 +25,11 @@ export async function getBalance(userId: string) {
 
   const row = rows[0]
   return {
-    balanceCents: batchTotal,
+    balanceCents: row.balanceCents,
     totalDepositedCents: row.totalDepositedCents,
     totalUsedCents: row.totalUsedCents,
     lastActivityAt: row.lastActivityAt,
   }
-}
-
-function getExpiryDate(): Date {
-  const d = new Date()
-  d.setDate(d.getDate() + CREDIT_EXPIRY_DAYS)
-  return d
 }
 
 export async function addCredits(userId: string, amountCents: number) {
@@ -79,10 +70,11 @@ export async function deductCredits(
   markupCents: number,
   totalCents: number,
   model: string,
-  provider: "venice" | "antseed",
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra",
   apiKeyId: string,
   inputTokens: number,
   outputTokens: number,
+  requestId: string,
   latencyMs?: number,
 ) {
   await db.transaction(async (tx) => {
@@ -93,7 +85,7 @@ export async function deductCredits(
         gt(creditBatches.remainingCents, '0'),
         gt(creditBatches.expiresAt, new Date()),
       ))
-      .orderBy(asc(creditBatches.createdAt))
+      .orderBy(asc(creditBatches.expiresAt), asc(creditBatches.remainingCents))
       .for('update')
 
     const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
@@ -135,6 +127,7 @@ export async function deductCredits(
     }
 
     await tx.insert(usageRecords).values({
+      requestId,
       userId,
       costCents: String(costCents),
       markupCents: String(markupCents),
@@ -147,12 +140,6 @@ export async function deductCredits(
       latencyMs: latencyMs ?? null,
     })
   })
-}
-
-export async function getStakingDiscount(userId: string): Promise<number> {
-  const rows = await db.select().from(stakingTiers).where(eq(stakingTiers.userId, userId))
-  if (!rows.length) return 0
-  return Number(rows[0].discountPercent)
 }
 
 export async function refundCredits(userId: string, amountCents: string) {
@@ -197,8 +184,8 @@ export async function preflightDeduction(userId: string, totalCents: string): Pr
           gt(creditBatches.remainingCents, '0'),
           gt(creditBatches.expiresAt, new Date()),
         ))
-        .orderBy(asc(creditBatches.createdAt))
-        .for('update')
+      .orderBy(asc(creditBatches.expiresAt), asc(creditBatches.remainingCents))
+      .for('update')
 
       const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
       const required = Number(totalCents)
@@ -287,4 +274,8 @@ export async function extendExpiringBatches(userId: string): Promise<number> {
   }
 
   return expiringBatches.length
+}
+
+export async function getStakingDiscount(_userId: string): Promise<number> {
+  return 0
 }

@@ -8,7 +8,7 @@ import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
 function generateAccountNumber(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -16,7 +16,7 @@ function generateAccountNumber(): string {
   for (let i = 0; i < 3; i++) {
     let segment = "";
     for (let j = 0; j < 4; j++) {
-      segment += chars[Math.floor(Math.random() * chars.length)];
+      segment += chars[randomBytes(1)[0] % chars.length];
     }
     segments.push(segment);
   }
@@ -67,8 +67,23 @@ authRoutes.post("/auth/verify", rateLimit({ windowMs: 60_000, maxRequests: 20 })
   const verified = await verifySiweMessage(message, signature);
   if (!verified) return c.json({ error: { message: "SIWE verification failed", type: "authentication_error" } }, 401);
   const user = await getOrCreateUser(verified.address);
+  
+  let accountNumber = user.accountNumber;
+  if (!accountNumber) {
+    accountNumber = generateAccountNumber();
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await db.select({ id: users.id }).from(users).where(eq(users.accountNumberHash, hashAccountNumber(accountNumber))).limit(1);
+      if (existing.length === 0) break;
+      accountNumber = generateAccountNumber();
+      attempts++;
+    }
+    const accountNumberHash = hashAccountNumber(accountNumber);
+    await db.update(users).set({ accountNumber, accountNumberHash }).where(eq(users.id, user.id));
+  }
+  
   const token = await generateSessionToken(user.id);
-  return c.json({ token, address: user.address });
+  return c.json({ token, address: user.address, accountNumber });
 });
 
 authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
@@ -140,7 +155,7 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
   
   let accountNumber = generateAccountNumber();
   let attempts = 0;
-  while (attempts < 10) {
+  while (attempts < 100) {
     const existing = await db.select({ id: users.id }).from(users).where(eq(users.accountNumberHash, hashAccountNumber(accountNumber))).limit(1);
     if (existing.length === 0) break;
     accountNumber = generateAccountNumber();
@@ -160,8 +175,23 @@ authRoutes.post("/auth/account/login", rateLimit({ windowMs: 60_000, maxRequests
   const { accountNumber } = parsed.data;
   const accountNumberHash = hashAccountNumber(accountNumber.toUpperCase());
   
-  const [user] = await db.select({ id: users.id, address: users.address }).from(users).where(eq(users.accountNumberHash, accountNumberHash)).limit(1);
+  const [user] = await db.select({ id: users.id, address: users.address, accountNumber: users.accountNumber }).from(users).where(eq(users.accountNumberHash, accountNumberHash)).limit(1);
   if (!user) return c.json({ error: { message: "Invalid account number", type: "authentication_error" } }, 401);
+  
+  // Auto-create account number if user doesn't have one (edge case: migrated user)
+  let newAccountNumber = user.accountNumber;
+  if (!newAccountNumber) {
+    newAccountNumber = generateAccountNumber();
+    let attempts = 0;
+    while (attempts < 100) {
+      const existing = await db.select({ id: users.id }).from(users).where(eq(users.accountNumberHash, hashAccountNumber(newAccountNumber))).limit(1);
+      if (existing.length === 0) break;
+      newAccountNumber = generateAccountNumber();
+      attempts++;
+    }
+    const newHash = hashAccountNumber(newAccountNumber);
+    await db.update(users).set({ accountNumber: newAccountNumber, accountNumberHash: newHash }).where(eq(users.id, user.id));
+  }
   
   const token = await generateSessionToken(user.id);
   return c.json({ token, address: user.address, hasApiKey: true });

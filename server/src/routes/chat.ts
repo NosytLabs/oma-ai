@@ -1,8 +1,9 @@
+import crypto from "crypto";
 import { Hono } from "hono";
 import { z } from "zod";
 import { bearerAuth } from "../auth/middleware.js";
 import { handleChatCompletion } from "../inference/router.js";
-import { MODEL_CATALOG, getModel, VIDEO_MODELS } from "../inference/models.js";
+import { MODEL_CATALOG, getModel, VIDEO_MODELS, calculateCostCredits } from "../inference/models.js";
 import * as venice from "../inference/venice.js";
 import { getBalance, deductCredits } from "../credits/balance.js";
 import { estimateTokens } from "../inference/models.js";
@@ -12,6 +13,36 @@ import type { OmaEnv } from "../types.js";
 import { withSpan } from "../tracing.js";
 import { SpanKind } from "@opentelemetry/api";
 
+/**
+ * x402 PAYMENT ARCHITECTURE NOTE (for Overseer's records):
+ * =======================================================
+ * x402 middleware uses FIXED/FLAT pricing per route. This is incompatible
+ * with inference routes which have VARIABLE costs based on actual token usage.
+ *
+ * The inference system already handles dynamic pricing via the credit system:
+ *   1. Preflight deduction based on estimated tokens (router.ts:171)
+ *   2. Actual cost calculation after response (router.ts:217-229)
+ *   3. Automatic refund of overestimated costs (router.ts:237-238)
+ *
+ * Applying x402 flat-fee to inference routes would either:
+ *   A) Overcharge users (flat fee > actual cost), OR
+ *   B) Undercharge and lose money (flat fee < actual cost)
+ *
+ * The x402 payment layer is correctly positioned as a CREDIT TOP-UP mechanism:
+ * - Users without credits cannot pay for inference
+ * - x402 provides onchain USDC payments to add credits via /x402/deposit
+ * - The credit system then handles the variable inference costs
+ *
+ * If true x402-native inference (without credits) is desired, the implementation
+ * would require:
+ *   1. Pre-authorize with estimated max cost
+ *   2. Store authorization in settlement cache
+ *   3. After inference, calculate actual cost and settle delta onchain
+ *   This is a significant architectural change and is not currently planned.
+ *
+ * Current design: Credits-only for inference, x402 for deposits only.
+ */
+
 export const chatRoutes = new Hono<OmaEnv>();
 
 function validationError(err: z.ZodError) {
@@ -19,7 +50,7 @@ function validationError(err: z.ZodError) {
 }
 
 const chatCompletionSchema = z.object({
-  model: z.string().min(1),
+  model: z.string().min(1).max(100),
   messages: z.array(z.object({
     role: z.enum(["system", "user", "assistant", "tool"]),
     content: z.union([z.string(), z.array(z.any())]),
@@ -32,13 +63,13 @@ const chatCompletionSchema = z.object({
 });
 
 const completionSchema = z.object({
-  model: z.string().min(1),
+  model: z.string().min(1).max(100),
   prompt: z.union([z.string(), z.array(z.string())]),
 });
 
 const embeddingsSchema = z.object({
-  model: z.string().min(1),
-  input: z.union([z.string(), z.array(z.string())]),
+  model: z.string().min(1).max(100),
+  input: z.union([z.string().max(50000), z.array(z.string().max(50000))]),
 });
 
 chatRoutes.use("/v1/chat/completions", bearerAuth);
@@ -185,7 +216,11 @@ chatRoutes.post("/v1/embeddings", async (c) => {
 
   const parsed = embeddingsSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
-  const { model, input } = parsed.data;
+  const { model } = parsed.data;
+  const input = parsed.data.input as string | string[];
+
+  const modelInfo = getModel(model);
+  if (!modelInfo) return c.json({ error: { message: `Model '${model}' not found in catalog. Available: ${Object.keys(MODEL_CATALOG).join(", ")}`, type: "invalid_request_error" } }, 400);
 
   const bal = await getBalance(userId);
   if (Number(bal.balanceCents) <= 0) {
@@ -199,12 +234,15 @@ chatRoutes.post("/v1/embeddings", async (c) => {
       return c.json({ error: { message: text || "Embedding failed", type: "inference_error" } }, resp.status as Parameters<typeof c.json>[1]);
     }
     const json = await resp.json();
-    const inputTokens = json.usage?.prompt_tokens ?? 0;
-
-    await deductCredits(userId, 1, 0, 1, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0);
+    const inputStr = typeof input === 'string' ? input : input.join('');
+    const inputTokens = json.usage?.prompt_tokens ?? estimateTokens(inputStr);
+    const requestId = crypto.randomUUID();
+    const totalCents = calculateCostCredits(model, inputTokens, 0);
+    
+    await deductCredits(userId, totalCents - 1, 0, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0, requestId);
 
     if (apiKey) {
-      trackSpend(apiKey.keyHash, 1).catch(() => {});
+      trackSpend(apiKey.keyHash, totalCents).catch(() => {});
     }
     return c.json(json);
   } catch (err) {
@@ -215,9 +253,9 @@ chatRoutes.post("/v1/embeddings", async (c) => {
 });
 
 const imageGenerationSchema = z.object({
-  model: z.string().min(1),
-  prompt: z.string().min(1),
-  n: z.number().int().positive().optional(),
+  model: z.string().min(1).max(100),
+  prompt: z.string().min(1).max(4000),
+  n: z.number().int().positive().max(10).optional(),
   size: z.string().optional(),
 });
 
@@ -235,7 +273,11 @@ chatRoutes.post("/v1/images/generations", async (c) => {
   }
 
   const imageCount = n ?? 1;
-  const totalCents = imageCount * 5;
+  const modelDef = getModel(model);
+  const pricePerImage = modelDef?.creditsPerMillionOutput 
+    ? Math.ceil((modelDef.creditsPerMillionOutput / 1_000_000) * 100) 
+    : 10;
+  const totalCents = imageCount * pricePerImage;
 
   try {
     const resp = await venice.imageGeneration({ model, prompt, n: imageCount, size });
@@ -245,7 +287,8 @@ chatRoutes.post("/v1/images/generations", async (c) => {
     }
     const json = await resp.json();
 
-    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0);
+    const requestId = crypto.randomUUID();
+    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0, requestId);
 
     if (apiKey) {
       trackSpend(apiKey.keyHash, totalCents).catch(() => {});
@@ -259,8 +302,8 @@ chatRoutes.post("/v1/images/generations", async (c) => {
 });
 
 const audioSpeechSchema = z.object({
-  model: z.string().min(1),
-  input: z.string().min(1),
+  model: z.string().min(1).max(100),
+  input: z.string().min(1).max(10000),
   voice: z.string().optional(),
   response_format: z.string().optional(),
 });
@@ -278,17 +321,18 @@ chatRoutes.post("/v1/audio/speech", async (c) => {
     return c.json({ error: { message: "Insufficient credits", type: "insufficient_quota" } }, 402);
   }
 
-  const inputTokens = estimateTokens(input);
-  const totalCents = Math.max(1, Math.ceil(inputTokens / 1000));
+const inputTokens = estimateTokens(input);
+    const totalCents = Math.max(1, Math.ceil(inputTokens / 1000));
 
-  try {
+    try {
     const resp = await venice.textToSpeech({ model, input, voice, response_format });
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
       return c.json({ error: { message: text || "Text-to-speech failed", type: "inference_error" } }, resp.status as Parameters<typeof c.json>[1]);
     }
 
-    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0);
+    const requestId = crypto.randomUUID();
+    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0, requestId);
 
     if (apiKey) {
       trackSpend(apiKey.keyHash, totalCents).catch(() => {});
@@ -305,8 +349,8 @@ chatRoutes.post("/v1/audio/speech", async (c) => {
 });
 
 const videoGenerationSchema = z.object({
-  model: z.string().min(1),
-  prompt: z.string().min(1),
+  model: z.string().min(1).max(100),
+  prompt: z.string().min(1).max(4000),
   duration: z.string().optional(),
   aspect_ratio: z.string().optional(),
   resolution: z.string().optional(),
@@ -343,7 +387,8 @@ chatRoutes.post("/v1/videos/generations", async (c) => {
       image_url,
     });
 
-    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0);
+    const requestId = crypto.randomUUID();
+    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0, requestId);
 
     if (apiKey) {
       trackSpend(apiKey.keyHash, totalCents).catch(() => {});

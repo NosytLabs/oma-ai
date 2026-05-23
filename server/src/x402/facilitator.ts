@@ -6,6 +6,9 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
+import { db } from "../db/client.js";
+import { settlements } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
 
 // ============================================================
 // Types
@@ -126,7 +129,10 @@ setInterval(cleanExpiredCache, 300_000).unref();
 // ============================================================
 
 function signReceipt(data: string): string {
-  const secret = config.RECEIPT_HMAC_SECRET || config.JWT_SECRET;
+  const secret = config.RECEIPT_HMAC_SECRET;
+  if (!secret) {
+    throw new Error("RECEIPT_HMAC_SECRET is not configured");
+  }
   const hmac = createHmac("sha256", secret);
   hmac.update(data);
   return hmac.digest("hex");
@@ -134,14 +140,14 @@ function signReceipt(data: string): string {
 
 function verifyReceipt(data: string, receipt: string): boolean {
   const expected = signReceipt(data);
-  const a = Buffer.from(receipt, "utf8");
-  const b = Buffer.from(expected, "utf8");
-  if (a.length !== b.length) {
-    const dummy = Buffer.alloc(Math.max(a.length, b.length), 0);
-    timingSafeEqual(dummy, dummy);
-    return false;
-  }
-  return timingSafeEqual(a, b);
+  const expectedBuf = Buffer.from(expected, "utf8");
+  const receiptBuf = Buffer.from(receipt, "utf8");
+  const len = Math.max(expectedBuf.length, receiptBuf.length);
+  const aPadded = Buffer.alloc(len);
+  const bPadded = Buffer.alloc(len);
+  expectedBuf.copy(aPadded);
+  receiptBuf.copy(bPadded);
+  return timingSafeEqual(aPadded, bPadded);
 }
 
 // ============================================================
@@ -204,6 +210,12 @@ async function verifyEvmPayment(
         if (decoded.functionName === "transfer") {
           const [recipient, rawAmount] = decoded.args as [string, bigint];
           const amount = formatUnits(rawAmount, USDC_DECIMALS);
+          const actualAmount = parseFloat(amount);
+          const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
+
+          if (actualAmount < requiredAmount) {
+            return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+          }
 
           if (recipient.toLowerCase() !== payeeLower) {
             return { valid: false, error: "Recipient mismatch" };
@@ -220,6 +232,12 @@ async function verifyEvmPayment(
         if (decoded.functionName === "transferFrom") {
           const [, recipient, rawAmount] = decoded.args as [string, string, bigint];
           const amount = formatUnits(rawAmount, USDC_DECIMALS);
+          const actualAmount = parseFloat(amount);
+          const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
+
+          if (actualAmount < requiredAmount) {
+            return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+          }
 
           if (recipient.toLowerCase() !== payeeLower) {
             return { valid: false, error: "Recipient mismatch" };
@@ -305,26 +323,40 @@ async function verifySolanaPayment(
     let foundTransfer = false;
     let amount = "0";
 
+    const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
+
     for (const ix of allInstructions) {
       if (
         ix.parsed?.type === "transfer" &&
         ix.parsed?.info?.destination === payload.payee
       ) {
-        foundTransfer = true;
         const isUsdc = payload.asset === SOLANA_USDC || payload.asset.toLowerCase().includes("usdc");
         const divisor = isUsdc ? 1e6 : 1e9;
         const rawAmt = Number(ix.parsed.info.lamports || ix.parsed.info.amount || 0);
         amount = (rawAmt / divisor).toString();
+        const actualAmount = parseFloat(amount);
+
+        if (actualAmount < requiredAmount) {
+          return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+        }
+
+        foundTransfer = true;
         break;
       }
       if (
         ix.parsed?.type === "transferChecked" &&
         ix.parsed?.info?.destination === payload.payee
       ) {
-        foundTransfer = true;
         const rawAmount = Number(ix.parsed.info.tokenAmount?.amount || ix.parsed.info.amount || 0);
         const decimals = ix.parsed.info.tokenAmount?.decimals ?? 6;
         amount = (rawAmount / Math.pow(10, decimals)).toString();
+        const actualAmount = parseFloat(amount);
+
+        if (actualAmount < requiredAmount) {
+          return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+        }
+
+        foundTransfer = true;
         break;
       }
     }
@@ -423,6 +455,64 @@ export async function verifyPayment(
 // Core: settlePayment
 // ============================================================
 
+export async function settlePaymentAsync(
+  txHash: string,
+  amount: string,
+  networkId: string,
+  payee: string,
+): Promise<SettlementResponse> {
+  const cacheKey = `${networkId}:${txHash}`;
+
+  const existing = settlementCache.get(cacheKey);
+  if (existing) {
+    return { settled: true, receipt: existing.receipt };
+  }
+
+  const existingDb = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
+  if (existingDb.length > 0) {
+    const record: SettlementRecord = {
+      txHash: existingDb[0].txHash,
+      amount: existingDb[0].amount,
+      networkId: existingDb[0].networkId,
+      payee: existingDb[0].payee,
+      settledAt: existingDb[0].settledAt.getTime(),
+      receipt: existingDb[0].receipt,
+    };
+    settlementCache.set(cacheKey, record);
+    return { settled: true, receipt: existingDb[0].receipt };
+  }
+
+  const settledAt = Date.now();
+  const receiptPayload = `${txHash}:${amount}:${networkId}:${payee}:${settledAt}`;
+  const receipt = signReceipt(receiptPayload);
+
+  const record: SettlementRecord = {
+    txHash,
+    amount,
+    networkId,
+    payee,
+    settledAt,
+    receipt,
+  };
+
+  settlementCache.set(cacheKey, record);
+
+  try {
+    await db.insert(settlements).values({
+      txHash,
+      amount,
+      networkId,
+      payee,
+      receipt,
+      settledAt: new Date(settledAt),
+    });
+  } catch (err) {
+    console.error("Failed to persist settlement to DB:", err);
+  }
+
+  return { settled: true, receipt };
+}
+
 export function settlePayment(
   txHash: string,
   amount: string,
@@ -454,9 +544,27 @@ export function settlePayment(
   return { settled: true, receipt };
 }
 
-export function isSettled(txHash: string, networkId: string): boolean {
+export async function isSettledAsync(txHash: string, networkId: string): Promise<boolean> {
   const cacheKey = `${networkId}:${txHash}`;
-  return settlementCache.has(cacheKey);
+  if (settlementCache.has(cacheKey)) {
+    return true;
+  }
+  const existing = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
+  return existing.length > 0;
+}
+
+export function isSettled(txHash: string, networkId: string): boolean {
+  return settlementCache.has(`${networkId}:${txHash}`);
+}
+
+export async function getSettlementReceiptAsync(txHash: string, networkId: string): Promise<string | null> {
+  const cacheKey = `${networkId}:${txHash}`;
+  const cached = settlementCache.get(cacheKey);
+  if (cached) {
+    return cached.receipt;
+  }
+  const existing = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
+  return existing[0]?.receipt ?? null;
 }
 
 export function getSettlementReceipt(txHash: string, networkId: string): string | null {
