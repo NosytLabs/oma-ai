@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useDeferredValue } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -81,6 +81,9 @@ export default function PlaygroundPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
+  const [deferredMessages, setDeferredMessages] = useState<Message[]>([])
+  const deferredMessagesDeferred = useDeferredValue(deferredMessages)
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
@@ -88,6 +91,7 @@ export default function PlaygroundPage() {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed) && parsed.length > 0) {
           setMessages(parsed)
+          setDeferredMessages(parsed)
         }
       } catch {}
     }
@@ -115,6 +119,7 @@ export default function PlaygroundPage() {
 
     const allMessages = [...messages, userMessage]
     setMessages(allMessages)
+    setDeferredMessages(allMessages)
     setInput('')
     setLoading(true)
     setError(null)
@@ -126,6 +131,7 @@ export default function PlaygroundPage() {
       timestamp: Date.now(),
     }
     setMessages([...allMessages, assistantMessage])
+    setDeferredMessages([...allMessages, assistantMessage])
 
     const startTime = Date.now()
     const abortController = new AbortController()
@@ -199,6 +205,29 @@ export default function PlaygroundPage() {
         const decoder = new TextDecoder()
         let accumulated = ''
         let tokenCount = 0
+        let lastUpdateTime = 0
+        const BATCH_INTERVAL_MS = 100
+
+        const flushToState = (force = false) => {
+          const now = Date.now()
+          if (force || now - lastUpdateTime >= BATCH_INTERVAL_MS) {
+            lastUpdateTime = now
+            setDeferredMessages(prev => {
+              const updated = [...prev]
+              const lastIdx = updated.length - 1
+              if (lastIdx >= 0) {
+                updated[lastIdx] = {
+                  ...updated[lastIdx],
+                  content: accumulated,
+                  tokens: tokenCount,
+                  latency: now - startTime,
+                  searchResults: lastIdx === updated.length - 1 ? currentSearchResults : updated[lastIdx].searchResults,
+                }
+              }
+              return updated
+            })
+          }
+        }
 
         while (true) {
           const { done, value } = await reader.read()
@@ -219,28 +248,30 @@ export default function PlaygroundPage() {
               if (delta) {
                 accumulated += delta
                 tokenCount += 1
-                setMessages(prev => {
-                  const updated = [...prev]
-                  const lastIdx = updated.length - 1
-                  if (lastIdx >= 0) {
-                    updated[lastIdx] = {
-                      ...updated[lastIdx],
-                      content: accumulated,
-                      tokens: tokenCount,
-                      latency: Date.now() - startTime,
-                      searchResults: lastIdx === updated.length - 1 ? currentSearchResults : updated[lastIdx].searchResults,
-                    }
-                  }
-                  return updated
-                })
+                flushToState()
               }
             } catch {}
           }
         }
+        flushToState(true)
       } else {
         const data = await response.json()
         const content = data.choices?.[0]?.message?.content || ''
         setMessages(prev => {
+          const updated = [...prev]
+          const lastIdx = updated.length - 1
+          if (lastIdx >= 0) {
+            updated[lastIdx] = {
+              ...updated[lastIdx],
+              content,
+              tokens: data.usage?.total_tokens || 0,
+              latency: Date.now() - startTime,
+              searchResults: currentSearchResults,
+            }
+          }
+          return updated
+        })
+        setDeferredMessages(prev => {
           const updated = [...prev]
           const lastIdx = updated.length - 1
           if (lastIdx >= 0) {
@@ -264,10 +295,24 @@ export default function PlaygroundPage() {
           }
           return updated
         })
+        setDeferredMessages(prev => {
+          const updated = [...prev]
+          if (updated[updated.length - 1]?.content === '') {
+            return updated.slice(0, -1)
+          }
+          return updated
+        })
       } else {
         const message = err instanceof Error ? err.message : 'Unknown error'
         setError(message)
         setMessages(prev => {
+          const updated = [...prev]
+          if (updated[updated.length - 1]?.content === '') {
+            return updated.slice(0, -1)
+          }
+          return updated
+        })
+        setDeferredMessages(prev => {
           const updated = [...prev]
           if (updated[updated.length - 1]?.content === '') {
             return updated.slice(0, -1)
@@ -410,11 +455,11 @@ export default function PlaygroundPage() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 py-8">
-            {messages.length === 0 ? (
+            {deferredMessagesDeferred.length === 0 ? (
               <EmptyState onPreset={handlePreset} />
             ) : (
               <div className="space-y-8">
-                {messages.map((msg, i) => (
+                {deferredMessagesDeferred.map((msg, i) => (
                   <ChatMessage
                     key={i}
                     msg={msg}
