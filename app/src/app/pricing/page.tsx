@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Check } from 'lucide-react'
+import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Check, Link2, Rocket, Sparkles } from 'lucide-react'
+import { TinyFishPricing } from '@/components/tinyfish-pricing'
 
 type Category = 'all' | 'frontier' | 'premium' | 'mid' | 'budget'
 
@@ -56,11 +57,11 @@ const CATEGORIES: { key: Category; label: string }[] = [
 ]
 
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> = {
-  all: { active: 'bg-indigo-600 text-white', inactive: 'bg-white text-slate-600 border border-slate-200' },
-  frontier: { active: 'bg-purple-600 text-white', inactive: 'bg-purple-50 text-purple-700 border border-purple-200' },
-  premium: { active: 'bg-violet-600 text-white', inactive: 'bg-violet-50 text-violet-700 border border-violet-200' },
-  mid: { active: 'bg-indigo-600 text-white', inactive: 'bg-indigo-50 text-indigo-700 border border-indigo-200' },
-  budget: { active: 'bg-emerald-600 text-white', inactive: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+  all: { active: 'bg-cyan-500 text-zinc-900', inactive: 'bg-zinc-900 text-zinc-400 border border-zinc-800' },
+  frontier: { active: 'bg-purple-500 text-white', inactive: 'bg-violet-500/10 text-purple-400 border border-purple-500/30' },
+  premium: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-500/10 text-violet-400 border border-violet-500/30' },
+  mid: { active: 'bg-cyan-500 text-zinc-900', inactive: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' },
+  budget: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' },
 }
 
 const FAQ_ITEMS = [
@@ -74,12 +75,13 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What payment methods are accepted?',
-    a: 'USDC (Direct) on Base or Solana for 1:1 USD credits, or HoudiniSwap to convert 100+ cryptocurrencies to USDC credits.'
+    a: 'USDC (Direct) on Base or Solana for 1:1 USD credits, HoudiniSwap to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request for gasless Solana/Base payments.'
   },
   {
-    q: 'What is AntSeed P2P?',
-    a: 'AntSeed is a decentralized peer-to-peer inference network routing through the OMA gateway, offering open-source models via distributed compute.'
+    q: 'What is x402 pay-per-request?',
+    a: 'x402 enables gasless AI inference payments on Solana and Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request.'
   },
+  
 ]
 
 function fmtPrice(n: number): string {
@@ -125,16 +127,16 @@ function AnimatedSection({ children, delay = 0, className = '' }: { children: Re
 
 function AccordionItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="border-b border-slate-200">
+    <div className="border-b border-zinc-800/50">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between py-5 text-left"
       >
-        <span className="font-medium text-slate-900">{item.q}</span>
-        <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="font-medium text-white">{item.q}</span>
+        <ChevronDown className={`h-5 w-5 text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}>
-        <p className="text-sm text-slate-600">{item.a}</p>
+        <p className="text-sm text-zinc-500">{item.a}</p>
       </div>
     </div>
   )
@@ -150,48 +152,78 @@ export default function PricingPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <AnimatedSection>
-          <div className="mb-2 text-sm font-medium text-indigo-600">OMA AI Gateway</div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            AI API Pricing — OpenAI-Compatible Inference
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-medium text-cyan-300">OpenAI-Compatible Pricing</span>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            AI API Pricing
           </h1>
-          <p className="mt-4 text-lg text-slate-600">
-            Credit-based billing. No subscriptions. No minimums. Venice and AntSeed P2P networks.
+          <p className="mt-4 text-lg text-zinc-500">
+            Credit-based billing. No subscriptions. No minimums. Access 50+ models via unified API.
           </p>
         </AnimatedSection>
 
         <AnimatedSection delay={100} className="mt-10">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6 hover:border-cyan-500/30 transition-colors">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
                 <CreditCard className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">USDC (Direct)</h3>
-              <p className="mt-2 text-sm text-slate-600">Send USDC on Base or Solana. 1:1 USD credits. Instant settlement.</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <h3 className="text-lg font-semibold text-white">USDC (Direct)</h3>
+              <p className="mt-2 text-sm text-zinc-500">Send USDC on Base or Solana. 1:1 USD credits. Instant settlement.</p>
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
                 <Check className="h-3.5 w-3.5" />
                 INSTANT
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6 hover:border-amber-500/30 transition-colors">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
                 <Coins className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">HoudiniSwap</h3>
-              <p className="mt-2 text-sm text-slate-600">Swap 100+ cryptocurrencies (BTC, XMR, SOL, DOGE) to USDC on Base.</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              <h3 className="text-lg font-semibold text-white">HoudiniSwap</h3>
+              <p className="mt-2 text-sm text-zinc-500">Swap 100+ cryptocurrencies (BTC, XMR, SOL, DOGE) to USDC on Base.</p>
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-zinc-800/50 px-3 py-1 text-xs font-semibold text-zinc-400 border border-zinc-700/50">
                 100+ COINS
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-zinc-900/50 p-6 hover:border-cyan-500/40 transition-colors">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                <Rocket className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">x402 Pay-Per-Request</h3>
+              <p className="mt-2 text-sm text-zinc-500">Gasless payments on Solana/Base. Pay per API request with automatic fee deduction.</p>
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-400 border border-cyan-500/20">
+                <Zap className="h-3.5 w-3.5" />
+                GASLESS
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection delay={150} className="mt-6">
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+            <div className="flex items-start gap-3">
+              <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
+              <div>
+                <h4 className="font-semibold text-cyan-300">x402 Protocol Integration</h4>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Native x402 support enables developers to integrate AI payments directly into applications without managing credit balances. 
+                  <Link href="/crypto-payments" className="ml-1 font-medium text-cyan-400 hover:underline">Learn more</Link>
+                </p>
               </div>
             </div>
           </div>
         </AnimatedSection>
 
         <AnimatedSection delay={200} className="mt-12">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 p-6">
+          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50">
+            <div className="border-b border-zinc-800/50 p-6">
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((cat) => (
                   <button
@@ -207,38 +239,38 @@ export default function PricingPage() {
                   </button>
                 ))}
               </div>
-              <p className="mt-4 text-sm text-slate-500">{filtered.length} models</p>
+              <p className="mt-4 text-sm text-zinc-500">{filtered.length} models</p>
             </div>
-            <div className="overflow-x-auto -mx-4 px-4 sm:overflow-visible sm:mx-0 sm:px-0">
-              <table className="w-full min-w-[600px] text-left">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Model</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Provider</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Input / 1M</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Output / 1M</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Context</th>
+                  <tr className="border-b border-zinc-800/50 bg-zinc-900/30">
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Model</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Provider</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Input / 1M</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Output / 1M</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Context</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((m, i) => (
-                    <tr key={m.id} className={`border-b border-slate-100 transition-colors hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                    <tr key={m.id} className={`border-b border-zinc-800/30 transition-colors hover:bg-zinc-800/20 ${i % 2 === 1 ? 'bg-zinc-900/20' : ''}`}>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">{m.name}</div>
-                        <div className="text-xs text-slate-500">{m.id}</div>
+                        <div className="font-medium text-white">{m.name}</div>
+                        <div className="text-xs text-zinc-600">{m.id}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          m.provider === 'Venice' ? 'bg-blue-100 text-blue-700' :
-                          m.provider === 'AntSeed' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-amber-100 text-amber-700'
+                          m.provider === 'Venice' ? 'bg-blue-500/20 text-blue-400' :
+                          m.provider === 'AntSeed' ? 'bg-emerald-500/20 text-emerald-400' :
+                          'bg-amber-500/20 text-amber-400'
                         }`}>
                           {m.provider}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-slate-900">{fmtPrice(m.inputPer1M)}</td>
-                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-slate-900">{fmtPrice(m.outputPer1M)}</td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-500">{m.ctx}</td>
+                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-cyan-400">{fmtPrice(m.inputPer1M)}</td>
+                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-zinc-300">{fmtPrice(m.outputPer1M)}</td>
+                      <td className="px-6 py-4 text-right text-sm text-zinc-500">{m.ctx}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -248,10 +280,10 @@ export default function PricingPage() {
         </AnimatedSection>
 
         <AnimatedSection delay={300} className="mt-12">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6">
             <div className="mb-4 flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-indigo-500" />
-              <h3 className="text-lg font-semibold text-slate-900">Frequently Asked Questions</h3>
+              <HelpCircle className="h-5 w-5 text-cyan-500" />
+              <h3 className="text-lg font-semibold text-white">Frequently Asked Questions</h3>
             </div>
             <div>
               {FAQ_ITEMS.map((item, i) => (
@@ -269,46 +301,48 @@ export default function PricingPage() {
         <AnimatedSection delay={400} className="mt-12 text-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/deposit"
-              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-xl"
+              href="/dashboard"
+              className="btn-primary text-lg px-8 py-4"
             >
-              <Zap className="h-5 w-5" />
+              <Zap className="h-5 w-5 mr-2" />
               Start AI Inference
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
             <Link
               href="/deposit"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-emerald-50 px-8 py-4 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100"
+              className="btn-secondary text-lg px-8 py-4"
             >
-              <Coins className="h-5 w-5" />
+              <Coins className="h-5 w-5 mr-2" />
               Deposit Crypto
             </Link>
-            <Link href="/models" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-4 text-sm font-medium text-slate-700 transition-all hover:border-indigo-300 hover:text-indigo-600">
+            <Link href="/models" className="px-6 py-4 text-base font-medium text-zinc-500 hover:text-cyan-400 transition-colors">
               View All Models
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="w-4 h-4 ml-2 inline-block" />
             </Link>
           </div>
         </AnimatedSection>
 
+        <TinyFishPricing />
+
         <AnimatedSection delay={500} className="mt-12">
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-            <h4 className="font-semibold text-amber-800">Credits & Billing</h4>
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+            <h4 className="font-semibold text-amber-300">Credits & Billing</h4>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="flex items-start gap-2">
                 <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-amber-800">Credits are 1:1 USD, non-redeemable, non-transferable</span>
+                <span className="text-sm text-zinc-400">Credits are 1:1 USD, non-redeemable, non-transferable</span>
               </div>
               <div className="flex items-start gap-2">
                 <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-amber-800">12-month rolling expiry from date of deposit</span>
+                <span className="text-sm text-zinc-400">12-month rolling expiry from date of deposit</span>
               </div>
               <div className="flex items-start gap-2">
                 <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-amber-800">No credit float -- credits appear after settlement</span>
+                <span className="text-sm text-zinc-400">No credit float -- credits appear after settlement</span>
               </div>
               <div className="flex items-start gap-2">
                 <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-amber-800">Billed per token, deducted in real-time</span>
+                <span className="text-sm text-zinc-400">Billed per token, deducted in real-time</span>
               </div>
             </div>
           </div>

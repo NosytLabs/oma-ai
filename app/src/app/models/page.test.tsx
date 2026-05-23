@@ -22,7 +22,7 @@ afterEach(() => {
 describe('ModelsPage', () => {
   it('renders the models page heading', () => {
     render(<ModelsPage />)
-    expect(screen.getByText(/AI Models API/i)).toBeInTheDocument()
+    expect(screen.getByText(/Every model\. One API\./i)).toBeInTheDocument()
   })
 
   it('renders category filter buttons', () => {

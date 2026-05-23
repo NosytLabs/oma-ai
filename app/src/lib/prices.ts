@@ -133,20 +133,25 @@ export async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 }
 
 // =============================================================================
-// PRICE CACHE
+// PRICE CACHE & DEDUP
 // =============================================================================
 
+interface PriceCache {
+  data: CryptoPrice[]
+  timestamp: number
+}
+
 let priceCache: PriceCache | null = null
+let ongoingFetch: Promise<PriceData> | null = null
 
 /**
- * Get all crypto prices with caching
+ * Get all crypto prices with caching and request deduplication
  * Returns cached data if fresh (< 30 seconds old), otherwise fetches new data
  */
 export async function getCryptoPrices(forceRefresh = false): Promise<PriceData> {
   const now = Date.now()
   const isCacheValid = priceCache && (now - priceCache.timestamp) < CACHE_DURATION
 
-  // Return cached data if valid and not forcing refresh
   if (isCacheValid && !forceRefresh && priceCache) {
     return {
       sol: priceCache.data.find(p => p.symbol === 'SOL') || null,
@@ -155,39 +160,39 @@ export async function getCryptoPrices(forceRefresh = false): Promise<PriceData> 
     }
   }
 
-  // Fetch fresh data from both sources in parallel
-  const [jupiterPrice, coingeckoPrices] = await Promise.all([
-    fetchSolPriceFromJupiter(),
-    fetchPricesFromCoinGecko(),
-  ])
-
-  // Merge prices, preferring Jupiter for SOL (more real-time)
-  const mergedPrices: CryptoPrice[] = []
-
-  // Add Jupiter SOL price if available
-  if (jupiterPrice) {
-    mergedPrices.push(jupiterPrice)
+  if (ongoingFetch && !forceRefresh) {
+    return ongoingFetch
   }
 
-  // Add CoinGecko prices (skip SOL if we have Jupiter price)
-  for (const price of coingeckoPrices) {
-    if (price.symbol === 'SOL' && jupiterPrice) {
-      // Use Jupiter price instead
-      continue
+  ongoingFetch = (async () => {
+    const [jupiterPrice, coingeckoPrices] = await Promise.all([
+      fetchSolPriceFromJupiter(),
+      fetchPricesFromCoinGecko(),
+    ])
+
+    const mergedPrices: CryptoPrice[] = []
+
+    if (jupiterPrice) {
+      mergedPrices.push(jupiterPrice)
     }
-    mergedPrices.push(price)
-  }
 
-  // Update cache
-  priceCache = {
-    data: mergedPrices,
-    timestamp: now,
-  }
+    for (const price of coingeckoPrices) {
+      if (price.symbol === 'SOL' && jupiterPrice) continue
+      mergedPrices.push(price)
+    }
 
-  return {
-    sol: mergedPrices.find(p => p.symbol === 'SOL') || null,
-    btc: mergedPrices.find(p => p.symbol === 'BTC') || null,
-    eth: mergedPrices.find(p => p.symbol === 'ETH') || null,
+    priceCache = { data: mergedPrices, timestamp: now }
+    return {
+      sol: mergedPrices.find(p => p.symbol === 'SOL') || null,
+      btc: mergedPrices.find(p => p.symbol === 'BTC') || null,
+      eth: mergedPrices.find(p => p.symbol === 'ETH') || null,
+    }
+  })()
+
+  try {
+    return await ongoingFetch
+  } finally {
+    ongoingFetch = null
   }
 }
 

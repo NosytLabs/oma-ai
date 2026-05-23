@@ -10,10 +10,12 @@ import { authRoutes } from "./routes/auth.js";
 import { chatRoutes } from "./routes/chat.js";
 import { modelRoutes } from "./routes/models.js";
 import { depositRoutes } from "./routes/deposit.js";
-import { stakingRoutes } from "./routes/staking.js";
+import { searchRoutes } from "./routes/search.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { crosschainRoutes } from "./x402/crosschain.js";
 import { onrampRoutes } from "./routes/onramp.js";
+import { creditRoutes } from "./routes/credits.js";
+import { adminRoutes } from "./routes/admin.js";
 import { jupiterRoutes } from "./lib/jupiter-client.js";
 import type { OmaEnv } from "./types.js";
 import { scheduleCreditExpiry } from "./jobs/credit-expiry.js";
@@ -40,7 +42,10 @@ const corsOptions = {
     if (config.NODE_ENV === "development") return origin;
     const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
     for (const allowed of allowedOrigins) {
-      if (allowed === "*") return origin;
+      if (allowed === "*") {
+        console.warn("[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
+        return null;
+      }
       try {
         const allowedUrl = new URL(allowed);
         const originUrl = new URL(origin);
@@ -75,10 +80,12 @@ app.route("/", authRoutes);
 app.route("/", chatRoutes);
 app.route("/", modelRoutes);
 app.route("/", depositRoutes);
-app.route("/", stakingRoutes);
+app.route("/", searchRoutes);
 app.route("/", x402Routes);
 app.route("/", crosschainRoutes);
 app.route("/", onrampRoutes);
+app.route("/", creditRoutes);
+app.route("/", adminRoutes);
 app.route("/", jupiterRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));

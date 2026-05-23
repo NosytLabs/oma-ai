@@ -1,84 +1,66 @@
 'use client'
 
-import { useState } from 'react'
-import { useAnimatedSection } from '@/lib/hooks'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Zap, Key, Coins, Activity, Code2, ArrowRight, Copy, Check } from 'lucide-react'
-import { TerminalBlock } from './Terminal'
+import { Zap, Key, Coins, Activity, ArrowRight, Copy, Check } from 'lucide-react'
 
 const pythonCode = `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://oma-ai.com/v1",
+    base_url="https://api.oma-ai.com/v1",
     api_key="oma_sk_your_key"
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="llama-3.3-70b",
     messages=[{"role": "user", "content": "Hello"}]
 )
-
 print(response.choices[0].message.content)`
 
 const jsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://oma-ai.com/v1",
+  baseURL: "https://api.oma-ai.com/v1",
   apiKey: "oma_sk_your_key",
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
+  model: "llama-3.3-70b",
   messages: [{ role: "user", content: "Hello" }],
-});
+});`
 
-console.log(response.choices[0].message.content);`
-
-const curlCode = `curl https://oma-ai.com/v1/chat/completions \\
+const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "model": "gpt-4o",
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'`
+  -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`
 
 const tabs = [
-  { label: 'Python', code: pythonCode, filename: 'main.py' },
-  { label: 'TypeScript', code: jsCode, filename: 'index.ts' },
-  { label: 'cURL', code: curlCode, filename: 'terminal' },
+  { label: 'Python', code: pythonCode },
+  { label: 'TypeScript', code: jsCode },
+  { label: 'cURL', code: curlCode },
 ]
 
-  const features = [
-  {
-    icon: <Zap className="h-4 w-4" />,
-    title: 'OpenAI-Compatible',
-    desc: 'Use VS Code Copilot, Cursor, LangChain, any OpenAI SDK. Just change the base URL.',
-    color: 'text-cyan',
-  },
-  {
-    icon: <Key className="h-4 w-4" />,
-    title: 'Bearer Token Auth',
-    desc: 'SHA-256 hashed on our end. Your key, your inference.',
-    color: 'text-cyan',
-  },
-  {
-    icon: <Coins className="h-4 w-4" />,
-    title: 'x402 Agent Payments',
-    desc: 'Agent-native payments via HTTP 402. Built for autonomous workflows.',
-    color: 'text-amber',
-  },
-  {
-    icon: <Activity className="h-4 w-4" />,
-    title: 'Streaming & Tool Use',
-    desc: 'Real-time streaming responses. Function calling. Structured outputs.',
-    color: 'text-green',
-  },
+const features = [
+  { icon: Zap, title: 'OpenAI-Compatible', desc: 'Use any OpenAI SDK. Just change the base URL.', color: 'text-cyan-400' },
+  { icon: Key, title: 'Bearer Token Auth', desc: 'SHA-256 hashed keys. Your inference, your key.', color: 'text-cyan-400' },
+  { icon: Coins, title: 'x402 Payments', desc: 'Agent-native payments via HTTP 402.', color: 'text-amber-400' },
+  { icon: Activity, title: 'Streaming & Tools', desc: 'Real-time streaming. Function calling.', color: 'text-emerald-400' },
 ]
 
 export function ForDevelopers() {
   const [activeTab, setActiveTab] = useState(0)
   const [copied, setCopied] = useState(false)
-  const { ref, isVisible } = useAnimatedSection()
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+      { threshold: 0.1 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
 
   const handleCopy = async () => {
     try {
@@ -91,120 +73,96 @@ export function ForDevelopers() {
   }
 
   return (
-    <section ref={ref} className="border-t border-zinc-200 py-20 sm:py-24">
-      <div className="mx-auto max-w-4xl px-4">
-        <h2
-          className={`mb-4 text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          FOR DEVELOPERS
-        </h2>
-        <p
-          className={`mb-12 text-center text-sm text-slate-500 transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '100ms' }}
-        >
-          Drop-in replacement. Change the base URL, keep your code.
-        </p>
+    <section ref={ref} className="relative py-24 px-4">
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950" />
+      
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+            Built for Developers
+          </h2>
+          <p className="text-lg text-zinc-500 max-w-2xl mx-auto">
+            Drop-in replacement for OpenAI. Change one line, keep your code.
+          </p>
+        </div>
 
-        <div
-          className={`transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '200ms' }}
-        >
-          {/* Tab Headers */}
-          <div className="flex items-center justify-between border-b border-zinc-200">
-            <div className="flex">
+        <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
+          <div className="flex items-center justify-between border-b border-zinc-800/50 mb-0">
+            <div className="flex gap-1">
               {tabs.map((tab, i) => (
                 <button
                   key={tab.label}
                   onClick={() => setActiveTab(i)}
-                  className={`group relative px-5 py-3 text-xs font-medium transition-all duration-200 ${
+                  className={`px-5 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
                     activeTab === i
-                      ? 'text-indigo-600'
-                      : 'text-slate-500 hover:text-zinc-900'
+                      ? 'text-cyan-400 border-cyan-400'
+                      : 'text-zinc-500 border-transparent hover:text-zinc-300'
                   }`}
                 >
-                  <Code2 className="mr-1.5 inline h-3.5 w-3.5" />
                   {tab.label}
-                  {activeTab === i && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />
-                  )}
                 </button>
               ))}
             </div>
             <button
               onClick={handleCopy}
-              className="mr-2 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-text-dim transition-all duration-200 hover:bg-surface hover:text-text min-h-[36px]"
+              aria-label={copied ? 'Copied' : 'Copy code'}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/50 rounded-lg transition-all"
             >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-green" />
-                  <span className="text-green">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>Copy</span>
-                </>
-              )}
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          <TerminalBlock
-            code={tabs[activeTab].code}
-            filename={tabs[activeTab].filename}
-          />
+          
+          <div className="rounded-b-xl overflow-hidden bg-zinc-950/80 border border-t-0 border-zinc-800/50">
+            <pre className="p-6 overflow-x-auto">
+              <code className="text-sm text-zinc-300 font-mono leading-relaxed">
+                {tabs[activeTab].code}
+              </code>
+            </pre>
+          </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {features.map((f, i) => (
-            <div
-              key={f.title}
-              className={`card-glow flex items-start gap-4 rounded-xl border border-zinc-200 bg-white p-5 transition-all duration-500 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-              style={{ transitionDelay: `${300 + i * 80}ms` }}
-            >
-              <div className={`mt-0.5 ${f.color}`}>{f.icon}</div>
-              <div>
-                <p className="text-sm font-bold text-zinc-900">{f.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{f.desc}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {features.map((f, i) => {
+            const Icon = f.icon
+            return (
+              <div
+                key={f.title}
+                className={`flex items-start gap-4 p-5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 transition-all duration-500 hover:border-cyan-500/30 hover:bg-zinc-900/80 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                style={{ transitionDelay: `${300 + i * 80}ms` }}
+              >
+                <Icon className={`w-5 h-5 ${f.color} mt-0.5`} />
+                <div>
+                  <p className="font-semibold text-white mb-1">{f.title}</p>
+                  <p className="text-sm text-zinc-500">{f.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
-        <div
-          className={`mt-10 flex flex-col items-center gap-4 transition-all duration-500 sm:flex-row sm:justify-center ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '700ms' }}
-        >
+        <div className={`mt-12 flex flex-wrap justify-center gap-4 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '700ms' }}>
           <Link
             href="/dashboard"
-            className="group relative inline-flex items-center gap-2 rounded-xl border border-indigo-400/50 bg-indigo-50 px-7 py-4 text-sm font-bold text-indigo-600 transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-500 hover:text-white hover:shadow-[0_0_30px_rgba(99,102,241,0.25)] hover:scale-105 active:scale-100 min-h-[52px] overflow-hidden"
+            className="btn-primary text-lg px-8 py-4"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/20 to-indigo-500/0 group-hover:animate-pulse" />
-            <Key className="h-5 w-5 group-hover:scale-110 transition-transform" />
+            <Key className="w-5 h-5 mr-2" />
             Start Building
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
           <Link
             href="/playground"
-            className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-4 text-sm font-semibold text-zinc-900 transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 min-h-[52px]"
+            className="btn-secondary text-lg px-8 py-4"
           >
-            <Activity className="h-5 w-5" />
+            <Activity className="w-5 h-5 mr-2" />
             Try Playground
           </Link>
           <Link
             href="/docs"
-            className="btn-secondary inline-flex items-center gap-2 px-6 py-3.5 text-sm font-mono min-h-[48px]"
+            className="px-6 py-4 text-base font-medium text-zinc-500 hover:text-cyan-400 transition-colors"
           >
-            View Full Documentation
-            <ArrowRight className="h-4 w-4" />
+            View Docs
+            <ArrowRight className="w-4 h-4 ml-2 inline-block" />
           </Link>
         </div>
       </div>

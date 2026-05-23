@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [unlinkingEvm, setUnlinkingEvm] = useState(false)
+  const [generatingAccount, setGeneratingAccount] = useState(false)
 
   useEffect(() => {
     if (!isConnected) return
@@ -119,6 +120,19 @@ export default function SettingsPage() {
       setError(e instanceof Error ? e.message : 'Account deletion failed')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleGenerateAccountNumber = async () => {
+    setGeneratingAccount(true)
+    try {
+      const result = await api.auth.createAccountNumber()
+      setUser((prev) => prev ? { ...prev, accountNumber: result.accountNumber } : null)
+      toast.success('Account number generated')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to generate account number')
+    } finally {
+      setGeneratingAccount(false)
     }
   }
 
@@ -260,6 +274,72 @@ export default function SettingsPage() {
               </motion.button>
             )}
           </motion.div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+      >
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+          <Fingerprint className="h-3.5 w-3.5" />
+          Account Number
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+          {user?.accountNumber ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <div className="text-lg font-mono font-bold tracking-wider text-primary">
+                  {user.accountNumber}
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-on-surface-variant">
+                  <Shield className="h-3 w-3" />
+                  <span>Mullvad-style account number for wallet-free login</span>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleCopy(user.accountNumber!, 'accountNumber')}
+                className="rounded-lg p-2 transition-colors hover:bg-surface-container-high"
+              >
+                {copied === 'accountNumber' ? (
+                  <Check className="h-5 w-5 text-green-500" />
+                ) : (
+                  <Copy className="h-5 w-5 text-on-surface-variant" />
+                )}
+              </motion.button>
+            </>
+          ) : (
+            <>
+              <div className="flex-1">
+                <div className="text-sm text-on-surface-variant">
+                  No account number generated yet
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-on-surface-variant">
+                  <Shield className="h-3 w-3" />
+                  <span>Generate to enable wallet-free login with Solana</span>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGenerateAccountNumber}
+                disabled={generatingAccount}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-primary/90 disabled:opacity-40"
+              >
+                {generatingAccount ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Key className="h-3 w-3" />
+                )}
+                Generate
+              </motion.button>
+            </>
+          )}
         </div>
       </motion.div>
 

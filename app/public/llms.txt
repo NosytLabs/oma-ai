@@ -1,0 +1,40 @@
+# OMA AI Gateway
+
+> Permissionless AI inference gateway. Pay with crypto, use 50+ models via OpenAI-compatible API.
+
+## Getting Started
+- [API Documentation](https://oma-ai.com/docs) - Complete API reference
+- [Playground](https://oma-ai.com/playground) - Interactive API testing
+- [Pricing](https://oma-ai.com/pricing) - Model pricing and tiers
+
+## Core Concepts
+- [Models](https://oma-ai.com/models) - 50+ AI models catalog
+- [Deposits](https://oma-ai.com/deposit) - Add credits via crypto
+- [Dashboard](https://oma-ai.com/dashboard) - Usage and API keys
+
+## API Reference
+- [Authentication](https://oma-ai.com/docs#authentication) - SIWE, API keys, x402
+- [Chat Completions](https://oma-ai.com/docs#chat-completions) - OpenAI-compatible inference
+- [Web Search](https://oma-ai.com/docs#web-search) - Real-time web search
+- [Web Fetch](https://oma-ai.com/docs#web-fetch) - Web page scraping
+- [Video Generation](https://oma-ai.com/docs#video-generation) - AI video creation
+- [x402 Payments](https://oma-ai.com/docs#x402-payments) - Per-request crypto payments
+
+## Models by Category
+
+### Frontier
+- Claude Opus 4.7 ($15/$75 per 1M tokens)
+- GPT-5.5 ($10/$30 per 1M tokens)
+- GPT-4o ($2.50/$10 per 1M tokens)
+
+### Budget
+- DeepSeek V4 Flash ($0.05/$0.19 per 1M tokens)
+- Qwen3-8B ($0.01/$0.01 per 1M tokens)
+- Llama 3.1 8B ($0.01/$0.01 per 1M tokens)
+
+### Uncensored
+- Venice Uncensored ($0.07/$0.35 per 1M tokens)
+
+## SDKs
+- Python: `pip install openai` with base_url="https://api.oma-ai.com/v1"
+- JavaScript: Use OpenAI SDK or fetch directly

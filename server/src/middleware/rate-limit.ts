@@ -1,11 +1,9 @@
 import type { Context, Next } from "hono";
-import { createClient } from "redis";
-import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
+import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 
-// Default limits
-const DEFAULT_TOKENS_PER_SECOND_USER = 20;
 const DEFAULT_BUCKET_SIZE_USER = 60;
+const DEFAULT_TOKENS_PER_SECOND_USER = 20;
 
 // Model-specific limits (requests per minute)
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
@@ -48,27 +46,6 @@ export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
   "kimi-k2-6": { rpm: 120, tpm: 240000 },
   "glm-5.1": { rpm: 120, tpm: 240000 },
 };
-
-// Redis client singleton
-let redisClient: ReturnType<typeof createClient> | null = null;
-let redisReady = false;
-
-async function getRedis() {
-  if (redisClient && redisReady) return redisClient;
-  try {
-    if (!redisClient) {
-      redisClient = createClient({ url: config.REDIS_URL ?? "redis://localhost:6379" });
-      redisClient.on("error", () => { redisReady = false; });
-      redisClient.on("ready", () => { redisReady = true; });
-      await redisClient.connect();
-      redisReady = true;
-    }
-    return redisClient;
-  } catch {
-    redisReady = false;
-    return null;
-  }
-}
 
 // Helper to get client IP from proxy headers safely
 function getRightmostIp(xForwardedFor: string | undefined): string {
@@ -187,7 +164,7 @@ function getModelLimits(model: string): { rpm: number; tpm: number } | null {
 
 // Token bucket rate limiter
 export async function checkTokenBucket(
-  redis: Awaited<ReturnType<typeof getRedis>>,
+  redis: Awaited<ReturnType<typeof getRedisClient>>,
   key: string,
   config: TokenBucketConfig,
   requested: number = 1
@@ -217,7 +194,7 @@ export async function checkTokenBucket(
 
 // RPM limiter using sliding window
 export async function checkRpmLimit(
-  redis: Awaited<ReturnType<typeof getRedis>>,
+  redis: Awaited<ReturnType<typeof getRedisClient>>,
   key: string,
   limit: number,
   windowSec: number = 60,
@@ -283,11 +260,17 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
       rateLimitKey = `${keyPrefix}:ip:${ip}`;
     }
 
-    const redis = await getRedis();
+    const redis = await getRedisClient();
+    const ready = isRedisReady();
 
-    // Fail open if Redis is unavailable (rate limiting disabled but traffic flows)
-    if (!redis || !redisReady) {
-      console.warn("[rate-limit] Redis unavailable -- failing open, rate limiting disabled");
+    // Fail open if Redis is unavailable (rate limiting bypassed but traffic flows)
+    if (!redis || !ready) {
+      console.warn("[rate-limit] WARNING: Redis unavailable -- failing OPEN (rate limiting bypassed)");
+      // Add header indicating rate limiting is not active
+      c.header("X-RateLimit-Limit", "unlimited");
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open");
+      c.set("rateLimit", { remaining: -1, reset: 0 });
       await next();
       return;
     }
@@ -370,17 +353,13 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 
       await next();
     } catch (err) {
-      console.error("[rate-limit] CRITICAL: Rate limit check failed:", err);
-      return c.json(
-        {
-          error: {
-            message: "Service temporarily unavailable. Please try again later.",
-            type: "rate_limit_error",
-            code: "rate_limit_unavailable"
-          }
-        },
-        503
-      );
+      console.error("[rate-limit] ERROR: Rate limit check failed -- failing OPEN (rate limiting bypassed):", err);
+      // Fail open on error - allow traffic through
+      c.header("X-RateLimit-Limit", "unlimited");
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open-error");
+      c.set("rateLimit", { remaining: -1, reset: 0 });
+      await next();
     }
   };
 }
@@ -407,10 +386,15 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
     }
 
     // Apply model-specific rate limiting
-    const redis = await getRedis();
+    const redis = await getRedisClient();
+    const ready = isRedisReady();
 
-    if (!redis || !redisReady) {
-      console.warn("[rate-limit] Redis unavailable -- failing open, rate limiting disabled");
+    // Fail open if Redis is unavailable
+    if (!redis || !ready) {
+      console.warn("[rate-limit] WARNING: Redis unavailable -- failing OPEN for model rate limiting");
+      c.header("X-RateLimit-Limit", "unlimited");
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open");
       await next();
       return;
     }
@@ -455,17 +439,12 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
 
       await next();
     } catch (err) {
-      console.error("[rate-limit] CRITICAL: Model rate limit check failed:", err);
-      return c.json(
-        {
-          error: {
-            message: "Service temporarily unavailable. Please try again later.",
-            type: "rate_limit_error",
-            code: "rate_limit_unavailable"
-          }
-        },
-        503
-      );
+      console.error("[rate-limit] ERROR: Model rate limit check failed -- failing OPEN:", err);
+      // Fail open on error
+      c.header("X-RateLimit-Limit", "unlimited");
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open-error");
+      await next();
     }
   };
 }
@@ -498,8 +477,9 @@ export async function getRateLimitStats(_apiKeyId?: string, _userId?: string): P
   redisConnected: boolean;
   activeBuckets?: number;
 }> {
-  const redis = await getRedis();
-  const healthy = redisReady && redis !== null;
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  const healthy = ready && redis !== null;
 
   return {
     healthy,
@@ -531,14 +511,16 @@ export function rateLimit(options: RateLimitOptions) {
       rateLimitKey = `${keyPrefix}:ip:${ip}`;
     }
 
-    const redis = await getRedis();
+    const redis = await getRedisClient();
+    const ready = isRedisReady();
 
-    if (!redis || !redisReady) {
-      console.error("[rate-limit] CRITICAL: Redis unavailable -- failing closed for rate limiting");
-      return c.json(
-        { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "rate_limit_unavailable" } },
-        503,
-      );
+    if (!redis || !ready) {
+      console.warn("[rate-limit] WARNING: Redis unavailable -- failing OPEN for rate limiting");
+      c.header("X-RateLimit-Limit", String(maxRequests));
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open");
+      await next();
+      return;
     }
 
     try {
@@ -562,11 +544,11 @@ export function rateLimit(options: RateLimitOptions) {
         );
       }
     } catch {
-      console.error("[rate-limit] CRITICAL: Redis operation failed -- failing closed for rate limiting");
-      return c.json(
-        { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "rate_limit_unavailable" } },
-        503,
-      );
+      console.error("[rate-limit] ERROR: Redis operation failed -- failing OPEN for rate limiting");
+      // Fail open on error
+      c.header("X-RateLimit-Limit", String(maxRequests));
+      c.header("X-RateLimit-Remaining", "unlimited");
+      c.header("X-RateLimit-Policy", "fail-open-error");
     }
 
     await next();

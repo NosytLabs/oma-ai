@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 const COINGECKO_API = 'https://api.coingecko.com/api/v3'
 const JUPITER_API = 'https://api.jup.ag/swap/v2/quote'
 
-// SOL and USDC mints
 const SOL_MINT = 'So11111111111111111111111111111111111111112'
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 
@@ -16,6 +15,21 @@ interface CoinPrice {
   source: 'jupiter' | 'coingecko'
 }
 
+interface PaymentLinkRequest {
+  amount: number
+  chain: 'base' | 'solana'
+  token?: string
+  expiry?: number
+  metadata?: Record<string, string>
+}
+
+interface x402PaymentRequest {
+  modelId: string
+  chain: 'base' | 'solana'
+  walletAddress: string
+  maxAmount?: number
+}
+
 const SUPPORTED_COINS: Record<string, { id: string; symbol: string; name: string }> = {
   btc: { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' },
   eth: { id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
@@ -24,15 +38,27 @@ const SUPPORTED_COINS: Record<string, { id: string; symbol: string; name: string
   xmr: { id: 'monero', symbol: 'XMR', name: 'Monero' },
 }
 
-/**
- * Fetch SOL price from Jupiter (more real-time for Solana)
- */
+const X402_CONFIGS = {
+  base: {
+    chainId: 8453,
+    network: 'Base',
+    usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    facilitatorUrl: 'https://x402.facilitator.xyz/base',
+  },
+  solana: {
+    chainId: 'mainnet-beta',
+    network: 'Solana',
+    usdcMint: USDC_MINT,
+    facilitatorUrl: 'https://x402.facilitator.xyz/solana',
+  },
+}
+
 async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
   try {
     const queryParams = new URLSearchParams({
       inputMint: SOL_MINT,
       outputMint: USDC_MINT,
-      amount: '1000000000', // 1 SOL in lamports
+      amount: '1000000000',
       slippageBps: '1',
       onlyDirectRoutes: 'false',
     })
@@ -44,7 +70,7 @@ async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
     if (!response.ok) return null
 
     const quote = await response.json()
-    const price = parseFloat(quote.outAmount) / 1e6 // USDC has 6 decimals
+    const price = parseFloat(quote.outAmount) / 1e6
 
     return {
       symbol: 'SOL',
@@ -60,9 +86,6 @@ async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
   }
 }
 
-/**
- * Fetch prices from CoinGecko for specified coin IDs
- */
 async function fetchFromCoinGecko(coinIds: string[]): Promise<Record<string, { usd: number; usd_24h_change?: number; last_updated_at?: number }>> {
   const response = await fetch(
     `${COINGECKO_API}/simple/price?ids=${coinIds.join(',')}&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true`,
@@ -79,26 +102,21 @@ async function fetchFromCoinGecko(coinIds: string[]): Promise<Record<string, { u
 export async function GET() {
   try {
     const coinIds = Object.values(SUPPORTED_COINS)
-      .filter(c => c.id !== 'solana') // Exclude SOL from CoinGecko (will get from Jupiter)
+      .filter(c => c.id !== 'solana')
       .map(c => c.id)
     
-    // Fetch from both sources in parallel
     const [jupiterSolPrice, coingeckoData] = await Promise.all([
       fetchSolFromJupiter(),
       fetchFromCoinGecko(coinIds),
     ])
 
-    // Build prices array
     const prices: CoinPrice[] = []
 
-    // Add Jupiter SOL price (more real-time for Solana)
     if (jupiterSolPrice) {
       prices.push(jupiterSolPrice)
     }
 
-    // Add CoinGecko prices
     for (const [key, coin] of Object.entries(SUPPORTED_COINS)) {
-      // Skip SOL if we have Jupiter price
       if (key === 'sol' && jupiterSolPrice) continue
 
       const coinData = coingeckoData[coin.id]
@@ -116,7 +134,6 @@ export async function GET() {
       }
     }
 
-    // Determine primary source for response
     const primarySource = jupiterSolPrice ? 'jupiter + coingecko' : 'coingecko'
 
     return NextResponse.json({
@@ -129,6 +146,98 @@ export async function GET() {
     console.error('Crypto price fetch error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch crypto prices' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { action } = body
+
+    switch (action) {
+      case 'create-payment-link': {
+        const { amount, chain, token = 'USDC' } = body as PaymentLinkRequest & { action: string }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const sessionToken = request.headers.get('x-oma-session') || request.headers.get('Authorization') || ''
+        const response = await fetch(`${apiUrl}/v1/deposit/houdini/payment-link`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {}),
+          },
+          body: JSON.stringify({ amount, chain, token }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          return NextResponse.json({ success: false, error: error.error?.message || 'Payment link creation failed' }, { status: response.status })
+        }
+
+        const data = await response.json()
+        return NextResponse.json({
+          success: true,
+          paymentLink: {
+            id: data.paymentLink.id,
+            url: data.paymentLink.url,
+            amount: data.paymentLink.amount,
+            chain: data.paymentLink.chain,
+            token: data.paymentLink.token,
+            expiresAt: data.paymentLink.expiresAt,
+            status: data.paymentLink.status,
+            depositId: data.depositId,
+          },
+        })
+      }
+
+      case 'create-x402-session': {
+        const { modelId, chain, walletAddress, maxAmount } = body as x402PaymentRequest & { action: string }
+        
+        const sessionId = `x402_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+        const x402Config = X402_CONFIGS[chain as keyof typeof X402_CONFIGS]
+        
+        return NextResponse.json({
+          success: true,
+          session: {
+            id: sessionId,
+            modelId,
+            chain,
+            walletAddress,
+            maxAmount: maxAmount || 10,
+            status: 'active',
+            facilitator: x402Config.facilitatorUrl,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      }
+
+      case 'get-x402-status': {
+        const { sessionId } = body
+        
+        return NextResponse.json({
+          success: true,
+          status: {
+            sessionId,
+            balance: 0,
+            spent: 0,
+            requests: 0,
+            lastActivity: new Date().toISOString(),
+          },
+        })
+      }
+
+      default:
+        return NextResponse.json(
+          { success: false, error: 'Unknown action' },
+          { status: 400 }
+        )
+    }
+  } catch (error) {
+    console.error('x402 API error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to process x402 request' },
       { status: 500 }
     )
   }

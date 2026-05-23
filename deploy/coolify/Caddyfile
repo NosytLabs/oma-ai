@@ -15,53 +15,48 @@
 # Global Configuration
 # =============================================================================
 {
-    # Email for certificate notifications
     email admin@your-domain.com
-    # Store certificates in this directory
     storage file_system /data/caddy
-}
-
-# =============================================================================
-# HTTP to HTTPS Redirect (all sites)
-# =============================================================================
-http:// {
-    # Redirect all HTTP traffic to HTTPS
-    redir https://{host}{uri}
 }
 
 # =============================================================================
 # Frontend Application (Next.js)
 # =============================================================================
 your-domain.com, www.your-domain.com {
+    # Handle ACME challenges for both domain variants
+    @acme path /.well-known/acme-challenge/*
+    handle @acme {
+        root * /var/www/certbot
+        file_server
+    }
+
     # Reverse proxy to Next.js frontend
-    reverse_proxy localhost:3000
+    reverse_proxy app:3000
 
     # Enable compression
     encode gzip zstd
 
+    # WebSocket support headers
+    header {
+        Upgrade $http_upgrade
+        Connection "upgrade"
+    }
+
     # Security headers
     header {
-        # Remove server identification
         -Server
-        # XSS protection
         X-XSS-Protection "1; mode=block"
-        # Content type sniffing protection
         X-Content-Type-Options nosniff
-        # Clickjacking protection
         X-Frame-Options DENY
-        # Referrer policy
         Referrer-Policy strict-origin-when-cross-origin
-        # Content Security Policy (customize as needed)
         Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.your-domain.com https://*.walletconnect.com wss://*.walletconnect.com;"
     }
 
-    # Logging
     log {
         output file /var/log/caddy/frontend.log
         level INFO
     }
 
-    # Handle errors with custom page
     handle_errors {
         rewrite * /error.html
         file_server
@@ -72,11 +67,30 @@ your-domain.com, www.your-domain.com {
 # API Server (Hono)
 # =============================================================================
 api.your-domain.com {
+    # Handle ACME challenges
+    @acme path /.well-known/acme-challenge/*
+    handle @acme {
+        root * /var/www/certbot
+        file_server
+    }
+
+    # Health check endpoint
+    @health path /health
+    handle @health {
+        respond "OK" 200
+    }
+
     # Reverse proxy to API server
-    reverse_proxy localhost:3001
+    reverse_proxy server:3001
 
     # Enable compression
     encode gzip
+
+    # WebSocket support headers
+    header {
+        Upgrade $http_upgrade
+        Connection "upgrade"
+    }
 
     # Security headers
     header {
@@ -85,14 +99,12 @@ api.your-domain.com {
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
         Referrer-Policy strict-origin-when-cross-origin
-        # Allow API access from frontend
         Access-Control-Allow-Origin "https://your-domain.com"
         Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         Access-Control-Allow-Headers "Content-Type, Authorization, X-Houdini-Order-Id, X-Houdini-Signature"
         Access-Control-Max-Age 86400
     }
 
-    # CORS preflight for API
     @options method OPTIONS
     handle @options {
         header {
@@ -104,25 +116,8 @@ api.your-domain.com {
         respond ""
     }
 
-    # Rate limiting (optional - enable if needed)
-    # rate-limit {
-    #     name api-rate-limit
-    #     match @options {
-    #         skip
-    #     }
-    # }
-
-    # Logging
     log {
         output file /var/log/caddy/api.log
         level INFO
     }
-}
-
-# =============================================================================
-# Health Check Endpoint (for monitoring)
-# =============================================================================
-health.your-domain.com {
-    # Direct health check without full proxy
-    respond "OK" 200
 }

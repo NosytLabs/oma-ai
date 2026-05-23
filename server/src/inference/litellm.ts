@@ -1,7 +1,6 @@
 import { config } from "../config.js";
-import { reportProviderResult } from "./circuit-breaker.js";
 import type { ChatMessage } from "./types.js";
-import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { BaseInferenceProvider, createErrorMapper } from "./base.js";
 
 const LITELLM_TIMEOUT_MS = 30_000;
 const LITELLM_STREAM_TIMEOUT_MS = 120_000;
@@ -22,20 +21,33 @@ function litellmHeaders(): Record<string, string> {
   return headers;
 }
 
-function mapLitellmError(status: number, body: string): never {
-  let type = "litellm_api_error";
-  let message = `LiteLLM error ${status}`;
+const mapLitellmError = createErrorMapper("LiteLLM");
 
-  try {
-    const parsed = JSON.parse(body);
-    if (parsed.error?.message) message = parsed.error.message;
-    if (parsed.error?.type) type = parsed.error.type;
-  } catch {
-    message = body.slice(0, 500);
+class LiteLLMProvider extends BaseInferenceProvider {
+  protected readonly config = {
+    name: "litellm",
+    chatCompletionPath: "/v1/chat/completions",
+    completionPath: "/v1/completions",
+    healthPath: "/health",
+    defaultTimeoutMs: LITELLM_TIMEOUT_MS,
+    streamTimeoutMs: LITELLM_STREAM_TIMEOUT_MS,
+    getUrl: litellmUrl,
+    getHeaders: litellmHeaders,
+    mapError: mapLitellmError,
+    checkConfig: () => {
+      if (!config.LITELLM_PROXY_URL) {
+        throw Object.assign(new Error("LiteLLM not configured"), { status: 503 });
+      }
+    },
+    reportHealth: true,
+  };
+
+  protected get spanName(): string {
+    return "llm.provider.litellm";
   }
-
-  throw Object.assign(new Error(message), { status, type });
 }
+
+const provider = new LiteLLMProvider();
 
 export async function chatCompletion(body: {
   model: string;
@@ -43,67 +55,7 @@ export async function chatCompletion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  const tracer = trace.getTracer("oma-server");
-
-  return tracer.startActiveSpan("llm.provider.litellm", { kind: SpanKind.CLIENT }, async (span) => {
-    try {
-      span.setAttribute("llm.provider", "litellm");
-      span.setAttribute("llm.model", body.model);
-      span.setAttribute("http.method", "POST");
-      span.setAttribute("http.url", litellmUrl("/v1/chat/completions"));
-
-      if (!config.LITELLM_PROXY_URL) {
-        span.setAttribute("error", true);
-        span.setAttribute("error.type", "configuration_error");
-        throw Object.assign(new Error("LiteLLM not configured"), { status: 503 });
-      }
-
-      const timeout = body.stream ? LITELLM_STREAM_TIMEOUT_MS : LITELLM_TIMEOUT_MS;
-      const start = Date.now();
-
-      let resp: Response;
-      try {
-        resp = await fetch(litellmUrl("/v1/chat/completions"), {
-          method: "POST",
-          headers: litellmHeaders(),
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(timeout),
-        });
-      } catch (err) {
-        await reportProviderResult("litellm", false, Date.now() - start);
-        span.setAttribute("error", true);
-        span.setAttribute("error.type", "connection_error");
-        const message = err instanceof Error ? err.message : String(err);
-        throw Object.assign(
-          new Error(`LiteLLM connection failed: ${message}`),
-          { status: 502 }
-        );
-      }
-
-      span.setAttribute("http.status_code", resp.status);
-
-      if (!resp.ok) {
-        const text = await resp.text().catch(() => "");
-        if (resp.status >= 500) {
-          await reportProviderResult("litellm", false, Date.now() - start);
-        }
-        span.setAttribute("error", true);
-        mapLitellmError(resp.status, text);
-      }
-
-      span.setStatus({ code: SpanStatusCode.OK });
-      return resp;
-    } catch (err) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err instanceof Error ? err.message : "Unknown error",
-      });
-      span.recordException(err instanceof Error ? err : new Error(String(err)));
-      throw err;
-    } finally {
-      span.end();
-    }
-  });
+  return provider.chatCompletion(body);
 }
 
 export async function completion(body: {
@@ -113,39 +65,7 @@ export async function completion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  if (!config.LITELLM_PROXY_URL) {
-    throw Object.assign(new Error("LiteLLM not configured"), { status: 503 });
-  }
-
-  const timeout = body.stream ? LITELLM_STREAM_TIMEOUT_MS : LITELLM_TIMEOUT_MS;
-  const start = Date.now();
-
-  let resp: Response;
-  try {
-    resp = await fetch(litellmUrl("/v1/completions"), {
-      method: "POST",
-      headers: litellmHeaders(),
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeout),
-    });
-  } catch (err) {
-    await reportProviderResult("litellm", false, Date.now() - start);
-    const message = err instanceof Error ? err.message : String(err);
-    throw Object.assign(
-      new Error(`LiteLLM connection failed: ${message}`),
-      { status: 502 }
-    );
-  }
-
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    if (resp.status >= 500) {
-      await reportProviderResult("litellm", false, Date.now() - start);
-    }
-    mapLitellmError(resp.status, text);
-  }
-
-  return resp;
+  return provider.completion(body);
 }
 
 export function streamChatCompletion(body: {
@@ -154,7 +74,7 @@ export function streamChatCompletion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  return chatCompletion({ ...body, stream: true });
+  return provider.streamChatCompletion(body);
 }
 
 export async function litellmHealthCheck(): Promise<{

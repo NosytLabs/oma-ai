@@ -1,6 +1,5 @@
-import crypto from "crypto";
-import { Hono } from "hono";
 import { z } from "zod";
+import { Hono } from "hono";
 import { bearerAuth } from "../auth/middleware.js";
 import { handleChatCompletion } from "../inference/router.js";
 import { MODEL_CATALOG, getModel, VIDEO_MODELS, calculateCostCredits } from "../inference/models.js";
@@ -9,6 +8,7 @@ import { getBalance, deductCredits } from "../credits/balance.js";
 import { estimateTokens } from "../inference/models.js";
 import { tokenBucket, modelRateLimit } from "../middleware/rate-limit.js";
 import { spendLimit, trackSpend } from "../middleware/spend-limit.js";
+import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { withSpan } from "../tracing.js";
 import { SpanKind } from "@opentelemetry/api";
@@ -45,16 +45,68 @@ import { SpanKind } from "@opentelemetry/api";
 
 export const chatRoutes = new Hono<OmaEnv>();
 
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
+const MAX_MESSAGE_CONTENT_BYTES = 100_000; // 100KB per message content
+const MAX_MESSAGES = 100;
+const MAX_TOTAL_BYTES = 1_000_000; // 1MB total for all messages combined
+
+function validateMessageContent(content: unknown): boolean {
+  if (typeof content === "string") {
+    return new TextEncoder().encode(content).length <= MAX_MESSAGE_CONTENT_BYTES;
+  }
+  if (Array.isArray(content)) {
+    return content.every(part => {
+      if (part && typeof part === "object" && "type" in part && "text" in (part as object)) {
+        if (typeof (part as { text?: unknown }).text === "string") {
+          return new TextEncoder().encode((part as { text: string }).text).length <= MAX_MESSAGE_CONTENT_BYTES;
+        }
+      }
+      return true;
+    });
+  }
+  return true;
 }
+
+function validateMessages(messages: unknown): boolean {
+  if (!Array.isArray(messages)) return false;
+  if (messages.length === 0 || messages.length > MAX_MESSAGES) return false;
+
+  let totalBytes = 0;
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object") return false;
+    const m = msg as { role?: unknown; content?: unknown };
+    if (!m.role || !m.content) return false;
+
+    if (typeof m.content === "string") {
+      totalBytes += new TextEncoder().encode(m.content).length;
+    } else if (Array.isArray(m.content)) {
+      for (const part of m.content) {
+        if (part && typeof part === "object" && "text" in part) {
+          if (typeof (part as { text?: unknown }).text === "string") {
+            totalBytes += new TextEncoder().encode((part as { text: string }).text).length;
+          }
+        }
+      }
+    }
+
+    if (totalBytes > MAX_TOTAL_BYTES) return false;
+  }
+
+  return messages.every(m => validateMessageContent((m as { content?: unknown }).content));
+}
+
+const messageSchema = z.object({
+  role: z.enum(["system", "user", "assistant", "tool"]),
+  content: z.union([z.string(), z.array(z.any())]),
+}).refine(validateMessageContent, {
+  message: `Message content exceeds maximum size of ${MAX_MESSAGE_CONTENT_BYTES} bytes`
+});
 
 const chatCompletionSchema = z.object({
   model: z.string().min(1).max(100),
-  messages: z.array(z.object({
-    role: z.enum(["system", "user", "assistant", "tool"]),
-    content: z.union([z.string(), z.array(z.any())]),
-  })).min(1),
+  messages: z.array(messageSchema).min(1).max(MAX_MESSAGES)
+    .refine(validateMessages, {
+      message: `Total message content exceeds maximum size of ${MAX_TOTAL_BYTES} bytes or more than ${MAX_MESSAGES} messages`
+    }),
   temperature: z.number().min(0).max(2).optional(),
   max_tokens: z.number().int().positive().optional(),
   stream: z.boolean().optional(),
@@ -220,7 +272,9 @@ chatRoutes.post("/v1/embeddings", async (c) => {
   const input = parsed.data.input as string | string[];
 
   const modelInfo = getModel(model);
-  if (!modelInfo) return c.json({ error: { message: `Model '${model}' not found in catalog. Available: ${Object.keys(MODEL_CATALOG).join(", ")}`, type: "invalid_request_error" } }, 400);
+  if (!modelInfo && !model.toLowerCase().includes('embedding')) {
+    return c.json({ error: { message: `Model '${model}' not found in catalog. Available: ${Object.keys(MODEL_CATALOG).join(", ")}`, type: "invalid_request_error" } }, 400);
+  }
 
   const bal = await getBalance(userId);
   if (Number(bal.balanceCents) <= 0) {
@@ -237,13 +291,15 @@ chatRoutes.post("/v1/embeddings", async (c) => {
     const inputStr = typeof input === 'string' ? input : input.join('');
     const inputTokens = json.usage?.prompt_tokens ?? estimateTokens(inputStr);
     const requestId = crypto.randomUUID();
-    const totalCents = calculateCostCredits(model, inputTokens, 0);
-    
-    await deductCredits(userId, totalCents - 1, 0, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0, requestId);
 
-    if (apiKey) {
-      trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+    if (modelInfo) {
+      const totalCents = calculateCostCredits(model, inputTokens, 0);
+      await deductCredits(userId, totalCents - 1, 0, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0, requestId);
+      if (apiKey) {
+        trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+      }
     }
+
     return c.json(json);
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;

@@ -8,6 +8,7 @@ vi.mock('../config.js', () => ({
   config: {
     JWT_SECRET: 'test-jwt-secret-that-is-at-least-32-chars-long-for-hmac',
     NODE_ENV: 'test',
+    FACILITATOR_MODE: 'mock',
   },
 }))
 
@@ -47,12 +48,29 @@ vi.mock('../auth/api-keys.js', () => ({
   validateApiKey: vi.fn().mockResolvedValue({ id: 'key-1', userId: 'user-test', keyPrefix: 'oma', keyHash: 'hash', name: 'test', active: true, createdAt: new Date() }),
 }))
 
+vi.mock('../auth/siwe.js', () => ({
+  verifySessionToken: vi.fn().mockResolvedValue('user-test'),
+  verifySiweMessage: vi.fn().mockResolvedValue({ success: true, userId: 'user-test' }),
+  getNonce: vi.fn().mockResolvedValue('nonce_abc123'),
+  generateSessionToken: vi.fn().mockReturnValue('session-token'),
+  getOrCreateUser: vi.fn().mockResolvedValue({ id: 'user-test', address: '0x123', createdAt: new Date() }),
+}))
+
+vi.mock('../middleware/spend-limit.js', () => ({
+  spendLimit: () => async (_c: unknown, next: () => void) => next(),
+  trackSpend: vi.fn(),
+}))
+
 vi.mock('../middleware/rate-limit.js', () => ({
   rateLimit: () => async (_c: unknown, next: () => void) => next(),
   tokenBucket: () => async (_c: unknown, next: () => void) => next(),
   modelRateLimit: () => async (_c: unknown, next: () => void) => next(),
   burstRateLimit: () => async (_c: unknown, next: () => void) => next(),
   expressiveRateLimit: () => async (_c: unknown, next: () => void) => next(),
+}))
+
+vi.mock('../routes/auth.js', () => ({
+  authRoutes: new (require('hono').Hono)(),
 }))
 
 import app from '../index.js'

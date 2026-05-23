@@ -1,172 +1,343 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { Search, Cpu, Zap, Brain, ArrowRight, Shield, Users } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef, memo } from 'react'
+import { Search, Brain, ArrowRight, Sparkles, X, ChevronDown, Code, Eye, Zap as ZapIcon, Hash, DollarSign, Terminal, Cpu } from 'lucide-react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, formatPricePerToken, getModelsByTier, Capability } from '@/lib/models-data'
 
-type Category = 'all' | 'budget' | 'mid' | 'premium' | 'frontier' | 'coding' | 'reasoning' | 'uncensored'
+type SortOption = 'price' | 'context' | 'name'
 
-interface Model {
-  id: string
-  name: string
-  category: 'budget' | 'mid' | 'premium' | 'frontier'
-  provider: 'Venice' | 'AntSeed' | 'Both'
-  input: number
-  output: number
-  ctx: string
-  caps: string[]
+const PROVIDERS: (Provider | 'All')[] = ['All', 'Venice']
+const TIERS: (Tier | 'All')[] = ['All', 'budget', 'mid', 'premium', 'frontier']
+
+const TIER_LABELS = {
+  budget: 'Budget',
+  mid: 'Mid-Range',
+  premium: 'Premium',
+  frontier: 'Frontier',
+} as const
+
+const CAPABILITY_ICONS: Record<Capability, React.ReactNode> = {
+  reasoning: <Brain className="h-4 w-4" />,
+  coding: <Code className="h-4 w-4" />,
+  multimodal: <Eye className="h-4 w-4" />,
+  vision: <Eye className="h-4 w-4" />,
+  fast: <ZapIcon className="h-4 w-4" />,
+  uncensored: <Cpu className="h-4 w-4" />,
+  agents: <Cpu className="h-4 w-4" />,
+  math: <Hash className="h-4 w-4" />,
+  chat: <Brain className="h-4 w-4" />,
 }
 
-const MODELS: Model[] = [
-  { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', category: 'frontier', provider: 'Venice', input: 15.00, output: 75.00, ctx: '200K', caps: ['chat','coding','reasoning','vision'] },
-  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', category: 'frontier', provider: 'Venice', input: 3.00, output: 15.00, ctx: '200K', caps: ['chat','coding','vision'] },
-  { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', category: 'premium', provider: 'Venice', input: 0.80, output: 4.00, ctx: '200K', caps: ['chat','fast','vision'] },
-  { id: 'gpt-5.5', name: 'GPT-5.5', category: 'frontier', provider: 'Venice', input: 10.00, output: 30.00, ctx: '128K', caps: ['chat','coding','reasoning'] },
-  { id: 'gpt-4o', name: 'GPT-4o', category: 'frontier', provider: 'Venice', input: 2.50, output: 10.00, ctx: '128K', caps: ['chat','coding','vision'] },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'premium', provider: 'Venice', input: 0.15, output: 0.60, ctx: '128K', caps: ['chat','fast'] },
-  { id: 'o3', name: 'OpenAI o3', category: 'frontier', provider: 'Venice', input: 10.00, output: 40.00, ctx: '200K', caps: ['reasoning','coding','agents'] },
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', category: 'frontier', provider: 'Venice', input: 1.50, output: 9.00, ctx: '1M', caps: ['chat','reasoning','vision'] },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'premium', provider: 'Venice', input: 0.15, output: 0.60, ctx: '1M', caps: ['chat','fast','vision'] },
-  { id: 'grok-41-fast', name: 'Grok 4.1 Fast', category: 'premium', provider: 'AntSeed', input: 0.26, output: 0.66, ctx: '128K', caps: ['chat','fast','reasoning'] },
-  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', category: 'premium', provider: 'AntSeed', input: 0.18, output: 1.00, ctx: '128K', caps: ['chat','coding','reasoning','math'] },
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', category: 'mid', provider: 'AntSeed', input: 0.05, output: 0.19, ctx: '128K', caps: ['chat','fast','coding'] },
-  { id: 'deepseek-r1', name: 'DeepSeek R1', category: 'premium', provider: 'AntSeed', input: 0.55, output: 2.19, ctx: '64K', caps: ['reasoning','math','coding'] },
-  { id: 'qwen3-235b-thinking', name: 'Qwen3 235B Thinking', category: 'premium', provider: 'AntSeed', input: 0.45, output: 2.11, ctx: '128K', caps: ['reasoning'] },
-  { id: 'qwen3-coder-480b', name: 'Qwen3 Coder 480B', category: 'premium', provider: 'AntSeed', input: 0.14, output: 0.60, ctx: '128K', caps: ['coding','chat','reasoning'] },
-  { id: 'qwen3-coder-30b', name: 'Qwen3 Coder 30B', category: 'budget', provider: 'AntSeed', input: 0.01, output: 0.02, ctx: '64K', caps: ['coding','fast'] },
-  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'mid', provider: 'Both', input: 0.30, output: 0.48, ctx: '128K', caps: ['chat','fast'] },
-  { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', category: 'budget', provider: 'AntSeed', input: 0.01, output: 0.01, ctx: '128K', caps: ['chat','fast','cheap'] },
-  { id: 'qwen3-235b', name: 'Qwen3 235B', category: 'mid', provider: 'AntSeed', input: 0.09, output: 0.45, ctx: '128K', caps: ['chat','reasoning'] },
-  { id: 'qwen3-8b', name: 'Qwen3 8B', category: 'budget', provider: 'AntSeed', input: 0.01, output: 0.01, ctx: '32K', caps: ['chat','fast','cheap'] },
-  { id: 'glm-5.1', name: 'GLM-5.1', category: 'mid', provider: 'AntSeed', input: 0.25, output: 0.60, ctx: '128K', caps: ['chat','coding'] },
-  { id: 'kimi-k2-6', name: 'Kimi K2.6', category: 'mid', provider: 'AntSeed', input: 0.07, output: 0.42, ctx: '128K', caps: ['chat','reasoning','coding'] },
-  { id: 'gemma-3-27b', name: 'Gemma 3 27B', category: 'mid', provider: 'AntSeed', input: 0.09, output: 0.18, ctx: '128K', caps: ['chat','vision'] },
-  { id: 'gemma4-31b', name: 'Gemma 4 31B', category: 'budget', provider: 'AntSeed', input: 0.01, output: 0.02, ctx: '128K', caps: ['chat','coding','vision'] },
-  { id: 'gpt-oss-120b', name: 'GPT-OSS 120B', category: 'mid', provider: 'AntSeed', input: 0.04, output: 0.14, ctx: '128K', caps: ['chat','coding','math'] },
-  { id: 'minimax-m2.7', name: 'MiniMax M2.7', category: 'budget', provider: 'AntSeed', input: 0.01, output: 0.02, ctx: '64K', caps: ['chat','fast'] },
-  { id: 'mistral-large', name: 'Mistral Large', category: 'frontier', provider: 'Venice', input: 2.00, output: 6.00, ctx: '128K', caps: ['chat','reasoning'] },
-  { id: 'mistral-small-3.2', name: 'Mistral Small 3.2', category: 'mid', provider: 'AntSeed', input: 0.09, output: 0.25, ctx: '64K', caps: ['chat','fast'] },
-  { id: 'qwen2.5-72b', name: 'Qwen 2.5 72B', category: 'mid', provider: 'AntSeed', input: 0.40, output: 0.40, ctx: '32K', caps: ['chat','coding','math'] },
-  { id: 'venice-uncensored', name: 'Venice Uncensored', category: 'premium', provider: 'Venice', input: 0.07, output: 0.35, ctx: '32K', caps: ['chat','uncensored','vision'] },
-]
-
-const CATEGORIES: { key: Category; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'budget', label: 'Budget' },
-  { key: 'mid', label: 'Mid' },
-  { key: 'premium', label: 'Premium' },
-  { key: 'frontier', label: 'Frontier' },
-  { key: 'coding', label: 'Coding' },
-  { key: 'reasoning', label: 'Reasoning' },
-  { key: 'uncensored', label: 'Uncensored' },
-]
-
-const CATEGORY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  budget: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  mid: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-  premium: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
-  frontier: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+const CAPABILITY_LABELS: Record<Capability, string> = {
+  reasoning: 'Reasoning',
+  coding: 'Coding',
+  multimodal: 'Multimodal',
+  vision: 'Vision',
+  fast: 'Fast',
+  uncensored: 'Uncensored',
+  agents: 'Agents',
+  math: 'Math',
+  chat: 'Chat',
 }
 
-const PROVIDER_STYLES: Record<string, { bg: string; text: string }> = {
-  Venice: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  AntSeed: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  Both: { bg: 'bg-amber-100', text: 'text-amber-700' },
-}
-
-function formatPrice(price: number): string {
-  if (price < 0.01) return `$${price.toFixed(3)}`
-  if (price < 1) return `$${price.toFixed(2)}`
-  return `$${price.toFixed(2)}`
-}
-
-function matchesFilter(model: Model, category: Category): boolean {
-  if (category === 'all') return true
-  if (category === 'uncensored') return model.caps.includes('uncensored')
-  if (category === 'coding') return model.caps.includes('coding')
-  if (category === 'reasoning') return model.caps.includes('reasoning')
-  return model.category === category
-}
-
-function ModelCard({ model, delay }: { model: Model; delay: number }) {
-  const [isHovered, setIsHovered] = useState(false)
+function ModelDetailModal({ model, onClose }: { model: Model; onClose: () => void }) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEsc)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleEsc)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
 
   return (
-    <div
-      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100/50"
-      style={{ animationDelay: `${delay}ms` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="mb-4 flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-slate-500">{model.id}</p>
-          <p className="mt-1 text-lg font-semibold text-slate-900">{model.name}</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <span
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${PROVIDER_STYLES[model.provider].bg} ${PROVIDER_STYLES[model.provider].text}`}
-          >
-            {model.provider}
-          </span>
-          {model.provider === 'Venice' && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-200" title="Zero data retention on Venice-hosted inference">
-              <Shield className="h-3 w-3" />
-              Privacy
-            </span>
-          )}
-          {model.provider === 'AntSeed' && (
-            <span className="flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 border border-cyan-200" title="P2P decentralized inference">
-              <Users className="h-3 w-3" />
-              P2P
-            </span>
-          )}
-        </div>
-      </div>
-
-      <span
-        className={`inline-block rounded-lg border px-3 py-1 text-xs font-medium uppercase tracking-wide ${CATEGORY_STYLES[model.category].bg} ${CATEGORY_STYLES[model.category].text} ${CATEGORY_STYLES[model.category].border}`}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
       >
-        {model.category}
-      </span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm p-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">{model.name}</h2>
+              <p className="mt-1 text-sm text-zinc-500">{model.id}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-full p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4">
-        <div>
-          <p className="text-xs text-slate-500">Input / 1M tokens</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">{formatPrice(model.input)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">Output / 1M tokens</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">{formatPrice(model.output)}</p>
-        </div>
-      </div>
+          <div className="p-6 space-y-6">
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${PROVIDER_COLORS[model.provider].bg} ${PROVIDER_COLORS[model.provider].text}`}>
+                {model.provider}
+              </span>
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${TIER_COLORS[model.tier].badge}`}>
+                {TIER_LABELS[model.tier]}
+              </span>
+            </div>
 
-      <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-        <Brain className="h-4 w-4 text-indigo-500" />
-        <span>Context: <span className="font-semibold text-slate-900">{model.ctx}</span></span>
-      </div>
+            <div>
+              <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wide mb-2">Description</h3>
+              <p className="text-zinc-300">{model.description}</p>
+            </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {model.caps.map((cap) => (
-          <span
-            key={cap}
-            className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600"
-          >
-            {cap}
-          </span>
-        ))}
-      </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-4">
+                <p className="text-xs text-zinc-600 mb-1">Input Price</p>
+                <p className="text-2xl font-bold font-mono text-cyan-400">{formatPrice(model.inputPricePer1M)}</p>
+                <p className="text-xs text-zinc-600 mt-1">per 1M tokens</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-4">
+                <p className="text-xs text-zinc-600 mb-1">Output Price</p>
+                <p className="text-2xl font-bold font-mono text-zinc-300">{formatPrice(model.outputPricePer1M)}</p>
+                <p className="text-xs text-zinc-600 mt-1">per 1M tokens</p>
+              </div>
+            </div>
 
-      <div
-        className={`absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
-    </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-3 rounded-lg bg-zinc-800/30 p-3">
+                <Brain className="h-5 w-5 text-cyan-500/60" />
+                <div>
+                  <p className="text-xs text-zinc-600">Context Window</p>
+                  <p className="font-semibold text-white">{model.contextLength}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg bg-zinc-800/30 p-3">
+                <DollarSign className="h-5 w-5 text-cyan-500/60" />
+                <div>
+                  <p className="text-xs text-zinc-600">Per Token</p>
+                  <p className="font-semibold text-white">{formatPricePerToken(model.inputPricePer1M)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wide mb-3">Capabilities</h3>
+              <div className="flex flex-wrap gap-2">
+                {model.capabilities.map((cap) => (
+                  <span
+                    key={cap}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/50 px-3 py-1.5 text-sm font-medium text-zinc-400"
+                  >
+                    {CAPABILITY_ICONS[cap]}
+                    {CAPABILITY_LABELS[cap]}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wide mb-3">Sample Request</h3>
+              <div className="relative">
+                <div className="absolute left-4 top-3">
+                  <Terminal className="h-5 w-5 text-zinc-600" />
+                </div>
+                <pre className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4 pl-12 text-sm font-mono text-zinc-400 overflow-x-auto">
+{`curl https://api.oma.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "${model.modelId}",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'`}
+                </pre>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-zinc-800">
+              <Link
+                href="/playground"
+                className="btn-primary flex-1 justify-center"
+              >
+                Use in Playground
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+              <Link
+                href="/dashboard"
+                className="btn-secondary flex-1 justify-center"
+              >
+                Get API Key
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
-function AnimatedSection({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+const ModelCard = memo(function ModelCard({
+  model,
+  delay,
+  onSelect,
+  isVisible,
+}: {
+  model: Model
+  delay: number
+  onSelect: (model: Model) => void
+  isVisible: boolean
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.4, delay: delay * 0.05 }}
+      className="group relative cursor-pointer"
+      onClick={() => onSelect(model)}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+      <div className="relative rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-5 transition-all duration-300 hover:border-cyan-500/30 hover:bg-zinc-900/80 hover:-translate-y-0.5">
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-zinc-600">{model.id}</p>
+            <p className="mt-0.5 text-base font-semibold text-white">{model.name}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${PROVIDER_COLORS[model.provider].bg} ${PROVIDER_COLORS[model.provider].text}`}>
+              {model.provider}
+            </span>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TIER_COLORS[model.tier].badge}`}>
+              {TIER_LABELS[model.tier]}
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-3 flex items-center gap-4 text-xs text-zinc-500">
+          <span className="flex items-center gap-1">
+            <Brain className="h-3.5 w-3.5 text-cyan-500/60" />
+            <span className="font-medium text-zinc-300">{model.contextLength}</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="font-mono text-cyan-400">{formatPrice(model.inputPricePer1M)}</span>
+            <span>/1M in</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="font-mono text-zinc-400">{formatPrice(model.outputPricePer1M)}</span>
+            <span>/1M out</span>
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {model.capabilities.slice(0, 4).map((cap) => (
+            <span
+              key={cap}
+              className="inline-flex items-center gap-1 rounded-md bg-zinc-800/50 px-2 py-0.5 text-xs font-medium text-zinc-500 transition-colors group-hover:bg-cyan-500/10 group-hover:text-cyan-400"
+            >
+              {CAPABILITY_ICONS[cap]}
+              {CAPABILITY_LABELS[cap]}
+            </span>
+          ))}
+          {model.capabilities.length > 4 && (
+            <span className="inline-flex items-center rounded-md bg-zinc-800/50 px-2 py-0.5 text-xs font-medium text-zinc-500">
+              +{model.capabilities.length - 4}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-4 flex items-center gap-2">
+          <button className="flex-1 rounded-lg bg-cyan-500/10 px-3 py-2 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20">
+            Use in Playground
+          </button>
+          <button className="rounded-lg bg-zinc-800/50 px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-white">
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+})
+
+const FreeModelHeroCard = memo(function FreeModelHeroCard({
+  model,
+  delay,
+  onSelect,
+}: {
+  model: Model
+  delay: number
+  onSelect: (model: Model) => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: delay * 0.1 }}
+      className="group relative cursor-pointer rounded-xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/10 to-zinc-900/50 p-5 transition-all duration-300 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10"
+      onClick={() => onSelect(model)}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+
+      <div className="relative">
+        <div className="mb-3 flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIER_COLORS[model.tier].badge}`}>
+              {TIER_LABELS[model.tier]}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-zinc-500">
+            <Brain className="h-3.5 w-3.5 text-cyan-500/60" />
+            <span className="font-medium text-cyan-400">{model.contextLength}</span>
+          </div>
+        </div>
+
+        <h3 className="text-lg font-bold text-white mb-1">{model.name}</h3>
+        <p className="text-sm text-zinc-500 line-clamp-2 mb-3">{model.description}</p>
+
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {model.capabilities.map((cap) => (
+            <span
+              key={cap}
+              className="inline-flex items-center gap-1 rounded-md bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400/80"
+            >
+              {CAPABILITY_ICONS[cap]}
+              {CAPABILITY_LABELS[cap]}
+            </span>
+          ))}
+        </div>
+
+        <Link
+          href="/playground"
+          className="inline-flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-zinc-900 transition-all hover:bg-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Sparkles className="h-4 w-4" />
+          Try Free
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </motion.div>
+  )
+})
+
+const AnimatedSection = memo(function AnimatedSection({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}) {
   const [isVisible, setIsVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -189,181 +360,311 @@ function AnimatedSection({ children, delay = 0, className = '' }: { children: Re
   }, [])
 
   return (
-    <div
+    <motion.div
       ref={ref}
-      className={`transition-all duration-500 ease-out ${className} ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.5, delay: delay / 1000 }}
+      className={className}
     >
       {children}
-    </div>
+    </motion.div>
   )
-}
+})
 
 export default function ModelsPage() {
-  const [activeCategory, setActiveCategory] = useState<Category>('all')
   const [search, setSearch] = useState('')
+  const [tierFilter, setTierFilter] = useState<Tier | 'All'>('All')
+  const [providerFilter, setProviderFilter] = useState<Provider | 'All'>('All')
+  const [sortBy, setSortBy] = useState<SortOption>('price')
+  const [selectedModel, setSelectedModel] = useState<Model | null>(null)
+  const [isGridVisible, setIsGridVisible] = useState(false)
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const element = gridRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsGridVisible(true)
+          observer.unobserve(element)
+        }
+      },
+      { threshold: 0.05 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
 
   const filtered = useMemo(() => {
-    return MODELS.filter((m) => {
-      const catMatch = matchesFilter(m, activeCategory)
-      if (!catMatch) return false
-      if (!search.trim()) return true
+    let result = [...MODELS]
+
+    if (search.trim()) {
       const q = search.toLowerCase()
-      return (
-        m.id.toLowerCase().includes(q) ||
-        m.name.toLowerCase().includes(q) ||
-        m.provider.toLowerCase().includes(q) ||
-        m.caps.some((c) => c.toLowerCase().includes(q))
+      result = result.filter(
+        (m) =>
+          m.id.toLowerCase().includes(q) ||
+          m.name.toLowerCase().includes(q) ||
+          m.provider.toLowerCase().includes(q) ||
+          m.capabilities.some((c) => c.toLowerCase().includes(q))
       )
+    }
+
+    if (tierFilter !== 'All') {
+      result = result.filter((m) => m.tier === tierFilter)
+    }
+
+    if (providerFilter !== 'All') {
+      result = result.filter((m) => m.provider === providerFilter)
+    }
+
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'price':
+          return a.inputPricePer1M - b.inputPricePer1M
+        case 'context':
+          return parseInt(b.contextLength) - parseInt(a.contextLength)
+        case 'name':
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
     })
-  }, [activeCategory, search])
+
+    return result
+  }, [search, tierFilter, providerFilter, sortBy])
+
+  const modelsByTier = useMemo(() => getModelsByTier(filtered), [filtered])
+
+  const budgetModels = useMemo(() => MODELS.filter((m) => m.tier === 'budget' && m.inputPricePer1M <= 0.02), [])
+
+  const groupedModels = useMemo(() => {
+    return TIER_ORDER.map((tier) => ({
+      tier,
+      label: TIER_LABELS[tier],
+      models: modelsByTier[tier],
+    })).filter((group) => group.models.length > 0)
+  }, [modelsByTier])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <AnimatedSection>
-          <div className="mb-2 text-sm font-medium text-indigo-600">OMA AI Gateway</div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-              AI Models API — Access Multiple LLMs Through One Gateway
-            </h1>
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 border border-emerald-200">
-              <Shield className="h-4 w-4" />
-              Privacy-first
-            </span>
+        <AnimatedSection className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-medium text-cyan-300">{MODELS.length}+ models available</span>
           </div>
-          <p className="mt-4 max-w-2xl text-lg text-slate-600">
-            {MODELS.length}+ models via OpenAI-compatible API. Privacy-first with Venice-hosted inference. Pay per token, no subscriptions.
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Every model. One API.
+            </h1>
+          </div>
+          <p className="mt-4 max-w-2xl text-lg text-zinc-500">
+            Access {MODELS.length}+ models via OpenAI-compatible API. Starter credits available. Pay per token, no subscriptions.
           </p>
         </AnimatedSection>
 
-        <AnimatedSection delay={100} className="mt-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => setActiveCategory(cat.key)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                    activeCategory === cat.key
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search models..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-full border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 lg:w-72"
-              />
-            </div>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection delay={200} className="mt-6">
-          <div className="flex items-center gap-4 rounded-xl bg-white border border-slate-200 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-indigo-500" />
-              <span className="text-sm text-slate-600">
-                <span className="font-semibold text-slate-900">{filtered.length}</span> models
-              </span>
-            </div>
-            <span className="text-slate-300">|</span>
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-indigo-500" />
-              <span className="text-sm text-slate-600">Venice AI + AntSeed P2P</span>
-            </div>
-            {activeCategory !== 'all' && (
-              <>
-                <span className="text-slate-300">|</span>
-                <button
-                  onClick={() => setActiveCategory('all')}
-                  className="text-sm text-indigo-600 hover:underline"
-                >
-                  Clear filter
-                </button>
-              </>
-            )}
-          </div>
-        </AnimatedSection>
-
-        {filtered.length === 0 ? (
-          <AnimatedSection delay={300}>
-            <div className="flex flex-col items-center justify-center py-20">
-              <Search className="mb-4 h-12 w-12 text-slate-300" />
-              <p className="text-lg font-medium text-slate-600">No models match your criteria</p>
-              <button
-                onClick={() => { setActiveCategory('all'); setSearch('') }}
-                className="mt-4 text-sm text-indigo-600 hover:underline"
-              >
-                Reset filters
-              </button>
+        {budgetModels.length > 0 && tierFilter === 'All' && providerFilter === 'All' && !search && (
+          <AnimatedSection delay={100}>
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-400 border border-amber-500/20">
+                  <Sparkles className="h-4 w-4" />
+                  Budget Models
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {budgetModels.map((model, i) => (
+                  <FreeModelHeroCard
+                    key={model.id}
+                    model={model}
+                    delay={i}
+                    onSelect={setSelectedModel}
+                  />
+                ))}
+              </div>
             </div>
           </AnimatedSection>
-        ) : (
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((model, i) => (
-              <ModelCard key={model.id} model={model} delay={i * 50} />
-            ))}
-          </div>
         )}
 
+        <AnimatedSection delay={200} className="sticky top-0 z-20 mb-6 bg-zinc-950/80 backdrop-blur-md py-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-xl border border-zinc-800/50 bg-zinc-900/80 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  placeholder="Search models..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-full border border-zinc-800 bg-zinc-900 py-2.5 pl-11 pr-4 text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 lg:w-64"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-zinc-600">Tier:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {TIERS.map((tier) => (
+                    <button
+                      key={tier}
+                      onClick={() => setTierFilter(tier)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        tierFilter === tier
+                          ? tier === 'All'
+                            ? 'bg-cyan-500 text-zinc-900'
+                            : TIER_COLORS[tier as Tier].bg + ' ' + TIER_COLORS[tier as Tier].text + ' border ' + TIER_COLORS[tier as Tier].border
+                          : 'bg-zinc-800/50 text-zinc-400 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      {tier === 'All' ? 'All' : TIER_LABELS[tier as Tier]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-zinc-600">Provider:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {PROVIDERS.map((provider) => (
+                    <button
+                      key={provider}
+                      onClick={() => setProviderFilter(provider)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        providerFilter === provider
+                          ? provider === 'All'
+                            ? 'bg-cyan-500 text-zinc-900'
+                            : PROVIDER_COLORS[provider as Provider].bg + ' ' + PROVIDER_COLORS[provider as Provider].text + ' border ' + PROVIDER_COLORS[provider as Provider].border
+                          : 'bg-zinc-800/50 text-zinc-400 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      {provider}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-zinc-500">
+                <span className="font-semibold text-cyan-400">{filtered.length}</span> models
+              </span>
+              <div className="relative group">
+                <button className="flex items-center gap-1.5 rounded-full bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors">
+                  Sort by
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                <div className="absolute right-0 top-full mt-1 hidden group-hover:block z-30">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900 shadow-xl overflow-hidden">
+                    {(['price', 'context', 'name'] as SortOption[]).map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => setSortBy(opt)}
+                        className={`block w-full px-4 py-2 text-left text-xs transition-colors ${
+                          sortBy === opt ? 'bg-cyan-500/10 text-cyan-400' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                        }`}
+                      >
+                        {opt === 'price' ? 'Price (Low to High)' : opt === 'context' ? 'Context Length' : 'Name (A-Z)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        <div ref={gridRef}>
+          {groupedModels.length === 0 ? (
+            <AnimatedSection delay={300}>
+              <div className="flex flex-col items-center justify-center py-20">
+                <Search className="mb-4 h-12 w-12 text-zinc-700" />
+                <p className="text-lg font-medium text-zinc-500">No models match your criteria</p>
+                <button
+                  onClick={() => { setSearch(''); setTierFilter('All'); setProviderFilter('All') }}
+                  className="mt-4 text-sm text-cyan-400 hover:underline"
+                >
+                  Reset filters
+                </button>
+              </div>
+            </AnimatedSection>
+          ) : (
+            <div className="space-y-10">
+              {groupedModels.map((group) => (
+                <AnimatedSection key={group.tier} delay={300}>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <h2 className={`text-lg font-bold ${TIER_COLORS[group.tier].text}`}>
+                        {group.label.toUpperCase()} MODELS
+                      </h2>
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TIER_COLORS[group.tier].badge}`}>
+                        {group.models.length}
+                      </span>
+                    </div>
+                    
+                      <div className="h-px flex-1 bg-gradient-to-r from-zinc-800 to-transparent" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {group.models.map((model, i) => (
+                      <ModelCard
+                        key={model.id}
+                        model={model}
+                        delay={i}
+                        onSelect={setSelectedModel}
+                        isVisible={isGridVisible}
+                      />
+                    ))}
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          )}
+        </div>
+
         <AnimatedSection delay={500} className="mt-16">
-          <h3 className="mb-6 text-lg font-semibold text-slate-900">Provider Legend</h3>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-3 w-3 rounded-full bg-blue-500" />
-                <span className="font-semibold text-slate-900">Venice AI</span>
+          <h3 className="mb-6 text-lg font-semibold text-white">Provider Legend</h3>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {([
+              { name: 'Venice', color: 'purple', desc: 'Privacy-first AI with zero data retention. Great for sensitive applications.' },
+              { name: 'Together AI', color: 'orange', desc: 'Open AI optimized for inference. Strong selection of open-weight models.' },
+              { name: 'DeepInfra', color: 'green', desc: 'Budget-friendly inference for open models. Great value for cost-effective workloads.' },
+            ] as const).map((provider) => {
+              const colorMap: Record<string, string> = {
+                purple: 'bg-purple-500',
+                orange: 'bg-orange-500',
+                green: 'bg-green-500',
+              };
+              return (
+              <div key={provider.name} className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-5">
+                <div className="mb-3 flex items-center gap-3">
+                  <span className={`flex h-3 w-3 rounded-full ${colorMap[provider.color] || 'bg-purple-500'}`} style={{}} />
+                  <span className="font-semibold text-white">{provider.name}</span>
+                </div>
+                <p className="text-sm text-zinc-500">{provider.desc}</p>
               </div>
-              <p className="text-sm text-slate-600">
-                Privacy-first (zero data retention on certain models). Hosted inference for proprietary models (GPT, Claude, Gemini, Mistral). Low-latency, high-availability.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-3 w-3 rounded-full bg-emerald-500" />
-                <span className="font-semibold text-slate-900">AntSeed P2P</span>
-              </div>
-              <p className="text-sm text-slate-600">
-                P2P decentralized inference for open-source models. 50-60% cheaper. Community-run compute nodes.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-3 w-3 rounded-full bg-amber-500" />
-                <span className="font-semibold text-slate-900">Both</span>
-              </div>
-              <p className="text-sm text-slate-600">
-                Available via either provider. Automatic failover ensures maximum uptime for critical workloads.
-              </p>
-            </div>
+              );
+            })}
           </div>
         </AnimatedSection>
 
         <AnimatedSection delay={700} className="mt-16 text-center">
-          <p className="mb-6 text-slate-600">
+          <p className="mb-6 text-zinc-500">
             All models accessible via OpenAI-compatible API. OMA stakers get up to 15% discount.
           </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-200/50"
-          >
+          <Link href="/dashboard" className="btn-primary text-lg px-8 py-4">
             Get API Key
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Link>
         </AnimatedSection>
       </div>
+
+      <AnimatePresence>
+        {selectedModel && (
+          <ModelDetailModal model={selectedModel} onClose={() => setSelectedModel(null)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

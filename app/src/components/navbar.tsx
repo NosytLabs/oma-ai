@@ -1,270 +1,207 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useWallet } from '@/components/wallet-provider'
 import { ConnectButton } from '@/components/connect-button'
-import { Menu, X, LogOut, ChevronDown, Hexagon, Key, ArrowRightLeft, Image as ImageIcon, Play } from 'lucide-react'
+import { Menu, X, ChevronDown, Key, Zap } from 'lucide-react'
 
-const OMA_LOGO_SVG = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-8 w-8">
-    <title>OMA AI Gateway Icon</title>
-    <desc>OMA icon with stylized AI brain circuit mark</desc>
-    <g transform="translate(0, 0) scale(0.42)">
-      <path d="M32 0 C56 0 76 16 76 38 C76 58 58 72 36 72 C18 72 0 58 0 38 C0 18 16 0 36 0" fill="none" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
-      <circle cx="18" cy="28" r="4" fill="#6366f1"/>
-      <circle cx="12" cy="42" r="3" fill="#6366f1"/>
-      <circle cx="22" cy="52" r="3.5" fill="#6366f1"/>
-      <circle cx="54" cy="24" r="3.5" fill="#6366f1"/>
-      <circle cx="60" cy="38" r="4" fill="#6366f1"/>
-      <circle cx="52" cy="54" r="3" fill="#6366f1"/>
-      <circle cx="36" cy="36" r="6" fill="#6366f1"/>
-      <circle cx="36" cy="36" r="3" fill="#fafafa"/>
-      <path d="M18 28 L30 34 M22 52 L30 40 M54 24 L42 32 M52 54 L42 40 M36 30 L36 42 M30 36 L42 36" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-      <circle cx="62" cy="18" r="4" fill="#f43f5e"/>
-    </g>
-  </svg>
-)
+const navLinks = [
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/models', label: 'Models' },
+  { href: '/playground', label: 'Playground' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/dashboard', label: 'Dashboard' },
+]
+
+function OmaLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizeMap = {
+    sm: { circle: 28, icon: 5, text: 18 },
+    md: { circle: 36, icon: 6, text: 22 },
+    lg: { circle: 48, icon: 8, text: 28 },
+  }
+  const s = sizeMap[size]
+ 
+  return (
+    <svg viewBox="0 0 64 64" fill="none" style={{ width: s.circle, height: s.circle }}>
+      <defs>
+        <linearGradient id={`navGrad${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#00ffc8"/>
+          <stop offset="50%" stopColor="#00d4aa"/>
+          <stop offset="100%" stopColor="#009984"/>
+        </linearGradient>
+        <linearGradient id={`accentGrad${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffb800"/>
+          <stop offset="100%" stopColor="#ff8c00"/>
+        </linearGradient>
+        <filter id={`glow${size}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <circle cx="32" cy="32" r="28" fill="#09090b"/>
+      <circle cx="32" cy="32" r="27" stroke={`url(#navGrad${size})`} strokeWidth="1" opacity="0.4"/>
+      <circle cx="32" cy="32" r="22" stroke={`url(#navGrad${size})`} strokeWidth="0.5" opacity="0.2"/>
+      <path d="M32 14 L38 24 L50 26 L42 36 L44 48 L32 42 L20 48 L22 36 L14 26 L26 24 Z" fill="none" stroke={`url(#accentGrad${size})`} strokeWidth="2" strokeLinejoin="round" filter={`url(#glow${size})`}/>
+      <circle cx="32" cy="32" r="5" fill={`url(#navGrad${size})`} filter={`url(#glow${size})`}/>
+      <circle cx="32" cy="32" r="2.5" fill="#09090b"/>
+    </svg>
+  )
+}
 
 export function Navbar() {
-  const {
-    evmAddress,
-    isConnected,
-    disconnect,
-  } = useWallet()
+  const { evmAddress, isConnected, disconnect } = useWallet()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const navLinks = [
-    { href: '/llms', label: 'Models' },
-    { href: '/pricing', label: 'Pricing' },
-    { href: '/image-generation', label: 'Images', icon: ImageIcon },
-    { href: '/video-generation', label: 'Video', icon: Play },
-    { href: '/docs', label: 'Docs' },
-    { href: '/playground', label: 'Playground' },
-    { href: '/swap', label: 'Swap', icon: ArrowRightLeft },
-    { href: '/stake', label: 'Stake' },
-  ]
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
-  const walletDropdownLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/deposit', label: 'Deposit' },
-    { href: '/stake', label: 'Stake' },
-  ]
+  const shortAddress = evmAddress ? `${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}` : ''
 
   return (
-    <nav className="group fixed top-0 left-0 right-0 z-50 border-b border-border bg-void/90 backdrop-blur-md transition-all duration-300 hover:shadow-soft">
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
-          {OMA_LOGO_SVG}
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-accent">OMA</span>
-            <span className="text-text-secondary text-base">.AI</span>
-          </span>
-        </Link>
-
-        <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <NavLink key={link.href} href={link.href} icon={link.icon}>
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="hidden items-center gap-3 md:flex">
-          {!isConnected && (
-            <Link
-              href="/dashboard"
-              className="group inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-4 py-2 text-xs font-bold text-accent transition-all duration-200 hover:border-accent hover:bg-accent hover:text-white hover:shadow-glow min-h-[40px]"
-            >
-              <Key className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
-              Get API Key
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled 
+        ? 'bg-zinc-950/95 backdrop-blur-2xl border-b border-zinc-800/60 shadow-2xl shadow-black/30' 
+        : 'bg-gradient-to-b from-zinc-950/80 to-transparent'
+    }`}>
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center gap-10">
+            <Link href="/" className="flex items-center gap-3 group">
+              <OmaLogo size="md" />
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold tracking-tight text-cyan-400 group-hover:text-cyan-300 transition-colors">OMA</span>
+                <span className="text-sm font-medium tracking-widest text-zinc-500">AI</span>
+              </div>
             </Link>
-          )}
-          {isConnected && evmAddress ? (
-            <div className="relative">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm transition-all duration-200 hover:border-accent/50 hover:shadow-soft"
-              >
-                <Hexagon className="h-4 w-4 text-accent" />
-                <span className="font-mono text-text">
-                  {`${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}`}
-                </span>
-                <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent">
-                  BASE
-                </span>
-                <ChevronDown className={`h-3 w-3 text-text-secondary transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
 
-              {dropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setDropdownOpen(false)}
-                  />
-                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border bg-panel py-1 shadow-floating animate-fade-in">
-                    <div className="border-b border-border px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Hexagon className="h-3 w-3 text-accent" />
-                        <p className="font-mono text-xs text-text-secondary break-all">
-                          {evmAddress}
-                        </p>
-                      </div>
+            <div className="hidden lg:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2.5 text-sm font-medium text-zinc-400 hover:text-cyan-400 rounded-lg hover:bg-cyan-400/5 transition-all duration-200 relative group"
+                >
+                  {link.label}
+                  <span className="absolute bottom-1 left-4 right-4 h-px bg-cyan-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/oma-ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+              </svg>
+            </a>
+           
+            {isConnected ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 border border-cyan-500/30 rounded-xl hover:border-cyan-400/50 hover:bg-cyan-500/15 transition-all duration-200"
+                >
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-sm font-medium text-zinc-200 font-mono">{shortAddress}</span>
+                  <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-60 py-2 bg-zinc-900/98 backdrop-blur-xl border border-zinc-800/80 rounded-xl shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 mb-2 border-b border-zinc-800/50">
+                      <p className="text-xs text-zinc-500">Connected</p>
+                      <p className="text-sm font-mono text-cyan-400">{shortAddress}</p>
                     </div>
-                    {walletDropdownLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-text transition-colors duration-150 hover:bg-surface"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                    <div className="border-t border-border" />
-                    <button
-                      onClick={() => {
-                        disconnect()
-                        setDropdownOpen(false)
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-secondary transition-colors duration-150 hover:bg-surface"
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:text-cyan-400 hover:bg-cyan-400/5 transition-colors"
+                      onClick={() => setShowUserMenu(false)}
                     >
-                      <LogOut className="h-4 w-4" />
-                      Disconnect
+                      <Key className="w-4 h-4" />
+                      <span>API Keys</span>
+                    </Link>
+                    <Link
+                      href="/deposit"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-300 hover:text-cyan-400 hover:bg-cyan-400/5 transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>Add Credits</span>
+                    </Link>
+                    <hr className="my-2 border-zinc-800/50" />
+                    <button
+                      onClick={() => { disconnect(); setShowUserMenu(false) }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <span>Disconnect</span>
                     </button>
                   </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <ConnectButton />
-          )}
-        </div>
-
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="text-text-secondary transition-all duration-200 hover:text-accent md:hidden"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
-      </div>
-
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-out md:hidden ${
-          mobileOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="border-t border-border bg-void px-4 py-4">
-          <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <MobileNavLink
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                icon={link.icon}
-              >
-                {link.label}
-              </MobileNavLink>
-            ))}
-
-            {!isConnected && (
-              <div className="mt-3 pt-3 border-t border-border">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-5 py-3 text-sm font-bold text-accent transition-all duration-200 hover:border-accent hover:bg-accent hover:text-white"
-                >
-                  <Key className="h-4 w-4" />
-                  Get API Key
-                </Link>
+                )}
               </div>
-            )}
-
-            {isConnected && (
-              <>
-                <div className="my-3 border-t border-border" />
-                {walletDropdownLinks.map((link) => (
-                  <MobileNavLink
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {link.label}
-                  </MobileNavLink>
-                ))}
-              </>
-            )}
-
-            <div className="my-3 border-t border-border" />
-
-            {isConnected && evmAddress ? (
-              <button
-                onClick={() => {
-                  disconnect()
-                  setMobileOpen(false)
-                }}
-                className="flex items-center gap-2 text-sm text-secondary transition-colors duration-150 hover:text-accent"
-              >
-                <LogOut className="h-4 w-4" />
-                Disconnect {`${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}`}
-              </button>
             ) : (
-              <div onClick={() => setMobileOpen(false)}>
-                <ConnectButton />
-              </div>
+              <ConnectButton />
             )}
+
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              {mobileOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
-      </div>
-    </nav>
-  )
-}
 
-function NavLink({
-  href,
-  icon: Icon,
-  children,
-}: {
-  href: string
-  icon?: React.ComponentType<{ className?: string }>
-  children: React.ReactNode
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-text-secondary transition-all duration-200 hover:text-accent hover:bg-surface hover:scale-105"
-    >
-      {Icon && <Icon className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110" />}
-      <span>{children}</span>
-    </Link>
-  )
-}
-
-function MobileNavLink({
-  href,
-  icon: Icon,
-  children,
-  onClick,
-}: {
-  href: string
-  icon?: React.ComponentType<{ className?: string }>
-  children: React.ReactNode
-  onClick: () => void
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-text-secondary transition-all duration-200 hover:text-accent hover:bg-surface"
-    >
-      {Icon && <Icon className="w-3.5 h-3.5" />}
-      <span>{children}</span>
-    </Link>
+        {mobileOpen && (
+          <div className="lg:hidden pb-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="pt-4 pb-2 border-t border-zinc-800/50 space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-4 py-3 text-base font-medium text-zinc-300 hover:text-cyan-400 hover:bg-cyan-400/5 rounded-lg transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="flex items-center gap-3 px-4 pt-4 mt-4 border-t border-zinc-800/50">
+                <a
+                  href="https://github.com/oma-ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                  </svg>
+                  GitHub
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
   )
 }

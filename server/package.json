@@ -14,7 +14,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "oma-shared": "file:../packages/shared",
     "@hono/node-server": "^1.14.0",
     "@lifi/sdk": "^3.16.3",
     "@neondatabase/serverless": "^1.0.0",

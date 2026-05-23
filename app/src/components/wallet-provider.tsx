@@ -1,14 +1,12 @@
 'use client'
 
-import { WagmiProvider } from 'wagmi'
+import { WagmiProvider, useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
 import { base } from 'wagmi/chains'
 import { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { getWagmiConfigSingleton } from '@/lib/wagmi'
 import { api } from '@/lib/api'
 
-// Prevent hydration mismatch by waiting for client-side mount
 function useIsMounted() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])

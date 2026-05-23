@@ -7,6 +7,7 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { createHash, randomBytes } from "crypto";
 
@@ -47,10 +48,6 @@ const walletSchema = z.object({
 const createKeySchema = z.object({
   name: z.string().min(1).max(100),
 });
-
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
-}
 
 authRoutes.post("/auth/nonce", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
   const parsed = nonceSchema.safeParse(await c.req.json());

@@ -5,6 +5,7 @@ import { addCredits } from "../credits/balance.js";
 import { bearerAuth } from "../auth/middleware.js";
 import { config } from "../config.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 
 export const onrampRoutes = new Hono<OmaEnv>();
@@ -45,10 +46,6 @@ setInterval(() => {
     }
   }
 }, 300_000).unref();
-
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
-}
 
 onrampRoutes.post("/v1/onramp/quote", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
   const parsed = quoteSchema.safeParse(await c.req.json());

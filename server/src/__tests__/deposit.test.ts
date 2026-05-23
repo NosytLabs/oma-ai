@@ -69,7 +69,6 @@ vi.mock('../credits/balance.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
-  processOmaDeposit: vi.fn(),
   processHoudiniDeposit: vi.fn(),
   completeHoudiniDeposit: vi.fn(),
 }))
@@ -166,7 +165,7 @@ vi.mock('../inference/antseed.js', () => ({
   antseedChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/circuit-breaker.js', () => ({
+vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
 }))
@@ -218,7 +217,7 @@ vi.mock('../credits/deposit-router.js', () => ({
 
 import app from '../index.js'
 import { verifySessionToken } from '../auth/siwe.js'
-import { processUsdcDeposit, processOmaDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit } from '../credits/deposit.js'
+import { processUsdcDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit } from '../credits/deposit.js'
 import { houdiniClient, OrderStatus, SwapType } from '../credits/houdini-client.js'
 import { db } from '../db/client.js'
 
@@ -274,57 +273,6 @@ describe('Deposit Routes', () => {
       expect(res.status).toBe(409)
       const body = await res.json()
       expect(body.error.type).toBe('duplicate')
-    })
-  })
-
-  describe('POST /v1/deposit/oma', () => {
-    it('processes OMA deposit with valid auth and body', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
-      vi.mocked(processOmaDeposit).mockResolvedValueOnce({ creditsCents: 1050, bonusPercent: 5, depositId: 'dep-2' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockChain: any = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
-      }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
-
-      const res = await app.request('/v1/deposit/oma', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer session-token',
-        },
-        body: JSON.stringify({ amount: 100, txHash: '0x' + 'b'.repeat(64) }),
-      })
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.credits).toBe(1050)
-      expect(body.bonus).toBe(5)
-    })
-
-    it('returns 503 when oracle not live', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
-      vi.mocked(processOmaDeposit).mockRejectedValueOnce(new Error('circuit breaker active - OMA deposits halted'))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockChain: any = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
-      }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
-
-      const res = await app.request('/v1/deposit/oma', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer session-token',
-        },
-        body: JSON.stringify({ amount: 100, txHash: '0x' + 'b'.repeat(64) }),
-      })
-      expect(res.status).toBe(403)
-      const body = await res.json()
-      expect(body.error.type).toBe('circuit_breaker')
     })
   })
 
@@ -444,8 +392,11 @@ describe('Deposit Routes', () => {
 
     it('returns 400 when route has not completed', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
-      const mockChain: any = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }) }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
+      interface MockChain {
+        from: () => { where: () => { limit: () => Promise<unknown[]> }; limit: () => Promise<unknown[]> };
+      }
+      const mockChain: MockChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }) }
+      ;(vi.mocked(db.select) as ReturnType<typeof vi.fn>).mockReturnValueOnce(mockChain as any)
       const { getRouteStatus } = await import('../credits/lifi-client.js')
       vi.mocked(getRouteStatus).mockResolvedValueOnce({ status: 'PENDING', fromAmount: '10', toAmount: '0', toAmountMin: '0' })
 

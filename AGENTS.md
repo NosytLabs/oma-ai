@@ -1,57 +1,222 @@
 # OMA AI Gateway - Operations
 
 ## Commands
+
 ### Server (oma/server)
-- Dev: `npm run dev`
-- Build: `npm run build`
-- Test: `npm test`
-- Typecheck: `npm run typecheck`
-- Lint: `npm run lint`
+```bash
+cd oma/server
+npm run dev          # Start dev server (tsx watch)
+npm run build        # Build for production
+npm run start        # Start production server
+npm run test         # Run all tests (vitest)
+npm run typecheck    # TypeScript validation
+npm run lint         # ESLint validation
+```
 
 ### App/Frontend (oma/app)
-- Dev: `npm run dev`
-- Build: `npm run build`
-- Lint: `npm run lint`
-- Typecheck: `npx tsc --noEmit`
+```bash
+cd oma/app
+npm run dev          # Start Next.js dev server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run typecheck    # TypeScript validation
+npm run lint         # ESLint validation
+```
 
 ### Docker
-- Build all: `docker compose build --no-cache`
-- Start: `docker compose up -d`
-- Stop: `docker compose down`
+```bash
+cd oma
+docker compose build --no-cache
+docker compose up -d
+docker compose down
+```
+
+### Development
+```bash
+# From oma root
+./start-dev.sh       # Start both servers
+
+# Or manually:
+cd app && npm run dev &
+cd server && npm run dev
+```
+
+---
+
+## Environment Setup
+
+### Server (.env)
+```env
+# Required
+DATABASE_URL=postgresql://user:pass@host/database
+JWT_SECRET=your-40-char-secret-key-here
+VENICE_API_KEY=sk-...
+
+# Optional
+REDIS_URL=redis://localhost:6379
+PORT=3001
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+FACILITATOR_MODE=mock
+TINYFISH_API_KEY=sk-tinyfish-...  # Web search MCP
+```
+
+### App (.env.local)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
 
 ## Validation Gates
-- Tests must pass before committing
-- Typecheck must pass (0 errors)
-- Lint must pass (0 errors)
 
-## Env Setup
-Copy `server/.env.example` to `server/.env` (server) and `app/.env.example` to `app/.env.local` (app).
-Key variables:
-- DATABASE_URL (Neon Postgres or local)
-- REDIS_URL (Upstash Redis or local)
-- VENICE_API_KEY
-- JWT_SECRET (40+ chars)
-- FACILITATOR_MODE=mock (for dev)
+Before any commit, ensure:
 
-## Testing Strategy
+- [ ] Server typecheck passes (`npm run typecheck` - 0 errors)
+- [ ] Server lint passes (`npm run lint` - 0 errors)
+- [ ] Server tests pass (`npm test`)
+- [ ] App typecheck passes (`npm run typecheck` - 0 errors)
+- [ ] App lint passes (`npm run lint` - 0 errors)
 
-### Scope
-1. Verify dev servers start - both frontend (Next.js) and backend (Hono.js)
-2. Health check - confirm /health endpoint responds
-3. Test suite - 116 tests pass (server), verify no flakes
-4. Docker build - both Dockerfiles build cleanly
-5. Frontend render - pages compile and render without runtime errors
-6. Rate-limit file audit - rate-limit.ts is the single authoritative file
-7. Security audit - env exposure, CORS config, auth middleware coverage
-8. Build audit - verify production build succeeds
+---
 
-### Acceptance Criteria
-- [ ] Server: `npm run dev` starts without crash
-- [ ] App: `npm run dev` starts without crash
-- [ ] Health endpoint returns 200 (when server running)
-- [ ] 116/116 tests passing (server)
-- [ ] App production build succeeds
-- [ ] Docker images build successfully
-- [ ] No dual rate-limit file confusion
-- [ ] Security headers present
-- [ ] No env vars leaked in source
+## Directory Structure
+
+```
+oma/
+├── server/src/              # Hono.js API server
+│   ├── routes/             # API endpoints
+│   │   ├── auth.ts         # SIWE authentication
+│   │   ├── chat.ts         # Inference endpoints
+│   │   ├── deposit.ts      # Payment deposits
+│   │   ├── models.ts       # Model listing
+│   │   ├── onramp.ts       # Fiat on-ramp
+│   │   └── stake.ts        # OMA staking
+│   ├── inference/          # AI provider routing
+│   │   ├── router.ts       # Circuit breaker + failover
+│   │   ├── venice.ts       # Venice AI integration
+│   │   ├── antseed.ts      # AntSeed backup
+│   │   ├── litellm.ts      # LiteLLM integration
+│   │   ├── models.ts       # Model catalog
+│   │   ├── tinyfish.ts      # TinyFish web search
+│   │   ├── tinyfish-fetch.ts # TinyFish web fetch
+│   │   └── provider-health.ts
+│   ├── credits/            # Credit system
+│   │   ├── balance.ts      # Balance management
+│   │   ├── deposit.ts      # Deposit processing
+│   │   └── oracle.ts       # Price oracle
+│   ├── x402/               # Payment facilitator
+│   │   ├── facilitator.ts  # x402 implementation
+│   │   └── crosschain.ts   # Cross-chain deposits
+│   ├── auth/               # Auth utilities
+│   │   ├── siwe.ts         # SIWE implementation
+│   │   ├── api-keys.ts     # API key management
+│   │   └── middleware.ts   # Auth middleware
+│   └── db/                 # Database
+│       ├── schema.ts       # Drizzle schema
+│       └── client.ts       # DB client
+├── app/src/                # Next.js frontend
+│   ├── app/               # Pages (App Router)
+│   │   ├── page.tsx        # Landing
+│   │   ├── dashboard/     # User dashboard
+│   │   ├── deposit/        # Deposit page
+│   │   ├── pricing/        # Pricing page
+│   │   ├── models/         # Model showcase
+│   │   ├── playground/     # API playground
+│   │   └── docs/           # Documentation
+│   └── components/         # UI components
+├── contracts/             # Solidity contracts
+├── deploy/coolify/        # Coolify deployment configs
+└── docs/                  # Documentation
+```
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `server/src/index.ts` | Main server entry point |
+| `server/src/config.ts` | Environment validation |
+| `server/src/routes/chat.ts` | /v1/chat/completions endpoint |
+| `server/src/inference/router.ts` | AI routing with failover |
+| `server/src/middleware/rate-limit.ts` | Rate limiting |
+| `app/src/app/page.tsx` | Landing page |
+| `app/src/components/navbar.tsx` | Navigation |
+
+---
+
+## Testing
+
+### Run all server tests
+```bash
+cd oma/server
+npm test
+```
+
+### Test specific file
+```bash
+cd oma/server
+npx vitest run src/__tests__/api.test.ts
+```
+
+### Test with coverage
+```bash
+cd oma/server
+npx vitest run --coverage
+```
+
+---
+
+## Database
+
+### Generate migrations
+```bash
+cd oma/server
+npm run db:generate
+```
+
+### Push schema to DB
+```bash
+cd oma/server
+npm run db:push
+```
+
+### Run migrations
+```bash
+cd oma/server
+npm run db:migrate
+```
+
+---
+
+## Health Check
+
+```bash
+# Server health
+curl http://localhost:3001/health
+
+# Expected response:
+{"status":"ok","version":"0.1.0","service":"oma-ai"}
+```
+
+---
+
+## Common Issues
+
+### Redis not connecting
+- Check `REDIS_URL` in `.env`
+- Ensure Redis is running locally or Upstash credentials are correct
+
+### TypeScript errors
+- Run `npm run typecheck` in both `server/` and `app/`
+- Fix any type errors before committing
+
+### Auth not working
+- Verify `JWT_SECRET` is 40+ characters
+- Check `FACILITATOR_MODE` is set correctly (mock for dev)
+
+---
+
+*Last updated: 2026-05-22*

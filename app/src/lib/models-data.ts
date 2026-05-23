@@ -1,0 +1,453 @@
+export type Tier = 'budget' | 'mid' | 'premium' | 'frontier'
+export type Provider = 'Venice'
+
+export interface Model {
+  id: string
+  name: string
+  provider: Provider
+  tier: Tier
+  description: string
+  contextLength: string
+  inputPricePer1M: number
+  outputPricePer1M: number
+  capabilities: Capability[]
+  modelId: string
+}
+
+export type Capability = 
+  | 'reasoning'
+  | 'coding'
+  | 'multimodal'
+  | 'vision'
+  | 'fast'
+  | 'uncensored'
+  | 'agents'
+  | 'math'
+  | 'chat'
+
+export const PROVIDER_COLORS: Record<Provider, { bg: string; text: string; border: string }> = {
+  Venice: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30' },
+}
+
+export const TIER_COLORS: Record<Tier, { bg: string; text: string; border: string; badge: string }> = {
+  budget: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', badge: 'bg-amber-500/20 text-amber-300' },
+  mid: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', badge: 'bg-cyan-500/20 text-cyan-300' },
+  premium: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/30', badge: 'bg-violet-500/20 text-violet-300' },
+  frontier: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300' },
+}
+
+export const TIER_ORDER: Tier[] = ['budget', 'mid', 'premium', 'frontier']
+
+export const MODELS: Model[] = [
+  {
+    id: 'deepseek-r1',
+    name: 'DeepSeek R1',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Advanced reasoning model with chain-of-thought capabilities. Excellent for complex problem-solving and mathematical reasoning.',
+    contextLength: '64K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['reasoning', 'math', 'coding'],
+    modelId: 'deepseek-r1',
+  },
+  {
+    id: 'deepseek-r1-distill',
+    name: 'DeepSeek R1 Distill',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Distilled version of DeepSeek R1 for faster inference while maintaining strong reasoning capabilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['reasoning', 'math'],
+    modelId: 'deepseek-r1-distill',
+  },
+  {
+    id: 'qwen3-8b',
+    name: 'Qwen 3 8B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Compact open-weight model with strong multilingual capabilities. Great for fast, efficient tasks.',
+    contextLength: '32K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.01,
+    capabilities: ['chat', 'fast'],
+    modelId: 'qwen3-8b',
+  },
+  {
+    id: 'llama-3.1-8b',
+    name: 'Llama 3.1 8B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Meta\'s open-weight model with excellent instruction following and coding abilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.01,
+    capabilities: ['chat', 'coding'],
+    modelId: 'llama-3.1-8b',
+  },
+  {
+    id: 'llama-3.2-3b',
+    name: 'Llama 3.2 3B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Ultra-efficient lightweight model for resource-constrained environments.',
+    contextLength: '128K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['chat', 'fast'],
+    modelId: 'llama-3.2-3b',
+  },
+  {
+    id: 'gemma-4-31b',
+    name: 'Gemma 4 31B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Google\'s open model with strong reasoning and instruction-following capabilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['chat', 'coding', 'reasoning'],
+    modelId: 'gemma-4-31b',
+  },
+  {
+    id: 'qwen3-coder-30b',
+    name: 'Qwen3 Coder 30B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Specialized code generation model with strong programming abilities.',
+    contextLength: '64K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['coding', 'fast'],
+    modelId: 'qwen3-coder-30b',
+  },
+  {
+    id: 'minimax-m2.7',
+    name: 'MiniMax M2.7',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Fast and efficient model optimized for chat and conversation tasks.',
+    contextLength: '64K',
+    inputPricePer1M: 0.01,
+    outputPricePer1M: 0.02,
+    capabilities: ['chat', 'fast'],
+    modelId: 'minimax-m2.7',
+  },
+  {
+    id: 'qwen2.5-72b',
+    name: 'Qwen 2.5 72B',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Large open-weight model with excellent multilingual and coding capabilities.',
+    contextLength: '32K',
+    inputPricePer1M: 0.40,
+    outputPricePer1M: 0.40,
+    capabilities: ['chat', 'coding', 'math'],
+    modelId: 'qwen2.5-72b',
+  },
+  {
+    id: 'deepseek-v4-flash',
+    name: 'DeepSeek V4 Flash',
+    provider: 'Venice',
+    tier: 'budget',
+    description: 'Fast version of DeepSeek V4 with optimized inference for quick responses.',
+    contextLength: '128K',
+    inputPricePer1M: 0.05,
+    outputPricePer1M: 0.19,
+    capabilities: ['chat', 'fast', 'coding'],
+    modelId: 'deepseek-v4-flash',
+  },
+  {
+    id: 'llama-3.3-70b',
+    name: 'Llama 3.3 70B',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Powerful open-weight model with excellent reasoning and instruction following.',
+    contextLength: '128K',
+    inputPricePer1M: 0.30,
+    outputPricePer1M: 0.48,
+    capabilities: ['chat', 'fast'],
+    modelId: 'llama-3.3-70b',
+  },
+  {
+    id: 'qwen3-235b',
+    name: 'Qwen3 235B',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Massive open-weight model with strong multilingual and reasoning capabilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.09,
+    outputPricePer1M: 0.45,
+    capabilities: ['chat', 'reasoning'],
+    modelId: 'qwen3-235b',
+  },
+  {
+    id: 'glm-5.1',
+    name: 'GLM-5.1',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Chinese-developed model with strong reasoning and multilingual support.',
+    contextLength: '128K',
+    inputPricePer1M: 0.25,
+    outputPricePer1M: 0.60,
+    capabilities: ['chat', 'coding'],
+    modelId: 'glm-5.1',
+  },
+  {
+    id: 'kimi-k2-6',
+    name: 'Kimi K2.6',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Moonshot AI\'s latest model with excellent context understanding and generation.',
+    contextLength: '128K',
+    inputPricePer1M: 0.07,
+    outputPricePer1M: 0.42,
+    capabilities: ['chat', 'reasoning', 'coding'],
+    modelId: 'kimi-k2',
+  },
+  {
+    id: 'gemma-3-27b',
+    name: 'Gemma 3 27B',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Google\'s latest open model with vision capabilities and improved reasoning.',
+    contextLength: '128K',
+    inputPricePer1M: 0.09,
+    outputPricePer1M: 0.18,
+    capabilities: ['chat', 'vision'],
+    modelId: 'gemma-3-27b',
+  },
+  {
+    id: 'gpt-oss-120b',
+    name: 'GPT-OSS 120B',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Open-source large language model with strong coding and reasoning abilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.04,
+    outputPricePer1M: 0.14,
+    capabilities: ['chat', 'coding', 'math'],
+    modelId: 'gpt-oss-120b',
+  },
+  {
+    id: 'mistral-small-3.2',
+    name: 'Mistral Small 3.2',
+    provider: 'Venice',
+    tier: 'mid',
+    description: 'Efficient Mistral model optimized for fast, high-quality responses.',
+    contextLength: '64K',
+    inputPricePer1M: 0.09,
+    outputPricePer1M: 0.25,
+    capabilities: ['chat', 'fast'],
+    modelId: 'mistral-small-3.2',
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Fast, efficient GPT-4o variant with vision capabilities at a lower price point.',
+    contextLength: '128K',
+    inputPricePer1M: 0.15,
+    outputPricePer1M: 0.60,
+    capabilities: ['chat', 'fast', 'vision', 'coding'],
+    modelId: 'gpt-4o-mini',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Google\'s fast, efficient multimodal model with massive context window.',
+    contextLength: '1M',
+    inputPricePer1M: 0.15,
+    outputPricePer1M: 0.60,
+    capabilities: ['chat', 'fast', 'vision', 'reasoning'],
+    modelId: 'gemini-2.5-flash',
+  },
+  {
+    id: 'grok-41-fast',
+    name: 'Grok 4.1 Fast',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'xAI\'s fast reasoning model with real-time knowledge and wit.',
+    contextLength: '128K',
+    inputPricePer1M: 0.26,
+    outputPricePer1M: 0.66,
+    capabilities: ['chat', 'fast', 'reasoning'],
+    modelId: 'grok-4.1-fast',
+  },
+  {
+    id: 'deepseek-v4-pro',
+    name: 'DeepSeek V4 Pro',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Premium DeepSeek model with enhanced reasoning and coding capabilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.18,
+    outputPricePer1M: 1.00,
+    capabilities: ['chat', 'coding', 'reasoning', 'math'],
+    modelId: 'deepseek-v4-pro',
+  },
+  {
+    id: 'deepseek-r1-premium',
+    name: 'DeepSeek R1',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Advanced reasoning model with chain-of-thought. Excellent for complex problem-solving.',
+    contextLength: '64K',
+    inputPricePer1M: 0.55,
+    outputPricePer1M: 2.19,
+    capabilities: ['reasoning', 'math', 'coding'],
+    modelId: 'deepseek-r1',
+  },
+  {
+    id: 'qwen3-coder-480b',
+    name: 'Qwen3 Coder 480B',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Massive specialized code generation model with exceptional programming abilities.',
+    contextLength: '128K',
+    inputPricePer1M: 0.14,
+    outputPricePer1M: 0.60,
+    capabilities: ['coding', 'chat', 'reasoning'],
+    modelId: 'qwen3-coder-480b',
+  },
+  {
+    id: 'venice-uncensored',
+    name: 'Venice Uncensored',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Privacy-first uncensored model for applications requiring unfiltered responses.',
+    contextLength: '32K',
+    inputPricePer1M: 0.07,
+    outputPricePer1M: 0.35,
+    capabilities: ['chat', 'uncensored', 'vision'],
+    modelId: 'venice-uncensored',
+  },
+  {
+    id: 'claude-haiku-4-5',
+    name: 'Claude Haiku 4.5',
+    provider: 'Venice',
+    tier: 'premium',
+    description: 'Fast, affordable Claude model with excellent reasoning and low latency.',
+    contextLength: '200K',
+    inputPricePer1M: 0.80,
+    outputPricePer1M: 4.00,
+    capabilities: ['chat', 'fast', 'vision', 'coding'],
+    modelId: 'claude-haiku-4-5',
+  },
+  {
+    id: 'claude-sonnet-4-6',
+    name: 'Claude Sonnet 4.6',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Balanced frontier model with excellent reasoning, coding, and vision capabilities.',
+    contextLength: '200K',
+    inputPricePer1M: 3.00,
+    outputPricePer1M: 15.00,
+    capabilities: ['chat', 'coding', 'vision', 'reasoning'],
+    modelId: 'claude-sonnet-4-6',
+  },
+  {
+    id: 'claude-opus-4-7',
+    name: 'Claude Opus 4.7',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Most capable Claude model for complex tasks requiring deep reasoning and analysis.',
+    contextLength: '200K',
+    inputPricePer1M: 15.00,
+    outputPricePer1M: 75.00,
+    capabilities: ['chat', 'coding', 'reasoning', 'vision', 'agents'],
+    modelId: 'claude-opus-4-7',
+  },
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'OpenAI\'s flagship multimodal model with exceptional reasoning and generation.',
+    contextLength: '128K',
+    inputPricePer1M: 2.50,
+    outputPricePer1M: 10.00,
+    capabilities: ['chat', 'coding', 'vision', 'reasoning'],
+    modelId: 'gpt-4o',
+  },
+  {
+    id: 'gpt-5.5',
+    name: 'GPT-5.5',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Latest GPT model with enhanced reasoning and agentic capabilities.',
+    contextLength: '128K',
+    inputPricePer1M: 10.00,
+    outputPricePer1M: 30.00,
+    capabilities: ['chat', 'coding', 'reasoning', 'agents'],
+    modelId: 'gpt-5.5',
+  },
+  {
+    id: 'o3',
+    name: 'OpenAI o3',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Advanced reasoning model with chain-of-thought for complex problem-solving.',
+    contextLength: '200K',
+    inputPricePer1M: 10.00,
+    outputPricePer1M: 40.00,
+    capabilities: ['reasoning', 'coding', 'agents', 'math'],
+    modelId: 'o3',
+  },
+  {
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Google\'s most capable multimodal model with million token context.',
+    contextLength: '1M',
+    inputPricePer1M: 1.50,
+    outputPricePer1M: 9.00,
+    capabilities: ['chat', 'reasoning', 'vision', 'agents'],
+    modelId: 'gemini-3.5-flash',
+  },
+  {
+    id: 'mistral-large',
+    name: 'Mistral Large',
+    provider: 'Venice',
+    tier: 'frontier',
+    description: 'Mistral\'s most capable model with excellent reasoning and multilingual support.',
+    contextLength: '128K',
+    inputPricePer1M: 2.00,
+    outputPricePer1M: 6.00,
+    capabilities: ['chat', 'reasoning', 'coding'],
+    modelId: 'mistral-large',
+  },
+]
+
+export function formatPrice(price: number): string {
+  if (price === 0) return 'Free'
+  if (price < 0.01) return `$${price.toFixed(3)}`
+  if (price < 1) return `$${price.toFixed(2)}`
+  return `$${price.toFixed(2)}`
+}
+
+export function formatPricePerToken(pricePer1M: number): string {
+  if (pricePer1M === 0) return '$0.00'
+  const perToken = pricePer1M / 1000000
+  if (perToken < 0.00001) return '$0.00'
+  return `$${perToken.toFixed(6)}`
+}
+
+export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
+  const grouped: Record<Tier, Model[]> = {
+    budget: [],
+    mid: [],
+    premium: [],
+    frontier: [],
+  }
+  for (const model of models) {
+    grouped[model.tier].push(model)
+  }
+  return grouped
+}

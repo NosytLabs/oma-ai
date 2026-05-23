@@ -79,6 +79,16 @@ export interface Order {
   transactionHash?: string;
 }
 
+export interface PaymentLink {
+  id: string;
+  url: string;
+  amount: string;
+  token: string;
+  chain: string;
+  expiresAt: string;
+  status: "pending" | "completed" | "expired" | "cancelled";
+}
+
 export class HoudiniClient {
   private apiKey: string;
   private apiSecret: string;
@@ -302,6 +312,25 @@ export class HoudiniClient {
 
   async getTokensForChain(blockchain: string): Promise<Token[]> {
     return this.getTokens(blockchain);
+  }
+
+  async createPaymentLink(
+    amount: string,
+    token: string,
+    chain: string
+  ): Promise<PaymentLink> {
+    this.ensureConfigured();
+    const body: Record<string, unknown> = {
+      amount,
+      token,
+      chain,
+    };
+    return this.request<PaymentLink>("POST", "/payment-links", body);
+  }
+
+  async getPaymentLink(linkId: string): Promise<PaymentLink> {
+    this.ensureConfigured();
+    return this.request<PaymentLink>("GET", `/payment-links/${encodeURIComponent(linkId)}`);
   }
 }
 

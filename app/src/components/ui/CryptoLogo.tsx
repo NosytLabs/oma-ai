@@ -59,7 +59,6 @@ export function CryptoLogo({
       setSrc('/logos/unknown.svg')
       setError(false)
       setLoaded(false)
-      setLoaded(false)
     }
   }, [normalizedSymbol, useSvg])
 

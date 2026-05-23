@@ -1,185 +1,111 @@
 'use client'
 
-import { useAnimatedSection } from '@/lib/hooks'
-import { Key, Zap, Coins, Clock, Shield, ShieldOff, ArrowRight } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Coins, ArrowRight, Zap, Shield, Clock } from 'lucide-react'
 
-const methods = [
-  {
-    method: 'USDC on Base',
-    settlement: '~2 seconds',
-    fee: '0%',
-    icon: <Key className="h-4 w-4 text-blue-400" />,
-    badge: 'Popular',
-  },
-  {
-    method: 'USDC on Solana',
-    settlement: '~2 seconds',
-    fee: '0%',
-    icon: <Zap className="h-4 w-4 text-purple-400" />,
-  },
-  {
-    method: 'OMA Token',
-    settlement: '~2 seconds',
-    fee: '+5% bonus',
-    icon: <Coins className="h-4 w-4 text-cyan" />,
-    badge: 'Best Value',
-  },
-  {
-    method: 'BTC / XMR / SOL (HoudiniSwap)',
-    settlement: '5-45 min',
-    fee: 'Swap spread',
-    icon: <Clock className="h-4 w-4 text-amber" />,
-  },
+const PAYMENT_METHODS = [
+  { method: 'USDC on Base', settlement: '~2 seconds', fee: '0%', badge: 'Popular', color: 'bg-blue-500' },
+  { method: 'USDC on Solana', settlement: '~2 seconds', fee: '0%', badge: null, color: 'bg-purple-500' },
+  { method: 'HoudiniSwap', settlement: '5-45 min', fee: 'Swap spread', badge: '100+ coins', color: 'bg-pink-500' },
 ]
 
-const stakingTiers = [
-  { stake: '1K OMA', discount: '3%', pct: 20, color: 'bg-cyan/20' },
-  { stake: '10K OMA', discount: '6%', pct: 40, color: 'bg-cyan/30' },
-  { stake: '50K OMA', discount: '10%', pct: 67, color: 'bg-cyan/40' },
-  { stake: '100K OMA', discount: '15%', pct: 100, color: 'bg-cyan/60' },
+const CREDIT_BENEFITS = [
+  { icon: Shield, text: 'Credits never expire' },
+  { icon: Zap, text: 'Billed per token, in real-time' },
+  { icon: Clock, text: 'Instant settlement onchain' },
 ]
 
 export function PricingPayments() {
-  const { ref, isVisible } = useAnimatedSection()
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+      { threshold: 0.1 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <section ref={ref} className="border-t border-border py-20 sm:py-24">
-      <div className="mx-auto max-w-5xl px-4">
-        <h2
-          className={`mb-4 text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          PRICING & PAYMENTS
-        </h2>
-        <p
-          className={`mb-12 text-center text-sm text-text-dim transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '100ms' }}
-        >
-          Credits are 1:1 USD. No markup on your deposit.
-        </p>
+    <section ref={ref} className="relative py-24 px-4">
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950" />
 
-        <div
-          className={`overflow-hidden rounded-lg border border-border transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '200ms' }}
-        >
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="w-full min-w-[560px] text-left text-xs">
-              <thead>
-                <tr className="border-b border-border bg-surface">
-                  <th className="px-4 py-3 font-medium text-text-dim">METHOD</th>
-                  <th className="px-4 py-3 font-medium text-text-dim">SETTLEMENT</th>
-                  <th className="px-4 py-3 font-medium text-text-dim">FEE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {methods.map((m, i) => (
-                  <tr
-                    key={m.method}
-                    className={`border-b border-border/50 transition-colors duration-300 hover:bg-panel ${
-                      isVisible ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    style={{ transitionDelay: `${250 + i * 50}ms` }}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {m.icon}
-                        <span className="text-text">{m.method}</span>
-                        {m.badge && (
-                          <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            m.badge === 'Best Value'
-                              ? 'bg-cyan/20 text-cyan'
-                              : 'bg-blue-500/20 text-blue-400'
-                          }`}>
-                            {m.badge}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-text-dim">{m.settlement}</td>
-                    <td
-                      className={`px-4 py-3 ${
-                        m.fee === '0%' || m.fee === '+5% bonus' ? 'text-cyan font-semibold' : 'text-text-dim'
-                      }`}
-                    >
-                      {m.fee}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div
-          className={`mt-10 transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '400ms' }}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-xs font-bold tracking-widest text-text-dim">
-              <Shield className="h-4 w-4 text-cyan" />
-              STAKING DISCOUNT TIERS
-            </h3>
-            <Link
-              href="/stake"
-              className="flex items-center gap-1 text-xs text-amber transition-colors hover:text-cyan"
-            >
-              Learn more <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {stakingTiers.map((tier, i) => (
-              <div
-                key={tier.stake}
-                className={`card-glow rounded-xl border border-border bg-panel p-4 transition-all duration-500 ${
-                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}
-                style={{ transitionDelay: `${450 + i * 80}ms` }}
-              >
-                <div className="mb-3 text-center">
-                  <span className="text-lg font-bold text-text">{tier.stake}</span>
-                </div>
-                <div className="mb-3 h-2 w-full overflow-hidden rounded-full border border-border bg-void">
-                  <div
-                    className={`h-full rounded-full ${tier.color} progress-animated`}
-                    style={{ width: `${tier.pct}%`, animationDelay: `${500 + i * 100}ms` }}
-                  />
-                </div>
-                <div className="text-center">
-                  <span className="text-xl font-bold text-cyan">{tier.discount}</span>
-                  <span className="ml-1 text-xs text-text-dim">OFF</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-center text-[10px] text-text-dim">
-            Max combined: 5% OMA bonus + 15% staking = <span className="text-cyan">20%</span>. Circuit breakers apply.
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+            Add Credits
+          </h2>
+          <p className="text-lg text-zinc-500 max-w-2xl mx-auto">
+            Pay with crypto you already have. Credits added instantly.
           </p>
         </div>
 
-        <div
-          className={`mt-8 flex items-start gap-3 rounded-xl border border-border bg-panel p-5 transition-all duration-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '700ms' }}
-        >
-          <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-text-dim" />
-          <div>
-            <p className="text-xs font-semibold text-text">
-              Credits are non-redeemable and non-transferable.
-            </p>
-            <p className="mt-1 text-xs text-text-dim">
-              No MTL license required. 12-month rolling expiry. ~5-8% breakage covers operating
-              costs.
-            </p>
-          </div>
+        <div className={`space-y-3 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
+          {PAYMENT_METHODS.map((m, i) => {
+            return (
+              <div
+                key={m.method}
+                className="flex items-center justify-between p-5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:border-cyan-500/30 hover:bg-zinc-900/80 transition-all duration-300 group"
+                style={{ transitionDelay: `${i * 80}ms` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 flex items-center justify-center group-hover:border-cyan-500/30 transition-colors`}>
+                    <Coins className="w-5 h-5 text-zinc-400 group-hover:text-cyan-400 transition-colors" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-white">{m.method}</span>
+                    {m.badge && (
+                      <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${
+                        m.badge === 'Popular'
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
+                      }`}>
+                        {m.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 text-sm">
+                  <span className="text-zinc-500">{m.settlement}</span>
+                  <span className={`font-semibold ${m.fee === '0%' ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                    {m.fee}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className={`mt-6 grid grid-cols-1 md:grid-cols-3 gap-3 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '400ms' }}>
+          {CREDIT_BENEFITS.map((benefit) => {
+            const Icon = benefit.icon
+            return (
+              <div key={benefit.text} className="flex items-center gap-2 p-3 rounded-lg bg-zinc-900/30 border border-zinc-800/50">
+                <Icon className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="text-sm text-zinc-400">{benefit.text}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className={`mt-8 p-5 rounded-xl bg-zinc-900/30 border border-zinc-800/50 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '600ms' }}>
+          <p className="text-sm text-zinc-600 text-center">
+            Credits are non-redeemable and non-transferable. Billed per token at live rates.
+          </p>
+        </div>
+
+        <div className={`mt-8 text-center transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '700ms' }}>
+          <Link
+            href="/deposit"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-500 text-zinc-900 font-semibold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
+          >
+            <Coins className="w-5 h-5" />
+            Buy Credits
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

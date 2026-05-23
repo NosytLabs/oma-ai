@@ -1,6 +1,19 @@
 import { db } from '../db/client.js'
-import { creditBalances, usageRecords, creditBatches } from '../db/schema.js'
-import { eq, sql, and, gt, asc, lt } from 'drizzle-orm'
+import { creditBalances, usageRecords, creditBatches, stakingTiers } from '../db/schema.js'
+import { eq, sql, and, gt, asc, desc, lt } from 'drizzle-orm'
+import { getRedisClient } from '../lib/redis-client.js'
+
+const BALANCE_CACHE_TTL = 30
+
+async function invalidateBalanceCache(userId: string) {
+  const redis = await getRedisClient()
+  if (!redis) return
+  try {
+    await redis.del(`balance:${userId}`)
+  } catch {
+    // Cache invalidation failure is non-critical
+  }
+}
 
 const CREDIT_EXPIRY_DAYS = 90
 const ACTIVE_EXTENSION_DAYS = 90
@@ -12,24 +25,41 @@ export function getExpiryDate(): Date {
 }
 
 export async function getBalance(userId: string) {
-  const rows = await db.select().from(creditBalances).where(eq(creditBalances.userId, userId))
-
-  if (!rows.length) {
-    return {
-      balanceCents: '0',
-      totalDepositedCents: '0',
-      totalUsedCents: '0',
-      lastActivityAt: null,
+  const redis = await getRedisClient()
+  if (redis) {
+    try {
+      const cached = await redis.get(`balance:${userId}`)
+      if (cached && typeof cached === 'string') return JSON.parse(cached)
+    } catch {
+      // Cache read failure is non-critical, fallback to DB
     }
   }
 
-  const row = rows[0]
-  return {
-    balanceCents: row.balanceCents,
-    totalDepositedCents: row.totalDepositedCents,
-    totalUsedCents: row.totalUsedCents,
-    lastActivityAt: row.lastActivityAt,
+  const rows = await db.select().from(creditBalances).where(eq(creditBalances.userId, userId))
+
+  const result = !rows.length
+    ? {
+        balanceCents: '0',
+        totalDepositedCents: '0',
+        totalUsedCents: '0',
+        lastActivityAt: null,
+      }
+    : {
+        balanceCents: rows[0].balanceCents,
+        totalDepositedCents: rows[0].totalDepositedCents,
+        totalUsedCents: rows[0].totalUsedCents,
+        lastActivityAt: rows[0].lastActivityAt,
+      }
+
+  if (redis) {
+    try {
+      await redis.setEx(`balance:${userId}`, BALANCE_CACHE_TTL, JSON.stringify(result))
+    } catch {
+      // Cache write failure is non-critical
+    }
   }
+
+  return result
 }
 
 export async function addCredits(userId: string, amountCents: number) {
@@ -62,6 +92,8 @@ export async function addCredits(userId: string, amountCents: number) {
         },
       })
   })
+
+  await invalidateBalanceCache(userId)
 }
 
 export async function deductCredits(
@@ -85,7 +117,7 @@ export async function deductCredits(
         gt(creditBatches.remainingCents, '0'),
         gt(creditBatches.expiresAt, new Date()),
       ))
-      .orderBy(asc(creditBatches.expiresAt), asc(creditBatches.remainingCents))
+      .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.remainingCents))
       .for('update')
 
     const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
@@ -140,6 +172,8 @@ export async function deductCredits(
       latencyMs: latencyMs ?? null,
     })
   })
+
+  await invalidateBalanceCache(userId)
 }
 
 export async function refundCredits(userId: string, amountCents: string) {
@@ -184,7 +218,7 @@ export async function preflightDeduction(userId: string, totalCents: string): Pr
           gt(creditBatches.remainingCents, '0'),
           gt(creditBatches.expiresAt, new Date()),
         ))
-      .orderBy(asc(creditBatches.expiresAt), asc(creditBatches.remainingCents))
+      .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.remainingCents))
       .for('update')
 
       const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
@@ -276,6 +310,16 @@ export async function extendExpiringBatches(userId: string): Promise<number> {
   return expiringBatches.length
 }
 
-export async function getStakingDiscount(_userId: string): Promise<number> {
-  return 0
+export async function getStakingDiscount(userId: string): Promise<number> {
+  try {
+    const [tier] = await db
+      .select({ discountPercent: stakingTiers.discountPercent })
+      .from(stakingTiers)
+      .where(eq(stakingTiers.userId, userId))
+      .limit(1);
+
+    return tier?.discountPercent ?? 0;
+  } catch {
+    return 0;
+  }
 }

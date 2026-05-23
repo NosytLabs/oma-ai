@@ -60,6 +60,10 @@ vi.mock('../db/client.js', () => ({
   getDb: () => chain,
 }))
 
+vi.mock('../lib/redis-client.js', () => ({
+  getRedisClient: vi.fn().mockResolvedValue(null),
+}))
+
 vi.mock('../auth/api-keys.js', () => ({
   validateApiKey: vi.fn(),
   createApiKey: vi.fn(),
@@ -77,7 +81,6 @@ vi.mock('../auth/siwe.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
-  processOmaDeposit: vi.fn(),
   processHoudiniDeposit: vi.fn(),
   completeHoudiniDeposit: vi.fn(),
 }))
@@ -102,7 +105,7 @@ vi.mock('../inference/antseed.js', () => ({
   antseedChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/circuit-breaker.js', () => ({
+vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
 }))
@@ -148,20 +151,14 @@ describe('Credit Batch System (90-Day Expiry)', () => {
   })
 
   describe('getBalance', () => {
-    it('returns zero for user with no batches or balance row', async () => {
+    it('returns zero for user with no balance row', async () => {
+      setQueryResult([{ balanceCents: '0', totalDepositedCents: '0', totalUsedCents: '0', lastActivityAt: null }])
+
       const balance = await getBalance('user-1')
       expect(balance.balanceCents).toBe('0')
     })
 
-    it('returns sum of remaining cents from active batches', async () => {
-      setQueryResult([{ total: '2500' }])
-
-      const balance = await getBalance('user-1')
-      expect(balance.balanceCents).toBe('2500')
-    })
-
-    it('includes totalDepositedCents and totalUsedCents from balance row', async () => {
-      setQueryResult([{ total: '5000' }])
+    it('returns balance from credit_balances table', async () => {
       setQueryResult([{ userId: 'user-1', balanceCents: '5000', totalDepositedCents: '10000', totalUsedCents: '5000', lastActivityAt: new Date('2026-05-15') }])
 
       const balance = await getBalance('user-1')

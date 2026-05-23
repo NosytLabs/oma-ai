@@ -9,6 +9,7 @@ import { settlePayment, verifyPayment, getSettlementReceipt } from "./facilitato
 import { bearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { config } from "../config.js";
+import { validationError } from "../lib/validation.js";
 import { USDC_BASE } from "../constants.js";
 import type { OmaEnv } from "../types.js";
 
@@ -29,10 +30,6 @@ const depositSchema = z.object({
   quoteId: z.string().min(1),
   refundAddress: z.string().optional(),
 });
-
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
-}
 
 interface PendingQuote {
   quoteId: string;

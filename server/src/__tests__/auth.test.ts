@@ -71,7 +71,6 @@ vi.mock('../credits/balance.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
-  processOmaDeposit: vi.fn(),
   processHoudiniDeposit: vi.fn(),
   completeHoudiniDeposit: vi.fn(),
 }))
@@ -105,7 +104,7 @@ vi.mock('../inference/antseed.js', () => ({
   antseedChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/circuit-breaker.js', () => ({
+vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
 }))

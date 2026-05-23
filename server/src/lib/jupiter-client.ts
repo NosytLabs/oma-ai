@@ -10,6 +10,7 @@ import { db } from "../db/client.js";
 import { deposits } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { config } from "../config.js";
+import { validationError } from "./validation.js";
 import { sessionAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 
@@ -115,10 +116,6 @@ const solanaDirectDepositSchema = z.object({
   amount: z.number().positive(),
   signature: z.string().min(1),
 });
-
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
-}
 
 /**
  * POST /v1/deposit/jupiter/quote

@@ -64,7 +64,7 @@ vi.mock("../config.js", () => ({
 }));
 
 import * as litellm from "../inference/litellm.js";
-import { checkProviderHealth, isProviderAvailable, reportProviderResult } from "../inference/circuit-breaker.js";
+import { checkProviderHealth, isProviderAvailable, reportProviderResult } from "../inference/provider-health.js";
 import { selectProvider, getModelPricing } from "../inference/router.js";
 
 describe("LiteLLM Provider client", () => {
@@ -130,7 +130,7 @@ describe("LiteLLM Provider client", () => {
           model: "litellm/gpt-4o",
           messages: [{ role: "user", content: "hello" }],
         })
-      ).rejects.toThrow("LiteLLM connection failed: Connection refused");
+      ).rejects.toThrow("litellm connection failed: Connection refused");
     });
 
     it("maps 4xx error response from LiteLLM accurately", async () => {

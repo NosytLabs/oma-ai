@@ -24,11 +24,11 @@ const BASE_URL = 'https://oma-ai.com'
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'OMA AI -- Permissionless Inference Gateway',
+    default: 'OMA AI — Permissionless Inference Gateway',
     template: '%s | OMA AI',
   },
   description:
-    'OpenAI-compatible API gateway. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference. Access GPT, Claude, Gemini, and more.',
+    'OpenAI-compatible API gateway. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference. Access GPT, Claude, Gemini, and 50+ models.',
   keywords: ['AI API', 'OpenAI compatible', 'cryptocurrency payments', 'privacy-first AI', 'inference gateway', 'GPT', 'Claude', 'Venice AI', 'AntSeed'],
   authors: [{ name: 'OMA AI' }],
   creator: 'OMA AI',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OMA AI -- Permissionless Inference Gateway',
+    title: 'OMA AI — Permissionless Inference Gateway',
     description: 'OpenAI-compatible API. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference.',
     site: '@oma_ai',
     creator: '@oma_ai',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: BASE_URL,
     siteName: 'OMA AI',
-    title: 'OMA AI -- Permissionless Inference Gateway',
+    title: 'OMA AI — Permissionless Inference Gateway',
     description: 'OpenAI-compatible API. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference.',
     images: [
       {
@@ -78,12 +78,13 @@ export default function RootLayout({
     <html lang="en" className={`${syne.variable} ${inter.variable}`}>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.png" sizes="any" />
       </head>
       <body className="min-h-screen bg-void text-text font-sans antialiased">
         <WalletProvider>
           <ToastProvider>
             <Navbar />
-            <main className="pt-18">
+            <main className="pt-20">
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>
             <Footer />

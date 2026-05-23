@@ -1,51 +1,26 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { processUsdcDeposit, processOmaDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit } from "../credits/deposit.js";
-import { getBalance, getStakingDiscount } from "../credits/balance.js";
+import { processUsdcDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit, processPaymentLinkDeposit } from "../credits/deposit.js";
+import { getBalance } from "../credits/balance.js";
 import { houdiniClient, SwapType } from "../credits/houdini-client.js";
 import { sessionAuth, bearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { deposits, usageRecords } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
 import { config } from "../config.js";
-import { checkCircuitBreaker } from "../credits/circuit-breaker.js";
+import { checkCircuitBreaker } from "../credits/price-guard.js";
 import { verifyBurnTransaction, waitForAttestation, getCctpSupportedChains } from "../credits/cctp-client.js";
 import { getQuoteForSwap, getRouteStatus, checkPossibleRoutes, getSupportedChains } from "../credits/lifi-client.js";
 import { routeDeposit } from "../credits/deposit-router.js";
 import type { Token } from "../credits/houdini-client.js";
+import { validationError } from "../lib/validation.js";
 import crypto from "crypto";
 import type { OmaEnv } from "../types.js";
 
 export const depositRoutes = new Hono<OmaEnv>();
 
-function validationError(err: z.ZodError) {
-  return { error: { message: `Validation error: ${err.errors.map((e) => e.message).join(", ")}`, type: "invalid_request_error" as const } };
-}
-
-const isHoudiniConfigured = !!config.HOUDINI_API_KEY && !!config.HOUDINI_API_SECRET;
-
-const MOCK_HOUDINI_CHAINS = [
-  { id: "BASE", name: "Base", blockchain: "BASE" },
-  { id: "ETHEREUM", name: "Ethereum", blockchain: "ETHEREUM" },
-  { id: "SOLANA", name: "Solana", blockchain: "SOLANA" }
-];
-
-const MOCK_HOUDINI_TOKENS = [
-  { id: "USDC-BASE", name: "USD Coin (Base)", symbol: "USDC", blockchain: "BASE", decimals: 6, address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", logoUrl: "https://oma-ai.com/logos/usdc.png" },
-  { id: "ETH-BASE", name: "Ethereum (Base)", symbol: "ETH", blockchain: "BASE", decimals: 18, address: "0x4200000000000000000000000000000000000006", logoUrl: "https://oma-ai.com/logos/eth.png" },
-  { id: "USDC-ETH", name: "USD Coin", symbol: "USDC", blockchain: "ETHEREUM", decimals: 6, address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", logoUrl: "https://oma-ai.com/logos/usdc.png" },
-  { id: "ETH-ETH", name: "Ethereum", symbol: "ETH", blockchain: "ETHEREUM", decimals: 18, logoUrl: "https://oma-ai.com/logos/eth.png" },
-  { id: "USDT-ETH", name: "Tether USD", symbol: "USDT", blockchain: "ETHEREUM", decimals: 6, address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", logoUrl: "https://oma-ai.com/logos/usdt.png" },
-  { id: "SOL-SOL", name: "Solana", symbol: "SOL", blockchain: "SOLANA", decimals: 9, logoUrl: "https://oma-ai.com/logos/sol.png" }
-];
-
 const usdcDepositSchema = z.object({
   amount: z.number().positive().max(100000),
-  txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
-});
-
-const omaDepositSchema = z.object({
-  amount: z.number().positive(),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
 });
 
@@ -97,6 +72,12 @@ const lifiQuoteSchema = z.object({
   fromAmount: z.string().min(1),
 });
 
+const paymentLinkSchema = z.object({
+  amount: z.number().positive(),
+  token: z.string().min(1),
+  chain: z.enum(["base", "solana", "ethereum", "bitcoin"]),
+});
+
 depositRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const parsed = usdcDepositSchema.safeParse(await c.req.json());
@@ -113,38 +94,11 @@ depositRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
   }
 });
 
-depositRoutes.post("/v1/deposit/oma", sessionAuth, async (c) => {
-  const userId = c.get("userId");
-  const parsed = omaDepositSchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json(validationError(parsed.error), 400);
-  const { amount, txHash } = parsed.data;
-  const existing = await db.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
-  if (existing.length > 0) return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
-  try {
-    const result = await processOmaDeposit(userId, amount, txHash);
-    return c.json({ credits: result.creditsCents, bonus: result.bonusPercent, depositId: result.depositId });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("circuit breaker") || message.includes("halted")) {
-      return c.json({ error: { message, type: "circuit_breaker" } }, 403);
-    }
-    return c.json({ error: { message, type: "deposit_error" } }, 500);
-  }
-});
-
 depositRoutes.post("/v1/deposit/houdini", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const parsed = houdiniDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { fromCoin, amount, quoteId, swapType } = parsed.data;
-
-  if (!isHoudiniConfigured) {
-    const mockOrderId = "mock-order-" + crypto.randomBytes(4).toString("hex");
-    const mockDepositAddress = "0xMockDepositAddress" + crypto.randomBytes(12).toString("hex");
-    const exchangeQuoteId = quoteId ?? "mock-quote-" + crypto.randomBytes(4).toString("hex");
-    const result = await processHoudiniDeposit(userId, exchangeQuoteId, fromCoin, amount, mockOrderId, mockDepositAddress);
-    return c.json({ depositAddress: result.depositAddress, depositId: result.depositId, orderId: mockOrderId });
-  }
 
   const allowedCoins = await houdiniClient.getTokens()
     .then((t) => t.map((x: Token) => x.symbol))
@@ -187,14 +141,30 @@ depositRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
     return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 
-  const body = JSON.parse(rawBody);
-  if (!body.depositId || !body.toAmount || !body.txHash) return c.json({ error: { message: "Missing required fields", type: "validation" } }, 400);
-
   try {
-    const [deposit] = await db.select({ userId: deposits.userId }).from(deposits).where(eq(deposits.id, body.depositId)).limit(1);
+    const body = JSON.parse(rawBody);
+    const isPaymentLink = body.type === "payment_link" || body.paymentLinkId;
+    const depositId = body.depositId;
+    const toAmount = body.toAmount;
+    const txHash = body.txHash;
+
+    if (!depositId || !toAmount || !txHash) return c.json({ error: { message: "Missing required fields", type: "validation" } }, 400);
+
+    const [deposit] = await db.select({ userId: deposits.userId, type: deposits.type }).from(deposits).where(eq(deposits.id, depositId)).limit(1);
     if (!deposit) return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
-    // amountUsd is the net USD amount OMA actually receives (after HoudiniSwap fees)
-    const result = await completeHoudiniDeposit(body.depositId, Number(body.toAmount), body.txHash, deposit.userId, body.amountUsd ? Number(body.amountUsd) : undefined);
+
+    if (isPaymentLink || deposit.type === "payment_link") {
+      const paymentStatus = body.status;
+      if (paymentStatus && paymentStatus !== "completed") {
+        return c.json({ status: paymentStatus, message: "Payment not completed yet" });
+      }
+      const paymentLinkId = body.paymentLinkId || body.depositId;
+      const amountUsd = body.amountUsd ? Number(body.amountUsd) : Number(toAmount);
+      const result = await processPaymentLinkDeposit(depositId, paymentLinkId, amountUsd, txHash);
+      return c.json({ credits: result.creditsCents, status: "completed" });
+    }
+
+    const result = await completeHoudiniDeposit(depositId, Number(toAmount), txHash, deposit.userId, body.amountUsd ? Number(body.amountUsd) : undefined);
     return c.json({ credits: result.creditsCents, status: "completed" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -209,21 +179,6 @@ depositRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
   const parsed = houdiniQuoteSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { fromToken, toToken, amount, swapType } = parsed.data;
-
-  if (!isHoudiniConfigured) {
-    const mockQuote = [{
-      quoteId: "mock-quote-" + crypto.randomBytes(4).toString("hex"),
-      fromToken,
-      toToken,
-      fromAmount: amount,
-      toAmount: String(Number(amount) * 0.995), // Mock 0.5% fee
-      rate: "0.995",
-      estimatedTime: 120,
-      swapType: swapType ?? "standard",
-      slippage: 1,
-    }];
-    return c.json(mockQuote);
-  }
 
   try {
     const quotes = await houdiniClient.getQuotes(fromToken, toToken, amount, swapType as SwapType | undefined);
@@ -248,13 +203,6 @@ depositRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
 depositRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
   const blockchain = c.req.query("blockchain");
 
-  if (!isHoudiniConfigured) {
-    const filtered = blockchain
-      ? MOCK_HOUDINI_TOKENS.filter((t) => t.blockchain.toUpperCase() === blockchain.toUpperCase())
-      : MOCK_HOUDINI_TOKENS;
-    return c.json({ tokens: filtered });
-  }
-
   try {
     const tokens = await houdiniClient.getTokens(blockchain);
     return c.json({ tokens });
@@ -265,10 +213,6 @@ depositRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
 });
 
 depositRoutes.get("/v1/deposit/houdini/chains", async (c) => {
-  if (!isHoudiniConfigured) {
-    return c.json({ chains: MOCK_HOUDINI_CHAINS });
-  }
-
   try {
     const chains = await houdiniClient.getChains();
     return c.json({ chains });
@@ -283,21 +227,6 @@ depositRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
   const parsed = houdiniExchangeSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { quoteId, fromCoin, fromAmount, refundAddress } = parsed.data;
-
-  if (!isHoudiniConfigured) {
-    const mockOrderId = "mock-order-" + crypto.randomBytes(4).toString("hex");
-    const mockDepositAddress = "0xMockDepositAddress" + crypto.randomBytes(12).toString("hex");
-    const result = await processHoudiniDeposit(userId, quoteId, fromCoin, fromAmount, mockOrderId, mockDepositAddress);
-    return c.json({
-      depositId: result.depositId,
-      depositAddress: mockDepositAddress,
-      orderId: mockOrderId,
-      fromAmount,
-      toAmount: String(Number(fromAmount) * 0.995),
-      status: "pending",
-      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-    });
-  }
 
   try {
     const order = await houdiniClient.createExchange(quoteId, undefined, refundAddress);
@@ -451,8 +380,7 @@ depositRoutes.post("/v1/deposit/route", sessionAuth, async (c) => {
 depositRoutes.get("/v1/balance", bearerAuth, async (c) => {
   const userId = c.get("userId");
   const balance = await getBalance(userId);
-  const stakingDiscount = await getStakingDiscount(userId);
-  return c.json({ balanceCents: balance.balanceCents, stakingDiscount });
+  return c.json({ balanceCents: balance.balanceCents });
 });
 
 depositRoutes.get("/v1/usage", bearerAuth, async (c) => {
@@ -496,43 +424,6 @@ depositRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
     }
 
     if (deposit.type === "houdini_swap" && deposit.houdiniId) {
-      if (deposit.houdiniId.startsWith("mock-order")) {
-        const createdMs = new Date(deposit.createdAt).getTime();
-        const elapsedSec = (Date.now() - createdMs) / 1000;
-        let mockStatus: "pending" | "settling" | "completed" = "pending";
-
-        if (elapsedSec > 30) {
-          mockStatus = "completed";
-        } else if (elapsedSec > 10) {
-          mockStatus = "settling";
-        }
-
-        if (mockStatus !== deposit.status) {
-          await db.update(deposits)
-            .set({ status: mockStatus })
-            .where(eq(deposits.id, depositId!));
-          if (mockStatus === "completed" && !deposit.txHash) {
-            const toAmount = 99.5;
-            const mockTxHash = "0xmocktx" + crypto.randomBytes(28).toString("hex");
-            await completeHoudiniDeposit(depositId!, toAmount, mockTxHash, deposit.userId);
-          }
-        }
-
-        const displayAmount = (deposit.amountUsd && deposit.amountUsd !== "0") ? deposit.amountUsd : "100.0";
-
-        return c.json({
-          id: deposit.id,
-          type: deposit.type,
-          status: mockStatus,
-          houdiniStatus: mockStatus === "completed" ? "FINISHED" : (mockStatus === "settling" ? "EXCHANGING" : "WAITING"),
-          amountUsd: deposit.amountUsd,
-          creditsIssued: deposit.creditsIssued,
-          fromAmount: displayAmount,
-          toAmount: String(Number(displayAmount) * 0.995),
-          txHash: deposit.txHash || "0xmocktx" + crypto.randomBytes(28).toString("hex"),
-        });
-      }
-
       try {
         const order = await houdiniClient.getDepositStatus(deposit.houdiniId);
         const mappedStatus = mapHoudiniStatus(order.status);
@@ -599,6 +490,42 @@ depositRoutes.get("/v1/circuit-breaker", bearerAuth, async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message, type: "oracle_error" } }, 502);
+  }
+});
+
+depositRoutes.post("/v1/deposit/houdini/payment-link", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = paymentLinkSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { amount, token, chain } = parsed.data;
+
+  try {
+    const amountStr = String(amount);
+    const paymentLink = await houdiniClient.createPaymentLink(amountStr, token, chain);
+    const [deposit] = await db.insert(deposits).values({
+      userId,
+      type: "payment_link",
+      status: "pending",
+      amountUsd: String(amount),
+      creditsIssued: "0",
+      houdiniId: paymentLink.id,
+    }).returning();
+
+    return c.json({
+      depositId: deposit.id,
+      paymentLink: {
+        id: paymentLink.id,
+        url: paymentLink.url,
+        amount: paymentLink.amount,
+        token: paymentLink.token,
+        chain: paymentLink.chain,
+        expiresAt: paymentLink.expiresAt,
+        status: paymentLink.status,
+      },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ error: { message: `Payment link failed: ${message}`, type: "payment_link_error" } }, 502);
   }
 });
 

@@ -66,7 +66,6 @@ vi.mock('../credits/balance.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
-  processOmaDeposit: vi.fn(),
   processHoudiniDeposit: vi.fn(),
   completeHoudiniDeposit: vi.fn(),
 }))
@@ -75,7 +74,7 @@ vi.mock('../credits/oracle.js', () => ({
   getOmaUsdPrice: vi.fn().mockResolvedValue(0.10),
 }))
 
-vi.mock('../credits/circuit-breaker.js', () => ({
+vi.mock('../credits/price-guard.js', () => ({
   checkCircuitBreaker: vi.fn().mockResolvedValue({ omaDepositsAllowed: true, omaBonusPercent: 5, reason: null }),
   checkOracleCircuitBreaker: vi.fn().mockResolvedValue(false),
 }))
@@ -100,7 +99,7 @@ vi.mock('../inference/antseed.js', () => ({
   antseedChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/circuit-breaker.js', () => ({
+vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
 }))
@@ -118,6 +117,10 @@ vi.mock('../middleware/spend-limit.js', () => ({
   trackSpend: vi.fn(),
 }))
 
+vi.mock('../routes/auth.js', () => ({
+  authRoutes: new (require('hono').Hono)(),
+}))
+
 vi.mock('../config.js', () => ({
   config: {
     PORT: 3001,
@@ -129,6 +132,7 @@ vi.mock('../config.js', () => ({
     HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
     FACILITATOR_MODE: 'mock',
     CHAIN_RPC_URL: 'https://mainnet.base.org',
+    RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
   },
 }))
 
