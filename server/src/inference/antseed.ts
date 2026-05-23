@@ -80,7 +80,7 @@ export async function antseedHealthCheck(): Promise<{
   try {
     const resp = await fetch(antseedUrl("/health"), {
       method: "GET",
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Date.now() - start;
     return { isUp: resp.ok, latencyMs };

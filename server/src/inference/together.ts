@@ -87,7 +87,7 @@ export async function togetherHealthCheck(): Promise<{
     const resp = await fetch(togetherUrl("/v1/models"), {
       method: "GET",
       headers: togetherHeaders(),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Date.now() - start;
     return { isUp: resp.ok, latencyMs };

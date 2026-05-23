@@ -90,7 +90,7 @@ export async function litellmHealthCheck(): Promise<{
   try {
     const resp = await fetch(litellmUrl("/health"), {
       method: "GET",
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Date.now() - start;
     return { isUp: resp.ok, latencyMs };

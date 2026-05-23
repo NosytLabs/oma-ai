@@ -91,7 +91,7 @@ export async function openrouterHealthCheck(): Promise<{
     const resp = await fetch(openrouterUrl("/v1/models"), {
       method: "GET",
       headers: openrouterHeaders(),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Date.now() - start;
     return { isUp: resp.ok, latencyMs };
