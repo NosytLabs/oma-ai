@@ -1,4 +1,32 @@
-const API = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003');
+const API = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
+
+const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+const DEFAULT_TTL = 60000;
+const STALE_TTL = 300000;
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.timestamp + entry.ttl) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCache(key: string, data: unknown, ttl = DEFAULT_TTL) {
+  cache.set(key, { data, timestamp: Date.now(), ttl });
+}
+
+function invalidateCache(pattern?: string) {
+  if (!pattern) {
+    cache.clear();
+    return;
+  }
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) cache.delete(key);
+  }
+}
 
 class ApiError extends Error {
   status: number;
@@ -66,6 +94,7 @@ export interface User {
   id: string;
   address: string;
   solanaAddress: string | null;
+  accountNumber: string | null;
   createdAt: string;
 }
 
@@ -90,9 +119,7 @@ export interface BalanceResponse {
   balanceCents: string;
   totalDepositedCents: string;
   totalUsedCents: string;
-  stakingDiscount: number;
   lastActivityAt: string | null;
-  stakedOma?: string;
 }
 
 export interface UsageRecord {
@@ -225,12 +252,30 @@ export interface HealthResponse {
 export { ApiError };
 
 export interface WalletResponse {
-  apiKey: string | null;
-  prefix: string;
-  id: string;
-  name: string;
-  createdAt: string;
-  warning?: string;
+  address: string;
+  balanceCents: number;
+  totalDeposited: number;
+  totalUsed: number;
+  sessionLimit: number;
+  sessionUsed: number;
+  promoBalanceCents: number;
+}
+
+export interface PurchaseCreditsResponse {
+  success: boolean;
+  creditsAdded: number;
+  expiresAt: string;
+  depositId: string;
+  paymentMethod: string;
+  autoReloadEnabled: boolean;
+}
+
+export interface AutoReloadSettings {
+  enabled: boolean;
+  thresholdCents: number;
+  reloadAmountCents: number;
+  spendLimitCents: number;
+  paymentMethod: string;
 }
 
 export interface Session {
@@ -280,13 +325,30 @@ export const api = {
       return request<void>('/account', { method: 'DELETE' });
     },
 
+    createAccountNumber() {
+      return request<{ accountNumber: string }>('/auth/account/create', { method: 'POST' });
+    },
+
+    loginWithAccountNumber(accountNumber: string) {
+      return request<{ token: string; address: string; hasApiKey: boolean }>('/auth/account/login', {
+        method: 'POST',
+        body: JSON.stringify({ accountNumber }),
+      });
+    },
+
     listKeys() {
       return request<{ keys: ApiKey[] }>('/keys').then(res => res.keys);
     },
   },
 
   balance() {
-    return request<BalanceResponse>('/v1/balance');
+    const cacheKey = '/v1/balance';
+    const cached = getCached<BalanceResponse>(cacheKey);
+    if (cached) return Promise.resolve(cached);
+    return request<BalanceResponse>('/v1/balance').then(data => {
+      setCache(cacheKey, data, 30000);
+      return data;
+    });
   },
 
   usage() {
@@ -294,11 +356,18 @@ export const api = {
   },
 
   models() {
-    return request<ModelsResponse>('/v1/models');
+    const cacheKey = '/v1/models';
+    const cached = getCached<ModelsResponse>(cacheKey);
+    if (cached) return Promise.resolve(cached);
+    return request<ModelsResponse>('/v1/models').then(data => {
+      setCache(cacheKey, data, STALE_TTL);
+      return data;
+    });
   },
 
   deposit: {
     usdc(amount: number, txHash: string) {
+      invalidateCache('/v1/balance');
       return request<DepositStatus>('/v1/deposit/usdc', {
         method: 'POST',
         body: JSON.stringify({ amount, txHash }),
@@ -306,6 +375,7 @@ export const api = {
     },
 
     oma(amount: number, txHash: string) {
+      invalidateCache('/v1/balance');
       return request<DepositStatus>('/v1/deposit/oma', {
         method: 'POST',
         body: JSON.stringify({ amount, txHash }),
@@ -369,31 +439,6 @@ export const api = {
     },
   },
 
-  staking: {
-    info() {
-      return request<{ stakedAmount: string; discountPercent: number; cooldownUntil: string | null }>('/v1/stake/info');
-    },
-
-    stake(amount: number, txHash: string) {
-      return request<{ stakedAmount: string; discountPercent: number }>('/v1/stake', {
-        method: 'POST',
-        body: JSON.stringify({ amount, txHash }),
-      });
-    },
-
-    unstake() {
-      return request<{ stakedAmount: string; discountPercent: number; cooldownUntil: string }>('/v1/unstake', {
-        method: 'POST',
-      });
-    },
-
-    withdraw() {
-      return request<{ success: boolean; amountWithdrawn: string; message: string }>('/v1/stake/withdraw', {
-        method: 'POST',
-      });
-    },
-  },
-
   health() {
     return request<HealthResponse>('/health');
   },
@@ -410,5 +455,87 @@ export const api = {
     depositHoudini: (fromCoin: string, amount: string, quoteId?: string, swapType?: string) => api.deposit.houdini(fromCoin, amount, quoteId, swapType) as Promise<HoudiniDepositResult>,
     getDepositStatus: (id: string) => api.deposit.status(id),
     getSupportedCoins: (blockchain?: string) => api.deposit.houdiniTokens(blockchain),
+    purchaseCredits: (amountCents: number, paymentMethod: 'usdc' | 'sol' | 'oma' = 'usdc') =>
+      request<PurchaseCreditsResponse>('/v1/credits/purchase', {
+        method: 'POST',
+        body: JSON.stringify({ amountCents, paymentMethod }),
+      }),
+    getAutoReload: () => request<AutoReloadSettings>('/v1/credits/auto-reload'),
+    updateAutoReload: (settings: Partial<AutoReloadSettings>) =>
+      request<AutoReloadSettings>('/v1/credits/auto-reload', {
+        method: 'POST',
+        body: JSON.stringify(settings),
+      }),
+  },
+
+  admin: {
+    getStats: () => request<{
+      totalUsers: number;
+      totalApiKeys: number;
+      totalCreditsPurchased: number;
+      totalUsageThisMonth: number;
+      revenue: number;
+      activeUsersLast24h: number;
+      providerCosts: { venice: number; openrouter: number };
+    }>('/admin/stats'),
+
+    getUsers: (page = 1, limit = 50) =>
+      request<{
+        users: Array<{
+          id: string;
+          address: string;
+          solanaAddress: string | null;
+          accountNumber: string | null;
+          createdAt: string;
+          lastActivityAt: string | null;
+          balanceCredits: number;
+          totalDeposited: number;
+          totalUsed: number;
+          totalRequests: number;
+        }>;
+        pagination: { page: number; limit: number; total: number; pages: number };
+      }>(`/admin/users?page=${page}&limit=${limit}`),
+
+    getUserDetail: (id: string) =>
+      request<{
+        user: { id: string; address: string; solanaAddress: string | null; accountNumber: string | null; createdAt: string };
+        balance: { balanceCredits: number; totalDeposited: number; totalUsed: number };
+        apiKeys: Array<{ id: string; keyPrefix: string; name: string; active: boolean; createdAt: string; totalRequests: number; totalSpend: number }>;
+        recentUsage: Array<{ id: string; model: string; provider: string; inputTokens: number; outputTokens: number; cost: number; createdAt: string }>;
+        recentDeposits: Array<{ id: string; type: string; amount: number; credits: number; status: string; txHash: string | null; createdAt: string }>;
+      }>(`/admin/users/${id}`),
+
+    getUsage: (period = '30d') =>
+      request<{
+        period: string;
+        summary: { totalRequests: number; totalInputTokens: number; totalOutputTokens: number; totalRevenue: number; totalCost: number; grossProfit: number; margin: string };
+        byProvider: Array<{ provider: string; totalRequests: number; totalInputTokens: number; totalOutputTokens: number; totalRevenue: number; totalCost: number; profit: number }>;
+        byModel: Array<{ model: string; provider: string; totalRequests: number; totalInputTokens: number; totalOutputTokens: number; totalRevenue: number }>;
+        dailyUsage: Array<{ date: string; totalRequests: number; totalRevenue: number }>;
+      }>(`/admin/usage?period=${period}`),
+
+    getRevenue: (period = '30d') =>
+      request<{
+        period: string;
+        summary: { totalRevenue: number; totalCost: number; grossProfit: number; totalDeposits: number; depositCount: number; newUsers: number };
+        monthlyRevenue: Array<{ month: string; totalRevenue: number; depositCount: number }>;
+      }>(`/admin/revenue?period=${period}`),
+
+    getKeys: (page = 1, limit = 100) =>
+      request<{
+        keys: Array<{
+          id: string;
+          userId: string;
+          userAddress: string;
+          keyPrefix: string;
+          name: string;
+          active: boolean;
+          createdAt: string;
+          totalRequests: number;
+          totalSpend: number;
+          lastUsedAt: string | null;
+        }>;
+        pagination: { page: number; limit: number; total: number; pages: number };
+      }>(`/admin/keys?page=${page}&limit=${limit}`),
   },
 };
