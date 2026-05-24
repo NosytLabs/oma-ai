@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWriteContract, usePublicClient } from 'wagmi'
-import { parseUnits } from 'viem'
+import { parseUnits, zeroAddress } from 'viem'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type DepositStep = 'select' | 'route' | 'processing' | 'complete' | 'error'
@@ -288,7 +288,7 @@ export default function DepositPage() {
       animate={{ opacity: 1 }}
     >
       <UnifiedDepositHeader />
-      <UnifiedDepositInterface onDeposit={(d) => console.log(d)} />
+      <UnifiedDepositInterface onDeposit={(deposit) => {}} />
     </motion.div>
   )
 }
@@ -381,6 +381,15 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
   const handleStartDeposit = async () => {
     if (!amount || parseFloat(amount) <= 0) return
     setError('')
+
+    // Validate treasury address is properly configured
+    if (OMA_BASE_TREASURY === zeroAddress) {
+      setError('Treasury address not configured. Please set NEXT_PUBLIC_BASE_TREASURY in your environment variables. Deposits are currently disabled.')
+      toast.error('Treasury misconfiguration detected')
+      setStep('error')
+      return
+    }
+
     setStep('processing')
 
     try {

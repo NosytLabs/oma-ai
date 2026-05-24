@@ -20,7 +20,8 @@ import {
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { formatCents, AnimatedNumber } from '@/lib/utils'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+import { formatCents } from '@/lib/utils'
 
 interface CreditHistoryItem {
   id: string

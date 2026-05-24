@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { processUsdcDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit, processPaymentLinkDeposit } from "../credits/deposit.js";
+import { processUsdcDeposit, processHoudiniDeposit, completeHoudiniDeposit, completeHoudiniDepositWithTx, processCctpDeposit, processLifiDeposit, processPaymentLinkDeposit } from "../credits/deposit.js";
 import { getBalance } from "../credits/balance.js";
 import { houdiniClient, SwapType } from "../credits/houdini-client.js";
 import { sessionAuth, bearerAuth } from "../auth/middleware.js";
+import { auditLog } from "../middleware/audit.js";
 import { db } from "../db/client.js";
 import { deposits, usageRecords } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
@@ -17,11 +18,14 @@ import { validationError } from "../lib/validation.js";
 import crypto from "crypto";
 import type { OmaEnv } from "../types.js";
 
+import { addToDlq } from "../lib/dlq.js";
+
 export const depositRoutes = new Hono<OmaEnv>();
 
 const usdcDepositSchema = z.object({
   amount: z.number().positive().max(100000),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+  signature: z.string({ required_error: "Deposit requires valid cryptographic proof (signature)" }).min(64, "Deposit requires valid cryptographic proof (signature)"),
 });
 
 const houdiniDepositSchema = z.object({
@@ -82,14 +86,29 @@ depositRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const parsed = usdcDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
-  const { amount, txHash } = parsed.data;
+  const { amount, txHash, signature } = parsed.data;
   const existing = await db.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
   if (existing.length > 0) return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
   try {
-    const result = await processUsdcDeposit(userId, amount, txHash);
+    const result = await processUsdcDeposit(userId, amount, txHash, signature);
+
+    const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+    const userAgent = c.req.header("user-agent") || undefined;
+
+    await auditLog({
+      userId,
+      action: "DEPOSIT_CREATED",
+      resource: "deposits",
+      resourceId: result.depositId,
+      metadata: { amount, txHash, method: "usdc_direct" },
+      ipAddress,
+      userAgent,
+    });
+
     return c.json({ credits: result.creditsCents, depositId: result.depositId });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[deposit:usdc] Deposit failed: amount=${amount}, txHash=${txHash}, error=${message}`);
     return c.json({ error: { message, type: "deposit_error" } }, 500);
   }
 });
@@ -134,10 +153,9 @@ depositRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
   if (!secret) return c.json({ error: { message: "Webhook not configured", type: "config_error" } }, 503);
   const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
 
-  if (signature.length !== expectedSig.length) {
-    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
-  }
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+  const signatureBuffer = Buffer.from(signature, "hex");
+  const expectedBuffer = Buffer.from(expectedSig, "hex");
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
     return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 
@@ -164,15 +182,23 @@ depositRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
       return c.json({ credits: result.creditsCents, status: "completed" });
     }
 
-    const result = await completeHoudiniDeposit(depositId, Number(toAmount), txHash, deposit.userId, body.amountUsd ? Number(body.amountUsd) : undefined);
+    const result = await db.transaction(async (tx) => {
+      const [lockedDeposit] = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
+      if (!lockedDeposit) throw new Error("Deposit not found");
+      if (lockedDeposit.status !== "pending") throw new Error("Deposit is not pending");
+      if (lockedDeposit.userId !== deposit.userId) throw new Error("Deposit ownership mismatch");
+      return completeHoudiniDepositWithTx(tx, depositId, Number(toAmount), txHash, deposit.userId, body.amountUsd ? Number(body.amountUsd) : undefined);
+    });
     return c.json({ credits: result.creditsCents, status: "completed" });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("not pending") || message.includes("not found") || message.includes("ownership mismatch")) {
-      return c.json({ credits: 0, status: "completed", duplicate: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("not pending") || message.includes("not found") || message.includes("ownership mismatch")) {
+        return c.json({ credits: 0, status: "completed", duplicate: true });
+      }
+      
+      await addToDlq("houdini", rawBody, message);
+      return c.json({ error: { message, type: "webhook_error" } }, 500);
     }
-    return c.json({ error: { message, type: "webhook_error" } }, 500);
-  }
 });
 
 depositRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
@@ -231,6 +257,20 @@ depositRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
   try {
     const order = await houdiniClient.createExchange(quoteId, undefined, refundAddress);
     const result = await processHoudiniDeposit(userId, quoteId, fromCoin, fromAmount, order.id, order.depositAddress);
+
+    const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+    const userAgent = c.req.header("user-agent") || undefined;
+
+    await auditLog({
+      userId,
+      action: "DEPOSIT_CREATED",
+      resource: "deposits",
+      resourceId: result.depositId,
+      metadata: { quoteId, fromCoin, fromAmount, orderId: order.id, method: "houdini_swap" },
+      ipAddress,
+      userAgent,
+    });
+
     return c.json({
       depositId: result.depositId,
       depositAddress: order.depositAddress,
@@ -242,6 +282,7 @@ depositRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[deposit:houdini] Exchange failed: fromCoin=${fromCoin}, fromAmount=${fromAmount}, error=${message}`);
     return c.json({ error: { message: `Exchange failed: ${message}`, type: "exchange_error" } }, 502);
   }
 });
@@ -270,6 +311,20 @@ depositRoutes.post("/v1/deposit/cctp", sessionAuth, async (c) => {
     }
 
     const result = await processCctpDeposit(userId, amount, txHash, sourceChain);
+
+    const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+    const userAgent = c.req.header("user-agent") || undefined;
+
+    await auditLog({
+      userId,
+      action: "DEPOSIT_CREATED",
+      resource: "deposits",
+      resourceId: result.depositId,
+      metadata: { amount, txHash, sourceChain, method: "cctp_crosschain" },
+      ipAddress,
+      userAgent,
+    });
+
     return c.json({ credits: result.creditsCents, depositId: result.depositId, method: "cctp" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -312,6 +367,20 @@ depositRoutes.post("/v1/deposit/lifi", sessionAuth, async (c) => {
     }
 
     const result = await processLifiDeposit(userId, amount, txHash, fromChain, fromToken, toToken);
+
+    const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+    const userAgent = c.req.header("user-agent") || undefined;
+
+    await auditLog({
+      userId,
+      action: "DEPOSIT_CREATED",
+      resource: "deposits",
+      resourceId: result.depositId,
+      metadata: { amount, txHash, fromChain, fromToken, toToken, method: "lifi_swap" },
+      ipAddress,
+      userAgent,
+    });
+
     return c.json({ credits: result.creditsCents, depositId: result.depositId, method: "lifi" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -469,7 +538,8 @@ depositRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "server_error";
-    return c.json({ error: { message: (err as Error).message, type: errType } }, status as Parameters<typeof c.json>[1]);
+    console.error(`[deposit] /v1/deposit/status error:`, err);
+    return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });
 

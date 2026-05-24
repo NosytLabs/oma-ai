@@ -1,5 +1,5 @@
 import { config } from "../config.js";
-import { BaseInferenceProvider, type ProviderConfig } from "./base.js";
+import { BaseInferenceProvider, type ProviderConfig, createErrorMapper } from "./base.js";
 
 export interface ProviderEndpoints {
   chat: string;
@@ -26,23 +26,6 @@ export interface ProviderFactoryConfig {
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_STREAM_TIMEOUT_MS = 120_000;
 const DEFAULT_HEALTH_CHECK_TIMEOUT_MS = 10_000;
-
-function createErrorMapper(providerName: string) {
-  return function mapError(status: number, body: string): never {
-    let type = `${providerName}_api_error`;
-    let message = `${providerName} error ${status}`;
-
-    try {
-      const parsed = JSON.parse(body);
-      if (parsed.error?.message) message = parsed.error.message;
-      if (parsed.error?.type) type = parsed.error.type;
-    } catch {
-      message = body.slice(0, 500);
-    }
-
-    throw Object.assign(new Error(message), { status, type });
-  };
-}
 
 function buildUrl(baseUrl: string, path: string): string {
   const base = baseUrl.replace(/\/+$/, "");

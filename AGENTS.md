@@ -92,7 +92,7 @@ oma/
 │   │   ├── deposit.ts      # Payment deposits
 │   │   ├── models.ts       # Model listing
 │   │   ├── onramp.ts       # Fiat on-ramp
-│   │   └── stake.ts        # OMA staking
+│   │   └── credits/        # OMA credits & staking
 │   ├── inference/          # AI provider routing
 │   │   ├── router.ts       # Circuit breaker + failover
 │   │   ├── venice.ts       # Venice AI integration
@@ -198,7 +198,7 @@ npm run db:migrate
 curl http://localhost:3001/health
 
 # Expected response:
-{"status":"ok","version":"0.1.0","service":"oma-ai"}
+{"status":"ok","version":"2.0.0","service":"oma-ai"}
 ```
 
 ---

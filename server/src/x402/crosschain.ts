@@ -13,10 +13,13 @@ import { validationError } from "../lib/validation.js";
 import { USDC_BASE } from "../constants.js";
 import type { OmaEnv } from "../types.js";
 
+import { getRedisClient } from "../lib/redis-client.js";
+
 export const crosschainRoutes = new Hono<OmaEnv>();
 
 const FACILITATOR_MARGIN_PERCENT = 1.5;
 const QUOTE_TTL_SECONDS = 60;
+const QUOTE_CACHE_PREFIX = "quote:";
 
 const quoteSchema = z.object({
   model: z.string().min(1),
@@ -46,17 +49,6 @@ interface PendingQuote {
   houdiniQuoteId: string;
   createdAt: number;
 }
-
-const quoteCache = new Map<string, PendingQuote>();
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, quote] of quoteCache) {
-    if (now - quote.createdAt > QUOTE_TTL_SECONDS * 1000 * 2) {
-      quoteCache.delete(key);
-    }
-  }
-}, 60_000).unref();
 
 crosschainRoutes.post("/v1/x402/quote", async (c) => {
   const parsed = quoteSchema.safeParse(await c.req.json());
@@ -111,7 +103,12 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
       createdAt: Date.now(),
     };
 
-    quoteCache.set(quoteId, pendingQuote);
+    const redis = await getRedisClient();
+    if (!redis) {
+      return c.json({ error: { message: "Cache service unavailable", type: "cache_error" } }, 503);
+    }
+    
+    await redis.set(`${QUOTE_CACHE_PREFIX}${quoteId}`, JSON.stringify(pendingQuote), { EX: QUOTE_TTL_SECONDS * 2 });
 
     return c.json({
       quoteId,
@@ -137,17 +134,31 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
 
   const { quoteId, refundAddress } = parsed.data;
 
-  const pendingQuote = quoteCache.get(quoteId);
-  if (!pendingQuote) {
-    return c.json({ error: { message: "Quote not found or expired", type: "not_found" } }, 404);
+  const redis = await getRedisClient();
+  if (!redis) {
+    return c.json({ error: { message: "Cache service unavailable", type: "cache_error" } }, 503);
   }
 
-  if (Date.now() - pendingQuote.createdAt > QUOTE_TTL_SECONDS * 1000) {
-    quoteCache.delete(quoteId);
-    return c.json({ error: { message: "Quote expired", type: "expired" } }, 410);
+  const lockKey = `${QUOTE_CACHE_PREFIX}lock:${quoteId}`;
+  const lockAcquired = await redis.set(lockKey, "1", { NX: true, EX: 10 });
+  
+  if (!lockAcquired) {
+    return c.json({ error: { message: "Quote is currently being processed", type: "rate_limit" } }, 429);
   }
 
   try {
+    const rawQuote = await redis.get(`${QUOTE_CACHE_PREFIX}${quoteId}`);
+    if (!rawQuote) {
+      return c.json({ error: { message: "Quote not found or expired", type: "not_found" } }, 404);
+    }
+    
+    const pendingQuote = JSON.parse(rawQuote) as PendingQuote;
+
+    if (Date.now() - pendingQuote.createdAt > QUOTE_TTL_SECONDS * 1000) {
+      await redis.del(`${QUOTE_CACHE_PREFIX}${quoteId}`);
+      return c.json({ error: { message: "Quote expired", type: "expired" } }, 410);
+    }
+
     const houdiniToAddress = config.HOUDINI_ADDRESS_TO;
     if (!houdiniToAddress) {
       return c.json({ error: { message: "HOUDINI_ADDRESS_TO not configured", type: "config_error" } }, 500);
@@ -159,7 +170,7 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
       refundAddress
     );
 
-    quoteCache.delete(quoteId);
+    await redis.del(`${QUOTE_CACHE_PREFIX}${quoteId}`);
 
     return c.json({
       orderId: order.id,
@@ -174,6 +185,8 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message: `Deposit creation failed: ${message}`, type: "deposit_error" } }, 502);
+  } finally {
+    await redis.del(lockKey);
   }
 });
 
@@ -195,17 +208,46 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
       txHash: order.transactionHash ?? null,
     };
 
-    if (order.status === OrderStatus.FINISHED && order.toAmount) {
+  if (order.status === OrderStatus.FINISHED && order.toAmount) {
+    if (!order.transactionHash) {
+      response.status = "settling";
+      response.message = "Transaction hash not yet available. Settlement pending on-chain verification.";
+    } else {
       const houdiniToAddress = config.HOUDINI_ADDRESS_TO || "";
-      const settlementResult = settlePayment(
-        order.transactionHash ?? orderId,
-        order.toAmount,
-        "base",
-        houdiniToAddress,
-      );
-      response.creditsIssued = order.toAmount;
-      response.receipt = settlementResult.receipt;
+      const paymentSig = {
+        x402Version: "1" as const,
+        signature: order.transactionHash,
+        authorization: "houdini_crosschain",
+        payload: {
+          x402Version: "1" as const,
+          scheme: "evm" as const,
+          networkId: "base",
+          asset: USDC_BASE,
+          amount: order.toAmount,
+          payee: houdiniToAddress,
+          payFrom: order.depositAddress,
+          maxAmountRequired: order.toAmount,
+          validBefore: Math.floor(Date.now() / 1000) + 3600,
+          validAfter: Math.floor(Date.now() / 1000) - 3600,
+        },
+      };
+
+      const verification = await verifyPayment(paymentSig);
+      if (!verification.valid) {
+        response.status = "settling";
+        response.message = `On-chain verification pending: ${verification.error}`;
+      } else {
+        const settlementResult = settlePayment(
+          order.transactionHash,
+          order.toAmount,
+          "base",
+          houdiniToAddress,
+        );
+        response.creditsIssued = order.toAmount;
+        response.receipt = settlementResult.receipt;
+      }
     }
+  }
 
     return c.json(response);
   } catch (err: unknown) {
@@ -289,7 +331,8 @@ crosschainRoutes.post("/v1/x402/proxy/chat/completions", async (c) => {
     return c.json({ error: { message: `Payment verification failed: ${verification.error}`, type: "payment_error" } }, 402);
   }
 
-  if (verification.txHash) {
+  const mode = config.FACILITATOR_MODE ?? "mock";
+  if (mode !== "mock" && verification.txHash) {
     settlePayment(
       verification.txHash,
       verification.amount ?? paymentSig.payload.amount,

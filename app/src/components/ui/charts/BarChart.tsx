@@ -9,23 +9,24 @@ interface CostData {
   cost: number
 }
 
-interface BarChartProps {
+interface BarChartComponentProps {
   data: CostData[]
+  showCostLabels?: boolean
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{value: number}>; label?: string }) => {
+const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean; payload?: Array<{value: number}>; label?: string; showCost?: boolean }) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 px-3 py-2 shadow-xl">
         <p className="text-xs text-zinc-400">{label}</p>
-        <p className="text-sm font-semibold text-amber-400">${payload[0].value.toFixed(2)}</p>
+        <p className="text-sm font-semibold text-amber-400">{showCost ? `$${payload[0].value.toFixed(2)}` : payload[0].value.toLocaleString()}</p>
       </div>
     )
   }
   return null
 }
 
-export function BarChartComponent({ data }: BarChartProps) {
+export function BarChartComponent({ data, showCostLabels = true }: BarChartComponentProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -54,9 +55,9 @@ export function BarChartComponent({ data }: BarChartProps) {
             fontSize={11} 
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => showCostLabels ? `$${value}` : value.toLocaleString()}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#27272a' }} />
+          <Tooltip content={<CustomTooltip showCost={showCostLabels} />} cursor={{ fill: '#27272a' }} />
           <Bar 
             dataKey="cost" 
             fill="url(#costGradient)" 

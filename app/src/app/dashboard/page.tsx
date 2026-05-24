@@ -1,11 +1,12 @@
 'use client'
 
 import { useWallet } from '@/components/wallet-provider'
-import { api, type ApiKey, type ApiKeyWithSecret, type BalanceResponse, type UsageRecord } from '@/lib/api'
+import { api, type ApiKey, type ApiKeyWithSecret, type BalanceResponse, type UsageRecord, type CreditBatch } from '@/lib/api'
 import { useToast } from '@/components/ui/Toast'
 import { AreaChartComponent, generateUsageData, DonutChart, generateModelData } from '@/components/ui/charts'
 import { SkeletonKeyList } from '@/components/ui/Skeleton'
-import { formatCents, formatTime, maskKey, AnimatedNumber } from '@/lib/utils'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+import { formatCents, formatTime, maskKey } from '@/lib/utils'
 import {
   Wallet,
   Key,
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const [balance, setBalance] = useState<BalanceResponse | null>(null)
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [usage, setUsage] = useState<UsageRecord[]>([])
+  const [creditBatches, setCreditBatches] = useState<CreditBatch[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,14 +71,16 @@ export default function DashboardPage() {
     else setRefreshing(true)
     setError(null)
     try {
-      const [bal, keyList, usageData] = await Promise.all([
+      const [bal, keyList, usageData, batchData] = await Promise.all([
         api.oma.getBalance(),
         api.oma.getApiKeys(),
         api.oma.getUsage(),
+        api.oma.getCreditBatches(),
       ])
       setBalance(bal)
       setKeys(keyList)
       setUsage(usageData.usage)
+      setCreditBatches(batchData.activeBatches)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to load dashboard data'
       setError(msg)
@@ -277,6 +281,52 @@ export default function DashboardPage() {
             </Link>
           </div>
         </motion.div>
+
+      {/* Expiring Credits Warning */}
+      {creditBatches.length > 0 && (() => {
+        const now = new Date()
+        const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+        const expiringBatches = creditBatches.filter(b => {
+          const expDate = new Date(b.expiresAt)
+          return expDate <= thirtyDaysFromNow && expDate > now
+        })
+        if (expiringBatches.length === 0) return null
+        return (
+          <motion.div
+            className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-500 mb-2">Credits Expiring Soon</h3>
+                <div className="space-y-2">
+                  {expiringBatches.map(batch => {
+                    const expDate = new Date(batch.expiresAt)
+                    const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+                    return (
+                      <div key={batch.id} className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-300">
+                          ${(parseInt(batch.remainingCents) / 100).toFixed(2)} credits
+                        </span>
+                        <span className="text-amber-400 font-medium">
+                          {daysLeft === 0 ? 'Expires today' : daysLeft === 1 ? 'Expires tomorrow' : `Expires in ${daysLeft} days`}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <Link href="/dashboard/credits" className="mt-3 inline-block text-xs text-amber-400 hover:text-amber-300">
+                  Buy more credits to avoid interruption
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )
+      })()}
+
 
         <motion.div
           className="rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-6"

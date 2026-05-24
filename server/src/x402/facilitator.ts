@@ -9,6 +9,8 @@ import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { settlements } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
+import { addSettlementToDlq } from "../lib/dlq.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 
 // ============================================================
 // Types
@@ -73,6 +75,7 @@ export interface PaymentRequired {
   validBefore: number;
   validAfter: number;
   description?: string;
+  "payment-URL"?: string;
 }
 
 export interface PaymentResponse {
@@ -107,22 +110,40 @@ export interface PaymentMiddlewareConfig {
 }
 
 // ============================================================
-// Settlement Cache
+// Settlement Cache (LRU with max size)
 // ============================================================
 
 const settlementCache = new Map<string, SettlementRecord>();
-const CACHE_TTL_MS = 86_400_000;
+const cacheAccessOrder: string[] = [];
+const CACHE_TTL_MS = 3_600_000;
+const MAX_CACHE_SIZE = 1_000;
+const PAYMENT_WINDOW_SECONDS = 300; // 5 minutes
 
 function cleanExpiredCache(): void {
   const now = Date.now();
   for (const [key, record] of settlementCache) {
     if (now - record.settledAt > CACHE_TTL_MS) {
       settlementCache.delete(key);
+      const idx = cacheAccessOrder.indexOf(key);
+      if (idx !== -1) cacheAccessOrder.splice(idx, 1);
+    }
+  }
+}
+
+function evictLRU(): void {
+  if (settlementCache.size >= MAX_CACHE_SIZE && cacheAccessOrder.length > 0) {
+    const firstKey = cacheAccessOrder.shift();
+    if (firstKey !== undefined) {
+      settlementCache.delete(firstKey);
     }
   }
 }
 
 setInterval(cleanExpiredCache, 300_000).unref();
+
+// ============================================================
+// Nonce Management
+// ============================================================
 
 // ============================================================
 // Signing Utilities
@@ -156,11 +177,28 @@ function verifyReceipt(data: string, receipt: string): boolean {
 
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 
-function getEvmClient() {
-  return createPublicClient({
-    chain: base,
-    transport: http(config.CHAIN_RPC_URL),
-  });
+const EVM_PUBLIC_RPC_FALLBACK = "https://base-rpc.publicnode.com";
+const SOLANA_PUBLIC_RPC_FALLBACK = "https://rpc.ankr.com/solana";
+
+async function fetchWithFallback(
+  url: string,
+  fallbackUrl: string | undefined,
+  fallbackDisplay: string,
+  request: RequestInit,
+): Promise<Response> {
+  try {
+    const response = await fetch(url, request);
+    return response;
+  } catch {
+    if (!fallbackUrl) {
+      console.warn(`[FACILITATOR] [WARN] Primary RPC failed (${url}), trying public fallback: ${fallbackDisplay}`);
+      const fallbackResponse = await fetch(fallbackDisplay, request);
+      return fallbackResponse;
+    }
+    console.warn(`[FACILITATOR] [WARN] Primary RPC failed (${url}), trying fallback: ${fallbackUrl}`);
+    const fallbackResponse = await fetch(fallbackUrl, request);
+    return fallbackResponse;
+  }
 }
 
 async function verifyEvmPayment(
@@ -168,12 +206,20 @@ async function verifyEvmPayment(
   authorization: string,
   payload: PaymentPayload,
 ): Promise<PaymentResponse> {
-  try {
-    const client = getEvmClient();
+  const txHash = signature.startsWith("0x")
+    ? (signature as Hash)
+    : (`0x${signature}` as Hash);
 
-    const txHash = signature.startsWith("0x")
-      ? (signature as Hash)
-      : (`0x${signature}` as Hash);
+  async function attemptVerification(rpcUrl: string, fallbackRpcUrl: string | undefined): Promise<PaymentResponse> {
+    const isFallback = rpcUrl !== config.CHAIN_RPC_URL;
+    if (isFallback && fallbackRpcUrl) {
+      console.warn(`[FACILITATOR] [WARN] EVM RPC fallback active: ${rpcUrl}`);
+    }
+
+    const client = createPublicClient({
+      chain: base,
+      transport: http(rpcUrl),
+    });
 
     const receipt = await client.getTransactionReceipt({ hash: txHash });
 
@@ -251,7 +297,8 @@ async function verifyEvmPayment(
           };
         }
       } catch (decodeErr) {
-        return { valid: false, error: `Failed to decode USDC transfer data: ${decodeErr instanceof Error ? decodeErr.message : String(decodeErr)}` };
+        console.error(`[facilitator] Failed to decode USDC transfer data:`, decodeErr);
+        return { valid: false, error: `Failed to decode USDC transfer data` };
       }
     }
 
@@ -263,8 +310,38 @@ async function verifyEvmPayment(
       networkId: payload.networkId,
       error: "Unrecognized USDC transfer method",
     };
-  } catch (err: unknown) {
-    return { valid: false, error: `EVM verification failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  try {
+    return await attemptVerification(config.CHAIN_RPC_URL, config.CHAIN_RPC_URL_FALLBACK);
+  } catch (primaryErr: unknown) {
+    const isNetworkError = primaryErr instanceof Error && (
+      primaryErr.message.includes("fetch") ||
+      primaryErr.message.includes("ECONNREFUSED") ||
+      primaryErr.message.includes("ETIMEDOUT") ||
+      primaryErr.message.includes("network") ||
+      primaryErr.message.includes("timeout") ||
+      primaryErr.name === "TypeError"
+    );
+
+    console.error(`[facilitator] EVM verification error:`, primaryErr);
+    if (!isNetworkError) {
+      return { valid: false, error: `EVM verification failed` };
+    }
+
+    if (config.CHAIN_RPC_URL_FALLBACK) {
+      try {
+        return await attemptVerification(config.CHAIN_RPC_URL_FALLBACK, undefined);
+      } catch {
+        return { valid: false, error: `EVM verification failed` };
+      }
+    }
+
+    try {
+      return await attemptVerification(EVM_PUBLIC_RPC_FALLBACK, undefined);
+    } catch {
+      return { valid: false, error: `EVM verification failed` };
+    }
   }
 }
 
@@ -279,21 +356,25 @@ async function verifySolanaPayment(
   _authorization: string,
   payload: PaymentPayload,
 ): Promise<PaymentResponse> {
-  try {
-    const rpcUrl = config.CHAIN_RPC_URL;
-    const response = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getTransaction",
-        params: [
-          signature,
-          { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
-        ],
-      }),
-    });
+  async function attemptVerification(rpcUrl: string): Promise<PaymentResponse> {
+    const response = await fetchWithFallback(
+      rpcUrl,
+      config.SOLANA_RPC_URL_FALLBACK,
+      SOLANA_PUBLIC_RPC_FALLBACK,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "getTransaction",
+          params: [
+            signature,
+            { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
+          ],
+        }),
+      },
+    );
 
     if (!response.ok) {
       return { valid: false, error: "Solana RPC request failed" };
@@ -302,7 +383,8 @@ async function verifySolanaPayment(
     const json = (await response.json()) as SolanaRpcResponse;
 
     if (json.error) {
-      return { valid: false, error: `Solana RPC error: ${json.error.message}` };
+      console.error(`[facilitator] Solana RPC error:`, json.error);
+      return { valid: false, error: `Solana RPC error` };
     }
 
     const tx = json.result;
@@ -371,8 +453,13 @@ async function verifySolanaPayment(
       amount,
       networkId: payload.networkId,
     };
+  }
+
+  try {
+    return await attemptVerification(config.SOLANA_RPC_URL);
   } catch (err: unknown) {
-    return { valid: false, error: `Solana verification failed: ${err instanceof Error ? err.message : String(err)}` };
+    console.error(`[facilitator] Solana verification failed:`, err);
+    return { valid: false, error: `Solana verification failed` };
   }
 }
 
@@ -479,6 +566,7 @@ export async function settlePaymentAsync(
       receipt: existingDb[0].receipt,
     };
     settlementCache.set(cacheKey, record);
+    cacheAccessOrder.push(cacheKey);
     return { settled: true, receipt: existingDb[0].receipt };
   }
 
@@ -495,22 +583,41 @@ export async function settlePaymentAsync(
     receipt,
   };
 
+  evictLRU();
   settlementCache.set(cacheKey, record);
+  cacheAccessOrder.push(cacheKey);
 
-  try {
-    await db.insert(settlements).values({
-      txHash,
-      amount,
-      networkId,
-      payee,
-      receipt,
-      settledAt: new Date(settledAt),
-    });
-  } catch (err) {
-    console.error("Failed to persist settlement to DB:", err);
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await db.insert(settlements).values({
+        txHash,
+        amount,
+        networkId,
+        payee,
+        receipt,
+        settledAt: new Date(settledAt),
+      });
+      return { settled: true, receipt };
+    } catch (err) {
+      if (attempt === 1) {
+        const pgErr = err as { code?: string };
+        if (pgErr.code === "23505") {
+          return { settled: true, receipt };
+        }
+      }
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.error(`Failed to persist settlement to DB (attempt ${attempt}/3):`, lastError);
+      if (attempt < 3) {
+        const backoffMs = Math.min(100 * Math.pow(2, attempt - 1), 1000);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      }
+    }
   }
 
-  return { settled: true, receipt };
+  settlementCache.delete(cacheKey);
+  await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
+  throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
 }
 
 export function settlePayment(
@@ -539,7 +646,9 @@ export function settlePayment(
     receipt,
   };
 
+  evictLRU();
   settlementCache.set(cacheKey, record);
+  cacheAccessOrder.push(cacheKey);
 
   return { settled: true, receipt };
 }
@@ -590,7 +699,7 @@ export function verifySettlementReceipt(
 
 export const x402Routes = new Hono<OmaEnv>();
 
-x402Routes.post("/x402/verify", async (c) => {
+x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
   const headerVal = c.req.header("PAYMENT-SIGNATURE");
   if (!headerVal) {
     return c.json(
@@ -650,6 +759,49 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
   return c.json(result, result.settled ? 200 : 422);
 });
 
+x402Routes.post("/x402/pay-req-test", async (c) => {
+  const now = Math.floor(Date.now() / 1000);
+  const paymentURL = `https://pay.om.ai/x402/deposit?network=base&asset=USDC&return_to=${encodeURIComponent(c.req.url)}`;
+  const paymentRequired: PaymentRequired = {
+    x402Version: "1",
+    scheme: "evm",
+    networkId: "base",
+    asset: USDC_BASE,
+    amount: "1.00",
+    payee: config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000",
+    maxAmountRequired: "1.00",
+    validBefore: now + PAYMENT_WINDOW_SECONDS,
+    validAfter: now,
+    description: "Payment required for x402 test",
+    "payment-URL": paymentURL,
+  };
+
+  c.header("Pay-Req", JSON.stringify(paymentRequired));
+  return c.json(
+    {
+      error: {
+        message: "Payment required",
+        type: "payment_required",
+        payment: paymentRequired,
+      },
+    },
+    402,
+  );
+});
+
+const testPricing: Record<string, string> = {
+  "/x402/middleware-test": "0.50",
+};
+
+x402Routes.use("/x402/middleware-test", paymentMiddleware({
+  pricing: testPricing,
+  payeeAddress: config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000",
+}));
+
+x402Routes.post("/x402/middleware-test", async (c) => {
+  return c.json({ success: true });
+});
+
 // ============================================================
 // Payment Middleware
 // ============================================================
@@ -678,6 +830,7 @@ export function paymentMiddleware(
 
     if (!paymentHeader) {
       const now = Math.floor(Date.now() / 1000);
+      const paymentURL = `https://pay.om.ai/x402/deposit?network=${networkId}&asset=${encodeURIComponent(asset)}&return_to=${encodeURIComponent(c.req.url)}`;
       const paymentRequired: PaymentRequired = {
         x402Version: "1",
         scheme,
@@ -686,12 +839,13 @@ export function paymentMiddleware(
         amount: price,
         payee: payeeAddress,
         maxAmountRequired: price,
-        validBefore: now + 3600,
+        validBefore: now + PAYMENT_WINDOW_SECONDS,
         validAfter: now,
         description: `Payment required for ${path}`,
+        "payment-URL": paymentURL,
       };
 
-      c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));
+      c.header("Pay-Req", JSON.stringify(paymentRequired));
       return c.json(
         {
           error: {

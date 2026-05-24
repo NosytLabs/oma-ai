@@ -1,6 +1,6 @@
 # OMA AI Gateway - MVP Documentation
 
-**Version:** 1.0.0  
+**Version:** 2.0.0  
 **Status:** Current Production Build  
 **Updated:** 2026-05-22
 
@@ -452,4 +452,4 @@ curl -X POST https://api.oma-ai.com/v1/chat/completions \
 
 ---
 
-*Built with Vault-Tec approved developer tools.*
+*Built with modern developer tools.*

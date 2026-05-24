@@ -1,4 +1,20 @@
+import { createPublicClient, http, type Hash } from "viem";
+import { base, mainnet, arbitrum, optimism, polygon, avalanche } from "viem/chains";
 import { config } from "../config.js";
+
+type ViemChain = typeof base | typeof mainnet | typeof arbitrum | typeof optimism | typeof polygon | typeof avalanche;
+
+function getViemChain(chain: CctpChain): ViemChain {
+  switch (chain) {
+    case "ethereum": return mainnet;
+    case "avalanche": return avalanche;
+    case "optimism": return optimism;
+    case "arbitrum": return arbitrum;
+    case "base": return base;
+    case "polygon": return polygon;
+    default: throw new Error(`Unsupported chain for viem: ${chain}`);
+  }
+}
 
 export const CCTP_SUPPORTED_CHAINS = [
   "solana",
@@ -21,6 +37,27 @@ export const CCTP_CHAIN_DOMAIN_IDS: Record<CctpChain, number> = {
   polygon: 7,
   solana: 8,
 };
+
+const FINALITY_CONFIRMATIONS = 12;
+
+async function verifyTransactionFinality(
+  chain: CctpChain,
+  txHash: string,
+): Promise<boolean> {
+  try {
+    const viemChain = getViemChain(chain);
+    const client = createPublicClient({
+      chain: viemChain,
+      transport: http(),
+    });
+    const receipt = await client.getTransactionReceipt({ hash: txHash as Hash });
+    const currentBlock = await client.getBlockNumber();
+    const confirmations = Number(currentBlock - receipt.blockNumber);
+    return confirmations >= FINALITY_CONFIRMATIONS;
+  } catch {
+    return false;
+  }
+}
 
 export interface CctpAttestation {
   status: "pending" | "complete";
@@ -183,15 +220,24 @@ export async function waitForAttestation(
 
     const msg = data.messages?.[0];
     if (msg?.status === "complete") {
-      return {
-        status: "complete",
-        attestation: msg.attestation,
-        messageHash: msg.messageHash,
-        sourceDomain: msg.sourceDomain,
-        destinationDomain: msg.destinationDomain,
-        amount: msg.amount,
-        mintRecipient: msg.mintRecipient,
-      };
+      let hasFinality = false;
+      for (let j = 0; j < 12 && !hasFinality; j++) {
+        hasFinality = await verifyTransactionFinality(chain, burnTxHash);
+        if (!hasFinality && j < 11) {
+          await new Promise((r) => setTimeout(r, interval));
+        }
+      }
+      if (hasFinality) {
+        return {
+          status: "complete",
+          attestation: msg.attestation,
+          messageHash: msg.messageHash,
+          sourceDomain: msg.sourceDomain,
+          destinationDomain: msg.destinationDomain,
+          amount: msg.amount,
+          mintRecipient: msg.mintRecipient,
+        };
+      }
     }
 
     if (i < retries - 1) await new Promise((r) => setTimeout(r, interval));

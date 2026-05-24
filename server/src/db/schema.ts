@@ -8,6 +8,7 @@ import {
   boolean,
   index,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const depositStatusEnum = pgEnum("deposit_status", [
@@ -30,7 +31,7 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "payment_link",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"]);
+export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -38,10 +39,15 @@ export const users = pgTable("users", {
   solanaAddress: text("solana_address"),
   accountNumber: text("account_number"), // Mullvad-style: OMA-XXXX-XXXX-XXXX (unique, nullable)
   accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
+  twoFactorSecret: text("two_factor_secret"), // TOTP secret (plaintext — should be encrypted at rest)
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   nonce: text("nonce").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("idx_users_address").on(t.address),
+  index("idx_users_account_number_hash").on(t.accountNumberHash),
+]);
 
 export const apiKeys = pgTable(
   "api_keys",
@@ -55,10 +61,13 @@ export const apiKeys = pgTable(
     name: text("name").notNull(),
     active: boolean("active").default(true).notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId)]
+  (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId), index("idx_api_keys_user_active").on(t.userId, t.active)]
 );
+
+export type ApiKey = typeof apiKeys.$inferSelect & { expired?: boolean };
 
 export const deposits = pgTable(
   "deposits",
@@ -84,6 +93,8 @@ export const deposits = pgTable(
     index("idx_deposits_houdini").on(t.houdiniId),
     index("idx_deposits_status").on(t.status),
     index("idx_deposits_txhash").on(t.txHash),
+    index("idx_deposits_user_status").on(t.userId, t.status),
+    index("idx_deposits_created_at").on(t.createdAt),
   ]
 );
 
@@ -117,6 +128,8 @@ export const usageRecords = pgTable(
     markupCents: numeric("markup_cents", { precision: 18, scale: 2 }).notNull(),
     totalCents: numeric("total_cents", { precision: 18, scale: 2 }).notNull(),
     latencyMs: integer("latency_ms"),
+    status: text("status").default("completed").notNull(),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
@@ -125,6 +138,8 @@ export const usageRecords = pgTable(
     index("idx_usage_model").on(t.model),
     index("idx_usage_created").on(t.createdAt),
     index("idx_usage_request").on(t.requestId),
+    index("idx_usage_user_created").on(t.userId, t.createdAt),
+    index("idx_usage_records_provider").on(t.provider),
   ]
 );
 
@@ -179,6 +194,7 @@ export const creditTransfers = pgTable(
   (t) => [
     index("idx_credit_transfers_from").on(t.fromUserId),
     index("idx_credit_transfers_to").on(t.toUserId),
+    index("idx_credit_transfers_from_to").on(t.fromUserId, t.toUserId),
   ]
 );
 
@@ -209,6 +225,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   creditTransfersFrom: many(creditTransfers, { relationName: "fromUser" }),
   creditTransfersTo: many(creditTransfers, { relationName: "toUser" }),
   autoReloadSettings: many(autoReloadSettings),
+  teamMemberships: many(teamMembers),
+  budgetAlerts: many(budgetAlerts),
+  budgetAlertHistory: many(budgetAlertHistory),
+  subscriptions: many(subscriptions),
 }));
 
 export const settlements = pgTable(
@@ -223,9 +243,12 @@ export const settlements = pgTable(
     settledAt: timestamp("settled_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
+    uniqueIndex("idx_settlements_txhash_network_unique").on(t.txHash, t.networkId),
     index("idx_settlements_txhash").on(t.txHash),
     index("idx_settlements_network").on(t.networkId),
     index("idx_settlements_payee").on(t.payee),
+    index("idx_settlements_txhash_network").on(t.txHash, t.networkId),
+    index("idx_settlements_txhash_network_payee").on(t.txHash, t.networkId, t.payee),
   ]
 );
 
@@ -287,4 +310,294 @@ export const stakingTiers = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   }
+);
+
+export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member", "billing"]);
+
+export const teams = pgTable("teams", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  billingEmail: text("billing_email"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const teamMembers = pgTable(
+  "team_members",
+  {
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    role: teamRoleEnum("role").default("member").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_team_members_team").on(t.teamId),
+    index("idx_team_members_user").on(t.userId),
+    index("idx_team_members_team_user").on(t.teamId, t.userId),
+  ]
+);
+
+export const ssoConnections = pgTable(
+  "sso_connections",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    provider: text("provider").notNull(),
+    domain: text("domain").notNull().unique(),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_sso_connections_team").on(t.teamId),
+    index("idx_sso_connections_domain").on(t.domain),
+  ]
+);
+
+export const teamsRelations = relations(teams, ({ many }) => ({
+  members: many(teamMembers),
+  ssoConnections: many(ssoConnections),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
+  user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
+}));
+
+export const ssoConnectionsRelations = relations(ssoConnections, ({ one }) => ({
+  team: one(teams, { fields: [ssoConnections.teamId], references: [teams.id] }),
+}));
+
+export const budgetAlertTypeEnum = pgEnum("budget_alert_type", [
+  "50_percent",
+  "75_percent",
+  "90_percent",
+  "100_percent",
+]);
+
+export const notificationChannelEnum = pgEnum("notification_channel", [
+  "email",
+  "webhook",
+  "both",
+]);
+
+export const budgetAlerts = pgTable(
+  "budget_alerts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    budgetLimitCents: numeric("budget_limit_cents", { precision: 18, scale: 2 }).notNull(),
+    alertThresholds: text("alert_thresholds").default("[50, 75, 90, 100]").notNull(),
+    emailEnabled: boolean("email_enabled").default(true).notNull(),
+    webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
+    webhookUrl: text("webhook_url"),
+    lastAlertAt: timestamp("last_alert_at", { withTimezone: true }),
+    dailyLimitCents: text("daily_limit_cents"),
+    weeklyLimitCents: text("weekly_limit_cents"),
+    monthlyLimitCents: text("monthly_limit_cents"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_budget_alerts_user").on(t.userId),
+  ]
+);
+
+export const budgetAlertHistory = pgTable(
+  "budget_alert_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    alertType: budgetAlertTypeEnum("alert_type").notNull(),
+    thresholdPercent: integer("threshold_percent").notNull(),
+    spentCents: numeric("spent_cents", { precision: 18, scale: 2 }).notNull(),
+    budgetLimitCents: numeric("budget_limit_cents", { precision: 18, scale: 2 }).notNull(),
+    notificationSent: boolean("notification_sent").default(false).notNull(),
+    notificationChannel: notificationChannelEnum("notification_channel"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_budget_alert_history_user").on(t.userId),
+    index("idx_budget_alert_history_created").on(t.createdAt),
+    index("idx_budget_alert_history_user_alert").on(t.userId, t.alertType),
+  ]
+);
+
+export const budgetAlertsRelations = relations(budgetAlerts, ({ one }) => ({
+  user: one(users, { fields: [budgetAlerts.userId], references: [users.id] }),
+}));
+
+export const budgetAlertHistoryRelations = relations(budgetAlertHistory, ({ one }) => ({
+  user: one(users, { fields: [budgetAlertHistory.userId], references: [users.id] }),
+}));
+
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "active",
+  "canceled",
+  "past_due",
+  "expired",
+]);
+
+export const plans = pgTable("plans", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  price: integer("price").notNull(),
+  credits: integer("credits").notNull(),
+  features: text("features").notNull().default("[]"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    planId: uuid("plan_id")
+      .references(() => plans.id, { onDelete: "set null" })
+      .notNull(),
+    status: subscriptionStatusEnum("status").default("active").notNull(),
+    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_subscriptions_user").on(t.userId),
+    index("idx_subscriptions_status").on(t.status),
+    index("idx_subscriptions_period_end").on(t.currentPeriodEnd),
+  ]
+);
+
+export const invoiceStatusEnum = pgEnum("invoice_status", [
+  "draft",
+  "pending",
+  "paid",
+  "overdue",
+  "cancelled",
+]);
+
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    invoiceNumber: text("invoice_number").notNull().unique(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+    status: invoiceStatusEnum("status").default("draft").notNull(),
+    lineItems: text("line_items").notNull(), // JSON array of {description, quantity, unitPrice, total}
+    dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_invoices_user").on(t.userId),
+    index("idx_invoices_status").on(t.status),
+    index("idx_invoices_number").on(t.invoiceNumber),
+    index("idx_invoices_due_date").on(t.dueDate),
+  ]
+);
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  user: one(users, { fields: [invoices.userId], references: [users.id] }),
+}));
+
+export const auditActionEnum = pgEnum("audit_action", [
+  "USER_LOGIN",
+  "USER_LOGOUT",
+  "API_KEY_CREATED",
+  "API_KEY_REVOKED",
+  "USER_CREATED",
+  "USER_UPDATED",
+  "USER_DELETED",
+  "TEAM_MEMBER_ADDED",
+  "TEAM_MEMBER_REMOVED",
+  "TEAM_MEMBER_ROLE_CHANGED",
+  "DEPOSIT_CREATED",
+  "DEPOSIT_COMPLETED",
+  "DEPOSIT_FAILED",
+  "WITHDRAWAL_CREATED",
+  "WITHDRAWAL_COMPLETED",
+  "WITHDRAWAL_FAILED",
+  "FEE_CHANGED",
+  "RATE_LIMIT_OVERRIDE_SET",
+  "RATE_LIMIT_OVERRIDE_REMOVED",
+  "SPEND_LIMIT_CHANGED",
+  "BUDGET_ALERT_CHANGED",
+]);
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "set null" }),
+    action: auditActionEnum("action").notNull(),
+    resource: text("resource").notNull(),
+    resourceId: uuid("resource_id"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_audit_logs_user").on(t.userId),
+    index("idx_audit_logs_action").on(t.action),
+    index("idx_audit_logs_resource").on(t.resource),
+    index("idx_audit_logs_resource_id").on(t.resourceId),
+    index("idx_audit_logs_created").on(t.createdAt),
+    index("idx_audit_logs_user_action").on(t.userId, t.action),
+    index("idx_audit_logs_user_created").on(t.userId, t.createdAt),
+  ]
+);
+
+export const plansRelations = relations(plans, ({ many }) => ({
+  subscriptions: many(subscriptions),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
+  plan: one(plans, { fields: [subscriptions.planId], references: [plans.id] }),
+}));
+
+export const adminConfig = pgTable(
+  "admin_config",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    key: text("key").notNull().unique(),
+    value: text("value").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("idx_admin_config_key").on(t.key)]
+);
+
+export const rateLimitOverrides = pgTable(
+  "rate_limit_overrides",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    targetType: text("target_type").notNull(),
+    targetId: uuid("target_id").notNull(),
+    rpm: integer("rpm"),
+    tpm: integer("tpm"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_rate_limit_overrides_target").on(t.targetType, t.targetId),
+    index("idx_rate_limit_overrides_expiry").on(t.expiresAt),
+  ]
 );

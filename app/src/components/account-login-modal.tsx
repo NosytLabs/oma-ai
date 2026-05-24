@@ -28,7 +28,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'}/auth/account/login`, {
+      const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/account/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accountNumber: accountNumber.trim().toUpperCase() }),
@@ -59,7 +59,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'}/auth/account/create`, {
+      const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/account/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

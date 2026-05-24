@@ -49,6 +49,11 @@ vi.mock("../db/client.js", () => ({
   getDb: () => dbChain,
 }));
 
+vi.mock("../lib/redis-client.js", () => ({
+  getRedisClient: vi.fn().mockResolvedValue(null),
+  isRedisReady: vi.fn().mockReturnValue(false),
+}));
+
 // Mock config with LiteLLM proxy settings
 vi.mock("../config.js", () => ({
   config: {
@@ -131,7 +136,7 @@ describe("LiteLLM Provider client", () => {
           messages: [{ role: "user", content: "hello" }],
         })
       ).rejects.toThrow("litellm connection failed: Connection refused");
-    });
+    }, 10000);
 
     it("maps 4xx error response from LiteLLM accurately", async () => {
       const mockErrResponse = new Response(
@@ -222,7 +227,7 @@ describe("LiteLLM Circuit Breaker and Routing", () => {
   it("reports successes and failures to update circuit breaker state for litellm", async () => {
     vi.useFakeTimers();
 
-    // Report 5 failures in a row (above error threshold of 5%)
+    // Report 5 failures in a row (above failure threshold of 5)
     for (let i = 0; i < 5; i++) {
       await reportProviderResult("litellm", false, 100);
     }
@@ -230,10 +235,14 @@ describe("LiteLLM Circuit Breaker and Routing", () => {
     const availableAfterFailures = await isProviderAvailable("litellm");
     expect(availableAfterFailures).toBe(false);
 
-    // Fast-forward past 10-minute cooldown (10m * 60s * 1000ms)
-    vi.advanceTimersByTime(10 * 60 * 1000 + 1000);
+    // Fast-forward past 60-second recovery timeout - circuit moves to HALF_OPEN
+    vi.advanceTimersByTime(60_000 + 1000);
 
-    // Report success to reset state
+    // In HALF_OPEN state, provider is available for probing
+    const availableInHalfOpen = await isProviderAvailable("litellm");
+    expect(availableInHalfOpen).toBe(true);
+
+    // Report success to close the circuit
     await reportProviderResult("litellm", true, 50);
     const availableAfterSuccess = await isProviderAvailable("litellm");
     expect(availableAfterSuccess).toBe(true);

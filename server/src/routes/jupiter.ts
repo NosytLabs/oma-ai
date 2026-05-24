@@ -10,7 +10,7 @@ import { db } from "../db/client.js";
 import { deposits } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { config } from "../config.js";
-import { validationError } from "./validation.js";
+import { validationError } from "../lib/validation.js";
 import { sessionAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 
@@ -263,26 +263,23 @@ jupiterRoutes.post("/v1/deposit/jupiter/complete", sessionAuth, async (c) => {
       }
     }
 
-    // If we couldn't find USDC transfer, use estimate based on Jupiter quote
-    if (usdcAmount === 0) {
-      // Get Jupiter quote for the amount
-      let amountLamports = amount;
-      if (inputMint === SOL_MINT) {
-        amountLamports = Math.round(amount * 1e9);
-      }
-
-      try {
-        const quote = await getQuote({
-          inputMint,
-          outputMint,
-          amount: amountLamports,
-          slippageBps: 50,
-        });
-        usdcAmount = parseFloat(quote.outAmount) / 1e6;
-      } catch {
-        // Fallback: just use the amount as USD estimate
-        usdcAmount = inputMint === SOL_MINT ? amount : amount;
-      }
+        // If we couldn't find USDC transfer, use estimate based on Jupiter quote
+        if (usdcAmount === 0) {
+          let amountLamports = amount;
+          if (inputMint === SOL_MINT) {
+            amountLamports = Math.round(amount * 1e9);
+          }
+          try {
+            const quote = await getQuote({
+              inputMint,
+              outputMint,
+              amount: amountLamports,
+              slippageBps: 50,
+            });
+            usdcAmount = parseFloat(quote.outAmount) / 1e6;
+          } catch {
+            return c.json({ error: { message: "Could not verify deposit amount on-chain or via quote. Please retry.", type: "verification_error" } }, 400);
+          }
     }
 
     // Create deposit record

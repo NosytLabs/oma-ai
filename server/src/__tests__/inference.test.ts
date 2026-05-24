@@ -43,7 +43,7 @@ vi.mock('../db/client.js', () => {
   return { db: chain, getDb: () => chain }
 })
 
-vi.mock('../auth/api-keys.js', () => ({
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), 
   validateApiKey: vi.fn(),
   createApiKey: vi.fn(),
   listApiKeys: vi.fn().mockResolvedValue([]),
@@ -161,7 +161,7 @@ import { handleChatCompletion } from '../inference/router.js'
 import { getBalance, deductCredits } from '../credits/balance.js'
 
 const validKey = {
-  id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, createdAt: new Date(),
+  id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
 }
 
 function authHeaders() {

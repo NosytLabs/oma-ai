@@ -1,3 +1,5 @@
+import { config } from "../config.js";
+
 export interface TinyFishFetchResult {
   url: string;
   status: number;
@@ -11,7 +13,7 @@ export interface TinyFishFetchResponse {
 }
 
 export async function fetchWebPages(urls: string[]): Promise<TinyFishFetchResponse> {
-  const apiKey = process.env.TINYFISH_API_KEY;
+  const apiKey = config.TINYFISH_API_KEY;
   if (!apiKey) {
     throw new Error('TINYFISH_API_KEY not configured');
   }

@@ -3,7 +3,7 @@ import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions";
-import { trace, SpanStatusCode, SpanKind } from "@opentelemetry/api";
+import { trace, SpanStatusCode, SpanKind, context, propagation } from "@opentelemetry/api";
 import { RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { config } from "./config.js";
 
@@ -71,6 +71,44 @@ export async function withSpan<T>(
 }
 
 /**
+ * LLM-specific span attribute keys following OpenTelemetry semantic conventions
+ */
+export const LLM_ATTRS = {
+  MODEL: "llm.model",
+  PROVIDER: "llm.provider",
+  USER_ID: "llm.user_id",
+  API_KEY_ID: "llm.api_key_id",
+  REQUEST_ID: "llm.request_id",
+  TOKENS_INPUT: "llm.tokens.input",
+  TOKENS_OUTPUT: "llm.tokens.output",
+  TOKENS_TOTAL: "llm.tokens.total",
+  STREAMING: "llm.streaming",
+  TIME_TO_FIRST_TOKEN_MS: "llm.time_to_first_token_ms",
+  TOKEN_THROUGHPUT_PER_SEC: "llm.token_throughput_per_sec",
+  ERROR: "error",
+  ERROR_TYPE: "error.type",
+  ERROR_MESSAGE: "error.message",
+} as const;
+
+/**
+ * Provider error types for categorization
+ */
+export const PROVIDER_ERROR_TYPES = {
+  CONNECTION_ERROR: "connection_error",
+  TIMEOUT_ERROR: "timeout_error",
+  RATE_LIMIT_ERROR: "rate_limit_error",
+  AUTHENTICATION_ERROR: "authentication_error",
+  PERMISSION_ERROR: "permission_error",
+  INVALID_REQUEST_ERROR: "invalid_request_error",
+  NOT_FOUND_ERROR: "not_found_error",
+  PAYMENT_REQUIRED_ERROR: "payment_required_error",
+  INTERNAL_ERROR: "internal_error",
+  SERVER_ERROR: "server_error",
+  CIRCUIT_BREAKER: "circuit_breaker",
+  UNKNOWN_ERROR: "unknown_error",
+} as const;
+
+/**
  * Record metrics for token usage
  */
 export function recordTokenMetrics(
@@ -83,13 +121,113 @@ export function recordTokenMetrics(
   const span = trace.getActiveSpan();
   if (!span) return;
 
-  span.setAttribute("llm.tokens.input", inputTokens);
-  span.setAttribute("llm.tokens.output", outputTokens);
-  span.setAttribute("llm.tokens.total", inputTokens + outputTokens);
-  span.setAttribute("llm.user_id", userId);
-  span.setAttribute("llm.model", model);
-  span.setAttribute("llm.provider", provider);
+  span.setAttribute(LLM_ATTRS.TOKENS_INPUT, inputTokens);
+  span.setAttribute(LLM_ATTRS.TOKENS_OUTPUT, outputTokens);
+  span.setAttribute(LLM_ATTRS.TOKENS_TOTAL, inputTokens + outputTokens);
+  span.setAttribute(LLM_ATTRS.USER_ID, userId);
+  span.setAttribute(LLM_ATTRS.MODEL, model);
+  span.setAttribute(LLM_ATTRS.PROVIDER, provider);
 }
+
+/**
+ * Record streaming-specific metrics
+ */
+export function recordStreamingMetrics(
+  timeToFirstTokenMs: number,
+  totalTokens: number,
+  durationMs: number
+): void {
+  const span = trace.getActiveSpan();
+  if (!span) return;
+
+  span.setAttribute(LLM_ATTRS.TIME_TO_FIRST_TOKEN_MS, timeToFirstTokenMs);
+  span.setAttribute(LLM_ATTRS.TOKEN_THROUGHPUT_PER_SEC, totalTokens / (durationMs / 1000));
+  span.setAttribute("llm.streaming_duration_ms", durationMs);
+}
+
+/**
+ * Set LLM span attributes for model, provider, user, and apiKey
+ */
+export function setLlmSpanAttributes(params: {
+  model?: string;
+  provider?: string;
+  userId?: string;
+  apiKeyId?: string;
+  requestId?: string;
+  streaming?: boolean;
+  inputTokens?: number;
+  outputTokens?: number;
+}): void {
+  const span = trace.getActiveSpan();
+  if (!span) return;
+
+  const { model, provider, userId, apiKeyId, requestId, streaming, inputTokens, outputTokens } = params;
+
+  if (model) span.setAttribute(LLM_ATTRS.MODEL, model);
+  if (provider) span.setAttribute(LLM_ATTRS.PROVIDER, provider);
+  if (userId) span.setAttribute(LLM_ATTRS.USER_ID, userId);
+  if (apiKeyId) span.setAttribute(LLM_ATTRS.API_KEY_ID, apiKeyId);
+  if (requestId) span.setAttribute(LLM_ATTRS.REQUEST_ID, requestId);
+  if (streaming !== undefined) span.setAttribute(LLM_ATTRS.STREAMING, streaming);
+  if (inputTokens !== undefined) span.setAttribute(LLM_ATTRS.TOKENS_INPUT, inputTokens);
+  if (outputTokens !== undefined) span.setAttribute(LLM_ATTRS.TOKENS_OUTPUT, outputTokens);
+}
+
+/**
+ * Set error attributes with provider-specific categorization
+ */
+export function setErrorAttributes(
+  errorType: string,
+  message: string,
+  provider?: string
+): void {
+  const span = trace.getActiveSpan();
+  if (!span) return;
+
+  span.setAttribute(LLM_ATTRS.ERROR, true);
+  span.setAttribute(LLM_ATTRS.ERROR_TYPE, errorType);
+  span.setAttribute(LLM_ATTRS.ERROR_MESSAGE, message);
+
+  if (provider) {
+    span.setAttribute("llm.error.provider", provider);
+  }
+}
+
+/**
+ * Get trace context for propagation to external services
+ */
+export function getTraceContext(): Record<string, string> {
+  const carrier: Record<string, string> = {};
+  propagation.inject(context.active(), carrier);
+  return carrier;
+}
+
+/**
+ * Extract trace context from carrier (for incoming requests)
+ */
+export function extractTraceContext(carrier: Record<string, string>) {
+  return propagation.extract(context.active(), carrier);
+}
+
+/**
+ * Run callback with extracted trace context
+ */
+export async function withTraceContext<T>(
+  carrier: Record<string, string>,
+  fn: () => Promise<T>
+): Promise<T> {
+  const extractedContext = extractTraceContext(carrier);
+  return context.with(extractedContext, fn);
+}
+
+// Span kinds for LLM operations
+export const LLM_SPAN_KINDS = {
+  INTERNAL: SpanKind.INTERNAL,
+  SERVER: SpanKind.SERVER,
+  CLIENT: SpanKind.CLIENT,
+  PRODUCER: SpanKind.PRODUCER,
+  CONSUMER: SpanKind.CONSUMER,
+} as const;
 
 // Trace exporter (OTLP HTTP)
 const traceExporter = new OTLPTraceExporter({

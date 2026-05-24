@@ -7,6 +7,8 @@ const {
   mockGetChains,
   mockGetTokens,
   mockGetTokensForChain,
+  fakeRedis,
+  mockRedisClient
 } = vi.hoisted(() => {
   const mockGetQuotes = vi.fn().mockResolvedValue([])
   const mockCreateExchange = vi.fn()
@@ -14,7 +16,50 @@ const {
   const mockGetChains = vi.fn().mockResolvedValue([])
   const mockGetTokens = vi.fn().mockResolvedValue([])
   const mockGetTokensForChain = vi.fn().mockResolvedValue([])
-  return { mockGetQuotes, mockCreateExchange, mockGetOrder, mockGetChains, mockGetTokens, mockGetTokensForChain }
+  const fakeRedis = new Map<string, string>()
+  const mockRedisClient = {
+    get: vi.fn(async (k) => fakeRedis.get(k) || null),
+    set: vi.fn(async (k, v, opts) => {
+      if (opts?.NX && fakeRedis.has(k)) return null;
+      fakeRedis.set(k, v);
+      return 'OK';
+    }),
+    del: vi.fn(async (k) => { fakeRedis.delete(k); return 1; }),
+  }
+  return { mockGetQuotes, mockCreateExchange, mockGetOrder, mockGetChains, mockGetTokens, mockGetTokensForChain, fakeRedis, mockRedisClient }
+})
+
+vi.mock('../lib/redis-client.js', () => ({
+  getRedisClient: vi.fn().mockResolvedValue(mockRedisClient)
+}))
+
+vi.mock('@hono/node-server', () => ({
+  serve: vi.fn(),
+}))
+
+vi.mock('../db/client.js', () => {
+  const mockSelect = vi.fn().mockReturnThis()
+  const mockFrom = vi.fn().mockReturnThis()
+  const mockWhere = vi.fn().mockReturnThis()
+  const mockLimit = vi.fn().mockResolvedValue([])
+  const mockInsert = vi.fn().mockReturnThis()
+  const mockValues = vi.fn().mockReturnThis()
+  const mockReturning = vi.fn().mockResolvedValue([{ id: 'test-user-id' }])
+  const mockEq = vi.fn().mockReturnValue('mock-eq')
+  
+  return {
+    db: {
+      select: mockSelect,
+      from: mockFrom,
+      where: mockWhere,
+      limit: mockLimit,
+      insert: mockInsert,
+      values: mockValues,
+      returning: mockReturning,
+      execute: vi.fn(),
+    },
+    eq: mockEq,
+  }
 })
 
 vi.mock('@hono/node-server', () => ({
@@ -57,7 +102,7 @@ vi.mock('../db/client.js', () => {
   return { db: chain, getDb: () => chain }
 })
 
-vi.mock('../auth/api-keys.js', () => ({
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), 
   validateApiKey: vi.fn().mockResolvedValue({
     id: 'key-1',
     userId: 'user-1',
@@ -203,7 +248,7 @@ vi.mock('../config.js', () => ({
     HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
     HOUDINI_ADDRESS_TO: '0x1234567890abcdef1234567890abcdef12345678',
     FACILITATOR_MODE: 'mock',
-    CHAIN_RPC_URL: 'https://mainnet.base.org',
+    CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
   },
 }))
@@ -213,6 +258,7 @@ import app from '../index.js'
 describe('Cross-Chain x402', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    fakeRedis.clear()
   })
 
   describe('POST /v1/x402/quote', () => {

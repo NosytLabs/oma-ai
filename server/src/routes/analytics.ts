@@ -1,0 +1,170 @@
+import { z } from "zod";
+import { Hono } from "hono";
+import { db } from "../db/client.js";
+import { usageRecords } from "../db/schema.js";
+import { desc, sql, count, sql as drizzleSql } from "drizzle-orm";
+import { bearerAuth } from "../auth/middleware.js";
+import type { OmaEnv } from "../types.js";
+
+const periodSchema = z.enum(["7d", "30d", "90d"]).default("30d");
+
+export const analyticsRoutes = new Hono<OmaEnv>();
+
+analyticsRoutes.use("/v1/analytics/*", bearerAuth);
+
+analyticsRoutes.get("/v1/analytics/usage", async (c) => {
+  const userId = c.get("userId");
+  if (!userId) {
+    return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
+  }
+
+  const periodResult = periodSchema.safeParse(c.req.query("period") || "30d");
+  const period = periodResult.success ? periodResult.data : "30d";
+  let dateFilter: Date;
+  const now = new Date();
+  switch (period) {
+    case "7d":
+      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      dateFilter = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  try {
+    const aggregateUsage = await db.select({
+      totalRequests: count(usageRecords.id),
+      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+    })
+    .from(usageRecords)
+    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`);
+
+    const byModel = await db.select({
+      model: usageRecords.model,
+      provider: usageRecords.provider,
+      totalRequests: count(usageRecords.id),
+      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+    })
+    .from(usageRecords)
+    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+    .groupBy(usageRecords.model, usageRecords.provider)
+    .orderBy(desc(drizzleSql`sum(${usageRecords.totalCents})`))
+    .limit(20);
+
+    const dailyUsage = await db.select({
+      date: sql<string>`date(${usageRecords.createdAt})`,
+      totalRequests: count(usageRecords.id),
+      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+    })
+    .from(usageRecords)
+    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+    .groupBy(sql`date(${usageRecords.createdAt})`)
+    .orderBy(sql`date(${usageRecords.createdAt})`);
+
+    const topModels = await db.select({
+      model: usageRecords.model,
+      totalRequests: count(usageRecords.id),
+    })
+    .from(usageRecords)
+    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+    .groupBy(usageRecords.model)
+    .orderBy(desc(drizzleSql`count(${usageRecords.id})`))
+    .limit(10);
+
+    const agg = aggregateUsage[0];
+    return c.json({
+      period,
+      summary: {
+        totalRequests: Number(agg?.totalRequests || 0),
+        totalInputTokens: Number(agg?.totalInputTokens || 0),
+        totalOutputTokens: Number(agg?.totalOutputTokens || 0),
+        totalCost: Number(agg?.totalCostCents || 0) / 100,
+      },
+      byModel: byModel.map((m) => ({
+        model: m.model,
+        provider: m.provider,
+        totalRequests: Number(m.totalRequests),
+        totalInputTokens: Number(m.totalInputTokens),
+        totalOutputTokens: Number(m.totalOutputTokens),
+        totalCost: Number(m.totalCostCents) / 100,
+      })),
+      dailyUsage: dailyUsage.map((d) => ({
+        date: d.date,
+        totalRequests: Number(d.totalRequests),
+        totalInputTokens: Number(d.totalInputTokens),
+        totalOutputTokens: Number(d.totalOutputTokens),
+        totalCost: Number(d.totalCostCents) / 100,
+      })),
+      topModels: topModels.map((m) => ({
+        model: m.model,
+        totalRequests: Number(m.totalRequests),
+      })),
+    });
+  } catch (err) {
+    console.error('Analytics usage error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+analyticsRoutes.get("/v1/analytics/models", async (c) => {
+  const userId = c.get("userId");
+  if (!userId) {
+    return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
+  }
+
+  const periodResult = periodSchema.safeParse(c.req.query("period") || "30d");
+  const period = periodResult.success ? periodResult.data : "30d";
+  let dateFilter: Date;
+  const now = new Date();
+  switch (period) {
+    case "7d":
+      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      dateFilter = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  try {
+    const popularModels = await db.select({
+      model: usageRecords.model,
+      provider: usageRecords.provider,
+      totalRequests: count(usageRecords.id),
+      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+    })
+    .from(usageRecords)
+    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+    .groupBy(usageRecords.model, usageRecords.provider)
+    .orderBy(desc(drizzleSql`count(${usageRecords.id})`))
+    .limit(10);
+
+    return c.json({
+      period,
+      models: popularModels.map((m) => ({
+        model: m.model,
+        provider: m.provider,
+        totalRequests: Number(m.totalRequests),
+        totalCost: Number(m.totalCostCents) / 100,
+      })),
+    });
+  } catch (err) {
+    console.error('Analytics models error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});

@@ -3,8 +3,16 @@ import { z } from "zod";
 import { bearerAuth } from "../auth/middleware.js";
 import { getBalance } from "../credits/balance.js";
 import { addCredits } from "../credits/balance.js";
+import {
+  getBudgetAlertConfig,
+  setBudgetAlertConfig,
+  getBudgetAlertHistory,
+  DEFAULT_THRESHOLDS,
+  type BudgetThreshold,
+} from "../credits/budget-alerts.js";
+import { auditLog } from "../middleware/audit.js";
 import { db } from "../db/client.js";
-import { creditBatches, autoReloadSettings, deposits, usageRecords } from "../db/schema.js";
+import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
 import { config } from "../config.js";
 import { calculateCostCredits } from "../inference/models.js";
@@ -27,11 +35,13 @@ const autoReloadSchema = z.object({
   paymentMethod: z.enum(["usdc", "sol", "oma"]).optional(),
 });
 
-function getExpiryDate(): Date {
-  const d = new Date();
-  d.setDate(d.getDate() + (config.CREDIT_BATCH_EXPIRY_DAYS || 365));
-  return d;
-}
+const budgetAlertSchema = z.object({
+  budgetLimitCents: z.number().positive().min(100),
+  alertThresholds: z.array(z.enum(["50", "75", "90", "100"])).default(["50", "75", "90", "100"]),
+  emailEnabled: z.boolean().default(true),
+  webhookEnabled: z.boolean().default(false),
+  webhookUrl: z.string().url().optional().nullable(),
+});
 
 creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
   const userId = c.get("userId");
@@ -70,28 +80,14 @@ creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
       });
   }
 
-  const expiresAt = getExpiryDate();
-
-  await db.insert(creditBatches).values({
-    userId,
-    amountCents: String(amountCents),
-    remainingCents: String(amountCents),
-    expiresAt,
-    paymentMethod,
-    depositId: deposit.id,
-  });
-
-  await db.update(deposits)
-    .set({ status: "completed", creditsIssued: String(amountCents / 100), completedAt: new Date() })
-    .where(eq(deposits.id, deposit.id));
-
   return c.json({
     success: true,
-    creditsAdded: amountCents,
-    expiresAt: expiresAt.toISOString(),
     depositId: deposit.id,
+    status: "pending",
+    amountCents,
     paymentMethod,
     autoReloadEnabled: autoReload ?? false,
+    message: "Deposit created. Credits will be issued after payment confirmation.",
   });
 });
 
@@ -261,6 +257,7 @@ creditRoutes.get("/v1/credits/auto-reload", bearerAuth, async (c) => {
 creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
   const userId = c.get("userId");
   const usageId = c.req.param("usageId");
+
   if (!usageId) {
     return c.json({ error: { message: "Usage ID is required", type: "invalid_request_error" } }, 400);
   }
@@ -274,6 +271,15 @@ creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
   }
 
   const usage = usageRecordsResult[0];
+
+  if (usage.status === "refunded") {
+    return c.json({ error: { message: "Usage record has already been refunded", type: "duplicate_refund" } }, 409);
+  }
+
+  await db.update(usageRecords)
+    .set({ status: "refunded", refundedAt: new Date() })
+    .where(eq(usageRecords.id, usageId));
+
   await addCredits(userId, Number(usage.totalCents));
 
   return c.json({ success: true, creditsRefunded: Number(usage.totalCents) });
@@ -301,4 +307,90 @@ creditRoutes.get("/v1/credits/price-estimate", bearerAuth, async (c) => {
   } catch (err) {
     return c.json({ error: { message: (err as Error).message, type: "invalid_request_error" } }, 400);
   }
+});
+
+creditRoutes.post("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = budgetAlertSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+
+  const { budgetLimitCents, alertThresholds, emailEnabled, webhookEnabled, webhookUrl } = parsed.data;
+  const thresholds = alertThresholds.map(Number) as BudgetThreshold[];
+
+  await setBudgetAlertConfig(userId, {
+    budgetLimitCents,
+    alertThresholds: thresholds,
+    emailEnabled,
+    webhookEnabled,
+    webhookUrl: webhookUrl ?? undefined,
+  });
+
+  const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+  const userAgent = c.req.header("user-agent") || undefined;
+
+  await auditLog({
+    userId,
+    action: "BUDGET_ALERT_CHANGED",
+    resource: "budget_alerts",
+    metadata: { budgetLimitCents, alertThresholds: thresholds, emailEnabled, webhookEnabled },
+    ipAddress,
+    userAgent,
+  });
+
+  return c.json({
+    success: true,
+    budgetLimitCents,
+    alertThresholds: thresholds,
+    emailEnabled,
+    webhookEnabled,
+    webhookUrl,
+  });
+});
+
+creditRoutes.get("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+  const userId = c.get("userId");
+  const config = await getBudgetAlertConfig(userId);
+
+  if (!config) {
+    return c.json({
+      budgetLimitCents: 0,
+      alertThresholds: DEFAULT_THRESHOLDS,
+      emailEnabled: true,
+      webhookEnabled: false,
+      webhookUrl: null,
+    });
+  }
+
+  return c.json({
+    budgetLimitCents: config.budgetLimitCents,
+    alertThresholds: config.alertThresholds,
+    emailEnabled: config.emailEnabled,
+    webhookEnabled: config.webhookEnabled,
+    webhookUrl: config.webhookUrl,
+  });
+});
+
+creditRoutes.delete("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+  const userId = c.get("userId");
+
+  await db.delete(budgetAlerts).where(eq(budgetAlerts.userId, userId));
+
+  return c.json({ success: true });
+});
+
+creditRoutes.get("/v1/credits/budget-alerts/history", bearerAuth, async (c) => {
+  const userId = c.get("userId");
+  const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
+
+  const history = await getBudgetAlertHistory(userId, limit);
+
+  return c.json({
+    history: history.map(h => ({
+      alertType: h.alertType,
+      thresholdPercent: h.thresholdPercent,
+      spentCents: Number(h.spentCents),
+      budgetLimitCents: Number(h.budgetLimitCents),
+      createdAt: h.createdAt,
+    })),
+  });
 });

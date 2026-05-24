@@ -1,0 +1,120 @@
+import { describe, it, expect, vi } from "vitest";
+import {
+  videoGeneration,
+  retrieveVideo,
+  veniceModels,
+} from "../venice.js";
+
+const { config } = await import("../../config.js");
+
+const mockConfig = vi.hoisted(() => ({
+  VENICE_API_KEY: "test-venice-key",
+  VENICE_API_URL: "https://api.venice.ai",
+  NODE_ENV: "test",
+  RECEIPT_HMAC_SECRET: "test-receipt-secret-at-least-32-chars!",
+}));
+
+vi.mock("../../config.js", () => ({
+  config: mockConfig,
+}));
+
+vi.mock("../../inference/cheaptokens.js", () => ({
+  getActiveVeniceKey: vi.fn().mockReturnValue("test-venice-key"),
+}));
+
+describe("veniceModels", () => {
+  it("returns models list from API", async () => {
+    const mockResponse = {
+      data: [
+        { id: "qwen3-4b", name: "Qwen3 4B" },
+        { id: "llama-3.2-3b", name: "Llama 3.2 3B" },
+      ],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockResponse),
+    });
+
+    const models = await veniceModels();
+    expect(models).toHaveLength(2);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/models"),
+      expect.any(Object)
+    );
+  });
+
+  it("throws error when API key not configured", async () => {
+    vi.mocked(config).VENICE_API_KEY = "";
+
+    await expect(veniceModels()).rejects.toThrow("Venice API key not configured");
+  });
+});
+
+describe("videoGeneration", () => {
+  it("submits video generation job", async () => {
+    const mockResponse = { queue_id: "video-123", status: "queued" };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockResponse),
+    });
+
+    const result = await videoGeneration({
+      model: "seedance-2-0-text-to-video",
+      prompt: "A beautiful sunset",
+      duration: "5s",
+      aspect_ratio: "16:9",
+      resolution: "720p",
+    });
+
+    expect(result.queueId).toBe("video-123");
+    expect(result.status).toBe("queued");
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/video/queue"),
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("throws error on video generation failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: vi.fn().mockResolvedValue("Video generation failed"),
+    });
+
+    await expect(videoGeneration({ model: "seedance-2-0-text-to-video", prompt: "test" }))
+      .rejects.toThrow("Video generation failed");
+  });
+});
+
+describe("retrieveVideo", () => {
+  it("retrieves video status", async () => {
+    const mockResponse = {
+      status: "completed",
+      video_url: "https://example.com/video.mp4",
+      download_url: "https://example.com/download.mp4",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockResponse),
+    });
+
+    const result = await retrieveVideo("video-123");
+    expect(result.status).toBe("completed");
+    expect(result.video_url).toBe("https://example.com/video.mp4");
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/video/retrieve"),
+      expect.any(Object)
+    );
+  });
+
+  it("throws error on video retrieval failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: vi.fn().mockResolvedValue("Retrieval failed"),
+    });
+
+    await expect(retrieveVideo("video-123")).rejects.toThrow("Video retrieval failed");
+  });
+});

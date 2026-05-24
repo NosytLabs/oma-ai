@@ -108,9 +108,326 @@ GET /health
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "service": "oma-ai"
 }
+```
+
+---
+
+### Analytics
+
+#### Get Usage Analytics
+```http
+GET /v1/analytics
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "totalRequests": 1523,
+  "totalTokens": 2500000,
+  "totalSpendCents": 1250,
+  "requestsByModel": {...},
+  "requestsOverTime": [...]
+}
+```
+
+#### Get Usage History
+```http
+GET /v1/usage
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "usage": [
+    {
+      "id": "usage_xxx",
+      "model": "deepseek-v4-flash",
+      "inputTokens": 1500,
+      "outputTokens": 250,
+      "costCents": 0.45,
+      "createdAt": "2026-05-22T..."
+    }
+  ]
+}
+```
+
+---
+
+### Subscriptions
+
+#### List Plans
+```http
+GET /v1/plans
+```
+
+#### Subscribe to Plan
+```http
+POST /v1/subscriptions
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "planId": "plan_xxx",
+  "paymentMethod": "usdc_base"
+}
+```
+
+#### Get Current Subscription
+```http
+GET /v1/subscriptions/me
+Authorization: Bearer <api_key>
+```
+
+#### Cancel Subscription
+```http
+DELETE /v1/subscriptions/me
+Authorization: Bearer <api_key>
+```
+
+---
+
+### Teams
+
+#### Get Team
+```http
+GET /teams/:teamId
+Authorization: Bearer <api_key>
+```
+
+#### List Team Members
+```http
+GET /teams/:teamId/members
+Authorization: Bearer <api_key>
+```
+
+#### Add Team Member
+```http
+POST /teams/:teamId/members
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "address": "0x..."
+}
+```
+
+---
+
+### SSO
+
+#### Create SSO Connection
+```http
+POST /sso/connections
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "teamId": "team_xxx",
+  "provider": "okta",
+  "domain": "example.com",
+  "metadata": "..."
+}
+```
+
+#### List SSO Connections for Team
+```http
+GET /sso/connections/:teamId
+Authorization: Bearer <api_key>
+```
+
+#### Delete SSO Connection
+```http
+DELETE /sso/connections/:connectionId
+Authorization: Bearer <api_key>
+```
+
+#### SAML Assertion Consumer Service
+```http
+POST /sso/saml/acs
+Content-Type: application/x-www-form-urlencoded
+
+SAMLResponse=<base64-encoded-saml-response>
+```
+
+#### SAML Metadata
+```http
+GET /sso/saml/metadata/:connectionId
+```
+
+---
+
+### Onramp
+
+#### Get Onramp Quote
+```http
+POST /v1/onramp/quote
+Content-Type: application/json
+
+{
+  "fromToken": "USD",
+  "toToken": "USDC",
+  "fromAmount": "100"
+}
+```
+
+#### Create Onramp Session
+```http
+POST /v1/onramp/session
+Content-Type: application/json
+
+{
+  "quoteId": "quote_xxx",
+  "address": "0x..."
+}
+```
+
+---
+
+### Jupiter (Solana Swap)
+
+#### Get Jupiter Quote
+```http
+POST /v1/deposit/jupiter/quote
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "inputMint": "SOL",
+  "outputMint": "USDC",
+  "amount": "1000000000"
+}
+```
+
+#### Complete Jupiter Deposit
+```http
+POST /v1/deposit/jupiter/complete
+Authorization: Bearer <api_key>
+Content-Type: application/json
+```
+
+#### Execute Jupiter Swap Transaction
+```http
+POST /v1/deposit/jupiter/swap-tx
+Authorization: Bearer <api_key>
+Content-Type: application/json
+```
+
+#### Direct SOL Deposit
+```http
+POST /v1/deposit/jupiter/direct-sol
+Authorization: Bearer <api_key>
+Content-Type: application/json
+```
+
+#### List Jupiter Tokens
+```http
+GET /v1/deposit/jupiter/tokens
+```
+
+#### Get Jupiter Token Price
+```http
+GET /v1/deposit/jupiter/price?mint=<token_mint>
+```
+
+---
+
+### Queue
+
+#### Get Queue Status
+```http
+GET /v1/queue/:jobId
+Authorization: Bearer <api_key>
+```
+
+#### List Pending Jobs
+```http
+GET /v1/queue
+Authorization: Bearer <api_key>
+```
+
+---
+
+### WebSocket
+
+#### Connect to WebSocket
+```
+ws://localhost:3001/v1/chat/completions/ws
+```
+
+**Authentication:** Pass `api_key` as query parameter or in first message.
+
+**Send:**
+```json
+{
+  "type": "auth",
+  "api_key": "oma_sk_xxx"
+}
+```
+
+**Send (Chat):**
+```json
+{
+  "type": "chat",
+  "id": "req_xxx",
+  "model": "deepseek-v4-flash",
+  "messages": [...]
+}
+```
+
+**Receive (Stream):**
+```json
+{
+  "type": "chunk",
+  "id": "req_xxx",
+  "delta": "Hello"
+}
+```
+
+---
+
+### Staking
+
+> **Note:** Staking endpoints are not yet implemented. The following endpoints are planned for a future release.
+
+#### Get Stake Info (Planned)
+```http
+GET /v1/stake/info
+Authorization: Bearer <api_key>
+```
+
+**Planned Response:**
+```json
+{
+  "stakedAmount": "1000000000",
+  "unstakedAmount": "500000000",
+  "rewardsPerSecond": "1000",
+  "totalStaked": "100000000000"
+}
+```
+
+#### Stake/Unstake Tokens (Planned)
+```http
+POST /v1/stake
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "amount": "1000000000",
+  "type": "stake" // "stake" or "unstake"
+}
+```
+
+**Note:** Use `type: "stake"` to stake tokens, `type: "unstake"` to initiate unstaking. Unstaked tokens require a 7-day cooldown before withdrawal.
+
+#### Withdraw Unstaked Tokens (Planned)
+```http
+POST /v1/stake/withdraw
+Authorization: Bearer <api_key>
 ```
 
 ---
@@ -169,6 +486,32 @@ Content-Type: application/json
   "id": "uuid",
   "name": "Default wallet key",
   "createdAt": "2026-05-22T..."
+}
+```
+
+#### Logout
+```http
+POST /auth/logout
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{ "success": true }
+```
+
+#### Get Current User
+```http
+GET /user
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{
+  "address": "0x...",
+  "apiKeys": [...],
+  "balanceCents": 5000
 }
 ```
 
@@ -241,6 +584,22 @@ Content-Type: application/json
   }
 }
 ```
+
+#### Legacy Text Completions (Deprecated)
+```http
+POST /v1/completions
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "model": "llama-3.3-70b",
+  "prompt": "The capital of France is",
+  "max_tokens": 50,
+  "temperature": 0.7
+}
+```
+
+**Note:** This endpoint is deprecated. Use `/v1/chat/completions` instead.
 
 #### Streaming Response
 ```http
@@ -369,6 +728,19 @@ Authorization: Bearer <api_key>
 **Response:**
 ```json
 {
+  "balanceCents": 5000
+}
+```
+
+#### Get Full Balance Details
+```http
+GET /v1/credits/balance
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
   "balanceCents": 5000,
   "totalDepositedCents": 10000,
   "totalUsedCents": 5000
@@ -386,8 +758,9 @@ Authorization: Bearer <api_key>
 Content-Type: application/json
 
 {
-  "amount": "1000000",  // 1 USDC (6 decimals)
-  "txHash": "0x..."
+  "amount": "1000000", // 1 USDC (6 decimals)
+  "txHash": "0x...",
+  "signature": "0x..."
 }
 ```
 
@@ -436,6 +809,35 @@ GET /v1/deposit/houdini/tokens
 ---
 
 ### x402 Payments
+
+x402 is a protocol for per-request crypto payments without pre-funding.
+
+#### Flow
+
+```
+1. Agent requests quote
+   POST /v1/x402/quote
+   { model, inputTokens, fromToken, fromChain }
+
+2. OMA returns quote with total cost
+   { quoteId, fromAmount, totalCostUsd, expiresIn }
+
+3. Agent creates deposit
+   POST /v1/x402/deposit
+   { quoteId, refundAddress? }
+
+4. OMA returns deposit address
+   { orderId, depositAddress, expiresAt }
+
+5. Agent sends tokens to deposit address
+
+6. Agent polls for settlement
+   GET /v1/x402/deposit/:orderId/status
+
+7. Once settled, agent calls inference with x402 headers
+   POST /v1/x402/proxy/chat/completions
+   X-Houdini-Order-Id: <orderId>
+```
 
 #### Get Quote
 ```http
@@ -516,9 +918,31 @@ Content-Type: application/json
 }
 ```
 
----
+#### x402 Headers (for direct proxy)
 
-## 4. Model Pricing
+```http
+POST /v1/x402/proxy/chat/completions
+X-Houdini-Order-Id: order_xxx
+PAYMENT-SIGNATURE: {"orderId":"order_xxx","amount":5000000,"networkId":"base"}
+Content-Type: application/json
+
+{
+  "model": "deepseek-v4-flash",
+  "messages": [{"role": "user", "content": "Hello"}]
+}
+```
+
+#### Supported Chains for x402
+
+- Base (primary)
+- Solana
+- Ethereum
+- Arbitrum
+- Optimism
+- Polygon
+- Avalanche
+- BSC
+- And 20+ via HoudiniSwap
 
 ### Frontier Models (Best Quality)
 
@@ -786,6 +1210,36 @@ client = OpenAI(api_key="oma_sk_xxx", base_url="http://localhost:3001/v1")
 | 429 | Rate limit exceeded |
 | 500 | Server error |
 | 503 | Service unavailable - all providers down |
+
+---
+
+## 9. Inference Providers
+
+OMA routes to multiple AI providers with automatic failover. The system uses circuit breakers to route around failures.
+
+### Available Providers
+
+| Provider | Features | Models |
+|----------|----------|--------|
+| **Venice AI** | Primary provider, most models | 50+ models |
+| **AntSeed** | Budget models, fast | DeepSeek, Qwen, Llama |
+| **LiteLLM** | Unified API, 100+ models | OpenAI-compatible |
+| **Together AI** | Open source models | Llama, Mistral, Qwen |
+| **OpenRouter** | Model aggregation | 100+ models |
+| **DeepInfra** | Fast inference | Llama, Mistral |
+| **CheapTokens** | Budget provider | Token generation |
+| **TinyFish** | Web search integration | Search-enhanced |
+
+### Provider Failover Priority
+1. Venice AI (primary)
+2. AntSeed (backup)
+3. LiteLLM (tertiary)
+4. Together AI → OpenRouter → DeepInfra → CheapTokens (further backups)
+
+### Circuit Breaker Configuration
+- **Venice:** 50% error rate threshold, 30s recovery
+- **AntSeed:** 50% error rate threshold, 30s recovery
+- **LiteLLM:** 60% error rate threshold, 60s recovery
 
 ---
 

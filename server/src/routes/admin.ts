@@ -1,38 +1,34 @@
+import { z } from "zod";
 import { Hono } from "hono";
 import { db } from "../db/client.js";
-import { users, apiKeys, usageRecords, deposits, creditBalances } from "../db/schema.js";
-import { eq, desc, sql, count } from "drizzle-orm";
-import { sessionAuth } from "../auth/middleware.js";
+import { users, apiKeys, usageRecords, deposits, creditBalances, invoices, auditLogs } from "../db/schema.js";
+import { eq, desc, sql, count, and, gte, lte } from "drizzle-orm";
+import { sessionAuth, requireAdmin } from "../auth/middleware.js";
+import { auditLog as _auditLog } from "../middleware/audit.js";
 import type { OmaEnv } from "../types.js";
-import { config } from "../config.js";
+import { getSettlementDlqEntries, retrySettlementFromDlq, getSettlementDlqLength } from "../lib/dlq.js";
+import { processSettlementDLQ, retrySettlementById, getSettlementDlqStatus } from "../lib/settlement-retry.js";
+import { rateLimit } from "../middleware/rate-limit.js";
+
+const pageSchema = z.coerce.number().int().positive().default(1);
+const limitSchema = z.coerce.number().int().positive().max(100).default(50);
+const searchSchema = z.string().max(500).optional();
+const dateSchema = z.string().refine((d) => !isNaN(Date.parse(d)), { message: "Invalid date format" }).optional();
 
 export const adminRoutes = new Hono<OmaEnv>();
 
-function isAdminAddress(address: string): boolean {
-  const adminAddresses = config.ADMIN_WALLET_ADDRESSES?.split(",").map(a => a.toLowerCase().trim()) ?? [];
-  return adminAddresses.includes(address.toLowerCase());
-}
-
 adminRoutes.use("*", sessionAuth);
-adminRoutes.use("*", async (c, next) => {
-  const userId = c.get("userId");
-  if (!userId) {
-    return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
-  }
-
-  const [user] = await db.select({ address: users.address }).from(users).where(eq(users.id, userId)).limit(1);
-  if (!user || !isAdminAddress(user.address)) {
-    return c.json({ error: { message: "Admin access required", type: "forbidden" } }, 403);
-  }
-
-  await next();
-});
+adminRoutes.use("*", requireAdmin());
+adminRoutes.use("*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
 
 adminRoutes.get("/admin/users", async (c) => {
-  const page = parseInt(c.req.query("page") || "1");
-  const limit = parseInt(c.req.query("limit") || "50");
+  const pageResult = pageSchema.safeParse(c.req.query("page") || "1");
+  const page = pageResult.success ? pageResult.data : 1;
+  const limitResult = limitSchema.safeParse(c.req.query("limit") || "50");
+  const limit = limitResult.success ? limitResult.data : 50;
   const offset = (page - 1) * limit;
-  const _search = c.req.query("search") || "";
+  const searchResult = searchSchema.safeParse(c.req.query("search") || "");
+  const _search = searchResult.success ? searchResult.data : "";
 
   try {
     const baseQuery = db.select({
@@ -179,6 +175,9 @@ adminRoutes.get("/admin/users/:id", async (c) => {
 
 adminRoutes.get("/admin/usage", async (c) => {
   const period = c.req.query("period") || "30d";
+  if (!["7d", "30d", "90d"].includes(period)) {
+    return c.json({ error: { message: "Invalid period. Must be 7d, 30d, or 90d", type: "invalid_request_error" } }, 400);
+  }
   
   let dateFilter: Date;
   const now = new Date();
@@ -288,6 +287,9 @@ adminRoutes.get("/admin/usage", async (c) => {
 
 adminRoutes.get("/admin/revenue", async (c) => {
   const period = c.req.query("period") || "30d";
+  if (!["7d", "30d", "90d", "all"].includes(period)) {
+    return c.json({ error: { message: "Invalid period. Must be 7d, 30d, 90d, or all", type: "invalid_request_error" } }, 400);
+  }
   
   let dateFilter: Date;
   const now = new Date();
@@ -360,8 +362,10 @@ adminRoutes.get("/admin/revenue", async (c) => {
 });
 
 adminRoutes.get("/admin/keys", async (c) => {
-  const page = parseInt(c.req.query("page") || "1");
-  const limit = parseInt(c.req.query("limit") || "100");
+  const pageResult = pageSchema.safeParse(c.req.query("page") || "1");
+  const page = pageResult.success ? pageResult.data : 1;
+  const limitResult = limitSchema.safeParse(c.req.query("limit") || "100");
+  const limit = limitResult.success ? limitResult.data : 100;
   const offset = (page - 1) * limit;
 
   try {
@@ -409,6 +413,328 @@ adminRoutes.get("/admin/keys", async (c) => {
     });
   } catch (err) {
     console.error('Admin keys error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.get("/v1/admin/audit-logs", async (c) => {
+  const limitResult = limitSchema.safeParse(c.req.query("limit") || "50");
+  const limit = limitResult.success ? limitResult.data : 50;
+  const offsetResult = z.coerce.number().int().nonnegative().default(0).safeParse(c.req.query("offset") || "0");
+  const offset = offsetResult.success ? offsetResult.data : 0;
+  const userIdFilter = c.req.query("userId");
+  const actionFilter = c.req.query("action");
+  const resourceFilter = c.req.query("resource");
+  const startDateResult = dateSchema.safeParse(c.req.query("startDate"));
+  const startDate = startDateResult.success ? startDateResult.data : undefined;
+  const endDateResult = dateSchema.safeParse(c.req.query("endDate"));
+  const endDate = endDateResult.success ? endDateResult.data : undefined;
+
+  try {
+    const conditions = [];
+
+    if (userIdFilter) {
+      conditions.push(eq(auditLogs.userId, userIdFilter));
+    }
+    if (actionFilter) {
+      conditions.push(eq(auditLogs.action, actionFilter as typeof auditLogs.$inferSelect.action));
+    }
+    if (resourceFilter) {
+      conditions.push(eq(auditLogs.resource, resourceFilter));
+    }
+    if (startDate) {
+      conditions.push(gte(auditLogs.createdAt, new Date(startDate)));
+    }
+    if (endDate) {
+      conditions.push(lte(auditLogs.createdAt, new Date(endDate)));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const logsResult = await db
+      .select({
+        id: auditLogs.id,
+        userId: auditLogs.userId,
+        action: auditLogs.action,
+        resource: auditLogs.resource,
+        resourceId: auditLogs.resourceId,
+        ipAddress: auditLogs.ipAddress,
+        userAgent: auditLogs.userAgent,
+        metadata: auditLogs.metadata,
+        createdAt: auditLogs.createdAt,
+      })
+      .from(auditLogs)
+      .where(whereClause)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const totalResult = await db
+      .select({ count: count() })
+      .from(auditLogs)
+      .where(whereClause);
+
+    const logsWithParsedMetadata = logsResult.map((log) => ({
+      ...log,
+      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+    }));
+
+    return c.json({
+      logs: logsWithParsedMetadata,
+      pagination: {
+        limit,
+        offset,
+        total: Number(totalResult[0]?.count || 0),
+      },
+    });
+  } catch (err) {
+    console.error('Admin audit logs error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.post("/admin/invoices", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { userId, amount, lineItems, dueDate } = body;
+
+    if (!userId || !amount || !lineItems || !dueDate) {
+      return c.json({ error: { message: "Missing required fields: userId, amount, lineItems, dueDate" } }, 400);
+    }
+
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!userResult.length) {
+      return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
+    }
+
+    const lastInvoice = await db.select({ invoiceNumber: invoices.invoiceNumber })
+      .from(invoices)
+      .orderBy(desc(invoices.createdAt))
+      .limit(1);
+
+    let nextNumber = 1;
+    if (lastInvoice.length > 0) {
+      const lastNum = lastInvoice[0].invoiceNumber;
+      const match = lastNum.match(/INV-(\d{4})-(\d+)/);
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const seq = parseInt(match[2], 10);
+        const currentYear = new Date().getFullYear();
+        nextNumber = year === currentYear ? seq + 1 : 1;
+      }
+    }
+
+    const year = new Date().getFullYear();
+    const invoiceNumber = `INV-${year}-${String(nextNumber).padStart(5, "0")}`;
+
+    const lineItemsJson = JSON.stringify(lineItems);
+
+    const result = await db.insert(invoices).values({
+      invoiceNumber,
+      userId,
+      amount: amount.toString(),
+      status: "pending",
+      lineItems: lineItemsJson,
+      dueDate: new Date(dueDate),
+    }).returning();
+
+    return c.json({ invoice: result[0] }, 201);
+  } catch (err) {
+    console.error('Admin create invoice error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.get("/admin/invoices/:id", async (c) => {
+  const invoiceId = c.req.param("id");
+
+  try {
+    const invoiceResult = await db.select()
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
+
+    if (!invoiceResult.length) {
+      return c.json({ error: { message: "Invoice not found", type: "not_found" } }, 404);
+    }
+
+    const invoice = invoiceResult[0];
+    const userResult = await db.select({
+      id: users.id,
+      address: users.address,
+      accountNumber: users.accountNumber,
+    }).from(users).where(eq(users.id, invoice.userId)).limit(1);
+
+    return c.json({
+      invoice: {
+        ...invoice,
+        amount: Number(invoice.amount),
+        lineItems: JSON.parse(invoice.lineItems),
+        user: userResult[0] || null,
+      },
+    });
+  } catch (err) {
+    console.error('Admin invoice detail error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.get("/admin/invoices", async (c) => {
+  const page = Math.max(parseInt(c.req.query("page") || "1", 10), 1);
+  const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
+  const offset = (page - 1) * limit;
+  const status = c.req.query("status");
+  const userIdFilter = c.req.query("userId");
+
+  try {
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(invoices.status, status as "draft" | "pending" | "paid" | "overdue" | "cancelled"));
+    }
+    if (userIdFilter) {
+      conditions.push(eq(invoices.userId, userIdFilter));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const results = await db.select({
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      userId: invoices.userId,
+      amount: invoices.amount,
+      status: invoices.status,
+      dueDate: invoices.dueDate,
+      createdAt: invoices.createdAt,
+      userAddress: users.address,
+    })
+    .from(invoices)
+    .leftJoin(users, eq(invoices.userId, users.id))
+    .where(whereClause)
+    .orderBy(desc(invoices.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+    const totalResult = await db.select({ count: count() }).from(invoices).where(whereClause);
+    const total = totalResult[0]?.count || 0;
+
+    return c.json({
+      invoices: results.map((inv) => ({
+        ...inv,
+        amount: Number(inv.amount),
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    console.error('Admin invoices list error:', err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.get("/v1/admin/dlq/settlements", async (c) => {
+  const page = Math.max(parseInt(c.req.query("page") || "1", 10), 1);
+  const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
+  const offset = (page - 1) * limit;
+
+  try {
+    const entries = await getSettlementDlqEntries(offset, limit);
+    const total = await getSettlementDlqLength();
+    const status = await getSettlementDlqStatus();
+
+    return c.json({
+      entries: entries.map((e) => ({
+        orderId: e.orderId,
+        amount: e.amount,
+        chain: e.chain,
+        attempts: e.attempts,
+        lastError: e.lastError,
+        createdAt: e.createdAt,
+        status: e.attempts >= 3 ? "permanently_failed" : "retryable",
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+      summary: {
+        total,
+        retryable: status.retryable,
+        permanentlyFailed: status.permanentlyFailed,
+      },
+    });
+  } catch (err) {
+    console.error("Admin settlement DLQ error:", err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.post("/v1/admin/dlq/settlements/:id/retry", async (c) => {
+  const id = c.req.param("id");
+
+  try {
+    const result = await retrySettlementById(id);
+
+    if (result.error && result.error === "Settlement not found in DLQ") {
+      return c.json({ error: { message: "Settlement not found in DLQ", type: "not_found" } }, 404);
+    }
+
+    return c.json({
+      orderId: result.orderId,
+      success: result.success,
+      attempts: result.attempts,
+      error: result.error,
+      permanentlyFailed: result.permanentlyFailed,
+    });
+  } catch (err) {
+    console.error("Admin settlement retry error:", err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.post("/v1/admin/dlq/settlements/:id/discard", async (c) => {
+  const id = c.req.param("id");
+
+  try {
+    const entries = await getSettlementDlqEntries(0, await getSettlementDlqLength());
+    const entry = entries.find((e) => e.orderId === id);
+
+    if (!entry) {
+      return c.json({ error: { message: "Settlement not found in DLQ", type: "not_found" } }, 404);
+    }
+
+    await retrySettlementFromDlq();
+
+    return c.json({
+      orderId: id,
+      discarded: true,
+    });
+  } catch (err) {
+    console.error("Admin settlement discard error:", err);
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+adminRoutes.post("/v1/admin/dlq/settlements/process", async (c) => {
+  try {
+    const results = await processSettlementDLQ();
+
+    return c.json({
+      processed: results.length,
+      results: results.map((r) => ({
+        orderId: r.orderId,
+        success: r.success,
+        attempts: r.attempts,
+        error: r.error,
+        permanentlyFailed: r.permanentlyFailed,
+      })),
+    });
+  } catch (err) {
+    console.error("Admin settlement DLQ process error:", err);
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

@@ -1,5 +1,5 @@
 export type Tier = 'budget' | 'mid' | 'premium' | 'frontier'
-export type Provider = 'Venice'
+export type Provider = 'Venice' | 'AntSeed'
 
 export interface Model {
   id: string
@@ -27,6 +27,7 @@ export type Capability =
 
 export const PROVIDER_COLORS: Record<Provider, { bg: string; text: string; border: string }> = {
   Venice: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30' },
+  AntSeed: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
 }
 
 export const TIER_COLORS: Record<Tier, { bg: string; text: string; border: string; badge: string }> = {

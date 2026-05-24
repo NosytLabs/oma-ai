@@ -12,8 +12,10 @@
 4. [Model Pricing](#4-model-pricing)
 5. [Authentication](#5-authentication)
 6. [x402 Payments](#6-x402-payments)
-7. [Testing Guide](#7-testing-guide)
-8. [Example Code](#8-example-code)
+7. [Teams API](#7-teams-api)
+8. [SSO/SAML API](#8-sso-saml-api)
+9. [Testing Guide](#9-testing-guide)
+10. [Example Code](#10-example-code)
 
 ---
 
@@ -37,6 +39,8 @@ User ──► OMA API ──► Venice AI / AntSeed / LiteLLM
 - Multi-provider failover (Venice → AntSeed → LiteLLM)
 - Rate limiting per API key
 - Streaming support
+- Cross-chain crypto deposits via HoudiniSwap
+- x402 payment protocol support
 
 ---
 
@@ -76,24 +80,6 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
 NEXT_PUBLIC_BASE_TREASURY=0xYourTreasuryAddress
 ```
 
-### Database Setup
-
-```bash
-cd server
-npm run db:push    # Creates tables
-```
-
-### Start Servers
-
-```bash
-# Both servers
-cd oma && ./start-dev.sh
-
-# Or individually
-cd server && npm run dev   # :3001
-cd app && npm run dev       # :3000
-```
-
 ---
 
 ## 3. API Endpoints
@@ -109,7 +95,8 @@ GET /health
 {
   "status": "ok",
   "version": "0.1.0",
-  "service": "oma-ai"
+  "service": "oma-ai",
+  "correlationId": "abc123"
 }
 ```
 
@@ -358,6 +345,48 @@ GET /v1/videos/retrieve?queue_id=abc123
 
 ---
 
+### Web Search
+
+OMA provides real-time web search through the Tinyfish provider. Credits are deducted per search.
+
+#### Search
+```http
+GET /v1/search?query=latest+AI+news
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "position": 1,
+      "site_name": "TechCrunch",
+      "title": "OpenAI Announces GPT-5",
+      "snippet": "OpenAI has announced...",
+      "url": "https://techcrunch.com/..."
+    }
+  ],
+  "query": "latest AI news",
+  "total_results": 42
+}
+```
+
+#### Streaming Search
+```http
+GET /v1/search/stream?query=latest+AI+news
+Authorization: Bearer <api_key>
+```
+
+**Response:** `text/event-stream`
+```
+data: {"type":"result","position":1,"site_name":"TechCrunch","title":"...","snippet":"...","url":"..."}
+
+data: [DONE]
+```
+
+---
+
 ### Credits & Balance
 
 #### Get Balance
@@ -369,109 +398,215 @@ Authorization: Bearer <api_key>
 **Response:**
 ```json
 {
+  "balanceCents": 5000
+}
+```
+
+#### Get Full Balance Details
+```http
+GET /v1/credits/balance
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
   "balanceCents": 5000,
   "totalDepositedCents": 10000,
-  "totalUsedCents": 5000
+  "totalUsedCents": 5000,
+  "lastActivityAt": "2026-05-22T...",
+  "activeBatches": [
+    {
+      "id": "batch-uuid",
+      "amountCents": 5000,
+      "remainingCents": 5000,
+      "expiresAt": "2027-05-22T...",
+      "paymentMethod": "usdc"
+    }
+  ]
 }
+```
+
+#### Get Transaction History
+```http
+GET /v1/credits/transactions?limit=50
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "transactions": [
+    {
+      "id": "txn-1",
+      "type": "deposit",
+      "amountCents": 10000,
+      "creditsIssued": 10000,
+      "status": "completed",
+      "createdAt": "2026-05-22T...",
+      "txHash": "0x..."
+    },
+    {
+      "id": "txn-2",
+      "type": "usage",
+      "model": "deepseek-v4-flash",
+      "amountCents": 5,
+      "status": "completed",
+      "createdAt": "2026-05-22T..."
+    }
+  ]
+}
+```
+
+#### Get Usage by Model
+```http
+GET /v1/credits/usage
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "usageByModel": [
+    {
+      "model": "deepseek-v4-flash",
+      "inputTokens": 50000,
+      "outputTokens": 25000,
+      "totalCents": 15,
+      "requestCount": 10
+    }
+  ],
+  "totalUsageCents": 150
+}
+```
+
+#### Purchase Credits
+```http
+POST /v1/credits/purchase
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "amountCents": 10000,
+  "paymentMethod": "usdc",
+  "autoReload": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "creditsAdded": 10000,
+  "expiresAt": "2027-05-22T...",
+  "depositId": "dep-xxx",
+  "paymentMethod": "usdc",
+  "autoReloadEnabled": false
+}
+```
+
+#### Auto-Reload Settings
+```http
+POST /v1/credits/auto-reload
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "thresholdCents": 1000,
+  "reloadAmountCents": 5000,
+  "spendLimitCents": 50000,
+  "paymentMethod": "usdc"
+}
+```
+
+#### Get Auto-Reload Settings
+```http
+GET /v1/credits/auto-reload
+Authorization: Bearer <api_key>
 ```
 
 ---
 
 ### Deposits
 
+OMA supports multiple deposit methods: USDC direct, HoudiniSwap (cross-chain), CCTP (Circle Cross-Chain Transfer Protocol), and LiFi (multi-chain).
+
 #### USDC Deposit (Base)
 ```http
 POST /v1/deposit/usdc
-Authorization: Bearer <api_key>
+Authorization: Bearer <session_token>
 Content-Type: application/json
 
 {
-  "amount": "1000000",  // 1 USDC (6 decimals)
-  "txHash": "0x..."
+  "amount": 1000000,
+  "txHash": "0x...",
+  "signature": "0x..."
+}
+```
+
+**Response:**
+```json
+{
+  "credits": 1000000,
+  "depositId": "dep-xxx"
 }
 ```
 
 #### USDC Deposit (Solana)
 ```http
 POST /v1/deposit/usdc
-Authorization: Bearer <api_key>
+Authorization: Bearer <session_token>
 Content-Type: application/json
 
 {
-  "amount": "1000000",
+  "amount": 1000000,
   "txHash": "solana_tx_hash",
   "network": "solana"
 }
 ```
 
-#### HoudiniSwap (Cross-Chain)
+#### HoudiniSwap Quote
 ```http
-POST /v1/deposit/houdini
-Authorization: Bearer <api_key>
+POST /v1/deposit/houdini/quote
+Authorization: Bearer <session_token>
 Content-Type: application/json
 
 {
   "fromToken": "ETH",
-  "fromChain": "ethereum",
   "toToken": "USDC",
-  "toChain": "base",
-  "fromAmount": "1000000000000000000"  // 1 ETH in wei
+  "amount": "1000000000000000000",
+  "swapType": "standard"
 }
 ```
 
 **Response:**
 ```json
-{
-  "orderId": "houdini_order_id",
-  "depositAddress": "0x...",  // Send tokens here
-  "expiresAt": "2026-05-22T..."
-}
+[
+  {
+    "quoteId": "houdini-quote-id",
+    "fromToken": "ETH",
+    "toToken": "USDC",
+    "fromAmount": "1000000000000000000",
+    "toAmount": "1950000",
+    "rate": "0.00195",
+    "estimatedTime": 0,
+    "swapType": "standard",
+    "slippage": 1
+  }
+]
 ```
 
-#### HoudiniSwap Tokens
+#### HoudiniSwap Exchange
 ```http
-GET /v1/deposit/houdini/tokens
-```
-
----
-
-### x402 Payments
-
-#### Get Quote
-```http
-POST /v1/x402/quote
+POST /v1/deposit/houdini/exchange
+Authorization: Bearer <session_token>
 Content-Type: application/json
 
 {
-  "model": "deepseek-v4-flash",
-  "inputTokens": 1000,
-  "fromToken": "ETH",
-  "fromChain": "ethereum"
-}
-```
-
-**Response:**
-```json
-{
-  "quoteId": "quote_xxx",
-  "fromToken": "ETH",
-  "fromAmount": "100000000000000000",
-  "toToken": "USDC",
-  "toAmount": "5000000",
-  "routingFee": "500000",
-  "facilitatorFee": "75000",
-  "totalCostUsd": 5.75,
-  "expiresIn": 60
-}
-```
-
-#### Create x402 Deposit
-```http
-POST /v1/x402/deposit
-Content-Type: application/json
-
-{
-  "quoteId": "quote_xxx",
+  "quoteId": "houdini-quote-id",
+  "fromCoin": "ETH",
+  "fromAmount": "1000000000000000000",
   "refundAddress": "0x..."
 }
 ```
@@ -479,41 +614,346 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "orderId": "order_xxx",
-  "depositAddress": "0x...",
-  "fromToken": "ETH",
-  "fromAmount": "100000000000000000",
+  "depositId": "dep-xxx",
+  "depositAddress": "0x...", 
+  "orderId": "houdini-order-id",
+  "fromAmount": "1000000000000000000",
+  "toAmount": "1950000",
+  "status": "pending",
   "expiresAt": "2026-05-22T..."
 }
 ```
 
-#### Check x402 Deposit Status
+#### HoudiniSwap Tokens
 ```http
-GET /v1/x402/deposit/:orderId/status
+GET /v1/deposit/houdini/tokens?blockchain=ethereum
 ```
 
 **Response:**
 ```json
 {
-  "orderId": "order_xxx",
-  "status": "settling",
-  "houdiniStatus": "PROCESSING",
-  "fromAmount": "100000000000000000",
-  "toAmount": "4950000",
-  "txHash": "0x..."
+  "tokens": [
+    { "symbol": "ETH", "address": "0x...", "chain": "ethereum" },
+    { "symbol": "USDC", "address": "0x...", "chain": "base" }
+  ]
 }
 ```
 
-#### x402 Proxy (Direct)
+#### HoudiniSwap Chains
 ```http
-POST /v1/x402/proxy/chat/completions
-X-Houdini-Order-Id: order_xxx
+GET /v1/deposit/houdini/chains
+```
+
+#### HoudiniSwap Webhook (for status updates)
+```http
+POST /v1/deposit/houdini/webhook
+X-Houdini-Signature: <hmac_signature>
 Content-Type: application/json
 
 {
-  "model": "deepseek-v4-flash",
-  "messages": [{"role": "user", "content": "Hello"}]
+  "type": "swap",
+  "depositId": "dep-xxx",
+  "toAmount": "1950000",
+  "txHash": "0x...",
+  "status": "FINISHED"
 }
+```
+
+#### HoudiniSwap Payment Link
+```http
+POST /v1/deposit/houdini/payment-link
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": 50,
+  "token": "USDC",
+  "chain": "base"
+}
+```
+
+**Response:**
+```json
+{
+  "depositId": "dep-xxx",
+  "paymentLink": {
+    "id": "pl-xxx",
+    "url": "https://pay.om.ai/link/...",
+    "amount": "50",
+    "token": "USDC",
+    "chain": "base",
+    "expiresAt": "2026-05-23T...",
+    "status": "pending"
+  }
+}
+```
+
+#### CCTP Deposit (Cross-Chain USDC Transfer)
+```http
+POST /v1/deposit/cctp
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": 1000000,
+  "txHash": "0x...",
+  "sourceChain": "ethereum",
+  "fastTransfer": false
+}
+```
+
+**Response:**
+```json
+{
+  "credits": 1000000,
+  "depositId": "dep-xxx",
+  "method": "cctp"
+}
+```
+
+#### CCTP Status Check
+```http
+POST /v1/deposit/cctp/status
+Content-Type: application/json
+
+{
+  "txHash": "0x...",
+  "sourceChain": "ethereum"
+}
+```
+
+#### CCTP Supported Chains
+```http
+GET /v1/deposit/cctp/chains
+```
+
+#### LiFi Deposit
+```http
+POST /v1/deposit/lifi
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": 1000000,
+  "txHash": "0x...",
+  "fromChain": "ethereum",
+  "fromToken": "USDC",
+  "toToken": "USDC"
+}
+```
+
+#### LiFi Quote
+```http
+POST /v1/deposit/lifi/quote
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "fromChain": "ethereum",
+  "fromToken": "USDC",
+  "fromAmount": "1000000"
+}
+```
+
+#### LiFi Check Routes
+```http
+POST /v1/deposit/lifi/check-routes
+Content-Type: application/json
+
+{
+  "fromChain": "ethereum",
+  "fromToken": "USDC",
+  "fromAmount": "1000000"
+}
+```
+
+#### LiFi Chains
+```http
+GET /v1/deposit/lifi/chains
+```
+
+#### Deposit Status
+```http
+GET /v1/deposit/status/:id
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "id": "dep-xxx",
+  "type": "houdini_swap",
+  "status": "settling",
+  "houdiniStatus": "CONFIRMING",
+  "amountUsd": "50.00",
+  "creditsIssued": 0,
+  "fromAmount": "0.025",
+  "toAmount": "49.50",
+  "txHash": null
+}
+```
+
+#### Get Deposit Coins
+```http
+GET /v1/deposit/coins
+```
+
+#### Circuit Breaker Status
+```http
+GET /v1/circuit-breaker
+Authorization: Bearer <api_key>
+```
+
+#### Get Usage Records
+```http
+GET /v1/usage
+Authorization: Bearer <api_key>
+```
+
+---
+
+### Onramp (Fiat to Credits)
+
+OMA supports fiat onramping with a processing fee.
+
+#### Get Onramp Quote
+```http
+POST /v1/onramp/quote
+Content-Type: application/json
+
+{
+  "amountUsd": 100
+}
+```
+
+**Response:**
+```json
+{
+  "amountUsd": 100,
+  "processingFeeUsd": 2.9,
+  "netUsd": 97.1,
+  "credits": 9710,
+  "rate": 100
+}
+```
+
+#### Create Onramp Session
+```http
+POST /v1/onramp/session
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "amountUsd": 100,
+  "successUrl": "https://app.oma.ai/success",
+  "cancelUrl": "https://app.oma.ai/cancel"
+}
+```
+
+**Response:**
+```json
+{
+  "sessionId": "sess-xxx",
+  "amountUsd": 100,
+  "credits": 9710,
+  "status": "pending"
+}
+```
+
+#### Get Onramp Session
+```http
+GET /v1/onramp/session/:id
+Authorization: Bearer <api_key>
+```
+
+#### Onramp Webhook (provider calls this)
+```http
+POST /v1/onramp/webhook
+X-Onramp-Signature: <hmac_signature>
+Content-Type: application/json
+
+{
+  "sessionId": "sess-xxx",
+  "status": "completed"
+}
+```
+
+---
+
+### Admin API
+
+Admin endpoints require authentication with an admin wallet address.
+
+#### List Users
+```http
+GET /admin/users?page=1&limit=50
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "user-xxx",
+      "address": "0x...",
+      "balanceDollars": 50.00,
+      "totalDeposited": 100.00,
+      "totalUsed": 50.00,
+      "lastActivityAt": "2026-05-22T...",
+      "totalRequests": 150
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 100,
+    "pages": 2
+  }
+}
+```
+
+#### Get User Detail
+```http
+GET /admin/users/:id
+Authorization: Bearer <session_token>
+```
+
+#### System Usage Stats
+```http
+GET /admin/usage?period=30d
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{
+  "period": "30d",
+  "summary": {
+    "totalRequests": 15000,
+    "totalInputTokens": 500000000,
+    "totalOutputTokens": 250000000,
+    "totalRevenue": 5000.00,
+    "totalCost": 3000.00,
+    "grossProfit": 2000.00,
+    "margin": "40.0%"
+  },
+  "byProvider": [...],
+  "byModel": [...],
+  "dailyUsage": [...]
+}
+```
+
+#### Revenue Stats
+```http
+GET /admin/revenue?period=30d
+Authorization: Bearer <session_token>
+```
+
+#### List All API Keys
+```http
+GET /admin/keys?page=1&limit=100
+Authorization: Bearer <session_token>
 ```
 
 ---
@@ -624,9 +1064,110 @@ x402 is a protocol for per-request crypto payments without pre-funding.
 6. Agent polls for settlement
    GET /v1/x402/deposit/:orderId/status
 
-7. Once settled, agent calls inference
+7. Once settled, agent calls inference via proxy
    POST /v1/x402/proxy/chat/completions
    X-Houdini-Order-Id: <orderId>
+```
+
+### Get x402 Quote
+```http
+POST /v1/x402/quote
+Content-Type: application/json
+
+{
+  "model": "deepseek-v4-flash",
+  "inputTokens": 1000,
+  "fromToken": "ETH",
+  "fromChain": "ethereum",
+  "swapType": "standard"
+}
+```
+
+**Response:**
+```json
+{
+  "quoteId": "quote_xxx",
+  "fromToken": "ETH",
+  "fromChain": "ethereum",
+  "fromAmount": "100000000000000000",
+  "toAmount": "5000000",
+  "toToken": "USDC",
+  "routingFee": "500000",
+  "facilitatorFee": "75000",
+  "totalCostUsd": "5.75",
+  "expiresIn": 60
+}
+```
+
+### Create x402 Deposit
+```http
+POST /v1/x402/deposit
+Content-Type: application/json
+
+{
+  "quoteId": "quote_xxx",
+  "refundAddress": "0x..."
+}
+```
+
+**Response:**
+```json
+{
+  "orderId": "order_xxx",
+  "depositAddress": "0x...",
+  "fromToken": "ETH",
+  "fromAmount": "100000000000000000",
+  "toToken": "USDC",
+  "status": "pending",
+  "swapType": "standard",
+  "expiresAt": "2026-05-22T..."
+}
+```
+
+### Check x402 Deposit Status
+```http
+GET /v1/x402/deposit/:orderId/status
+```
+
+**Response:**
+```json
+{
+  "orderId": "order_xxx",
+  "status": "settling",
+  "houdiniStatus": "CONFIRMING",
+  "fromAmount": "100000000000000000",
+  "toAmount": "4950000",
+  "txHash": null
+}
+```
+
+### x402 Proxy (Direct Inference with Payment)
+```http
+POST /v1/x402/proxy/chat/completions
+X-Houdini-Order-Id: order_xxx
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+{
+  "model": "deepseek-v4-flash",
+  "messages": [{"role": "user", "content": "Hello"}]
+}
+```
+
+### x402 Verify (Check Payment)
+```http
+POST /x402/verify
+PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}
+```
+
+### x402 Chains
+```http
+GET /v1/x402/chains
+```
+
+### x402 Tokens
+```http
+GET /v1/x402/tokens?blockchain=ethereum
 ```
 
 ### x402 Headers (for direct proxy)
@@ -657,7 +1198,134 @@ Content-Type: application/json
 
 ---
 
-## 7. Testing Guide
+## 7. Teams API
+
+Teams allow multiple wallets to share credits and manage permissions.
+
+#### List Teams
+```http
+GET /teams
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "teams": []
+}
+```
+
+#### Create Team
+```http
+POST /teams
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "name": "My Team"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "team": {
+    "id": "team-1",
+    "name": "My Team"
+  }
+}
+```
+
+#### Get Team
+```http
+GET /teams/:teamId
+Authorization: Bearer <session_token>
+```
+
+#### Add Team Member
+```http
+POST /teams/:teamId/members
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "address": "0x...",
+  "role": "member"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "member": {
+    "address": "0x...",
+    "role": "member"
+  }
+}
+```
+
+---
+
+## 8. SSO/SAML API
+
+Enterprise SSO for team-based authentication.
+
+#### Create SSO Connection
+```http
+POST /sso/connections
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "teamId": "team-1",
+  "provider": "okta",
+  "domain": "company.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "connection": {
+    "id": "conn-1",
+    "teamId": "team-1",
+    "provider": "okta",
+    "domain": "company.com"
+  }
+}
+```
+
+#### List SSO Connections
+```http
+GET /sso/connections/:teamId
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "connections": []
+}
+```
+
+#### SAML Assertion Consumer Service (ACS)
+```http
+POST /sso/saml/acs
+Content-Type: application/x-www-form-urlencoded
+
+SAMLResponse=base64_encoded_saml_response
+```
+
+This endpoint receives SAML assertions from identity providers and issues session tokens. After successful authentication, it redirects to the application dashboard.
+
+---
+
+## 9. Testing Guide
 
 ### Health Check
 ```bash
@@ -688,6 +1356,12 @@ curl -X POST http://localhost:3001/v1/chat/completions \
   }'
 ```
 
+### Test Web Search
+```bash
+curl "http://localhost:3001/v1/search?query=hello" \
+  -H "Authorization: Bearer oma_sk_your_key"
+```
+
 ### Test Balance
 ```bash
 curl http://localhost:3001/v1/balance \
@@ -697,6 +1371,18 @@ curl http://localhost:3001/v1/balance \
 ### Test List Models
 ```bash
 curl http://localhost:3001/v1/models
+```
+
+### Test Deposit Quote
+```bash
+curl -X POST http://localhost:3001/v1/deposit/houdini/quote \
+  -H "Authorization: Bearer oma_sk_your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fromToken": "ETH",
+    "toToken": "USDC",
+    "amount": "1000000000000000000"
+  }'
 ```
 
 ### Run Tests
@@ -710,7 +1396,7 @@ cd app && npm run test
 
 ---
 
-## 8. Example Code
+## 10. Example Code
 
 ### Python (OpenAI SDK)
 
@@ -761,6 +1447,126 @@ curl -X POST http://localhost:3001/v1/chat/completions \
   }'
 ```
 
+### Web Search Example
+
+```python
+import fetch
+
+response = await fetch("http://localhost:3001/v1/search?query=latest+AI+news", {
+    "headers": {
+        "Authorization": "Bearer oma_sk_your_key"
+    }
+})
+data = await response.json()
+print(data["results"])
+```
+
+### Streaming Search Example
+
+```javascript
+const response = await fetch("http://localhost:3001/v1/search/stream?query=hello", {
+  headers: { "Authorization": "Bearer oma_sk_your_key" }
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  for (const line of chunk.split("\n")) {
+    if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+      const data = JSON.parse(line.slice(6));
+      console.log(data.title, data.url);
+    }
+  }
+}
+```
+
+### x402 Payment Flow Example
+
+```python
+import json
+
+# Step 1: Get quote
+quote_response = await fetch("http://localhost:3001/v1/x402/quote", {
+    "method": "POST",
+    "headers": {"Content-Type": "application/json"},
+    "body": json.dumps({
+        "model": "deepseek-v4-flash",
+        "inputTokens": 1000,
+        "fromToken": "ETH",
+        "fromChain": "ethereum"
+    })
+})
+quote = await quote_response.json()
+print(f"Quote: {quote['totalCostUsd']} USD")
+
+# Step 2: Create deposit
+deposit_response = await fetch("http://localhost:3001/v1/x402/deposit", {
+    "method": "POST", 
+    "headers": {"Content-Type": "application/json"},
+    "body": json.dumps({"quoteId": quote["quoteId"]})
+})
+deposit = await deposit_response.json()
+print(f"Deposit address: {deposit['depositAddress']}")
+
+# Step 3: Poll for settlement (in real implementation, agent sends tokens first)
+import asyncio
+for _ in range(60):
+    await asyncio.sleep(1)
+    status_response = await fetch(f"http://localhost:3001/v1/x402/deposit/{deposit['orderId']}/status")
+    status = await status_response.json()
+    if status["status"] == "completed":
+        print("Payment settled!")
+        break
+
+# Step 4: Make inference request with payment header
+inference_response = await fetch("http://localhost:3001/v1/x402/proxy/chat/completions", {
+    "method": "POST",
+    "headers": {
+        "Authorization": "Bearer oma_sk_your_key",
+        "X-Houdini-Order-Id": deposit["orderId"],
+        "Content-Type": "application/json"
+    },
+    "body": json.dumps({
+        "model": "deepseek-v4-flash",
+        "messages": [{"role": "user", "content": "Hello!"}]
+    })
+})
+```
+
+### Cross-Chain Deposit via HoudiniSwap
+
+```python
+# Get quote
+quote = await fetch("http://localhost:3001/v1/deposit/houdini/quote", {
+    "method": "POST",
+    "headers": {"Authorization": f"Bearer {session_token}"},
+    "body": json.dumps({
+        "fromToken": "ETH",
+        "toToken": "USDC", 
+        "amount": "1000000000000000000"
+    })
+})
+
+# Create exchange order
+exchange = await fetch("http://localhost:3001/v1/deposit/houdini/exchange", {
+    "method": "POST",
+    "headers": {"Authorization": f"Bearer {session_token}"},
+    "body": json.dumps({
+        "quoteId": quote[0]["quoteId"],
+        "fromCoin": "ETH",
+        "fromAmount": "1000000000000000000",
+        "refundAddress": "0xyourwalletaddress"
+    })
+})
+
+print(f"Send {exchange['fromAmount']} ETH to: {exchange['depositAddress']}")
+```
+
 ### OpenAI SDK Migration
 
 ```python
@@ -783,8 +1589,11 @@ client = OpenAI(api_key="oma_sk_xxx", base_url="http://localhost:3001/v1")
 | 401 | Unauthorized - invalid API key |
 | 402 | Payment required - insufficient credits |
 | 404 | Not found - model doesn't exist |
+| 409 | Conflict - duplicate transaction |
+| 410 | Gone - quote expired |
 | 429 | Rate limit exceeded |
 | 500 | Server error |
+| 502 | Bad gateway - external service error |
 | 503 | Service unavailable - all providers down |
 
 ---

@@ -7,6 +7,7 @@ vi.mock('@hono/node-server', () => ({
 vi.mock('../config.js', () => ({
   config: {
     JWT_SECRET: 'test-jwt-secret-that-is-at-least-32-chars-long-for-hmac',
+    ONRAMP_WEBHOOK_SECRET: 'test-jwt-secret-that-is-at-least-32-chars-long-for-hmac',
     NODE_ENV: 'test',
     FACILITATOR_MODE: 'mock',
   },
@@ -44,7 +45,7 @@ vi.mock('../db/client.js', () => {
   };
 })
 
-vi.mock('../auth/api-keys.js', () => ({
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), 
   validateApiKey: vi.fn().mockResolvedValue({ id: 'key-1', userId: 'user-test', keyPrefix: 'oma', keyHash: 'hash', name: 'test', active: true, createdAt: new Date() }),
 }))
 
@@ -71,6 +72,39 @@ vi.mock('../middleware/rate-limit.js', () => ({
 
 vi.mock('../routes/auth.js', () => ({
   authRoutes: new (require('hono').Hono)(),
+}))
+
+const { mockQuoteCache } = vi.hoisted(() => {
+  const _sessionStore = new Map<string, { id: string; userId: string; amountUsd: number; creditsCents: number; fiatFeeCents: number; status: 'pending' | 'completed' | 'expired'; createdAt: number }>()
+
+  const mockQuoteCache = {
+    set: vi.fn().mockImplementation(async (session) => {
+      _sessionStore.set(session.id, session)
+      return true
+    }),
+    get: vi.fn().mockImplementation(async (id) => {
+      return _sessionStore.get(id) || null
+    }),
+    delete: vi.fn().mockImplementation(async (id) => {
+      _sessionStore.delete(id)
+      return true
+    }),
+    acquireLock: vi.fn().mockResolvedValue(true),
+    releaseLock: vi.fn().mockResolvedValue(true),
+    updateStatus: vi.fn().mockImplementation(async (id, status) => {
+      const session = _sessionStore.get(id)
+      if (session) {
+        session.status = status
+      }
+      return true
+    }),
+  }
+
+  return { mockQuoteCache }
+})
+
+vi.mock('../lib/quote-cache.js', () => ({
+  QuoteCache: vi.fn().mockImplementation(() => mockQuoteCache),
 }))
 
 import app from '../index.js'

@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
 
 const ANTSEED_TIMEOUT_MS = 30_000;
 const ANTSEED_STREAM_TIMEOUT_MS = 120_000;
@@ -45,7 +45,11 @@ export async function chatCompletion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  return provider.chatCompletion(body);
+  return withRetry(() => provider.chatCompletion(body), {
+    onRetry: (attempt, delay, err) => {
+      console.warn(`AntSeed request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+    },
+  });
 }
 
 export async function completion(body: {
@@ -55,7 +59,11 @@ export async function completion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  return provider.completion(body);
+  return withRetry(() => provider.completion(body), {
+    onRetry: (attempt, delay, err) => {
+      console.warn(`AntSeed completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+    },
+  });
 }
 
 export function streamChatCompletion(body: {

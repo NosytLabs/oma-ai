@@ -198,7 +198,7 @@ describe('Auth Endpoints', () => {
     })
 
     it('returns 401 when SIWE verification fails', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       vi.mocked(verifySiweMessage).mockResolvedValueOnce(null as any)
       const res = await app.request('/auth/verify', {
         method: 'POST',
@@ -213,7 +213,7 @@ describe('Auth Endpoints', () => {
     it('returns token on successful verification', async () => {
       vi.mocked(verifySiweMessage).mockResolvedValueOnce({
         address: '0xabc123def456789012345678901234567890abcd',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       } as any)
 
       const res = await app.request('/auth/verify', {

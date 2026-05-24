@@ -57,7 +57,7 @@ You pay for AI API calls with crypto (USDC). Instead of setting up accounts with
 1. Install MetaMask: https://metamask.io
 2. Add Base network manually:
    - Network Name: `Base`
-   - RPC URL: `https://mainnet.base.org`
+   - RPC URL: `https://base-rpc.publicnode.com`
    - Chain ID: `8453`
    - Currency: `ETH`
    - Block Explorer: `https://basescan.org`
@@ -114,12 +114,7 @@ If you have ETH, BTC, SOL, etc. on other chains:
 
 ### Option 3: x402 (For AI Agents - Most Advanced)
 
-x402 is a protocol for per-request payments without pre-funding:
-
-1. Agent requests a quote: `POST /v1/x402/quote`
-2. Agent pays on-chain
-3. Agent makes API request with payment proof
-4. Credits deducted automatically
+x402 is a protocol for per-request payments without pre-funding. For full details, see [API-DOCUMENTATION.md](API-DOCUMENTATION.md#6-x402-payments).
 
 ---
 
@@ -172,7 +167,7 @@ All OpenAI SDK calls work the same - just change the key and base URL.
 | **Premium** | GPT-4o, Claude Sonnet 4 | $2.50-3.00 |
 | **Budget** | DeepSeek-V4-Flash, Qwen-3-8B | $0.01-0.19 |
 
-Full pricing at: https://oma-ai.com/pricing
+Full pricing at: https://oma-ai.com/pricing or see [API-DOCUMENTATION.md](API-DOCUMENTATION.md#4-model-pricing)
 
 ---
 
@@ -283,7 +278,7 @@ npm run dev
 # Health check
 curl http://localhost:3001/health
 
-# Should return: {"status":"ok","version":"0.1.0","service":"oma-ai"}
+# Should return: {"status":"ok","version":"2.0.0","service":"oma-ai"}
 
 # Open in browser
 open http://localhost:3000

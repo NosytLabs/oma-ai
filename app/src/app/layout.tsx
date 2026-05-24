@@ -19,7 +19,7 @@ const inter = Inter({
   display: 'swap',
 })
 
-const BASE_URL = 'https://oma-ai.com'
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

@@ -1,22 +1,63 @@
-import { addCredits } from "./balance.js";
 import { db } from "../db/client.js";
-import { deposits } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { deposits, creditBatches, creditBalances } from "../db/schema.js";
+import { eq, sql } from "drizzle-orm";
 
-export async function processUsdcDeposit(userId: string, amountUsd: number, txHash: string) {
+const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
+const SOLANA_TX_HASH_RE = /^[1-9A-HJ-NP-Za-km-z]{88}$/;
+
+function isValidTxHash(txHash: string): boolean {
+  return EVM_TX_HASH_RE.test(txHash) || SOLANA_TX_HASH_RE.test(txHash);
+}
+
+export async function processUsdcDeposit(userId: string, amountUsd: number, txHash: string, signature?: string) {
+  if (amountUsd > 0) {
+    if (!signature || signature.length < 64) {
+      throw new Error("Deposit requires valid cryptographic proof (signature)");
+    }
+  }
+
   const creditsCents = Math.round(amountUsd * 100);
 
-  const [deposit] = await db.insert(deposits).values({
-    userId,
-    type: "usdc_direct",
-    status: "completed",
-    amountUsd: String(amountUsd),
-    creditsIssued: String(creditsCents / 100),
-    txHash,
-  }).returning();
+  await db.transaction(async (tx) => {
+    const [deposit] = await tx.insert(deposits).values({
+      userId,
+      type: "usdc_direct",
+      status: "completed",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+    }).returning();
 
-  await addCredits(userId, creditsCents);
+    await tx.insert(creditBatches).values({
+      userId,
+      amountCents: String(creditsCents),
+      remainingCents: String(creditsCents),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    });
 
+    await tx.insert(creditBalances)
+      .values({
+        userId,
+        balanceCents: String(creditsCents),
+        totalDepositedCents: String(creditsCents),
+        totalUsedCents: '0',
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditBalances.userId,
+        set: {
+          balanceCents: sql`${creditBalances.balanceCents} + ${creditsCents}`,
+          totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${creditsCents}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    return { creditsCents, depositId: deposit.id };
+  });
+
+  const [deposit] = await db.select().from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
   return { creditsCents, depositId: deposit.id };
 }
 
@@ -43,51 +84,123 @@ export async function processHoudiniDeposit(
 }
 
 export async function completeHoudiniDeposit(depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
-  const result = await db.transaction(async (tx) => {
-    const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
-    if (!rows.length) throw new Error("Deposit not found");
-
-    const deposit = rows[0];
-    if (deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
-    if (deposit.status !== "pending") throw new Error("Deposit is not pending");
-
-    // Use amountUsd if provided (actual USD received by OMA after HoudiniSwap fees),
-    // otherwise fall back to toAmount (for backward compatibility)
-    const netAmountUsd = amountUsd ?? toAmount;
-    const creditsCents = Math.round(netAmountUsd * 100);
-
-    await tx.update(deposits)
-      .set({
-        status: "completed",
-        amountUsd: String(netAmountUsd),
-        creditsIssued: String(creditsCents / 100),
-        txHash,
-        completedAt: new Date(),
-      })
-      .where(eq(deposits.id, depositId));
-
-    return { creditsCents, userId: deposit.userId };
+  const { creditsCents } = await db.transaction(async (tx) => {
+    return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId, amountUsd);
   });
 
-  await addCredits(result.userId, result.creditsCents);
-
-  return { creditsCents: result.creditsCents };
+  return { creditsCents };
 }
 
-export async function processCctpDeposit(userId: string, amountUsd: number, txHash: string, _sourceChain: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function completeHoudiniDepositImpl(tx: any, depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
+  const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
+  if (!rows.length) throw new Error("Deposit not found");
+
+  const deposit = rows[0];
+  if (deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
+  if (deposit.status !== "pending") throw new Error("Deposit is not pending");
+
+  const netAmountUsd = amountUsd ?? toAmount;
+  const creditsCents = Math.round(netAmountUsd * 100);
+
+  await tx.update(deposits)
+    .set({
+      status: "completed",
+      amountUsd: String(netAmountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+      completedAt: new Date(),
+    })
+    .where(eq(deposits.id, depositId));
+
+  await tx.insert(creditBatches).values({
+    userId: deposit.userId,
+    amountCents: String(creditsCents),
+    remainingCents: String(creditsCents),
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+  });
+
+  await tx.insert(creditBalances)
+    .values({
+      userId: deposit.userId,
+      balanceCents: String(creditsCents),
+      totalDepositedCents: String(creditsCents),
+      totalUsedCents: '0',
+      lastActivityAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: creditBalances.userId,
+      set: {
+        balanceCents: sql`${creditBalances.balanceCents} + ${creditsCents}`,
+        totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${creditsCents}`,
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+  return { creditsCents, userId: deposit.userId };
+}
+
+export async function completeHoudiniDepositWithTx(tx: Awaited<ReturnType<typeof db.transaction>>, depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
+  return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId, amountUsd);
+}
+
+export async function processCctpDeposit(userId: string, amountUsd: number, txHash: string, _sourceChain: string, messageHash?: string, attestation?: string) {
+  if (!isValidTxHash(txHash)) {
+    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM) or base58 (Solana)");
+  }
+
+  if (messageHash && !/^0x[a-fA-F0-9]{64}$/.test(messageHash)) {
+    throw new Error("Invalid CCTP messageHash: must be 0x-prefixed 64 hex chars");
+  }
+
+  if (attestation && !/^0x[a-fA-F0-9]+$/.test(attestation)) {
+    throw new Error("Invalid CCTP attestation: must be a valid hex string");
+  }
+
   const creditsCents = Math.round(amountUsd * 100);
 
-  const [deposit] = await db.insert(deposits).values({
-    userId,
-    type: "cctp_crosschain",
-    status: "completed",
-    amountUsd: String(amountUsd),
-    creditsIssued: String(creditsCents / 100),
-    txHash,
-  }).returning();
+  await db.transaction(async (tx) => {
+    const [deposit] = await tx.insert(deposits).values({
+      userId,
+      type: "cctp_crosschain",
+      status: "completed",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+    }).returning();
 
-  await addCredits(userId, creditsCents);
+    await tx.insert(creditBatches).values({
+      userId,
+      amountCents: String(creditsCents),
+      remainingCents: String(creditsCents),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    });
 
+    await tx.insert(creditBalances)
+      .values({
+        userId,
+        balanceCents: String(creditsCents),
+        totalDepositedCents: String(creditsCents),
+        totalUsedCents: '0',
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditBalances.userId,
+        set: {
+          balanceCents: sql`${creditBalances.balanceCents} + ${creditsCents}`,
+          totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${creditsCents}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    return { creditsCents, depositId: deposit.id, method: "cctp" as const };
+  });
+
+  const [deposit] = await db.select().from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
   return { creditsCents, depositId: deposit.id, method: "cctp" as const };
 }
 
@@ -95,23 +208,65 @@ export async function processLifiDeposit(
   userId: string,
   amountUsd: number,
   txHash: string,
-  _fromChain: string,
+  fromChain: string,
   _fromToken: string,
-  _toToken?: string,
+  toToken?: string,
+  lifiStatus?: string,
 ) {
+  if (!isValidTxHash(txHash)) {
+    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM) or base58 (Solana)");
+  }
+
+  if (lifiStatus && lifiStatus !== "completed") {
+    throw new Error(`Invalid LiFi status: expected "completed", got "${lifiStatus}"`);
+  }
+
+  if (!fromChain || typeof fromChain !== "string") {
+    throw new Error("Invalid LiFi fromChain");
+  }
+
   const creditsCents = Math.round(amountUsd * 100);
 
-  const [deposit] = await db.insert(deposits).values({
-    userId,
-    type: "lifi_swap",
-    status: "completed",
-    amountUsd: String(amountUsd),
-    creditsIssued: String(creditsCents / 100),
-    txHash,
-  }).returning();
+  await db.transaction(async (tx) => {
+    const [deposit] = await tx.insert(deposits).values({
+      userId,
+      type: "lifi_swap",
+      status: "completed",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+    }).returning();
 
-  await addCredits(userId, creditsCents);
+    await tx.insert(creditBatches).values({
+      userId,
+      amountCents: String(creditsCents),
+      remainingCents: String(creditsCents),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    });
 
+    await tx.insert(creditBalances)
+      .values({
+        userId,
+        balanceCents: String(creditsCents),
+        totalDepositedCents: String(creditsCents),
+        totalUsedCents: '0',
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditBalances.userId,
+        set: {
+          balanceCents: sql`${creditBalances.balanceCents} + ${creditsCents}`,
+          totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${creditsCents}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    return { creditsCents, depositId: deposit.id, method: "lifi" as const };
+  });
+
+  const [deposit] = await db.select().from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
   return { creditsCents, depositId: deposit.id, method: "lifi" as const };
 }
 
@@ -122,7 +277,7 @@ export async function processPaymentLinkDeposit(
   txHash: string,
   userId?: string,
 ) {
-  const result = await db.transaction(async (tx) => {
+  const { creditsCents } = await db.transaction(async (tx) => {
     const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
     if (!rows.length) throw new Error("Deposit not found");
 
@@ -143,10 +298,34 @@ export async function processPaymentLinkDeposit(
       })
       .where(eq(deposits.id, depositId));
 
-    return { creditsCents, userId: deposit.userId };
+    await tx.insert(creditBatches).values({
+      userId: deposit.userId,
+      amountCents: String(creditsCents),
+      remainingCents: String(creditsCents),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    });
+
+    await tx.insert(creditBalances)
+      .values({
+        userId: deposit.userId,
+        balanceCents: String(creditsCents),
+        totalDepositedCents: String(creditsCents),
+        totalUsedCents: '0',
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditBalances.userId,
+        set: {
+          balanceCents: sql`${creditBalances.balanceCents} + ${creditsCents}`,
+          totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${creditsCents}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    return { creditsCents };
   });
 
-  await addCredits(result.userId, result.creditsCents);
-
-  return { creditsCents: result.creditsCents, depositId };
+  return { creditsCents, depositId };
 }

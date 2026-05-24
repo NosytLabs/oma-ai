@@ -1,6 +1,6 @@
 # OMA AI - Brand Messaging Guide
 
-**Version:** 1.0.0  
+**Version:** 2.0.0  
 **Domain:** oma-ai.com  
 **Status:** Internal Reference Document
 
@@ -29,7 +29,7 @@
 - **Multi-provider routing** - Circuit breaker pattern for failover; multi-model support ready
 - **Self-hosted option** - Full control via Coolify deployment; no vendor lock-in
 - **Crypto-native payments** - x402 support, cross-chain deposits via HoudiniSwap (20+ chains)
-- **Wallet-based auth** - SIWE sign-in, zero KYC, instant API key generation
+- **Wallet-based auth** - SIWE sign-in, privacy-first, instant API key generation
 
 ---
 
@@ -95,7 +95,7 @@
 |------------|--------|
 | Centralized hosted service | Self-hosted gateway option |
 | Credit card + crypto | Crypto-native (BTC, ETH, SOL, XMR, 20+ chains) |
-| KYC required for some tier | Zero KYC via wallet signature |
+| KYC required for some tier | Privacy-first via wallet signature |
 | 400+ models | Venice-powered + multi-provider routing |
 | Generic positioning | Privacy-first, developer-focused |
 
@@ -187,7 +187,7 @@
 - Pay with crypto AI inference
 - Cross-chain crypto deposits
 - x402 AI payments
-- Zero KYC AI API
+- Privacy-first AI API
 - Privacy-focused LLM gateway
 
 ---
@@ -207,7 +207,7 @@
 
 1. **Privacy-First Architecture** - Self-hosted option + Venice privacy + zero data retention
 2. **Crypto-Native Payments** - 20+ chain deposits via HoudiniSwap + x402 + USDC/SOL
-3. **Zero KYC Signup** - Wallet-based auth via SIWE; instant API key generation
+3. **Privacy-First Signup** - Wallet-based auth via SIWE; instant API key generation
 4. **Multi-Provider Routing** - Circuit breaker failover; routing-ready for future models
 5. **Developer Experience** - OpenAI-compatible API, dashboard, playground, comprehensive docs
 
@@ -262,7 +262,7 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0 | 2025-05-21 | OMA Team | Initial brand messaging guide |
+| 2.0.0 | 2026-05-22 | OMA Team | Version 2.0.0 update |
 
 ---
 

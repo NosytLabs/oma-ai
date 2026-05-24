@@ -1,5 +1,5 @@
-import { db } from '../../db/client.js';
-import { usageRecords } from '../../db/schema.js';
+import { db } from '../db/client.js';
+import { usageRecords } from '../db/schema.js';
 
 export interface UsageRecordParams {
   requestId: string;
@@ -20,7 +20,7 @@ export async function recordUsage(params: UsageRecordParams): Promise<void> {
     userId: params.userId,
     apiKeyId: params.apiKeyId,
     model: params.modelId,
-    provider: params.provider as "venice" | "antseed" | "litellm" | "openrouter",
+    provider: params.provider as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra",
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
     costCents: params.costCents,

@@ -6,6 +6,7 @@ const INSECURE_DEFAULTS = [
   "changeme",
   "secret",
   "jwt-secret",
+  "dev-receipt-hmac-placeholder",
 ];
 
 const envSchema = z.object({
@@ -33,9 +34,11 @@ const envSchema = z.object({
   HOUDINI_WS_URL: z.string().min(1).default("wss://partner-api.houdiniswap.com/v2/ws"),
   HOUDINI_ADDRESS_TO: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   CHEAPTOKENS_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  CHAIN_RPC_URL: z.string().min(1).optional().default("https://mainnet.base.org"),
+  CHAIN_RPC_URL: z.string().min(1).optional().default("https://base-rpc.publicnode.com"),
+  CHAIN_RPC_URL_FALLBACK: z.string().optional(),
   AERODROME_POOL_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   SOLANA_RPC_URL: z.string().min(1).default("https://api.mainnet-beta.solana.com"),
+  SOLANA_RPC_URL_FALLBACK: z.string().optional(),
   FACILITATOR_MODE: z.enum(["mock", "live"]).default("mock"),
   FACILITATOR_PRIVATE_KEY: z.string().min(1).optional(),
   TREASURY_SOLANA_ADDRESS: z.string().min(1).optional(),
@@ -44,8 +47,9 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
-  RECEIPT_HMAC_SECRET: z.string().min(1).optional(),
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
+  NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
+  DEBUG_STREAM: z.coerce.boolean().default(false),
   AUTO_RELOAD_THRESHOLD: z.coerce.number().positive().default(50000),
   AUTO_RELOAD_AMOUNT: z.coerce.number().positive().default(1000000),
   AUTO_RELOAD_SPEND_LIMIT: z.coerce.number().positive().default(1000000),
@@ -58,8 +62,12 @@ const envSchema = z.object({
   CREDIT_EXPIRY_DAYS: z.coerce.number().positive().default(365),
   CREDIT_BATCH_EXPIRY_DAYS: z.coerce.number().positive().default(365),
 
+  // API key expiration (0 = never expires)
+  DEFAULT_KEY_EXPIRY_DAYS: z.coerce.number().min(0).default(90),
+
   // Admin wallet addresses (comma-separated, checks on every admin route)
   ADMIN_WALLET_ADDRESSES: z.string().optional().default(""),
+  PLATFORM_TEAM_ID: z.string().optional().default(""),
 
   CCTP_CIRCLE_API_URL: z.string().min(1).default("https://iris-api.circle.com"),
   CCTP_SOURCE_CHAINS: z.string().min(1).default("solana,ethereum,arbitrum,optimism,polygon,avalanche"),
@@ -76,6 +84,15 @@ const envSchema = z.object({
   OTEL_EXPORTER_PROMETHEUS_PORT: z.coerce.number().positive().default(9464).optional(),
 
   TINYFISH_API_KEY: z.string().optional(),
+
+  // Weighted load balancing for provider failover (format: "venice:70,antseed:30,litellm:0,openrouter:0,together:0,deepinfra:0")
+  // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
+  // If not set, defaults to sequential fallback (primary provider first, then others in order).
+  PROVIDER_WEIGHTS: z.string().optional(),
+
+  // Per-model weighted load balancing (format: "gpt-4=venice:70,openrouter:30;dalle-3=openrouter:100;claude-3=venice:50,antseed:50")
+  // Takes precedence over PROVIDER_WEIGHTS for matching models. Format: modelId=provider:weight,...
+  MODEL_WEIGHTS: z.string().optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;
@@ -109,5 +126,70 @@ if (isProductionEnv && config.JWT_SECRET.length < 40) {
 
 if (isProductionEnv && !config.RECEIPT_HMAC_SECRET) {
   console.error("[FATAL] RECEIPT_HMAC_SECRET must be set in production environments.");
+  process.exit(1);
+}
+
+if (isProductionEnv && INSECURE_DEFAULTS.includes(config.RECEIPT_HMAC_SECRET)) {
+  console.error("[FATAL] RECEIPT_HMAC_SECRET must not be a known insecure default in production. Set a strong secret.");
+  process.exit(1);
+}
+
+if (isProductionEnv && (config.DATABASE_URL.includes("localhost") || !config.DATABASE_URL.includes("@"))) {
+  throw new Error("[FATAL] DATABASE_URL must have proper credentials in production. Set a user:password@host in the connection string.");
+}
+
+if (isProductionEnv && !config.ONRAMP_WEBHOOK_SECRET) {
+  console.warn("[ONRAMP] WARNING: ONRAMP_WEBHOOK_SECRET is not set. Webhook verification will fail unless ONRAMP_WEBHOOK_SECRET is explicitly configured.");
+}
+
+function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean {
+  if (!modelWeightsStr) return true;
+  const modelEntries = modelWeightsStr.split(";");
+  for (let i = 0; i < modelEntries.length; i++) {
+    const entry = modelEntries[i].trim();
+    if (!entry) continue;
+    const parts = entry.split("=");
+    if (parts.length !== 2) {
+      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: expected "model=provider:weight,...", got "${entry}"`);
+      return false;
+    }
+    const [modelId, weightsStr] = parts.map(s => s.trim());
+    if (!modelId) {
+      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: model name cannot be empty`);
+      return false;
+    }
+    if (!weightsStr) {
+      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weights cannot be empty for model "${modelId}"`);
+      return false;
+    }
+    const weightEntries = weightsStr.split(",");
+    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"];
+    let totalWeight = 0;
+    for (const we of weightEntries) {
+      const [provider, weight] = we.split(":").map(s => s.trim());
+      if (!provider || !weight) {
+        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: invalid weight format "${we}" for model "${modelId}"`);
+        return false;
+      }
+      if (!ALL_PROVIDERS_LIST.includes(provider)) {
+        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: unknown provider "${provider}" for model "${modelId}". Valid: ${ALL_PROVIDERS_LIST.join(", ")}`);
+        return false;
+      }
+      const w = parseInt(weight, 10);
+      if (isNaN(w) || w < 0 || w > 100) {
+        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weight "${weight}" must be 0-100 for provider "${provider}" in model "${modelId}"`);
+        return false;
+      }
+      totalWeight += w;
+    }
+    if (totalWeight > 0 && totalWeight !== 100) {
+      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weights sum to ${totalWeight}% (should be 100 or omit 0% providers) for model "${modelId}"`);
+      return false;
+    }
+  }
+  return true;
+}
+
+if (config.MODEL_WEIGHTS && !validateModelWeightsSync(config.MODEL_WEIGHTS)) {
   process.exit(1);
 }

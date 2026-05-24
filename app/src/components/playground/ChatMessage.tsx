@@ -151,11 +151,13 @@ function SearchSources({ results, expanded, onToggle }: SearchSourcesProps) {
                   rel="noopener noreferrer"
                   className="flex items-start gap-3 p-3 bg-surface-elevated border border-border rounded-lg hover:border-accent/50 transition-colors group"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getFaviconUrl(result.url) || ''}
                     alt=""
+                    aria-hidden="true"
                     className="w-5 h-5 mt-0.5 rounded-sm"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    onError={(e) => { (e.target as HTMLImageElement).classList.add('img-error') }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-accent group-hover:underline truncate">{result.title}</div>

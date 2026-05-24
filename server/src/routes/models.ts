@@ -18,6 +18,9 @@ modelRoutes.get("/v1/models", async (c) => {
       object: "model" as const,
       created,
       owned_by: "oma",
+      permission: [],
+      root: m.id,
+      parent: null,
       pricing: {
         prompt: (m.inputPricePer1M / 1_000_000).toFixed(8),
         completion: (m.outputPricePer1M / 1_000_000).toFixed(8),
@@ -30,6 +33,9 @@ modelRoutes.get("/v1/models", async (c) => {
       object: "model" as const,
       created,
       owned_by: "oma",
+      permission: [],
+      root: m.id,
+      parent: null,
       pricing: {
         prompt: m.price.toFixed(8),
       },
@@ -52,6 +58,9 @@ modelRoutes.get("/v1/models/:model", async (c) => {
     object: "model",
     created: Math.floor(Date.now() / 1000),
     owned_by: "oma",
+    permission: [],
+    root: modelInfo.id,
+    parent: null,
     pricing: {
       prompt: (modelInfo.inputPricePer1M / 1_000_000).toFixed(8),
       completion: (modelInfo.outputPricePer1M / 1_000_000).toFixed(8),

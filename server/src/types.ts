@@ -13,5 +13,6 @@ export type OmaEnv = {
     } | null;
     correlationId?: string;
     payment?: { txHash?: string; amount: string; networkId: string };
+    teamRole?: string;
   };
 };

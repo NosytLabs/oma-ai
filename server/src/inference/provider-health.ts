@@ -1,11 +1,24 @@
 import { db } from "../db/client.js";
 import { providerHealth } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { healthCheck } from "./provider-factory.js";
 
-const COOLDOWN_MS = 10 * 60 * 1000;
-const ERROR_RATE_THRESHOLD = 0.05;
+const FAILURE_THRESHOLD = 5;
+const RECOVERY_TIMEOUT_MS = 60_000;
 
-const healthCache = new Map<string, {
+enum CircuitState {
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
+}
+
+type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra";
+
+interface HealthRecord {
+  state: CircuitState;
+  consecutiveFailures: number;
+  lastFailureAt: number | null;
   isUp: boolean;
   latencyMs: number;
   errorRate: number;
@@ -13,17 +26,85 @@ const healthCache = new Map<string, {
   errorCount: number;
   cooldownUntil: number | null;
   lastUpdated: number;
-}>();
+}
 
-async function ensureProviderRecord(provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra"): Promise<void> {
+const healthCache = new Map<string, HealthRecord>();
+
+const pendingRequests = new Map<Provider, Set<string>>();
+const MAX_PENDING_PER_PROVIDER = 3;
+
+const lastTrafficAt = new Map<Provider, number>();
+const PROBE_INTERVAL_MS = 45_000;
+const IDLE_THRESHOLD_MS = 60_000;
+
+const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"];
+
+async function createInitialRecord(provider: Provider): Promise<HealthRecord> {
+  const record: HealthRecord = {
+    state: CircuitState.CLOSED,
+    consecutiveFailures: 0,
+    lastFailureAt: null,
+    isUp: true,
+    latencyMs: 0,
+    errorRate: 0,
+    totalRequests: 0,
+    errorCount: 0,
+    cooldownUntil: null,
+    lastUpdated: Date.now(),
+  };
+  healthCache.set(provider, record);
+
+  await db.insert(providerHealth).values({ provider, isUp: true, latencyMs: 0, errorRate: "0" });
+
+  const redis = await getRedisClient();
+  if (redis && isRedisReady()) {
+    await redis.hSet(`provider:health:${provider}`, {
+      state: CircuitState.CLOSED,
+      consecutiveFailures: "0",
+      lastFailureAt: "",
+      isUp: "true",
+      latencyMs: "0",
+      errorRate: "0",
+      totalRequests: "0",
+      errorCount: "0",
+      cooldownUntil: "",
+    });
+  }
+  return record;
+}
+
+async function ensureProviderRecord(provider: Provider): Promise<void> {
   const existing = healthCache.get(provider);
-  if (existing && Date.now() - existing.lastUpdated < 30_000) return;
+  if (existing && Date.now() - existing.lastUpdated < 5_000) return;
+
+  const redis = await getRedisClient();
+  if (redis && isRedisReady()) {
+    const data = await redis.hGetAll(`provider:health:${provider}`);
+    if (Object.keys(data).length > 0) {
+      healthCache.set(provider, {
+        state: (data.state as CircuitState) || CircuitState.CLOSED,
+        consecutiveFailures: parseInt(data.consecutiveFailures, 10) || 0,
+        lastFailureAt: data.lastFailureAt ? parseInt(data.lastFailureAt, 10) : null,
+        isUp: data.isUp === "true",
+        latencyMs: parseInt(data.latencyMs, 10) || 0,
+        errorRate: parseFloat(data.errorRate) || 0,
+        totalRequests: parseInt(data.totalRequests, 10) || 0,
+        errorCount: parseInt(data.errorCount, 10) || 0,
+        cooldownUntil: data.cooldownUntil ? parseInt(data.cooldownUntil, 10) : null,
+        lastUpdated: Date.now(),
+      });
+      return;
+    }
+  }
 
   const rows = await db.select().from(providerHealth).where(eq(providerHealth.provider, provider)).limit(1);
 
   if (rows.length > 0) {
     const row = rows[0];
-    healthCache.set(provider, {
+    const record: HealthRecord = {
+      state: CircuitState.CLOSED,
+      consecutiveFailures: 0,
+      lastFailureAt: null,
       isUp: row.isUp ?? true,
       latencyMs: row.latencyMs ?? 0,
       errorRate: Number(row.errorRate) || 0,
@@ -31,26 +112,38 @@ async function ensureProviderRecord(provider: "venice" | "antseed" | "litellm" |
       errorCount: 0,
       cooldownUntil: (() => {
         const val = row.cooldownUntil as Date | null;
-        if (val === null) {
-          return null;
-        }
+        if (val === null) return null;
         return new Date(val).getTime();
       })(),
       lastUpdated: Date.now(),
-    });
+    };
+    healthCache.set(provider, record);
+
+    if (redis && isRedisReady()) {
+      await redis.hSet(`provider:health:${provider}`, {
+        state: record.state,
+        consecutiveFailures: String(record.consecutiveFailures),
+        lastFailureAt: record.lastFailureAt ? String(record.lastFailureAt) : "",
+        isUp: String(record.isUp),
+        latencyMs: String(record.latencyMs),
+        errorRate: String(record.errorRate),
+        totalRequests: String(record.totalRequests),
+        errorCount: String(record.errorCount),
+        cooldownUntil: record.cooldownUntil ? String(record.cooldownUntil) : "",
+      });
+    }
     return;
   }
 
-  await db.insert(providerHealth).values({ provider, isUp: true, latencyMs: 0, errorRate: "0" });
-  healthCache.set(provider, {
-    isUp: true, latencyMs: 0, errorRate: 0, totalRequests: 0, errorCount: 0, cooldownUntil: null, lastUpdated: Date.now(),
-  });
+  await createInitialRecord(provider);
 }
 
-export async function checkProviderHealth(provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra"): Promise<{
+export async function checkProviderHealth(provider: Provider): Promise<{
   isUp: boolean;
   latencyMs: number;
   errorRate: number;
+  state: CircuitState;
+  consecutiveFailures: number;
   cooldownUntil?: number;
 }> {
   await ensureProviderRecord(provider);
@@ -59,11 +152,13 @@ export async function checkProviderHealth(provider: "venice" | "antseed" | "lite
     isUp: h.isUp,
     latencyMs: h.latencyMs,
     errorRate: h.errorRate,
+    state: h.state,
+    consecutiveFailures: h.consecutiveFailures,
     ...(h.cooldownUntil ? { cooldownUntil: h.cooldownUntil } : {}),
   };
 }
 
-export async function reportProviderResult(provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", success: boolean, latencyMs: number): Promise<void> {
+export async function reportProviderResult(provider: Provider, success: boolean, latencyMs: number): Promise<void> {
   await ensureProviderRecord(provider);
   const h = healthCache.get(provider)!;
 
@@ -72,15 +167,47 @@ export async function reportProviderResult(provider: "venice" | "antseed" | "lit
   h.errorRate = h.totalRequests > 0 ? h.errorCount / h.totalRequests : 0;
   h.latencyMs = h.totalRequests === 1 ? latencyMs : Math.round((h.latencyMs * (h.totalRequests - 1) + latencyMs) / h.totalRequests);
 
-  if (h.errorRate > ERROR_RATE_THRESHOLD && h.totalRequests >= 5) {
-    h.cooldownUntil = Date.now() + COOLDOWN_MS;
-    h.isUp = false;
-  } else if (success) {
-    h.isUp = true;
-    if (h.cooldownUntil && Date.now() > h.cooldownUntil) h.cooldownUntil = null;
+  if (h.state === CircuitState.HALF_OPEN) {
+    if (success) {
+      h.state = CircuitState.CLOSED;
+      h.consecutiveFailures = 0;
+      h.lastFailureAt = null;
+      h.isUp = true;
+    } else {
+      h.state = CircuitState.OPEN;
+      h.cooldownUntil = Date.now() + RECOVERY_TIMEOUT_MS;
+    }
+  } else if (h.state === CircuitState.CLOSED) {
+    if (success) {
+      h.consecutiveFailures = 0;
+      h.isUp = true;
+    } else {
+      h.consecutiveFailures += 1;
+      h.lastFailureAt = Date.now();
+      if (h.consecutiveFailures >= FAILURE_THRESHOLD) {
+        h.state = CircuitState.OPEN;
+        h.cooldownUntil = Date.now() + RECOVERY_TIMEOUT_MS;
+        h.isUp = false;
+      }
+    }
   }
 
   h.lastUpdated = Date.now();
+
+  const redis = await getRedisClient();
+  if (redis && isRedisReady()) {
+    await redis.hSet(`provider:health:${provider}`, {
+      state: h.state,
+      consecutiveFailures: String(h.consecutiveFailures),
+      lastFailureAt: h.lastFailureAt ? String(h.lastFailureAt) : "",
+      isUp: String(h.isUp),
+      latencyMs: String(h.latencyMs),
+      errorRate: String(h.errorRate),
+      totalRequests: String(h.totalRequests),
+      errorCount: String(h.errorCount),
+      cooldownUntil: h.cooldownUntil ? String(h.cooldownUntil) : "",
+    });
+  }
 
   await db.update(providerHealth).set({
     isUp: h.isUp,
@@ -91,10 +218,88 @@ export async function reportProviderResult(provider: "venice" | "antseed" | "lit
   }).where(eq(providerHealth.provider, provider));
 }
 
-export async function isProviderAvailable(provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra"): Promise<boolean> {
+export async function isProviderAvailable(provider: Provider): Promise<boolean> {
   await ensureProviderRecord(provider);
   const h = healthCache.get(provider)!;
+
+  if (h.state === CircuitState.OPEN) {
+    if (h.cooldownUntil && Date.now() >= h.cooldownUntil) {
+      h.state = CircuitState.HALF_OPEN;
+      h.cooldownUntil = null;
+      return true;
+    }
+    return false;
+  }
+
+  if (h.state === CircuitState.HALF_OPEN) {
+    return true;
+  }
+
   if (!h.isUp) return false;
-  if (h.cooldownUntil && Date.now() < h.cooldownUntil) return false;
+  const pending = pendingRequests.get(provider);
+  if (pending && pending.size >= MAX_PENDING_PER_PROVIDER) return false;
   return true;
 }
+
+export function reserveProvider(provider: Provider, requestId: string): boolean {
+  const pending = pendingRequests.get(provider) ?? new Set();
+  if (pending.size >= MAX_PENDING_PER_PROVIDER) return false;
+  pending.add(requestId);
+  pendingRequests.set(provider, pending);
+  return true;
+}
+
+export function releaseProvider(provider: Provider, requestId: string): void {
+  const pending = pendingRequests.get(provider);
+  if (pending) {
+    pending.delete(requestId);
+    if (pending.size === 0) pendingRequests.delete(provider);
+    else pendingRequests.set(provider, pending);
+  }
+}
+
+export function recordTraffic(provider: Provider): void {
+  lastTrafficAt.set(provider, Date.now());
+}
+
+async function probeIdleProviders(): Promise<void> {
+  const now = Date.now();
+  for (const provider of ALL_PROVIDERS) {
+    const lastTraffic = lastTrafficAt.get(provider) ?? 0;
+    if (now - lastTraffic < IDLE_THRESHOLD_MS) continue;
+    const { isUp, latencyMs } = await healthCheck(provider, getProviderBaseUrl(provider), getProviderHealthPath(provider));
+    await reportProviderResult(provider, isUp, latencyMs);
+  }
+}
+
+function getProviderBaseUrl(provider: Provider): string {
+  const baseUrls: Record<Provider, string> = {
+    venice: "https://api.venice.ai",
+    antseed: "https://antseed.com",
+    litellm: "https://openai.llmgateway.eu",
+    openrouter: "https://openrouter.ai",
+    together: "https://api.together.xyz",
+    deepinfra: "https://api.deepinfra.com",
+  };
+  return baseUrls[provider];
+}
+
+function getProviderHealthPath(_provider: Provider): string {
+  return "/v1/models";
+}
+
+let probeInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startBackgroundProbing(intervalMs: number = PROBE_INTERVAL_MS): void {
+  if (probeInterval) return;
+  probeInterval = setInterval(probeIdleProviders, intervalMs);
+}
+
+export function stopBackgroundProbing(): void {
+  if (probeInterval) {
+    clearInterval(probeInterval);
+    probeInterval = null;
+  }
+}
+
+export { CircuitState };

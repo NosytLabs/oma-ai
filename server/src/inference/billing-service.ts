@@ -1,5 +1,5 @@
-import { getModel, calculateCost, estimateTokens } from '../models.js';
-import type { ModelPricing } from '../types.js';
+import { getModel, calculateCost, estimateTokens } from './models.js';
+import type { ModelPricing } from './types.js';
 
 export { estimateTokens };
 

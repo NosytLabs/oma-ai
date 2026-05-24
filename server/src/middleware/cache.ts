@@ -1,9 +1,8 @@
 import type { Context, Next } from "hono";
+import type { OmaEnv } from "../types.js";
 import { createHash } from "crypto";
-import { createClient } from "redis";
-import { config } from "../config.js";
+import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 
-let redisClient: ReturnType<typeof createClient> | null = null;
 let redisReady = false;
 
 interface CacheOptions {
@@ -19,24 +18,10 @@ const DEFAULT_VARY_HEADERS = ["x-api-key"];
 const DEFAULT_EXCLUDE_METHODS = ["POST"]; // Only cache POST requests by default
 
 async function getRedis() {
+  const redisClient = await getRedisClient();
+  redisReady = isRedisReady();
   if (redisClient && redisReady) return redisClient;
-  try {
-    if (!redisClient) {
-      redisClient = createClient({ url: config.REDIS_URL ?? "redis://localhost:6379" });
-      redisClient.on("error", () => {
-        redisReady = false;
-      });
-      redisClient.on("ready", () => {
-        redisReady = true;
-      });
-      await redisClient.connect();
-      redisReady = true;
-    }
-    return redisClient;
-  } catch {
-    redisReady = false;
-    return null;
-  }
+  return null;
 }
 
 function hashFingerprint(data: string): string {
@@ -64,7 +49,7 @@ export function createCacheMiddleware(options: CacheOptions = {}) {
     excludeMethods = DEFAULT_EXCLUDE_METHODS,
   } = options;
 
-  return async (c: Context, next: Next) => {
+  return async (c: Context<OmaEnv>, next: Next) => {
     // Skip caching based on method
     const method = c.req.method.toUpperCase();
     if (excludeMethods.includes(method)) {
@@ -224,10 +209,22 @@ export async function invalidateCache(keyPattern: string): Promise<number> {
   if (!redis || !redisReady) return 0;
 
   try {
-    const keys = await redis.keys(`${keyPattern}:response:*`);
-    if (keys.length === 0) return 0;
+    const pattern = `${keyPattern}:response:*`;
+    let cursor = 0;
+    let totalDeleted = 0;
 
-    return await redis.del(keys);
+    do {
+      const result = await redis.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      cursor = result.cursor;
+      const keys = result.keys;
+
+      if (keys.length > 0) {
+        const deleted = await redis.del(keys);
+        totalDeleted += deleted;
+      }
+    } while (cursor !== 0);
+
+    return totalDeleted;
   } catch (err) {
     console.error("[cache] Invalidation failed:", err);
     return 0;

@@ -224,3 +224,49 @@ export function createErrorMapper(providerName: string) {
     throw Object.assign(new Error(message), { status, type });
   };
 }
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    retryStatuses?: number[];
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    onRetry?: (attempt: number, delay: number, error: Error) => void;
+  } = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    retryStatuses = [429, 500, 502, 503, 504],
+    baseDelayMs = 1000,
+    maxDelayMs = 30000,
+    onRetry,
+  } = options;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const errorObj = err as { status?: number; retryAfter?: number };
+      const isRetryable = retryStatuses.includes(errorObj?.status ?? 0);
+
+      if (attempt === maxRetries || !isRetryable) {
+        throw err;
+      }
+
+      const retryAfter = errorObj?.retryAfter;
+      let delay: number;
+      if (retryAfter) {
+        delay = retryAfter * 1000;
+      } else {
+        const exponentialDelay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
+        const jitter = Math.random() * 0.3 * exponentialDelay;
+        delay = exponentialDelay + jitter;
+      }
+
+      onRetry?.(attempt + 1, delay, err instanceof Error ? err : new Error(String(err)));
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error("Retry loop exited unexpectedly");
+}

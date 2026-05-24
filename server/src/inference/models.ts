@@ -21,6 +21,26 @@ export interface ModelDef {
   creditsPerMillionOutput: number;
 }
 
+export const WHISPER_MODEL = "whisper-1";
+
+export const WHISPER_MODEL_INFO: ModelDef = {
+  id: WHISPER_MODEL,
+  veniceId: WHISPER_MODEL,
+  provider: "venice",
+  primaryProvider: "venice",
+  inputPricePer1M: 0,
+  outputPricePer1M: 0,
+  markupPercent: 10,
+  category: "budget",
+  maxTokens: 0,
+  supportsStreaming: false,
+  displayName: "Whisper",
+  capabilities: ["audio", "transcription"],
+  description: "OpenAI Whisper model for audio transcription",
+  creditsPerMillionInput: 0,
+  creditsPerMillionOutput: 0,
+};
+
 export const MODEL_CATALOG: Record<string, ModelDef> = {
   "llama-3.2-3b": {
     id: "llama-3.2-3b",
@@ -89,6 +109,23 @@ export const MODEL_CATALOG: Record<string, ModelDef> = {
     displayName: "Venice Uncensored",
     capabilities: ["chat", "uncensored"],
     description: "Venice AI uncensored model with no content restrictions",
+    creditsPerMillionInput: 25,
+    creditsPerMillionOutput: 100,
+  },
+  "venice-uncensored-1-2": {
+    id: "venice-uncensored-1-2",
+    veniceId: "venice-uncensored-1-2",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.20,
+    outputPricePer1M: 0.90,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 128000,
+    supportsStreaming: true,
+    displayName: "Venice Uncensored 1.2",
+    capabilities: ["chat", "uncensored", "function_calling"],
+    description: "Venice AI uncensored model v1.2 with function calling support",
     creditsPerMillionInput: 25,
     creditsPerMillionOutput: 100,
   },
@@ -281,6 +318,40 @@ export const MODEL_CATALOG: Record<string, ModelDef> = {
     description: "Zhipu AI fast model via ZAI Organization on Venice",
     creditsPerMillionInput: 0.10,
     creditsPerMillionOutput: 0.40,
+  },
+  "venice-sd35": {
+    id: "venice-sd35",
+    veniceId: "venice-sd35",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.60,
+    outputPricePer1M: 0.60,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 0,
+    supportsStreaming: false,
+    displayName: "Venice SD3.5",
+    capabilities: ["image_generation", "text-to-image"],
+    description: "Venice AI Stable Diffusion 3.5 for image generation",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  },
+  "qwen-image-2": {
+    id: "qwen-image-2",
+    veniceId: "qwen-image-2",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.40,
+    outputPricePer1M: 0.40,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 0,
+    supportsStreaming: false,
+    displayName: "Qwen Image 2",
+    capabilities: ["image_generation", "text-to-image"],
+    description: "Qwen image generation model via Venice",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
   },
   "google-gemma-3-27b-it": {
     id: "google-gemma-3-27b-it",
@@ -832,7 +903,62 @@ export function getModel(modelId: string): ModelDef | null {
 }
 
 export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4);
+  if (!text || text.length === 0) return 0;
+
+  let tokenCount = 0;
+  let currentWord = "";
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const code = char.charCodeAt(0);
+
+    if (code < 128) {
+      if (/\s/.test(char)) {
+        if (currentWord.length > 0) {
+          tokenCount += estimateWordTokens(currentWord);
+          currentWord = "";
+        }
+      } else {
+        currentWord += char;
+      }
+    } else {
+      if (currentWord.length > 0) {
+        tokenCount += estimateWordTokens(currentWord);
+        currentWord = "";
+      }
+      tokenCount += estimateNonAsciiTokens(char);
+    }
+  }
+
+  if (currentWord.length > 0) {
+    tokenCount += estimateWordTokens(currentWord);
+  }
+
+  return Math.max(1, Math.ceil(tokenCount));
+}
+
+function estimateWordTokens(word: string): number {
+  const trimmed = word.trim();
+  if (!trimmed) return 0;
+  const len = trimmed.length;
+  if (len <= 3) return 1;
+  if (len <= 6) return 2;
+  if (len <= 12) return 3;
+  return 4;
+}
+
+function estimateNonAsciiTokens(char: string): number {
+  const code = char.charCodeAt(0);
+  if (code >= 0x4E00 && code <= 0x9FFF) return 2;
+  if (code >= 0x3040 && code <= 0x30FF) return 2;
+  if (code >= 0xAC00 && code <= 0xD7AF) return 2;
+  if (code >= 0x1F300 && code <= 0x1F9FF) return 2;
+  return 2;
+}
+
+export function estimateTokensFromWords(wordCount: number): number {
+  if (wordCount <= 0) return 1;
+  return Math.max(1, Math.ceil(wordCount * 1.3));
 }
 
 export function listModels(): Array<{

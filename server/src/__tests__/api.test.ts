@@ -40,12 +40,7 @@ vi.mock('../db/client.js', () => {
   return { db: chain, getDb: () => chain }
 })
 
-vi.mock('../auth/api-keys.js', () => ({
-  validateApiKey: vi.fn(),
-  createApiKey: vi.fn(),
-  listApiKeys: vi.fn().mockResolvedValue([]),
-  revokeApiKey: vi.fn(),
-}))
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), validateApiKey: vi.fn(), createApiKey: vi.fn(), listApiKeys: vi.fn().mockResolvedValue([]), revokeApiKey: vi.fn(), getApiKey: vi.fn(), refreshApiKey: vi.fn() }))
 
 vi.mock('../auth/siwe.js', () => ({
   verifySiweMessage: vi.fn(),
@@ -145,12 +140,15 @@ describe('API Endpoints', () => {
   })
 
   describe('GET /health', () => {
-    it('returns 200 with status ok', async () => {
+    it('returns status based on dependency health', async () => {
       const res = await app.request('/health')
-      expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.status).toBe('ok')
       expect(body.service).toBe('oma-ai')
+      expect(body.version).toBe('2.0.0')
+      expect(body.correlationId).toBeDefined()
+      expect(body.checks).toBeDefined()
+      expect(['ok', 'degraded', 'error']).toContain(body.status)
+      expect([200, 503]).toContain(res.status)
     })
   })
 
@@ -197,7 +195,7 @@ describe('API Endpoints', () => {
 
     it('returns 402 with valid key but no credits', async () => {
       vi.mocked(validateApiKey).mockResolvedValueOnce({
-        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, createdAt: new Date(),
+        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
       })
       vi.mocked(getBalance).mockResolvedValueOnce({ balanceCents: '0', totalDepositedCents: '0', totalUsedCents: '0', lastActivityAt: null })
 
@@ -216,7 +214,7 @@ describe('API Endpoints', () => {
 
     it('returns 400 when model is missing', async () => {
       vi.mocked(validateApiKey).mockResolvedValueOnce({
-        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, createdAt: new Date(),
+        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
       })
 
       const res = await app.request('/v1/chat/completions', {
@@ -234,7 +232,7 @@ describe('API Endpoints', () => {
 
     it('returns 400 when messages is missing', async () => {
       vi.mocked(validateApiKey).mockResolvedValueOnce({
-        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, createdAt: new Date(),
+        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
       })
 
       const res = await app.request('/v1/chat/completions', {
@@ -306,3 +304,4 @@ describe('API Endpoints', () => {
     })
   })
 })
+

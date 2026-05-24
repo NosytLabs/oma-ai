@@ -2,8 +2,8 @@ import { createWalletClient, http, parseUnits, encodeFunctionData, type Address,
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config.js";
+import { USDC_BASE } from "../constants.js";
 
-const USDC_BASE_ADDRESS: Address = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const USDC_ABI = [
   {
     name: "transfer",
@@ -91,7 +91,7 @@ export class CheapTokensClient {
 
     const amountWei = parseUnits((amountCents / 100).toFixed(6), 6);
     const txHash = await walletClient.sendTransaction({
-      to: USDC_BASE_ADDRESS,
+      to: USDC_BASE,
       data: encodeFunctionData({
         abi: USDC_ABI,
         functionName: "transfer",
@@ -121,7 +121,6 @@ export function getActiveVeniceKey(): string | null {
   if (cachedKey && Date.now() < cachedExpiry) {
     return cachedKey;
   }
-  // Key is missing or expired, trigger refresh in background
   triggerRefresh().catch((err) => {
     console.error("[CheapTokens] Async refresh failed:", err);
   });
@@ -153,10 +152,4 @@ export async function triggerRefresh(): Promise<void> {
   } finally {
     isRefreshing = false;
   }
-}
-
-// Export for test suites to manually set state
-export function setCachedKey(key: string | null, expiry: number) {
-  cachedKey = key;
-  cachedExpiry = expiry;
 }

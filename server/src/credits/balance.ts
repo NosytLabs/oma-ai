@@ -102,7 +102,7 @@ export async function deductCredits(
   markupCents: number,
   totalCents: number,
   model: string,
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra",
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish",
   apiKeyId: string,
   inputTokens: number,
   outputTokens: number,
@@ -119,6 +119,10 @@ export async function deductCredits(
       ))
       .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.remainingCents))
       .for('update')
+
+    if (!activeBatches.length) {
+      throw new Error('Insufficient credits')
+    }
 
     const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
     if (totalAvailable < totalCents) {
@@ -176,18 +180,46 @@ export async function deductCredits(
   await invalidateBalanceCache(userId)
 }
 
-export async function refundCredits(userId: string, amountCents: string) {
+export async function refundCredits(userId: string, amountCents: string, originalRequestId?: string) {
   const amt = Number(amountCents)
   if (amt <= 0) return
 
-  const expiresAt = getExpiryDate()
+  const newExpiry = getExpiryDate()
 
   await db.transaction(async (tx) => {
+    // Try to find the original batch from a recent usage record for the same request
+    let oldExpiry: Date | null = null
+    if (originalRequestId) {
+      const [usage] = await tx.select()
+        .from(usageRecords)
+        .where(and(
+          eq(usageRecords.requestId, originalRequestId),
+          eq(usageRecords.userId, userId),
+        ))
+        .orderBy(desc(usageRecords.createdAt))
+        .limit(1)
+      if (usage) {
+        const batchInfo = await tx.select({ expiresAt: creditBatches.expiresAt })
+          .from(creditBatches)
+          .where(and(
+            eq(creditBatches.userId, userId),
+            eq(creditBatches.amountCents, usage.totalCents),
+          ))
+          .orderBy(desc(creditBatches.expiresAt))
+          .limit(1)
+        if (batchInfo.length > 0) {
+          oldExpiry = batchInfo[0].expiresAt
+        }
+      }
+    }
+
+    const effectiveExpiry = oldExpiry && oldExpiry < newExpiry ? oldExpiry : newExpiry
+
     await tx.insert(creditBatches).values({
       userId,
       amountCents: String(amt),
       remainingCents: String(amt),
-      expiresAt,
+      expiresAt: effectiveExpiry,
     })
 
     const [newSum] = await tx.select({ total: sql`COALESCE(SUM(${creditBatches.remainingCents}), 0)` })
@@ -219,7 +251,11 @@ export async function preflightDeduction(userId: string, totalCents: string): Pr
           gt(creditBatches.expiresAt, new Date()),
         ))
       .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.remainingCents))
-      .for('update')
+      .for('update', { skipLocked: true })
+
+      if (!activeBatches.length) {
+        throw new Error('Insufficient credits')
+      }
 
       const totalAvailable = activeBatches.reduce((s, b) => s + Number(b.remainingCents), 0)
       const required = Number(totalCents)

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Users, CreditCard, DollarSign, Key, TrendingUp, Activity, RefreshCw, Download, Eye, Zap, Clock } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { Search, Users, CreditCard, DollarSign, Key, TrendingUp, Activity, RefreshCw, Download, Eye, Zap, Clock, Gauge } from 'lucide-react'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import dynamic from 'next/dynamic'
 
-type Tab = 'overview' | 'users' | 'usage' | 'revenue' | 'keys'
+const AdminOverviewCharts = dynamic(() => import('@/components/admin/AdminOverviewCharts').then(m => ({ default: m.AdminOverviewCharts })), { ssr: false })
+const AdminRevenueChart = dynamic(() => import('@/components/admin/AdminRevenueCharts').then(m => ({ default: m.AdminRevenueCharts })), { ssr: false })
+
+type Tab = 'overview' | 'users' | 'usage' | 'revenue' | 'keys' | 'fees' | 'rate-limits'
 
 type User = {
   id: string
@@ -225,7 +227,7 @@ export default function AdminPage() {
       <div className="border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1">
-            {(['overview', 'users', 'usage', 'revenue', 'keys'] as Tab[]).map((tab) => (
+            {(['overview', 'users', 'usage', 'revenue', 'keys', 'fees', 'rate-limits'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -239,8 +241,10 @@ export default function AdminPage() {
                 {tab === 'users' && <Users className="w-4 h-4 inline mr-2" />}
                 {tab === 'usage' && <TrendingUp className="w-4 h-4 inline mr-2" />}
                 {tab === 'revenue' && <DollarSign className="w-4 h-4 inline mr-2" />}
-                {tab === 'keys' && <Key className="w-4 h-4 inline mr-2" />}
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+{tab === 'keys' && <Key className="w-4 h-4 inline mr-2" />}
+                  {tab === 'fees' && <DollarSign className="w-4 h-4 inline mr-2" />}
+                  {tab === 'rate-limits' && <Gauge className="w-4 h-4 inline mr-2" />}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -295,113 +299,43 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-                <h3 className="text-sm font-medium text-white mb-4">Revenue Overview</h3>
-                <div className="h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData.slice(-30)}>
-                      <defs>
-                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#71717a" 
-                        fontSize={11} 
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => {
-                          const d = new Date(value)
-                          return format(d, 'MMM d')
-                        }}
-                      />
-                      <YAxis 
-                        stroke="#71717a" 
-                        fontSize={11} 
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `$${value}`}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#18181b', 
-                          border: '1px solid #3f3f46',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                        formatter={(value) => [`${Number(value).toFixed(2)}`, 'Revenue']}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="revenue" 
-                        stroke="#22d3ee" 
-                        fill="url(#revenueGradient)" 
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-                <h3 className="text-sm font-medium text-white mb-4">Provider Costs (This Month)</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-400">V</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">Venice</p>
-                        <p className="text-xs text-zinc-500">Primary provider</p>
-                      </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <h3 className="text-sm font-medium text-white mb-4">Provider Costs (This Month)</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-blue-400">V</span>
                     </div>
-                    <p className="text-lg font-bold text-amber-400">{formatCurrency(adminStats.providerCosts.venice)}</p>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-purple-400">OR</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">OpenRouter</p>
-                        <p className="text-xs text-zinc-500">Backup provider</p>
-                      </div>
-                    </div>
-                    <p className="text-lg font-bold text-amber-400">{formatCurrency(adminStats.providerCosts.openrouter)}</p>
-                  </div>
-                  <div className="border-t border-zinc-800 pt-4 flex items-center justify-between">
-                    <p className="text-sm text-zinc-400">Total Provider Costs</p>
-                    <p className="text-lg font-bold text-white">
-                      {formatCurrency(adminStats.providerCosts.venice + adminStats.providerCosts.openrouter)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-zinc-800 overflow-hidden">
-              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-                <h3 className="font-medium text-white">Recent Transactions</h3>
-              </div>
-              <div className="divide-y divide-zinc-800/50">
-                {usageStats?.dailyUsage?.slice(-10).reverse().map((day, i) => (
-                  <div key={i} className="px-4 py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-white">{format(new Date(day.date), 'MMM d, yyyy')}</p>
-                      <p className="text-xs text-zinc-500">{day.totalRequests.toLocaleString()} requests</p>
+                      <p className="text-sm font-medium text-white">Venice</p>
+                      <p className="text-xs text-zinc-500">Primary provider</p>
                     </div>
-                    <p className="text-sm font-mono text-cyan-400">{formatCurrency(day.totalRevenue)}</p>
                   </div>
-                )) || (
-                  <div className="px-4 py-8 text-center text-zinc-500">No transactions yet</div>
-                )}
+                  <p className="text-lg font-bold text-amber-400">{formatCurrency(adminStats.providerCosts.venice)}</p>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-purple-400">OR</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">OpenRouter</p>
+                      <p className="text-xs text-zinc-500">Backup provider</p>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-amber-400">{formatCurrency(adminStats.providerCosts.openrouter)}</p>
+                </div>
+                <div className="border-t border-zinc-800 pt-4 flex items-center justify-between">
+                  <p className="text-sm text-zinc-400">Total Provider Costs</p>
+                  <p className="text-lg font-bold text-white">
+                    {formatCurrency(adminStats.providerCosts.venice + adminStats.providerCosts.openrouter)}
+                  </p>
+                </div>
               </div>
             </div>
+
+            <AdminOverviewCharts chartData={chartData} dailyUsage={usageStats?.dailyUsage} />
           </div>
         )}
 
@@ -641,40 +575,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-                    <h3 className="text-sm font-medium text-white mb-4">Revenue Chart</h3>
-                    <div className="h-[280px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={revenueStats.monthlyRevenue?.slice(-12)}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                          <XAxis 
-                            dataKey="month" 
-                            stroke="#71717a" 
-                            fontSize={11} 
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <YAxis 
-                            stroke="#71717a" 
-                            fontSize={11} 
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(value) => `$${value}`}
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#18181b', 
-                              border: '1px solid #3f3f46',
-                              borderRadius: '8px',
-                              fontSize: '12px',
-                            }}
-                            formatter={(value) => [`${Number(value).toFixed(2)}`, 'Revenue']}
-                          />
-                          <Bar dataKey="totalRevenue" fill="#22d3ee" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
+                  <AdminRevenueChart monthlyRevenue={revenueStats?.monthlyRevenue} />
 
                   <div className="rounded-xl border border-zinc-800 overflow-hidden">
                     <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
@@ -771,6 +672,22 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'fees' && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
+            <DollarSign className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-400">Fee configuration</p>
+            <a href="/admin/fees" className="text-cyan-400 hover:underline mt-2 inline-block">Open Fee Configuration →</a>
+          </div>
+        )}
+
+        {activeTab === 'rate-limits' && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
+            <Gauge className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-400">Rate limit configuration</p>
+            <a href="/admin/rate-limits" className="text-cyan-400 hover:underline mt-2 inline-block">Open Rate Limits →</a>
           </div>
         )}
       </div>

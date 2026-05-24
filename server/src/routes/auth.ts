@@ -5,11 +5,12 @@ import { createApiKey, listApiKeys, revokeApiKey } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
-import { users } from "../db/schema.js";
+import { users, apiKeys, subscriptions, auditLogs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { createHash, randomBytes } from "crypto";
+import { authenticator } from "@otplib/preset-default";
 
 function generateAccountNumber(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -133,11 +134,75 @@ authRoutes.get("/user", sessionAuth, async (c) => {
 
 authRoutes.delete("/account", sessionAuth, async (c) => {
   const userId = c.get("userId");
-  await db.delete(users).where(eq(users.id, userId));
+  await db.transaction(async (tx) => {
+    await tx.delete(apiKeys).where(eq(apiKeys.userId, userId));
+    await tx.update(subscriptions).set({ status: "canceled" }).where(eq(subscriptions.userId, userId));
+    await tx.insert(auditLogs).values({
+      userId,
+      action: "USER_DELETED",
+      resource: "users",
+      resourceId: userId,
+      metadata: JSON.stringify({ deletedAt: new Date().toISOString() }),
+      createdAt: new Date(),
+    });
+    await tx.delete(users).where(eq(users.id, userId));
+  });
   return c.json({ success: true });
 });
 
 authRoutes.post("/auth/logout", sessionAuth, async (c) => c.json({ success: true }));
+
+authRoutes.post("/auth/2fa/setup", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const [user] = await db.select({ address: users.address }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
+
+  const secret = authenticator.generateSecret();
+  const otpauth = authenticator.keyuri(user.address, "OMA", secret);
+
+  await db.update(users).set({ twoFactorSecret: secret }).where(eq(users.id, userId));
+
+  return c.json({ secret, otpauth });
+});
+
+authRoutes.post("/auth/2fa/verify", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = z.object({ code: z.string().min(6).max(6) }).safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { code } = parsed.data;
+
+  const [user] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user?.twoFactorSecret) return c.json({ error: { message: "2FA not set up", type: "invalid_request_error" } }, 400);
+
+  const isValid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
+  if (!isValid) return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
+
+  await db.update(users).set({ twoFactorEnabled: true }).where(eq(users.id, userId));
+  return c.json({ success: true, message: "2FA enabled" });
+});
+
+authRoutes.post("/auth/2fa/disable", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = z.object({ password: z.string().min(1), code: z.string().min(6).max(6) }).safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { code } = parsed.data;
+
+  const [user] = await db.select({ twoFactorSecret: users.twoFactorSecret, twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user?.twoFactorEnabled) return c.json({ error: { message: "2FA not enabled", type: "invalid_request_error" } }, 400);
+
+  const isCodeValid = authenticator.verify({ token: code, secret: user.twoFactorSecret! });
+  if (!isCodeValid) return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
+
+  await db.update(users).set({ twoFactorEnabled: false, twoFactorSecret: null }).where(eq(users.id, userId));
+  return c.json({ success: true, message: "2FA disabled" });
+});
+
+authRoutes.get("/auth/2fa/status", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
+  return c.json({ enabled: user.twoFactorEnabled });
+});
 
 // Account-number auth (Mullvad-style)
 authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {

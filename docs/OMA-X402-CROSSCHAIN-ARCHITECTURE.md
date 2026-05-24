@@ -94,47 +94,18 @@ When a HoudiniSwap deposit settles:
 
 ## API Endpoints
 
-### Cross-Chain Quote
-```
-POST /v1/x402/quote
-Body: { model, inputTokens, fromToken, fromChain, swapType? }
-Response: { quoteId, fromToken, fromAmount, toToken, toAmount, routingFee, facilitatorFee, totalCostUsd, expiresIn }
-```
+For complete API endpoint documentation, see [API-DOCUMENTATION.md](API-DOCUMENTATION.md#6-x402-payments).
 
-### Create Deposit
-```
-POST /v1/x402/deposit
-Body: { quoteId, refundAddress? }
-Response: { orderId, depositAddress, fromToken, fromAmount, expiresAt }
-```
+### Quick Reference
 
-### Deposit Status
-```
-GET /v1/x402/deposit/:orderId/status
-Response: { orderId, status, houdiniStatus, fromAmount, toAmount, txHash, creditsIssued? }
-```
-
-### x402 Verify (Existing, Enhanced)
-```
-POST /x402/verify
-Header: PAYMENT-SIGNATURE (JSON with HoudiniSwap order reference or on-chain tx)
-Response: { valid, txHash, amount, networkId }
-```
-
-### x402 Settle (Existing)
-```
-POST /x402/settle
-Body: { txHash, amount, networkId, payee }
-Response: { settled, receipt }
-```
-
-### Proxy Inference (x402 Direct)
-```
-POST /v1/x402/proxy/chat/completions
-Header: X-Houdini-Order-Id
-Body: { model, messages, stream? }
-Response: Streamed inference response (same as /v1/chat/completions)
-```
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/x402/quote` | Get payment quote for cross-chain |
+| `POST /v1/x402/deposit` | Create x402 deposit |
+| `GET /v1/x402/deposit/:orderId/status` | Check deposit status |
+| `POST /x402/verify` | Verify payment receipt |
+| `POST /x402/settle` | Settle payment |
+| `POST /v1/x402/proxy/chat/completions` | Direct proxy with x402 headers |
 
 ## Security Considerations
 

@@ -2,32 +2,90 @@ import type { Context, Next } from "hono";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { checkBudgetThresholds, getBudgetAlertConfig, processBudgetAlert } from "../credits/budget-alerts.js";
+
+interface SpendEntry {
+  keyHash: string;
+  costCents: number;
+  timestamp: number;
+}
+
+const spendRetryQueue: SpendEntry[] = [];
+const MAX_QUEUE_SIZE = 1000;
+const MAX_RETENTION_MS = 5 * 60 * 1000;
 
 function todayKey(keyHash: string): string {
   const date = new Date().toISOString().slice(0, 10);
   return `spend:${keyHash}:${date}`;
 }
 
+async function processQueue(): Promise<void> {
+  if (spendRetryQueue.length === 0) return;
+
+  const redis = await getRedisClient();
+  if (!redis || !isRedisReady()) return;
+
+  const now = Date.now();
+  const remaining: SpendEntry[] = [];
+
+  for (const entry of spendRetryQueue) {
+    if (now - entry.timestamp > MAX_RETENTION_MS) continue;
+    try {
+      const key = todayKey(entry.keyHash);
+      const val = await redis.incrByFloat(key, entry.costCents);
+      if (typeof val === "number" && val === entry.costCents) {
+        await redis.expire(key, 86400);
+      }
+    } catch {
+      remaining.push(entry);
+    }
+  }
+
+  spendRetryQueue.length = 0;
+  spendRetryQueue.push(...remaining.slice(0, MAX_QUEUE_SIZE));
+}
+
 export async function trackSpend(
   keyHash: string,
   costCents: number,
 ): Promise<void> {
-  const redis = await getRedisClient();
-  const ready = isRedisReady();
-  if (!redis || !ready) {
-    console.error("Redis not available for trackSpend");
-    return;
+  try {
+    const redis = await getRedisClient();
+    const ready = isRedisReady();
+    if (!redis || !ready) {
+      throw new Error("Redis unavailable");
+    }
+
+    processQueue().catch(() => {});
+
+    const key = todayKey(keyHash);
+    const val = await redis.incrByFloat(key, costCents);
+    if (typeof val === "number" && val === costCents) {
+      await redis.expire(key, 86400);
+    }
+  } catch (err) {
+    console.error("trackSpend failed, queuing for retry:", err);
+    if (spendRetryQueue.length < MAX_QUEUE_SIZE) {
+      spendRetryQueue.push({ keyHash, costCents, timestamp: Date.now() });
+    }
   }
-  const key = todayKey(keyHash);
-  const val = await redis.incrByFloat(key, costCents);
-  if (typeof val === "number" && val === costCents) {
-    await redis.expire(key, 86400);
-  }
+}
+
+export async function checkAndTriggerBudgetAlerts(userId: string): Promise<void> {
+  const alert = await checkBudgetThresholds(userId);
+  if (!alert) return;
+
+  const alertConfig = await getBudgetAlertConfig(userId);
+  if (!alertConfig) return;
+
+  await processBudgetAlert(userId, alert, alertConfig);
 }
 
 export function spendLimit() {
   return async (c: Context<OmaEnv>, next: Next) => {
     const apiKey = c.get("apiKey");
+    const userId = c.get("userId");
+
     if (!apiKey) {
       await next();
       return;
@@ -51,9 +109,15 @@ export function spendLimit() {
     if (spent >= limit) {
       c.header("x-spend-limit-exceeded", "1");
       return c.json(
-        { error: { message: "Daily spend limit exceeded. Please wait or upgrade your plan.", type: "rate_limit_error" } },
+        { error: { message: "Daily spend limit exceeded. Please wait or upgrade your plan.", type: "rate_limit_error", code: "spend_limit_exceeded" } },
         429,
       );
+    }
+
+    if (userId) {
+      checkAndTriggerBudgetAlerts(userId).catch(err => {
+        console.error("[spend-limit] Budget alert check failed:", err);
+      });
     }
 
     await next();

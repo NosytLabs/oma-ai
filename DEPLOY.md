@@ -158,7 +158,7 @@ npm run db:generate
 
 | Service | Endpoint | Expected Response |
 |---------|----------|-------------------|
-| Server | `GET /health` | `{"status":"ok","version":"0.1.0","service":"oma-ai"}` |
+| Server | `GET /health` | `{"status":"ok","version":"2.0.0","service":"oma-ai"}` |
 | App | `GET /` | Next.js app loads |
 
 ### Manual Health Check

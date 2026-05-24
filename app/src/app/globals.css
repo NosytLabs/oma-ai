@@ -326,3 +326,7 @@ a:focus-visible {
   border-radius: 16px;
   padding: 1.5rem;
 }
+
+.img-error {
+  display: none;
+}

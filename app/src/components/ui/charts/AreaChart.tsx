@@ -10,17 +10,18 @@ interface DataPoint {
   cost: number
 }
 
-interface UsageChartProps {
+interface AreaChartComponentProps {
   data: DataPoint[]
+  showCostArea?: boolean
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{value: number; name?: string}>; label?: string }) => {
+const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean; payload?: Array<{value: number; name?: string}>; label?: string; showCost?: boolean }) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 px-3 py-2 shadow-xl">
         <p className="text-xs text-zinc-400">{label}</p>
         <p className="text-sm font-semibold text-cyan-400">{payload[0].value.toLocaleString()} requests</p>
-        {payload[0].name === 'cost' && (
+        {showCost && payload[0].name === 'cost' && (
           <p className="text-sm font-semibold text-amber-400">${payload[0].value.toFixed(2)}</p>
         )}
       </div>
@@ -29,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null
 }
 
-export function AreaChartComponent({ data }: UsageChartProps) {
+export function AreaChartComponent({ data, showCostArea = true }: AreaChartComponentProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -43,10 +44,12 @@ export function AreaChartComponent({ data }: UsageChartProps) {
               <stop offset="5%" stopColor="#00ffc8" stopOpacity={0.3} />
               <stop offset="95%" stopColor="#00ffc8" stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ffb800" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#ffb800" stopOpacity={0} />
-            </linearGradient>
+            {showCostArea && (
+              <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ffb800" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#ffb800" stopOpacity={0} />
+              </linearGradient>
+            )}
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
           <XAxis 
@@ -64,7 +67,7 @@ export function AreaChartComponent({ data }: UsageChartProps) {
             axisLine={false}
             tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip showCost={showCostArea} />} />
           <Area 
             type="monotone" 
             dataKey="requests" 
@@ -73,14 +76,16 @@ export function AreaChartComponent({ data }: UsageChartProps) {
             fill="url(#colorRequests)"
             animationDuration={1000}
           />
-          <Area 
-            type="monotone" 
-            dataKey="cost" 
-            stroke="#ffb800" 
-            strokeWidth={2}
-            fill="url(#colorCost)"
-            animationDuration={1000}
-          />
+          {showCostArea && (
+            <Area 
+              type="monotone" 
+              dataKey="cost" 
+              stroke="#ffb800" 
+              strokeWidth={2}
+              fill="url(#colorCost)"
+              animationDuration={1000}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </motion.div>

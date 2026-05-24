@@ -131,6 +131,14 @@ export interface UsageRecord {
   createdAt: string;
 }
 
+export interface CreditBatch {
+  id: string;
+  amountCents: string;
+  remainingCents: string;
+  expiresAt: string;
+  paymentMethod: string | null;
+}
+
 export interface UsageResponse {
   usage: UsageRecord[];
 }
@@ -489,6 +497,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ amountCents, paymentMethod }),
       }),
+    getCreditBatches: () => request<{ activeBatches: CreditBatch[] }>('/v1/credits/balance'),
     getAutoReload: () => request<AutoReloadSettings>('/v1/credits/auto-reload'),
     updateAutoReload: (settings: Partial<AutoReloadSettings>) =>
       request<AutoReloadSettings>('/v1/credits/auto-reload', {

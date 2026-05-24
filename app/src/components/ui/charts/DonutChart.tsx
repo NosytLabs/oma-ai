@@ -11,6 +11,7 @@ interface ModelData {
 
 interface DonutChartProps {
   data: ModelData[]
+  label?: string
 }
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{payload: ModelData}> }) => {
@@ -26,7 +27,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
   return null
 }
 
-export function DonutChart({ data }: DonutChartProps) {
+export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
@@ -56,7 +57,7 @@ export function DonutChart({ data }: DonutChartProps) {
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold text-white">{total.toLocaleString()}</span>
-        <span className="text-xs text-zinc-500 uppercase tracking-wider">Total</span>
+        <span className="text-xs text-zinc-500 uppercase tracking-wider">{label}</span>
       </div>
     </motion.div>
   )

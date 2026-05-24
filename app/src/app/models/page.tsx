@@ -8,7 +8,7 @@ import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER
 
 type SortOption = 'price' | 'context' | 'name'
 
-const PROVIDERS: (Provider | 'All')[] = ['All', 'Venice']
+const PROVIDERS: (Provider | 'All')[] = ['All', 'Venice', 'AntSeed']
 const TIERS: (Tier | 'All')[] = ['All', 'budget', 'mid', 'premium', 'frontier']
 
 const TIER_LABELS = {
@@ -377,6 +377,8 @@ export default function ModelsPage() {
   const [tierFilter, setTierFilter] = useState<Tier | 'All'>('All')
   const [providerFilter, setProviderFilter] = useState<Provider | 'All'>('All')
   const [sortBy, setSortBy] = useState<SortOption>('price')
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
   const [isGridVisible, setIsGridVisible] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -397,6 +399,18 @@ export default function ModelsPage() {
 
     observer.observe(element)
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const sortButton = document.getElementById("sort-dropdown-button")
+      const sortDropdown = document.getElementById("sort-dropdown")
+      if (sortButton && sortDropdown && !sortButton.contains(e.target as Node) && !sortDropdown.contains(e.target as Node)) {
+        setSortDropdownOpen(false)
+      }
+    }
+    document.addEventListener("click", handleClickOutside)
+    return () => document.removeEventListener("click", handleClickOutside)
   }, [])
 
   const filtered = useMemo(() => {
@@ -551,7 +565,7 @@ export default function ModelsPage() {
               <span className="text-xs text-zinc-500">
                 <span className="font-semibold text-cyan-400">{filtered.length}</span> models
               </span>
-              <div className="relative group">
+              <div className="relative">
                 <button className="flex items-center gap-1.5 rounded-full bg-zinc-800/50 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors">
                   Sort by
                   <ChevronDown className="h-3.5 w-3.5" />

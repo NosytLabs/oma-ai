@@ -1,6 +1,6 @@
 # OMA AI Gateway
 
-**Website:** https://oma.ai  
+**Website:** https://oma-ai.com  
 **Version:** 2.0.0  
 **Status:** Production Ready
 
@@ -141,14 +141,14 @@ cd server && npm run dev # Backend :3001
 
 ## Available Models
 
-### Frontier (Premium)
+### Frontier Models
 | Model | Provider | Input | Output | Context |
 |-------|----------|-------|--------|---------|
 | claude-opus-4-7 | Venice | $15.00 | $75.00 | 200K |
 | gpt-5.5 | Venice | $10.00 | $30.00 | 128K |
 | o3 | Venice | $10.00 | $40.00 | 200K |
 
-### Standard (Mid-tier)
+### Premium Models (Mid-tier)
 | Model | Provider | Input | Output | Context |
 |-------|----------|-------|--------|---------|
 | claude-sonnet-4-6 | Venice | $3.00 | $15.00 | 200K |
@@ -202,7 +202,7 @@ cd server && npm run dev # Backend :3001
 
 | Document | Description |
 |----------|-------------|
-| [SOLO-DEVELOPER-GUIDE.md](docs/SOLO-DEVELOPER-GUIDE.md) | Full technical guide |
+| [DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Full technical guide |
 | [docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md](docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md) | x402 payment flow |
 | [AGENTS.md](AGENTS.md) | Dev operations & commands |
 

@@ -131,7 +131,7 @@ vi.mock('../config.js', () => ({
     REDIS_URL: 'redis://localhost:6379',
     HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
     FACILITATOR_MODE: 'mock',
-    CHAIN_RPC_URL: 'https://mainnet.base.org',
+    CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
   },
 }))
@@ -271,6 +271,45 @@ describe('x402 Facilitator', () => {
         },
       })
       expect(res.status).toBe(400)
+    })
+  })
+
+  describe('x402 Pay-Req Header', () => {
+    it('returns proper Pay-Req header on 402 with correct fields', async () => {
+      const res = await app.request('/x402/pay-req-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ test: 'trigger-402' }),
+      })
+      expect(res.status).toBe(402)
+      const payReqHeader = res.headers.get('Pay-Req')
+      expect(payReqHeader).toBeTruthy()
+      const payReq = JSON.parse(payReqHeader!)
+      expect(payReq).toHaveProperty('amount')
+      expect(payReq).toHaveProperty('asset')
+      expect(payReq).toHaveProperty('payment-URL')
+      expect(payReq).toHaveProperty('maxAmountRequired')
+      expect(payReq).toHaveProperty('validBefore')
+      expect(payReq).toHaveProperty('validAfter')
+      expect(payReq.scheme).toBe('evm')
+      expect(payReq.networkId).toBe('base')
+    })
+
+    it('middleware returns Pay-Req header when payment missing', async () => {
+      const res = await app.request('/x402/middleware-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ test: 'data' }),
+      })
+      expect(res.status).toBe(402)
+      const payReqHeader = res.headers.get('Pay-Req')
+      expect(payReqHeader).toBeTruthy()
+      const payReq = JSON.parse(payReqHeader!)
+      expect(payReq).toHaveProperty('payment-URL')
     })
   })
 })

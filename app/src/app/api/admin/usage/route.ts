@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 
+import { getAdminAuthorization, unauthorizedAdminResponse } from '../auth'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export async function GET(request: Request) {
@@ -7,9 +9,14 @@ export async function GET(request: Request) {
   const period = searchParams.get('period') || '30d'
 
   try {
+    const authorization = getAdminAuthorization(request)
+    if (!authorization) {
+      return unauthorizedAdminResponse()
+    }
+
     const res = await fetch(`${API_URL}/admin/usage?period=${period}`, {
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        'Authorization': authorization,
       },
       cache: 'no-store',
     })

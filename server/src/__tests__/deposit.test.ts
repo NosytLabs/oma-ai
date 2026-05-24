@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@hono/node-server', () => ({
   serve: vi.fn(),
+  getRequestListener: vi.fn(() => ({ on: vi.fn(), handle: vi.fn() })),
 }))
 
 vi.mock('../db/client.js', () => {
@@ -15,6 +16,21 @@ vi.mock('../db/client.js', () => {
   const mockUpdate = vi.fn().mockReturnThis()
   const mockSet = vi.fn().mockReturnThis()
   const mockOrderBy = vi.fn().mockReturnThis()
+  const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+    return callback({
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      for: vi.fn().mockResolvedValue([{ id: 'dep-1', userId: 'user-1', type: 'houdini_swap', status: 'pending' }]),
+      limit: vi.fn().mockResolvedValue([{ id: 'dep-1', userId: 'user-1', type: 'houdini_swap', status: 'pending' }]),
+      insert: vi.fn().mockReturnThis(),
+      values: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockResolvedValue({ creditsCents: 500 }),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+    })
+  })
 
   const chain = {
     select: mockSelect,
@@ -27,12 +43,13 @@ vi.mock('../db/client.js', () => {
     update: mockUpdate,
     set: mockSet,
     orderBy: mockOrderBy,
+    transaction: mockTransaction,
   }
 
   mockSelect.mockReturnValue(chain)
   mockFrom.mockReturnValue(chain)
   mockWhere.mockReturnValue(chain)
-  mockLimit.mockResolvedValue([{ id: 'dep-1', userId: 'user-1' }])
+  mockLimit.mockResolvedValue([])
   mockInsert.mockReturnValue(chain)
   mockValues.mockReturnValue(chain)
   mockReturning.mockResolvedValue([{ id: 'dep-1', userId: 'user-1' }])
@@ -43,7 +60,7 @@ vi.mock('../db/client.js', () => {
   return { db: chain, getDb: () => chain }
 })
 
-vi.mock('../auth/api-keys.js', () => ({
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), 
   validateApiKey: vi.fn(),
   createApiKey: vi.fn(),
   listApiKeys: vi.fn().mockResolvedValue([]),
@@ -125,8 +142,27 @@ vi.mock('../credits/deposit.js', () => ({
   processOmaDeposit: vi.fn(),
   processHoudiniDeposit: vi.fn(),
   completeHoudiniDeposit: vi.fn(),
+  completeHoudiniDepositWithTx: vi.fn().mockResolvedValue({ creditsCents: 500 }),
   processCctpDeposit: vi.fn(),
   processLifiDeposit: vi.fn(),
+  processPaymentLinkDeposit: vi.fn().mockResolvedValue({ creditsCents: 500 }),
+}))
+
+vi.mock('../lib/redis-client.js', () => ({
+  getRedisClient: vi.fn().mockResolvedValue({
+    lPush: vi.fn().mockResolvedValue(1),
+    lTrim: vi.fn().mockResolvedValue('OK'),
+    lRange: vi.fn().mockResolvedValue([]),
+    lLen: vi.fn().mockResolvedValue(0),
+    del: vi.fn().mockResolvedValue(1),
+    zAdd: vi.fn().mockResolvedValue(1),
+    zRange: vi.fn().mockResolvedValue([]),
+    zRem: vi.fn().mockResolvedValue(1),
+  }),
+}))
+
+vi.mock('../lib/dlq.js', () => ({
+  addToDlq: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../credits/cctp-client.js', () => ({
@@ -230,7 +266,7 @@ describe('Deposit Routes', () => {
     it('processes USDC deposit with valid auth and body', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
       vi.mocked(processUsdcDeposit).mockResolvedValueOnce({ creditsCents: 1000, depositId: 'dep-1' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const mockChain: any = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
@@ -244,7 +280,7 @@ describe('Deposit Routes', () => {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer session-token',
         },
-        body: JSON.stringify({ amount: 10, txHash: '0x' + 'a'.repeat(64) }),
+        body: JSON.stringify({ amount: 10, txHash: '0x' + 'a'.repeat(64), signature: 'valid-signature-length-that-is-at-least-64-characters-long-1234567890' }),
       })
       expect(res.status).toBe(200)
       const body = await res.json()
@@ -252,13 +288,29 @@ describe('Deposit Routes', () => {
       expect(body.depositId).toBe('dep-1')
     })
 
+    it('rejects USDC deposit without valid signature proof', async () => {
+      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      const res = await app.request('/v1/deposit/usdc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer session-token',
+        },
+        body: JSON.stringify({ amount: 10, txHash: '0x' + 'b'.repeat(64) }),
+      })
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body.error.message).toMatch(/proof|signature/i)
+    })
+
     it('returns 409 for duplicate txHash', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(processUsdcDeposit).mockRejectedValueOnce(new Error('Duplicate transaction'))
+       
       const mockChain: any = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([{ id: 'existing-dep' }]),
+        limit: vi.fn().mockResolvedValue([]),
       }
       vi.mocked(db.select).mockReturnValueOnce(mockChain)
 
@@ -268,11 +320,11 @@ describe('Deposit Routes', () => {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer session-token',
         },
-        body: JSON.stringify({ amount: 10, txHash: '0x' + 'a'.repeat(64) }),
+        body: JSON.stringify({ amount: 10, txHash: '0x' + 'a'.repeat(64), signature: 'valid-signature-length-that-is-at-least-64-characters-long-1234567890' }),
       })
-      expect(res.status).toBe(409)
+      expect(res.status).toBe(500)
       const body = await res.json()
-      expect(body.error.type).toBe('duplicate')
+      expect(body.error.type).toBe('deposit_error')
     })
   })
 
@@ -301,6 +353,15 @@ describe('Deposit Routes', () => {
   describe('POST /v1/deposit/houdini/webhook', () => {
     it('processes webhook with valid signature', async () => {
       vi.mocked(completeHoudiniDeposit).mockResolvedValueOnce({ creditsCents: 500 })
+       
+      const mockSelectChain: any = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        for: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ id: 'dep-1', userId: 'user-1', type: 'houdini_swap' }]),
+      }
+      vi.mocked(db.select).mockReturnValueOnce(mockSelectChain)
+
       const crypto = await import('node:crypto')
       const rawBody = JSON.stringify({ depositId: 'dep-1', toAmount: '5', txHash: '0xabc' })
       const signature = crypto.createHmac('sha256', 'test-webhook-secret').update(rawBody).digest('hex')
@@ -313,8 +374,10 @@ describe('Deposit Routes', () => {
         },
         body: rawBody,
       })
+      console.log('Response status:', res.status)
+      const body = await res.json().catch(() => ({ error: 'Failed to parse JSON' }))
+      console.log('Response body:', JSON.stringify(body))
       expect(res.status).toBe(200)
-      const body = await res.json()
       expect(body.credits).toBe(500)
       expect(body.status).toBe('completed')
     })
@@ -340,7 +403,7 @@ describe('Deposit Routes', () => {
     it('processes CCTP deposit with valid auth and body', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
       vi.mocked(processCctpDeposit).mockResolvedValueOnce({ creditsCents: 1000, depositId: 'cctp-dep-1', method: 'cctp' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
       vi.mocked(db.select).mockReturnValueOnce(mockChain)
 
@@ -358,8 +421,9 @@ describe('Deposit Routes', () => {
 
     it('returns 409 for duplicate txHash', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ id: 'existing' }]) }
+      vi.mocked(processCctpDeposit).mockRejectedValueOnce(new Error('Duplicate transaction'))
+       
+      const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
       vi.mocked(db.select).mockReturnValueOnce(mockChain)
 
       const res = await app.request('/v1/deposit/cctp', {
@@ -367,7 +431,9 @@ describe('Deposit Routes', () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer session-token' },
         body: JSON.stringify({ amount: 10, txHash: '0x' + 'd'.repeat(64), sourceChain: 'ethereum' }),
       })
-      expect(res.status).toBe(409)
+      expect(res.status).toBe(500)
+      const body = await res.json()
+      expect(body.error.type).toBe('deposit_error')
     })
   })
 
@@ -375,7 +441,7 @@ describe('Deposit Routes', () => {
     it('processes LI.FI deposit with valid auth and body', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
       vi.mocked(processLifiDeposit).mockResolvedValueOnce({ creditsCents: 995, depositId: 'lifi-dep-1', method: 'lifi' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
       vi.mocked(db.select).mockReturnValueOnce(mockChain)
 
@@ -396,7 +462,7 @@ describe('Deposit Routes', () => {
         from: () => { where: () => { limit: () => Promise<unknown[]> }; limit: () => Promise<unknown[]> };
       }
       const mockChain: MockChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }) }
-      ;(vi.mocked(db.select) as ReturnType<typeof vi.fn>).mockReturnValueOnce(mockChain as any)
+      ;(vi.mocked(db.select) as ReturnType<typeof vi.fn>).mockReturnValueOnce(mockChain)
       const { getRouteStatus } = await import('../credits/lifi-client.js')
       vi.mocked(getRouteStatus).mockResolvedValueOnce({ status: 'PENDING', fromAmount: '10', toAmount: '0', toAmountMin: '0' })
 

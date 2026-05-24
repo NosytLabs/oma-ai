@@ -7,6 +7,8 @@ export function useIntersectionObserver(
 ): [React.RefObject<HTMLElement | null>, boolean] {
   const ref = useRef<HTMLElement>(null)
   const [isIntersecting, setIsIntersecting] = useState(false)
+  const optionsRef = useRef(options)
+  optionsRef.current = options
 
   useEffect(() => {
     const element = ref.current
@@ -19,12 +21,12 @@ export function useIntersectionObserver(
           observer.unobserve(element)
         }
       },
-      { threshold: 0.1, ...options }
+      { threshold: 0.1, ...optionsRef.current }
     )
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [options])
+  }, [ref])
 
   return [ref, isIntersecting]
 }

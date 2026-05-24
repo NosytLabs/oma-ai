@@ -27,20 +27,24 @@ describe('ModelsPage', () => {
 
   it('renders category filter buttons', () => {
     render(<ModelsPage />)
-    expect(screen.getByRole('button', { name: /all/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /budget/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /mid/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /premium/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /frontier/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /coding/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /reasoning/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /uncensored/i })).toBeInTheDocument()
+    // Get all buttons and check for expected tier and provider filter buttons
+    const buttons = screen.getAllByRole('button')
+    const buttonTexts = buttons.map(b => b.textContent)
+    // Tier filter buttons: All, Budget, Mid-Range, Premium, Frontier
+    expect(buttonTexts.some(t => t === 'All')).toBe(true)
+    expect(buttonTexts.some(t => t === 'Budget')).toBe(true)
+    expect(buttonTexts.some(t => t === 'Mid-Range')).toBe(true)
+    expect(buttonTexts.some(t => t === 'Premium')).toBe(true)
+    expect(buttonTexts.some(t => t === 'Frontier')).toBe(true)
+    // Provider filter buttons: All, Venice, AntSeed
+    expect(buttonTexts.some(t => t === 'Venice')).toBe(true)
+    expect(buttonTexts.some(t => t === 'AntSeed')).toBe(true)
   })
 
   it('renders the stats bar showing model count', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      const spans = screen.getAllByText('30')
+      const spans = screen.getAllByText('32')
       expect(spans.length).toBeGreaterThan(0)
     })
   })
@@ -57,8 +61,9 @@ describe('ModelsPage', () => {
     await waitFor(() => {
       const budgetButton = screen.getByRole('button', { name: /budget/i })
       fireEvent.click(budgetButton)
-      const clearFilterButton = screen.getByRole('button', { name: /clear filter/i })
-      expect(clearFilterButton).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.getByText(/Budget Models/i)).toBeInTheDocument()
     })
   })
 
@@ -71,21 +76,23 @@ describe('ModelsPage', () => {
     })
   })
 
-  it('clear filter appears when a filter is active', async () => {
+  it('search with no results shows reset message', async () => {
     render(<ModelsPage />)
-    const budgetButton = screen.getByRole('button', { name: /budget/i })
-    fireEvent.click(budgetButton)
     await waitFor(() => {
-      expect(screen.getByText(/clear filter/i)).toBeInTheDocument()
+      const searchInput = screen.getByPlaceholderText(/search models/i)
+      fireEvent.change(searchInput, { target: { value: 'xyznonexistent123' } })
+    })
+    await waitFor(() => {
+      expect(screen.getByText(/No models match your criteria/i)).toBeInTheDocument()
     })
   })
 
-  it('renders provider legend with Venice AI, AntSeed P2P, and Both', async () => {
+  it('renders provider legend with Venice, Together AI, and DeepInfra', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      expect(screen.getAllByText(/Venice AI/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/AntSeed/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/Both/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Venice/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Together AI/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/DeepInfra/i).length).toBeGreaterThan(0)
     })
   })
 

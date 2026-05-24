@@ -1,13 +1,13 @@
 import { Suspense, lazy } from 'react'
 import { Hero } from '@/components/landing/Hero'
-import { HowItWorks } from '@/components/landing/HowItWorks'
-import { ModelHighlights } from '@/components/landing/ModelHighlights'
-import { PricingTiers } from '@/components/landing/PricingTiers'
-import { FeatureShowcase } from '@/components/landing/FeatureShowcase'
 import { TrustedBy } from '@/components/landing/TrustedBy'
 
 import { Skeleton } from '@/components/ui/Skeleton'
 
+const LazyHowItWorks = lazy(() => import('@/components/landing/HowItWorks').then(m => ({ default: m.HowItWorks })))
+const LazyModelHighlights = lazy(() => import('@/components/landing/ModelHighlights').then(m => ({ default: m.ModelHighlights })))
+const LazyFeatureShowcase = lazy(() => import('@/components/landing/FeatureShowcase').then(m => ({ default: m.FeatureShowcase })))
+const LazyPricingTiers = lazy(() => import('@/components/landing/PricingTiers').then(m => ({ default: m.PricingTiers })))
 const LazyForDevelopers = lazy(() => import('@/components/landing/ForDevelopers').then(m => ({ default: m.ForDevelopers })))
 const LazyPricingPayments = lazy(() => import('@/components/landing/PricingPayments').then(m => ({ default: m.PricingPayments })))
 const LazyCtaFooter = lazy(() => import('@/components/landing/CtaFooter').then(m => ({ default: m.CtaFooter })))
@@ -29,16 +29,16 @@ export default function HomePage() {
       <Hero />
       <TrustedBy />
       <Suspense fallback={<SectionSkeleton />}>
-        <HowItWorks />
+        <LazyHowItWorks />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <ModelHighlights />
+        <LazyModelHighlights />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <FeatureShowcase />
+        <LazyFeatureShowcase />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <PricingTiers />
+        <LazyPricingTiers />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <LazyForDevelopers />

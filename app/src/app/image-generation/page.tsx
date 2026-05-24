@@ -34,7 +34,9 @@ export default function ImageGenerationPage() {
   const generate = useCallback(async () => {
     if (!prompt.trim() || loading) return
 
-    const apiKey = localStorage.getItem('oma_api_key')
+    const apiKey = // Uses raw API key (oma_api_key_raw) rather than session token (oma_session)
+// because this page directly authenticates with the server-side API endpoint
+localStorage.getItem('oma_api_key_raw')
     if (!apiKey) {
       toast.error('Enter your API key in Settings first')
       return

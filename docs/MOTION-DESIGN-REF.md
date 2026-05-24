@@ -1,6 +1,6 @@
 # OMA AI Gateway - Motion Design Reference
 
-> Building a better future... with delightful animations.
+> Building a better future with delightful animations.
 
 ## Overview
 
@@ -229,5 +229,4 @@ Every significant animation should have:
 
 ---
 
-*Vault-Tec is not responsible for any unforeseen joy caused by excellent animation timing.*
-*Remember: Building a Better Future... with Smooth Transitions.*
+*For additional motion design resources, visit [LottieFiles Motion Design Skill](https://lottiefiles.com/motion-design).*

@@ -210,6 +210,7 @@ export function Hero() {
         loop
         muted
         playsInline
+        preload="none"
         onLoadedData={() => setVideoLoaded(true)}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-40' : 'opacity-0'} z-0`}
       >
