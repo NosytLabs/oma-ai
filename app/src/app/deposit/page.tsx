@@ -288,7 +288,7 @@ export default function DepositPage() {
       animate={{ opacity: 1 }}
     >
       <UnifiedDepositHeader />
-      <UnifiedDepositInterface onDeposit={(deposit) => {}} />
+      <UnifiedDepositInterface onDeposit={(_deposit) => {}} />
     </motion.div>
   )
 }
