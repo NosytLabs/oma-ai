@@ -1,9 +1,18 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Check, Link2, Rocket, Sparkles } from 'lucide-react'
-import { TinyFishPricing } from '@/components/tinyfish-pricing'
+import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Link2, Rocket } from 'lucide-react'
+import { Skeleton } from '@/components/ui/Skeleton'
+
+const LazyTinyFishPricing = dynamic(
+  () => import('@/components/tinyfish-pricing').then(mod => mod.TinyFishPricing),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full" />
+  }
+)
 
 type Category = 'all' | 'frontier' | 'premium' | 'mid' | 'budget'
 
@@ -57,12 +66,36 @@ const CATEGORIES: { key: Category; label: string }[] = [
 ]
 
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> = {
-  all: { active: 'bg-cyan-500 text-zinc-900', inactive: 'bg-zinc-900 text-zinc-400 border border-zinc-800' },
-  frontier: { active: 'bg-purple-500 text-white', inactive: 'bg-violet-500/10 text-purple-400 border border-purple-500/30' },
-  premium: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-500/10 text-violet-400 border border-violet-500/30' },
-  mid: { active: 'bg-cyan-500 text-zinc-900', inactive: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' },
-  budget: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' },
+  all: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]' },
+  frontier: { active: 'bg-[var(--color-accent)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
+  premium: { active: 'bg-[var(--color-accent)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
+  mid: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-cyan)] border border-[var(--color-cyan)]/30' },
+  budget: { active: 'bg-[var(--color-success)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-success)] border border-[var(--color-success)]/30' },
 }
+
+const PAYMENT_METHODS = [
+  {
+    icon: CreditCard,
+    title: 'USDC on Base / Solana',
+    desc: 'Direct USDC transfers at 1:1 USD rate. Settlement is immediate on confirmation.',
+    tag: null,
+    tagStyle: '',
+  },
+  {
+    icon: Coins,
+    title: 'HoudiniSwap',
+    desc: 'Convert 100+ cryptocurrencies to USDC credits on Base. Rate varies by asset.',
+    tag: '100+ assets',
+    tagStyle: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]',
+  },
+  {
+    icon: Rocket,
+    title: 'x402 Pay-Per-Request',
+    desc: 'Gasless payments on Solana and Base. Each API request deducts fees automatically.',
+    tag: 'no pre-fund',
+    tagStyle: 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] border border-[var(--color-accent)]/30',
+  },
+]
 
 const FAQ_ITEMS = [
   {
@@ -81,7 +114,6 @@ const FAQ_ITEMS = [
     q: 'What is x402 pay-per-request?',
     a: 'x402 enables gasless AI inference payments on Solana and Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request.'
   },
-  
 ]
 
 function fmtPrice(n: number): string {
@@ -90,53 +122,18 @@ function fmtPrice(n: number): string {
   return `$${n.toFixed(2)}`
 }
 
-function AnimatedSection({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const [isVisible, setIsVisible] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.unobserve(element)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      className={`transition-all duration-500 ease-out ${className} ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  )
-}
-
 function AccordionItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="border-b border-zinc-800/50">
+    <div className="border-b border-[var(--color-border)]">
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between py-5 text-left"
+        className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-[var(--color-text-bright)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2"
       >
-        <span className="font-medium text-white">{item.q}</span>
-        <ChevronDown className={`h-5 w-5 text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="font-medium text-[var(--color-text)]">{item.q}</span>
+        <ChevronDown className={`h-5 w-5 text-[var(--color-text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}>
-        <p className="text-sm text-zinc-500">{item.a}</p>
+        <p className="text-sm text-[var(--color-text-secondary)]">{item.a}</p>
       </div>
     </div>
   )
@@ -152,84 +149,80 @@ export default function PricingPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950">
+    <div className="min-h-screen bg-[var(--color-void)]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <AnimatedSection>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-medium text-cyan-300">OpenAI-Compatible Pricing</span>
+        {/* ── Header ── */}
+        <div className="mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] mb-6">
+            <span className="text-xs font-mono text-[var(--color-accent)] uppercase tracking-widest">{'// pricing'}</span>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text-bright)] sm:text-5xl font-syne">
             AI API Pricing
           </h1>
-          <p className="mt-4 text-lg text-zinc-500">
-            Credit-based billing. No subscriptions. No minimums. Access 50+ models via unified API.
+          <p className="mt-4 text-base text-[var(--color-text-secondary)] max-w-2xl">
+            Credit-based billing. No subscriptions. No minimums. Pay per token across 28+ models via unified OpenAI-compatible API.
           </p>
-        </AnimatedSection>
+        </div>
 
-        <AnimatedSection delay={100} className="mt-10">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6 hover:border-cyan-500/30 transition-colors">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
-                <CreditCard className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-white">USDC (Direct)</h3>
-              <p className="mt-2 text-sm text-zinc-500">Send USDC on Base or Solana. 1:1 USD credits. Instant settlement.</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
-                <Check className="h-3.5 w-3.5" />
-                INSTANT
-              </div>
-            </div>
+        {/* ── Payment Methods ── */}
+        <div className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
+            <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-widest">payment methods</span>
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {PAYMENT_METHODS.map((method) => {
+              const Icon = method.icon
+              return (
+                <div key={method.title} className="relative group">
+                  <div className="absolute inset-0 bg-[var(--color-accent-dim)] rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]/40 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                        <Icon className="h-5 w-5 text-[var(--color-cyan)]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-[var(--color-text-bright)] truncate">{method.title}</h3>
+                        <p className="mt-1 text-xs text-[var(--color-text-secondary)] leading-relaxed">{method.desc}</p>
+                      </div>
+                    </div>
+                    {method.tag && (
+                      <div className={`mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border ${method.tagStyle}`}>
+                        {method.tag}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
-            <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6 hover:border-amber-500/30 transition-colors">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
-                <Coins className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-white">HoudiniSwap</h3>
-              <p className="mt-2 text-sm text-zinc-500">Swap 100+ cryptocurrencies (BTC, XMR, SOL, DOGE) to USDC on Base.</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-zinc-800/50 px-3 py-1 text-xs font-semibold text-zinc-400 border border-zinc-700/50">
-                100+ COINS
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-zinc-900/50 p-6 hover:border-cyan-500/40 transition-colors">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
-                <Rocket className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-white">x402 Pay-Per-Request</h3>
-              <p className="mt-2 text-sm text-zinc-500">Gasless payments on Solana/Base. Pay per API request with automatic fee deduction.</p>
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-400 border border-cyan-500/20">
-                <Zap className="h-3.5 w-3.5" />
-                GASLESS
-              </div>
+        {/* ── x402 Banner ── */}
+        <div className="mb-12 p-4 rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent-dim)]">
+          <div className="flex items-start gap-3">
+            <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-accent)]" />
+            <div>
+              <h4 className="text-sm font-semibold text-[var(--color-accent)]">x402 Protocol</h4>
+              <p className="mt-1 text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                Native x402 support lets applications integrate AI payments without managing credit balances.
+                <Link href="/crypto-payments" className="ml-1 font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors">Learn more →</Link>
+              </p>
             </div>
           </div>
-        </AnimatedSection>
+        </div>
 
-        <AnimatedSection delay={150} className="mt-6">
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-            <div className="flex items-start gap-3">
-              <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
-              <div>
-                <h4 className="font-semibold text-cyan-300">x402 Protocol Integration</h4>
-                <p className="mt-1 text-sm text-zinc-400">
-                  Native x402 support enables developers to integrate AI payments directly into applications without managing credit balances. 
-                  <Link href="/crypto-payments" className="ml-1 font-medium text-cyan-400 hover:underline">Learn more</Link>
-                </p>
-              </div>
-            </div>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection delay={200} className="mt-12">
-          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50">
-            <div className="border-b border-zinc-800/50 p-6">
-              <div className="flex flex-wrap gap-2">
+        {/* ── Model Table ── */}
+        <div className="mb-12">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+            <div className="border-b border-[var(--color-border)] px-6 py-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat.key}
                     onClick={() => setCategory(cat.key)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-all duration-150 ${
                       category === cat.key
                         ? CATEGORY_STYLES[cat.key].active
                         : CATEGORY_STYLES[cat.key].inactive
@@ -239,114 +232,118 @@ export default function PricingPage() {
                   </button>
                 ))}
               </div>
-              <p className="mt-4 text-sm text-zinc-500">{filtered.length} models</p>
+              <p className="text-xs text-[var(--color-text-muted)] font-mono">{filtered.length} models</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-zinc-800/50 bg-zinc-900/30">
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Model</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Provider</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Input / 1M</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Output / 1M</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Context</th>
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Model</th>
+                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Provider</th>
+                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Input / 1M</th>
+                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Output / 1M</th>
+                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Ctx</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((m, i) => (
-                    <tr key={m.id} className={`border-b border-zinc-800/30 transition-colors hover:bg-zinc-800/20 ${i % 2 === 1 ? 'bg-zinc-900/20' : ''}`}>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">{m.name}</div>
-                        <div className="text-xs text-zinc-600">{m.id}</div>
+                    <tr key={m.id} className={`border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-medium text-[var(--color-text-bright)]">{m.name}</span>
+                        <span className="ml-2 text-xs text-[var(--color-text-muted)] font-mono">{m.id}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          m.provider === 'Venice' ? 'bg-blue-500/20 text-blue-400' :
-                          m.provider === 'AntSeed' ? 'bg-emerald-500/20 text-emerald-400' :
-                          'bg-amber-500/20 text-amber-400'
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-mono font-medium ${
+                          m.provider === 'Venice' ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' :
+                          m.provider === 'AntSeed' ? 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' :
+                          'bg-[var(--color-secondary)]/20 text-[var(--color-secondary)]'
                         }`}>
                           {m.provider}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-cyan-400">{fmtPrice(m.inputPer1M)}</td>
-                      <td className="px-6 py-4 text-right font-mono text-sm font-medium text-zinc-300">{fmtPrice(m.outputPer1M)}</td>
-                      <td className="px-6 py-4 text-right text-sm text-zinc-500">{m.ctx}</td>
+                      <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-cyan)]">{fmtPrice(m.inputPer1M)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-text-secondary)]">{fmtPrice(m.outputPer1M)}</td>
+                      <td className="px-4 py-3 text-right text-xs text-[var(--color-text-muted)] font-mono">{m.ctx}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-        </AnimatedSection>
+        </div>
 
-        <AnimatedSection delay={300} className="mt-12">
-          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-cyan-500" />
-              <h3 className="text-lg font-semibold text-white">Frequently Asked Questions</h3>
-            </div>
-            <div>
-              {FAQ_ITEMS.map((item, i) => (
-                <AccordionItem
-                  key={i}
-                  item={item}
-                  isOpen={openFaq === i}
-                  onToggle={() => setOpenFaq(openFaq === i ? null : i)}
-                />
-              ))}
-            </div>
+        {/* ── FAQ ── */}
+        <div className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <HelpCircle className="h-4 w-4 text-[var(--color-accent)]" />
+            <h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">FAQ</h3>
           </div>
-        </AnimatedSection>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            {FAQ_ITEMS.map((item, i) => (
+              <AccordionItem
+                key={i}
+                item={item}
+                isOpen={openFaq === i}
+                onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+              />
+            ))}
+          </div>
+        </div>
 
-        <AnimatedSection delay={400} className="mt-12 text-center">
+        {/* ── CTA ── */}
+        <div className="mb-12 text-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"
-              className="btn-primary text-lg px-8 py-4"
+              className="btn-primary text-sm px-6 py-3"
             >
-              <Zap className="h-5 w-5 mr-2" />
+              <Zap className="h-4 w-4 mr-2" />
               Start AI Inference
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
             <Link
               href="/deposit"
-              className="btn-secondary text-lg px-8 py-4"
+              className="btn-secondary text-sm px-6 py-3"
             >
-              <Coins className="h-5 w-5 mr-2" />
+              <Coins className="h-4 w-4 mr-2" />
               Deposit Crypto
             </Link>
-            <Link href="/models" className="px-6 py-4 text-base font-medium text-zinc-500 hover:text-cyan-400 transition-colors">
+            <Link href="/models" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors">
               View All Models
-              <ArrowRight className="w-4 h-4 ml-2 inline-block" />
+              <ArrowRight className="w-4 h-4 ml-1 inline-block" />
             </Link>
           </div>
-        </AnimatedSection>
+        </div>
 
-        <TinyFishPricing />
-
-        <AnimatedSection delay={500} className="mt-12">
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
-            <h4 className="font-semibold text-amber-300">Credits & Billing</h4>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-zinc-400">Credits are 1:1 USD, non-redeemable, non-transferable</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-zinc-400">12-month rolling expiry from date of deposit</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-zinc-400">No credit float -- credits appear after settlement</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="text-sm text-zinc-400">Billed per token, deducted in real-time</span>
-              </div>
-            </div>
+        {/* ── TinyFish ── */}
+        <div className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
+            <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-widest">add-ons</span>
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
           </div>
-        </AnimatedSection>
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <LazyTinyFishPricing />
+          </Suspense>
+        </div>
+
+        {/* ── Billing Notes ── */}
+        <div className="p-4 rounded-xl border border-[var(--color-amber)]/20 bg-[var(--color-amber)]/5">
+          <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-amber)] mb-3">Billing</h4>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {[
+              'Credits are 1:1 USD, non-redeemable, non-transferable',
+              '12-month rolling expiry from date of deposit',
+              'No credit float — credits appear after settlement',
+              'Billed per token, deducted in real-time',
+            ].map((note) => (
+              <div key={note} className="flex items-start gap-2">
+                <div className="mt-1.5 h-1 w-1 rounded-full bg-[var(--color-amber)]" />
+                <span className="text-xs text-[var(--color-text-secondary)]">{note}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

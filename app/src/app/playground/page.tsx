@@ -5,16 +5,10 @@
  * contrast: pass (46–50)
  */
 
-import type { Metadata } from 'next'
 'use client'
 
 import dynamic from 'next/dynamic'
 import { useState, useRef, useEffect, useCallback, useDeferredValue } from 'react'
-
-export const metadata: Metadata = {
-  title: 'Playground | OMA AI',
-  description: 'Test AI models in real-time with our interactive playground.',
-}
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
