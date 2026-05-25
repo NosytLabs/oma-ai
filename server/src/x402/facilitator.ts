@@ -11,6 +11,24 @@ import { settlements } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { addSettlementToDlq } from "../lib/dlq.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { getRedisClient } from "../lib/redis-client.js";
+
+const LOCK_TTL_SECONDS = 30;
+
+async function acquireSettlementLock(cacheKey: string): Promise<boolean> {
+  const redis = await getRedisClient();
+  if (!redis) return true;
+  const lockKey = `settlement:lock:${cacheKey}`;
+  const result = await redis.set(lockKey, "1", { NX: true, EX: LOCK_TTL_SECONDS });
+  return result === "OK";
+}
+
+async function releaseSettlementLock(cacheKey: string): Promise<void> {
+  const redis = await getRedisClient();
+  if (!redis) return;
+  const lockKey = `settlement:lock:${cacheKey}`;
+  await redis.del(lockKey);
+}
 
 // ============================================================
 // Types
@@ -149,6 +167,9 @@ setInterval(cleanExpiredCache, 300_000).unref();
 // Signing Utilities
 // ============================================================
 
+const RECEIPT_VERSION = "1";
+const RECEIPT_EXPIRY_SECONDS = 365 * 24 * 60 * 60;
+
 function signReceipt(data: string): string {
   const secret = config.RECEIPT_HMAC_SECRET;
   if (!secret) {
@@ -159,7 +180,14 @@ function signReceipt(data: string): string {
   return hmac.digest("hex");
 }
 
-function verifyReceipt(data: string, receipt: string): boolean {
+function verifyReceipt(
+  data: string,
+  receipt: string,
+  receiptExpiry?: number
+): boolean {
+  if (receiptExpiry !== undefined && Date.now() > receiptExpiry * 1000) {
+    return false;
+  }
   const expected = signReceipt(data);
   const expectedBuf = Buffer.from(expected, "utf8");
   const receiptBuf = Buffer.from(receipt, "utf8");
@@ -169,6 +197,17 @@ function verifyReceipt(data: string, receipt: string): boolean {
   expectedBuf.copy(aPadded);
   receiptBuf.copy(bPadded);
   return timingSafeEqual(aPadded, bPadded);
+}
+
+function createReceiptPayload(
+  txHash: string,
+  amount: string,
+  networkId: string,
+  payee: string,
+  settledAt: number,
+): string {
+  const expiryTime = Math.floor(settledAt / 1000) + RECEIPT_EXPIRY_SECONDS;
+  return `${RECEIPT_VERSION}:${txHash}:${amount}:${networkId}:${payee}:${settledAt}:${expiryTime}`;
 }
 
 // ============================================================
@@ -523,6 +562,9 @@ export async function verifyPayment(
   const mode = config.FACILITATOR_MODE ?? "mock";
 
   if (mode === "mock") {
+    if (config.NODE_ENV !== "development" && config.NODE_ENV !== "test") {
+      throw new Error(`[FACILITATOR] FATAL: Mock payment mode explicitly forbidden in ${config.NODE_ENV} environment`);
+    }
     console.warn("[FACILITATOR] [WARN] Processing payment in mock mode -- signatures are NOT verified on-chain");
     return mockVerifyPayment(signature, payload);
   }
@@ -542,12 +584,21 @@ export async function verifyPayment(
 // Core: settlePayment
 // ============================================================
 
+interface SettlementOptions {
+  idempotencyKey?: string;
+  skipIfExists?: boolean;
+}
+
+const settlementInProgress = new Map<string, Promise<SettlementResponse>>();
+
 export async function settlePaymentAsync(
   txHash: string,
   amount: string,
   networkId: string,
   payee: string,
+  options: SettlementOptions = {},
 ): Promise<SettlementResponse> {
+  const { idempotencyKey, skipIfExists: _skipIfExists = true } = options;
   const cacheKey = `${networkId}:${txHash}`;
 
   const existing = settlementCache.get(cacheKey);
@@ -555,69 +606,126 @@ export async function settlePaymentAsync(
     return { settled: true, receipt: existing.receipt };
   }
 
-  const existingDb = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
-  if (existingDb.length > 0) {
-    const record: SettlementRecord = {
-      txHash: existingDb[0].txHash,
-      amount: existingDb[0].amount,
-      networkId: existingDb[0].networkId,
-      payee: existingDb[0].payee,
-      settledAt: existingDb[0].settledAt.getTime(),
-      receipt: existingDb[0].receipt,
-    };
-    settlementCache.set(cacheKey, record);
-    cacheAccessOrder.push(cacheKey);
-    return { settled: true, receipt: existingDb[0].receipt };
-  }
-
-  const settledAt = Date.now();
-  const receiptPayload = `${txHash}:${amount}:${networkId}:${payee}:${settledAt}`;
-  const receipt = signReceipt(receiptPayload);
-
-  const record: SettlementRecord = {
-    txHash,
-    amount,
-    networkId,
-    payee,
-    settledAt,
-    receipt,
-  };
-
-  evictLRU();
-  settlementCache.set(cacheKey, record);
-  cacheAccessOrder.push(cacheKey);
-
-  let lastError: Error | null = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      await db.insert(settlements).values({
-        txHash,
-        amount,
-        networkId,
-        payee,
-        receipt,
-        settledAt: new Date(settledAt),
-      });
-      return { settled: true, receipt };
-    } catch (err) {
-      if (attempt === 1) {
-        const pgErr = err as { code?: string };
-        if (pgErr.code === "23505") {
-          return { settled: true, receipt };
-        }
-      }
-      lastError = err instanceof Error ? err : new Error(String(err));
-      console.error(`Failed to persist settlement to DB (attempt ${attempt}/3):`, lastError);
-      if (attempt < 3) {
-        const backoffMs = Math.min(100 * Math.pow(2, attempt - 1), 1000);
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
-      }
+  const lockAcquired = await acquireSettlementLock(cacheKey);
+  if (!lockAcquired) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const existingAfterLock = settlementCache.get(cacheKey);
+    if (existingAfterLock) {
+      return { settled: true, receipt: existingAfterLock.receipt };
+    }
+    const lockRetry = await acquireSettlementLock(cacheKey);
+    if (!lockRetry) {
+      throw new Error("Could not acquire settlement lock");
     }
   }
 
-  settlementCache.delete(cacheKey);
-  await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
-  throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
+  try {
+    const existingDb = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
+    if (existingDb.length > 0) {
+      const record: SettlementRecord = {
+        txHash: existingDb[0].txHash,
+        amount: existingDb[0].amount,
+        networkId: existingDb[0].networkId,
+        payee: existingDb[0].payee,
+        settledAt: existingDb[0].settledAt.getTime(),
+        receipt: existingDb[0].receipt,
+      };
+      settlementCache.set(cacheKey, record);
+      cacheAccessOrder.push(cacheKey);
+      return { settled: true, receipt: existingDb[0].receipt };
+    }
+
+    if (idempotencyKey) {
+      const inProgress = settlementInProgress.get(idempotencyKey);
+      if (inProgress) {
+        return inProgress;
+      }
+    }
+
+    const settleKey = `${cacheKey}:${idempotencyKey ?? "default"}`;
+    const inProgressGeneral = settlementInProgress.get(settleKey);
+    if (inProgressGeneral) {
+      return inProgressGeneral;
+    }
+
+    const settlementPromise = (async (): Promise<SettlementResponse> => {
+      let result: SettlementResponse | null = null;
+      try {
+        const settledAt = Date.now();
+        const receiptPayload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
+        const receipt = signReceipt(receiptPayload);
+
+        const record: SettlementRecord = {
+          txHash,
+          amount,
+          networkId,
+          payee,
+          settledAt,
+          receipt,
+        };
+
+        evictLRU();
+        settlementCache.set(cacheKey, record);
+        cacheAccessOrder.push(cacheKey);
+
+        let lastError: Error | null = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            await db.insert(settlements).values({
+              txHash,
+              amount,
+              networkId,
+              payee,
+              receipt,
+              settledAt: new Date(settledAt),
+            });
+            result = { settled: true, receipt };
+            break;
+          } catch (err) {
+            if (attempt === 1) {
+              const pgErr = err as { code?: string };
+              if (pgErr.code === "23505") {
+                const existingRecord = await db.select().from(settlements)
+                  .where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId)))
+                  .limit(1);
+                if (existingRecord.length > 0) {
+                  result = { settled: true, receipt: existingRecord[0].receipt };
+                  break;
+                }
+              }
+            }
+            lastError = err instanceof Error ? err : new Error(String(err));
+            console.error(`Failed to persist settlement to DB (attempt ${attempt}/3):`, lastError);
+            if (attempt < 3) {
+              const backoffMs = Math.min(100 * Math.pow(2, attempt - 1), 1000);
+              await new Promise((resolve) => setTimeout(resolve, backoffMs));
+            }
+          }
+        }
+
+        if (!result) {
+          settlementCache.delete(cacheKey);
+          await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
+          throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
+        }
+      } finally {
+        settlementInProgress.delete(settleKey);
+        if (idempotencyKey) {
+          settlementInProgress.delete(idempotencyKey);
+        }
+      }
+      return result!;
+    })();
+
+    settlementInProgress.set(settleKey, settlementPromise);
+    if (idempotencyKey) {
+      settlementInProgress.set(idempotencyKey, settlementPromise);
+    }
+
+    return await settlementPromise;
+  } finally {
+    await releaseSettlementLock(cacheKey);
+  }
 }
 
 export function settlePayment(
@@ -634,7 +742,7 @@ export function settlePayment(
   }
 
   const settledAt = Date.now();
-  const receiptPayload = `${txHash}:${amount}:${networkId}:${payee}:${settledAt}`;
+  const receiptPayload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
   const receipt = signReceipt(receiptPayload);
 
   const record: SettlementRecord = {
@@ -688,8 +796,12 @@ export function verifySettlementReceipt(
   payee: string,
   settledAt: number,
   receipt: string,
+  receiptExpiry?: number,
 ): boolean {
-  const payload = `${txHash}:${amount}:${networkId}:${payee}:${settledAt}`;
+  if (receiptExpiry !== undefined && Date.now() > receiptExpiry * 1000) {
+    return false;
+  }
+  const payload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
   return verifyReceipt(payload, receipt);
 }
 

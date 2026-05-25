@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useCallback, memo } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
@@ -91,14 +91,14 @@ function CodeBlock({ children, className }: CodeBlockProps) {
 
   return (
     <div className="relative group my-4">
-      <pre className="bg-zinc-900 text-zinc-100 rounded-xl p-4 overflow-x-auto text-sm leading-relaxed border border-zinc-800">
+      <pre className="bg-black text-[var(--color-text)] p-4 overflow-x-auto text-xs leading-relaxed border border-[var(--color-border)] font-mono">
         <code className={className}>{code}</code>
       </pre>
       <button
         onClick={handleCopy}
-        className="absolute top-3 right-3 p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-zinc-700"
+        className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
-        {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+        {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
     </div>
   )
@@ -108,9 +108,11 @@ interface SearchSourcesProps {
   results: SearchResult[]
   expanded: boolean
   onToggle: () => void
+  prefersReducedMotion?: boolean | null
 }
 
-function SearchSources({ results, expanded, onToggle }: SearchSourcesProps) {
+function SearchSources({ results, expanded, onToggle, prefersReducedMotion }: SearchSourcesProps) {
+  const motionPrefersReducedMotion = prefersReducedMotion ?? false
   const getFaviconUrl = (url: string) => {
     try {
       const urlObj = new URL(url)
@@ -120,48 +122,59 @@ function SearchSources({ results, expanded, onToggle }: SearchSourcesProps) {
     }
   }
 
+  const getHostname = (url: string): string => {
+    try {
+      return new URL(url).hostname
+    } catch {
+      return url
+    }
+  }
+
   if (results.length === 0) return null
 
   return (
-    <div className="my-4 border border-border rounded-xl overflow-hidden">
+    <div className="my-4 border border-[var(--color-border)] overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 bg-surface-elevated hover:bg-surface transition-colors"
+        aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} search sources, ${results.length} result${results.length !== 1 ? 's' : ''}`}
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
       >
-        <span className="flex items-center gap-2 text-sm text-zinc-400">
-          <Search className="w-4 h-4" />
-          {results.length} source{results.length !== 1 ? 's' : ''}
+        <span className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
+          <Search className="w-3.5 h-3.5" />
+          {results.length} SOURCE{results.length !== 1 ? 'S' : ''}
         </span>
-        {expanded ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-[var(--color-text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)]" />}
       </button>
       <AnimatePresence>
         {expanded && (
           <motion.div
-            initial={{ height: 0 }}
+            initial={motionPrefersReducedMotion ? { height: 'auto' } : { height: 0 }}
             animate={{ height: 'auto' }}
-            exit={{ height: 0 }}
+            exit={motionPrefersReducedMotion ? { height: 'auto' } : { height: 0 }}
+            transition={motionPrefersReducedMotion ? { duration: 0 } : undefined}
             className="overflow-hidden"
           >
-            <div className="p-3 space-y-2 bg-surface">
+            <div className="p-3 space-y-2 bg-[var(--color-void)]">
               {results.map((result, i) => (
                 <a
                   key={i}
                   href={result.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-3 p-3 bg-surface-elevated border border-border rounded-lg hover:border-accent/50 transition-colors group"
+                  className="flex items-start gap-3 p-3 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-success)]/30 transition-colors group"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getFaviconUrl(result.url) || ''}
                     alt=""
                     aria-hidden="true"
-                    className="w-5 h-5 mt-0.5 rounded-sm"
+                    className="w-4 h-4 mt-0.5 rounded-sm"
                     onError={(e) => { (e.target as HTMLImageElement).classList.add('img-error') }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-accent group-hover:underline truncate">{result.title}</div>
-                    <div className="text-xs text-zinc-500 truncate">{new URL(result.url).hostname}</div>
+                    <div className="text-xs font-mono text-[var(--color-success)] group-hover:underline truncate">{result.title}</div>
+                    <div className="text-[10px] text-[var(--color-text-muted)] font-mono truncate">{getHostname(result.url)}</div>
                   </div>
                 </a>
               ))}
@@ -179,10 +192,11 @@ interface ChatMessageProps {
   onCopy: (content: string) => void
 }
 
-export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
   const isUser = msg.role === 'user'
   const [copied, setCopied] = useState(false)
   const [sourcesExpanded, setSourcesExpanded] = useState(false)
+  const prefersReducedMotion = useReducedMotion() ?? false
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(msg.content)
@@ -195,18 +209,18 @@ export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      animate={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
       className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
-      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-        isUser ? 'bg-accent' : 'bg-surface-elevated border border-border'
+      <div className={`shrink-0 w-10 h-10 flex items-center justify-center ${
+        isUser ? 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/20' : 'bg-[var(--color-surface)] border border-[var(--color-border)]'
       }`}>
         {isUser ? (
-          <User className="w-5 h-5 text-void" />
+          <User className="w-5 h-5 text-[var(--color-success)]" />
         ) : (
-          <Bot className="w-5 h-5 text-accent" />
+          <Bot className="w-5 h-5 text-[var(--color-text-muted)]" />
         )}
       </div>
 
@@ -216,17 +230,18 @@ export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
             results={msg.searchResults}
             expanded={sourcesExpanded}
             onToggle={() => setSourcesExpanded(!sourcesExpanded)}
+            prefersReducedMotion={prefersReducedMotion}
           />
         )}
-        <div className={`px-5 py-4 leading-relaxed ${
+        <div className={`px-5 py-4 leading-relaxed font-mono text-sm ${
           isUser
-            ? 'bg-accent/10 border border-accent/20 text-text rounded-2xl rounded-tr-sm'
-            : 'bg-surface-elevated border border-border text-text rounded-2xl rounded-tl-sm'
+            ? 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-text)] border-r-0'
+            : 'bg-[var(--color-surface)]/50 border border-[var(--color-border)] text-[var(--color-text-secondary)] border-l-0'
         }`}>
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
           ) : (
-            <div className="markdown-content prose prose-invert prose-sm max-w-none">
+            <div className="markdown-content font-mono text-sm">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -234,7 +249,7 @@ export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
                     const match = /language-(\w+)/.exec(className || '')
                     const isInline = !match && !className
                     return isInline ? (
-                      <code className="px-1.5 py-0.5 bg-zinc-800 text-accent rounded font-mono text-sm" {...props}>
+                      <code className="px-1.5 py-0.5 bg-[var(--color-surface-elevated)] text-[var(--color-success)] font-mono text-xs" {...props}>
                         {children}
                       </code>
                     ) : (
@@ -248,20 +263,20 @@ export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
                 {msg.content}
               </ReactMarkdown>
               {loading && msg.role === 'assistant' && (
-                <span className="inline-flex gap-1 mt-2">
-                  <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="inline-flex gap-1 mt-3">
+                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '0ms' }} />
+                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '150ms' }} />
+                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '300ms' }} />
                 </span>
               )}
             </div>
           )}
         </div>
 
-        <div className={`flex items-center gap-3 mt-2 text-xs text-zinc-600 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex items-center gap-3 mt-2 text-[10px] text-[var(--color-text-muted)] font-mono ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
           <span>{time}</span>
           {msg.tokens && (
-            <span className="font-mono">{msg.tokens} tokens</span>
+            <span>TK:{msg.tokens}</span>
           )}
           {msg.latency && (
             <span className="flex items-center gap-1">
@@ -272,14 +287,24 @@ export function ChatMessage({ msg, loading, onCopy }: ChatMessageProps) {
           {!isUser && msg.content && !loading && (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 hover:text-accent transition-colors"
+              aria-label={copied ? 'Copied to clipboard' : 'Copy message to clipboard'}
+              className="flex items-center gap-1 min-h-11 px-4 py-3 hover:text-[var(--color-success)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
             >
-              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? <Check className="w-3 h-3 text-[var(--color-success)]" /> : <Copy className="w-3 h-3" />}
+              {copied ? 'COPIED' : 'COPY'}
             </button>
           )}
         </div>
       </div>
     </motion.div>
   )
-}
+}, (prevProps, nextProps) => {
+  const prev = prevProps.msg
+  const next = nextProps.msg
+  return prev.role === next.role &&
+    prev.content === next.content &&
+    prev.timestamp === next.timestamp &&
+    prev.tokens === next.tokens &&
+    prev.latency === next.latency &&
+    prevProps.loading === nextProps.loading
+})

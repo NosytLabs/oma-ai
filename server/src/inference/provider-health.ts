@@ -30,6 +30,47 @@ interface HealthRecord {
 
 const healthCache = new Map<string, HealthRecord>();
 
+const CACHE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const STALE_CACHE_THRESHOLD_MS = 30 * 60 * 1000;
+const MAX_CACHE_SIZE = 100;
+let cacheCleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+function cleanupStaleCacheEntries(): void {
+  const now = Date.now();
+  const staleKeys: string[] = [];
+  
+  for (const [provider, record] of healthCache.entries()) {
+    if (now - record.lastUpdated > STALE_CACHE_THRESHOLD_MS) {
+      staleKeys.push(provider);
+    }
+  }
+  
+  for (const key of staleKeys) {
+    healthCache.delete(key);
+  }
+  
+  if (healthCache.size > MAX_CACHE_SIZE) {
+    const entries = [...healthCache.entries()].sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+    const toRemove = healthCache.size - MAX_CACHE_SIZE;
+    for (let i = 0; i < toRemove; i++) {
+      healthCache.delete(entries[i][0]);
+    }
+  }
+}
+
+export function startCacheCleanup(): void {
+  if (cacheCleanupInterval) return;
+  cleanupStaleCacheEntries();
+  cacheCleanupInterval = setInterval(cleanupStaleCacheEntries, CACHE_CLEANUP_INTERVAL_MS);
+}
+
+export function stopCacheCleanup(): void {
+  if (cacheCleanupInterval) {
+    clearInterval(cacheCleanupInterval);
+    cacheCleanupInterval = null;
+  }
+}
+
 const pendingRequests = new Map<Provider, Set<string>>();
 const MAX_PENDING_PER_PROVIDER = 3;
 
@@ -206,16 +247,53 @@ export async function reportProviderResult(provider: Provider, success: boolean,
       totalRequests: String(h.totalRequests),
       errorCount: String(h.errorCount),
       cooldownUntil: h.cooldownUntil ? String(h.cooldownUntil) : "",
+      lastDbSyncAt: String(Date.now()),
     });
-  }
 
-  await db.update(providerHealth).set({
-    isUp: h.isUp,
-    latencyMs: h.latencyMs,
-    errorRate: h.errorRate.toFixed(4),
-    cooldownUntil: h.cooldownUntil ? new Date(h.cooldownUntil) : null,
-    lastCheckAt: new Date(),
-  }).where(eq(providerHealth.provider, provider));
+    await redis.setEx(`provider:health:pending_sync:${provider}`, 60, String(Date.now()));
+  }
+}
+
+const DB_SYNC_INTERVAL_MS = 30_000;
+let dbSyncInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startBackgroundDbSync(intervalMs: number = DB_SYNC_INTERVAL_MS): void {
+  if (dbSyncInterval) return;
+  dbSyncInterval = setInterval(syncProviderHealthToDb, intervalMs);
+}
+
+export function stopBackgroundDbSync(): void {
+  if (dbSyncInterval) {
+    clearInterval(dbSyncInterval);
+    dbSyncInterval = null;
+  }
+}
+
+async function syncProviderHealthToDb(): Promise<void> {
+  for (const provider of ALL_PROVIDERS) {
+    const redis = await getRedisClient();
+    if (!redis || !isRedisReady()) break;
+
+    const pendingSync = await redis.get(`provider:health:pending_sync:${provider}`);
+    if (!pendingSync) continue;
+
+    const data = await redis.hGetAll(`provider:health:${provider}`);
+    if (Object.keys(data).length === 0) continue;
+
+    try {
+      await db.update(providerHealth).set({
+        isUp: data.isUp === "true",
+        latencyMs: parseInt(data.latencyMs, 10) || 0,
+        errorRate: String(parseFloat(data.errorRate).toFixed(4)) || "0",
+        cooldownUntil: data.cooldownUntil ? new Date(parseInt(data.cooldownUntil, 10)) : null,
+        lastCheckAt: new Date(parseInt(data.lastDbSyncAt, 10) || Date.now()),
+      }).where(eq(providerHealth.provider, provider));
+
+      await redis.del(`provider:health:pending_sync:${provider}`);
+    } catch {
+      // Sync failure is non-critical
+    }
+  }
 }
 
 export async function isProviderAvailable(provider: Provider): Promise<boolean> {

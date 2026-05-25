@@ -4,6 +4,7 @@ import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { getActiveVeniceKey } from "./cheaptokens.js";
 import { BaseInferenceProvider, createErrorMapper, type ProviderConfig } from "./base.js";
 import { createProvider } from "./provider-factory.js";
+import { reportProviderResult } from "./provider-health.js";
 
 const VENICE_TIMEOUT_MS = 30_000;
 const VENICE_STREAM_TIMEOUT_MS = 120_000;
@@ -94,6 +95,7 @@ class VeniceProvider extends BaseInferenceProvider {
     const tracer = trace.getTracer(this.tracerName);
 
     return tracer.startActiveSpan(`${this.spanName}.embeddings`, { kind: SpanKind.CLIENT }, async (span) => {
+      const start = Date.now();
       try {
         span.setAttribute("llm.provider", this.config.name);
         span.setAttribute("llm.model", body.model);
@@ -114,12 +116,18 @@ class VeniceProvider extends BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           span.setAttribute("error", true);
+          if (resp.status >= 500) {
+            await reportProviderResult("venice", false, Date.now() - start);
+          }
           mapVeniceError(resp.status, text);
+        } else {
+          await reportProviderResult("venice", true, Date.now() - start);
         }
 
         span.setStatus({ code: SpanStatusCode.OK });
         return resp;
       } catch (err) {
+        await reportProviderResult("venice", false, Date.now() - start);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: err instanceof Error ? err.message : "Unknown error",
@@ -145,6 +153,7 @@ class VeniceProvider extends BaseInferenceProvider {
     const tracer = trace.getTracer(this.tracerName);
 
     return tracer.startActiveSpan(`${this.spanName}.image`, { kind: SpanKind.CLIENT }, async (span) => {
+      const start = Date.now();
       try {
         span.setAttribute("llm.provider", this.config.name);
         span.setAttribute("llm.model", body.model);
@@ -165,12 +174,18 @@ class VeniceProvider extends BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           span.setAttribute("error", true);
+          if (resp.status >= 500) {
+            await reportProviderResult("venice", false, Date.now() - start);
+          }
           mapVeniceError(resp.status, text);
+        } else {
+          await reportProviderResult("venice", true, Date.now() - start);
         }
 
         span.setStatus({ code: SpanStatusCode.OK });
         return resp;
       } catch (err) {
+        await reportProviderResult("venice", false, Date.now() - start);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: err instanceof Error ? err.message : "Unknown error",
@@ -196,6 +211,7 @@ class VeniceProvider extends BaseInferenceProvider {
     const tracer = trace.getTracer(this.tracerName);
 
     return tracer.startActiveSpan(`${this.spanName}.tts`, { kind: SpanKind.CLIENT }, async (span) => {
+      const start = Date.now();
       try {
         span.setAttribute("llm.provider", this.config.name);
         span.setAttribute("llm.model", body.model);
@@ -216,12 +232,18 @@ class VeniceProvider extends BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           span.setAttribute("error", true);
+          if (resp.status >= 500) {
+            await reportProviderResult("venice", false, Date.now() - start);
+          }
           mapVeniceError(resp.status, text);
+        } else {
+          await reportProviderResult("venice", true, Date.now() - start);
         }
 
         span.setStatus({ code: SpanStatusCode.OK });
         return resp;
       } catch (err) {
+        await reportProviderResult("venice", false, Date.now() - start);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: err instanceof Error ? err.message : "Unknown error",
