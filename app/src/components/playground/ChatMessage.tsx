@@ -91,12 +91,13 @@ function CodeBlock({ children, className }: CodeBlockProps) {
 
   return (
     <div className="relative group my-4">
-      <pre className="bg-black text-[var(--color-text)] p-4 overflow-x-auto text-xs leading-relaxed border border-[var(--color-border)] font-mono">
+      <pre className="bg-[var(--color-void)] text-[var(--color-text)] p-4 overflow-x-auto text-xs leading-relaxed border border-[var(--color-border)] font-mono">
         <code className={className}>{code}</code>
       </pre>
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 p-1.5 bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        aria-label={copied ? 'Copied' : 'Copy code'}
+        className="absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
       >
         {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
@@ -138,7 +139,7 @@ function SearchSources({ results, expanded, onToggle, prefersReducedMotion }: Se
         onClick={onToggle}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'Collapse' : 'Expand'} search sources, ${results.length} result${results.length !== 1 ? 's' : ''}`}
-        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
       >
         <span className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
           <Search className="w-3.5 h-3.5" />
@@ -288,7 +289,7 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
             <button
               onClick={handleCopy}
               aria-label={copied ? 'Copied to clipboard' : 'Copy message to clipboard'}
-              className="flex items-center gap-1 min-h-11 px-4 py-3 hover:text-[var(--color-success)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+              className="flex items-center gap-1 min-h-11 px-4 py-3 hover:text-[var(--color-success)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
             >
               {copied ? <Check className="w-3 h-3 text-[var(--color-success)]" /> : <Copy className="w-3 h-3" />}
               {copied ? 'COPIED' : 'COPY'}

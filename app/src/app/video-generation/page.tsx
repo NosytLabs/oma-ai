@@ -72,6 +72,11 @@ export default function VideoGenerationPage() {
     }
   }, [])
 
+  const getApiKeyFromCookie = useCallback(() => {
+    const match = document.cookie.match(/oma_api_key=([^;]+)/)
+    return match ? match[1] : null
+  }, [])
+
   const startPolling = useCallback((qId: string) => {
     setPolling(true)
     let attempts = 0
@@ -88,9 +93,7 @@ export default function VideoGenerationPage() {
       }
 
       try {
-        const apiKey = // Uses raw API key (oma_api_key_raw) rather than session token (oma_session)
-// because this page directly authenticates with the server-side API endpoint
-localStorage.getItem('oma_api_key_raw')
+        const apiKey = getApiKeyFromCookie()
         const resp = await fetch(`${RETRIEVE_URL}?queue_id=${qId}`, {
           headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
         })
@@ -109,14 +112,12 @@ localStorage.getItem('oma_api_key_raw')
         // retry
       }
     }, 3000)
-  }, [toast])
+  }, [toast, getApiKeyFromCookie])
 
   const generate = useCallback(async () => {
     if (!prompt.trim() || loading) return
 
-    const apiKey = // Uses raw API key (oma_api_key_raw) rather than session token (oma_session)
-// because this page directly authenticates with the server-side API endpoint
-localStorage.getItem('oma_api_key_raw')
+    const apiKey = getApiKeyFromCookie()
     if (!apiKey) {
       toast.error('Enter your API key in Settings first')
       return
@@ -160,7 +161,7 @@ localStorage.getItem('oma_api_key_raw')
       toast.error(msg)
       setLoading(false)
     }
-  }, [prompt, model, aspectRatio, duration, resolution, imageUrl, loading, toast, startPolling])
+  }, [prompt, model, aspectRatio, duration, resolution, imageUrl, loading, toast, startPolling, getApiKeyFromCookie])
 
   const downloadVideo = useCallback(async () => {
     if (!videoUrl) return
@@ -188,59 +189,67 @@ localStorage.getItem('oma_api_key_raw')
   const selectedModel = VIDEO_MODELS.find(m => m.id === model)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="min-h-screen bg-[var(--color-void)]">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="mb-2 text-sm font-medium text-indigo-600">OMA AI Gateway</div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <div className="mb-2 text-sm font-medium text-[var(--color-accent)]">OMA AI Gateway</div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl font-syne">
             Video Generation
           </h1>
-          <p className="mt-3 text-lg text-slate-600">
+          <p className="mt-3 text-lg text-[var(--color-text)]">
             Generate videos from text prompts or images. Powered by Seedance 2.0, Kling V3 Pro, and Grok Imagine.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex rounded-xl bg-slate-100 p-1">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+          <div className="mb-6 flex rounded-xl bg-[var(--color-surface)] p-1" role="tablist" aria-label="Video generation mode">
             <button
               onClick={() => setMode('text-to-video')}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all ${
-                mode === 'text-to-video'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+              role="tab"
+              aria-selected={mode === 'text-to-video'}
+              aria-controls="prompt-panel"
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-inset ${
+mode === 'text-to-video'
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm border border-[var(--color-accent)]'
+                    : 'text-[var(--color-text)] hover:text-[var(--color-accent)] hover:bg-[var(--color-border)]/50'
               }`}
             >
-              <Sparkles className="w-4 h-4" /> Text to Video
+              <Sparkles className="w-4 h-4" aria-hidden="true" /> Text to Video
             </button>
             <button
               onClick={() => setMode('image-to-video')}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all ${
-                mode === 'image-to-video'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+              role="tab"
+              aria-selected={mode === 'image-to-video'}
+              aria-controls="prompt-panel"
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-inset ${
+mode === 'image-to-video'
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm border border-[var(--color-accent)]'
+                    : 'text-[var(--color-text)] hover:text-[var(--color-accent)] hover:bg-[var(--color-border)]/50'
               }`}
             >
-              <ImageIcon className="w-4 h-4" /> Image to Video
+              <ImageIcon className="w-4 h-4" aria-hidden="true" /> Image to Video
             </button>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-4" id="prompt-panel" role="tabpanel">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Prompt</label>
+                <label htmlFor="video-prompt" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Prompt</label>
                 <textarea
+                  id="video-prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Describe the video you want to generate..."
                   rows={4}
-                  className="w-full resize-none"
+                  className="w-full resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2"
                   disabled={loading || polling}
+                  aria-required="true"
                 />
               </div>
 
               {mode === 'image-to-video' && (
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Source Image</label>
+                  <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Source Image</label>
                   <FileUpload
                     onFileSelect={(_file, dataUrl) => {
                       setImageUrl(dataUrl)
@@ -253,7 +262,7 @@ localStorage.getItem('oma_api_key_raw')
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Model</label>
+                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
                 <select value={model} onChange={(e) => setModel(e.target.value)} disabled={loading || polling}>
                   {availableModels.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -264,7 +273,7 @@ localStorage.getItem('oma_api_key_raw')
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Aspect Ratio</label>
+                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Aspect Ratio</label>
                 <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} disabled={loading || polling}>
                   {ASPECT_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -273,7 +282,7 @@ localStorage.getItem('oma_api_key_raw')
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Duration</label>
+                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Duration</label>
                 <select value={duration} onChange={(e) => setDuration(e.target.value)} disabled={loading || polling}>
                   {DURATION_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -282,7 +291,7 @@ localStorage.getItem('oma_api_key_raw')
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Resolution</label>
+                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Resolution</label>
                 <select value={resolution} onChange={(e) => setResolution(e.target.value)} disabled={loading || polling}>
                   {RESOLUTION_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -292,61 +301,62 @@ localStorage.getItem('oma_api_key_raw')
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               onClick={generate}
               disabled={!prompt.trim() || loading || polling}
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto justify-center"
+              aria-label={loading ? 'Submitting video generation job' : polling ? 'Processing video generation' : 'Generate video from prompt'}
             >
               {loading ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>
+                <><Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> Submitting...</>
               ) : polling ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                <><Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> Processing...</>
               ) : (
-                <><Sparkles className="w-5 h-5" /> Generate Video</>
+                <><Sparkles className="w-5 h-5" aria-hidden="true" /> Generate Video</>
               )}
             </button>
             {(videoUrl || queueId) && (
-              <button onClick={reset} className="btn-secondary">
-                <Plus className="w-4 h-4" /> New
+              <button onClick={reset} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Start new video generation">
+                <Plus className="w-4 h-4" aria-hidden="true" /> New
               </button>
             )}
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-600">
+            <div className="mt-4 rounded-xl border px-4 py-3 text-sm" role="alert" style={{ borderColor: 'var(--color-error)', backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, transparent)', color: 'var(--color-error)' }}>
               {error}
             </div>
           )}
 
           {selectedModel && (
-            <div className="mt-4 text-xs text-slate-400">
+            <div className="mt-4 text-xs text-[var(--color-text)]">
               Cost: ${selectedModel.price.toFixed(2)} per generation
             </div>
           )}
         </div>
 
         {loading && !polling && (
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-12 shadow-sm">
+          <div className="mt-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 shadow-sm">
             <div className="flex flex-col items-center justify-center text-center">
-              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-              <p className="text-lg font-semibold text-slate-900">Submitting video generation job...</p>
-              <p className="text-sm text-slate-500">This may take a moment.</p>
+              <Loader2 className="w-10 h-10 text-[var(--color-accent)] animate-spin mb-4" />
+              <p className="text-lg font-semibold text-[var(--color-text)]">Submitting video generation job...</p>
+              <p className="text-sm text-[var(--color-text)]">This may take a moment.</p>
             </div>
           </div>
         )}
 
         {polling && (
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-12 shadow-sm">
+          <div className="mt-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 shadow-sm">
             <div className="flex flex-col items-center justify-center text-center">
               <div className="relative mb-6">
-                <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
+                <Loader2 className="w-16 h-16 text-[var(--color-accent)] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Film className="w-6 h-6 text-indigo-600" />
+                  <Film className="w-6 h-6 text-[var(--color-accent)]" />
                 </div>
               </div>
-              <p className="text-lg font-semibold text-slate-900">Generating your video...</p>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="text-lg font-semibold text-[var(--color-text)]">Generating your video...</p>
+              <p className="mt-2 text-sm text-[var(--color-text)]">
                 This usually takes 30-60 seconds. Stay on this page and the video will appear automatically.
               </p>
             </div>
@@ -355,15 +365,16 @@ localStorage.getItem('oma_api_key_raw')
 
         {videoUrl && !loading && !polling && (
           <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Your Video</h2>
-              <button onClick={downloadVideo} className="btn-secondary">
-                <Download className="w-4 h-4" /> Download
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">Your Video</h2>
+              <button onClick={downloadVideo} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Download generated video">
+                <Download className="w-4 h-4" aria-hidden="true" /> Download
               </button>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-black shadow-sm">
-              <video controls autoPlay className="w-full max-h-[600px]">
+            <div className="rounded-2xl overflow-hidden border border-[var(--color-border)] bg-[var(--color-void)] shadow-sm">
+              <video controls autoPlay className="w-full max-h-[600px]" aria-label="Generated video preview">
                 <source src={videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
               </video>
             </div>
           </div>
@@ -371,11 +382,11 @@ localStorage.getItem('oma_api_key_raw')
 
         {!loading && !polling && !videoUrl && !error && (
           <div className="mt-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center mb-6 shadow-xl">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center mb-6 shadow-xl">
               <Film className="w-10 h-10 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Describe the video you want</h2>
-            <p className="text-slate-500 max-w-md">
+            <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Describe the video you want</h2>
+            <p className="text-[var(--color-text)] max-w-md">
               Write a detailed prompt describing the scene, motion, and style. You can also upload an image to animate it.
             </p>
           </div>

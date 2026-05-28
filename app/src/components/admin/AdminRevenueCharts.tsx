@@ -10,36 +10,36 @@ interface MonthlyRevenue {
 
 export function AdminRevenueCharts({ monthlyRevenue }: { monthlyRevenue: MonthlyRevenue[] | undefined }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-medium text-white mb-4">Revenue Chart</h3>
-      <div className="h-[280px]">
+    <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)] mb-4">Revenue Chart</h3>
+      <div className="h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthlyRevenue?.slice(-12)}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
             <XAxis
               dataKey="month"
-              stroke="#71717a"
-              fontSize={11}
+              stroke="var(--color-text-secondary)"
+              fontSize={10}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              stroke="#71717a"
-              fontSize={11}
+              stroke="var(--color-text-secondary)"
+              fontSize={10}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `$${value}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#18181b',
-                border: '1px solid #3f3f46',
-                borderRadius: '8px',
-                fontSize: '12px',
+                backgroundColor: 'var(--color-panel)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                fontSize: '11px',
               }}
               formatter={(value) => [`${Number(value).toFixed(2)}`, 'Revenue']}
             />
-            <Bar dataKey="totalRevenue" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="totalRevenue" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

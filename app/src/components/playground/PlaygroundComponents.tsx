@@ -1,11 +1,9 @@
-/* Hallmark · component: PlaygroundComponents · genre: terminal · theme: Terminal */
-
 'use client'
 
 import type { Message } from './index'
 import { MODELS } from '@/lib/models-data'
 
-export const btnBase = "relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-none outline-none " +
+export const btnBase = "relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-full " +
   "bg-[var(--color-void)] border-[var(--color-border)] text-[var(--color-text-muted)] " +
   "hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] hover:brightness-125 " +
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-success)]/50 focus-visible:-outline-offset-1 focus-visible:bg-[var(--color-surface)] " +
@@ -51,7 +49,42 @@ export function StatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBarProps)
       {totalTokens > 0 && (
         <>
           <span>TOK:{totalTokens.toString().padStart(4, '0')}</span>
-          <span className="text-emerald-500">CST:${totalCost.toFixed(4)}</span>
+          <span className="text-[var(--color-success)]">CST:${totalCost.toFixed(4)}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
+export function MobileStatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBarProps) {
+  const { inputPer1M, outputPer1M } = getModelPricing(model)
+  const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0)
+  const totalCost = messages.reduce((acc, m) => {
+    if (m.inputTokens && m.outputTokens) {
+      const inputCost = (m.inputTokens / 1_000_000) * inputPer1M
+      const outputCost = (m.outputTokens / 1_000_000) * outputPer1M
+      return acc + inputCost + outputCost
+    }
+    return acc
+  }, 0)
+
+  if (messages.length === 0) return null
+
+  const msgCount = messages.filter(m => m.role === 'user').length
+
+  return (
+    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono">
+      <span className="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+        {msgCount}{msgCount === 1 ? ' msg' : ' msgs'}
+      </span>
+      {totalTokens > 0 && (
+        <>
+          <span className="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+            {totalTokens >= 1000 ? `${(totalTokens / 1000).toFixed(1)}k` : totalTokens} tok
+          </span>
+          <span className="bg-[var(--color-success-dim)] text-[var(--color-success)] px-1.5 py-0.5 rounded border border-[var(--color-success)]/30">
+            ${totalCost.toFixed(4)}
+          </span>
         </>
       )}
     </div>

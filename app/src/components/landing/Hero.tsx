@@ -4,6 +4,21 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Code2, Zap, Lock, Globe, Sparkles, Terminal, Copy, Check } from 'lucide-react'
 
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(null)
+  
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+    
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
+  
+  return prefersReducedMotion
+}
+
 const devCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -28,28 +43,28 @@ function CodeBlock() {
 
   return (
     <div className="relative group">
-      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-      <div className="relative bg-zinc-950/95 border border-zinc-800/60 rounded-xl overflow-hidden shadow-2xl shadow-black/50">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50 bg-zinc-900/50">
+      <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-accent)]/10 via-[var(--color-success)]/5 to-[var(--color-accent)]/10 rounded-lg blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+      <div className="relative bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg overflow-hidden shadow-2xl shadow-black/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-error)]/60" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-secondary)]/60" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-success)]/60" />
           </div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] font-mono">
             <Terminal className="w-3.5 h-3.5" />
             <span>quick-start.ts</span>
           </div>
           <button
             onClick={handleCopy}
             aria-label={copied ? 'Copied' : 'Copy code'}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/50 rounded transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface)] rounded transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-        <pre className="p-5 text-sm font-mono text-zinc-300 overflow-x-auto leading-relaxed">
+        <pre className="p-5 text-sm font-mono text-[var(--color-text-secondary)] overflow-x-auto leading-relaxed">
           <code>{devCode}</code>
         </pre>
       </div>
@@ -67,9 +82,9 @@ const features = [
 function FeatureBadge({ feature }: { feature: typeof features[0] }) {
   const Icon = feature.icon
   return (
-    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-zinc-900/60 border border-zinc-800/50 backdrop-blur-sm hover:border-cyan-500/30 hover:bg-zinc-900/80 transition-all duration-300">
-      <Icon className="w-4 h-4 text-cyan-400" />
-      <span className="text-sm font-medium text-zinc-300">{feature.text}</span>
+    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface-elevated)] transition-all duration-300" role="presentation">
+      <Icon className="w-4 h-4 text-[var(--color-accent)]" aria-hidden="true" />
+      <span className="text-sm font-medium text-[var(--color-text-secondary)]">{feature.text}</span>
     </div>
   )
 }
@@ -80,17 +95,24 @@ function AnimatedStatCounter({
   label,
   isVisible,
   delay = 0,
+  reducedMotion = false,
 }: {
   value: number
   suffix: string
   label: string
   isVisible: boolean
   delay?: number
+  reducedMotion?: boolean
 }) {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
     if (!isVisible) return
+    if (reducedMotion) {
+      setCount(value)
+      return
+    }
+    
     let startTime: number
     let animationFrame: number
     const duration = 2000
@@ -110,25 +132,25 @@ function AnimatedStatCounter({
     }, delay)
 
     return () => cancelAnimationFrame(animationFrame)
-  }, [isVisible, value, delay])
+  }, [isVisible, value, delay, reducedMotion])
 
   return (
     <div
-      className={`flex flex-col items-center p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-sm transition-all duration-500 ${
+      className={`flex flex-col items-center p-4 rounded border border-[var(--color-border)] bg-[var(--color-surface)] transition-all ${reducedMotion ? 'duration-0' : 'duration-500'} ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={{ transitionDelay: reducedMotion ? '0ms' : `${delay}ms` }}
     >
-      <div className="text-2xl md:text-3xl font-bold text-white">
+      <div className="text-2xl md:text-3xl font-mono font-bold text-[var(--color-text)]">
         <span>{count.toLocaleString()}</span>
-        <span className="text-cyan-400">{suffix}</span>
+        <span className="text-[var(--color-accent)]">{suffix}</span>
       </div>
-      <div className="text-xs text-zinc-500 mt-1">{label}</div>
+      <div className="text-xs text-[var(--color-text-muted)] mt-1 font-mono">{label}</div>
     </div>
   )
 }
 
-function LivePricingTicker() {
+function LivePricingTicker({ reducedMotion = false }: { reducedMotion?: boolean }) {
   const prices = [
     { model: 'GPT-4o', price: '$2.50' },
     { model: 'Claude 4', price: '$3.00' },
@@ -138,19 +160,19 @@ function LivePricingTicker() {
 
   return (
     <div className="flex items-center gap-3 overflow-hidden py-2">
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Live</span>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-[var(--color-success)]/10 border border-[var(--color-success)]/20 shrink-0">
+        <div className={`w-2 h-2 rounded-full bg-[var(--color-success)] ${reducedMotion ? '' : 'animate-pulse'}`} />
+        <span className="text-[10px] font-bold text-[var(--color-success)] uppercase tracking-widest font-mono">Live</span>
       </div>
       <div className="flex items-center gap-4 overflow-hidden">
         {prices.map((p) => (
-          <div key={p.model} className="flex items-center gap-2 text-xs whitespace-nowrap">
-            <span className="font-medium text-zinc-400">{p.model}</span>
-            <span className="text-cyan-400 font-mono font-semibold">{p.price}</span>
+          <div key={p.model} className="flex items-center gap-2 text-xs whitespace-nowrap font-mono">
+            <span className="font-medium text-[var(--color-text-secondary)]">{p.model}</span>
+            <span className="text-[var(--color-accent)] font-semibold">{p.price}</span>
           </div>
         ))}
-        <div className="flex items-center gap-2 text-xs whitespace-nowrap">
-          <span className="font-medium text-zinc-400">/1M tokens</span>
+        <div className="flex items-center gap-2 text-xs whitespace-nowrap font-mono">
+          <span className="font-medium text-[var(--color-text-muted)]">/1M tokens</span>
         </div>
       </div>
     </div>
@@ -160,10 +182,11 @@ function LivePricingTicker() {
 export function Hero() {
   const [mounted, setMounted] = useState(false)
   const [statsVisible, setStatsVisible] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-  const [videoLoaded, setVideoLoaded] = useState(false)
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const heroRef = useRef<HTMLDivElement>(null)
   const statsRef = useRef<HTMLDivElement>(null)
+  const prefersReducedMotionState = usePrefersReducedMotion()
+  const prefersReducedMotion = prefersReducedMotionState ?? false
 
   useEffect(() => {
     setMounted(true)
@@ -195,74 +218,61 @@ export function Hero() {
 
   return (
     <section ref={heroRef} className="relative min-h-screen flex items-center pt-24 pb-16 px-4 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950" />
+      <div className="absolute inset-0 bg-[var(--color-void)]" />
 
       <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
+        className="absolute inset-0 opacity-20 pointer-events-none"
         style={{
           background:
             'radial-gradient(circle at 20% 20%, rgba(0, 255, 200, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(255, 184, 0, 0.05) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.03) 0%, transparent 60%)',
         }}
       />
 
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="none"
-        onLoadedData={() => setVideoLoaded(true)}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-40' : 'opacity-0'} z-0`}
-      >
-        <source src="https://res.cloudinary.com/dfonotyfb/video/upload/v1775585556/dds3_1_rqhg7x.mp4" type="video/mp4" />
-        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260505_105838_084968f2-4415-42a4-971a-3bec54539549.mp4" type="video/mp4" />
-      </video>
-
       <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
+        className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
           background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(0, 255, 200, 0.15) 0%, transparent 50%)`,
         }}
       />
 
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[var(--color-accent)]/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-[var(--color-secondary)]/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(0, 255, 200, 0.06) 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, rgba(0, 255, 200, 0.04) 1px, transparent 0)',
           backgroundSize: '56px 56px',
         }}
       />
 
       <div className="mx-auto max-w-6xl relative z-10">
-        <div className={`transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+        <div className={`transition-all ${prefersReducedMotion ? 'duration-0' : 'duration-1000'} ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           <div className="flex items-center gap-3 mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-medium text-cyan-300">50+ models, instant global access</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10">
+              <Sparkles className="w-4 h-4 text-[var(--color-accent)]" />
+              <span className="text-sm font-medium text-[var(--color-accent)] font-mono">50+ models, instant global access</span>
             </div>
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-sm hover:bg-amber-500/20 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-secondary)]/20 bg-[var(--color-secondary)]/10 hover:bg-[var(--color-secondary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
             >
-              <span className="text-sm font-medium text-amber-300">Credits-based pricing</span>
+              <span className="text-sm font-medium text-[var(--color-secondary)] font-mono">Credits-based pricing</span>
             </Link>
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight mb-8 leading-[1.05]">
-            <span className="text-white">The AI Gateway</span>
+          <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-syne font-bold tracking-tight mb-8 leading-[1.05]">
+            <span className="text-[var(--color-accent)]">ONE MAN ARMY</span>
             <br />
-            <span className="gradient-text">Built for Builders</span>
+            <span className="text-[var(--color-text)]">50+ Models. Zero Lock-in.</span>
           </h1>
 
-          <p className="max-w-2xl text-xl md:text-2xl text-zinc-400 leading-relaxed mb-6">
+          <p className="max-w-2xl text-xl md:text-2xl text-[var(--color-text-secondary)] leading-relaxed mb-6">
             One API. Every model. Pay with crypto. Route seamlessly between OpenAI, Anthropic, Meta, and open-source models.
           </p>
 
-          <LivePricingTicker />
+          <LivePricingTicker reducedMotion={prefersReducedMotion} />
 
           <div className="flex flex-wrap gap-3 mb-12 mt-6">
             {features.map((feature) => (
@@ -273,7 +283,8 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4 sm:gap-5">
             <Link
               href="/docs"
-              className="btn-primary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 text-center sm:text-left min-h-[48px] flex items-center justify-center"
+              aria-label="Get API Key - Read documentation"
+              className="btn-primary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 shadow-lg shadow-[var(--color-accent)]/20 hover:shadow-[var(--color-accent)]/30 text-center sm:text-left min-h-[48px] flex items-center justify-center"
             >
               <Terminal className="w-5 h-5 mr-2" />
               Get API Key
@@ -281,7 +292,8 @@ export function Hero() {
             </Link>
             <Link
               href="/playground"
-              className="btn-secondary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 text-center sm:text-left min-h-[48px] flex items-center justify-center"
+              aria-label="Try the Playground"
+              className="btn-secondary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 text-center sm:text-left min-h-[48px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
             >
               Try Playground
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -291,48 +303,48 @@ export function Hero() {
 
         <div
           ref={statsRef}
-          className={`mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 transition-all duration-700 ${
+          className={`mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 transition-all ${prefersReducedMotion ? 'duration-0' : 'duration-700'} ${
             mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
           }`}
-          style={{ transitionDelay: '200ms' }}
+          style={{ transitionDelay: prefersReducedMotion ? '0ms' : '200ms' }}
         >
-          <AnimatedStatCounter value={2847231} suffix="" label="Total Requests" isVisible={statsVisible} delay={0} />
-          <AnimatedStatCounter value={99.9} suffix="%" label="Uptime" isVisible={statsVisible} delay={100} />
-          <AnimatedStatCounter value={50} suffix="+" label="Models" isVisible={statsVisible} delay={200} />
-          <AnimatedStatCounter value={3} suffix="" label="Providers" isVisible={statsVisible} delay={300} />
+          <AnimatedStatCounter value={2847231} suffix="" label="Total Requests" isVisible={statsVisible} delay={0} reducedMotion={prefersReducedMotion} />
+          <AnimatedStatCounter value={99.9} suffix="%" label="Uptime" isVisible={statsVisible} delay={100} reducedMotion={prefersReducedMotion} />
+          <AnimatedStatCounter value={50} suffix="+" label="Models" isVisible={statsVisible} delay={200} reducedMotion={prefersReducedMotion} />
+          <AnimatedStatCounter value={3} suffix="" label="Providers" isVisible={statsVisible} delay={300} reducedMotion={prefersReducedMotion} />
         </div>
 
         <div
-          className={`mt-20 transition-all duration-1000 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
+          className={`mt-20 transition-all ${prefersReducedMotion ? 'duration-0 delay-0' : 'duration-1000 delay-300'} ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-zinc-600">Quick start</span>
-            <div className="w-8 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+            <div className="w-8 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)]/50 to-transparent" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)] font-mono">Quick start</span>
+            <div className="w-8 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)]/50 to-transparent" />
           </div>
           <CodeBlock />
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="group p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-sm hover:border-cyan-500/30 hover:bg-zinc-900/60 transition-all duration-300">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 flex items-center justify-center mb-4 group-hover:border-cyan-500/40 transition-colors">
-                <Zap className="w-5 h-5 text-cyan-400" />
+            <div className="group p-6 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface-elevated)] transition-all duration-300">
+              <div className="w-11 h-11 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mb-4 group-hover:border-[var(--color-accent)]/40 transition-colors">
+                <Zap className="w-5 h-5 text-[var(--color-accent)]" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Fast Setup</h3>
-              <p className="text-sm text-zinc-500">OpenAI SDK compatible. Drop-in replacement in minutes.</p>
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Fast Setup</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">OpenAI SDK compatible. Drop-in replacement in minutes.</p>
             </div>
-            <div className="group p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-sm hover:border-emerald-500/30 hover:bg-zinc-900/60 transition-all duration-300">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 flex items-center justify-center mb-4 group-hover:border-emerald-500/40 transition-colors">
-                <Lock className="w-5 h-5 text-emerald-400" />
+            <div className="group p-6 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-success)]/30 hover:bg-[var(--color-surface-elevated)] transition-all duration-300">
+              <div className="w-11 h-11 rounded border border-[var(--color-success)]/20 bg-[var(--color-success)]/10 flex items-center justify-center mb-4 group-hover:border-[var(--color-success)]/40 transition-colors">
+                <Lock className="w-5 h-5 text-[var(--color-success)]" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Privacy First</h3>
-              <p className="text-sm text-zinc-500">No tracking. No data collection. Your queries stay private.</p>
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Privacy First</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">No tracking. No data collection. Your queries stay private.</p>
             </div>
-            <div className="group p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-sm hover:border-amber-500/30 hover:bg-zinc-900/60 transition-all duration-300">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center mb-4 group-hover:border-amber-500/40 transition-colors">
-                <Globe className="w-5 h-5 text-amber-400" />
+            <div className="group p-6 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-secondary)]/30 hover:bg-[var(--color-surface-elevated)] transition-all duration-300">
+              <div className="w-11 h-11 rounded border border-[var(--color-secondary)]/20 bg-[var(--color-secondary)]/10 flex items-center justify-center mb-4 group-hover:border-[var(--color-secondary)]/40 transition-colors">
+                <Globe className="w-5 h-5 text-[var(--color-secondary)]" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Global Edge</h3>
-              <p className="text-sm text-zinc-500">Low-latency inference from edge locations worldwide.</p>
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Global Edge</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">Low-latency inference from edge locations worldwide.</p>
             </div>
           </div>
         </div>
