@@ -1,1 +1,26 @@
-²ø1šYì
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>OMA - Open Model Access</title>
+  <desc>OMA logo for navigation and header usage</desc>
+
+  <defs>
+    <linearGradient id="omaGradientNav" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ffc8"/>
+      <stop offset="50%" stop-color="#00e6b0"/>
+      <stop offset="100%" stop-color="#00b894"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon mark -->
+  <g transform="translate(4, 6)">
+    <circle cx="24" cy="24" r="18" fill="none" stroke="url(#omaGradientNav)" stroke-width="2" opacity="0.5"/>
+    <circle cx="24" cy="24" r="12" fill="none" stroke="url(#omaGradientNav)" stroke-width="2.5"/>
+    <circle cx="24" cy="24" r="4" fill="#00ffc8"/>
+    <circle cx="24" cy="9" r="2.5" fill="#00ffc8"/>
+    <circle cx="24" cy="39" r="2.5" fill="#00ffc8"/>
+    <circle cx="9" cy="24" r="2.5" fill="#00ffc8"/>
+    <circle cx="39" cy="24" r="2.5" fill="#00ffc8"/>
+  </g>
+
+  <!-- OMA text -->
+  <text x="62" y="40" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="32" fill="url(#omaGradientNav)" letter-spacing="-0.5">OMA</text>
+</svg>

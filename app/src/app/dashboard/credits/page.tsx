@@ -108,14 +108,14 @@ const handleBuyCredits = async () => {
       >
         <div className="text-center max-w-md px-4">
           <motion.div 
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-amber-500/10"
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-cyan)]/30 bg-gradient-to-br from-[var(--color-cyan)]/10 to-[var(--color-warning)]/10"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
           >
-            <Wallet className="h-10 w-10 text-cyan-500" />
+            <Wallet className="h-10 w-10 text-[var(--color-cyan)]" />
           </motion.div>
           <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
-          <p className="mb-6 text-zinc-500">Connect your wallet to view your credit balance and history.</p>
+          <p className="mb-6 text-[var(--color-text-muted)]">Connect your wallet to view your credit balance and history.</p>
           <motion.button
             onClick={() => connectEvm()}
             className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
@@ -143,12 +143,12 @@ const handleBuyCredits = async () => {
       >
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-cyan-400">Dashboard</Link>
-            <span className="text-zinc-600">/</span>
+            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
+            <span className="text-[var(--color-text-muted)]">/</span>
             <span className="text-sm text-white">Credits</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Credits</h1>
-          <p className="mt-1 text-sm text-zinc-500">Balance, purchases, and usage breakdown</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Balance, purchases, and usage breakdown</p>
         </div>
         <div className="flex items-center gap-3">
           <motion.button
@@ -175,20 +175,20 @@ const handleBuyCredits = async () => {
       <AnimatePresence>
         {error && (
           <motion.div 
-            className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3"
+            className="mb-6 flex items-center gap-3 rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-4 py-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
-            <span className="text-sm text-red-400">{error}</span>
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
+            <span className="text-sm text-[var(--color-error)]">{error}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <motion.div
-          className="lg:col-span-2 rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/80 to-zinc-950 p-6 relative overflow-hidden"
+          className="lg:col-span-2 rounded-2xl border border-[var(--color-border)]/50 bg-gradient-to-br from-zinc-900/80 to-zinc-950 p-6 relative overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -196,57 +196,57 @@ const handleBuyCredits = async () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]">
               <Coins className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Current Balance</h2>
-              <p className="text-xs text-zinc-500">Available credits</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Available credits</p>
             </div>
           </div>
 
           <div className="mb-6">
             <div className="text-5xl font-bold tracking-tight text-white mb-1">
               {loading && !balance ? (
-                <span className="text-zinc-600">$0.00</span>
+                <span className="text-[var(--color-text-muted)]">$0.00</span>
               ) : (
                 <AnimatedNumber value={parseFloat(formatCents(balance?.balanceCents ?? '0'))} />
               )}
             </div>
-            <div className="text-sm text-zinc-500">
+            <div className="text-sm text-[var(--color-text-muted)]">
               {balance ? `${formatCents(balance.totalDepositedCents)} total deposited` : 'No deposits'}
             </div>
           </div>
 
           {balance && parseFloat(formatCents(balance.balanceCents)) > 0 && (
-            <div className="mt-4 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+            <div className="mt-4 p-4 rounded-xl bg-[var(--color-cyan)]/5 border border-[var(--color-cyan)]/20">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-zinc-400">Last activity</span>
-                <span className="text-cyan-400">{balance.lastActivityAt ? new Date(balance.lastActivityAt).toLocaleString() : 'N/A'}</span>
+                <span className="text-[var(--color-text-muted)]">Last activity</span>
+                <span className="text-[var(--color-cyan)]">{balance.lastActivityAt ? new Date(balance.lastActivityAt).toLocaleString() : 'N/A'}</span>
               </div>
             </div>
           )}
         </motion.div>
 
         <motion.div
-          className="rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-6"
+          className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-warning)]/10 text-[var(--color-warning)]">
               <CreditCard className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Buy Credits</h2>
-              <p className="text-xs text-zinc-500">USDC or SOL payment</p>
+              <p className="text-xs text-[var(--color-text-muted)]">USDC or SOL payment</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Amount (USD)</label>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Amount (USD)</label>
               <input
                 type="text"
                 value={buyAmount}
@@ -254,7 +254,7 @@ const handleBuyCredits = async () => {
                   if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) setBuyAmount(e.target.value)
                 }}
                 placeholder="0.00"
-                className="w-full text-2xl font-bold bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50"
+                className="w-full text-2xl font-bold bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-3 placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-cyan)]/50"
               />
             </div>
 
@@ -263,7 +263,7 @@ const handleBuyCredits = async () => {
                 <motion.button
                   key={preset}
                   onClick={() => setBuyAmount(preset.toString())}
-                  className="flex-1 rounded-lg border border-zinc-700 py-2 text-sm font-medium hover:bg-zinc-800 transition-colors"
+                  className="flex-1 rounded-lg border border-[var(--color-border)] py-2 text-sm font-medium hover:bg-[var(--color-surface-elevated)] transition-colors"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -273,32 +273,32 @@ const handleBuyCredits = async () => {
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Payment Method</label>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Payment Method</label>
               <div className="grid grid-cols-2 gap-3">
                 <motion.button
                   onClick={() => setSelectedPayment('usdc')}
                   className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
                     selectedPayment === 'usdc' 
-                      ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' 
-                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600'
+                      ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
+                      : 'border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:brightness-125'
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500" />
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--color-cyan)] to-[var(--color-blue)]" />
                   USDC
                 </motion.button>
                 <motion.button
                   onClick={() => setSelectedPayment('sol')}
                   className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
                     selectedPayment === 'sol' 
-                      ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' 
-                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600'
+                      ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
+                      : 'border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:brightness-125'
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-500" />
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--color-violet)] to-[var(--color-violet)]" />
                   SOL
                 </motion.button>
               </div>
@@ -307,7 +307,7 @@ const handleBuyCredits = async () => {
             <motion.button
               onClick={handleBuyCredits}
               disabled={!buyAmount || parseFloat(buyAmount) <= 0 || processing}
-              className="btn-primary w-full py-4 disabled:opacity-50"
+              className="btn-primary w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
@@ -327,7 +327,7 @@ const handleBuyCredits = async () => {
       <AnimatePresence>
         {showSettings && (
           <motion.div
-            className="mb-8 rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-6"
+            className="mb-8 rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -337,7 +337,7 @@ const handleBuyCredits = async () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-white">Auto-reload credits</p>
-                  <p className="text-sm text-zinc-500">Automatically purchase credits when balance falls below threshold</p>
+                  <p className="text-sm text-[var(--color-text-muted)]">Automatically purchase credits when balance falls below threshold</p>
                 </div>
                 <motion.button
                   onClick={async () => {
@@ -350,7 +350,7 @@ const handleBuyCredits = async () => {
                     }
                   }}
                   className={`relative h-6 w-11 rounded-full transition-colors ${
-                    autoReload ? 'bg-cyan-500' : 'bg-zinc-700'
+                    autoReload ? 'bg-[var(--color-cyan)]' : 'bg-[var(--color-surface-elevated)]'
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -360,21 +360,21 @@ const handleBuyCredits = async () => {
                 </motion.button>
               </div>
               {autoReload && (
-                <div className="space-y-3 pt-3 border-t border-zinc-800/50">
+                <div className="space-y-3 pt-3 border-t border-[var(--color-border)]/50">
                   <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Threshold ($)</label>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Threshold ($)</label>
                     <input
                       type="text"
                       placeholder="10.00"
-                      className="w-full text-sm font-medium bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Reload amount ($)</label>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Reload amount ($)</label>
                     <input
                       type="text"
                       placeholder="50.00"
-                      className="w-full text-sm font-medium bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                     />
                   </div>
                 </div>
@@ -386,20 +386,20 @@ const handleBuyCredits = async () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <motion.div
-          className="rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-6"
+          className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">30-Day Costs</h3>
-            <div className="text-sm text-zinc-500">${costData.reduce((sum, d) => sum + d.cost, 0).toFixed(2)} total</div>
+            <div className="text-sm text-[var(--color-text-muted)]">${costData.reduce((sum, d) => sum + d.cost, 0).toFixed(2)} total</div>
           </div>
           <BarChartComponent data={costData} />
         </motion.div>
 
         <motion.div
-          className="rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-6"
+          className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -412,7 +412,7 @@ const handleBuyCredits = async () => {
             {modelData.map((model) => (
               <div key={model.name} className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: model.color }} />
-                <span className="text-xs text-zinc-400">{model.name}</span>
+                <span className="text-xs text-[var(--color-text-muted)]">{model.name}</span>
               </div>
             ))}
           </div>
@@ -420,36 +420,36 @@ const handleBuyCredits = async () => {
       </div>
 
       <motion.div
-        className="rounded-2xl border border-zinc-800/50 bg-zinc-900/50 overflow-hidden"
+        className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-800/50">
-          <History className="h-5 w-5 text-cyan-500" />
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--color-border)]/50">
+          <History className="h-5 w-5 text-[var(--color-cyan)]" />
           <h3 className="text-lg font-semibold text-white">Credit History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-zinc-800/50 bg-zinc-800/30">
-                <th className="px-6 py-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Source</th>
-                <th className="px-6 py-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Status</th>
+              <tr className="border-b border-[var(--color-border)]/50 bg-[var(--color-surface-elevated)]">
+                <th className="px-6 py-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Source</th>
+                <th className="px-6 py-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-4 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-500" />
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-cyan)]" />
                   </td>
                 </tr>
               ) : history.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-zinc-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-[var(--color-text-muted)]">
                     No credit history yet
                   </td>
                 </tr>
@@ -457,18 +457,18 @@ const handleBuyCredits = async () => {
                 history.map((item, i) => (
                   <motion.tr
                     key={item.id}
-                    className="border-b border-zinc-800/30 transition-colors hover:bg-zinc-800/20"
+                    className="border-b border-[var(--color-border)]/30 transition-colors hover:bg-[var(--color-surface-elevated)]"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
                   >
-                    <td className="px-6 py-4 text-sm text-zinc-400">
+                    <td className="px-6 py-4 text-sm text-[var(--color-text-muted)]">
                       {new Date(item.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 text-sm ${
-                        item.type === 'deposit' ? 'text-emerald-400' : 
-                        item.type === 'refund' ? 'text-cyan-400' : 'text-amber-400'
+                        item.type === 'deposit' ? 'text-[var(--color-green)]' : 
+                        item.type === 'refund' ? 'text-[var(--color-cyan)]' : 'text-[var(--color-warning)]'
                       }`}>
                         {item.type === 'deposit' ? (
                           <ArrowUpRight className="h-4 w-4" />
@@ -480,17 +480,17 @@ const handleBuyCredits = async () => {
                         <span className="capitalize">{item.type}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-zinc-300">{item.source || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)]">{item.source || '-'}</td>
                     <td className="px-6 py-4 text-sm font-medium">
-                      <span className={item.amount > 0 ? 'text-emerald-400' : 'text-amber-400'}>
+                      <span className={item.amount > 0 ? 'text-[var(--color-green)]' : 'text-[var(--color-warning)]'}>
                         {item.amount > 0 ? '+' : ''}{item.amount > 0 ? '$' : '-$'}{Math.abs(item.amount / 100).toFixed(2)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        item.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
-                        item.status === 'pending' ? 'bg-amber-500/10 text-amber-400' :
-                        'bg-red-500/10 text-red-400'
+                        item.status === 'completed' ? 'bg-[var(--color-green)]/10 text-[var(--color-green)]' :
+                        item.status === 'pending' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
+                        'bg-[var(--color-error)]/10 text-[var(--color-error)]'
                       }`}>
                         {item.status}
                       </span>

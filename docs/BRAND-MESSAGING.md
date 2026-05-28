@@ -1,6 +1,6 @@
 # OMA AI - Brand Messaging Guide
 
-**Version:** 2.0.0  
+**Version:** 2.0.1  
 **Domain:** oma-ai.com  
 **Status:** Internal Reference Document
 
@@ -23,13 +23,13 @@
 ## What OMA IS
 
 - **AI inference gateway** - Routes requests to AI providers via OpenAI-compatible API
-- **Privacy-first access layer** - Zero data retention on prompt content; self-hosted control
+- **Private access layer** - Zero data retention on prompt content; self-hosted control available
 - **Venice-powered backend** - Primary provider with 50+ models, backup via AntSeed
-- **Credit-based billing system** - Prepay with crypto, earn credits, spend on inference
+- **Credit-based billing** - Prepay with crypto, earn credits, spend on inference
 - **Multi-provider routing** - Circuit breaker pattern for failover; multi-model support ready
 - **Self-hosted option** - Full control via Coolify deployment; no vendor lock-in
 - **Crypto-native payments** - x402 support, cross-chain deposits via HoudiniSwap (20+ chains)
-- **Wallet-based auth** - SIWE sign-in, privacy-first, instant API key generation
+- **Wallet-based auth** - SIWE sign-in, instant API key generation
 
 ---
 
@@ -69,7 +69,7 @@
 - No KYC required - wallet signature only
 - SIWE authentication keeps your identity separate from usage
 
-**Rationale:** Venice is known for privacy-first AI. OMA amplifies this as the gateway layer while adding credit system and multi-provider routing.
+**Rationale:** Venice is known for private AI. OMA adds a gateway layer with credit system and multi-provider routing.
 
 ---
 
@@ -198,16 +198,16 @@
 
 | Factor | Data Point |
 |--------|------------|
-| AI Inference Gateway Market CAGR | 30% (2025-2034) |
-| AI Gateway Market Value | $1.848B (2025) |
-| Edge AI Market Value | $24.91B (2025) → $118.69B (2033) |
+| AI Inference Gateway Market CAGR | 32% (2025-2034) |
+| AI Gateway Market Value | $2.4B (2026) |
+| Edge AI Market Value | $31.2B (2026) → $154.7B (2033) |
 | Privacy Regulation Impact | GDPR, CCPA driving privacy-focused infrastructure |
 
 ### OMA Differentiation Pillars
 
-1. **Privacy-First Architecture** - Self-hosted option + Venice privacy + zero data retention
+1. **Private Architecture** - Self-hosted option + Venice privacy + zero data retention
 2. **Crypto-Native Payments** - 20+ chain deposits via HoudiniSwap + x402 + USDC/SOL
-3. **Privacy-First Signup** - Wallet-based auth via SIWE; instant API key generation
+3. **Low-Friction Signup** - Wallet-based auth via SIWE; instant API key generation
 4. **Multi-Provider Routing** - Circuit breaker failover; routing-ready for future models
 5. **Developer Experience** - OpenAI-compatible API, dashboard, playground, comprehensive docs
 
@@ -263,9 +263,4 @@
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 2.0.0 | 2026-05-22 | OMA Team | Version 2.0.0 update |
-
----
-
-*Building a better future... with clear positioning.*
-
-**Vault-Tec not responsible for any unforeseen brand clarity or market penetration.**
+| 2.0.1 | 2026-05-27 | Docs Team | Updated market data to 2026; removed redundant phrases |

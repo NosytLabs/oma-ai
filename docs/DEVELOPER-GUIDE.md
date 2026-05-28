@@ -4,11 +4,12 @@
 
 **OMA = AI Gateway for Developers**
 
-You pay for AI API calls with crypto (USDC). Instead of setting up accounts with OpenAI/Anthropic/etc, you:
-1. Deposit USDC (or other crypto) into OMA
-2. Get credits
-3. Use OMA's OpenAI-compatible API to call 50+ AI models
-4. OMA routes to the best provider (Venice AI, AntSeed)
+Pay for AI API calls with crypto. Skip account setup with OpenAI, Anthropic, and others. Here's how:
+
+1. Deposit USDC into OMA
+2. Receive credits
+3. Call 50+ AI models via OMA's OpenAI-compatible API
+4. OMA routes requests to the optimal provider
 
 **Website:** https://oma-ai.com (currently running locally on your machine)
 
@@ -47,9 +48,9 @@ You pay for AI API calls with crypto (USDC). Instead of setting up accounts with
 
 | Wallet | Type | Best For |
 |--------|------|----------|
-| **MetaMask** | Browser Extension | Most popular, easy |
+| **MetaMask** | Browser Extension | Most popular option |
 | **Coinbase Wallet** | Browser Extension | Built-in Base support |
-| **Rabby** | Browser Extension | Good for Base |
+| **Rabby** | Browser Extension | Good Base support |
 | **Rainbow** | Mobile App | Mobile users |
 
 ### Setup MetaMask for Base:
@@ -66,7 +67,7 @@ You pay for AI API calls with crypto (USDC). Instead of setting up accounts with
 
 1. Buy ETH on Coinbase or other exchange
 2. Send ETH to your MetaMask
-3. Bridge ETH to Base: https://bridge.base.org
+3. Bridge ETH to Base: https://superbridge.app/base or https://brid.gg/base (bridge.base.org is deprecated)
 4. Swap ETH for USDC: https://app.uniswap.org (select Base network)
 
 ---
@@ -163,9 +164,9 @@ All OpenAI SDK calls work the same - just change the key and base URL.
 
 | Model Tier | Examples | Cost per 1M input tokens |
 |------------|----------|------------------------|
-| **Frontier** | GPT-5.5, Claude Opus 4 | $15-75 |
-| **Premium** | GPT-4o, Claude Sonnet 4 | $2.50-3.00 |
-| **Budget** | DeepSeek-V4-Flash, Qwen-3-8B | $0.01-0.19 |
+| **Frontier** | GPT-4o, Claude 4, Gemini 3.5 | $1.50-15.00 |
+| **Premium** | GPT-4o-mini, DeepSeek V4, Qwen3 | $0.09-0.35 |
+| **Budget** | Llama 3.3 70B, Gemma 3, Phi-4 | $0.05-0.25 |
 
 Full pricing at: https://oma-ai.com/pricing or see [API-DOCUMENTATION.md](API-DOCUMENTATION.md#4-model-pricing)
 
@@ -199,21 +200,21 @@ cp .env.example .env
 Edit `.env`:
 ```env
 # Required - Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/oma
+DATABASE_URL="postgresql://postgres:password@localhost:5432/oma"
 
 # Required - Get from https://api.venice.ai
-VENICE_API_KEY=sk-your-venice-api-key
+VENICE_API_KEY="sk-your-venice-api-key"
 
-# Required - Any random string 40+ chars
-JWT_SECRET=this-is-my-super-secret-key-that-is-at-least-40-characters-long
+# Required - Random string, 40+ characters
+JWT_SECRET="your-secure-secret-key-minimum-40-characters-long"
 
 # Server config
 PORT=3001
-CORS_ORIGIN=http://localhost:3000
-NODE_ENV=development
+CORS_ORIGIN="http://localhost:3000"
+NODE_ENV="development"
 
 # Optional - Rate limiting works without Redis in dev
-REDIS_URL=redis://localhost:6379
+REDIS_URL="redis://localhost:6379"
 ```
 
 ### 3. Configure Frontend (.env.local)
@@ -225,14 +226,14 @@ cp .env.example .env.local
 
 Edit `.env.local`:
 ```env
-# API URL (server is on 3001)
-NEXT_PUBLIC_API_URL=http://localhost:3001
+# API URL (server runs on 3001)
+NEXT_PUBLIC_API_URL="http://localhost:3001"
 
-# Your wallet connect project ID (get free from https://cloud.walletconnect.com)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+# WalletConnect project ID (free from https://cloud.walletconnect.com)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID="your_project_id"
 
-# Treasury address (can be placeholder in dev)
-NEXT_PUBLIC_BASE_TREASURY=0x1234567890123456789012345678901234567890
+# Treasury address (placeholder works in dev)
+NEXT_PUBLIC_BASE_TREASURY="0x1234567890123456789012345678901234567890"
 ```
 
 ### 4. Get API Keys
@@ -418,23 +419,18 @@ curl -X POST http://localhost:3001/keys \
 ## Troubleshooting
 
 ### "Redis not available" warning
-- Redis is optional for development
-- Rate limiting falls back to fail-open (allows requests)
-- Install Redis or ignore the warning
+Redis is optional in development. Rate limiting defaults to fail-open. Install Redis or ignore the warning.
 
 ### "Invalid API key" error
-- Check your API key is correct
-- Make sure you're using `oma_sk_...` format
-- Verify the key is active in dashboard
+Verify your API key uses `oma_sk_...` format and is active in the dashboard.
 
 ### "Insufficient credits" error
-- Deposit USDC to get credits
-- Check balance at `/dashboard`
+Deposit USDC to add credits. Check balance at `/dashboard`.
 
 ### Wallet won't connect
-- Make sure MetaMask is installed and unlocked
-- Try switching networks if Base isn't added
-- Check WalletConnect Project ID is set
+1. Ensure MetaMask is installed and unlocked
+2. Add the Base network if not already configured
+3. Verify WalletConnect Project ID is set in `.env.local`
 
 ---
 
@@ -442,10 +438,10 @@ curl -X POST http://localhost:3001/keys \
 
 1. Get Venice API key from https://api.venice.ai
 2. Set up MetaMask with Base network
-3. Get some USDC on Base
+3. Acquire USDC on Base
 4. Start the servers: `./start-dev.sh`
-5. Go to http://localhost:3000
-6. Connect wallet → Deposit USDC → Create API key → Build!
+5. Open http://localhost:3000
+6. Connect wallet → Deposit USDC → Create API key → Build
 
 ---
 

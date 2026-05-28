@@ -1,7 +1,7 @@
 import { getRedisClient } from "../lib/redis-client.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const PROCESSING_LOCK_TTL = 30; // seconds — if handler crashes, lock auto-expires quickly
+const PROCESSING_LOCK_TTL = 30;
 
 export async function checkIdempotencyKey(
   key: string,
@@ -13,28 +13,54 @@ export async function checkIdempotencyKey(
 
   const redis = await getRedisClient();
   if (!redis) return null;
-  
-  const existing = await redis.get(`idem:${key}`);
-  if (existing) {
-    try {
-      const parsed = JSON.parse(existing);
-      // If the key exists with status "processing" and the lock TTL has expired, treat as abandoned
-      if (parsed && parsed.status === "processing") {
-        const lockTtl = await redis.ttl(`idem:${key}`);
-        // If TTL <= (total TTL - PROCESSING_LOCK_TTL), the processing lock has lapsed and we can allow retry
-        if (lockTtl <= ttlSeconds - PROCESSING_LOCK_TTL) {
-          await redis.del(`idem:${key}`);
-          return { isNew: true };
+
+  const lockKey = `idem:${key}`;
+  const processingData = JSON.stringify({ status: "processing", createdAt: Date.now() });
+
+  try {
+    const existing = await redis.get(lockKey);
+    
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing);
+        if (parsed && parsed.status === "processing") {
+          const lockTtl = await redis.ttl(lockKey);
+          if (lockTtl <= ttlSeconds - PROCESSING_LOCK_TTL) {
+            await redis.del(lockKey);
+            const reSet = await redis.setNX(lockKey, processingData);
+            if (reSet) {
+              await redis.expire(lockKey, PROCESSING_LOCK_TTL);
+              return { isNew: true };
+            }
+            const retryExisting = await redis.get(lockKey);
+            if (retryExisting) {
+              return { isNew: false, existingResponse: JSON.parse(retryExisting) };
+            }
+            return { isNew: true };
+          }
         }
+        return { isNew: false, existingResponse: parsed };
+      } catch {
+        return { isNew: true };
       }
-      return { isNew: false, existingResponse: parsed };
-    } catch {
+    }
+
+    const wasSet = await redis.setNX(lockKey, processingData);
+    
+    if (!wasSet) {
+      const retryExisting = await redis.get(lockKey);
+      if (retryExisting) {
+        return { isNew: false, existingResponse: JSON.parse(retryExisting) };
+      }
       return { isNew: true };
     }
+
+    await redis.expire(lockKey, PROCESSING_LOCK_TTL);
+    return { isNew: true };
+  } catch (err) {
+    console.error("[idempotency] Error:", err);
+    return { isNew: true };
   }
-  
-  await redis.setEx(`idem:${key}`, PROCESSING_LOCK_TTL, JSON.stringify({ status: "processing" }));
-  return { isNew: true };
 }
 
 export async function storeIdempotencyResult(

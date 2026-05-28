@@ -6,41 +6,49 @@ import { createSolanaChallenge, getOrCreateSolanaUser, verifySolanaChallenge } f
 import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { db } from "../db/client.js";
 import { users, apiKeys, subscriptions, auditLogs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
-import { createHash, randomBytes, createHmac } from "crypto";
+import { createHash, randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { authenticator } from "@otplib/preset-default";
 import { encryptSecret, decryptSecret } from "../auth/encryption.js";
+import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 
 function generateCsrfToken(): string {
-  const secret = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
+  const secret = config.CSRF_SECRET;
+  if (!secret) {
+    throw new Error("FATAL: CSRF_SECRET environment variable must be set. CSRF protection is disabled without it.");
+  }
   const randomPart = randomBytes(32).toString('hex');
-  const timestamp = Date.now().toString();
   const signature = createHmac('sha256', secret)
-    .update(`${randomPart}:${timestamp}`)
+    .update(randomPart)
     .digest('hex');
-  return `${randomPart}:${timestamp}:${signature}`;
+  return `${randomPart}:${signature}`;
 }
 
 function validateCsrfToken(token: string, secret?: string): boolean {
-  const csrfSecret = secret || process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
+  const csrfSecret = secret || config.CSRF_SECRET;
+  if (!csrfSecret) {
+    console.error("[auth] CSRF_SECRET not configured - rejecting token validation");
+    return false;
+  }
   const parts = token.split(':');
-  if (parts.length !== 3) return false;
+  if (parts.length !== 2) return false;
   
-  const [randomPart, timestamp, signature] = parts;
+  const [randomPart, signature] = parts;
   const expectedSignature = createHmac('sha256', csrfSecret)
-    .update(`${randomPart}:${timestamp}`)
+    .update(randomPart)
     .digest('hex');
   
-  if (signature !== expectedSignature) return false;
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSignature);
   
-  const tokenAge = Date.now() - parseInt(timestamp, 10);
-  const maxAge = 3600000;
-  if (tokenAge > maxAge) return false;
+  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return false;
   
   return true;
 }
@@ -411,9 +419,7 @@ authRoutes.get("/auth/csrf-token", async (c) => {
 });
 
 authRoutes.post("/auth/account/login", async (c, next) => {
-  const ip = (c.req.header("x-forwarded-for")?.split(",").map(s => s.trim()).filter(Boolean).pop()
-    ?? c.req.header("x-real-ip")
-    ?? "unknown");
+  const ip = extractClientIp(c);
   const key = `rl:account-login:ip:${ip}`;
 
   const redis = await getRedisClient();
@@ -437,12 +443,14 @@ authRoutes.post("/auth/account/login", async (c, next) => {
         ipAddress: ip,
         metadata: JSON.stringify({ ip, count: current - 1 }),
         createdAt: new Date(),
-      }).catch(() => {});
+      }).catch((err) => {
+        logger.warn({ err, ip }, "Failed to write ACCOUNT_LOGIN_RATE_LIMITED audit log");
+      });
       c.header("Retry-After", String(Math.max(ttl, 1)));
       return c.json({ error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } }, 429);
     }
   } catch (err) {
-    console.error("[account-login-rate-limit] Redis error:", err);
+    logger.error({ err, ip }, "Account login rate limit Redis error");
     return c.json({ error: { message: "Service temporarily unavailable", type: "rate_limit_error", code: "service_unavailable" } }, 503);
   }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Code2, FileText, Lightbulb, Bug, Sparkles } from 'lucide-react'
+import { Code2, FileText, Lightbulb, Bug } from 'lucide-react'
 
 interface Preset {
   id: string
@@ -47,33 +47,33 @@ export function EmptyState({ onPreset }: EmptyStateProps) {
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-8"
+        transition={{ duration: 0.3 }}
+        className="w-16 h-16 flex items-center justify-center mb-8 border border-[var(--color-border)]"
       >
-        <Sparkles className="w-10 h-10 text-accent" />
+        <span className="text-2xl text-[var(--color-success)] font-mono">{'>'}_</span>
       </motion.div>
       <motion.h1
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
-        className="text-3xl font-syne font-bold text-text mb-4"
+        className="text-2xl font-mono font-bold text-[var(--color-text)] mb-4 tracking-tight"
       >
-        What would you like to create?
+        OMA PLAYGROUND
       </motion.h1>
       <motion.p
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-zinc-500 text-lg max-w-md mb-8"
+        className="text-[var(--color-text-muted)] text-sm font-mono max-w-md mb-8"
       >
-        Ask any question, brainstorm ideas, or explore concepts together.
+        {'// QUERY THE GATEWAY'}
       </motion.p>
 
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-2 gap-2 w-full max-w-sm"
       >
         {PRESETS.map((preset) => {
           const Icon = preset.icon
@@ -81,11 +81,11 @@ export function EmptyState({ onPreset }: EmptyStateProps) {
             <button
               key={preset.id}
               onClick={() => onPreset(preset.prompt)}
-              className="flex items-center gap-2 px-4 py-3 bg-surface-elevated border border-border rounded-xl text-sm text-zinc-300 hover:border-accent/50 hover:text-accent transition-all"
+              className="flex items-center gap-2 px-4 py-3 bg-[var(--color-void)] border border-[var(--color-border)] rounded-full text-sm font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border)] hover:brightness-150 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
             >
-              <Icon className="w-4 h-4" />
-              {preset.label}
-            </button>
+            <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            {preset.label}
+          </button>
           )
         })}
       </motion.div>

@@ -26,15 +26,15 @@ export type Capability =
   | 'chat'
 
 export const PROVIDER_COLORS: Record<Provider, { bg: string; text: string; border: string }> = {
-  Venice: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30' },
-  AntSeed: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  Venice: { bg: 'bg-[var(--color-violet)]/20', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30' },
+  AntSeed: { bg: 'bg-[var(--color-success)]/20', text: 'text-[var(--color-success)]', border: 'border-[var(--color-success)]/30' },
 }
 
 export const TIER_COLORS: Record<Tier, { bg: string; text: string; border: string; badge: string }> = {
-  budget: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', badge: 'bg-amber-500/20 text-amber-300' },
-  mid: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', badge: 'bg-cyan-500/20 text-cyan-300' },
-  premium: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/30', badge: 'bg-violet-500/20 text-violet-300' },
-  frontier: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300' },
+  budget: { bg: 'bg-[var(--color-warning)]/10', text: 'text-[var(--color-warning)]', border: 'border-[var(--color-warning)]/30', badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
+  mid: { bg: 'bg-[var(--color-cyan)]/10', text: 'text-[var(--color-cyan)]', border: 'border-[var(--color-cyan)]/30', badge: 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' },
+  premium: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
+  frontier: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
 }
 
 export const TIER_ORDER: Tier[] = ['budget', 'mid', 'premium', 'frontier']
@@ -425,13 +425,6 @@ export const MODELS: Model[] = [
     modelId: 'mistral-large',
   },
 ]
-
-export function formatPrice(price: number): string {
-  if (price === 0) return 'Free'
-  if (price < 0.01) return `$${price.toFixed(3)}`
-  if (price < 1) return `$${price.toFixed(2)}`
-  return `$${price.toFixed(2)}`
-}
 
 export function formatPricePerToken(pricePer1M: number): string {
   if (pricePer1M === 0) return '$0.00'

@@ -1,6 +1,7 @@
-export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra";
+import { ALL_PROVIDERS, type Provider } from "../inference/provider-selector.js";
 
-export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"];
+export { ALL_PROVIDERS };
+export type { Provider };
 
 export function validateModelWeights(modelWeightsStr: string | undefined): { valid: boolean; errors: string[] } {
   const errors: string[] = [];

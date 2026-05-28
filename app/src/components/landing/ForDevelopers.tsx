@@ -41,10 +41,10 @@ const tabs = [
 ]
 
 const features = [
-  { icon: Zap, title: 'OpenAI-Compatible', desc: 'Use any OpenAI SDK. Just change the base URL.', color: 'text-cyan-400' },
-  { icon: Key, title: 'Bearer Token Auth', desc: 'SHA-256 hashed keys. Your inference, your key.', color: 'text-cyan-400' },
-  { icon: Coins, title: 'x402 Payments', desc: 'Agent-native payments via HTTP 402.', color: 'text-amber-400' },
-  { icon: Activity, title: 'Streaming & Tools', desc: 'Real-time streaming. Function calling.', color: 'text-emerald-400' },
+  { icon: Zap, title: 'OpenAI-Compatible', desc: 'Use any OpenAI SDK. Just change the base URL.', color: 'text-[var(--color-cyan)]' },
+  { icon: Key, title: 'Bearer Token Auth', desc: 'SHA-256 hashed keys. Your inference, your key.', color: 'text-[var(--color-cyan)]' },
+  { icon: Coins, title: 'x402 Payments', desc: 'Agent-native payments via HTTP 402.', color: 'text-[var(--color-secondary)]' },
+  { icon: Activity, title: 'Streaming & Tools', desc: 'Real-time streaming. Function calling.', color: 'text-[var(--color-success)]' },
 ]
 
 export function ForDevelopers() {
@@ -74,29 +74,29 @@ export function ForDevelopers() {
 
   return (
     <section ref={ref} className="relative py-24 px-4">
-      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900/50 to-zinc-950" />
+      <div className="absolute inset-0 bg-[var(--color-void)]" />
       
       <div className="max-w-4xl mx-auto relative z-10">
         <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-mono font-bold tracking-tight text-[var(--color-text)] mb-4">
             Built for Developers
           </h2>
-          <p className="text-lg text-zinc-500 max-w-2xl mx-auto">
+          <p className="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">
             Drop-in replacement for OpenAI. Change one line, keep your code.
           </p>
         </div>
 
         <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
-          <div className="flex items-center justify-between border-b border-zinc-800/50 mb-0">
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] mb-0">
             <div className="flex gap-1">
               {tabs.map((tab, i) => (
                 <button
                   key={tab.label}
                   onClick={() => setActiveTab(i)}
-                  className={`px-5 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                  className={`px-5 py-3 text-sm font-medium transition-all duration-200 border-b-2 cursor-pointer ${
                     activeTab === i
-                      ? 'text-cyan-400 border-cyan-400'
-                      : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                      ? 'text-[var(--color-cyan)] border-[var(--color-cyan)]'
+                      : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
                   }`}
                 >
                   {tab.label}
@@ -106,16 +106,16 @@ export function ForDevelopers() {
             <button
               onClick={handleCopy}
               aria-label={copied ? 'Copied' : 'Copy code'}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/50 rounded-lg transition-all"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)] hover:bg-[var(--color-surface)] rounded-lg transition-all cursor-pointer"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-[var(--color-success)]" /> : <Copy className="w-4 h-4" />}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
           
-          <div className="rounded-b-xl overflow-hidden bg-zinc-950/80 border border-t-0 border-zinc-800/50">
+          <div className="rounded-b-lg overflow-hidden bg-[var(--color-void)] border border-t-0 border-[var(--color-border)]">
             <pre className="p-6 overflow-x-auto">
-              <code className="text-sm text-zinc-300 font-mono leading-relaxed">
+              <code className="text-sm text-[var(--color-text-secondary)] font-mono leading-relaxed">
                 {tabs[activeTab].code}
               </code>
             </pre>
@@ -128,13 +128,13 @@ export function ForDevelopers() {
             return (
               <div
                 key={f.title}
-                className={`flex items-start gap-4 p-5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 transition-all duration-500 hover:border-cyan-500/30 hover:bg-zinc-900/80 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                className={`flex items-start gap-4 p-5 rounded border border-[var(--color-border)] bg-[var(--color-surface)] transition-all duration-500 hover:border-[var(--color-cyan)]/30 hover:bg-[var(--color-surface-elevated)] ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: `${300 + i * 80}ms` }}
               >
                 <Icon className={`w-5 h-5 ${f.color} mt-0.5`} />
                 <div>
-                  <p className="font-semibold text-white mb-1">{f.title}</p>
-                  <p className="text-sm text-zinc-500">{f.desc}</p>
+                  <p className="font-semibold text-[var(--color-text)] mb-1">{f.title}</p>
+                  <p className="text-sm text-[var(--color-text-muted)]">{f.desc}</p>
                 </div>
               </div>
             )
@@ -159,7 +159,7 @@ export function ForDevelopers() {
           </Link>
           <Link
             href="/docs"
-            className="px-6 py-4 text-base font-medium text-zinc-500 hover:text-cyan-400 transition-colors"
+            className="px-6 py-4 text-base font-medium text-[var(--color-text-muted)] hover:text-[var(--color-cyan)] transition-colors"
           >
             View Docs
             <ArrowRight className="w-4 h-4 ml-2 inline-block" />

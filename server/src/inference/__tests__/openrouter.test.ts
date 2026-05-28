@@ -93,12 +93,19 @@ describe("OpenRouter Provider", () => {
     });
 
     it("throws error when API key not configured", async () => {
-      await expect(
-        openrouter.chatCompletion({
-          model: "openrouter/anthropic/claude-3",
-          messages: [{ role: "user", content: "hello" }],
-        })
-      ).rejects.toMatchObject({ status: expect.any(Number) });
+      const { config } = await import("../../config.js");
+      const originalKey = config.OPENROUTER_API_KEY;
+      (config as any).OPENROUTER_API_KEY = "";
+      try {
+        await expect(
+          openrouter.chatCompletion({
+            model: "openrouter/anthropic/claude-3",
+            messages: [{ role: "user", content: "hello" }],
+          })
+        ).rejects.toMatchObject({ status: 503 });
+      } finally {
+        (config as any).OPENROUTER_API_KEY = originalKey;
+      }
     });
 
     it("handles connection failure with 502", async () => {

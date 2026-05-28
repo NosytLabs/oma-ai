@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useId, ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 
@@ -32,16 +32,22 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const prefersReducedMotion = useReducedMotion() ?? false
+  // React 19 useId hook for unique ID generation
+  const uniqueId = useId()
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
   const toast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Math.random().toString(36).slice(2)
+    // Use cryptographically secure ID generation
+    const id = `${uniqueId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
     setToasts((prev) => [...prev, { id, message, type }])
-    setTimeout(() => dismiss(id), 4000)
-  }, [dismiss])
+    
+    // Auto-dismiss after 4 seconds
+    const timeoutId = setTimeout(() => dismiss(id), 4000)
+    return () => clearTimeout(timeoutId)
+  }, [dismiss, uniqueId])
 
   const success = useCallback((message: string) => toast(message, 'success'), [toast])
   const error = useCallback((message: string) => toast(message, 'error'), [toast])
@@ -70,9 +76,9 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
   }
 
   const styles = {
-    success: 'border-green-500/30 bg-green-500/10',
-    error: 'border-red-500/30 bg-red-500/10',
-    info: 'border-indigo-500/30 bg-indigo-500/10',
+    success: 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10',
+    error: 'border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
+    info: 'border-[var(--color-info)]/30 bg-[var(--color-info)]/10',
   }
 
   const animationVariants = {
@@ -94,7 +100,7 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-black/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-black/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
       >
         <X className="h-4 w-4 text-[var(--color-text-secondary)]" />
       </button>

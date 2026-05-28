@@ -38,82 +38,86 @@ const PRIVACY_FEATURES = [
 
 export default function PrivateAIAPIPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-4xl px-4 py-16">
+    <div className="min-h-[calc(100vh-4rem)] bg-[var(--color-void)] px-4 py-16">
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-indigo-700"
+          className="mb-8 inline-flex items-center gap-2 text-xs font-mono transition-colors hover:text-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded"
+          style={{ color: 'var(--color-text-muted)' }}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to Home
         </Link>
 
         <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700">
-            <Shield className="h-4 w-4" />
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-4 py-2 text-sm font-mono font-medium text-[var(--color-accent)]">
+            <Shield className="h-4 w-4" aria-hidden="true" />
             Privacy-First
           </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-            Private AI API - <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Low-Retention AI Inference Gateway</span>
+          <h1 className="font-syne mb-4 text-4xl font-bold tracking-tight text-[var(--color-text)] md:text-5xl">
+            Private AI API —
+            <span className="bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-tertiary)] bg-clip-text text-transparent">
+              Low-Retention AI Inference Gateway
+            </span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-slate-600">
+          <p className="mx-auto max-w-2xl text-lg text-[var(--color-text-muted)]">
             No personal data needed. OMA gives you AI access with minimal logging and zero account requirements.
           </p>
         </div>
 
         <div className="mb-16 grid gap-6 md:grid-cols-2">
           {PRIVACY_FEATURES.map((feature, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50">
-                <feature.icon className="h-6 w-6 text-indigo-700" />
+            <div key={index} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-all hover:border-[var(--color-accent)]/30">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/10">
+                <feature.icon className="h-6 w-6 text-[var(--color-accent)]" aria-hidden="true" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-slate-900">{feature.title}</h3>
-              <p className="text-slate-600">{feature.desc}</p>
+              <h3 className="mb-2 font-syne text-lg font-bold text-[var(--color-text)]">{feature.title}</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">{feature.desc}</p>
             </div>
           ))}
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">Privacy Comparison</h2>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <h2 className="mb-8 font-syne text-2xl font-bold text-[var(--color-text)] text-center">Privacy Comparison</h2>
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="p-4 text-left font-semibold text-slate-900">Feature</th>
-                  <th className="p-4 text-center font-semibold text-slate-900">Traditional AI APIs</th>
-                  <th className="p-4 text-center font-semibold text-indigo-700">OMA</th>
+                <tr className="border-b border-[var(--color-border)] bg-[var(--color-accent)]/5">
+                  <th scope="col" className="p-4 text-left font-mono text-sm font-medium text-[var(--color-text)]">Feature</th>
+                  <th scope="col" className="p-4 text-center font-mono text-sm font-medium text-[var(--color-text-muted)]">Traditional AI APIs</th>
+                  <th scope="col" className="p-4 text-center font-mono text-sm font-medium text-[var(--color-accent)]">OMA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
-                <tr>
-                  <td className="p-4 text-slate-600">Account Required</td>
-                  <td className="p-4 text-center text-slate-600">Yes</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">No</td>
+              <tbody className="divide-y divide-[var(--color-border)]">
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">Account Required</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Yes</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">No</td>
                 </tr>
-                <tr className="bg-slate-50/50">
-                  <td className="p-4 text-slate-600">Email Verification</td>
-                  <td className="p-4 text-center text-slate-600">Yes</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">No</td>
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">Email Verification</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Yes</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">No</td>
                 </tr>
-                <tr>
-                  <td className="p-4 text-slate-600">Phone Number</td>
-                  <td className="p-4 text-center text-slate-600">Sometimes</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">No</td>
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">Phone Number</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Sometimes</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">No</td>
                 </tr>
-                <tr className="bg-slate-50/50">
-                  <td className="p-4 text-slate-600">KYC Verification</td>
-                  <td className="p-4 text-center text-slate-600">Often</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">Never</td>
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">KYC Verification</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Often</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">Never</td>
                 </tr>
-                <tr>
-                  <td className="p-4 text-slate-600">Persistent Logging</td>
-                  <td className="p-4 text-center text-slate-600">Full logs</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">Minimal</td>
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">Persistent Logging</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Full logs</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">Minimal</td>
                 </tr>
-                <tr className="bg-slate-50/50">
-                  <td className="p-4 text-slate-600">Data Sold to Third Parties</td>
-                  <td className="p-4 text-center text-slate-600">Possible</td>
-                  <td className="p-4 text-center font-semibold text-indigo-700">Never</td>
+                <tr className="transition-colors hover:bg-[var(--color-surface)]/50">
+                  <td className="p-4 text-sm text-[var(--color-text-muted)]">Data Sold to Third Parties</td>
+                  <td className="p-4 text-center text-sm text-[var(--color-text-muted)]">Possible</td>
+                  <td className="p-4 text-center font-mono text-sm font-bold text-[var(--color-accent)]">Never</td>
                 </tr>
               </tbody>
             </table>
@@ -121,104 +125,86 @@ export default function PrivateAIAPIPage() {
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">What We Log</h2>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-8 font-syne text-2xl font-bold text-[var(--color-text)] text-center">What We Log</h2>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
             <div className="space-y-4">
-              <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-                  <span className="text-sm font-bold text-indigo-700">1</span>
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10">
+                  <span className="font-mono text-sm font-bold text-[var(--color-accent)]">1</span>
                 </div>
                 <div>
-                  <h3 className="mb-1 font-semibold text-slate-900">Transaction Hashes</h3>
-                  <p className="text-sm text-slate-600">Blockchain hashes for credit deposits. Lets us handle refund disputes.</p>
+                  <h3 className="mb-1 font-mono text-sm font-semibold text-[var(--color-text)]">Transaction Hashes</h3>
+                  <p className="text-sm text-[var(--color-text-muted)]">Blockchain hashes for credit deposits. Lets us handle refund disputes.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-                  <span className="text-sm font-bold text-indigo-700">2</span>
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10">
+                  <span className="font-mono text-sm font-bold text-[var(--color-accent)]">2</span>
                 </div>
                 <div>
-                  <h3 className="mb-1 font-semibold text-slate-900">Credit Balances</h3>
-                  <p className="text-sm text-slate-600">We track your credit balance so you can pay per request.</p>
+                  <h3 className="mb-1 font-mono text-sm font-semibold text-[var(--color-text)]">Credit Balances</h3>
+                  <p className="text-sm text-[var(--color-text-muted)]">We track your credit balance so you can pay per request.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 rounded-xl bg-slate-50 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-                  <span className="text-sm font-bold text-indigo-700">3</span>
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10">
+                  <span className="font-mono text-sm font-bold text-[var(--color-accent)]">3</span>
                 </div>
                 <div>
-                  <h3 className="mb-1 font-semibold text-slate-900">API Request Metadata</h3>
-                  <p className="text-sm text-slate-600">Timestamps and model IDs only. No prompt or response content.</p>
+                  <h3 className="mb-1 font-mono text-sm font-semibold text-[var(--color-text)]">API Request Metadata</h3>
+                  <p className="text-sm text-[var(--color-text-muted)]">Timestamps and model IDs only. No prompt or response content.</p>
                 </div>
               </div>
             </div>
-            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm text-slate-600">
-                <span className="font-semibold text-indigo-700">What we don&apos;t log:</span> Your prompts and responses stay private. AI generation runs entirely on Venice&apos;s infrastructure.
+            <div className="mt-6 rounded-xl border border-[var(--color-accent)]/20 p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 5%, transparent)' }}>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                <span className="font-mono font-semibold text-[var(--color-accent)]">What we don&apos;t log:</span> Your prompts and responses stay private. AI generation runs entirely on Venice&apos;s infrastructure.
               </p>
             </div>
           </div>
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">Built on Venice</h2>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="mb-4 text-slate-600">
+          <h2 className="mb-8 font-syne text-2xl font-bold text-[var(--color-text)] text-center">Built on Venice</h2>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <p className="mb-4 text-sm text-[var(--color-text-muted)]">
               OMA routes inference to Venice AI, which operates under their own privacy policy. Venice offers:
             </p>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-                <CheckCircle className="h-5 w-5 shrink-0 text-indigo-700" />
-                <span className="text-sm text-slate-700">Minimal prompt and response retention</span>
+              <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                <span className="text-sm text-[var(--color-text)]">Minimal prompt and response retention</span>
               </div>
-              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-                <CheckCircle className="h-5 w-5 shrink-0 text-indigo-700" />
-                <span className="text-sm text-slate-700">No training on user data</span>
+              <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                <span className="text-sm text-[var(--color-text)]">No training on user data</span>
               </div>
-              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-                <CheckCircle className="h-5 w-5 shrink-0 text-indigo-700" />
-                <span className="text-sm text-slate-700">Privacy-focused infrastructure</span>
+              <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                <span className="text-sm text-[var(--color-text)]">Privacy-focused infrastructure</span>
               </div>
-              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-                <CheckCircle className="h-5 w-5 shrink-0 text-indigo-700" />
-                <span className="text-sm text-slate-700">Enterprise-grade security</span>
+              <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                <span className="text-sm text-[var(--color-text)]">Enterprise-grade security</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Start Now</h2>
-          <p className="mb-6 text-slate-600">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+          <h2 className="font-syne mb-4 text-2xl font-bold text-[var(--color-text)]">Start Now</h2>
+          <p className="mb-6 text-[var(--color-text-muted)]">
             No account needed. Connect your wallet, add credits, and start inferring.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700">
+            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 font-mono text-sm font-semibold text-[var(--color-text-inverse)] shadow-lg shadow-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2">
               Get API Key
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <Link href="/docs" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-              Read Docs
+            <Link href="/docs" className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-transparent px-6 py-3 font-mono text-sm font-medium text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2">
+              View Documentation
             </Link>
           </div>
-        </div>
-
-        <div className="mt-12 flex flex-wrap justify-center gap-4 text-sm text-slate-600">
-          <Link href="/compare/openrouter-alternative" className="hover:text-indigo-700">
-            OpenRouter Alternative
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/compare/venice-ai-alternative" className="hover:text-indigo-700">
-            Venice AI Alternative
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/crypto-payments" className="hover:text-indigo-700">
-            Crypto Payments
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/pricing" className="hover:text-indigo-700">
-            Pricing
-          </Link>
         </div>
       </div>
     </div>

@@ -29,9 +29,10 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "jupiter_swap",
   "solana_direct",
   "payment_link",
+  "wrong_network_recovery",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish"]);
+export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -39,9 +40,9 @@ export const users = pgTable("users", {
   solanaAddress: text("solana_address"),
   accountNumber: text("account_number"), // Mullvad-style: OMA-XXXX-XXXX-XXXX (unique, nullable)
   accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
-  twoFactorSecret: text("two_factor_secret"), // TOTP secret (plaintext — should be encrypted at rest)
+  twoFactorSecret: text("two_factor_secret"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
-  nonce: text("nonce").notNull(),
+  nonce: text("nonce").notNull(), // TTL: expired after 10min (checked in siwe.ts); production cleanup via cron
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
@@ -138,6 +139,7 @@ export const usageRecords = pgTable(
     index("idx_usage_model").on(t.model),
     index("idx_usage_created").on(t.createdAt),
     index("idx_usage_request").on(t.requestId),
+    uniqueIndex("uq_usage_request_id").on(t.requestId),
     index("idx_usage_user_created").on(t.userId, t.createdAt),
     index("idx_usage_records_provider").on(t.provider),
   ]
@@ -247,7 +249,6 @@ export const settlements = pgTable(
     index("idx_settlements_txhash").on(t.txHash),
     index("idx_settlements_network").on(t.networkId),
     index("idx_settlements_payee").on(t.payee),
-    index("idx_settlements_txhash_network").on(t.txHash, t.networkId),
     index("idx_settlements_txhash_network_payee").on(t.txHash, t.networkId, t.payee),
   ]
 );
@@ -400,9 +401,9 @@ export const budgetAlerts = pgTable(
     webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
     webhookUrl: text("webhook_url"),
     lastAlertAt: timestamp("last_alert_at", { withTimezone: true }),
-    dailyLimitCents: text("daily_limit_cents"),
-    weeklyLimitCents: text("weekly_limit_cents"),
-    monthlyLimitCents: text("monthly_limit_cents"),
+    dailyLimitCents: numeric("daily_limit_cents", { precision: 18, scale: 2 }),
+    weeklyLimitCents: numeric("weekly_limit_cents", { precision: 18, scale: 2 }),
+    monthlyLimitCents: numeric("monthly_limit_cents", { precision: 18, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -538,6 +539,7 @@ export const auditActionEnum = pgEnum("audit_action", [
   "RATE_LIMIT_OVERRIDE_REMOVED",
   "SPEND_LIMIT_CHANGED",
   "BUDGET_ALERT_CHANGED",
+  "ACCOUNT_LOGIN_RATE_LIMITED",
 ]);
 
 export const auditLogs = pgTable(
@@ -601,3 +603,135 @@ export const rateLimitOverrides = pgTable(
     index("idx_rate_limit_overrides_expiry").on(t.expiresAt),
   ]
 );
+
+export const recoveryStatusEnum = pgEnum("recovery_status", [
+  "pending",
+  "completed",
+  "rejected",
+  "expired",
+]);
+
+export const depositRecoveries = pgTable(
+  "deposit_recoveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    originalTxHash: text("original_tx_hash").notNull(),
+    recoveryTxHash: text("recovery_tx_hash"),
+    amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }).notNull(),
+    status: recoveryStatusEnum("status").default("pending").notNull(),
+    rejectionReason: text("rejection_reason"),
+    completedBy: uuid("completed_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("idx_deposit_recoveries_user").on(t.userId),
+    index("idx_deposit_recoveries_status").on(t.status),
+    index("idx_deposit_recoveries_original_tx").on(t.originalTxHash),
+    index("idx_deposit_recoveries_created").on(t.createdAt),
+  ]
+);
+
+export const depositNotifications = pgTable(
+  "deposit_notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    depositId: uuid("deposit_id")
+      .references(() => deposits.id, { onDelete: "cascade" })
+      .notNull(),
+    type: text("type").notNull(),
+    status: text("status").notNull(),
+    amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }),
+    creditsIssued: numeric("credits_issued", { precision: 18, scale: 8 }),
+    txHash: text("tx_hash"),
+    method: text("method"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("idx_deposit_notifications_user").on(t.userId),
+    index("idx_deposit_notifications_deposit").on(t.depositId),
+    index("idx_deposit_notifications_created").on(t.createdAt),
+  ]
+);
+
+export const webhookSubscriptions = pgTable(
+  "webhook_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    url: text("url").notNull(),
+    event: text("event").notNull(),
+    events: text("events"),
+    secret: text("secret"),
+    active: boolean("active").default(true).notNull(),
+    lastNotificationAt: timestamp("last_notification_at", { withTimezone: true }),
+    lastNotificationStatus: text("last_notification_status"),
+    notificationCount: integer("notification_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_webhook_subscriptions_user").on(t.userId),
+    index("idx_webhook_subscriptions_active").on(t.userId, t.active),
+  ]
+);
+
+export const depositRecoveriesRelations = relations(depositRecoveries, ({ one }) => ({
+  user: one(users, { fields: [depositRecoveries.userId], references: [users.id] }),
+}));
+
+export const depositNotificationsRelations = relations(depositNotifications, ({ one }) => ({
+  user: one(users, { fields: [depositNotifications.userId], references: [users.id] }),
+  deposit: one(deposits, { fields: [depositNotifications.depositId], references: [deposits.id] }),
+}));
+
+export const webhookSubscriptionsRelations = relations(webhookSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [webhookSubscriptions.userId], references: [users.id] }),
+}));
+
+export const withdrawalStatusEnum = pgEnum("withdrawal_status", [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+
+export const withdrawals = pgTable(
+  "withdrawals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    type: text("type").notNull(),
+    amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
+    netAmountCents: numeric("net_amount_cents", { precision: 18, scale: 2 }).notNull(),
+    feeCents: numeric("fee_cents", { precision: 18, scale: 2 }).notNull(),
+    toAddress: text("to_address").notNull(),
+    chainId: text("chain_id").default("8453").notNull(),
+    status: withdrawalStatusEnum("status").default("pending").notNull(),
+    txHash: text("tx_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("idx_withdrawals_user").on(t.userId),
+    index("idx_withdrawals_status").on(t.status),
+    index("idx_withdrawals_txhash").on(t.txHash),
+    index("idx_withdrawals_user_status").on(t.userId, t.status),
+    index("idx_withdrawals_created_at").on(t.createdAt),
+  ]
+);
+
+export const withdrawalsRelations = relations(withdrawals, ({ one }) => ({
+  user: one(users, { fields: [withdrawals.userId], references: [users.id] }),
+}));

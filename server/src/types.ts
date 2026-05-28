@@ -1,6 +1,9 @@
+export type AuthMethod = "siwe" | "solana" | "account-number" | "sso";
+
 export type OmaEnv = {
   Variables: {
     userId: string;
+    authMethod?: AuthMethod;
     rateLimit?: { remaining: number; reset: number };
     apiKey: {
       id: string;

@@ -10,10 +10,14 @@ export function getWagmiConfig() {
       coinbaseWallet({ appName: 'OMA AI' }),
     ],
     transports: {
-      [base.id]: http(),
-      [baseSepolia.id]: http(),
+      [base.id]: http(
+        process.env.NEXT_PUBLIC_QUICKNODE_MAINNET_URL || undefined
+      ),
+      [baseSepolia.id]: http(
+        process.env.NEXT_PUBLIC_QUICKNODE_TESTNET_URL || undefined
+      ),
     },
-    storage: createStorage({ storage: typeof window !== 'undefined' ? window.localStorage : undefined }),
+    storage: createStorage({ storage: typeof window !== 'undefined' ? window.localStorage : undefined, key: 'wagmi' }),
   })
 }
 

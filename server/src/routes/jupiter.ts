@@ -5,7 +5,7 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { addCredits } from "../credits/balance.js";
+import { addCredits } from "../credits/index.js";
 import { db } from "../db/client.js";
 import { deposits } from "../db/schema.js";
 import { eq } from "drizzle-orm";

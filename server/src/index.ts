@@ -1,27 +1,22 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { createServer } from "node:http";
-import { sql } from "drizzle-orm";
 import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
-import { redisHealthCheck } from "./lib/redis-client.js";
-import { db } from "./db/client.js";
-import { healthCheck } from "./inference/provider-factory.js";
+import { logger } from "./lib/logger.js";
 import { authRoutes } from "./routes/auth.js";
-import { chatRoutes } from "./routes/chat.js";
-import { setupWebSocket } from "./routes/chat-ws.js";
+import { chatRoutes } from "./routes/chat/index.js";
 import { modelRoutes } from "./routes/models.js";
-import { depositRoutes } from "./routes/deposit.js";
+import { depositRoutes } from "./routes/deposit/index.js";
 import { searchRoutes } from "./routes/search.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { crosschainRoutes } from "./x402/crosschain.js";
 import { onrampRoutes } from "./routes/onramp.js";
 import { creditRoutes } from "./routes/credits.js";
-import { adminRoutes } from "./routes/admin.js";
+import { adminRoutes } from "./routes/admin/index.js";
 import { jupiterRoutes } from "./routes/jupiter.js";
 import { teamsRouter } from "./routes/teams.js";
 import { ssoRouter } from "./routes/sso.js";
@@ -31,14 +26,31 @@ import { configRoutes } from "./routes/config.js";
 import { analyticsRoutes } from "./routes/analytics.js";
 import { adminAnalyticsRoutes } from "./routes/analytics-admin.js";
 import { fetchRoutes } from "./routes/fetch.js";
+import { invoiceRoutes } from "./routes/invoices.js";
+import { withdrawalRoutes } from "./routes/withdraw.js";
+import { refundRoutes } from "./routes/refunds.js";
+import { exportRoutes } from "./routes/export.js";
 import type { OmaEnv } from "./types.js";
 import { scheduleCreditExpiry } from "./jobs/credit-expiry.js";
 import { scheduleSubscriptionCheck } from "./jobs/subscription-cron.js";
+import { scheduleNonceCleanup } from "./jobs/nonce-cleanup.js";
+import { scheduleDepositRetry } from "./jobs/deposit-retry.js";
+import { scheduleWrongNetworkRecovery } from "./jobs/deposit-recovery.js";
+import { scheduleDepositNotifications } from "./jobs/deposit-notifications.js";
 import { generateCorrelationId } from "./tracing.js";
+import { reloadModelCatalog } from "./inference/models.js";
+import { stopBackgroundDbSync, stopBackgroundProbing, stopCacheCleanup } from "./inference/provider-health.js";
+import { stopQueueProcessor } from "./lib/request-queue.js";
+
+reloadModelCatalog();
 
 if (config.NODE_ENV !== "test") {
   scheduleCreditExpiry();
   scheduleSubscriptionCheck();
+  scheduleNonceCleanup();
+  scheduleDepositRetry();
+  scheduleWrongNetworkRecovery();
+  scheduleDepositNotifications();
 }
 
 const app = new Hono<OmaEnv>();
@@ -46,6 +58,7 @@ const app = new Hono<OmaEnv>();
 app.use("*", async (c, next) => {
   const correlationId = c.req.header("X-Correlation-ID") || generateCorrelationId();
   c.set("correlationId", correlationId);
+  c.header("X-Request-ID", correlationId);
   await next();
 });
 
@@ -58,7 +71,7 @@ const corsOptions = {
     const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
     for (const allowed of allowedOrigins) {
       if (allowed === "*") {
-        console.warn("[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
+        logger.warn({ origin }, "[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
         return null;
       }
       try {
@@ -79,79 +92,10 @@ const corsOptions = {
 };
 
 app.use("*", cors(corsOptions));
-app.use("*", logger());
 
 app.get("/health", async (c) => {
-  const correlationId = c.get("correlationId") || generateCorrelationId();
-  const checks: Record<string, unknown> = {};
-  let allHealthy = true;
-  let hasDegraded = false;
-
-  // Redis check
-  try {
-    const redisResult = await Promise.race([
-      redisHealthCheck(),
-      new Promise<{ status: string }>((resolve) =>
-        setTimeout(() => resolve({ status: "timeout" }), 2000)
-      ),
-    ]);
-    checks.redis = redisResult;
-    if (redisResult.status !== "ok") {
-      allHealthy = false;
-      if (redisResult.status === "timeout") {
-        hasDegraded = true;
-      }
-    }
-  } catch {
-    checks.redis = { status: "error" };
-    allHealthy = false;
-  }
-
-  // Database check
-  try {
-    const start = Date.now();
-    await db.execute(sql`SELECT 1`);
-    checks.database = { status: "ok", latency: Date.now() - start };
-  } catch (err) {
-    checks.database = { status: "error", error: err instanceof Error ? err.message : "Unknown error" };
-    allHealthy = false;
-  }
-
-  // Venice API health check (if API key is configured)
-  if (config.VENICE_API_KEY) {
-    try {
-      const veniceHealth = await Promise.race([
-        healthCheck("venice", config.VENICE_API_URL.replace(/\/+$/, ""), "/api/v1/models", 5000),
-        new Promise<{ isUp: boolean; latencyMs: number }>((resolve) =>
-          setTimeout(() => resolve({ isUp: false, latencyMs: 5000 }), 5000)
-        ),
-      ]);
-      checks.venice = { status: veniceHealth.isUp ? "ok" : "error", latency: veniceHealth.latencyMs };
-      if (!veniceHealth.isUp) hasDegraded = true;
-    } catch {
-      checks.venice = { status: "error" };
-      hasDegraded = true;
-    }
-  } else {
-    checks.venice = { status: "not_configured" };
-  }
-
-  let status: "ok" | "degraded" | "error" = "ok";
-  let httpStatus: ContentfulStatusCode = 200;
-  if (!allHealthy) {
-    status = "error";
-    httpStatus = 503;
-  } else if (hasDegraded) {
-    status = "degraded";
-  }
-
-  return c.json({
-    status,
-    version: "2.0.0",
-    service: "oma-ai",
-    correlationId,
-    checks,
-  }, httpStatus);
+  c.header("Cache-Control", "no-store");
+  return c.json({ status: "ok", version: "2.0.0", service: "oma-ai" }, 200);
 });
 
 app.route("/", authRoutes);
@@ -173,6 +117,10 @@ app.route("/", subscriptionRoutes);
 app.route("/", analyticsRoutes);
 app.route("/", adminAnalyticsRoutes);
 app.route("/", fetchRoutes);
+app.route("/", withdrawalRoutes);
+app.route("/", invoiceRoutes);
+app.route("/", refundRoutes);
+app.route("/", exportRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));
 
@@ -180,7 +128,8 @@ app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
-  console.error(`[OMA] Unhandled error: ${err.message}`);
+  const correlationId = c.get("correlationId") as string | undefined;
+  logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
   const errWithStatus = err as Error & { status?: ContentfulStatusCode };
   const status = errWithStatus.status ?? 500;
   if (status >= 500) {
@@ -191,17 +140,46 @@ app.onError((err, c) => {
 
 const httpServer = createServer();
 
-setupWebSocket(httpServer);
-
 serve({
   fetch: app.fetch,
-  createServer: () => httpServer,
   port: config.PORT,
 }, (info) => {
-  console.log(`[OMA] API server running on port ${info.port}`);
-  console.log(`[OMA] Health: http://localhost:${info.port}/health`);
-  console.log(`[OMA] Models: http://localhost:${info.port}/v1/models`);
-  console.log(`[OMA] WebSocket: ws://localhost:${info.port}/v1/chat/completions/ws`);
+  logger.info({ port: info.port }, "[OMA] API server running");
+  logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
+  logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
+  logger.info({ wsUrl: `ws://localhost:${info.port}/v1/chat/completions/ws` }, "[OMA] WebSocket endpoint");
+
+  const shutdown = async (signal: string) => {
+    logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
+
+    stopBackgroundDbSync();
+    stopBackgroundProbing();
+    stopCacheCleanup();
+    stopQueueProcessor();
+
+    httpServer.close(async () => {
+      logger.info("[OMA] HTTP server closed");
+
+      try {
+        const { closeRedisClient } = await import("./lib/redis-client.js");
+        await closeRedisClient();
+        logger.info("[OMA] Redis connection closed");
+      } catch (err) {
+        logger.warn({ error: err }, "[OMA] Redis close error");
+      }
+
+      logger.info("[OMA] Graceful shutdown complete");
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      logger.error("[OMA] Forced shutdown after timeout");
+      process.exit(1);
+    }, 10_000);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 });
 
 export default app;

@@ -30,6 +30,50 @@ function getQueueKey(): string {
   return `${QUEUE_KEY_PREFIX}:pending`;
 }
 
+const ENQUEUE_SCRIPT = `
+local queue_key = KEYS[1]
+local user_set_key = KEYS[2]
+local max_depth = tonumber(ARGV[1])
+local request_json = ARGV[2]
+local user_id = ARGV[3]
+local request_id = ARGV[4]
+
+local depth = redis.call('LLEN', queue_key)
+if depth >= max_depth then
+  return {-1, depth}
+end
+
+redis.call('RPUSH', queue_key, request_json)
+redis.call('HINCRBY', queue_key, '_user:' .. user_id, 1)
+redis.call('SADD', user_set_key, request_id)
+return {1, depth + 1}
+`;
+
+const DEQUEUE_SCRIPT = `
+local queue_key = KEYS[1]
+local user_set_key = KEYS[2]
+local user_id = ARGV[1]
+
+local item = redis.call('LPOP', queue_key)
+if not item then
+  return {nil, 0}
+end
+
+local ok, parsed = pcall(cjson.decode, item)
+if not ok then
+  return {item, 0}
+end
+
+local uid = parsed.userId or user_id
+local reqId = parsed.id or ''
+
+redis.call('HINCRBY', queue_key, '_user:' .. uid, -1)
+if reqId ~= '' then
+  redis.call('SREM', user_set_key, reqId)
+end
+return {item, 1}
+`;
+
 export async function enqueueRequest(request: QueuedRequest): Promise<void> {
   const redis = await getRedisClient();
   const ready = isRedisReady();
@@ -39,13 +83,24 @@ export async function enqueueRequest(request: QueuedRequest): Promise<void> {
   }
 
   try {
-    const depth = (await redis.llen(getQueueKey())) as number;
-    if (depth >= MAX_QUEUE_DEPTH) {
+    const jsonStr = JSON.stringify(request);
+    const userQueueKey = `oma:queue:users:${request.userId}`;
+    const result = await (redis.eval as (script: string, numkeys: number, ...args: (string | number)[]) => Promise<number[]>)(
+      ENQUEUE_SCRIPT,
+      2,
+      getQueueKey(),
+      userQueueKey,
+      MAX_QUEUE_DEPTH,
+      jsonStr,
+      request.userId,
+      request.id
+    );
+
+    if (result[0] === -1) {
       throw new Error(`Queue full: ${MAX_QUEUE_DEPTH} requests pending`);
     }
-
-    await redis.rPush(getQueueKey(), JSON.stringify(request));
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Queue full")) throw err;
     console.error("[queue] Failed to enqueue request:", err);
     throw err;
   }
@@ -60,18 +115,12 @@ export async function getQueueStatus(userId: string): Promise<QueueStatus> {
   try {
     const queueDepth = (await redis.llen(getQueueKey())) as number;
 
-    const items = await redis.lRange(getQueueKey(), 0, -1);
-    let userPosition = -1;
-    for (let i = 0; i < items.length; i++) {
-      const parsed = JSON.parse(items[i]) as QueuedRequest;
-      if (parsed.userId === userId) {
-        userPosition = i + 1;
-        break;
-      }
-    }
+    const count = await redis.hGet(getQueueKey(), `_user:${userId}`);
+    const userCount = count ? parseInt(count, 10) : 0;
+    const userPosition = userCount > 0 ? 1 : -1;
 
     const estimatedWaitSeconds = userPosition > 0
-      ? Math.ceil((userPosition * DEFAULT_PROCESS_INTERVAL_MS) / 1000)
+      ? Math.ceil((userCount * DEFAULT_PROCESS_INTERVAL_MS) / 1000)
       : 0;
 
     return {
@@ -91,14 +140,8 @@ export async function getQueuePosition(userId: string, requestId: string): Promi
   if (!redis || !isRedisReady()) return -1;
 
   try {
-    const items = await redis.lRange(getQueueKey(), 0, -1);
-    for (let i = 0; i < items.length; i++) {
-      const parsed = JSON.parse(items[i]) as QueuedRequest;
-      if (parsed.userId === userId && parsed.id === requestId) {
-        return i + 1;
-      }
-    }
-    return -1;
+    const exists = await redis.sIsMember(`oma:queue:users:${userId}`, requestId);
+    return exists ? 1 : -1;
   } catch (err) {
     console.error("[queue] Failed to get queue position:", err);
     return -1;
@@ -110,10 +153,28 @@ export async function processNextRequest(): Promise<QueuedRequest | null> {
   if (!redis || !isRedisReady()) return null;
 
   try {
-    const item = await redis.lPop(getQueueKey());
-    if (!item) return null;
+    const result = await (redis.eval as (script: string, numkeys: number, ...args: (string | number)[]) => Promise<(string | number | null)[]>)(
+      DEQUEUE_SCRIPT,
+      2,
+      getQueueKey(),
+      `oma:queue:users:placeholder`,
+      ""
+    );
 
-    return JSON.parse(item as string) as QueuedRequest;
+    if (!result[0]) return null;
+
+    const item = result[0] as string;
+    const parsed = JSON.parse(item) as QueuedRequest;
+
+    if (result[1] === 0) {
+      const userQueueKey = `oma:queue:users:${parsed.userId}`;
+      const multi = redis.multi();
+      multi.hIncrBy(getQueueKey(), `_user:${parsed.userId}`, -1);
+      multi.sRem(userQueueKey, parsed.id);
+      await multi.exec();
+    }
+
+    return parsed;
   } catch (err) {
     console.error("[queue] Failed to process next request:", err);
     return null;
@@ -138,11 +199,18 @@ export async function removeFromQueue(userId: string, requestId: string): Promis
   if (!redis || !isRedisReady()) return false;
 
   try {
+    const isMember = await redis.sIsMember(`oma:queue:users:${userId}`, requestId);
+    if (!isMember) return false;
+
     const items = await redis.lRange(getQueueKey(), 0, -1);
     for (const item of items) {
       const parsed = JSON.parse(item as string) as QueuedRequest;
       if (parsed.userId === userId && parsed.id === requestId) {
-        await redis.lRem(getQueueKey(), 1, item);
+        const multi = redis.multi();
+        multi.lRem(getQueueKey(), 1, item);
+        multi.hIncrBy(getQueueKey(), `_user:${userId}`, -1);
+        multi.sRem(`oma:queue:users:${userId}`, requestId);
+        await multi.exec();
         return true;
       }
     }
@@ -158,7 +226,13 @@ export async function clearQueue(): Promise<boolean> {
   if (!redis || !isRedisReady()) return false;
 
   try {
-    await redis.del(getQueueKey());
+    const userKeys = await redis.keys("oma:queue:users:*");
+    const keysToDelete = [getQueueKey(), ...userKeys];
+    if (userKeys.length > 0) {
+      await redis.del(keysToDelete);
+    } else {
+      await redis.del(getQueueKey());
+    }
     return true;
   } catch (err) {
     console.error("[queue] Failed to clear queue:", err);

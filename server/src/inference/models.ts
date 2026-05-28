@@ -1,3 +1,8 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { config } from '../config.js';
+import { logger } from '../lib/logger.js';
+
 export interface ModelDef {
   id: string;
   veniceId?: string;
@@ -6,8 +11,11 @@ export interface ModelDef {
   openrouterId?: string;
   togetherId?: string;
   deepinfraId?: string;
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "both" | "all";
-  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra";
+  groqId?: string;
+  cerebrasId?: string;
+  bedrockId?: string;
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock" | "both" | "all";
+  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock";
   inputPricePer1M: number;
   outputPricePer1M: number;
   markupPercent: number;
@@ -41,735 +49,6 @@ export const WHISPER_MODEL_INFO: ModelDef = {
   creditsPerMillionOutput: 0,
 };
 
-export const MODEL_CATALOG: Record<string, ModelDef> = {
-  "llama-3.2-3b": {
-    id: "llama-3.2-3b",
-    veniceId: "llama-3.2-3b",
-    openrouterId: "meta-llama/llama-3.2-3b-instruct",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.15,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.2 3B",
-    capabilities: ["chat", "fast", "coding"],
-    description: "Meta efficient small model with strong per-parameter performance",
-    creditsPerMillionInput: 0,
-    creditsPerMillionOutput: 0,
-  },
-"llama-3.2-1b": {
-    id: "llama-3.2-1b",
-    veniceId: "llama-3.2-1b",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.10,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.2 1B",
-    capabilities: ["chat", "fast"],
-    description: "Meta ultra-compact model for lightweight tasks",
-    creditsPerMillionInput: 0,
-    creditsPerMillionOutput: 0,
-  },
-  "llama-3.3-70b": {
-    id: "llama-3.3-70b",
-    veniceId: "llama-3.3-70b",
-    openrouterId: "meta-llama/llama-3.3-70b-instruct",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.88,
-    outputPricePer1M: 0.88,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.3 70B",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Meta open-source flagship model with broad general capability",
-    creditsPerMillionInput: 25,
-    creditsPerMillionOutput: 25,
-  },
-  "venice-uncensored": {
-    id: "venice-uncensored",
-    veniceId: "venice-uncensored",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.20,
-    outputPricePer1M: 0.90,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Venice Uncensored",
-    capabilities: ["chat", "uncensored"],
-    description: "Venice AI uncensored model with no content restrictions",
-    creditsPerMillionInput: 25,
-    creditsPerMillionOutput: 100,
-  },
-  "venice-uncensored-1-2": {
-    id: "venice-uncensored-1-2",
-    veniceId: "venice-uncensored-1-2",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.20,
-    outputPricePer1M: 0.90,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Venice Uncensored 1.2",
-    capabilities: ["chat", "uncensored", "function_calling"],
-    description: "Venice AI uncensored model v1.2 with function calling support",
-    creditsPerMillionInput: 25,
-    creditsPerMillionOutput: 100,
-  },
-  "venice-01": {
-    id: "venice-01",
-    veniceId: "venice-01",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.25,
-    outputPricePer1M: 1.00,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Venice 01",
-    capabilities: ["chat", "reasoning", "coding"],
-    description: "Venice AI flagship reasoning model with strong problem-solving",
-    creditsPerMillionInput: 50,
-    creditsPerMillionOutput: 150,
-  },
-  "venice-01-lite": {
-    id: "venice-01-lite",
-    veniceId: "venice-01-lite",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Venice 01 Lite",
-    capabilities: ["chat", "reasoning", "fast"],
-    description: "Venice AI efficient reasoning model for cost-conscious inference",
-    creditsPerMillionInput: 25,
-    creditsPerMillionOutput: 75,
-  },
-  "qwen3-5-9b": {
-    id: "qwen3-5-9b",
-    veniceId: "qwen3-5-9b",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.15,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 256000,
-    supportsStreaming: true,
-    displayName: "Qwen3.5 9B",
-    capabilities: ["chat", "fast"],
-    description: "Alibaba efficient small model for lightweight general tasks",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 15,
-  },
-  "qwen3-4b": {
-    id: "qwen3-4b",
-    veniceId: "qwen3-4b",
-    openrouterId: "qwen/qwen2.5-3b-instruct",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.05,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 256000,
-    supportsStreaming: true,
-    displayName: "Qwen3.5 4B",
-    capabilities: ["chat", "fast"],
-    description: "Alibaba compact model for efficient lightweight tasks",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-  },
-  "qwen3-8b": {
-    id: "qwen3-8b",
-    veniceId: "qwen3-8b",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.15,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 256000,
-    supportsStreaming: true,
-    displayName: "Qwen3.5 8B",
-    capabilities: ["chat", "fast"],
-    description: "Alibaba efficient small model for general tasks",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 15,
-  },
-  "deepseek-v3": {
-    id: "deepseek-v3",
-    veniceId: "deepseek-v3",
-    openrouterId: "deepseek/deepseek-v3",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.33,
-    outputPricePer1M: 0.48,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 160000,
-    supportsStreaming: true,
-    displayName: "DeepSeek V3",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "DeepSeek MoE model with strong multilingual performance",
-    creditsPerMillionInput: 50,
-    creditsPerMillionOutput: 75,
-  },
-  "deepseek-r1": {
-    id: "deepseek-r1",
-    veniceId: "deepseek-r1",
-    openrouterId: "deepseek/deepseek-r1",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.55,
-    outputPricePer1M: 2.20,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "DeepSeek R1",
-    capabilities: ["chat", "reasoning", "coding"],
-    description: "DeepSeek open reasoning model with chain-of-thought",
-    creditsPerMillionInput: 55,
-    creditsPerMillionOutput: 220,
-  },
-  "zai-org-glm-5-1": {
-    id: "zai-org-glm-5-1",
-    veniceId: "zai-org-glm-5-1",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 1.75,
-    outputPricePer1M: 5.50,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "ZAI GLM-5.1",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Zhipu AI model via ZAI Organization on Venice",
-    creditsPerMillionInput: 1.75,
-    creditsPerMillionOutput: 5.50,
-  },
-  "zai-org-glm-4.7": {
-    id: "zai-org-glm-4.7",
-    veniceId: "zai-org-glm-4.7",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.25,
-    outputPricePer1M: 1.00,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "ZAI GLM-4.7",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Zhipu AI model via ZAI Organization on Venice",
-    creditsPerMillionInput: 0.25,
-    creditsPerMillionOutput: 1.00,
-  },
-  "zai-org-glm-4.6": {
-    id: "zai-org-glm-4.6",
-    veniceId: "zai-org-glm-4.6",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.25,
-    outputPricePer1M: 1.00,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "ZAI GLM-4.6",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Zhipu AI model via ZAI Organization on Venice",
-    creditsPerMillionInput: 0.25,
-    creditsPerMillionOutput: 1.00,
-  },
-  "zai-org-glm-4.7-flash": {
-    id: "zai-org-glm-4.7-flash",
-    veniceId: "zai-org-glm-4.7-flash",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "ZAI GLM-4.7 Flash",
-    capabilities: ["chat", "fast"],
-    description: "Zhipu AI fast model via ZAI Organization on Venice",
-    creditsPerMillionInput: 0.10,
-    creditsPerMillionOutput: 0.40,
-  },
-  "venice-sd35": {
-    id: "venice-sd35",
-    veniceId: "venice-sd35",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.60,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 0,
-    supportsStreaming: false,
-    displayName: "Venice SD3.5",
-    capabilities: ["image_generation", "text-to-image"],
-    description: "Venice AI Stable Diffusion 3.5 for image generation",
-    creditsPerMillionInput: 0,
-    creditsPerMillionOutput: 0,
-  },
-  "qwen-image-2": {
-    id: "qwen-image-2",
-    veniceId: "qwen-image-2",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.40,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 0,
-    supportsStreaming: false,
-    displayName: "Qwen Image 2",
-    capabilities: ["image_generation", "text-to-image"],
-    description: "Qwen image generation model via Venice",
-    creditsPerMillionInput: 0,
-    creditsPerMillionOutput: 0,
-  },
-  "google-gemma-3-27b-it": {
-    id: "google-gemma-3-27b-it",
-    veniceId: "google-gemma-3-27b-it",
-    openrouterId: "google/gemma-3-27b-it",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.30,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Gemma 3 27B IT",
-    capabilities: ["chat", "coding", "fast"],
-    description: "Google open-source model with strong efficiency per parameter",
-    creditsPerMillionInput: 0.30,
-    creditsPerMillionOutput: 0.60,
-  },
-  "google-gemma-4-31b-it": {
-    id: "google-gemma-4-31b-it",
-    veniceId: "google-gemma-4-31b-it",
-    openrouterId: "google/gemma-4-31b-it",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.40,
-    outputPricePer1M: 0.80,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Gemma 4 31B IT",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Google next-generation model with improved instruction following",
-    creditsPerMillionInput: 0.40,
-    creditsPerMillionOutput: 0.80,
-  },
-  "gemma-4-uncensored": {
-    id: "gemma-4-uncensored",
-    veniceId: "gemma-4-uncensored",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.40,
-    outputPricePer1M: 0.80,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Gemma 4 Uncensored",
-    capabilities: ["chat", "uncensored"],
-    description: "Google Gemma 4 uncensored variant",
-    creditsPerMillionInput: 0.40,
-    creditsPerMillionOutput: 0.80,
-  },
-  "hermes-3-llama-3.1-405b": {
-    id: "hermes-3-llama-3.1-405b",
-    veniceId: "hermes-3-llama-3.1-405b",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 1.20,
-    outputPricePer1M: 2.40,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Hermes 3 Llama 3.1 405B",
-    capabilities: ["chat", "reasoning", "coding"],
-    description: "Nous Research high-capability uncensored model",
-    creditsPerMillionInput: 1.20,
-    creditsPerMillionOutput: 2.40,
-  },
-  "mistral-small-3.2-24b-instruct": {
-    id: "mistral-small-3.2-24b-instruct",
-    veniceId: "mistral-small-3.2-24b-instruct",
-    openrouterId: "mistralai/mistral-small-3.1-24b-instruct",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "Mistral Small 3.2 24B",
-    capabilities: ["chat", "fast", "coding"],
-    description: "Mistral efficient model for fast inference at low cost",
-    creditsPerMillionInput: 0.10,
-    creditsPerMillionOutput: 0.40,
-  },
-  "minimax-m27": {
-    id: "minimax-m27",
-    veniceId: "minimax-m27",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "MiniMax M27",
-    capabilities: ["chat", "fast"],
-    description: "MiniMax efficient model for cost-sensitive deployments",
-    creditsPerMillionInput: 0.10,
-    creditsPerMillionOutput: 0.40,
-  },
-  "mercury-2": {
-    id: "mercury-2",
-    veniceId: "mercury-2",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.15,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "Mercury 2",
-    capabilities: ["chat", "fast"],
-    description: "Compact efficient model for lightweight tasks",
-    creditsPerMillionInput: 0.05,
-    creditsPerMillionOutput: 0.15,
-  },
-  "aion-labs-aion-2-0": {
-    id: "aion-labs-aion-2-0",
-    veniceId: "aion-labs-aion-2-0",
-    provider: "venice",
-    primaryProvider: "venice",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "Aion 2.0",
-    capabilities: ["chat", "coding"],
-    description: "Aion Labs model for reasoning and coding tasks",
-    creditsPerMillionInput: 0.10,
-    creditsPerMillionOutput: 0.40,
-  },
-  "openai/gpt-4o-mini": {
-    id: "openai/gpt-4o-mini",
-    openrouterId: "openai/gpt-4o-mini",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.15,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "GPT-4o Mini",
-    capabilities: ["chat", "fast", "coding"],
-    description: "OpenAI compact frontier model for fast, affordable inference",
-    creditsPerMillionInput: 0.15,
-    creditsPerMillionOutput: 0.60,
-  },
-  "meta-llama/llama-3.2-3b-instruct:budget": {
-    id: "meta-llama/llama-3.2-3b-instruct:budget",
-    openrouterId: "meta-llama/llama-3.2-3b-instruct",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.01,
-    outputPricePer1M: 0.02,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.2 3B",
-    capabilities: ["chat", "fast"],
-    description: "Meta Llama 3.2 3B - efficient for lightweight tasks",
-    creditsPerMillionInput: 0.01,
-    creditsPerMillionOutput: 0.02,
-  },
-  "mistralai/mistral-7b-instruct:budget": {
-    id: "mistralai/mistral-7b-instruct:budget",
-    openrouterId: "mistralai/mistral-7b-instruct",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.01,
-    outputPricePer1M: 0.02,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Mistral 7B",
-    capabilities: ["chat", "fast"],
-    description: "Mistral 7B - efficient model for lightweight tasks",
-    creditsPerMillionInput: 0.01,
-    creditsPerMillionOutput: 0.02,
-  },
-  "deepseek/deepseek-r1:budget": {
-    id: "deepseek/deepseek-r1:budget",
-    openrouterId: "deepseek/deepseek-r1",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.55,
-    outputPricePer1M: 2.20,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 64000,
-    supportsStreaming: true,
-    displayName: "DeepSeek R1",
-    capabilities: ["chat", "reasoning", "coding"],
-    description: "DeepSeek R1 reasoning model with chain-of-thought",
-    creditsPerMillionInput: 0.55,
-    creditsPerMillionOutput: 2.20,
-  },
-  "qwen/qwen3-coder-32b:budget": {
-    id: "qwen/qwen3-coder-32b:budget",
-    openrouterId: "qwen/qwen3-coder-32b",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.14,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Qwen3 Coder 32B",
-    capabilities: ["chat", "coding"],
-    description: "Qwen3 Coder 32B - specialized code generation",
-    creditsPerMillionInput: 0.14,
-    creditsPerMillionOutput: 0.60,
-  },
-  "google/gemma-4-31b-it:budget": {
-    id: "google/gemma-4-31b-it:budget",
-    openrouterId: "google/gemma-4-31b-it",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.40,
-    outputPricePer1M: 0.80,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Gemma 4 31B",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Google Gemma 4 31B - strong reasoning and instruction-following",
-    creditsPerMillionInput: 0.40,
-    creditsPerMillionOutput: 0.80,
-  },
-  "google/gemini-2.0-flash-001": {
-    id: "google/gemini-2.0-flash-001",
-    openrouterId: "google/gemini-2.0-flash-001",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.40,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    displayName: "Gemini 2.0 Flash",
-    capabilities: ["chat", "fast", "coding", "vision"],
-    description: "Google Gemini 2.0 Flash fast multimodal model via OpenRouter",
-    creditsPerMillionInput: 0.10,
-    creditsPerMillionOutput: 0.40,
-  },
-  "anthropic/claude-3-5-sonnet": {
-    id: "anthropic/claude-3-5-sonnet",
-    openrouterId: "anthropic/claude-3-5-sonnet",
-    provider: "openrouter",
-    primaryProvider: "openrouter",
-    inputPricePer1M: 3.00,
-    outputPricePer1M: 15.00,
-    markupPercent: 10,
-    category: "frontier",
-    maxTokens: 200000,
-    supportsStreaming: true,
-    displayName: "Claude 3.5 Sonnet",
-    capabilities: ["chat", "reasoning", "coding", "vision"],
-    description: "Anthropic frontier reasoning model via OpenRouter",
-    creditsPerMillionInput: 3.00,
-    creditsPerMillionOutput: 15.00,
-  },
-  "meta-llama/llama-3.3-70b-together": {
-    id: "meta-llama/llama-3.3-70b-together",
-    togetherId: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    deepinfraId: "meta-llama/Llama-3.3-70B-Instruct",
-    provider: "both",
-    primaryProvider: "together",
-    inputPricePer1M: 0.59,
-    outputPricePer1M: 0.79,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.3 70B (Together)",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Meta Llama 3.3 70B via Together AI and DeepInfra",
-    creditsPerMillionInput: 0.59,
-    creditsPerMillionOutput: 0.79,
-  },
-  "deepseek-v3-together": {
-    id: "deepseek-v3-together",
-    togetherId: "deepseek-ai/DeepSeek-V3",
-    deepinfraId: "deepseek-ai/DeepSeek-V3",
-    provider: "both",
-    primaryProvider: "together",
-    inputPricePer1M: 0.25,
-    outputPricePer1M: 0.45,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 160000,
-    supportsStreaming: true,
-    displayName: "DeepSeek V3 (Together)",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "DeepSeek MoE model via Together AI and DeepInfra",
-    creditsPerMillionInput: 0.25,
-    creditsPerMillionOutput: 0.45,
-  },
-  "qwen-2.5-72b-together": {
-    id: "qwen-2.5-72b-together",
-    togetherId: "Qwen/Qwen2.5-72B-Instruct-Turbo",
-    deepinfraId: "Qwen/Qwen2.5-72B-Instruct-Turbo",
-    provider: "both",
-    primaryProvider: "together",
-    inputPricePer1M: 0.90,
-    outputPricePer1M: 0.90,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Qwen 2.5 72B (Together)",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "Alibaba Qwen 2.5 72B via Together AI and DeepInfra",
-    creditsPerMillionInput: 0.90,
-    creditsPerMillionOutput: 0.90,
-  },
-  "mistral-7b-together": {
-    id: "mistral-7b-together",
-    togetherId: "mistralai/Mistral-7B-Instruct-v0.3",
-    deepinfraId: "mistralai/Mistral-7B-Instruct-v0.3",
-    provider: "both",
-    primaryProvider: "deepinfra",
-    inputPricePer1M: 0.20,
-    outputPricePer1M: 0.20,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 32000,
-    supportsStreaming: true,
-    displayName: "Mistral 7B (Together)",
-    capabilities: ["chat", "fast"],
-    description: "Mistral 7B via Together AI and DeepInfra",
-    creditsPerMillionInput: 0.20,
-    creditsPerMillionOutput: 0.20,
-  },
-  "meta-llama-3.1-8b-together": {
-    id: "meta-llama-3.1-8b-together",
-    togetherId: "meta-llama/Llama-3.1-8B-Instruct-Turbo",
-    provider: "together",
-    primaryProvider: "together",
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.05,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.1 8B (Together)",
-    capabilities: ["chat", "fast", "ultra-cheap"],
-    description: "Meta Llama 3.1 8B ultra-budget via Together AI",
-    creditsPerMillionInput: 0.05,
-    creditsPerMillionOutput: 0.05,
-  },
-  "nvidia-nemotron-70b-together": {
-    id: "nvidia-nemotron-70b-together",
-    togetherId: "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",
-    provider: "together",
-    primaryProvider: "together",
-    inputPricePer1M: 0.80,
-    outputPricePer1M: 0.90,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "NVIDIA Nemotron 70B (Together)",
-    capabilities: ["chat", "coding", "reasoning"],
-    description: "NVIDIA Llama 3.1 Nemotron 70B via Together AI",
-    creditsPerMillionInput: 0.80,
-    creditsPerMillionOutput: 0.90,
-  },
-  "google-gemma-2-27b-together": {
-    id: "google-gemma-2-27b-together",
-    togetherId: "google/gemma-2-27b-it",
-    provider: "together",
-    primaryProvider: "together",
-    inputPricePer1M: 0.35,
-    outputPricePer1M: 0.35,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 8192,
-    supportsStreaming: true,
-    displayName: "Gemma 2 27B IT (Together)",
-    capabilities: ["chat", "coding", "fast"],
-    description: "Google Gemma 2 27B via Together AI",
-    creditsPerMillionInput: 0.35,
-    creditsPerMillionOutput: 0.35,
-  },
-  "microsoft-phi-4-deepinfra": {
-    id: "microsoft-phi-4-deepinfra",
-    deepinfraId: "microsoft/phi-4",
-    provider: "deepinfra",
-    primaryProvider: "deepinfra",
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.05,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 16000,
-    supportsStreaming: true,
-    displayName: "Microsoft Phi-4 (DeepInfra)",
-    capabilities: ["chat", "fast", "ultra-budget"],
-    description: "Microsoft Phi-4 ultra-budget via DeepInfra",
-    creditsPerMillionInput: 0.05,
-    creditsPerMillionOutput: 0.05,
-  },
-};
-
 export interface VideoModelDef {
   id: string;
   provider: "venice";
@@ -783,75 +62,347 @@ export interface VideoModelDef {
   creditsPrice: number;
 }
 
-export const VIDEO_MODELS: Record<string, VideoModelDef> = {
+export let MODEL_CATALOG: Record<string, ModelDef> = {};
+export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
+
+const FALLBACK_MODELS: Record<string, ModelDef> = {
+  "groq/llama-3.3-70b": {
+    id: "groq/llama-3.3-70b",
+    provider: "groq" as const,
+    primaryProvider: "groq" as const,
+    inputPricePer1M: 0.59,
+    outputPricePer1M: 0.79,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.3 70B (Groq)",
+    capabilities: ["chat", "code"],
+    description: "Meta's 70B model with ultra-fast inference on Groq",
+    creditsPerMillionInput: 590,
+    creditsPerMillionOutput: 790,
+  },
+  "groq/llama-3.1-8b-instant": {
+    id: "groq/llama-3.1-8b-instant",
+    provider: "groq" as const,
+    primaryProvider: "groq" as const,
+    inputPricePer1M: 0.05,
+    outputPricePer1M: 0.08,
+    markupPercent: 10,
+    category: "budget",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.1 8B Instant (Groq)",
+    capabilities: ["chat"],
+    description: "Ultra-fast budget model on Groq",
+    creditsPerMillionInput: 50,
+    creditsPerMillionOutput: 80,
+  },
+  "groq/mixtral-8x7b": {
+    id: "groq/mixtral-8x7b",
+    provider: "groq" as const,
+    primaryProvider: "groq" as const,
+    inputPricePer1M: 0.24,
+    outputPricePer1M: 0.24,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 32768,
+    supportsStreaming: true,
+    displayName: "Mixtral 8x7B (Groq)",
+    capabilities: ["chat", "code"],
+    description: "Fast Mixture-of-Experts model on Groq",
+    creditsPerMillionInput: 240,
+    creditsPerMillionOutput: 240,
+  },
+  "cerebras/llama-3.3-70b": {
+    id: "cerebras/llama-3.3-70b",
+    provider: "cerebras" as const,
+    primaryProvider: "cerebras" as const,
+    inputPricePer1M: 0.60,
+    outputPricePer1M: 0.60,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.3 70B (Cerebras)",
+    capabilities: ["chat", "code"],
+    description: "Ultra-fast inference on Cerebras wafer scale engine",
+    creditsPerMillionInput: 600,
+    creditsPerMillionOutput: 600,
+  },
+  "cerebras/llama-3.1-8b": {
+    id: "cerebras/llama-3.1-8b",
+    provider: "cerebras" as const,
+    primaryProvider: "cerebras" as const,
+    inputPricePer1M: 0.10,
+    outputPricePer1M: 0.10,
+    markupPercent: 10,
+    category: "budget",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.1 8B (Cerebras)",
+    capabilities: ["chat"],
+    description: "Fast budget model on Cerebras",
+    creditsPerMillionInput: 100,
+    creditsPerMillionOutput: 100,
+  },
+  "deepseek-v3": {
+    id: "deepseek-v3",
+    veniceId: "deepseek-v3",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.50,
+    outputPricePer1M: 1.50,
+    markupPercent: 10,
+    category: "premium",
+    maxTokens: 65536,
+    supportsStreaming: true,
+    displayName: "DeepSeek V3",
+    capabilities: ["chat", "code", "reasoning"],
+    description: "DeepSeek's latest flagship model",
+    creditsPerMillionInput: 500,
+    creditsPerMillionOutput: 1500,
+  },
+  "bedrock/claude-3.5-sonnet": {
+    id: "bedrock/claude-3.5-sonnet",
+    provider: "bedrock" as const,
+    primaryProvider: "bedrock" as const,
+    bedrockId: "claude-3-5-sonnet",
+    inputPricePer1M: 3.00,
+    outputPricePer1M: 15.00,
+    markupPercent: 10,
+    category: "premium",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude 3.5 Sonnet (Bedrock)",
+    capabilities: ["chat", "code", "reasoning", "vision"],
+    description: "Anthropic Claude 3.5 Sonnet on AWS Bedrock",
+    creditsPerMillionInput: 3000,
+    creditsPerMillionOutput: 15000,
+  },
+  "bedrock/llama-3.1-70b": {
+    id: "bedrock/llama-3.1-70b",
+    provider: "bedrock" as const,
+    primaryProvider: "bedrock" as const,
+    bedrockId: "llama-3.1-70b-instruct",
+    inputPricePer1M: 0.65,
+    outputPricePer1M: 2.75,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 128000,
+    supportsStreaming: true,
+    displayName: "Llama 3.1 70B (Bedrock)",
+    capabilities: ["chat", "code"],
+    description: "Meta Llama 3.1 70B on AWS Bedrock",
+    creditsPerMillionInput: 650,
+    creditsPerMillionOutput: 2750,
+  },
+  "llama-3.3-70b": {
+    id: "llama-3.3-70b",
+    veniceId: "llama-3.3-70b",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.35,
+    outputPricePer1M: 0.90,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.3 70B",
+    capabilities: ["chat", "code"],
+    description: "Meta's latest 70B model",
+    creditsPerMillionInput: 350,
+    creditsPerMillionOutput: 900,
+  },
+  "llama-3.2-3b": {
+    id: "llama-3.2-3b",
+    veniceId: "llama-3.2-3b",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.06,
+    outputPricePer1M: 0.12,
+    markupPercent: 10,
+    category: "budget",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.2 3B",
+    capabilities: ["chat"],
+    description: "Fast, lightweight model",
+    creditsPerMillionInput: 60,
+    creditsPerMillionOutput: 120,
+  },
+  "gpt-4o-mini": {
+    id: "gpt-4o-mini",
+    openrouterId: "gpt-4o-mini",
+    provider: "openrouter",
+    primaryProvider: "openrouter",
+    inputPricePer1M: 0.15,
+    outputPricePer1M: 0.60,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 128000,
+    supportsStreaming: true,
+    displayName: "GPT-4o Mini",
+    capabilities: ["chat", "code", "reasoning"],
+    description: "OpenAI's cost-efficient model",
+    creditsPerMillionInput: 150,
+    creditsPerMillionOutput: 600,
+  },
+  "llama-3.3-70b-together": {
+    id: "llama-3.3-70b-together",
+    togetherId: "llama-3.3-70b-together",
+    provider: "together",
+    primaryProvider: "together",
+    inputPricePer1M: 0.35,
+    outputPricePer1M: 0.90,
+    markupPercent: 10,
+    category: "premium",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3.3 70B (Together)",
+    capabilities: ["chat", "code"],
+    description: "Meta's 70B on Together AI",
+    creditsPerMillionInput: 350,
+    creditsPerMillionOutput: 900,
+  },
+  "free/gpt-3.5-turbo": {
+    id: "free/gpt-3.5-turbo",
+    openrouterId: "openai/gpt-3.5-turbo",
+    provider: "openrouter",
+    primaryProvider: "openrouter",
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    markupPercent: 0,
+    category: "budget",
+    maxTokens: 16385,
+    supportsStreaming: true,
+    displayName: "GPT-3.5 Turbo (FREE)",
+    capabilities: ["chat", "code"],
+    description: "Free tier - OpenAI GPT-3.5 Turbo with rate limits",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  },
+  "free/claude-3-haiku": {
+    id: "free/claude-3-haiku",
+    openrouterId: "anthropic/claude-3-haiku",
+    provider: "openrouter",
+    primaryProvider: "openrouter",
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    markupPercent: 0,
+    category: "budget",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude 3 Haiku (FREE)",
+    capabilities: ["chat", "code", "fast"],
+    description: "Free tier - Anthropic Claude 3 Haiku",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  },
+  "free/gemini-pro": {
+    id: "free/gemini-pro",
+    openrouterId: "google/gemini-pro",
+    provider: "openrouter",
+    primaryProvider: "openrouter",
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    markupPercent: 0,
+    category: "budget",
+    maxTokens: 32768,
+    supportsStreaming: true,
+    displayName: "Gemini Pro (FREE)",
+    capabilities: ["chat", "code", "vision"],
+    description: "Free tier - Google Gemini Pro",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  },
+  "free/llama-3-8b": {
+    id: "free/llama-3-8b",
+    openrouterId: "meta-llama/llama-3-8b-instruct",
+    provider: "openrouter",
+    primaryProvider: "openrouter",
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    markupPercent: 0,
+    category: "budget",
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: "Llama 3 8B (FREE)",
+    capabilities: ["chat", "code"],
+    description: "Free tier - Meta Llama 3 8B",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  },
+};
+
+const FALLBACK_VIDEO_MODELS: Record<string, VideoModelDef> = {
   "seedance-2-0-text-to-video": {
     id: "seedance-2-0-text-to-video",
     provider: "venice",
     price: 0.90,
     duration: "5s",
     displayName: "Seedance 2.0 Text-to-Video",
-    capabilities: ["text-to-video", "5s"],
-    description: "High-quality text-to-video generation with Seedance 2.0",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-    creditsPrice: 0.90,
-  },
-  "seedance-2-0-image-to-video": {
-    id: "seedance-2-0-image-to-video",
-    provider: "venice",
-    price: 1.20,
-    duration: "5s",
-    displayName: "Seedance 2.0 Image-to-Video",
-    capabilities: ["image-to-video", "5s"],
-    description: "Animate images into videos with Seedance 2.0",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-    creditsPrice: 1.20,
+    capabilities: ["video-generation", "text-to-video"],
+    description: "Seedance 2.0 for text-to-video generation",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+    creditsPrice: 900,
   },
   "kling-v3-pro-text-to-video": {
     id: "kling-v3-pro-text-to-video",
     provider: "venice",
     price: 0.92,
     duration: "5s",
-    displayName: "Kling V3 Pro Text-to-Video",
-    capabilities: ["text-to-video", "5s"],
-    description: "Professional-grade text-to-video with Kling V3 Pro",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-    creditsPrice: 0.92,
-  },
-  "kling-v3-pro-image-to-video": {
-    id: "kling-v3-pro-image-to-video",
-    provider: "venice",
-    price: 1.40,
-    duration: "5s",
-    displayName: "Kling V3 Pro Image-to-Video",
-    capabilities: ["image-to-video", "5s"],
-    description: "Transform images into videos with Kling V3 Pro",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-    creditsPrice: 1.40,
-  },
-  "grok-imagine-text-to-video": {
-    id: "grok-imagine-text-to-video",
-    provider: "venice",
-    price: 0.85,
-    duration: "5s",
-    displayName: "Grok Imagine Text-to-Video",
-    capabilities: ["text-to-video", "5s"],
-    description: "Creative text-to-video generation via Grok Imagine",
-    creditsPerMillionInput: 10,
-    creditsPerMillionOutput: 10,
-    creditsPrice: 0.85,
+    displayName: "Kling 3.0 Pro Text-to-Video",
+    capabilities: ["video-generation", "text-to-video"],
+    description: "Kling 3.0 Pro for text-to-video generation",
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+    creditsPrice: 920,
   },
 };
 
-export function calculateCost(
+let catalogPromise: Promise<void> | null = null;
+
+export function ensureCatalogLoaded(): Promise<void> {
+  if (!catalogPromise) {
+    catalogPromise = reloadModelCatalog();
+  }
+  return catalogPromise;
+}
+
+export async function reloadModelCatalog(): Promise<void> {
+  const configPath = config.MODELS_CONFIG_PATH || path.join(process.cwd(), 'models.json');
+  try {
+    const data = await fs.promises.readFile(configPath, 'utf-8');
+    const parsed = JSON.parse(data);
+    MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS;
+    VIDEO_MODELS = parsed.VIDEO_MODELS || FALLBACK_VIDEO_MODELS;
+    logger.info({ modelCount: Object.keys(MODEL_CATALOG).length, videoModelCount: Object.keys(VIDEO_MODELS).length, configPath, type: 'model_catalog_loaded' });
+  } catch (error) {
+    logger.warn({ configPath, error: error instanceof Error ? error.message : String(error), type: 'model_catalog_fallback' }, 'Failed to load models.json, using fallback models');
+    MODEL_CATALOG = FALLBACK_MODELS;
+    VIDEO_MODELS = FALLBACK_VIDEO_MODELS;
+  }
+}
+
+export async function getModelCatalog(): Promise<Record<string, ModelDef>> {
+  await ensureCatalogLoaded();
+  return MODEL_CATALOG;
+}
+
+export async function getVideoModels(): Promise<Record<string, VideoModelDef>> {
+  await ensureCatalogLoaded();
+  return VIDEO_MODELS;
+}
+
+export async function calculateCost(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
   discountPercent: number = 0
-): { costCents: string; markupCents: string; totalCents: string } {
+): Promise<{ costCents: string; markupCents: string; totalCents: string }> {
+  await ensureCatalogLoaded();
   const model = MODEL_CATALOG[modelId];
   if (!model) {
     throw new Error(`Unknown model: ${modelId}`);
@@ -874,12 +425,13 @@ export function calculateCost(
   return { costCents, markupCents, totalCents };
 }
 
-export function calculateCostCredits(
+export async function calculateCostCredits(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
   discountPercent: number = 0
-): number {
+): Promise<number> {
+  await ensureCatalogLoaded();
   const model = MODEL_CATALOG[modelId];
   if (!model) {
     throw new Error(`Unknown model: ${modelId}`);
@@ -898,62 +450,14 @@ export function calculateCostCredits(
   return Math.max(1, Math.ceil(netTotal));
 }
 
-export function getModel(modelId: string): ModelDef | null {
+export async function getModel(modelId: string): Promise<ModelDef | null> {
+  await ensureCatalogLoaded();
   return MODEL_CATALOG[modelId] ?? null;
 }
 
 export function estimateTokens(text: string): number {
   if (!text || text.length === 0) return 0;
-
-  let tokenCount = 0;
-  let currentWord = "";
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const code = char.charCodeAt(0);
-
-    if (code < 128) {
-      if (/\s/.test(char)) {
-        if (currentWord.length > 0) {
-          tokenCount += estimateWordTokens(currentWord);
-          currentWord = "";
-        }
-      } else {
-        currentWord += char;
-      }
-    } else {
-      if (currentWord.length > 0) {
-        tokenCount += estimateWordTokens(currentWord);
-        currentWord = "";
-      }
-      tokenCount += estimateNonAsciiTokens(char);
-    }
-  }
-
-  if (currentWord.length > 0) {
-    tokenCount += estimateWordTokens(currentWord);
-  }
-
-  return Math.max(1, Math.ceil(tokenCount));
-}
-
-function estimateWordTokens(word: string): number {
-  const trimmed = word.trim();
-  if (!trimmed) return 0;
-  const len = trimmed.length;
-  if (len <= 3) return 1;
-  if (len <= 6) return 2;
-  if (len <= 12) return 3;
-  return 4;
-}
-
-function estimateNonAsciiTokens(char: string): number {
-  const code = char.charCodeAt(0);
-  if (code >= 0x4E00 && code <= 0x9FFF) return 2;
-  if (code >= 0x3040 && code <= 0x30FF) return 2;
-  if (code >= 0xAC00 && code <= 0xD7AF) return 2;
-  if (code >= 0x1F300 && code <= 0x1F9FF) return 2;
-  return 2;
+  return Math.max(1, Math.ceil(text.length / 4));
 }
 
 export function estimateTokensFromWords(wordCount: number): number {
@@ -961,7 +465,7 @@ export function estimateTokensFromWords(wordCount: number): number {
   return Math.max(1, Math.ceil(wordCount * 1.3));
 }
 
-export function listModels(): Array<{
+export async function listModels(): Promise<Array<{
   id: string;
   category: string;
   inputPricePer1M: number;
@@ -970,7 +474,8 @@ export function listModels(): Array<{
   displayName: string;
   capabilities: string[];
   description: string;
-}> {
+}>> {
+  await ensureCatalogLoaded();
   return Object.values(MODEL_CATALOG).map((m) => ({
     id: m.id,
     category: m.category,
@@ -983,7 +488,7 @@ export function listModels(): Array<{
   }));
 }
 
-export function listVideoModels(): Array<{
+export async function listVideoModels(): Promise<Array<{
   id: string;
   provider: string;
   price: number;
@@ -991,7 +496,8 @@ export function listVideoModels(): Array<{
   displayName: string;
   capabilities: string[];
   description: string;
-}> {
+}>> {
+  await ensureCatalogLoaded();
   return Object.values(VIDEO_MODELS).map((m) => ({
     id: m.id,
     provider: m.provider,

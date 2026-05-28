@@ -13,7 +13,7 @@ enum CircuitState {
   HALF_OPEN = "HALF_OPEN",
 }
 
-type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra";
+type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock";
 
 interface HealthRecord {
   state: CircuitState;
@@ -358,6 +358,9 @@ function getProviderBaseUrl(provider: Provider): string {
     openrouter: "https://openrouter.ai",
     together: "https://api.together.xyz",
     deepinfra: "https://api.deepinfra.com",
+    groq: "https://api.groq.com",
+    cerebras: "https://api.cerebras.ai",
+    bedrock: "https://bedrock-runtime.us-east-1.amazonaws.com",
   };
   return baseUrls[provider];
 }

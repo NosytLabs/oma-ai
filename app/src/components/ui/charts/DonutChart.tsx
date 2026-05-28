@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { motion } from 'framer-motion'
 
-interface ModelData {
+export interface ModelData {
   name: string
   value: number
   color: string
@@ -18,8 +18,8 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
   if (active && payload && payload.length) {
     const data = payload[0].payload
     return (
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 px-3 py-2 shadow-xl">
-        <p className="text-xs text-zinc-400">{data.name}</p>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
+        <p className="text-xs text-[var(--color-text-muted)]">{data.name}</p>
         <p className="text-sm font-semibold text-white">{data.value.toLocaleString()}</p>
       </div>
     )
@@ -29,6 +29,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
 
 export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
+  const chartDescription = `Donut chart showing ${data.map(d => `${d.name}: ${d.value.toLocaleString()}`).join(', ')}. Total: ${total.toLocaleString()}`
 
   return (
     <motion.div
@@ -37,7 +38,7 @@ export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
       className="relative h-[280px] w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+        <PieChart role="img" aria-label={chartDescription}>
           <Pie
             data={data}
             cx="50%"
@@ -55,9 +56,9 @@ export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
           <Tooltip content={<CustomTooltip />} />
         </PieChart>
       </ResponsiveContainer>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold text-white">{total.toLocaleString()}</span>
-        <span className="text-xs text-zinc-500 uppercase tracking-wider">{label}</span>
+        <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">{label}</span>
       </div>
     </motion.div>
   )

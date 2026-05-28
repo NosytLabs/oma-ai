@@ -15,6 +15,15 @@ interface QuoteCacheOptions {
   lockTtlMs: number
 }
 
+let cachedRedisClient: ReturnType<typeof getRedisClient> | null = null
+
+async function getCachedRedisClient() {
+  if (!cachedRedisClient) {
+    cachedRedisClient = getRedisClient()
+  }
+  return cachedRedisClient
+}
+
 export class QuoteCache {
   private ttlSec: number
   private lockTtlSec: number
@@ -33,7 +42,7 @@ export class QuoteCache {
   }
 
   async set(session: PendingSession): Promise<boolean> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return false
 
     try {
@@ -45,7 +54,7 @@ export class QuoteCache {
   }
 
   async get(id: string): Promise<PendingSession | null> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return null
 
     try {
@@ -58,7 +67,7 @@ export class QuoteCache {
   }
 
   async delete(id: string): Promise<boolean> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return false
 
     try {
@@ -70,7 +79,7 @@ export class QuoteCache {
   }
 
   async acquireLock(id: string, workerId: string): Promise<boolean> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return false
 
     try {
@@ -85,7 +94,7 @@ export class QuoteCache {
   }
 
   async releaseLock(id: string, workerId: string): Promise<boolean> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return false
 
     const luaScript = `
@@ -108,7 +117,7 @@ export class QuoteCache {
   }
 
   async updateStatus(id: string, status: PendingSession['status']): Promise<boolean> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return false
 
     try {
@@ -126,7 +135,7 @@ export class QuoteCache {
   }
 
   async health(): Promise<{ healthy: boolean; redis: boolean }> {
-    const redis = await getRedisClient()
+    const redis = await getCachedRedisClient()
     if (!redis) return { healthy: false, redis: false }
 
     try {

@@ -6,7 +6,7 @@ import { MODELS } from '@/lib/models-data'
 export const btnBase = "relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-full " +
   "bg-[var(--color-void)] border-[var(--color-border)] text-[var(--color-text-muted)] " +
   "hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] hover:brightness-125 " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-success)]/50 focus-visible:-outline-offset-1 focus-visible:bg-[var(--color-surface)] " +
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-success)]/50 focus-visible:outline-offset-1 focus-visible:bg-[var(--color-surface)] " +
   "active:translate-y-[1px] " +
   "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--color-void)] disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-muted)] disabled:active:translate-y-0 " +
   "data-[state=loading]:text-transparent data-[state=loading]:pointer-events-none " +
@@ -91,6 +91,4 @@ export function MobileStatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBar
   )
 }
 
-export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4)
-}
+

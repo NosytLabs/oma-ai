@@ -1,0 +1,99 @@
+import { Hono } from "hono";
+import { bearerAuth } from "../../auth/middleware.js";
+import { getModel, calculateCost, estimateTokens } from "../../inference/models.js";
+import * as venice from "../../inference/venice.js";
+import { getBalance, deductCredits } from "../../credits/index.js";
+import { tokenBucket } from "../../middleware/rate-limit.js";
+import { requestTimeout } from "../../middleware/timeout.js";
+import { trackSpend } from "../../middleware/spend-limit.js";
+import { validationError } from "../../lib/validation.js";
+import type { OmaEnv } from "../../types.js";
+import { embeddingsSchema, createInsufficientCreditsPayReq } from "./validation.js";
+
+export const embeddingsRouter = new Hono<OmaEnv>();
+
+embeddingsRouter.use("/v1/embeddings", bearerAuth);
+embeddingsRouter.use("/v1/embeddings", requestTimeout());
+embeddingsRouter.use(
+  "/v1/embeddings",
+  tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),
+);
+
+embeddingsRouter.post("/v1/embeddings", async (c) => {
+  const userId = c.get("userId");
+  const apiKey = c.get("apiKey");
+
+  const parsed = embeddingsSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { model } = parsed.data;
+  const input = parsed.data.input as string | string[];
+
+  const modelInfo = await getModel(model);
+  if (!modelInfo && !model.toLowerCase().includes("embedding")) {
+    return c.json(
+      {
+        error: {
+          message: `Model '${model}' not found`,
+          type: "invalid_request_error",
+        },
+      },
+      400,
+    );
+  }
+
+  const bal = await getBalance(userId);
+  if (Number(bal.balanceCents) <= 0) {
+    const payReq = createInsufficientCreditsPayReq(c.req.url, 1);
+    c.header("Pay-Req", JSON.stringify(payReq));
+    return c.json(
+      { error: { message: "Insufficient credits", type: "insufficient_quota" } },
+      402,
+    );
+  }
+
+  try {
+    const resp = await venice.embeddings({ model, input });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      return c.json(
+        { error: { message: text || "Embedding failed", type: "inference_error" } },
+        resp.status as Parameters<typeof c.json>[1],
+      );
+    }
+    const json = await resp.json();
+    const inputStr = typeof input === "string" ? input : input.join("");
+    const inputTokens = json.usage?.prompt_tokens ?? estimateTokens(inputStr);
+    const requestId = crypto.randomUUID();
+
+    if (modelInfo) {
+      const costDetail = await calculateCost(model, inputTokens, 0);
+      const markupCents = Number(costDetail.markupCents);
+      const totalCents = Number(costDetail.totalCents);
+      await deductCredits(
+        userId,
+        Number(costDetail.costCents),
+        markupCents,
+        totalCents,
+        model,
+        "venice",
+        apiKey?.id ?? "unknown",
+        inputTokens,
+        0,
+        requestId,
+      );
+      if (apiKey) {
+        trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+      }
+    }
+
+    return c.json(json);
+  } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
+    const errType = (err as { type?: string }).type ?? "inference_error";
+    console.error(`[chat] /v1/embeddings error:`, err);
+    return c.json(
+      { error: { message: "An internal error occurred", type: errType } },
+      status as Parameters<typeof c.json>[1],
+    );
+  }
+});

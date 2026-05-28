@@ -16,5 +16,7 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+RUN addgroup -g 1001 -S oma && adduser -S oma -u 1001 -G oma
+USER oma
 EXPOSE 3000
 CMD ["npm", "start"]

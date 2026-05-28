@@ -1,6 +1,6 @@
 import { db } from "../db/client.js";
 import { creditBatches, creditBalances } from "../db/schema.js";
-import { eq, lt, gt, and, sql } from "drizzle-orm";
+import { eq, lt, gt, and, sql, inArray } from "drizzle-orm";
 
 const EXPIRY_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ACTIVE_EXTENSION_DAYS = 90;
@@ -31,10 +31,13 @@ export async function processExpiredCredits(): Promise<{
   for (const batch of expiredBatches) {
     expiredAmount += Number(batch.remainingCents);
     affectedUserIds.add(batch.userId);
+  }
 
+  if (expiredBatches.length > 0) {
+    const expiredIds = expiredBatches.map(b => b.id);
     await db.update(creditBatches)
       .set({ remainingCents: '0' })
-      .where(eq(creditBatches.id, batch.id));
+      .where(inArray(creditBatches.id, expiredIds));
   }
 
   for (const userId of affectedUserIds) {
@@ -68,6 +71,8 @@ export async function processExpiredCredits(): Promise<{
     .where(gt(creditBalances.lastActivityAt, extensionCutoff));
 
   let extendedBatchCount = 0;
+  const newExpiry = new Date();
+  newExpiry.setDate(newExpiry.getDate() + ACTIVE_EXTENSION_DAYS);
 
   for (const { userId } of activeUsers) {
     const expiringBatches = await db.select({ id: creditBatches.id })
@@ -80,14 +85,13 @@ export async function processExpiredCredits(): Promise<{
 
     if (expiringBatches.length === 0) continue;
 
-    const newExpiry = new Date();
-    newExpiry.setDate(newExpiry.getDate() + ACTIVE_EXTENSION_DAYS);
-
-    for (const batch of expiringBatches) {
-      await db.update(creditBatches)
-        .set({ expiresAt: newExpiry })
-        .where(eq(creditBatches.id, batch.id));
-    }
+    const batchIds = expiringBatches.map(b => b.id);
+    await db.update(creditBatches)
+      .set({ expiresAt: newExpiry })
+      .where(and(
+        inArray(creditBatches.id, batchIds),
+        gt(creditBatches.remainingCents, '0'),
+      ));
 
     extendedBatchCount += expiringBatches.length;
   }

@@ -1,11 +1,23 @@
 'use client'
 
+import React, { useCallback, useContext, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { base } from 'wagmi/chains'
-import { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { getWagmiConfigSingleton } from '@/lib/wagmi'
-import { api } from '@/lib/api'
+import { api, type User } from '@/lib/api'
+import { WalletContext, type AuthMethod, type WalletKind } from './wallet-context'
+
+export type { AuthMethod, WalletKind }
+
+const noopSolana = {
+  address: null as string | null,
+  connected: false,
+  connecting: false,
+  connect: () => {},
+  disconnect: async () => {},
+  signMessage: async (_message: string) => { throw new Error('Solana wallet not available'); },
+};
 
 function useIsMounted() {
   const [mounted, setMounted] = useState(false)
@@ -24,42 +36,56 @@ const queryClient = new QueryClient({
 
 function setCookie(name: string, value: string, maxAgeDays: number) {
   const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict; Secure`
 }
 
 function deleteCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict; Secure`
 }
 
-interface WalletContextValue {
-  isConnected: boolean
-  connectEvm: (connectorId?: string) => void
-  disconnect: () => Promise<void>
-  evmAddress: `0x${string}` | undefined
-  evmChain: { id: number; name: string } | undefined
-  signMessage: (message: string) => Promise<string>
-  isConnecting: boolean
-  availableConnectors: { id: string; name: string; icon?: string }[]
+interface StoredSession {
+  token: string;
+  authMethod: AuthMethod;
 }
 
-const WalletContext = createContext<WalletContextValue>({
-  isConnected: false,
-  connectEvm: () => {},
-  disconnect: async () => {},
-  evmAddress: undefined,
-  evmChain: undefined,
-  signMessage: async () => '',
-  isConnecting: false,
-  availableConnectors: [],
-})
+function getStoredSession(): StoredSession | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const token = localStorage.getItem('oma_session');
+    if (!token) return null;
+    const meta = localStorage.getItem('oma_session_meta');
+    if (meta) {
+      return { token, authMethod: JSON.parse(meta).authMethod || 'siwe' };
+    }
+    return { token, authMethod: 'siwe' };
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(token: string, authMethod: AuthMethod) {
+  localStorage.setItem('oma_session', token);
+  localStorage.setItem('oma_session_meta', JSON.stringify({ authMethod }));
+  setCookie('oma_session', token, 7);
+}
+
+function clearSession() {
+  localStorage.removeItem('oma_session');
+  localStorage.removeItem('oma_session_meta');
+  deleteCookie('oma_session');
+}
 
 function InnerProvider({ children }: { children: ReactNode }) {
   const { address, isConnected: evmConnected, chainId, isConnecting: evmConnecting } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect: evmDisconnect } = useDisconnect()
   const { signMessageAsync } = useSignMessage()
+  const solana = noopSolana
 
-  const [siweLoading, setSiweLoading] = useState(false)
+  const [session, setSession] = useState<StoredSession | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [isReady, setIsReady] = useState(false)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const siweDoneRef = useRef<`0x${string}` | undefined>(undefined)
 
   const availableConnectors = useMemo(
@@ -79,13 +105,34 @@ function InnerProvider({ children }: { children: ReactNode }) {
     return found ? { id: found.id, name: found.name } : undefined
   }, [chainId])
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const userData = await api.auth.getUser();
+      setUser(userData);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   useEffect(() => {
-    if (!evmConnected || !address || siweDoneRef.current === address || siweLoading) return
+    const stored = getStoredSession();
+    if (stored) {
+      setSession(stored);
+      api.auth.getUser().then(setUser).catch(() => {
+        clearSession();
+        setSession(null);
+      });
+    }
+    setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!evmConnected || !address || siweDoneRef.current === address || isAuthenticating) return
 
     let cancelled = false
 
     async function siweLogin() {
-      setSiweLoading(true)
+      setIsAuthenticating(true)
       try {
         const nonceRes = await api.auth.getNonce(address!)
         const nonce = nonceRes.nonce
@@ -101,11 +148,12 @@ function InnerProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
 
         if (verifyRes.token) {
-          localStorage.setItem('oma_session', verifyRes.token)
-          setCookie('oma_session', verifyRes.token, 7)
+          storeSession(verifyRes.token, 'siwe');
+          setSession({ token: verifyRes.token, authMethod: 'siwe' });
+          siweDoneRef.current = address;
+          const userData = await api.auth.getUser();
+          setUser(userData);
         }
-
-        siweDoneRef.current = address
       } catch (err: unknown) {
         console.error('SIWE login failed:', err)
         const error = err as { code?: number; message?: string }
@@ -113,7 +161,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
           evmDisconnect()
         }
       } finally {
-        if (!cancelled) setSiweLoading(false)
+        if (!cancelled) setIsAuthenticating(false)
       }
     }
 
@@ -122,7 +170,42 @@ function InnerProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [evmConnected, address, signMessageAsync, siweLoading, evmDisconnect])
+  }, [evmConnected, address, signMessageAsync, isAuthenticating, evmDisconnect])
+
+  useEffect(() => {
+    if (solana.connected && solana.address && !session) {
+      let cancelled = false;
+
+      async function solanaLogin() {
+        setIsAuthenticating(true);
+        try {
+          const challengeRes = await api.auth.solana.getChallenge(solana.address!);
+          if (cancelled) return;
+
+          const signature = await solana.signMessage(challengeRes.message);
+          if (cancelled) return;
+
+          const verifyRes = await api.auth.solana.verify(solana.address!, challengeRes.message, signature);
+          if (cancelled) return;
+
+          storeSession(verifyRes.token, 'solana');
+          setSession({ token: verifyRes.token, authMethod: 'solana' });
+          const userData = await api.auth.getUser();
+          setUser(userData);
+        } catch (err) {
+          console.error('Solana login failed:', err);
+        } finally {
+          if (!cancelled) setIsAuthenticating(false);
+        }
+      }
+
+      solanaLogin();
+
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [solana.connected, solana.address, session, solana]);
 
   const connectEvm = useCallback(
     (connectorId?: string) => {
@@ -141,9 +224,13 @@ function InnerProvider({ children }: { children: ReactNode }) {
       evmDisconnect()
       siweDoneRef.current = undefined
     }
-    localStorage.removeItem('oma_session')
-    deleteCookie('oma_session')
-  }, [evmConnected, evmDisconnect])
+    if (solana.connected) {
+      await solana.disconnect()
+    }
+    clearSession()
+    setSession(null)
+    setUser(null)
+  }, [evmConnected, evmDisconnect, solana])
 
   const signMessage = useCallback(
     async (message: string): Promise<string> => {
@@ -156,34 +243,57 @@ function InnerProvider({ children }: { children: ReactNode }) {
           throw new Error('Failed to sign message. Please try again.')
         }
       }
+      if (solana.connected) {
+        try {
+          return await solana.signMessage(message)
+        } catch (err) {
+          console.error('Solana sign failed:', err)
+          throw new Error('Failed to sign message. Please try again.')
+        }
+      }
       throw new Error('No wallet connected. Please connect a wallet first.')
     },
-    [evmConnected, signMessageAsync],
+    [evmConnected, signMessageAsync, solana],
   )
 
-  const isConnected = evmConnected
-  const isConnecting = evmConnecting || siweLoading
+  const isConnected = evmConnected || solana.connected;
+  const isConnecting = evmConnecting || solana.connecting || isAuthenticating;
+  const authMethod = session?.authMethod ?? null;
+  const accountNumber = user?.accountNumber ?? null;
+  const activeWallet: WalletKind | null = evmConnected ? 'evm' : solana.connected ? 'solana' : null;
+
+  const hasEvmWallet = !!evmConnected;
+  const hasSolanaWallet = solana.connected && !!solana.address;
+  const canDepositBase = !!evmConnected || !!accountNumber;
+  const canDepositSolana = solana.connected || !!accountNumber;
+  const canUseSwap = !!evmConnected;
 
   const value = useMemo(
     () => ({
+      isReady,
       isConnected,
+      isAuthenticated: !!session,
+      authMethod,
+      accountNumber,
       connectEvm,
       disconnect,
       evmAddress: address,
       evmChain,
+      solanaAddress: solana.address,
       signMessage,
       isConnecting,
+      isAuthenticating,
       availableConnectors,
+      activeWallet,
+      hasEvmWallet,
+      hasSolanaWallet,
+      canDepositBase,
+      canDepositSolana,
+      canUseSwap,
+      refreshUser,
     }),
     [
-      isConnected,
-      connectEvm,
-      disconnect,
-      address,
-      evmChain,
-      signMessage,
-      isConnecting,
-      availableConnectors,
+      isReady, isConnected, session, authMethod, accountNumber, connectEvm, disconnect, address, evmChain, solana.address, signMessage, isConnecting, isAuthenticating, availableConnectors, activeWallet, hasEvmWallet, hasSolanaWallet, canDepositBase, canDepositSolana, canUseSwap, refreshUser,
     ],
   )
 

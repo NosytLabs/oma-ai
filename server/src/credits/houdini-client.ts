@@ -73,6 +73,7 @@ export interface Order {
   toAmount: string;
   depositAddress: string;
   refundAddress?: string;
+  refundTxHash?: string;
   swapType: SwapType;
   createdAt: string;
   updatedAt: string;
@@ -99,6 +100,7 @@ export class HoudiniClient {
   private tokenExpiresAt = 0;
   private ws: Ws | null = null;
   private wsSubscriptions = new Map<string, Set<(order: Order) => void>>();
+  private _configured = false;
 
   constructor(apiKey: string, apiSecret: string, partnerId: string, addressTo: string, wsUrl: string) {
     this.apiKey = apiKey;
@@ -106,12 +108,17 @@ export class HoudiniClient {
     this.partnerId = partnerId;
     this.addressTo = addressTo;
     this.wsUrl = wsUrl;
+    this._configured = !!(apiKey && apiSecret && partnerId);
+  }
+
+  isConfigured(): boolean {
+    return this._configured;
   }
 
   private ensureConfigured(): void {
-    if (!this.apiKey || !this.apiSecret) {
+    if (!this._configured) {
       throw new Error(
-        "HoudiniSwap API key and secret are not configured. Set HOUDINI_API_KEY and HOUDINI_API_SECRET environment variables."
+        "HoudiniSwap is not configured. Set HOUDINI_API_KEY, HOUDINI_API_SECRET, and HOUDINI_PARTNER_ID environment variables."
       );
     }
   }
@@ -201,7 +208,8 @@ export class HoudiniClient {
   async createExchange(
     quoteId: string,
     addressTo?: string,
-    refundAddress?: string
+    refundAddress?: string,
+    slippageTolerance?: number
   ): Promise<Order> {
     this.ensureConfigured();
     const body: Record<string, unknown> = {
@@ -209,6 +217,7 @@ export class HoudiniClient {
       addressTo: addressTo ?? this.addressTo,
     };
     if (refundAddress) body.refundAddress = refundAddress;
+    if (slippageTolerance !== undefined) body.slippageTolerance = slippageTolerance;
     return this.request<Order>("POST", "/exchange", body);
   }
 
@@ -294,8 +303,8 @@ export class HoudiniClient {
           }
         }
       } catch (err) {
-      console.warn("[houdini] Malformed WebSocket message:", err);
-    }
+        console.warn("[houdini] Malformed WebSocket message:", err);
+      }
     });
     ws.addEventListener("close", () => { this.ws = null; });
     ws.addEventListener("error", () => { this.ws = null; });

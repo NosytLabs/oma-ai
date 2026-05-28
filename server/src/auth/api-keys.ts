@@ -10,12 +10,10 @@ const KEY_ROTATION_WARNING_DAYS = 60;
 function timingSafeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a, "utf8");
   const bufB = Buffer.from(b, "utf8");
-  const len = Math.max(bufA.length, bufB.length);
-  const aPadded = Buffer.alloc(len);
-  const bPadded = Buffer.alloc(len);
-  bufA.copy(aPadded);
-  bufB.copy(bPadded);
-  return crypto.timingSafeEqual(aPadded, bPadded);
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 function addDays(days: number): Date {
@@ -144,4 +142,23 @@ export async function refreshApiKey(userId: string, keyId: string) {
     createdAt: created.createdAt,
     expiresAt: created.expiresAt,
   };
+}
+
+export function createApiKeyCookieHeader(apiKey: string): string {
+  const isDev = config.NODE_ENV === "development";
+  const maxAge = 7 * 24 * 60 * 60;
+  let cookie = `oma_api_key=${apiKey}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  if (!isDev) {
+    cookie += "; Secure";
+  }
+  return cookie;
+}
+
+export function createLogoutCookieHeader(): string {
+  const isDev = config.NODE_ENV === "development";
+  let cookie = "oma_api_key=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+  if (!isDev) {
+    cookie += "; Secure";
+  }
+  return cookie;
 }

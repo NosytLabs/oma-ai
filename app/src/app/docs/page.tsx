@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react'
+import { useState, useEffect, useRef, createContext, useContext, ReactNode, useId } from 'react'
 import {
   BookOpen, Key, Gauge, Copy, Check, Terminal, Shield, Zap,
   Lock, AlertCircle, DollarSign, Sun, Moon, Menu, X, ChevronRight, Play,
-  Package, HardDrive, CheckCircle2, ExternalLink
+  Package, HardDrive, CheckCircle2
 } from 'lucide-react'
 
 /* ==================== THEME CONTEXT ==================== */
@@ -77,10 +77,10 @@ type ErrorInfo = {
 /* ==================== DATA ==================== */
 
 const PLAN_LIMITS: PlanLimits[] = [
-  { name: 'Free', rpm: 60, tpm: 60000, concurrent: 5, color: 'text-zinc-400', badge: 'bg-zinc-800 text-zinc-400' },
-  { name: 'Starter', rpm: 120, tpm: 120000, concurrent: 10, color: 'text-cyan-400', badge: 'bg-cyan-500/20 text-cyan-400' },
-  { name: 'Pro', rpm: 300, tpm: 300000, concurrent: 25, color: 'text-violet-400', badge: 'bg-violet-500/20 text-violet-400' },
-  { name: 'Business', rpm: 1000, tpm: 1000000, concurrent: 100, color: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-400' },
+  { name: 'Free', rpm: 60, tpm: 60000, concurrent: 5, color: 'text-[var(--color-text-secondary)]', badge: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)]' },
+  { name: 'Starter', rpm: 120, tpm: 120000, concurrent: 10, color: 'text-[var(--color-accent)]', badge: 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' },
+  { name: 'Pro', rpm: 300, tpm: 300000, concurrent: 25, color: 'text-[var(--color-tertiary)]', badge: 'bg-[var(--color-tertiary)]/20 text-[var(--color-tertiary)]' },
+  { name: 'Business', rpm: 1000, tpm: 1000000, concurrent: 100, color: 'text-[var(--color-warning)]', badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
 ]
 
 const MODEL_PRICING: ModelPricing[] = [
@@ -247,7 +247,7 @@ const NAV_ITEMS = [
 
 const QUICK_START_STEPS = [
   { n: '1', title: 'Get API Key', desc: 'Create an account and generate your API key from the dashboard.' },
-  { n: '2', title: 'Add to Headers', desc: 'Include your key in the Authorization header: Bearer sk-oma-...' },
+  { n: '2', title: 'Add to Headers', desc: 'Include your key in the Authorization header: Bearer oma_sk_...' },
   { n: '3', title: 'Start Building', desc: 'Use the OpenAI SDK with base_url=https://api.oma-ai.com/v1' },
 ]
 
@@ -270,28 +270,30 @@ function ThemeToggle() {
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <Sun className="h-4 w-4 text-amber-400" />
+        <Sun className="h-4 w-4 text-[var(--color-warning)]" />
       ) : (
-        <Moon className="h-4 w-4 text-cyan-400" />
+        <Moon className="h-4 w-4 text-[var(--color-cyan)]" />
       )}
     </button>
   )
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, id }: { text: string; id: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent"
+      className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
       aria-label={copied ? 'Copied' : 'Copy code'}
+      aria-controls={id}
     >
-      {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4 text-[var(--color-green)]" /> : <Copy className="h-4 w-4" />}
     </button>
   )
 }
 
 function CodeBlock({ code, title }: { code: string; title?: string }) {
+  const id = useId()
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-[#0d0d0f]">
       {title && (
@@ -299,14 +301,15 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
           <span className="text-xs font-medium text-text-muted font-mono">{title}</span>
         </div>
       )}
-      <CopyButton text={code} />
-      <pre className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-zinc-300">{code}</code></pre>
+      <CopyButton text={code} id={id} />
+      <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-[var(--color-text-secondary)]">{code}</code></pre>
     </div>
   )
 }
 
 function TabbedCode({ tabs }: { tabs: Tab[] }) {
   const [active, setActive] = useState(0)
+  const id = useId()
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-[#0d0d0f]">
       <div className="flex border-b border-border/50">
@@ -315,7 +318,7 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
             key={t.label}
             onClick={() => setActive(i)}
             className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
-              i === active ? 'text-cyan-400 border-cyan-400' : 'text-text-muted border-transparent hover:text-text-secondary'
+              i === active ? 'text-[var(--color-cyan)] border-[var(--color-cyan)]' : 'text-text-muted border-transparent hover:text-text-secondary'
             }`}
           >
             {t.label}
@@ -323,8 +326,8 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
         ))}
       </div>
       <div className="relative">
-        <CopyButton text={tabs[active].code} />
-        <pre className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-zinc-300">{tabs[active].code}</code></pre>
+        <CopyButton text={tabs[active].code} id={id} />
+        <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-[var(--color-text-secondary)]">{tabs[active].code}</code></pre>
       </div>
     </div>
   )
@@ -367,7 +370,7 @@ function AnimatedSection({ children, delay = 0 }: { children: ReactNode; delay?:
 
 function QuickStartSection() {
   const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer sk-oma-your-key-here" \\
+  -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "oma/llama-3.2-3b",
@@ -394,23 +397,23 @@ function QuickStartSection() {
       <div className="rounded-xl border border-border bg-[#0d0d0f] p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-cyan-400" />
+            <Terminal className="h-4 w-4 text-[var(--color-cyan)]" />
             <span className="text-sm font-medium text-text">Your First Request</span>
           </div>
-          <span className="rounded-md bg-cyan-500/10 px-2 py-0.5 text-xs font-mono text-cyan-400 border border-cyan-500/20">cURL</span>
+          <span className="rounded-md bg-[var(--color-cyan)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-cyan)] border border-[var(--color-cyan)]/20">cURL</span>
         </div>
-        <CopyButton text={curlCode} />
-        <pre className="overflow-x-auto text-sm font-mono text-zinc-300"><code>{curlCode}</code></pre>
+        <CopyButton text={curlCode} id="quickstart-code" />
+        <pre className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)]"><code>{curlCode}</code></pre>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface/50 p-3">
           <div className="text-xs text-text-muted mb-1">Base URL</div>
-          <code className="text-sm text-cyan-400">https://api.oma-ai.com/v1</code>
+          <code className="text-sm text-[var(--color-cyan)]">https://api.oma-ai.com/v1</code>
         </div>
         <div className="rounded-lg border border-border bg-surface/50 p-3">
           <div className="text-xs text-text-muted mb-1">SDK Install</div>
-          <code className="text-sm text-cyan-400">npm install openai</code>
+          <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
         </div>
       </div>
     </AnimatedSection>
@@ -420,7 +423,7 @@ function QuickStartSection() {
 function AuthenticationSection() {
   const pythonCode = `from openai import OpenAI
 client = OpenAI(
-    api_key="sk-oma-your-key-here",
+    api_key="oma_sk_your_key_here",
     base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
@@ -430,7 +433,7 @@ response = client.chat.completions.create(
 
   const jsCode = `import OpenAI from "openai";
 const client = new OpenAI({
-  apiKey: "sk-oma-your-key-here",
+  apiKey: "oma_sk_your_key_here",
   baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
@@ -443,7 +446,7 @@ import (
     openai "github.com/sashabaranov/go-openai"
 )
 func main() {
-    client := openai.New("sk-oma-your-key-here")
+    client := openai.New("oma_sk_your_key_here")
     client.BaseURL = "https://api.oma-ai.com/v1"
 }`
 
@@ -455,13 +458,13 @@ func main() {
       <div className="rounded-xl border border-border bg-[#0d0d0f] p-5 mb-6">
         <div className="mb-3 text-sm text-text-muted">Authorization Header</div>
         <div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
-          <span className="text-amber-400">Authorization:</span> <span className="text-cyan-400">Bearer sk-oma-...</span>
+          <span className="text-[var(--color-warning)]">Authorization:</span> <span className="text-[var(--color-cyan)]">Bearer oma_sk_...</span>
         </div>
       </div>
 
       <TabbedCode tabs={[
         { label: 'cURL', lang: 'bash', code: `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer sk-oma-your-key-here" \\
+  -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"oma/llama-3.2-3b","messages":[{"role":"user","content":"Hello"}]}'` },
         { label: 'Python', lang: 'python', code: pythonCode },
@@ -469,13 +472,13 @@ func main() {
         { label: 'Go', lang: 'go', code: goCode },
       ]} />
 
-      <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+      <div className="mt-6 rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 p-4">
         <div className="flex items-start gap-3">
-          <Shield className="h-5 w-5 text-amber-400 mt-0.5" />
+          <Shield className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
           <div>
-            <h4 className="font-semibold text-amber-300">API Key Security</h4>
+            <h4 className="font-semibold text-[var(--color-warning)]">API Key Security</h4>
             <p className="mt-1 text-sm text-text-muted">
-              Keys use the <code className="text-amber-300 font-mono">sk-oma-</code> prefix. Only the SHA-256 hash is stored. Keep your key secret and never commit it to version control.
+              Keys use the <code className="text-[var(--color-warning)] font-mono">oma_sk_</code> prefix. Only the SHA-256 hash is stored. Keep your key secret and never commit it to version control.
             </p>
           </div>
         </div>
@@ -501,7 +504,7 @@ function EndpointsSection() {
             >
               <div className="flex items-center gap-3">
                 <span className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
-                  ep.method === 'GET' ? 'bg-green-500/10 text-green-400' : 'bg-cyan-500/10 text-cyan-400'
+                  ep.method === 'GET' ? 'bg-[var(--color-green)]/10 text-[var(--color-green)]' : 'bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]'
                 }`}>
                   {ep.method}
                 </span>
@@ -527,7 +530,7 @@ function EndpointsSection() {
                     <div className="rounded-lg border border-border/50 bg-[#0d0d0f] p-4 space-y-2">
                       {Object.entries(ep.body).map(([key, val]) => (
                         <div key={key} className="flex gap-3 font-mono text-sm">
-                          <span className="text-cyan-400 shrink-0">{key}</span>
+                          <span className="text-[var(--color-cyan)] shrink-0">{key}</span>
                           <span className="text-text-muted">{val}</span>
                         </div>
                       ))}
@@ -591,9 +594,9 @@ function RateLimitsSection() {
         <div className="rounded-xl border border-border bg-surface/50 p-4">
           <h4 className="mb-2 font-semibold text-text">Rate Limit Headers</h4>
           <div className="space-y-1 font-mono text-xs text-text-muted">
-            <div><span className="text-cyan-400">X-RateLimit-Limit</span> - Requests per minute</div>
-            <div><span className="text-cyan-400">X-RateLimit-Remaining</span> - Requests left</div>
-            <div><span className="text-cyan-400">X-RateLimit-Reset</span> - Seconds until reset</div>
+            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Limit</span> - Requests per minute</div>
+            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Remaining</span> - Requests left</div>
+            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Reset</span> - Seconds until reset</div>
           </div>
         </div>
       </div>
@@ -621,7 +624,7 @@ function PricingSection() {
             {MODEL_PRICING.map((m, i) => (
               <tr key={m.id} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
                 <td className="px-4 py-3 font-medium text-text">{m.name}</td>
-                <td className="px-4 py-3 text-right font-mono text-cyan-400">{fmt(m.input)}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{fmt(m.input)}</td>
                 <td className="px-4 py-3 text-right font-mono text-text-secondary">{fmt(m.output)}</td>
                 <td className="px-4 py-3 text-right text-text-muted">{m.ctx}</td>
               </tr>
@@ -630,23 +633,20 @@ function PricingSection() {
         </table>
       </div>
 
-      <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-        <h4 className="font-semibold text-cyan-300">Credit Deduction</h4>
+      <div className="rounded-xl border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/5 p-4">
+        <h4 className="font-semibold text-[var(--color-cyan)]">Credit Deduction</h4>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
             <span className="text-sm text-text-muted">$1 = $1. Billed per token in real-time.</span>
           </div>
+
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
-            <span className="text-sm text-text-muted">Billed per token in real-time</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
             <span className="text-sm text-text-muted">No minimums or subscriptions</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
             <span className="text-sm text-text-muted">12-month rolling expiry</span>
           </div>
         </div>
@@ -658,7 +658,7 @@ function PricingSection() {
 function X402Section() {
   const flowCode = `# 1. Request without credits - get 402
 curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer sk-oma-agent-key" \\
+  -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
@@ -670,7 +670,7 @@ curl https://api.oma-ai.com/v1/chat/completions \\
 
 # 3. Request with payment proof - SUCCESS
 curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer sk-oma-agent-key" \\
+  -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
   -H "x-payment-proof: base64-proof-from-facilitator" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`
@@ -697,11 +697,11 @@ const response = await client.chat.completions.create({
       <SectionHeading id="x402" icon={<Zap className="h-5 w-5" />} title="x402 Payments"
         subtitle="Native HTTP 402 payments for AI agents. Pay per request, no credit pre-funding." />
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-6">
+      <div className="rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 p-4 mb-6">
         <div className="flex items-start gap-3">
-          <Zap className="h-5 w-5 text-amber-400 mt-0.5" />
+          <Zap className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
           <div>
-            <h4 className="font-semibold text-amber-300">Venice x402 Protocol</h4>
+            <h4 className="font-semibold text-[var(--color-warning)]">Venice x402 Protocol</h4>
             <p className="mt-1 text-sm text-text-muted">
               x402 enables gasless AI inference payments on Solana and Base. When credits are exhausted,
               the API returns HTTP 402 with payment details. Agents can pay directly without pre-funding.
@@ -718,7 +718,7 @@ const response = await client.chat.completions.create({
       <div className="rounded-xl border border-border bg-surface/50 p-5">
         <h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
         <p className="text-sm text-text-muted mb-4">
-          Enable <code className="text-cyan-400 font-mono">x402: true</code> in the SDK to pay per request automatically.
+          Enable <code className="text-[var(--color-cyan)] font-mono">x402: true</code> in the SDK to pay per request automatically.
           Ideal for agents that make sporadic API calls and do not want to manage credit balances.
         </p>
         <CodeBlock code={agentCode} />
@@ -728,16 +728,16 @@ const response = await client.chat.completions.create({
         <div className="rounded-xl border border-border bg-surface/50 p-4">
           <h4 className="mb-2 font-semibold text-text">Benefits</h4>
           <ul className="space-y-1.5 text-sm text-text-muted">
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5 shrink-0" /> No credit pre-funding</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5 shrink-0" /> Per-request billing</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> No credit pre-funding</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Per-request billing</li>
           </ul>
         </div>
         <div className="rounded-xl border border-border bg-surface/50 p-4">
           <h4 className="mb-2 font-semibold text-text">Supported Chains</h4>
           <ul className="space-y-1.5 text-sm text-text-muted">
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" /> Base (USDC)</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" /> Solana (USDC)</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Base (USDC)</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Solana (USDC)</li>
           </ul>
         </div>
       </div>
@@ -749,7 +749,7 @@ function SDKsSection() {
   const pythonCode = `# Install: pip install openai
 from openai import OpenAI
 client = OpenAI(
-    api_key="sk-oma-your-key-here",
+    api_key="oma_sk_your_key_here",
     base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
@@ -761,7 +761,7 @@ print(response.choices[0].message.content)`
   const jsCode = `// Install: npm install openai
 import OpenAI from "openai";
 const client = new OpenAI({
-  apiKey: "sk-oma-your-key-here",
+  apiKey: "oma_sk_your_key_here",
   baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
@@ -774,7 +774,7 @@ import requests
 response = requests.post(
     "https://api.oma-ai.com/v1/chat/completions",
     headers={
-        "Authorization": "Bearer sk-oma-your-key-here",
+        "Authorization": "Bearer oma_sk_your_key_here",
         "Content-Type": "application/json"
     },
     json={
@@ -792,17 +792,17 @@ print(response.json())`
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-cyan-400" />
+            <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
             <span className="font-mono text-sm text-text">npm</span>
           </div>
-          <code className="text-sm text-cyan-400">npm install openai</code>
+          <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
         </div>
         <div className="rounded-xl border border-border bg-surface/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-cyan-400" />
+            <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
             <span className="font-mono text-sm text-text">pip</span>
           </div>
-          <code className="text-sm text-cyan-400">pip install openai</code>
+          <code className="text-sm text-[var(--color-cyan)]">pip install openai</code>
         </div>
       </div>
 
@@ -816,7 +816,7 @@ print(response.json())`
         <h4 className="mb-3 font-semibold text-text">Vercel AI SDK</h4>
         <CodeBlock code={`import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'sk-oma-...' });
+const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'oma_sk_...' });
 const { text } = await generateText({ model: oma('oma/llama-3.2-3b'), prompt: 'Hello!' });`} />
       </div>
     </AnimatedSection>
@@ -826,7 +826,7 @@ const { text } = await generateText({ model: oma('oma/llama-3.2-3b'), prompt: 'H
 function ErrorsSection() {
   const retryCode = `import time
 from openai import OpenAI
-client = OpenAI(api_key="sk-oma-...", base_url="https://api.oma-ai.com/v1")
+client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
 for attempt in range(5):
     try:
         response = client.chat.completions.create(model="oma/llama-3.2-3b", messages=[{"role": "user", "content": "Hi"}])
@@ -854,8 +854,8 @@ for attempt in range(5):
           <tbody>
             {ERROR_CODES.map(e => (
               <tr key={e.code} className="border-b border-border/50">
-                <td className="px-4 py-3 font-mono font-bold text-red-400">{e.code}</td>
-                <td className="px-4 py-3 font-mono text-amber-400">{e.type}</td>
+                <td className="px-4 py-3 font-mono font-bold text-[var(--color-error)]">{e.code}</td>
+                <td className="px-4 py-3 font-mono text-[var(--color-warning)]">{e.type}</td>
                 <td className="px-4 py-3 text-text-muted">{e.desc}</td>
               </tr>
             ))}
@@ -865,8 +865,8 @@ for attempt in range(5):
 
       <div className="rounded-xl border border-border bg-[#0d0d0f] p-5">
         <h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
-        <CopyButton text={retryCode} />
-        <pre className="overflow-x-auto text-sm font-mono text-zinc-300"><code>{retryCode}</code></pre>
+        <CopyButton text={retryCode} id="retry-code" />
+        <pre className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)]"><code>{retryCode}</code></pre>
       </div>
     </AnimatedSection>
   )
@@ -876,21 +876,25 @@ for attempt in range(5):
 
 function Sidebar({ activeId }: { activeId: string }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const mobileNavId = useId()
 
   return (
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
+        aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        aria-expanded={mobileOpen}
+        aria-controls={mobileNavId}
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
+        <button className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
       )}
 
-      <aside className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+      <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-4">
@@ -902,7 +906,7 @@ function Sidebar({ activeId }: { activeId: string }) {
             <p className="mt-1 text-xs text-text-muted">v1.0.0</p>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1" aria-label="Documentation navigation">
             {NAV_ITEMS.map(item => {
               const Icon = item.icon
               const isActive = activeId === item.id
@@ -911,11 +915,12 @@ function Sidebar({ activeId }: { activeId: string }) {
                   key={item.id}
                   href={`#${item.id}`}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
                     isActive
                       ? 'bg-accent/10 text-accent border border-accent/30'
                       : 'text-text-muted hover:bg-surface hover:text-text'
                   }`}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -981,9 +986,9 @@ function DocsContent() {
 
         <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <h1 className="text-4xl font-bold tracking-tight text-text font-syne mb-3">
+            <h2 className="text-4xl font-bold tracking-tight text-text font-syne mb-3">
               OMA API Documentation
-            </h1>
+            </h2>
             <p className="text-lg text-text-muted">
               OpenAI-compatible AI inference gateway with crypto payments. Access 30+ models with unified API.
             </p>
@@ -1000,20 +1005,7 @@ function DocsContent() {
             <ErrorsSection />
           </div>
 
-          <footer className="mt-20 border-t border-border pt-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-sm text-text-muted">OMA AI Gateway — Building a better AI infrastructure.</p>
-              <div className="flex gap-4">
-                <a href="/playground" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-accent transition-colors">
-                  <Play className="h-4 w-4" /> Playground
-                </a>
-                <a href="/dashboard" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-accent transition-colors">
-                  <ExternalLink className="h-4 w-4" /> Dashboard
-                </a>
-              </div>
-            </div>
-          </footer>
-        </main>
+          </main>
       </div>
     </div>
   )

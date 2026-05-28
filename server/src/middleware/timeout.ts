@@ -1,18 +1,28 @@
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
+import { logger } from "../lib/logger.js";
 
 export function requestTimeout(timeoutMs: number = 120_000) {
   return async (c: Context<OmaEnv>, next: Next) => {
+    let timedOut = false;
+    let resolveTimeout: (() => void) | null = null;
+    const timeoutPromise = new Promise<void>((resolve) => {
+      resolveTimeout = resolve;
+    });
+
     const timeoutId = setTimeout(() => {
-      console.error(`[timeout] Request exceeded ${timeoutMs}ms: ${c.req.url}`);
-      c.status(504);
-      return c.json({ error: { message: "Request timeout", type: "timeout_error" } });
+      timedOut = true;
+      resolveTimeout?.();
     }, timeoutMs);
-    
+
     try {
-      await next();
+      await Promise.race([next(), timeoutPromise]);
     } finally {
       clearTimeout(timeoutId);
+    }
+
+    if (timedOut && !c.finalized) {
+      logger.warn({ timeoutMs, url: c.req.url }, "Request exceeded timeout");
     }
   };
 }

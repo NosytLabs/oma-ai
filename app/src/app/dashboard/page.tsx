@@ -191,14 +191,19 @@ export default function DashboardPage() {
   }, [usage])
 
   if (!isConnected) {
-    return <LazyConnectWalletView onConnect={connectEvm} />
+    return (
+      <>
+        <h1 className="sr-only">Dashboard</h1>
+        <LazyConnectWalletView onConnect={connectEvm} />
+      </>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-surface)] selection:text-[var(--color-text)]">
-      
-      {/* Main Workbench Content */}
-      <main className="p-4 md:p-8 pt-20">
+    <div>
+      <h1 className="sr-only">Dashboard</h1>
+      <main id="dashboard-content" className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-surface)] selection:text-[var(--color-text)]">
+        <div className="p-4 md:p-8 pt-20">
 
         {error && (
           <div className="mb-6 flex items-center justify-between border border-[var(--color-accent-dim)] bg-[var(--color-error-bg)] p-4 text-xs uppercase tracking-widest text-[var(--color-error)]">
@@ -220,7 +225,7 @@ export default function DashboardPage() {
               {backendError && (
                 <button 
                   onClick={() => fetchData(true)} 
-                  className="flex items-center gap-2 text-[var(--color-error)] hover:text-[var(--color-error)]/80 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded border border-[var(--color-error)]/50 text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors text-sm font-medium"
                 >
                   <RefreshCw className="h-3 w-3" />
                   RETRY
@@ -251,12 +256,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Provider Health */}
-        <div className="mb-6 border border-[var(--color-surface)] bg-[var(--color-void)]">
+        <div className="mb-6 border border-[var(--color-border)] bg-[var(--color-void)]">
           <LazyProviderHealthCard />
         </div>
 
         {/* API Keys */}
-        <div className="mb-6 border border-[var(--color-surface)] bg-[var(--color-void)]">
+        <div className="mb-6 border border-[var(--color-border)] bg-[var(--color-void)]">
           <LazyApiKeyManager
             keys={keys}
             loading={loading}
@@ -274,7 +279,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Requests */}
-        <div className="border border-[var(--color-surface)] bg-[var(--color-void)]">
+        <div className="border border-[var(--color-border)] bg-[var(--color-void)]">
           <LazyRecentRequestsTable
             usage={usage}
             loading={loading}
@@ -284,16 +289,16 @@ export default function DashboardPage() {
           />
         </div>
 
-      </main>
-
-      <Suspense fallback={null}>
-        <LazyCreatedKeyModal
-          createdKey={createdKey}
-          copied={copied}
-          onCopy={handleCopy}
-          onDismiss={() => setCreatedKey(null)}
-        />
-      </Suspense>
+        <Suspense fallback={null}>
+          <LazyCreatedKeyModal
+            createdKey={createdKey}
+            copied={copied}
+            onCopy={handleCopy}
+            onDismiss={() => setCreatedKey(null)}
+          />
+        </Suspense>
+      </div>
+    </main>
     </div>
   )
 }

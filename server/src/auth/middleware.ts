@@ -1,24 +1,39 @@
 import type { Context, Next } from "hono";
 import { validateApiKey, shouldRecommendRotation } from "./api-keys.js";
 import { verifySessionToken } from "./siwe.js";
+import { decryptSecret } from "./encryption.js";
 import { db } from "../db/client.js";
 import { users, teamMembers } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { authenticator } from "@otplib/preset-default";
 import { getRedisClient } from "../lib/redis-client.js";
-import { config } from "../config.js";
+import { config, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
 
-const TWO_FA_FAILURES = new Map<string, { count: number; resetAt: number }>();
+const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of TWO_FA_FAILURES) {
-    if (entry.resetAt <= now) {
-      TWO_FA_FAILURES.delete(key);
+function isValidEthereumAddress(address: string): boolean {
+  return ETH_ADDRESS_REGEX.test(address);
+}
+
+function validateAdminAddresses(): void {
+  if (!config.ADMIN_WALLET_ADDRESSES) return;
+
+  const addresses = config.ADMIN_WALLET_ADDRESSES.split(",").map((a) => a.trim()).filter(Boolean);
+
+  for (const address of addresses) {
+    if (!isValidEthereumAddress(address)) {
+      console.error(`[FATAL] ADMIN_WALLET_ADDRESSES contains invalid Ethereum address: ${address}`);
+      process.exit(1);
     }
   }
-}, 60_000).unref();
+}
+
+const validProductionEnvironments = ["production", "staging", "preview"];
+const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
+if (isProductionEnv) {
+  validateAdminAddresses();
+}
 
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   const authHeader = c.req.header("Authorization");
@@ -47,29 +62,23 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
     return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
   }
   const token = authHeader.slice(7);
-  const userId = await verifySessionToken(token);
-  if (!userId) {
+  const session = await verifySessionToken(token);
+  if (!session) {
     return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
   }
-  c.set("userId", userId);
+  c.set("userId", session.userId);
+  c.set("authMethod", session.authMethod);
 
-  const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, userId)).limit(1);
+  const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
   if (user?.twoFactorEnabled) {
     const redis = await getRedisClient();
-    const failKey = `2fa_fail:${userId}`;
-
-    let failCount = 0;
-    if (redis) {
-      const failCountStr = await redis.get(failKey);
-      failCount = failCountStr ? parseInt(String(failCountStr), 10) : 0;
-    } else {
-      const entry = TWO_FA_FAILURES.get(failKey);
-      if (entry && entry.resetAt > Date.now()) {
-        failCount = entry.count;
-      } else if (entry) {
-        TWO_FA_FAILURES.delete(failKey);
-      }
+    if (!redis) {
+      return c.json({ error: { message: "Authentication service unavailable", type: "server_error" } }, 503);
     }
+    const failKey = `2fa_fail:${session.userId}`;
+
+    const failCountStr = await redis.get(failKey);
+    const failCount = failCountStr ? parseInt(String(failCountStr), 10) : 0;
 
     if (failCount >= 5) {
       return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
@@ -79,26 +88,22 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
     if (!twoFactorCode) {
       return c.json({ error: { message: "2FA code required", type: "authentication_error", code: "2fa_required" } }, 401);
     }
-    const [userWithSecret] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, userId)).limit(1);
+    const [userWithSecret] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, session.userId)).limit(1);
     if (userWithSecret?.twoFactorSecret) {
-      const isValid = authenticator.verify({ token: twoFactorCode, secret: userWithSecret.twoFactorSecret });
+      let secret: string;
+      try {
+        const parsed = JSON.parse(userWithSecret.twoFactorSecret);
+        secret = decryptSecret(parsed.encrypted, parsed.iv, parsed.authTag);
+      } catch {
+        return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
+      }
+      const isValid = authenticator.verify({ token: twoFactorCode, secret });
       if (!isValid) {
-        if (redis) {
-          await redis.incr(failKey);
-          await redis.expire(failKey, 300);
-        } else {
-          const entry = TWO_FA_FAILURES.get(failKey) || { count: 0, resetAt: Date.now() + 300_000 };
-          entry.count += 1;
-          entry.resetAt = Date.now() + 300_000;
-          TWO_FA_FAILURES.set(failKey, entry);
-        }
+        await redis.incr(failKey);
+        await redis.expire(failKey, 300);
         return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
       }
-      if (redis) {
-        await redis.del(failKey);
-      } else {
-        TWO_FA_FAILURES.delete(failKey);
-      }
+      await redis.del(failKey);
     }
   }
 
@@ -154,14 +159,13 @@ export function requireAdmin() {
       return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
     }
 
-    if (config.ADMIN_WALLET_ADDRESSES) {
-      const adminAddresses = config.ADMIN_WALLET_ADDRESSES.split(",").map((a) => a.trim().toLowerCase());
+    if (ADMIN_WALLET_ADDRESSES_SET.size > 0) {
       const [user] = await db
         .select({ address: users.address })
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
-      if (user?.address && adminAddresses.includes(user.address.toLowerCase())) {
+      if (user?.address && ADMIN_WALLET_ADDRESSES_SET.has(user.address.toLowerCase())) {
         c.set("teamRole", "owner");
         await next();
         return;

@@ -142,7 +142,7 @@ vi.mock('../config.js', () => ({
   },
 }))
 
-import { getBalance, addCredits, preflightDeduction, refundCredits } from '../credits/balance.js'
+import { getBalance, addCredits, preflightDeduction, refundCredits } from '../credits/index.js'
 
 describe('Credit Batch System (90-Day Expiry)', () => {
   beforeEach(() => {
@@ -225,6 +225,7 @@ describe('Credit Batch System (90-Day Expiry)', () => {
     it('creates a new batch for refunded credits', async () => {
       chain.transaction.mockImplementationOnce(async (fn: (tx: typeof chain) => Promise<void>) => {
         chain._queryResult = [{ total: '5200' }]
+        chain.for.mockResolvedValueOnce([{ id: 'user-1' }])
         await fn(chain)
       })
 

@@ -8,8 +8,8 @@ export const modelRoutes = new Hono<OmaEnv>();
 modelRoutes.use("/v1/models/*", optionalAuth);
 
 modelRoutes.get("/v1/models", async (c) => {
-  const catalog = listModels();
-  const videoCatalog = listVideoModels();
+  const catalog = await listModels();
+  const videoCatalog = await listVideoModels();
   const created = Math.floor(Date.now() / 1000);
 
   const data = [
@@ -44,13 +44,15 @@ modelRoutes.get("/v1/models", async (c) => {
     })),
   ];
 
+  c.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=1800");
+  c.header("Vary", "Accept-Encoding");
   return c.json({ object: "list", data });
 });
 
 modelRoutes.get("/v1/models/:model", async (c) => {
   const modelId = c.req.param("model");
 
-  const modelInfo = getModel(modelId);
+  const modelInfo = await getModel(modelId);
   if (!modelInfo) return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
 
   return c.json({

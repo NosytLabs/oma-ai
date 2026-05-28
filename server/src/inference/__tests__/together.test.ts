@@ -91,12 +91,19 @@ describe("Together AI Provider", () => {
     });
 
     it("throws error when API key not configured", async () => {
-      await expect(
-        together.chatCompletion({
-          model: "together/meta-llama-3",
-          messages: [{ role: "user", content: "hello" }],
-        })
-      ).rejects.toMatchObject({ status: expect.any(Number) });
+      const { config } = await import("../../config.js");
+      const originalKey = config.TOGETHER_API_KEY;
+      (config as any).TOGETHER_API_KEY = "";
+      try {
+        await expect(
+          together.chatCompletion({
+            model: "together/meta-llama-3",
+            messages: [{ role: "user", content: "hello" }],
+          })
+        ).rejects.toMatchObject({ status: 503 });
+      } finally {
+        (config as any).TOGETHER_API_KEY = originalKey;
+      }
     });
 
     it("handles connection failure with 502", async () => {

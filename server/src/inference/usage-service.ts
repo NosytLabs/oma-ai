@@ -26,7 +26,7 @@ export async function recordUsage(params: UsageRecordParams): Promise<void> {
     costCents: params.costCents,
     markupCents: params.markupCents,
     totalCents: params.totalCents,
-  });
+  }).onConflictDoNothing();
 }
 
 export async function recordUsageFromBilling(

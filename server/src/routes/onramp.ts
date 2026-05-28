@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import crypto from "node:crypto";
-import { addCredits } from "../credits/balance.js";
+import { addCredits } from "../credits/index.js";
 import { bearerAuth } from "../auth/middleware.js";
 import { config } from "../config.js";
 import { rateLimit } from "../middleware/rate-limit.js";

@@ -4,7 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from 'framer-motion'
 import { format, subDays } from 'date-fns'
 
-interface DataPoint {
+export interface DataPoint {
   date: string
   requests: number
   cost: number
@@ -18,11 +18,11 @@ interface AreaChartComponentProps {
 const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean; payload?: Array<{value: number; name?: string}>; label?: string; showCost?: boolean }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 px-3 py-2 shadow-xl">
-        <p className="text-xs text-zinc-400">{label}</p>
-        <p className="text-sm font-semibold text-cyan-400">{payload[0].value.toLocaleString()} requests</p>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
+        <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+        <p className="text-sm font-semibold text-[var(--color-cyan)]">{payload[0].value.toLocaleString()} requests</p>
         {showCost && payload[0].name === 'cost' && (
-          <p className="text-sm font-semibold text-amber-400">${payload[0].value.toFixed(2)}</p>
+          <p className="text-sm font-semibold text-[var(--color-amber)]">${payload[0].value.toFixed(2)}</p>
         )}
       </div>
     )
@@ -31,6 +31,10 @@ const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean;
 }
 
 export function AreaChartComponent({ data, showCostArea = true }: AreaChartComponentProps) {
+  const totalRequests = data.reduce((sum, d) => sum + d.requests, 0)
+  const totalCost = data.reduce((sum, d) => sum + d.cost, 0)
+  const chartDescription = `Area chart showing ${data.length} days of usage data. Total requests: ${totalRequests.toLocaleString()}. Total cost: $${totalCost.toFixed(2)}`
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -38,7 +42,7 @@ export function AreaChartComponent({ data, showCostArea = true }: AreaChartCompo
       className="h-[300px] w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} role="img" aria-label={chartDescription}>
           <defs>
             <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#00ffc8" stopOpacity={0.3} />

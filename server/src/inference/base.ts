@@ -1,4 +1,4 @@
-import { reportProviderResult } from "./provider-health.js";
+import { reportProviderResult } from "./provider-result.js";
 import type { ChatMessage } from "./types.js";
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 
@@ -56,7 +56,8 @@ export abstract class BaseInferenceProvider {
 
         this.config.checkConfig();
 
-        const timeout = body.stream ? this.streamTimeoutMs : this.timeoutMs;
+        const requestTimeout = typeof body.timeout === "number" ? body.timeout : undefined;
+        const timeout = requestTimeout ?? (body.stream ? this.streamTimeoutMs : this.timeoutMs);
         const start = Date.now();
 
         let resp: Response;
@@ -129,7 +130,8 @@ export abstract class BaseInferenceProvider {
 
         this.config.checkConfig();
 
-        const timeout = body.stream ? this.streamTimeoutMs : this.timeoutMs;
+        const requestTimeout = typeof body.timeout === "number" ? body.timeout : undefined;
+        const timeout = requestTimeout ?? (body.stream ? this.streamTimeoutMs : this.timeoutMs);
         const start = Date.now();
 
         let resp: Response;
@@ -223,6 +225,33 @@ export function createErrorMapper(providerName: string) {
 
     throw Object.assign(new Error(message), { status, type });
   };
+}
+
+export async function healthCheck(options: {
+  getUrl: () => string;
+  getHeaders?: () => Record<string, string>;
+  keyConfigured: boolean;
+  timeout?: number;
+}): Promise<{ isUp: boolean; latencyMs: number }> {
+  const { getUrl, getHeaders = () => ({}), keyConfigured, timeout = 10_000 } = options;
+
+  if (!keyConfigured) {
+    return { isUp: false, latencyMs: -1 };
+  }
+
+  const start = Date.now();
+
+  try {
+    const resp = await fetch(getUrl(), {
+      method: "GET",
+      headers: getHeaders(),
+      signal: AbortSignal.timeout(timeout),
+    });
+    const latencyMs = Date.now() - start;
+    return { isUp: resp.ok, latencyMs };
+  } catch {
+    return { isUp: false, latencyMs: Date.now() - start };
+  }
 }
 
 export async function withRetry<T>(

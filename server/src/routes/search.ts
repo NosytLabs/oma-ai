@@ -1,9 +1,10 @@
 import { Hono } from "hono";
+import crypto from "node:crypto";
 import { bearerAuth } from "../auth/middleware.js";
 import { searchWeb } from "../inference/tinyfish.js";
 import { tokenBucket, modelRateLimit } from "../middleware/rate-limit.js";
 import { spendLimit, trackSpend } from "../middleware/spend-limit.js";
-import { getBalance, deductCredits } from "../credits/balance.js";
+import { getBalance, deductCredits } from "../credits/index.js";
 import { config } from "../config.js";
 import { USDC_BASE } from "../constants.js";
 import type { OmaEnv } from "../types.js";

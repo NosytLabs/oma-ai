@@ -6,7 +6,7 @@ import { Search, Brain, ArrowRight, Sparkles, ChevronDown, Code, Eye, Zap as Zap
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/models-data'
+import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/prices'
 
 const LazyModelDetailModal = dynamic(
   () => import('@/components/models/ModelDetailModal').then(mod => mod.ModelDetailModal),
@@ -41,16 +41,18 @@ const TIER_LABELS: Record<Tier, string> = {
   frontier: 'Frontier',
 }
 
+const ICON_PROPS = { strokeWidth: 1.5 } as const
+
 const CAPABILITY_ICONS: Record<Capability, React.ReactNode> = {
-  reasoning: <Brain className="h-3.5 w-3.5" />,
-  coding: <Code className="h-3.5 w-3.5" />,
-  multimodal: <Eye className="h-3.5 w-3.5" />,
-  vision: <Eye className="h-3.5 w-3.5" />,
-  fast: <ZapIcon className="h-3.5 w-3.5" />,
-  uncensored: <Cpu className="h-3.5 w-3.5" />,
-  agents: <Cpu className="h-3.5 w-3.5" />,
-  math: <Hash className="h-3.5 w-3.5" />,
-  chat: <Brain className="h-3.5 w-3.5" />,
+  reasoning: <Brain className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  coding: <Code className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  multimodal: <Eye className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  vision: <Eye className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  fast: <ZapIcon className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  uncensored: <Cpu className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  agents: <Cpu className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  math: <Hash className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
+  chat: <Brain className="h-3.5 w-3.5" aria-hidden="true" {...ICON_PROPS} />,
 }
 
 const CAPABILITY_LABELS: Record<Capability, string> = {
@@ -76,6 +78,13 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSelect(model)
+    }
+  }
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -87,15 +96,16 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
       onClick={() => onSelect(model)}
-      onKeyDown={(e) => e.key === 'Enter' && onSelect(model)}
+      onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
       aria-label={`View ${model.name} details`}
+      aria-pressed={false}
       style={{ transform: `scale(${isPressed ? '0.98' : '1'})` }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{model.id}</p>
+          <p className="text-xs font-medium truncate font-mono" style={{ color: 'var(--color-text-muted)' }}>{model.id}</p>
           <p className="mt-0.5 text-base font-semibold" style={{ color: 'var(--color-text-bright)' }}>{model.name}</p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -108,7 +118,7 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-4 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="mb-3 flex items-center gap-4 text-xs min-h-[44px]" style={{ color: 'var(--color-text-muted)' }}>
         <span className="flex items-center gap-1">
           <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-cyan)', opacity: 0.6 }} />
           <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{model.contextLength}</span>
@@ -157,6 +167,13 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
 })
 
 const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: Omit<ModelCardProps, 'onSelect'> & { onSelect: (model: Model) => void }) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSelect(model)
+    }
+  }
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -164,9 +181,11 @@ const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: O
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className="free-model-card"
       onClick={() => onSelect(model)}
+      onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={`Try ${model.name} free`}
+      aria-pressed={false}
     >
       <div className="mb-3 flex items-start justify-between">
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIER_COLORS[model.tier].badge}`}>
@@ -178,7 +197,7 @@ const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: O
         </div>
       </div>
 
-      <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--color-text-bright)', fontFamily: 'var(--font-syne)' }}>{model.name}</h3>
+      <h3 className="text-lg font-bold mb-1 font-syne" style={{ color: 'var(--color-text-bright)' }}>{model.name}</h3>
       <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--color-text-muted)' }}>{model.description}</p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
@@ -275,14 +294,25 @@ const FilterBar = memo(function FilterBar({
             id="sort-dropdown-button"
             className="sort-dropdown-trigger"
             onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setSortDropdownOpen(false)
+              }
+            }}
             aria-haspopup="listbox"
             aria-expanded={sortDropdownOpen}
+            tabIndex={0}
           >
             Sort by
             <ChevronDown className="h-3.5 w-3.5" style={{ transform: sortDropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
           </button>
           {sortDropdownOpen && (
-            <div id="sort-dropdown" className="sort-dropdown-menu" role="listbox" aria-label="Sort options">
+            <div 
+              id="sort-dropdown" 
+              className="sort-dropdown-menu" 
+              role="listbox" 
+              aria-label="Sort options"
+            >
               {SORT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -315,7 +345,11 @@ const FilterBar = memo(function FilterBar({
             <span className="font-semibold" style={{ color: 'var(--color-cyan)' }}>{filteredCount}</span> models
           </span>
         </div>
-        {mobileFiltersOpen && filterContent}
+        {mobileFiltersOpen && (
+          <div className="overflow-hidden rounded-xl" style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)' }}>
+            <div className="p-4 flex flex-col gap-4">{filterContent}</div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -408,269 +442,6 @@ export default function ModelsPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-void)' }}>
-      <style>{`
-        .model-card {
-          position: relative;
-          cursor: pointer;
-          padding: 20px;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-          background: var(--color-panel);
-          transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
-        }
-        .model-card:hover {
-          border-color: var(--color-accent);
-          background-color: var(--color-surface-elevated);
-        }
-        .model-card:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .model-card:active {
-          transform: scale(0.98);
-        }
-        .model-modal-close {
-          border-radius: 9999px;
-          padding: 8px;
-          color: var(--color-text-muted);
-          transition: color 0.2s, background-color 0.2s;
-        }
-        .model-modal-close:hover {
-          color: var(--color-text-bright);
-          background-color: var(--color-surface);
-        }
-        .model-modal-close:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .model-stat-card {
-          padding: 16px;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-          background: var(--color-surface);
-        }
-        .capability-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 500;
-          transition: background-color 0.2s, color 0.2s;
-        }
-        .model-card-cta {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px 12px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 500;
-          background: var(--color-accent-dim);
-          color: var(--color-accent);
-          transition: background-color 0.2s;
-          border: none;
-          cursor: pointer;
-        }
-        .model-card-cta:hover {
-          background: var(--color-accent-glow);
-        }
-        .model-card-cta:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .model-card-arrow {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px;
-          border-radius: 8px;
-          background: var(--color-surface);
-          color: var(--color-text-muted);
-          transition: background-color 0.2s, color 0.2s;
-          border: none;
-          cursor: pointer;
-        }
-        .model-card-arrow:hover {
-          background: var(--color-surface-elevated);
-          color: var(--color-text-bright);
-        }
-        .model-card-arrow:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .free-model-card {
-          position: relative;
-          cursor: pointer;
-          padding: 20px;
-          border-radius: 12px;
-          border: 1px solid var(--color-accent);
-          background: linear-gradient(180deg, var(--color-accent-dim) 0%, var(--color-panel) 100%);
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .free-model-card:hover {
-          border-color: var(--color-accent);
-          box-shadow: 0 0 30px var(--color-accent-glow);
-        }
-        .free-model-card:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .free-model-cta {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          background: var(--color-accent);
-          color: var(--color-text-inverse);
-          transition: background-color 0.2s, transform 0.15s;
-        }
-        .free-model-cta:hover {
-          background: var(--color-accent-hover);
-          transform: translateY(-1px);
-        }
-        .free-model-cta:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .free-model-cta:active {
-          transform: translateY(0);
-        }
-        .model-search-input {
-          width: 100%;
-          max-width: 256px;
-          padding: 10px 12px 10px 40px;
-          border-radius: 9999px;
-          border: 1px solid var(--color-border);
-          background: var(--color-surface);
-          color: var(--color-text);
-          font-size: 14px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .model-search-input::placeholder {
-          color: var(--color-text-muted);
-        }
-        .model-search-input:focus {
-          outline: none;
-          border-color: var(--color-accent);
-          box-shadow: 0 0 0 4px var(--color-accent-dim);
-        }
-        .filter-pill {
-          padding: 6px 12px;
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 500;
-          border: 1px solid transparent;
-          background: var(--color-surface);
-          color: var(--color-text-muted);
-          transition: all 0.2s;
-          cursor: pointer;
-        }
-        .filter-pill:hover {
-          color: var(--color-text-bright);
-          background: var(--color-surface-elevated);
-        }
-        .filter-pill[aria-pressed="true"] {
-          background: var(--color-accent);
-          color: var(--color-text-inverse);
-        }
-        .filter-pill:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .sort-dropdown-trigger {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 500;
-          background: var(--color-surface);
-          color: var(--color-text-muted);
-          transition: all 0.2s;
-          border: none;
-          cursor: pointer;
-        }
-        .sort-dropdown-trigger:hover {
-          color: var(--color-text-bright);
-        }
-        .sort-dropdown-trigger:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        .sort-dropdown-menu {
-          position: absolute;
-          right: 0;
-          top: calc(100% + 8px);
-          min-width: 180px;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-          background: var(--color-panel);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          overflow: hidden;
-          z-index: 30;
-        }
-        .sort-option {
-          display: block;
-          width: 100%;
-          padding: 10px 16px;
-          text-align: left;
-          font-size: 12px;
-          color: var(--color-text-muted);
-          transition: background-color 0.15s, color 0.15s;
-          border: none;
-          cursor: pointer;
-          background: transparent;
-        }
-        .sort-option:hover {
-          background: var(--color-surface);
-          color: var(--color-text-bright);
-        }
-        .sort-option[aria-selected="true"] {
-          background: var(--color-accent-dim);
-          color: var(--color-accent);
-        }
-        .sort-option:focus-visible {
-          outline: none;
-          background: var(--color-surface);
-        }
-        .mobile-filter-toggle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          background: var(--color-surface);
-          color: var(--color-text);
-          border: 1px solid var(--color-border);
-          transition: all 0.2s;
-          cursor: pointer;
-        }
-        .mobile-filter-toggle:hover {
-          border-color: var(--color-accent);
-        }
-        .mobile-filter-toggle:focus-visible {
-          outline: 2px solid var(--color-accent);
-          outline-offset: 2px;
-        }
-        @media (max-width: 767px) {
-          .model-search-input {
-            max-width: 100%;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .model-card, .free-model-card, .free-model-cta, .model-card-cta, .capability-chip {
-            transition: none;
-          }
-        }
-      `}</style>
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <motion.header className="mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
@@ -678,7 +449,7 @@ export default function ModelsPage() {
             <Sparkles className="w-4 h-4" style={{ color: 'var(--color-cyan)' }} />
             <span className="text-sm font-medium" style={{ color: 'var(--color-cyan)' }}>{MODELS.length}+ models available</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight lg:text-5xl" style={{ color: 'var(--color-text-bright)', fontFamily: 'var(--font-syne)' }}>
+          <h1 className="text-3xl font-bold tracking-tight lg:text-5xl font-syne" style={{ color: 'var(--color-text-bright)' }}>
             Every model. One API.
           </h1>
           <p className="mt-4 max-w-2xl text-lg" style={{ color: 'var(--color-text-secondary)' }}>
@@ -694,7 +465,7 @@ export default function ModelsPage() {
                 Budget Models
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {budgetModels.map((model) => (
                 <FreeModelHeroCard key={model.id} model={model} onSelect={setSelectedModel} />
               ))}
@@ -723,7 +494,7 @@ export default function ModelsPage() {
             {groupedModels.map((group) => (
               <motion.section key={group.tier} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
                 <div className="mb-4 flex items-center gap-3">
-                  <h2 className={`text-lg font-bold ${TIER_COLORS[group.tier].text}`} style={{ fontFamily: 'var(--font-syne)' }}>
+                  <h2 className={`text-lg font-bold font-syne ${TIER_COLORS[group.tier].text}`}>
                     {group.label}
                   </h2>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TIER_COLORS[group.tier].badge}`}>
@@ -731,7 +502,7 @@ export default function ModelsPage() {
                   </span>
                   <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, var(--color-border) 0%, transparent 100%)' }} />
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.models.map((model) => (
                     <ModelCard key={model.id} model={model} onSelect={setSelectedModel} />
                   ))}
@@ -742,7 +513,7 @@ export default function ModelsPage() {
         )}
 
         <motion.section className="mt-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
-          <h3 className="mb-6 text-lg font-semibold" style={{ color: 'var(--color-text-bright)', fontFamily: 'var(--font-syne)' }}>Provider Legend</h3>
+          <h3 className="mb-6 text-lg font-semibold font-syne" style={{ color: 'var(--color-text-bright)' }}>Provider Legend</h3>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {([
               { name: 'Venice', accent: 'var(--color-accent)', desc: 'Privacy-first AI with zero data retention. Great for sensitive applications.' },

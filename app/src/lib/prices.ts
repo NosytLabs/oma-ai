@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * Crypto Price Fetching Module
  * Fetches real-time prices from Jupiter (SOL) and CoinGecko (BTC, ETH)
@@ -7,6 +5,10 @@
  */
 
 import { useEffect, useState, useCallback } from 'react'
+
+// Re-export types and functions from models-data for backwards compatibility
+export type { Tier, Provider, Model, Capability } from './models-data'
+export { PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, MODELS, getModelsByTier, formatPricePerToken } from './models-data'
 
 // =============================================================================
 // TYPES
@@ -344,13 +346,15 @@ export function calculateUsdValue(symbol: string, amount: number, prices: PriceD
  */
 export function formatPrice(price: number | null): string {
   if (price === null) return '--'
-  if (price < 0.01) return price.toFixed(6)
-  if (price < 1) return price.toFixed(4)
-  if (price < 1000) return price.toFixed(2)
-  return price.toLocaleString('en-US', {
+  if (price === 0) return 'Free'
+  const prefix = '$'
+  if (price < 0.01) return `${prefix}${price.toFixed(6)}`
+  if (price < 1) return `${prefix}${price.toFixed(4)}`
+  if (price < 1000) return `${prefix}${price.toFixed(2)}`
+  return `${prefix}${price.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })
+  })}`
 }
 
 /**

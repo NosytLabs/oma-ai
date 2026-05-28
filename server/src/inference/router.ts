@@ -96,12 +96,13 @@ export async function handleChatCompletion(userId: string, apiKeyId: string, bod
 
       const modelId = body.model;
       const model = await getModel(modelId);
-      const discountPercent = await getStakingDiscount(userId);
+      const [discountPercent, pricing, estimatedOutputTokens] = await Promise.all([
+        getStakingDiscount(userId),
+        getModelPricing(modelId),
+        getEstimatedOutputTokens(modelId),
+      ]);
       const inputTokens = body.messages ? countMessageTokens(body.messages) : 0;
       span.setAttribute(LLM_ATTRS.TOKENS_INPUT, inputTokens);
-
-      const pricing = await getModelPricing(modelId);
-      const estimatedOutputTokens = await getEstimatedOutputTokens(modelId);
       const inputPerToken = pricing.inputPer1k / 1000;
       const outputPerToken = pricing.outputPer1k / 1000;
       const markupMultiplier = 1 + pricing.markup / 100;

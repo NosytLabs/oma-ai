@@ -37,50 +37,52 @@ analyticsRoutes.get("/v1/analytics/usage", async (c) => {
   }
 
   try {
-    const aggregateUsage = await db.select({
-      totalRequests: count(usageRecords.id),
-      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
-      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
-      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`);
-
-    const byModel = await db.select({
-      model: usageRecords.model,
-      provider: usageRecords.provider,
-      totalRequests: count(usageRecords.id),
-      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
-      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
-      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
-    .groupBy(usageRecords.model, usageRecords.provider)
-    .orderBy(desc(drizzleSql`sum(${usageRecords.totalCents})`))
-    .limit(20);
-
-    const dailyUsage = await db.select({
-      date: sql<string>`date(${usageRecords.createdAt})`,
-      totalRequests: count(usageRecords.id),
-      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
-      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
-      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
-    .groupBy(sql`date(${usageRecords.createdAt})`)
-    .orderBy(sql`date(${usageRecords.createdAt})`);
-
-    const topModels = await db.select({
-      model: usageRecords.model,
-      totalRequests: count(usageRecords.id),
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
-    .groupBy(usageRecords.model)
-    .orderBy(desc(drizzleSql`count(${usageRecords.id})`))
-    .limit(10);
+    const [aggregateUsage, byModel, dailyUsage, topModels] = await Promise.all([
+      db.select({
+        totalRequests: count(usageRecords.id),
+        totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+        totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+        totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      })
+      .from(usageRecords)
+      .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`),
+      
+      db.select({
+        model: usageRecords.model,
+        provider: usageRecords.provider,
+        totalRequests: count(usageRecords.id),
+        totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+        totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+        totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      })
+      .from(usageRecords)
+      .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+      .groupBy(usageRecords.model, usageRecords.provider)
+      .orderBy(desc(drizzleSql`sum(${usageRecords.totalCents})`))
+      .limit(20),
+      
+      db.select({
+        date: sql<string>`date(${usageRecords.createdAt})`,
+        totalRequests: count(usageRecords.id),
+        totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+        totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+        totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      })
+      .from(usageRecords)
+      .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+      .groupBy(sql`date(${usageRecords.createdAt})`)
+      .orderBy(sql`date(${usageRecords.createdAt})`),
+      
+      db.select({
+        model: usageRecords.model,
+        totalRequests: count(usageRecords.id),
+      })
+      .from(usageRecords)
+      .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
+      .groupBy(usageRecords.model)
+      .orderBy(desc(drizzleSql`count(${usageRecords.id})`))
+      .limit(10),
+    ]);
 
     const agg = aggregateUsage[0];
     return c.json({

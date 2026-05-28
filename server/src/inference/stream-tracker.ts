@@ -8,9 +8,14 @@ import type { ModelPricing } from "./types.js";
 
 const DEBUG_STREAM = config.DEBUG_STREAM;
 let streamParseErrors = 0;
+const MAX_ERROR_COUNT = 1_000_000;
 
 export function getStreamMetrics() {
   return { parseErrors: streamParseErrors };
+}
+
+export function resetStreamMetrics(): void {
+  streamParseErrors = 0;
 }
 
 function logStreamDebug(message: string, data?: Record<string, unknown>) {
@@ -23,6 +28,9 @@ const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
 function logParseError(requestId: string, data: string, error: unknown) {
+  if (streamParseErrors >= MAX_ERROR_COUNT) {
+    streamParseErrors = 0;
+  }
   streamParseErrors++;
   const parseError = error instanceof Error ? error.message : String(error);
   logStreamDebug("SSE parse error", {
@@ -32,7 +40,12 @@ function logParseError(requestId: string, data: string, error: unknown) {
   });
 }
 
+interface StreamState {
+  refundExecuted: boolean;
+}
+
 async function handleStreamEnd(
+  streamState: StreamState,
   streamStartTime: number, firstTokenTime: number | undefined,
   outputTokens: number, accumulatedContent: string, usageDataReceived: boolean,
   _inputTokens: number, modelId: string, discountPercent: number,
@@ -40,19 +53,25 @@ async function handleStreamEnd(
   requestId: string,
   onStreamingMetrics?: (ttftMs: number, totalTokens: number, durationMs: number) => Promise<void>,
 ) {
+  if (streamState.refundExecuted) return;
+  streamState.refundExecuted = true;
   const streamDuration = Date.now() - streamStartTime;
   const finalOutputTokens = usageDataReceived ? outputTokens : estimateTokens(accumulatedContent);
   if (firstTokenTime !== undefined && onStreamingMetrics) {
     await onStreamingMetrics(firstTokenTime, finalOutputTokens, streamDuration);
   }
-  const cost = await calculateActualCost(modelId, _inputTokens, finalOutputTokens, discountPercent);
-  await recordUsage({
-    requestId, userId, apiKeyId, modelId, provider,
-    inputTokens: _inputTokens, outputTokens: finalOutputTokens,
-    costCents: cost.costCents, markupCents: cost.markupCents, totalCents: cost.totalCents,
-  });
-  const refund = parseInt(estimatedTotalCents, 10) - parseInt(cost.totalCents, 10);
-  if (refund > 0) await refundCreditsWithRetry(userId, String(refund));
+  try {
+    const cost = await calculateActualCost(modelId, _inputTokens, finalOutputTokens, discountPercent);
+    await recordUsage({
+      requestId, userId, apiKeyId, modelId, provider,
+      inputTokens: _inputTokens, outputTokens: finalOutputTokens,
+      costCents: cost.costCents, markupCents: cost.markupCents, totalCents: cost.totalCents,
+    });
+    const refund = parseInt(estimatedTotalCents, 10) - parseInt(cost.totalCents, 10);
+    if (refund > 0) await refundCreditsWithRetry(userId, String(refund));
+  } catch (err) {
+    console.error("[stream-tracker] Error in handleStreamEnd:", err);
+  }
 }
 
 export function createTrackingStream(
@@ -73,6 +92,7 @@ export function createTrackingStream(
   let usageDataReceived = false, firstTokenReceived = false;
   let firstTokenTime: number | undefined;
   let streamCompleted = false;
+  const streamState: StreamState = { refundExecuted: false };
   const streamStartTime = Date.now();
 
   return new ReadableStream({
@@ -93,6 +113,7 @@ export function createTrackingStream(
               if (data === "[DONE]" && !streamCompleted) {
                 streamCompleted = true;
                 await handleStreamEnd(
+                  streamState,
                   streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
                   _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
                 );
@@ -116,6 +137,19 @@ export function createTrackingStream(
             }
             controller.enqueue(encoder.encode(line + "\n"));
           }
+
+          if (controller.desiredSize !== null && controller.desiredSize <= 0) {
+            await new Promise<void>((resolve) => {
+              const checkSize = () => {
+                if (controller.desiredSize !== null && controller.desiredSize > 0) {
+                  resolve();
+                } else {
+                  setTimeout(checkSize, 10);
+                }
+              };
+              checkSize();
+            });
+          }
         }
       } catch (err) {
         try { await reader.cancel(); } catch { /* empty */ }
@@ -126,12 +160,13 @@ export function createTrackingStream(
       }
     },
     async cancel() {
-      if (!streamCompleted) {
+      if (!streamState.refundExecuted) {
+        streamState.refundExecuted = true;
         try { await refundCreditsWithRetry(userId, estimatedTotalCents); } catch (err) {
           console.error('[router] Refund failed during cancel:', err);
         }
       }
-      await upstream.cancel();
+      try { await upstream.cancel(); } catch { /* empty */ }
     },
   });
 }

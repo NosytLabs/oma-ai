@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { motion } from 'framer-motion'
 import { format, subDays } from 'date-fns'
 
-interface CostData {
+export interface CostData {
   date: string
   cost: number
 }
@@ -17,9 +17,9 @@ interface BarChartComponentProps {
 const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean; payload?: Array<{value: number}>; label?: string; showCost?: boolean }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 px-3 py-2 shadow-xl">
-        <p className="text-xs text-zinc-400">{label}</p>
-        <p className="text-sm font-semibold text-amber-400">{showCost ? `$${payload[0].value.toFixed(2)}` : payload[0].value.toLocaleString()}</p>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
+        <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+        <p className="text-sm font-semibold text-[var(--color-amber)]">{showCost ? `$${payload[0].value.toFixed(2)}` : payload[0].value.toLocaleString()}</p>
       </div>
     )
   }
@@ -27,6 +27,9 @@ const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean;
 }
 
 export function BarChartComponent({ data, showCostLabels = true }: BarChartComponentProps) {
+  const totalCost = data.reduce((sum, d) => sum + d.cost, 0)
+  const chartDescription = `Bar chart showing ${data.length} days of cost data. Total cost: $${totalCost.toFixed(2)}`
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,7 +37,7 @@ export function BarChartComponent({ data, showCostLabels = true }: BarChartCompo
       className="h-[280px] w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} role="img" aria-label={chartDescription}>
           <defs>
             <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#ffb800" stopOpacity={0.8} />

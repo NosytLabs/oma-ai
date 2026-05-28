@@ -6,7 +6,7 @@ vi.mock('../inference/provider-health.js', () => ({
   reportProviderResult: vi.fn(),
 }))
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../credits/index.js', () => ({
   getStakingDiscount: vi.fn().mockResolvedValue(0),
   preflightDeduction: vi.fn().mockResolvedValue(true),
   refundCredits: vi.fn(),
@@ -59,6 +59,12 @@ vi.mock('../inference/litellm.js', () => ({
   chatCompletion: vi.fn(),
 }))
 
+vi.mock('../inference/circuit-breaker.js', () => ({
+  isCircuitOpen: vi.fn().mockResolvedValue(false),
+  recordProviderSuccess: vi.fn(),
+  recordProviderError: vi.fn(),
+}))
+
 vi.mock('../config.js', () => ({
   config: {
     PROVIDER_WEIGHTS: undefined,
@@ -109,7 +115,7 @@ describe('Router', () => {
       const { chatCompletion } = await import('../inference/venice.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
       
-      const { refundCredits } = await import('../credits/balance.js')
+      const { refundCredits } = await import('../credits/index.js')
       vi.mocked(refundCredits).mockResolvedValue(undefined)
       
       const result = await router.handleChatCompletion('user-1', 'key-1', mockBody)

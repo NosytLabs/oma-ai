@@ -63,7 +63,7 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
         <button
           onClick={handleClear}
           aria-label="Remove image"
-          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-xl text-zinc-600 hover:text-rose-600 hover:bg-white shadow-lg transition-all"
+          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-xl text-[var(--color-text-muted)] hover:text-rose-600 hover:bg-white shadow-lg transition-all"
         >
           <X className="w-4 h-4" />
         </button>

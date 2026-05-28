@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, healthCheck } from "./base.js";
 
 const LITELLM_TIMEOUT_MS = 30_000;
 const LITELLM_STREAM_TIMEOUT_MS = 120_000;
@@ -81,22 +81,11 @@ export async function litellmHealthCheck(): Promise<{
   isUp: boolean;
   latencyMs: number;
 }> {
-  if (!config.LITELLM_PROXY_URL) {
-    return { isUp: false, latencyMs: -1 };
-  }
-
-  const start = Date.now();
-
-  try {
-    const resp = await fetch(litellmUrl("/health"), {
-      method: "GET",
-      signal: AbortSignal.timeout(10_000),
-    });
-    const latencyMs = Date.now() - start;
-    return { isUp: resp.ok, latencyMs };
-  } catch {
-    return { isUp: false, latencyMs: Date.now() - start };
-  }
+  return healthCheck({
+    getUrl: () => litellmUrl("/health"),
+    getHeaders: litellmHeaders,
+    keyConfigured: !!config.LITELLM_PROXY_URL,
+  });
 }
 
 export { chatCompletion as litellmChatCompletion };

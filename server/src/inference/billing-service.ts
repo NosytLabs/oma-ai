@@ -1,4 +1,4 @@
-import { getModel, calculateCost, estimateTokens } from './models.js';
+import { getModel, calculateCost, estimateTokens, ensureCatalogLoaded } from './models.js';
 import type { ModelPricing } from './types.js';
 
 export { estimateTokens };
@@ -9,8 +9,9 @@ export interface CostCalculation {
   totalCents: string;
 }
 
-export function getModelPricing(modelId: string): ModelPricing {
-  const modelDef = getModel(modelId);
+export async function getModelPricing(modelId: string): Promise<ModelPricing> {
+  await ensureCatalogLoaded();
+  const modelDef = await getModel(modelId);
   if (modelDef) {
     return {
       inputPer1k: modelDef.inputPricePer1M / 1000,
@@ -36,13 +37,13 @@ export function getModelPricing(modelId: string): ModelPricing {
   return { inputPer1k: 0.001, outputPer1k: 0.002, provider: "venice", markup: 150 };
 }
 
-export function estimateCost(
+export async function estimateCost(
   modelId: string,
   inputTokens: number,
   estimatedOutputTokens: number,
   discountPercent: number = 0
-): string {
-  const pricing = getModelPricing(modelId);
+): Promise<string> {
+  const pricing = await getModelPricing(modelId);
   const inputPerToken = pricing.inputPer1k / 1000;
   const outputPerToken = pricing.outputPer1k / 1000;
   const markupMultiplier = 1 + pricing.markup / 100;
@@ -51,18 +52,18 @@ export function estimateCost(
   return String(Math.max(1, Math.ceil(estimatedCostUsd * 100)));
 }
 
-export function calculateActualCost(
+export async function calculateActualCost(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
   discountPercent: number = 0
-): CostCalculation {
-  const model = getModel(modelId);
+): Promise<CostCalculation> {
+  const model = await getModel(modelId);
   if (model) {
-    return calculateCost(model.id, inputTokens, outputTokens, discountPercent);
+    return await calculateCost(model.id, inputTokens, outputTokens, discountPercent);
   }
 
-  const pricing = getModelPricing(modelId);
+  const pricing = await getModelPricing(modelId);
   const inputPerToken = pricing.inputPer1k / 1000;
   const outputPerToken = pricing.outputPer1k / 1000;
   const markupMultiplier = 1 + pricing.markup / 100;
@@ -77,16 +78,16 @@ export function calculateActualCost(
   };
 }
 
-export function calculateStreamingCost(
+export async function calculateStreamingCost(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
   discountPercent: number = 0
-): CostCalculation {
+): Promise<CostCalculation> {
   return calculateActualCost(modelId, inputTokens, outputTokens, discountPercent);
 }
 
-export function getEstimatedOutputTokens(modelId: string): number {
-  const model = getModel(modelId);
+export async function getEstimatedOutputTokens(modelId: string): Promise<number> {
+  const model = await getModel(modelId);
   return model ? Math.floor(model.maxTokens / 4) : 1024;
 }

@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { bearerAuth } from "../auth/middleware.js";
-import { getBalance } from "../credits/balance.js";
-import { addCredits } from "../credits/balance.js";
+import { getBalance, addCredits } from "../credits/index.js";
 import {
   getBudgetAlertConfig,
   setBudgetAlertConfig,
@@ -17,6 +16,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { config } from "../config.js";
 import { calculateCostCredits } from "../inference/models.js";
 import { validationError } from "../lib/validation.js";
+import { errorResponse } from "../lib/api-errors.js";
 import type { OmaEnv } from "../types.js";
 
 export const creditRoutes = new Hono<OmaEnv>();
@@ -44,190 +44,214 @@ const budgetAlertSchema = z.object({
 });
 
 creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
-  const userId = c.get("userId");
-  const parsed = purchaseSchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  try {
+    const userId = c.get("userId");
+    const parsed = purchaseSchema.safeParse(await c.req.json());
+    if (!parsed.success) return c.json(validationError(parsed.error), 400);
 
-  const { amountCents, paymentMethod, autoReload } = parsed.data;
+    const { amountCents, paymentMethod, autoReload } = parsed.data;
 
-  const [deposit] = await db.insert(deposits).values({
-    userId,
-    type: paymentMethod === "sol" ? "usdc_solana" : "usdc_direct",
-    status: "pending",
-    amountUsd: String(amountCents / 100),
-    creditsIssued: "0",
-  }).returning();
+    const [deposit] = await db.insert(deposits).values({
+      userId,
+      type: paymentMethod === "sol" ? "usdc_solana" : "usdc_direct",
+      status: "pending",
+      amountUsd: String(amountCents / 100),
+      creditsIssued: "0",
+    }).returning();
 
-  if (autoReload) {
-    await db.insert(autoReloadSettings)
-      .values({
-        userId,
-        enabled: true,
-        thresholdCents: String(config.AUTO_RELOAD_THRESHOLD),
-        reloadAmountCents: String(amountCents),
-        spendLimitCents: String(config.AUTO_RELOAD_SPEND_LIMIT),
-        paymentMethod,
-      })
-      .onConflictDoUpdate({
-        target: autoReloadSettings.userId,
-        set: {
+    if (autoReload) {
+      await db.insert(autoReloadSettings)
+        .values({
+          userId,
           enabled: true,
           thresholdCents: String(config.AUTO_RELOAD_THRESHOLD),
           reloadAmountCents: String(amountCents),
+          spendLimitCents: String(config.AUTO_RELOAD_SPEND_LIMIT),
           paymentMethod,
-          updatedAt: new Date(),
-        },
-      });
-  }
+        })
+        .onConflictDoUpdate({
+          target: autoReloadSettings.userId,
+          set: {
+            enabled: true,
+            thresholdCents: String(config.AUTO_RELOAD_THRESHOLD),
+            reloadAmountCents: String(amountCents),
+            paymentMethod,
+            updatedAt: new Date(),
+          },
+        });
+    }
 
-  return c.json({
-    success: true,
-    depositId: deposit.id,
-    status: "pending",
-    amountCents,
-    paymentMethod,
-    autoReloadEnabled: autoReload ?? false,
-    message: "Deposit created. Credits will be issued after payment confirmation.",
-  });
+    return c.json({
+      success: true,
+      depositId: deposit.id,
+      status: "pending",
+      amountCents,
+      paymentMethod,
+      autoReloadEnabled: autoReload ?? false,
+      message: "Deposit created. Credits will be issued after payment confirmation.",
+    });
+  } catch (err) {
+    return errorResponse(c, err);
+  }
 });
 
 creditRoutes.get("/v1/credits/balance", bearerAuth, async (c) => {
-  const userId = c.get("userId");
-  const balance = await getBalance(userId);
+  try {
+    const userId = c.get("userId");
+    const balance = await getBalance(userId);
 
-  const batches = await db.select()
-    .from(creditBatches)
-    .where(eq(creditBatches.userId, userId))
-    .orderBy(desc(creditBatches.createdAt))
-    .limit(50);
+    const batches = await db.select()
+      .from(creditBatches)
+      .where(eq(creditBatches.userId, userId))
+      .orderBy(desc(creditBatches.createdAt))
+      .limit(50);
 
-  const activeBatches = batches.filter(b => Number(b.remainingCents) > 0 && new Date(b.expiresAt) > new Date());
+    const activeBatches = batches.filter(b => Number(b.remainingCents) > 0 && new Date(b.expiresAt) > new Date());
 
-  return c.json({
-    balanceCents: balance.balanceCents,
-    totalDepositedCents: balance.totalDepositedCents,
-    totalUsedCents: balance.totalUsedCents,
-    lastActivityAt: balance.lastActivityAt,
-    activeBatches: activeBatches.map(b => ({
-      id: b.id,
-      amountCents: b.amountCents,
-      remainingCents: b.remainingCents,
-      expiresAt: b.expiresAt,
-      paymentMethod: b.paymentMethod,
-    })),
-  });
+    return c.json({
+      balanceCents: balance.balanceCents,
+      totalDepositedCents: balance.totalDepositedCents,
+      totalUsedCents: balance.totalUsedCents,
+      lastActivityAt: balance.lastActivityAt,
+      activeBatches: activeBatches.map(b => ({
+        id: b.id,
+        amountCents: b.amountCents,
+        remainingCents: b.remainingCents,
+        expiresAt: b.expiresAt,
+        paymentMethod: b.paymentMethod,
+      })),
+    });
+  } catch (err) {
+    console.error("[credits] Balance error:", err);
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+  }
 });
 
 creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
-  const userId = c.get("userId");
-  const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
+  try {
+    const userId = c.get("userId");
+    const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
 
-  const [depositsResult, usageResult] = await Promise.all([
-    db.select().from(deposits)
-      .where(eq(deposits.userId, userId))
-      .orderBy(desc(deposits.createdAt))
-      .limit(limit),
-    db.select().from(usageRecords)
-      .where(eq(usageRecords.userId, userId))
-      .orderBy(desc(usageRecords.createdAt))
-      .limit(limit),
-  ]);
+    const [depositsResult, usageResult] = await Promise.all([
+      db.select().from(deposits)
+        .where(eq(deposits.userId, userId))
+        .orderBy(desc(deposits.createdAt))
+        .limit(limit),
+      db.select().from(usageRecords)
+        .where(eq(usageRecords.userId, userId))
+        .orderBy(desc(usageRecords.createdAt))
+        .limit(limit),
+    ]);
 
-  const transactions = [
-    ...depositsResult.map((d: typeof deposits.$inferSelect) => ({
-      id: d.id,
-      type: "deposit" as const,
-      amountCents: Math.round(Number(d.amountUsd) * 100),
-      creditsIssued: Math.round(Number(d.creditsIssued) * 100),
-      status: d.status,
-      createdAt: d.createdAt,
-      txHash: d.txHash,
-    })),
-    ...usageResult.map((u: typeof usageRecords.$inferSelect) => ({
-      id: u.id,
-      type: "usage" as const,
-      model: u.model,
-      amountCents: Number(u.totalCents),
-      status: "completed" as const,
-      createdAt: u.createdAt,
-    })),
-  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const transactions = [
+      ...depositsResult.map((d: typeof deposits.$inferSelect) => ({
+        id: d.id,
+        type: "deposit" as const,
+        amountCents: Math.round(Number(d.amountUsd) * 100),
+        creditsIssued: Math.round(Number(d.creditsIssued) * 100),
+        status: d.status,
+        createdAt: d.createdAt,
+        txHash: d.txHash,
+      })),
+      ...usageResult.map((u: typeof usageRecords.$inferSelect) => ({
+        id: u.id,
+        type: "usage" as const,
+        model: u.model,
+        amountCents: Number(u.totalCents),
+        status: "completed" as const,
+        createdAt: u.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  return c.json({ transactions: transactions.slice(0, limit) });
+    return c.json({ transactions: transactions.slice(0, limit) });
+  } catch (err) {
+    console.error("[credits] Transactions error:", err);
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+  }
 });
 
 creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
-  const userId = c.get("userId");
+  try {
+    const userId = c.get("userId");
 
-  const usageResult = await db.select({
-    model: usageRecords.model,
-    inputTokens: usageRecords.inputTokens,
-    outputTokens: usageRecords.outputTokens,
-    totalCents: usageRecords.totalCents,
-  })
-    .from(usageRecords)
-    .where(eq(usageRecords.userId, userId));
+    const usageResult = await db.select({
+      model: usageRecords.model,
+      inputTokens: usageRecords.inputTokens,
+      outputTokens: usageRecords.outputTokens,
+      totalCents: usageRecords.totalCents,
+    })
+      .from(usageRecords)
+      .where(eq(usageRecords.userId, userId));
 
-  const modelTotals: Record<string, { inputTokens: number; outputTokens: number; totalCents: number; count: number }> = {};
-  for (const record of usageResult) {
-    if (!modelTotals[record.model]) {
-      modelTotals[record.model] = { inputTokens: 0, outputTokens: 0, totalCents: 0, count: 0 };
+    const modelTotals: Record<string, { inputTokens: number; outputTokens: number; totalCents: number; count: number }> = {};
+    for (const record of usageResult) {
+      if (!modelTotals[record.model]) {
+        modelTotals[record.model] = { inputTokens: 0, outputTokens: 0, totalCents: 0, count: 0 };
+      }
+      modelTotals[record.model].inputTokens += record.inputTokens;
+      modelTotals[record.model].outputTokens += record.outputTokens;
+      modelTotals[record.model].totalCents += Number(record.totalCents);
+      modelTotals[record.model].count += 1;
     }
-    modelTotals[record.model].inputTokens += record.inputTokens;
-    modelTotals[record.model].outputTokens += record.outputTokens;
-    modelTotals[record.model].totalCents += Number(record.totalCents);
-    modelTotals[record.model].count += 1;
-  }
 
-  return c.json({
-    usageByModel: Object.entries(modelTotals).map(([model, data]) => ({
-      model,
-      inputTokens: data.inputTokens,
-      outputTokens: data.outputTokens,
-      totalCents: data.totalCents,
-      requestCount: data.count,
-    })),
-    totalUsageCents: Object.values(modelTotals).reduce((sum, m) => sum + m.totalCents, 0),
-  });
+    return c.json({
+      usageByModel: Object.entries(modelTotals).map(([model, data]) => ({
+        model,
+        inputTokens: data.inputTokens,
+        outputTokens: data.outputTokens,
+        totalCents: data.totalCents,
+        requestCount: data.count,
+      })),
+      totalUsageCents: Object.values(modelTotals).reduce((sum, m) => sum + m.totalCents, 0),
+    });
+  } catch (err) {
+    console.error("[credits] Usage error:", err);
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+  }
 });
 
 creditRoutes.post("/v1/credits/auto-reload", bearerAuth, async (c) => {
-  const userId = c.get("userId");
-  const parsed = autoReloadSchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  try {
+    const userId = c.get("userId");
+    const parsed = autoReloadSchema.safeParse(await c.req.json());
+    if (!parsed.success) return c.json(validationError(parsed.error), 400);
 
-  const { enabled, thresholdCents, reloadAmountCents, spendLimitCents, paymentMethod } = parsed.data;
+    const { enabled, thresholdCents, reloadAmountCents, spendLimitCents, paymentMethod } = parsed.data;
 
-  await db.insert(autoReloadSettings)
-    .values({
-      userId,
-      enabled,
-      thresholdCents: String(thresholdCents ?? config.AUTO_RELOAD_THRESHOLD),
-      reloadAmountCents: String(reloadAmountCents ?? config.AUTO_RELOAD_AMOUNT),
-      spendLimitCents: String(spendLimitCents ?? config.AUTO_RELOAD_SPEND_LIMIT),
-      paymentMethod: paymentMethod ?? "usdc",
-    })
-    .onConflictDoUpdate({
-      target: autoReloadSettings.userId,
-      set: {
+    await db.insert(autoReloadSettings)
+      .values({
+        userId,
         enabled,
         thresholdCents: String(thresholdCents ?? config.AUTO_RELOAD_THRESHOLD),
         reloadAmountCents: String(reloadAmountCents ?? config.AUTO_RELOAD_AMOUNT),
         spendLimitCents: String(spendLimitCents ?? config.AUTO_RELOAD_SPEND_LIMIT),
         paymentMethod: paymentMethod ?? "usdc",
-        updatedAt: new Date(),
-      },
+      })
+      .onConflictDoUpdate({
+        target: autoReloadSettings.userId,
+        set: {
+          enabled,
+          thresholdCents: String(thresholdCents ?? config.AUTO_RELOAD_THRESHOLD),
+          reloadAmountCents: String(reloadAmountCents ?? config.AUTO_RELOAD_AMOUNT),
+          spendLimitCents: String(spendLimitCents ?? config.AUTO_RELOAD_SPEND_LIMIT),
+          paymentMethod: paymentMethod ?? "usdc",
+          updatedAt: new Date(),
+        },
+      });
+
+    const settings = await db.select().from(autoReloadSettings).where(eq(autoReloadSettings.userId, userId)).limit(1);
+
+    return c.json({
+      enabled: settings[0]?.enabled ?? enabled,
+      thresholdCents: Number(settings[0]?.thresholdCents ?? thresholdCents ?? config.AUTO_RELOAD_THRESHOLD),
+      reloadAmountCents: Number(settings[0]?.reloadAmountCents ?? reloadAmountCents ?? config.AUTO_RELOAD_AMOUNT),
+      spendLimitCents: Number(settings[0]?.spendLimitCents ?? spendLimitCents ?? config.AUTO_RELOAD_SPEND_LIMIT),
+      paymentMethod: settings[0]?.paymentMethod ?? paymentMethod ?? "usdc",
     });
-
-  const settings = await db.select().from(autoReloadSettings).where(eq(autoReloadSettings.userId, userId)).limit(1);
-
-  return c.json({
-    enabled: settings[0]?.enabled ?? enabled,
-    thresholdCents: Number(settings[0]?.thresholdCents ?? thresholdCents ?? config.AUTO_RELOAD_THRESHOLD),
-    reloadAmountCents: Number(settings[0]?.reloadAmountCents ?? reloadAmountCents ?? config.AUTO_RELOAD_AMOUNT),
-    spendLimitCents: Number(settings[0]?.spendLimitCents ?? spendLimitCents ?? config.AUTO_RELOAD_SPEND_LIMIT),
-    paymentMethod: settings[0]?.paymentMethod ?? paymentMethod ?? "usdc",
-  });
+  } catch (err) {
+    console.error("[credits] Auto-reload error:", err);
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+  }
 });
 
 creditRoutes.get("/v1/credits/auto-reload", bearerAuth, async (c) => {
@@ -295,7 +319,7 @@ creditRoutes.get("/v1/credits/price-estimate", bearerAuth, async (c) => {
   }
 
   try {
-    const credits = calculateCostCredits(model, inputTokens, outputTokens);
+    const credits = await calculateCostCredits(model, inputTokens, outputTokens);
     return c.json({
       model,
       inputTokens,

@@ -3,6 +3,7 @@ import { auditLogs } from "../db/schema.js";
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 import { randomUUID } from "crypto";
+import { logger } from "../lib/logger.js";
 
 export type AuditAction = typeof auditLogs.$inferInsert.action;
 
@@ -30,7 +31,7 @@ export async function auditLog(params: AuditLogParams): Promise<void> {
       createdAt: new Date(),
     });
   } catch (err) {
-    console.error("[audit] Failed to write audit log:", err);
+    logger.error({ err, params }, "Failed to write audit log");
   }
 }
 

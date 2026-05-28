@@ -57,6 +57,9 @@ export async function getBudgetAlertConfig(userId: string): Promise<BudgetAlertC
     emailEnabled: alert.emailEnabled,
     webhookEnabled: alert.webhookEnabled,
     webhookUrl: alert.webhookUrl ?? undefined,
+    dailyLimitCents: alert.dailyLimitCents ? Number(alert.dailyLimitCents) : undefined,
+    weeklyLimitCents: alert.weeklyLimitCents ? Number(alert.weeklyLimitCents) : undefined,
+    monthlyLimitCents: alert.monthlyLimitCents ? Number(alert.monthlyLimitCents) : undefined,
   };
 }
 
@@ -222,7 +225,10 @@ export async function setBudgetAlertConfig(
       alertThresholds: JSON.stringify(thresholds),
       emailEnabled: config.emailEnabled ?? true,
       webhookEnabled: config.webhookEnabled ?? false,
-      webhookUrl: config.webhookUrl,
+      webhookUrl: config.webhookUrl ?? undefined,
+      dailyLimitCents: config.dailyLimitCents ? String(config.dailyLimitCents) : undefined,
+      weeklyLimitCents: config.weeklyLimitCents ? String(config.weeklyLimitCents) : undefined,
+      monthlyLimitCents: config.monthlyLimitCents ? String(config.monthlyLimitCents) : undefined,
     })
     .onConflictDoUpdate({
       target: budgetAlerts.userId,
@@ -231,7 +237,10 @@ export async function setBudgetAlertConfig(
         alertThresholds: JSON.stringify(thresholds),
         emailEnabled: config.emailEnabled ?? true,
         webhookEnabled: config.webhookEnabled ?? false,
-        webhookUrl: config.webhookUrl,
+        webhookUrl: config.webhookUrl ?? undefined,
+        dailyLimitCents: config.dailyLimitCents ? String(config.dailyLimitCents) : undefined,
+        weeklyLimitCents: config.weeklyLimitCents ? String(config.weeklyLimitCents) : undefined,
+        monthlyLimitCents: config.monthlyLimitCents ? String(config.monthlyLimitCents) : undefined,
         updatedAt: new Date(),
       },
     });
@@ -313,6 +322,13 @@ export async function sendEmailNotification(userId: string, alert: AlertTriggere
 }
 
 export async function sendWebhookNotification(userId: string, alert: AlertTriggered, webhookUrl: string): Promise<void> {
+  const urlParsed = new URL(webhookUrl);
+  const hostname = urlParsed.hostname;
+  const PRIVATE_HOSTNAMES = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+  if (PRIVATE_HOSTNAMES.some(h => hostname === h || hostname.endsWith('.local'))) {
+    console.warn(`[BUDGET-ALERT] Blocked SSRF attempt to ${webhookUrl}`);
+    return;
+  }
   console.log(`[BUDGET-ALERT] Webhook notification for user ${userId}: ${alert.threshold}% threshold reached to ${webhookUrl}`);
 }
 

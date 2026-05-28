@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, healthCheck } from "./base.js";
 
 const OPENROUTER_TIMEOUT_MS = 30_000;
 const OPENROUTER_STREAM_TIMEOUT_MS = 120_000;
@@ -81,23 +81,11 @@ export async function openrouterHealthCheck(): Promise<{
   isUp: boolean;
   latencyMs: number;
 }> {
-  if (!config.OPENROUTER_API_KEY) {
-    return { isUp: false, latencyMs: -1 };
-  }
-
-  const start = Date.now();
-
-  try {
-    const resp = await fetch(openrouterUrl("/v1/models"), {
-      method: "GET",
-      headers: openrouterHeaders(),
-      signal: AbortSignal.timeout(10_000),
-    });
-    const latencyMs = Date.now() - start;
-    return { isUp: resp.ok, latencyMs };
-  } catch {
-    return { isUp: false, latencyMs: Date.now() - start };
-  }
+  return healthCheck({
+    getUrl: () => openrouterUrl("/v1/models"),
+    getHeaders: openrouterHeaders,
+    keyConfigured: !!config.OPENROUTER_API_KEY,
+  });
 }
 
 export interface BYOKKey {

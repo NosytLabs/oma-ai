@@ -25,8 +25,8 @@ import {
   Link2,
 } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useWriteContract, usePublicClient } from 'wagmi'
-import { parseUnits, zeroAddress } from 'viem'
+import { useWriteContract, usePublicClient, useAccount } from 'wagmi'
+import { parseUnits } from 'viem'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type DepositStep = 'select' | 'route' | 'processing' | 'complete' | 'error'
@@ -60,7 +60,7 @@ const ERC20_ABI = [
 ] as const
 
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-const OMA_BASE_TREASURY = process.env.NEXT_PUBLIC_BASE_TREASURY || '0x0000000000000000000000000000000000000000'
+const treasuryAddress = process.env.NEXT_PUBLIC_BASE_TREASURY
 
 const POPULAR_COINS: CoinOption[] = [
   { id: 'usdc-base', symbol: 'USDC', name: 'USD Coin', network: 'Base', isNative: true, decimals: 6, isPopular: true, chain: 'base' },
@@ -152,11 +152,16 @@ function CoinSelector({ selected, onSelect }: { selected: CoinOption | null; onS
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-text-secondary">Select Asset</label>
+      <label className="mb-2 block text-xs font-medium tracking-wider text-[var(--color-text-secondary)] font-mono uppercase">
+        Select Asset
+      </label>
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-4 text-left hover:border-indigo-500/50 transition-all"
-        whileHover={{ scale: 1.01 }}
+        className="w-full flex items-center gap-3 rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)] px-4 py-4 text-left 
+          hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-cyan)]/40
+          focus-visible:border-[var(--color-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+          transition-colors duration-150"
+        whileHover={{ scale: 1 }}
         whileTap={{ scale: 0.99 }}
       >
         {selected ? (
@@ -164,38 +169,45 @@ function CoinSelector({ selected, onSelect }: { selected: CoinOption | null; onS
             <CryptoLogo symbol={selected.symbol} size={32} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold">{selected.symbol}</span>
-                {selected.isPopular && <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">POPULAR</span>}
+                <span className="font-semibold text-[var(--color-text-bright)]">{selected.symbol}</span>
+                {selected.isPopular && (
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[var(--color-cyan)] bg-[var(--color-cyan)]/10 border border-[var(--color-cyan)]/20">
+                    POPULAR
+                  </span>
+                )}
               </div>
-              <div className="text-xs text-text-secondary">{selected.name} - {selected.network}</div>
+              <div className="text-xs text-[var(--color-text-secondary)]">{selected.name} — {selected.network}</div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center gap-2 text-text-secondary">
+          <div className="flex-1 flex items-center gap-2 text-[var(--color-text-secondary)]">
             <Coins className="h-5 w-5" />
             <span>Choose cryptocurrency</span>
           </div>
         )}
-        <ChevronDown className={`h-5 w-5 text-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-5 w-5 text-[var(--color-text-secondary)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-panel shadow-2xl overflow-hidden"
-            initial={{ opacity: 0, y: -10 }}
+            className="absolute z-50 mt-2 w-full rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-panel)] shadow-xl"
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
           >
-            <div className="p-3 border-b border-border">
+            <div className="p-3 border-b border-[var(--color-border)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
                 <input
                   type="text"
                   placeholder="Search coins..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-indigo-500/50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-sm 
+                    text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]
+                    focus:outline-none focus:border-[var(--color-cyan)]/50"
                   autoFocus
                 />
               </div>
@@ -205,16 +217,20 @@ function CoinSelector({ selected, onSelect }: { selected: CoinOption | null; onS
                 <motion.button
                   key={coin.id}
                   onClick={() => { onSelect(coin); setIsOpen(false); setSearch(''); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/50 ${selected?.id === coin.id ? 'bg-indigo-500/5 border-l-2 border-indigo-500' : ''}`}
-                  whileHover={{ x: 4 }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 
+                    hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-bright)]
+                    focus:bg-[var(--color-surface-elevated)] focus:text-[var(--color-text-bright)]
+                    focus:outline-none
+                    ${selected?.id === coin.id ? 'bg-[var(--color-surface-elevated)] border-l-2 border-[var(--color-cyan)]' : 'border-l-2 border-transparent'}`}
+                  whileHover={{ x: 2 }}
                 >
                   <CryptoLogo symbol={coin.symbol} size={28} />
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold">{coin.symbol}</span>
-                      {coin.isPrivacy && <Lock className="h-3 w-3 text-purple-400" />}
+                      <span className="font-semibold">{coin.symbol}</span>
+                      {coin.isPrivacy && <Lock className="h-3 w-3 text-[var(--color-pink)]" />}
                     </div>
-                    <div className="text-xs text-text-secondary">{coin.name}</div>
+                    <div className="text-xs text-[var(--color-text-secondary)]">{coin.name}</div>
                   </div>
                 </motion.button>
               ))}
@@ -251,26 +267,30 @@ export default function DepositPage() {
     return (
       <motion.div
         className="flex min-h-[calc(100vh-4rem)] items-center justify-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        <div className="text-center max-w-md px-4">
-          <motion.div
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring' }}
-          >
-            <Wallet className="h-10 w-10 text-indigo-500" />
-          </motion.div>
-          <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
-          <p className="mb-6 text-text-secondary">
-            Connect an EVM wallet to deposit funds and generate API credits for AI inference services. Low-friction onboarding.
-          </p>
+        <div className="text-left max-w-md px-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
+              <Wallet className="h-7 w-7 text-[var(--color-cyan)]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--color-text-bright)]">Connect Your Wallet</h1>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1">
+                Connect an EVM wallet to deposit funds and generate API credits for AI inference services.
+              </p>
+            </div>
+          </div>
           <motion.button
             onClick={() => connectEvm()}
-            className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
-            whileHover={{ scale: 1.02 }}
+            className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[var(--color-cyan)] text-[var(--color-void)] font-semibold text-sm
+              hover:bg-[var(--color-cyan-bright)] 
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+              active:translate-y-0
+              transition-colors duration-150"
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
           >
             <Zap className="h-4 w-4" />
@@ -283,7 +303,7 @@ export default function DepositPage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-4xl px-4 py-8"
+      className="mx-auto max-w-3xl px-4 py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -297,31 +317,27 @@ function UnifiedDepositHeader() {
   return (
     <motion.div
       className="mb-8"
-      initial={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
     >
       <div className="flex items-center gap-4 mb-3">
-        <motion.div
-          className="flex h-14 w-14 items-center justify-center rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10"
-          initial={{ rotate: -10 }}
-          animate={{ rotate: 0 }}
-          transition={{ type: 'spring' }}
-        >
-          <Coins className="h-7 w-7 text-indigo-500" />
-        </motion.div>
-        <div>
-          <h1 className="text-3xl font-bold">Deposit Credits</h1>
-          <p className="text-text-secondary text-sm">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
+          <Coins className="h-6 w-6 text-[var(--color-cyan)]" />
+        </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-[var(--color-text-bright)]">Deposit Credits</h1>
+          <p className="text-[var(--color-text-secondary)] text-sm">
             Crypto-friendly credit system. Fund with USDC or swap from 100+ cryptocurrencies via Houdini-powered flow.
           </p>
         </div>
         <motion.span
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 px-3 py-1.5 text-xs font-bold text-indigo-400 border border-indigo-500/30"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring' }}
+          className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-semibold text-[var(--color-cyan)] border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
         >
-          <Hexagon className="h-3.5 w-3.5" />
+          <Hexagon className="h-3 w-3" />
           BASE
         </motion.span>
       </div>
@@ -344,6 +360,8 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
   const { writeContractAsync } = useWriteContract()
   const publicClient = usePublicClient()
   const { prices } = useCryptoPrices()
+  const { address: walletAddress } = useAccount()
+  const { signMessage } = useWallet()
 
   const usdValue = selectedCoin && amount ? calculateUsdValue(selectedCoin.symbol, parseFloat(amount) || 0, prices) : null
 
@@ -382,9 +400,9 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
     if (!amount || parseFloat(amount) <= 0) return
     setError('')
 
-    // Validate treasury address is properly configured
-    if (OMA_BASE_TREASURY === zeroAddress) {
-      setError('Treasury address not configured. Please set NEXT_PUBLIC_BASE_TREASURY in your environment variables. Deposits are currently disabled.')
+    if (!treasuryAddress) {
+      const errMsg = 'Treasury address not configured. Please set NEXT_PUBLIC_BASE_TREASURY in your environment variables. Deposits are disabled until treasury is configured.'
+      setError(errMsg)
       toast.error('Treasury misconfiguration detected')
       setStep('error')
       return
@@ -394,23 +412,128 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
     try {
       if (selectedCoin?.id === 'usdc-base') {
+        setProcessingStep('Requesting deposit nonce...')
+        
+        const sessionToken = document.cookie.match(/oma_session=([^;]+)/)?.[1] || '';
+        
+        const chainId = await publicClient!.getChainId()
+        
+        const nonceResponse = await fetch('/api/v1/deposit/usdc/nonce', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify({ 
+            amount: parseFloat(amount),
+            walletAddress,
+            chainId,
+          }),
+        })
+
+        if (!nonceResponse.ok) {
+          const errorData = await nonceResponse.json().catch(() => ({}))
+          throw new Error(errorData.error?.message || 'Failed to get deposit nonce')
+        }
+
+        const { nonce } = await nonceResponse.json()
+
         setProcessingStep('Requesting wallet signature...')
         const parsedAmount = parseUnits(amount, 6)
+        
         const tx = await writeContractAsync({
           address: USDC_ADDRESS,
           abi: ERC20_ABI,
           functionName: 'transfer',
-          args: [OMA_BASE_TREASURY as `0x${string}`, parsedAmount],
+          args: [treasuryAddress as `0x${string}`, parsedAmount],
         })
+        
         setProcessingStep('Transaction broadcasting...')
         setTxHash(tx)
+        
         await publicClient!.waitForTransactionReceipt({ hash: tx })
-        setProcessingStep('Crediting your account...')
-        const result = await api.oma.depositUsdc(parseFloat(amount), tx)
-        onDeposit({ id: result.id, status: result.status, amountCents: result.amountCents ?? '0', coin: 'USDC', createdAt: result.createdAt })
+        
+        setProcessingStep('Verifying deposit and crediting account...')
+        
+        const messageToSign = `Deposit ${amount} USDC to OMA\nTx: ${tx}\nChain: ${chainId}\nNonce: ${nonce}\nWallet: ${walletAddress}\n\nSigning this message confirms the deposit.`
+        
+        let signature: string
+        try {
+          signature = await signMessage(messageToSign)
+        } catch (signErr) {
+          const signError = signErr instanceof Error ? signErr.message : 'Signing failed'
+          if (signError.includes('User denied') || signError.includes('rejected')) {
+            throw new Error('Signature denied. Please sign the message to confirm your deposit.')
+          }
+          throw new Error(`Failed to sign deposit message: ${signError}`)
+        }
+
+        const signatureResponse = await fetch('/api/v1/deposit/usdc/signature', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify({
+            amount: parseFloat(amount),
+            txHash: tx,
+            signature,
+            nonce,
+            walletAddress,
+            chainId,
+          }),
+        })
+
+        if (!signatureResponse.ok) {
+          const errorData = await signatureResponse.json().catch(() => ({}))
+          throw new Error(errorData.error?.message || 'Signature verification failed')
+        }
+
+        const result = await fetch('/api/v1/deposit/usdc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify({
+            amount: parseFloat(amount),
+            txHash: tx,
+            signature,
+            nonce,
+            walletAddress,
+            chainId,
+          }),
+        }).then(async res => {
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}))
+            throw new Error(errorData.error?.message || 'Deposit failed')
+          }
+          return res.json()
+        })
+
+        onDeposit({ id: result.depositId, status: 'completed', amountCents: String(result.credits), coin: 'USDC', createdAt: new Date().toISOString() })
         toast.success(`Successfully deposited $${amount} USDC`)
         setStep('complete')
       } else {
+        const sessionToken = document.cookie.match(/oma_session=([^;]+)/)?.[1] || '';
+        
+        let tokensResponse: Response | null = null;
+        try {
+          tokensResponse = await fetch('/api/v1/deposit/houdini/tokens', {
+            headers: { 'Authorization': `Bearer ${sessionToken}` },
+          });
+        } catch {
+          // Network error - Houdini service unreachable
+        }
+
+        if (!tokensResponse?.ok) {
+          const errorMsg = 'HoudiniSwap is not currently configured on this server. Please try using Direct USDC deposit or contact support.'
+          setError(errorMsg)
+          toast.error('Service unavailable')
+          setStep('error')
+          return
+        }
+
         setStep('route')
       }
     } catch (e) {
@@ -476,23 +599,21 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
   const quickAmounts = [10, 50, 100, 500]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <motion.div
-        className="rounded-2xl border border-border bg-panel p-6 shadow-2xl relative overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
+        className="rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-panel)] p-6"
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.1, duration: 0.25 }}
       >
-        <div className="absolute top-0 right-0 h-60 w-60 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 blur-3xl rounded-full pointer-events-none" />
-
         {step === 'select' && (
-          <div className="space-y-6 relative">
+          <div className="space-y-5">
             <CoinSelector selected={selectedCoin} onSelect={setSelectedCoin} />
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Amount</label>
-                {selectedCoin && <span className="text-xs text-text-secondary">Balance: {coinBalance ?? '--'}</span>}
+                <label className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-secondary)] font-mono">Amount</label>
+                {selectedCoin && <span className="text-xs text-[var(--color-text-muted)] font-mono">Balance: {coinBalance ?? '--'}</span>}
               </div>
               <div className="relative">
                 <input
@@ -500,17 +621,20 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
-                  className="w-full text-2xl font-bold bg-surface border border-border rounded-xl px-4 py-4 placeholder:text-text-secondary/30 focus:outline-none focus:border-indigo-500/50"
+                  className="w-full text-xl font-semibold bg-[var(--color-surface)] border border-[var(--color-border-bright)] rounded-lg px-4 py-4 
+                    placeholder:text-[var(--color-text-muted)]
+                    focus:outline-none focus:border-[var(--color-cyan)]/50 focus:ring-2 focus:ring-[var(--color-cyan)]/20
+                    hover:border-[var(--color-cyan)]/30"
                 />
                 {selectedCoin && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     <CryptoLogo symbol={selectedCoin.symbol} size={20} />
-                    <span className="text-sm font-bold">{selectedCoin.symbol}</span>
+                    <span className="text-sm font-semibold text-[var(--color-text-bright)]">{selectedCoin.symbol}</span>
                   </div>
                 )}
               </div>
               {usdValue !== null && selectedCoin && (
-                <div className="mt-2 text-sm text-text-secondary">
+                <div className="mt-2 text-sm text-[var(--color-text-muted)] font-mono">
                   ≈ ${usdValue.toFixed(2)} USD
                 </div>
               )}
@@ -522,8 +646,13 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
                   <motion.button
                     key={q}
                     onClick={() => setAmount(q.toString())}
-                    className="flex-1 rounded-lg border border-border py-2 text-sm font-medium hover:bg-surface transition-colors"
-                    whileHover={{ scale: 1.02 }}
+                    className="flex-1 rounded border border-[var(--color-border-bright)] py-2 text-sm font-medium 
+                      text-[var(--color-text-secondary)] bg-[var(--color-surface)]
+                      hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-bright)]
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                      active:translate-y-0
+                      transition-colors duration-150"
+                    whileHover={{ scale: 1 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     ${q}
@@ -534,27 +663,30 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
             {selectedCoin && amount && parseFloat(amount) > 0 && (
               <motion.div
-                className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4"
+                className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-4"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.2 }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-text-secondary">Route</span>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-[var(--color-text-secondary)] font-medium">Route</span>
                   {route.badge && (
-                    <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-400">{route.badge}</span>
+                    <span className="rounded px-2 py-0.5 text-xs font-mono font-semibold text-[var(--color-cyan)] border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/10">
+                      {route.badge}
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-indigo-500/30 bg-indigo-500/10">
-                    <ShieldCheck className="h-5 w-5 text-indigo-500" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
+                    <ShieldCheck className="h-5 w-5 text-[var(--color-cyan)]" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-bold">{route.label}</div>
-                    <div className="text-xs text-text-secondary">{route.description}</div>
+                    <div className="font-semibold text-[var(--color-text-bright)]">{route.label}</div>
+                    <div className="text-xs text-[var(--color-text-secondary)]">{route.description}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-text-secondary">Est. time</div>
-                    <div className="text-sm font-medium">{route.estimatedTime}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">Est. time</div>
+                    <div className="text-sm font-medium text-[var(--color-text-bright)]">{route.estimatedTime}</div>
                   </div>
                 </div>
               </motion.div>
@@ -562,122 +694,145 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
             <motion.button
               onClick={handleStartDeposit}
-              disabled={!selectedCoin || !amount || parseFloat(amount) <= 0}
-              className="btn-primary w-full py-4 text-base disabled:opacity-50"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              disabled={!selectedCoin || !amount || parseFloat(amount) <= 0 || !treasuryAddress}
+              className="w-full py-4 text-sm font-semibold rounded-full
+                bg-[var(--color-cyan)] text-[var(--color-void)] 
+                hover:bg-[var(--color-cyan-bright)] 
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                disabled:opacity-40 disabled:cursor-not-allowed
+                active:translate-y-0
+                transition-colors duration-150"
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {selectedCoin ? 'Continue' : 'Select an asset to continue'}
+              {!treasuryAddress ? 'Treasury not configured' : !selectedCoin ? 'Select an asset to continue' : !amount || parseFloat(amount) <= 0 ? 'Enter an amount' : 'Continue'}
             </motion.button>
           </div>
         )}
 
         {step === 'route' && (
-          <div className="space-y-6 relative">
+          <div className="space-y-5">
             <motion.div
-              className="text-center"
+              className="text-left"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
             >
-              <motion.div
-                className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/10"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-              >
-                <ArrowRightLeft className="h-8 w-8 text-indigo-500" />
-              </motion.div>
-              <h3 className="text-xl font-bold mb-2">Swap Required</h3>
-              <p className="text-text-secondary text-sm">
-                {selectedCoin?.symbol} is not directly supported. Use HoudiniSwap to convert to USDC.
-              </p>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
+                  <ArrowRightLeft className="h-5 w-5 text-[var(--color-cyan)]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Swap Required</h3>
+                  <p className="text-[var(--color-text-secondary)] text-sm">
+                    {selectedCoin?.symbol} is not directly supported. Use HoudiniSwap to convert to USDC.
+                  </p>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
-              className="rounded-xl border border-border bg-surface p-4"
-              initial={{ opacity: 0, y: 10 }}
+              className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-4"
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1, duration: 0.2 }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <Sparkles className="h-5 w-5 text-indigo-500" />
-                <span className="font-medium">HoudiniSwap Integration</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
+                <span className="text-sm font-medium text-[var(--color-text-bright)]">HoudiniSwap Integration</span>
               </div>
-              <div className="space-y-2 text-sm text-text-secondary">
+              <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>100+ cryptocurrencies supported</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>Cross-chain swaps</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>Privacy enhanced routing via Monero tunnel</span>
                 </div>
               </div>
             </motion.div>
 
             <motion.div
-              className="rounded-xl border border-purple-200 bg-purple-50/50 p-4"
-              initial={{ opacity: 0, y: 10 }}
+              className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-4"
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15, duration: 0.2 }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <Rocket className="h-5 w-5 text-purple-500" />
-                <span className="font-medium">x402 Pay-Per-Request</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Rocket className="h-4 w-4 text-[var(--color-pink)]" />
+                <span className="text-sm font-medium text-[var(--color-text-bright)]">x402 Pay-Per-Request</span>
               </div>
-              <p className="text-sm text-purple-700 mb-4">
+              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
                 Create a payment link and share it with users. They can pay without connecting a wallet directly.
               </p>
-              <div className="space-y-2 text-sm text-text-secondary">
+              <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>Gasless transactions</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>Works on Solana and Base</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-[var(--color-green)]" />
                   <span>Automatic token conversion</span>
                 </div>
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex gap-3">
               <motion.button
                 onClick={handleReset}
-                className="btn-secondary py-3"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.99 }}
+                className="flex-1 py-3 text-sm font-medium rounded-lg border border-[var(--color-border-bright)] 
+                  text-[var(--color-text-secondary)] bg-transparent
+                  hover:bg-[var(--color-surface)] hover:text-[var(--color-text-bright)]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                  active:translate-y-0
+                  transition-colors duration-150"
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Back
               </motion.button>
               <motion.button
                 onClick={handleCreatePaymentLink}
                 disabled={creatingPaymentLink}
-                className="btn-primary py-3 disabled:opacity-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.99 }}
+                className="flex-1 py-3 text-sm font-semibold rounded-lg
+                  bg-[var(--color-cyan)] text-[var(--color-void)]
+                  hover:bg-[var(--color-cyan-bright)]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  active:translate-y-0
+                  transition-colors duration-150"
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {creatingPaymentLink ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </span>
                 ) : (
-                  <Link2 className="mr-2 h-4 w-4" />
+                  <span className="inline-flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    Create Link
+                  </span>
                 )}
-                {creatingPaymentLink ? 'Creating...' : 'Create Link'}
               </motion.button>
             </div>
 
-            <div className="text-center">
+            <div className="text-left">
               <a
                 href="https://app.houdiniswap.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-indigo-400 hover:text-indigo-300 underline"
+                className="text-sm text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)] underline"
               >
                 Open HoudiniSwap →
               </a>
@@ -687,86 +842,101 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
         {step === 'processing' && (
           <motion.div
-            className="text-center py-8"
+            className="text-left py-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
           >
             {paymentLinkInfo ? (
               <>
-                <motion.div
-                  className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/10"
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                >
-                  <Link2 className="h-8 w-8 text-indigo-500" />
-                </motion.div>
-                <h3 className="text-xl font-bold mb-2">Payment Link Created</h3>
-                <p className="text-text-secondary text-sm mb-4">Share this link with anyone to receive payment</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
+                    <Link2 className="h-5 w-5 text-[var(--color-cyan)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Payment Link Created</h3>
+                    <p className="text-[var(--color-text-secondary)] text-sm">Share this link with anyone to receive payment</p>
+                  </div>
+                </div>
                 
-                <div className="bg-surface rounded-xl border border-border p-4 mb-4">
+                <div className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-4 mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-text-secondary">Amount</span>
-                    <span className="font-bold text-lg">${paymentLinkInfo.amount} {paymentLinkInfo.token}</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">Amount</span>
+                    <span className="font-bold text-lg text-[var(--color-text-bright)]">${paymentLinkInfo.amount} {paymentLinkInfo.token}</span>
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-text-secondary">Chain</span>
-                    <span className="font-medium capitalize">{paymentLinkInfo.chain}</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">Chain</span>
+                    <span className="font-medium text-[var(--color-text-bright)] capitalize">{paymentLinkInfo.chain}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-text-secondary">Expires</span>
-                    <span className="text-sm">{new Date(paymentLinkInfo.expiresAt).toLocaleString()}</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">Expires</span>
+                    <span className="text-sm text-[var(--color-text-bright)]">{new Date(paymentLinkInfo.expiresAt).toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="bg-surface rounded-xl border border-border p-3 mb-4 break-all">
-                  <div className="text-xs text-text-secondary mb-1">Payment Link</div>
-                  <div className="text-sm font-mono text-indigo-400">{paymentLinkInfo.url}</div>
+                <div className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-3 mb-4 break-all">
+                  <div className="text-xs text-[var(--color-text-muted)] mb-1 font-mono">Payment Link</div>
+                  <div className="text-sm font-mono text-[var(--color-cyan)]">{paymentLinkInfo.url}</div>
                 </div>
                 
-                <div className="flex gap-3 justify-center">
+                <div className="flex gap-3">
                   <motion.button
                     onClick={async () => {
                       await navigator.clipboard.writeText(paymentLinkInfo.url)
                       toast.success('Copied to clipboard!')
                     }}
-                    className="btn-secondary py-3 px-6"
-                    whileHover={{ scale: 1.02 }}
+                    className="py-3 px-5 text-sm font-medium rounded-lg border border-[var(--color-border-bright)] 
+                      text-[var(--color-text-secondary)] bg-transparent
+                      hover:bg-[var(--color-surface)] hover:text-[var(--color-text-bright)]
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                      active:translate-y-0
+                      transition-colors duration-150"
+                    whileHover={{ scale: 1 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link2 className="mr-2 h-4 w-4" />
-                    Copy Link
+                    <span className="inline-flex items-center gap-2">
+                      <Link2 className="h-4 w-4" />
+                      Copy Link
+                    </span>
                   </motion.button>
                   <motion.button
                     onClick={handleReset}
-                    className="btn-primary py-3 px-6"
-                    whileHover={{ scale: 1.02 }}
+                    className="py-3 px-5 text-sm font-semibold rounded-lg
+                      bg-[var(--color-cyan)] text-[var(--color-void)]
+                      hover:bg-[var(--color-cyan-bright)]
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                      active:translate-y-0
+                      transition-colors duration-150"
+                    whileHover={{ scale: 1 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     Done
                   </motion.button>
                 </div>
 
-                <p className="text-xs text-text-secondary mt-6">
+                <p className="text-xs text-[var(--color-text-muted)] mt-5 font-mono">
                   Deposit ID: {paymentLinkInfo.depositId}<br/>
                   Credits will be added to your account once payment is confirmed via webhook.
                 </p>
               </>
             ) : (
               <>
-                <motion.div
-                  className="mx-auto mb-6 h-16 w-16"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                >
-                  <Loader2 className="h-16 w-16 text-indigo-500" />
-                </motion.div>
-                <h3 className="text-xl font-bold mb-2">Processing Deposit</h3>
-                <p className="text-text-secondary text-sm mb-4">{processingStep}</p>
+                <div className="flex items-center justify-center mb-6">
+                  <motion.div
+                    className="h-14 w-14 rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] flex items-center justify-center"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Loader2 className="h-7 w-7 text-[var(--color-cyan)]" />
+                  </motion.div>
+                </div>
+                <h3 className="text-lg font-bold text-[var(--color-text-bright)] text-center mb-2">Processing Deposit</h3>
+                <p className="text-[var(--color-text-secondary)] text-sm text-center mb-4">{processingStep}</p>
                 {txHash && (
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-xs text-text-secondary">Tx:</span>
-                    <span className="text-xs font-mono text-indigo-500">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
-                    <a href={`https://basescan.io/tx/${txHash}`} target="_blank" rel="noopener" className="text-indigo-500 hover:text-indigo-400">
+                    <span className="text-xs text-[var(--color-text-muted)] font-mono">Tx:</span>
+                    <span className="text-xs font-mono text-[var(--color-cyan)]">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
+                    <a href={`https://basescan.io/tx/${txHash}`} target="_blank" rel="noopener" className="text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)]">
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
@@ -778,25 +948,30 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
         {step === 'complete' && (
           <motion.div
-            className="text-center py-8"
-            initial={{ opacity: 0, scale: 0.9 }}
+            className="text-left py-6"
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <motion.div
-              className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-green-500/30 bg-green-500/10"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', delay: 0.2 }}
-            >
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
-            </motion.div>
-            <h3 className="text-xl font-bold mb-2">Deposit Complete!</h3>
-            <p className="text-text-secondary text-sm mb-6">Your credits have been added to your account.</p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--color-green)]/30 bg-[var(--color-green)]/10">
+                <CheckCircle2 className="h-6 w-6 text-[var(--color-green)]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Deposit Complete!</h3>
+                <p className="text-[var(--color-text-secondary)] text-sm">Your credits have been added to your account.</p>
+              </div>
+            </div>
             <motion.button
               onClick={handleReset}
-              className="btn-primary py-3 px-8"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.99 }}
+              className="py-3 px-6 text-sm font-semibold rounded-lg
+                bg-[var(--color-cyan)] text-[var(--color-void)]
+                hover:bg-[var(--color-cyan-bright)]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                active:translate-y-0
+                transition-colors duration-150"
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 0.98 }}
             >
               Make Another Deposit
             </motion.button>
@@ -805,24 +980,30 @@ function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit)
 
         {step === 'error' && (
           <motion.div
-            className="text-center py-8"
+            className="text-left py-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <motion.div
-              className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-            >
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-            </motion.div>
-            <h3 className="text-xl font-bold mb-2">Deposit Failed</h3>
-            <p className="text-text-secondary text-sm mb-6">{error}</p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--color-red)]/30 bg-[var(--color-red)]/10">
+                <AlertTriangle className="h-6 w-6 text-[var(--color-red)]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Deposit Failed</h3>
+                <p className="text-[var(--color-text-secondary)] text-sm">{error}</p>
+              </div>
+            </div>
             <motion.button
               onClick={handleReset}
-              className="btn-primary py-3 px-8"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.99 }}
+              className="py-3 px-6 text-sm font-semibold rounded-lg
+                bg-[var(--color-cyan)] text-[var(--color-void)]
+                hover:bg-[var(--color-cyan-bright)]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                active:translate-y-0
+                transition-colors duration-150"
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 0.98 }}
             >
               Try Again
             </motion.button>

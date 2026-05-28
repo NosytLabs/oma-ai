@@ -1,14 +1,7 @@
-/* Hallmark · macrostructure: Workbench · theme: Terminal
- * audience: Developers · use case: Test AI models · tone: Technical
- * enrichment: none (typography only)
- * states: default · hover · focus · active · disabled · loading · error · success
- * contrast: pass (46–50)
- */
-
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useRef, useEffect, useCallback, useDeferredValue } from 'react'
+import { useState, useRef, useEffect, useCallback, useDeferredValue, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -65,11 +58,17 @@ const LazyStatsBar = dynamic(
   { ssr: false, loading: () => null }
 )
 
+const LazyMobileStatsBar = dynamic(
+  () => import('@/components/playground/PlaygroundComponents').then(mod => mod.MobileStatsBar),
+  { ssr: false, loading: () => null }
+)
+
 import {
   Message,
   SearchResult,
 } from '@/components/playground'
-import { CostEstimate, estimateTokens } from '@/components/playground/MessageInput'
+import { CostEstimate } from '@/components/playground/MessageInput'
+import { estimateTokens } from '@/lib/text'
 import { btnBase } from '@/components/playground/PlaygroundComponents'
 
 const STORAGE_KEY = 'oma_playground_conversation'
@@ -94,7 +93,6 @@ export default function PlaygroundPage() {
   const [stream, setStream] = useState(true)
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [searching, setSearching] = useState(false)
-  const [, setSearchResults] = useState<SearchResult[]>([])
   
   // Status states for buttons
   const [shareStatus, setShareStatus] = useState<'default'|'loading'|'success'|'error'>('default')
@@ -103,15 +101,24 @@ export default function PlaygroundPage() {
   const toast = useToast()
 
   const getApiKeyFromCookie = useCallback(() => {
-    const match = document.cookie.match(/oma_api_key=([^;]+)/)
-    return match ? match[1] : null
+    try {
+      const match = document.cookie.match(/(?:^|;\s*)oma_api_key=([^;]*)/)
+      return match?.[1] || null
+    } catch {
+      return null
+    }
   }, [])
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const messagesRef = useRef<Message[]>(messages)
 
   const deferredMessages = useDeferredValue(messages)
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -125,11 +132,31 @@ export default function PlaygroundPage() {
     }
   }, [])
 
+  const debouncedSave = useMemo(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    return (msgs: Message[]) => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs))
+        } catch (err) {
+          console.warn('Failed to save conversation to storage:', err)
+        }
+      }, 2000)
+    }
+  }, [])
+
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+      debouncedSave(messages)
     }
-  }, [messages])
+  }, [messages, debouncedSave])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -145,13 +172,12 @@ export default function PlaygroundPage() {
       inputTokens: estimateTokens(input.trim()),
     }
 
-    const allMessages = [...messages, userMessage]
+    const currentMessages = messagesRef.current
+    const allMessages = [...currentMessages, userMessage]
     setMessages(allMessages)
     setInput('')
     setLoading(true)
     setError(null)
-    setSearchResults([])
-
     const assistantMessage: Message = {
       role: 'assistant',
       content: '',
@@ -181,7 +207,6 @@ export default function PlaygroundPage() {
               snippet: r.snippet,
               favicon: r.favicon,
             }))
-            setSearchResults(currentSearchResults)
             const searchContext: Message = {
               role: 'system',
               content: `Web search results for "${input.trim()}":\n\n${searchData.results.map((r: SearchResult) => 
@@ -192,20 +217,25 @@ export default function PlaygroundPage() {
             messagesWithSearch = [searchContext, ...allMessages]
           }
         }
-      } catch {
-        // Search failed, continue without
+      } catch (err) {
+        console.warn('Web search failed:', err)
       } finally {
         setSearching(false)
       }
     }
 
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getApiKeyFromCookie() || ''}`,
-        },
+      try {
+        const apiKey = getApiKeyFromCookie();
+        if (!apiKey) {
+          throw new Error('No API key found. Please connect your wallet to get an API key.');
+        }
+        
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
         body: JSON.stringify({
           model,
           messages: messagesWithSearch.map(m => ({ role: m.role, content: m.content })),
@@ -279,7 +309,9 @@ export default function PlaygroundPage() {
                 tokenCount += 1
                 flushToState()
               }
-            } catch {}
+            } catch (err) {
+              console.warn('Failed to parse streaming response:', err)
+            }
           }
         }
         flushToState(true)
@@ -325,7 +357,7 @@ export default function PlaygroundPage() {
       setLoading(false)
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [input, loading, messages, model, temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream, webSearchEnabled, getApiKeyFromCookie])
+  }, [input, loading, model, temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream, webSearchEnabled, getApiKeyFromCookie])
 
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort()
@@ -369,7 +401,7 @@ export default function PlaygroundPage() {
   const shareConversation = useCallback(() => {
     setShareStatus('loading')
     try {
-      const id = Math.random().toString(36).slice(2, 10)
+      const id = crypto.randomUUID()
       const data = { id, messages }
       localStorage.setItem(`oma_share_${id}`, JSON.stringify(data))
       setShareStatus('success')
@@ -383,10 +415,11 @@ export default function PlaygroundPage() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono overflow-hidden">
+      <h1 className="sr-only">API Playground</h1>
       {/* Top Nav/Toolbar */}
       <header aria-label="Playground toolbar" className="flex-none h-12 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-void)]/95">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-emerald-500 mr-4">
+          <div className="flex items-center gap-2 text-[var(--color-green)] mr-4">
             <TerminalSquare className="w-4 h-4" />
             <span className="text-[11px] font-bold tracking-widest uppercase">OMA.WB</span>
           </div>
@@ -397,7 +430,7 @@ export default function PlaygroundPage() {
           
           <button
             onClick={() => setParamsOpen(!paramsOpen)}
-            className={`${btnBase} ${paramsOpen ? '!bg-[var(--color-surface)] !text-[var(--color-success)] !border-[var(--color-success)]/30' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`}
+            className={`${btnBase} ${paramsOpen ? '!bg-[var(--color-surface)] !text-[var(--color-success)] !border-[var(--color-success)]/30' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`}
             title="Toggle Parameters"
           >
             <Settings2 className="w-3.5 h-3.5" />
@@ -408,7 +441,7 @@ export default function PlaygroundPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-            className={`${btnBase} ${webSearchEnabled ? '!bg-[var(--color-surface)] !text-[var(--color-success)] !border-[var(--color-success)]/30' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`}
+            className={`${btnBase} ${webSearchEnabled ? '!bg-[var(--color-surface)] !text-[var(--color-success)] !border-[var(--color-success)]/30' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`}
             title="Toggle Web Search"
           >
             <Search className="w-3.5 h-3.5" />
@@ -416,16 +449,19 @@ export default function PlaygroundPage() {
           </button>
           
           {searching && (
-            <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] text-emerald-500 uppercase tracking-widest border border-emerald-900/50 bg-emerald-950/20">
-              <span className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] text-[var(--color-green)] uppercase tracking-widest border border-[var(--color-green)]/20 bg-[var(--color-green)]/10">
+              <span className="w-1.5 h-1.5 bg-[var(--color-green)] animate-pulse" />
               NET_REQ
             </div>
           )}
 
           <div className="h-4 w-px bg-[var(--color-border)] mx-2 hidden md:block" />
-          
-          <LazyStatsBar messages={deferredMessages} model={model} />
-
+          <div className="hidden md:block">
+            <LazyStatsBar messages={deferredMessages} model={model} />
+          </div>
+          <div className="md:hidden">
+            <LazyMobileStatsBar messages={deferredMessages} model={model} />
+          </div>
           <div className="h-4 w-px bg-[var(--color-border)] mx-2 hidden md:block" />
 
           {messages.length > 0 && (
@@ -434,7 +470,7 @@ export default function PlaygroundPage() {
                 onClick={shareConversation} 
                 disabled={shareStatus === 'loading'}
                 data-state={shareStatus}
-                className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`} 
+                className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] data-[state=loading]:bg-[var(--color-accent)]/20 data-[state=loading]:text-[var(--color-accent)]`} 
                 title="Share"
               >
                 {shareStatus === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
@@ -445,7 +481,7 @@ export default function PlaygroundPage() {
                 onClick={exportConversation} 
                 disabled={exportStatus === 'loading'}
                 data-state={exportStatus}
-                className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`} 
+                className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] data-[state=loading]:bg-[var(--color-accent)]/20 data-[state=loading]:text-[var(--color-accent)]`} 
                 title="Export"
               >
                 {exportStatus === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
@@ -454,7 +490,7 @@ export default function PlaygroundPage() {
               </button>
               <button 
                 onClick={clearChat} 
-                className={`${btnBase} hover:!text-red-400 hover:!border-red-900/50 hover:!bg-red-950/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`} 
+                className={`${btnBase} hover:!text-[var(--color-error)] hover:!border-[var(--color-error)]/20 hover:!bg-[var(--color-error)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]`} 
                 title="Clear"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -465,7 +501,7 @@ export default function PlaygroundPage() {
       </header>
 
       {/* Main Workspace */}
-      <div className="flex-1 flex overflow-hidden bg-[#050505]">
+      <div className="flex-1 flex overflow-hidden bg-[var(--color-void)]">
         {/* Chat Area */}
         <main aria-label="Chat messages" className="flex-1 flex flex-col min-w-0 border-r border-[var(--color-border)] relative">
           <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
@@ -476,7 +512,7 @@ export default function PlaygroundPage() {
                 <div className="space-y-8 pb-12">
                   {deferredMessages.map((msg, i) => (
                     <LazyChatMessage
-                      key={i}
+                      key={msg.timestamp || `msg-${i}`}
                       msg={msg}
                       loading={loading}
                       onCopy={handleCopy}
@@ -492,12 +528,12 @@ export default function PlaygroundPage() {
           <div className="flex-none p-4 bg-[var(--color-void)] border-t border-[var(--color-border)]">
             <div className="max-w-4xl mx-auto">
               {error && (
-                <div className="mb-3 flex items-center justify-between px-3 py-2 bg-red-950/30 border border-red-900/50 text-[11px] text-red-400 uppercase tracking-wider">
+                <div className="mb-3 flex items-center justify-between px-3 py-2 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-[11px] text-[var(--color-error)] uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>ERR: {error}</span>
                   </div>
-                  <button onClick={() => setError(null)} className="p-1 hover:bg-red-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
+                  <button onClick={() => setError(null)} className="p-1 hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -534,7 +570,7 @@ export default function PlaygroundPage() {
               <div className="w-80 flex flex-col h-full">
                 <div className="flex-none h-12 border-b border-[var(--color-border)] flex items-center justify-between px-4">
                   <h2 className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">Model Parameters</h2>
-                  <button onClick={() => setParamsOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
+                  <button onClick={() => setParamsOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -581,7 +617,7 @@ export default function PlaygroundPage() {
             >
               <div className="flex-none h-12 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-void)]">
                 <h2 className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">Parameters</h2>
-                <button onClick={() => setParamsOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
+                <button onClick={() => setParamsOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
                   <X className="w-4 h-4" />
                 </button>
               </div>

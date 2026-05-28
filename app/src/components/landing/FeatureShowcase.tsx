@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import {
   Route,
   DollarSign,
@@ -68,21 +69,6 @@ const additionalFeatures: Feature[] = [
       'Low-latency inference from edge locations worldwide. 50+ regions for minimal ping times.',
   },
 ]
-
-function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(null)
-  
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mediaQuery.matches)
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [])
-  
-  return prefersReducedMotion
-}
 
 function FeatureCard({
   feature,

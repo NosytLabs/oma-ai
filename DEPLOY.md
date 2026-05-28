@@ -242,4 +242,8 @@ caddy reload --config Caddyfile
 
 ---
 
-*Remember: Vault-Tec -- Building a Better Future... Underground!*
+## Questions?
+
+For support, please open an issue on the [GitHub repository](https://github.com/NosytLabs/oma) or contact the development team.
+
+---

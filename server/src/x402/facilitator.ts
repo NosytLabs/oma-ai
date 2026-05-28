@@ -128,14 +128,14 @@ export interface PaymentMiddlewareConfig {
 }
 
 // ============================================================
-// Settlement Cache (LRU with max size)
+// Settlement Cache (Thread-safe LRU with max size)
 // ============================================================
 
 const settlementCache = new Map<string, SettlementRecord>();
 const cacheAccessOrder: string[] = [];
-const CACHE_TTL_MS = 3_600_000;
 const MAX_CACHE_SIZE = 1_000;
-const PAYMENT_WINDOW_SECONDS = 300; // 5 minutes
+const PAYMENT_WINDOW_SECONDS = 300;
+let cacheLock = false;
 
 function cleanExpiredCache(): void {
   const now = Date.now();
@@ -157,6 +157,21 @@ function evictLRU(): void {
   }
 }
 
+function atomicCacheSet(cacheKey: string, record: SettlementRecord): void {
+  if (cacheLock) {
+    setTimeout(() => atomicCacheSet(cacheKey, record), 0);
+    return;
+  }
+  cacheLock = true;
+  try {
+    evictLRU();
+    settlementCache.set(cacheKey, record);
+    cacheAccessOrder.push(cacheKey);
+  } finally {
+    cacheLock = false;
+  }
+}
+
 setInterval(cleanExpiredCache, 300_000).unref();
 
 // ============================================================
@@ -168,7 +183,6 @@ setInterval(cleanExpiredCache, 300_000).unref();
 // ============================================================
 
 const RECEIPT_VERSION = "1";
-const RECEIPT_EXPIRY_SECONDS = 365 * 24 * 60 * 60;
 
 function signReceipt(data: string): string {
   const secret = config.RECEIPT_HMAC_SECRET;
@@ -214,7 +228,7 @@ function createReceiptPayload(
 // EVM Verification (Base)
 // ============================================================
 
-import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
+import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
 
 const EVM_PUBLIC_RPC_FALLBACK = "https://base-rpc.publicnode.com";
 const SOLANA_PUBLIC_RPC_FALLBACK = "https://rpc.ankr.com/solana";
@@ -562,8 +576,8 @@ export async function verifyPayment(
   const mode = config.FACILITATOR_MODE ?? "mock";
 
   if (mode === "mock") {
-    if (config.NODE_ENV !== "development" && config.NODE_ENV !== "test") {
-      throw new Error(`[FACILITATOR] FATAL: Mock payment mode explicitly forbidden in ${config.NODE_ENV} environment`);
+    if (config.NODE_ENV === "production") {
+      throw new Error(`[FACILITATOR] FATAL: Mock payment mode explicitly forbidden in production`);
     }
     console.warn("[FACILITATOR] [WARN] Processing payment in mock mode -- signatures are NOT verified on-chain");
     return mockVerifyPayment(signature, payload);
@@ -590,6 +604,17 @@ interface SettlementOptions {
 }
 
 const settlementInProgress = new Map<string, Promise<SettlementResponse>>();
+const SETTLEMENT_IN_PROGRESS_MAX_SIZE = 1000;
+
+function evictSettlementInProgressOldest(): void {
+  if (settlementInProgress.size > SETTLEMENT_IN_PROGRESS_MAX_SIZE) {
+    const entries = Array.from(settlementInProgress.entries());
+    const toDelete = entries.slice(0, entries.length - SETTLEMENT_IN_PROGRESS_MAX_SIZE);
+    for (const [key] of toDelete) {
+      settlementInProgress.delete(key);
+    }
+  }
+}
 
 export async function settlePaymentAsync(
   txHash: string,
@@ -630,8 +655,7 @@ export async function settlePaymentAsync(
         settledAt: existingDb[0].settledAt.getTime(),
         receipt: existingDb[0].receipt,
       };
-      settlementCache.set(cacheKey, record);
-      cacheAccessOrder.push(cacheKey);
+      atomicCacheSet(cacheKey, record);
       return { settled: true, receipt: existingDb[0].receipt };
     }
 
@@ -664,9 +688,7 @@ export async function settlePaymentAsync(
           receipt,
         };
 
-        evictLRU();
-        settlementCache.set(cacheKey, record);
-        cacheAccessOrder.push(cacheKey);
+        atomicCacheSet(cacheKey, record);
 
         let lastError: Error | null = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
@@ -704,7 +726,17 @@ export async function settlePaymentAsync(
         }
 
         if (!result) {
-          settlementCache.delete(cacheKey);
+          while (cacheLock) {
+            new Promise((resolve) => setTimeout(resolve, 1));
+          }
+          cacheLock = true;
+          try {
+            settlementCache.delete(cacheKey);
+            const idx = cacheAccessOrder.indexOf(cacheKey);
+            if (idx !== -1) cacheAccessOrder.splice(idx, 1);
+          } finally {
+            cacheLock = false;
+          }
           await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
           throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
         }
@@ -721,6 +753,7 @@ export async function settlePaymentAsync(
     if (idempotencyKey) {
       settlementInProgress.set(idempotencyKey, settlementPromise);
     }
+    evictSettlementInProgressOldest();
 
     return await settlementPromise;
   } finally {
@@ -754,9 +787,7 @@ export function settlePayment(
     receipt,
   };
 
-  evictLRU();
-  settlementCache.set(cacheKey, record);
-  cacheAccessOrder.push(cacheKey);
+  atomicCacheSet(cacheKey, record);
 
   return { settled: true, receipt };
 }
@@ -1009,11 +1040,12 @@ export function paymentMiddleware(
     }
 
     if (verification.txHash) {
-      settlePayment(
+      await settlePaymentAsync(
         verification.txHash,
         verification.amount ?? paymentSig.payload.amount,
         verification.networkId ?? paymentSig.payload.networkId,
         payeeAddress,
+        { idempotencyKey: paymentSig.signature },
       );
     }
 

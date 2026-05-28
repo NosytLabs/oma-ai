@@ -24,7 +24,22 @@ const {
       fakeRedis.set(k, v);
       return 'OK';
     }),
-    del: vi.fn(async (k) => { fakeRedis.delete(k); return 1; }),
+    del: vi.fn(async (keys) => {
+      const count = Array.isArray(keys) ? keys.length : 1;
+      if (Array.isArray(keys)) {
+        keys.forEach(k => fakeRedis.delete(k));
+      } else {
+        fakeRedis.delete(keys);
+      }
+      return count;
+    }),
+    scan: vi.fn(async (cursor, opts) => {
+      const allKeys = Array.from(fakeRedis.keys()).filter(k => k.startsWith(opts?.MATCH?.replace('*', '') ?? 'quote:'));
+      if (cursor === '0') {
+        return { cursor: '1', keys: allKeys.slice(0, 100) };
+      }
+      return { cursor: '0', keys: [] };
+    }),
   }
   return { mockGetQuotes, mockCreateExchange, mockGetOrder, mockGetChains, mockGetTokens, mockGetTokensForChain, fakeRedis, mockRedisClient }
 })
@@ -125,7 +140,7 @@ vi.mock('../auth/siwe.js', () => ({
   verifySessionToken: vi.fn(),
 }))
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../credits/index.js', () => ({
   getBalance: vi.fn().mockResolvedValue({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null }),
   getStakingDiscount: vi.fn().mockResolvedValue(0),
   addCredits: vi.fn(),
@@ -206,9 +221,11 @@ vi.mock('../inference/models.js', () => ({
     description: 'Test model',
   }),
   MODEL_CATALOG: {},
+  reloadModelCatalog: vi.fn().mockResolvedValue(undefined),
   calculateCost: vi.fn().mockReturnValue({ inputCost: 0.001, outputCost: 0.002, totalCost: 0.003 }),
   estimateTokens: vi.fn().mockReturnValue(100),
   listModels: vi.fn().mockReturnValue([]),
+  ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../inference/venice.js', () => ({
@@ -250,8 +267,41 @@ vi.mock('../config.js', () => ({
     FACILITATOR_MODE: 'mock',
     CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
+    CROSSCHAIN_BLOCK_CONFIRMATIONS: 6,
   },
 }))
+
+vi.mock('viem', () => ({
+  createPublicClient: vi.fn().mockReturnValue({
+    getBlockNumber: vi.fn().mockResolvedValue(200n),
+    getTransactionReceipt: vi.fn().mockResolvedValue({
+      blockNumber: 194n,
+    }),
+  }),
+  http: vi.fn(),
+}))
+
+vi.mock('viem/chains', () => ({
+  base: { id: 8453, name: 'Base' },
+}))
+
+vi.mock('../x402/facilitator.js', async (importOriginal) => {
+  const actual = await importOriginal() as { x402Routes: unknown }
+  return {
+    x402Routes: actual.x402Routes,
+    settlePayment: vi.fn().mockReturnValue({
+      settled: true,
+      receipt: { id: 'mock-receipt', timestamp: Date.now() },
+    }),
+    verifyPayment: vi.fn().mockResolvedValue({
+      valid: true,
+      txHash: '0xabc123',
+      amount: '15.00',
+      networkId: 'base',
+    }),
+    getSettlementReceipt: vi.fn().mockReturnValue(null),
+  }
+})
 
 import app from '../index.js'
 

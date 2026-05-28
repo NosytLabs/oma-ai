@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
-
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../auth'
+import { rateLimitMiddleware } from '../rate-limit'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export async function GET(request: Request) {
+  const rateLimitResponse = rateLimitMiddleware(request)
+  if (rateLimitResponse) return rateLimitResponse
+
   const { searchParams } = new URL(request.url)
   const page = searchParams.get('page') || '1'
-  const limit = searchParams.get('limit') || '100'
+  const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500)
 
   try {
     const authorization = getAdminAuthorization(request)

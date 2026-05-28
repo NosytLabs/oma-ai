@@ -1,0 +1,6 @@
+export { getBalance, invalidateBalanceCache } from './balance.js'
+export { deductCredits } from './deduction.js'
+export { refundCredits, getExpiryDate } from './refunds.js'
+export { preflightDeduction, extendExpiringBatches, getCreditExpiryDate } from './preflight.js'
+export { getStakingDiscount, invalidateStakingDiscountCache } from './staking.js'
+export { addCredits } from './add-credits.js'

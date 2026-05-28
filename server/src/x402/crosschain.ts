@@ -12,6 +12,8 @@ import { config } from "../config.js";
 import { validationError } from "../lib/validation.js";
 import { USDC_BASE } from "../constants.js";
 import type { OmaEnv } from "../types.js";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 
 import { getRedisClient } from "../lib/redis-client.js";
 
@@ -20,6 +22,9 @@ export const crosschainRoutes = new Hono<OmaEnv>();
 const FACILITATOR_MARGIN_PERCENT = 1.5;
 const QUOTE_TTL_SECONDS = 60;
 const QUOTE_CACHE_PREFIX = "quote:";
+const MAX_QUOTE_CACHE_SIZE = 1000;
+const LOCK_TTL_SECONDS = 10;
+const LOCK_VALUE_PREFIX = "lock:";
 
 const quoteSchema = z.object({
   model: z.string().min(1),
@@ -40,6 +45,7 @@ interface PendingQuote {
   fromChain: string;
   fromAmount: string;
   toAmount: string;
+  expectedToAmount: string;
   routingFee: string;
   facilitatorFee: string;
   totalCostUsd: string;
@@ -48,6 +54,26 @@ interface PendingQuote {
   swapType: SwapType;
   houdiniQuoteId: string;
   createdAt: number;
+  slippageTolerance: number;
+  requestId: string;
+}
+
+async function evictOldestQuotes(redis: NonNullable<Awaited<ReturnType<typeof getRedisClient>>>, count: number): Promise<void> {
+  const keys: string[] = [];
+  let cursor = "0";
+  do {
+    const result = await redis.scan(cursor, { MATCH: `${QUOTE_CACHE_PREFIX}*`, COUNT: 100 });
+    cursor = result.cursor;
+    keys.push(...result.keys);
+  } while (cursor !== "0");
+
+  if (keys.length === 0) return;
+
+  keys.sort();
+  const keysToDelete = keys.slice(0, count);
+  if (keysToDelete.length > 0) {
+    await redis.del(keysToDelete);
+  }
 }
 
 crosschainRoutes.post("/v1/x402/quote", async (c) => {
@@ -56,12 +82,12 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
 
   const { model, inputTokens, fromToken, fromChain, swapType } = parsed.data;
 
-  const modelInfo = getModel(model);
+  const modelInfo = await getModel(model);
   if (!modelInfo) {
     return c.json({ error: { message: `Model '${model}' not found`, type: "invalid_request_error" } }, 400);
   }
 
-  const pricing = getModelPricing(model);
+  const pricing = await getModelPricing(model);
   const estimatedOutputTokens = Math.floor(modelInfo.maxTokens / 4);
   const inputCostUsd = (inputTokens * pricing.inputPer1k) / 1000;
   const outputCostUsd = (estimatedOutputTokens * pricing.outputPer1k) / 1000;
@@ -84,8 +110,10 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
     const bestQuote = quotes[0];
     const routingFee = bestQuote.fee ?? "0";
     const totalCostUsd = (inferenceCostUsd + facilitatorFee + parseFloat(routingFee)).toFixed(8);
+    const slippageTolerance = config.CROSSCHAIN_SLIPPAGE_TOLERANCE ?? 0.02;
 
     const quoteId = crypto.randomUUID();
+    const requestId = crypto.randomUUID();
 
     const pendingQuote: PendingQuote = {
       quoteId,
@@ -93,6 +121,7 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
       fromChain,
       fromAmount: bestQuote.amount,
       toAmount: bestQuote.estimatedAmount,
+      expectedToAmount: bestQuote.estimatedAmount,
       routingFee,
       facilitatorFee: facilitatorFee.toFixed(8),
       totalCostUsd,
@@ -101,13 +130,27 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
       swapType: (swapType as SwapType) ?? SwapType.STANDARD,
       houdiniQuoteId: bestQuote.id,
       createdAt: Date.now(),
+      slippageTolerance,
+      requestId,
     };
 
     const redis = await getRedisClient();
     if (!redis) {
       return c.json({ error: { message: "Cache service unavailable", type: "cache_error" } }, 503);
     }
-    
+
+    let currentSize = 0;
+    let cursor = "0";
+    do {
+      const result = await redis.scan(cursor, { MATCH: `${QUOTE_CACHE_PREFIX}*`, COUNT: 100 });
+      cursor = result.cursor;
+      currentSize += result.keys.length;
+    } while (cursor !== "0");
+
+    if (currentSize >= MAX_QUOTE_CACHE_SIZE) {
+      await evictOldestQuotes(redis, 10);
+    }
+
     await redis.set(`${QUOTE_CACHE_PREFIX}${quoteId}`, JSON.stringify(pendingQuote), { EX: QUOTE_TTL_SECONDS * 2 });
 
     return c.json({
@@ -121,6 +164,7 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
       facilitatorFee: pendingQuote.facilitatorFee,
       totalCostUsd,
       expiresIn: QUOTE_TTL_SECONDS,
+      slippageTolerance,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -139,20 +183,26 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
     return c.json({ error: { message: "Cache service unavailable", type: "cache_error" } }, 503);
   }
 
-  const lockKey = `${QUOTE_CACHE_PREFIX}lock:${quoteId}`;
-  const lockAcquired = await redis.set(lockKey, "1", { NX: true, EX: 10 });
+  const rawQuote = await redis.get(`${QUOTE_CACHE_PREFIX}${quoteId}`);
+  if (!rawQuote) {
+    return c.json({ error: { message: "Quote not found or expired", type: "not_found" } }, 404);
+  }
+  
+  const pendingQuote = JSON.parse(rawQuote) as PendingQuote;
+  const lockKey = `${QUOTE_CACHE_PREFIX}${LOCK_VALUE_PREFIX}${quoteId}`;
+  const lockValue = pendingQuote.requestId;
+  const lockAcquired = await redis.set(lockKey, lockValue, { NX: true, EX: LOCK_TTL_SECONDS });
   
   if (!lockAcquired) {
     return c.json({ error: { message: "Quote is currently being processed", type: "rate_limit" } }, 429);
   }
 
   try {
-    const rawQuote = await redis.get(`${QUOTE_CACHE_PREFIX}${quoteId}`);
-    if (!rawQuote) {
-      return c.json({ error: { message: "Quote not found or expired", type: "not_found" } }, 404);
+    const currentLockValue = await redis.get(lockKey);
+    if (currentLockValue !== lockValue) {
+      console.error(`[CROSSCHAIN] Lock ownership verification failed for quote ${quoteId}`);
+      return c.json({ error: { message: "Quote lock expired or transferred", type: "lock_error" } }, 409);
     }
-    
-    const pendingQuote = JSON.parse(rawQuote) as PendingQuote;
 
     if (Date.now() - pendingQuote.createdAt > QUOTE_TTL_SECONDS * 1000) {
       await redis.del(`${QUOTE_CACHE_PREFIX}${quoteId}`);
@@ -167,7 +217,8 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
     const order = await houdiniClient.createExchange(
       pendingQuote.houdiniQuoteId,
       houdiniToAddress,
-      refundAddress
+      refundAddress,
+      pendingQuote.slippageTolerance
     );
 
     await redis.del(`${QUOTE_CACHE_PREFIX}${quoteId}`);
@@ -178,6 +229,8 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
       fromToken: pendingQuote.fromToken,
       fromAmount: pendingQuote.fromAmount,
       toToken: "USDC",
+      expectedToAmount: pendingQuote.expectedToAmount,
+      minAcceptedAmount: (parseFloat(pendingQuote.expectedToAmount) * (1 - pendingQuote.slippageTolerance)).toFixed(8),
       status: order.status,
       swapType: pendingQuote.swapType,
       expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
@@ -186,7 +239,10 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message: `Deposit creation failed: ${message}`, type: "deposit_error" } }, 502);
   } finally {
-    await redis.del(lockKey);
+    const currentLockValue = await redis.get(lockKey);
+    if (currentLockValue === lockValue) {
+      await redis.del(lockKey);
+    }
   }
 });
 
@@ -199,13 +255,18 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
   try {
     const order = await houdiniClient.getOrder(orderId);
 
+    const statusResult = mapHoudiniStatus(order.status, order);
     const response: Record<string, unknown> = {
       orderId: order.id,
-      status: mapHoudiniStatus(order.status),
+      status: statusResult.status,
       houdiniStatus: order.status,
       fromAmount: order.fromAmount,
       toAmount: order.toAmount,
       txHash: order.transactionHash ?? null,
+      ...(statusResult.refundTxHash && {
+        refundTxHash: statusResult.refundTxHash,
+        refundStatus: "processed",
+      }),
     };
 
   if (order.status === OrderStatus.FINISHED && order.toAmount) {
@@ -213,38 +274,64 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
       response.status = "settling";
       response.message = "Transaction hash not yet available. Settlement pending on-chain verification.";
     } else {
-      const houdiniToAddress = config.HOUDINI_ADDRESS_TO || "";
-      const paymentSig = {
-        x402Version: "1" as const,
-        signature: order.transactionHash,
-        authorization: "houdini_crosschain",
-        payload: {
-          x402Version: "1" as const,
-          scheme: "evm" as const,
-          networkId: "base",
-          asset: USDC_BASE,
-          amount: order.toAmount,
-          payee: houdiniToAddress,
-          payFrom: order.depositAddress,
-          maxAmountRequired: order.toAmount,
-          validBefore: Math.floor(Date.now() / 1000) + 3600,
-          validAfter: Math.floor(Date.now() / 1000) - 3600,
-        },
-      };
+      const requiredConfirmations = config.CROSSCHAIN_BLOCK_CONFIRMATIONS ?? 6;
+      const confirmationCheck = await checkBlockConfirmations(order.transactionHash, requiredConfirmations);
 
-      const verification = await verifyPayment(paymentSig);
-      if (!verification.valid) {
+      if (!confirmationCheck.confirmed) {
         response.status = "settling";
-        response.message = `On-chain verification pending: ${verification.error}`;
+        response.message = `Waiting for block confirmations: ${confirmationCheck.confirmations}/${requiredConfirmations}`;
+        response.blockConfirmations = confirmationCheck;
       } else {
-        const settlementResult = settlePayment(
-          order.transactionHash,
-          order.toAmount,
-          "base",
-          houdiniToAddress,
-        );
-        response.creditsIssued = order.toAmount;
-        response.receipt = settlementResult.receipt;
+        const houdiniToAddress = config.HOUDINI_ADDRESS_TO || "";
+        const pendingQuoteMinAmount = (parseFloat(order.toAmount) * 0.98).toFixed(8);
+        const actualToAmount = parseFloat(order.toAmount);
+        const minAcceptedAmount = parseFloat(pendingQuoteMinAmount);
+
+        if (actualToAmount < minAcceptedAmount) {
+          response.status = "slippage_violation";
+          response.message = `Slippage exceeded: received ${actualToAmount} USDC, expected at least ${minAcceptedAmount} USDC`;
+          response.creditsIssued = null;
+          response.receipt = null;
+        } else {
+          const paymentSig = {
+            x402Version: "1" as const,
+            signature: order.transactionHash,
+            authorization: "houdini_crosschain",
+            payload: {
+              x402Version: "1" as const,
+              scheme: "evm" as const,
+              networkId: "base",
+              asset: USDC_BASE,
+              amount: order.toAmount,
+              payee: houdiniToAddress,
+              payFrom: order.depositAddress,
+              maxAmountRequired: order.toAmount,
+              validBefore: Math.floor(Date.now() / 1000) + 3600,
+              validAfter: Math.floor(Date.now() / 1000) - 3600,
+            },
+          };
+
+          const verification = await verifyPayment(paymentSig);
+          if (!verification.valid) {
+            response.status = "settling";
+            response.message = `On-chain verification pending: ${verification.error}`;
+          } else {
+            const settlementResult = settlePayment(
+              order.transactionHash,
+              order.toAmount,
+              "base",
+              houdiniToAddress,
+            );
+            response.creditsIssued = order.toAmount;
+            response.receipt = settlementResult.receipt;
+            response.slippageProtection = {
+              expectedAmount: order.toAmount,
+              actualAmount: actualToAmount,
+              minAcceptedAmount,
+              withinTolerance: true,
+            };
+          }
+        }
       }
     }
   }
@@ -383,16 +470,58 @@ function settlementReceipt(orderId: string): string | null {
   return getSettlementReceipt(orderId, "base");
 }
 
-function mapHoudiniStatus(status: string): string {
-  switch (status) {
-    case "FINISHED": return "completed";
-    case "FAILED":
-    case "EXPIRED": return "failed";
-    case "REFUNDED": return "refunded";
-    case "WAITING":
-    case "CONFIRMING":
-    case "EXCHANGING":
-    case "ANONYMIZING": return "settling";
-    default: return "pending";
+function mapHoudiniStatus(status: string, order?: { refundTxHash?: string; refundAddress?: string }): { status: string; refundTxHash?: string; refundAddress?: string } {
+  const baseStatus = (() => {
+    switch (status) {
+      case "FINISHED": return "completed";
+      case "FAILED":
+      case "EXPIRED": return "failed";
+      case "REFUNDED": {
+        console.log(`[CROSSCHAIN] [AUDIT] Refund processed for order. refundTxHash: ${order?.refundTxHash ?? "N/A"}, refundAddress: ${order?.refundAddress ?? "N/A"}`);
+        return "refunded";
+      }
+      case "WAITING":
+      case "CONFIRMING":
+      case "EXCHANGING":
+      case "ANONYMIZING": return "settling";
+      default: return "pending";
+    }
+  })();
+  
+  return {
+    status: baseStatus,
+    ...(status === "REFUNDED" && order ? {
+      refundTxHash: order.refundTxHash,
+      refundAddress: order.refundAddress,
+    } : {}),
+  };
+}
+
+async function checkBlockConfirmations(
+  txHash: string,
+  requiredConfirmations: number
+): Promise<{ confirmed: boolean; currentBlock: number; confirmations: number }> {
+  try {
+    const client = createPublicClient({
+      chain: base,
+      transport: http(config.CHAIN_RPC_URL),
+    });
+
+    const currentBlock = await client.getBlockNumber();
+    const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
+
+    if (!receipt) {
+      return { confirmed: false, currentBlock: Number(currentBlock), confirmations: 0 };
+    }
+
+    const confirmations = Number(currentBlock - receipt.blockNumber);
+    return {
+      confirmed: confirmations >= requiredConfirmations,
+      currentBlock: Number(currentBlock),
+      confirmations,
+    };
+  } catch (err) {
+    console.error(`[CROSSCHAIN] Block confirmation check failed for ${txHash}:`, err);
+    return { confirmed: false, currentBlock: 0, confirmations: 0 };
   }
 }

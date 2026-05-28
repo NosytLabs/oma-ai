@@ -1,49 +1,54 @@
-<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="320" height="80" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>OMA - Open Model Access</title>
+  <desc>OMA AI Gateway logo - Clean, modern tech-forward branding</desc>
+
   <defs>
+    <!-- Primary cyan gradient -->
     <linearGradient id="omaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00FFCC" />
-      <stop offset="100%" stop-color="#00B4D8" />
+      <stop offset="0%" stop-color="#00ffc8"/>
+      <stop offset="50%" stop-color="#00e6b0"/>
+      <stop offset="100%" stop-color="#00b894"/>
     </linearGradient>
-    <linearGradient id="omaGradientDark" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#0088AA" />
-      <stop offset="100%" stop-color="#005577" />
-    </linearGradient>
+
+    <!-- Glow effect for logo -->
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
   </defs>
-  
-  <!-- Background Circle -->
-  <circle cx="100" cy="100" r="95" fill="#0A0A0F" stroke="url(#omaGradient)" stroke-width="2"/>
-  
-  <!-- Inner Ring -->
-  <circle cx="100" cy="100" r="80" fill="none" stroke="url(#omaGradient)" stroke-width="1" stroke-opacity="0.3"/>
-  
-  <!-- OMA Text -->
-  <text x="100" y="115" 
-        font-family="Arial, sans-serif" 
-        font-size="72" 
-        font-weight="bold" 
-        fill="url(#omaGradient)"
-        text-anchor="middle"
-        filter="url(#glow)">
-    OMA
-  </text>
-  
-  <!-- AI Indicator Dots -->
-  <circle cx="70" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
-  <circle cx="85" cy="155" r="4" fill="#00FFCC" fill-opacity="0.6"/>
-  <circle cx="100" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
-  <circle cx="115" cy="155" r="4" fill="#00FFCC" fill-opacity="0.6"/>
-  <circle cx="130" cy="155" r="4" fill="#00FFCC" fill-opacity="0.8"/>
-  
-  <!-- Decorative Corner Accents -->
-  <path d="M20 40 L20 20 L40 20" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
-  <path d="M160 20 L180 20 L180 40" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
-  <path d="M180 160 L180 180 L160 180" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
-  <path d="M40 180 L20 180 L20 160" fill="none" stroke="#00FFCC" stroke-width="2" stroke-opacity="0.5"/>
+
+  <!-- Icon: Stylized brain/circuit O mark -->
+  <g transform="translate(8, 8)">
+    <!-- Outer ring with dots - represents neural network -->
+    <circle cx="30" cy="32" r="28" fill="none" stroke="url(#omaGradient)" stroke-width="2" opacity="0.3"/>
+    <circle cx="30" cy="32" r="22" fill="none" stroke="url(#omaGradient)" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- Core O shape - stylized gateway/archive symbol -->
+    <circle cx="30" cy="32" r="14" fill="none" stroke="url(#omaGradient)" stroke-width="3" filter="url(#glow)"/>
+
+    <!-- Neural connection nodes -->
+    <circle cx="30" cy="12" r="3" fill="#00ffc8"/>
+    <circle cx="30" cy="52" r="3" fill="#00ffc8"/>
+    <circle cx="10" cy="32" r="3" fill="#00ffc8"/>
+    <circle cx="50" cy="32" r="3" fill="#00ffc8"/>
+
+    <!-- Diagonal accent nodes -->
+    <circle cx="16" cy="18" r="2" fill="#00ffc8" opacity="0.7"/>
+    <circle cx="44" cy="18" r="2" fill="#00ffc8" opacity="0.7"/>
+    <circle cx="16" cy="46" r="2" fill="#00ffc8" opacity="0.7"/>
+    <circle cx="44" cy="46" r="2" fill="#00ffc8" opacity="0.7"/>
+
+    <!-- Center core - represents the gateway -->
+    <circle cx="30" cy="32" r="5" fill="#00ffc8" filter="url(#glow)"/>
+    <circle cx="30" cy="32" r="2.5" fill="#0a0a0f"/>
+  </g>
+
+  <!-- OMA Text - Bold sans-serif -->
+  <text x="85" y="52" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="48" fill="url(#omaGradient)" letter-spacing="-1" filter="url(#glow)">OMA</text>
+
+  <!-- Tagline - Smaller, secondary -->
+  <text x="188" y="52" font-family="Syne, system-ui, sans-serif" font-weight="500" font-size="12" fill="#a0a0aa" letter-spacing="2">OPEN MODEL ACCESS</text>
 </svg>

@@ -33,7 +33,7 @@ vi.mock('../db/client.js', () => {
   mockLimit.mockResolvedValue([])
   mockInsert.mockReturnValue(chain)
   mockValues.mockReturnValue(chain)
-  mockReturning.mockResolvedValue([{ id: 'user-1', address: '0xabc', nonce: 'nonce123', createdAt: new Date(), updatedAt: new Date() }])
+  mockReturning.mockResolvedValue([{ id: 'user-1', address: '0xabc', accountNumber: 'OMA-TEST-ACCT-NUMB', nonce: 'nonce123', createdAt: new Date(), updatedAt: new Date() }])
   mockUpdate.mockReturnValue(chain)
   mockSet.mockReturnValue(chain)
 
@@ -63,7 +63,24 @@ vi.mock('../auth/siwe.js', () => ({
   verifySessionToken: vi.fn(),
 }))
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../auth/solana.js', () => ({
+  createSolanaChallenge: vi.fn().mockResolvedValue({
+    nonce: 'solana_nonce_123',
+    message: 'OMA wants you to sign in with your Solana account:\nSo11111111111111111111111111111111111111112\n\nNonce: solana_nonce_123',
+  }),
+  verifySolanaChallenge: vi.fn(),
+  getOrCreateSolanaUser: vi.fn().mockResolvedValue({
+    id: 'sol-user-1',
+    address: 'So11111111111111111111111111111111111111112',
+    solanaAddress: 'So11111111111111111111111111111111111111112',
+    accountNumber: null,
+    nonce: 'solana_nonce_123',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+}))
+
+vi.mock('../credits/index.js', () => ({
   getBalance: vi.fn().mockResolvedValue({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null }),
   getStakingDiscount: vi.fn().mockResolvedValue(0),
   addCredits: vi.fn(),
@@ -135,7 +152,9 @@ vi.mock('../config.js', () => ({
 }))
 
 import app from '../index.js'
+import { db } from '../db/client.js'
 import { verifySiweMessage, verifySessionToken } from '../auth/siwe.js'
+import { createSolanaChallenge, verifySolanaChallenge } from '../auth/solana.js'
 
 describe('Auth Endpoints', () => {
   beforeEach(() => {
@@ -228,6 +247,115 @@ describe('Auth Endpoints', () => {
     })
   })
 
+  describe('POST /auth/solana/challenge', () => {
+    it('returns a challenge with a valid Solana address', async () => {
+      const res = await app.request('/auth/solana/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: 'So11111111111111111111111111111111111111112' }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body).toHaveProperty('message')
+      expect(body).toHaveProperty('nonce', 'solana_nonce_123')
+      expect(vi.mocked(createSolanaChallenge)).toHaveBeenCalledWith('So11111111111111111111111111111111111111112')
+    })
+
+    it('returns 400 with an invalid Solana address', async () => {
+      const res = await app.request('/auth/solana/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: 'not-solana' }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe('POST /auth/solana/verify', () => {
+    it('returns 401 when Solana verification fails', async () => {
+      vi.mocked(verifySolanaChallenge).mockResolvedValueOnce(null as any)
+
+      const res = await app.request('/auth/solana/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: 'So11111111111111111111111111111111111111112',
+          message: 'solana-message',
+          signature: 'c2ln',
+        }),
+      })
+
+      expect(res.status).toBe(401)
+      const body = await res.json()
+      expect(body.error.type).toBe('authentication_error')
+    })
+
+    it('returns token and Solana account details on successful verification', async () => {
+      vi.mocked(verifySolanaChallenge).mockResolvedValueOnce({
+        address: 'So11111111111111111111111111111111111111112',
+      })
+
+      const res = await app.request('/auth/solana/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: 'So11111111111111111111111111111111111111112',
+          message: 'solana-message',
+          signature: 'c2ln',
+        }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body).toHaveProperty('token')
+      expect(body).toHaveProperty('solanaAddress', 'So11111111111111111111111111111111111111112')
+      expect(body).toHaveProperty('authMethod', 'solana')
+      expect(body).toHaveProperty('accountNumber')
+    })
+  })
+
+  describe('POST /auth/account/create', () => {
+    it('creates a standalone account-number account without a wallet session', async () => {
+      const res = await app.request('/auth/account/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body).toHaveProperty('token')
+      expect(body).toHaveProperty('accountNumber')
+      expect(body).toHaveProperty('authMethod', 'account-number')
+    })
+  })
+
+  describe('GET /user', () => {
+    it('returns authMethod from the current session', async () => {
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'solana' } as any)
+      const mockedDb = db as any
+      mockedDb.limit
+        .mockResolvedValueOnce([{ twoFactorEnabled: false }])
+        .mockResolvedValueOnce([{
+          id: 'user-1',
+          address: 'So11111111111111111111111111111111111111112',
+          solanaAddress: 'So11111111111111111111111111111111111111112',
+          accountNumber: 'OMA-ABCD-EFGH-JKLM',
+          createdAt: new Date(),
+        }])
+
+      const res = await app.request('/user', {
+        headers: { 'Authorization': 'Bearer session-token' },
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body).toHaveProperty('authMethod', 'solana')
+    })
+  })
+
   describe('POST /keys', () => {
     it('returns 401 without session', async () => {
       const res = await app.request('/keys', {
@@ -239,7 +367,7 @@ describe('Auth Endpoints', () => {
     })
 
     it('returns 400 with empty name', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' } as any)
       const res = await app.request('/keys', {
         method: 'POST',
         headers: {
@@ -252,7 +380,7 @@ describe('Auth Endpoints', () => {
     })
 
     it('returns 400 with name > 100 chars', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' } as any)
       const longName = 'a'.repeat(101)
       const res = await app.request('/keys', {
         method: 'POST',
@@ -266,7 +394,7 @@ describe('Auth Endpoints', () => {
     })
 
     it('creates key with valid session and name', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' } as any)
       const res = await app.request('/keys', {
         method: 'POST',
         headers: {
@@ -290,7 +418,7 @@ describe('Auth Endpoints', () => {
     })
 
     it('returns keys list with valid session', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' } as any)
       const res = await app.request('/keys', {
         headers: { 'Authorization': 'Bearer session-token' },
       })

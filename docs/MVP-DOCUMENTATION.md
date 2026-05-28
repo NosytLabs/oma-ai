@@ -1,8 +1,8 @@
 # OMA AI Gateway - MVP Documentation
 
-**Version:** 2.0.0  
+**Version:** 2.0.1  
 **Status:** Current Production Build  
-**Updated:** 2026-05-22
+**Updated:** 2026-05-27
 
 ---
 
@@ -25,7 +25,7 @@ OMA (Open Model Access) AI Gateway is a production-ready AI inference service th
 - **Unified API access** to 50+ AI models via OpenAI-compatible endpoints
 - **Multi-provider routing** with automatic failover (Venice AI + AntSeed P2P)
 - **Crypto-native payments** with credit-based billing
-- **Cross-chain deposits** from 100+ cryptocurrencies via HoudiniSwap
+- **Cross-chain deposits** from 20+ chains via HoudiniSwap
 - **x402 protocol support** for gasless, per-request payments
 - **OMA token staking** for discount tiers
 
@@ -59,7 +59,7 @@ OMA (Open Model Access) AI Gateway is a production-ready AI inference service th
 |---------|-------------|
 | **USDC Deposits** | Direct Base/Solana transfers, instant 1:1 credits |
 | **OMA Token Deposits** | +5% bonus, TWAP oracle pricing |
-| **HoudiniSwap** | Cross-chain from 100+ tokens |
+| **HoudiniSwap** | Cross-chain from 20+ tokens |
 | **x402 Pay-Per-Request** | Gasless payments on Base/Solana |
 | **Staking Discounts** | 3-15% discounts based on OMA staked |
 
@@ -366,15 +366,14 @@ oma/server/
 │   │   ├── models.ts    # Model listing
 │   │   ├── deposit.ts   # Deposits
 │   │   ├── stake.ts      # Staking
-│   │   └── onramp.ts    # Fiat onramp
+│   │   └── x402/       # x402 facilitator
 │   ├── inference/      # AI provider routing
 │   │   ├── router.ts    # Circuit breaker
 │   │   ├── venice.ts    # Venice AI
 │   │   ├── antseed.ts   # AntSeed backup
-│   │   ├── litellm.ts   # LiteLLM
+│   │   ├── openrouter.ts # OpenRouter
 │   │   └── models.ts    # Model catalog
 │   ├── credits/        # Credit system
-│   ├── x402/           # Payment facilitator
 │   ├── auth/           # SIWE implementation
 │   ├── db/             # Drizzle ORM
 │   └── middleware/     # Rate limiting, security
@@ -384,8 +383,8 @@ oma/server/
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| Database | PostgreSQL (Neon) | Users, keys, credits, deposits |
-| Cache | Redis (Upstash) | Rate limiting, sessions, nonces |
+| Database | PostgreSQL | Users, keys, credits, deposits |
+| Cache | Redis | Rate limiting, sessions, nonces |
 | Blockchain | Base (primary), Solana (secondary) | Deposits, staking |
 | CDN | Cloudflare | Static assets, edge caching |
 
@@ -452,4 +451,5 @@ curl -X POST https://api.oma-ai.com/v1/chat/completions \
 
 ---
 
-*Built with modern developer tools.*
+**Version:** 2.0.1  
+**Updated:** 2026-05-27

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PLACEHOLDER_ADDRESSES } from "./constants.js";
+import { PLACEHOLDER_ADDRESSES, CREDIT_EXPIRY_DAYS } from "./constants.js";
 
 const INSECURE_DEFAULTS = [
   "dev-secret-change-me-in-prod-32ch",
@@ -26,6 +26,11 @@ const envSchema = z.object({
   TOGETHER_API_URL: z.string().min(1).default("https://api.together.xyz/v1"),
   DEEPINFRA_API_KEY: z.string().min(1).optional(),
   DEEPINFRA_API_URL: z.string().min(1).default("https://api.deepinfra.com/v1/openai"),
+  GROQ_API_KEY: z.string().min(1).optional(),
+  CEREBRAS_API_KEY: z.string().min(1).optional(),
+  BEDROCK_ACCESS_KEY_ID: z.string().min(1).optional(),
+  BEDROCK_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  BEDROCK_REGION: z.string().min(1).default("us-east"),
   HOUDINI_API_KEY: z.string().min(1).optional(),
   HOUDINI_API_SECRET: z.string().min(1).optional(),
   HOUDINI_PARTNER_ID: z.string().min(1).optional(),
@@ -45,6 +50,7 @@ const envSchema = z.object({
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x3333333333333333333333333333333333333333"),
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
+  ENCRYPTION_KEY: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
@@ -59,8 +65,8 @@ const envSchema = z.object({
   // Credit system: $1 = $1 (1 dollar = 1 dollar, no conversion math)
   CREDIT_VALUE_PER_DOLLAR: z.coerce.number().default(1),
   CREDIT_PRICE_PER_TOKEN: z.coerce.number().default(0.000001),
-  CREDIT_EXPIRY_DAYS: z.coerce.number().positive().default(365),
-  CREDIT_BATCH_EXPIRY_DAYS: z.coerce.number().positive().default(365),
+  CREDIT_EXPIRY_DAYS: z.coerce.number().positive().default(CREDIT_EXPIRY_DAYS),
+  CREDIT_BATCH_EXPIRY_DAYS: z.coerce.number().positive().default(CREDIT_EXPIRY_DAYS),
 
   // API key expiration (0 = never expires)
   DEFAULT_KEY_EXPIRY_DAYS: z.coerce.number().min(0).default(90),
@@ -85,6 +91,9 @@ const envSchema = z.object({
 
   TINYFISH_API_KEY: z.string().optional(),
 
+  // CSRF protection secret (required for session-based auth flows)
+  CSRF_SECRET: z.string().min(32).default("dev-csrf-secret-change-me-in-prod-32ch"),
+
   // Weighted load balancing for provider failover (format: "venice:70,antseed:30,litellm:0,openrouter:0,together:0,deepinfra:0")
   // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
   // If not set, defaults to sequential fallback (primary provider first, then others in order).
@@ -93,14 +102,43 @@ const envSchema = z.object({
   // Per-model weighted load balancing (format: "gpt-4=venice:70,openrouter:30;dalle-3=openrouter:100;claude-3=venice:50,antseed:50")
   // Takes precedence over PROVIDER_WEIGHTS for matching models. Format: modelId=provider:weight,...
   MODEL_WEIGHTS: z.string().optional(),
+
+  // Provider request timeouts (ms)
+  PROVIDER_TIMEOUT_STREAM_MS: z.coerce.number().min(1000).default(120000),
+  PROVIDER_TIMEOUT_NON_STREAM_MS: z.coerce.number().min(1000).default(60000),
+
+  // Path to models.json config file (supports absolute paths, useful for Docker/K8s deployments)
+  MODELS_CONFIG_PATH: z.string().optional(),
+
+  // Cross-chain security settings
+  CROSSCHAIN_SLIPPAGE_TOLERANCE: z.coerce.number().min(0).max(0.5).default(0.02),
+  CROSSCHAIN_BLOCK_CONFIRMATIONS: z.coerce.number().int().min(1).max(100).default(6),
+
+  // Trusted proxy IPs for X-Forwarded-For validation (comma-separated)
+  // Only trust X-Forwarded-For headers from these known proxy IPs
+  TRUSTED_PROXY_IPS: z.string().optional().default(""),
 });
 
 export type Config = z.infer<typeof envSchema>;
 
 export const config: Config = envSchema.parse(process.env);
 
+// Cached set of admin wallet addresses for O(1) lookup in requireAdmin()
+const ADMIN_WALLET_ADDRESSES_SET: Set<string> = new Set(
+  config.ADMIN_WALLET_ADDRESSES
+    .split(",")
+    .map((a) => a.trim().toLowerCase())
+    .filter(Boolean)
+);
+export { ADMIN_WALLET_ADDRESSES_SET };
+
 const validProductionEnvironments = ["production", "staging", "prod", "preview"];
 const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
+
+if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
+  console.error("[FATAL] CSRF_SECRET must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
+  process.exit(1);
+}
 
 if (config.FACILITATOR_MODE === "mock" && isProductionEnv) {
   throw new Error("FATAL: FACILITATOR_MODE=mock is not allowed in production or staging environments. Set FACILITATOR_MODE=live or run in development.");

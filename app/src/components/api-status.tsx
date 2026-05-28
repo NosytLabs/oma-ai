@@ -1,0 +1,98 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
+
+interface ApiStatusProps {
+  onRetry?: () => void
+  showRetryButton?: boolean
+}
+
+export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
+  const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+
+  const checkHealth = useCallback(async () => {
+    setStatus('checking')
+    try {
+      const res = await fetch('/api/health', {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      })
+      if (res.ok) {
+        setStatus('online')
+      } else {
+        setStatus('offline')
+      }
+    } catch {
+      setStatus('offline')
+    }
+  }, [])
+
+  useEffect(() => {
+    checkHealth()
+    const interval = setInterval(checkHealth, 30000)
+    return () => clearInterval(interval)
+  }, [checkHealth])
+
+  const handleRetry = () => {
+    checkHealth()
+    onRetry?.()
+  }
+
+  const getStatusInfo = () => {
+    switch (status) {
+      case 'checking':
+        return {
+          icon: <RefreshCw className="h-3 w-3 animate-spin" />,
+          text: 'Connecting...',
+          className: 'text-[var(--color-text-muted)]',
+          dotClass: 'bg-[var(--color-warning)] animate-pulse',
+        }
+      case 'online':
+        return {
+          icon: <Wifi className="h-3 w-3" />,
+          text: 'API Online',
+          className: 'text-[var(--color-success)]',
+          dotClass: 'bg-[var(--color-success)]',
+        }
+      case 'offline':
+        return {
+          icon: <WifiOff className="h-3 w-3" />,
+          text: 'Backend Unavailable',
+          className: 'text-[var(--color-error)]',
+          dotClass: 'bg-[var(--color-error)]',
+        }
+    }
+  }
+
+  const info = getStatusInfo()
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <span className={`relative flex h-2 w-2`}>
+          {status === 'checking' && (
+            <span className={`absolute inline-flex h-full w-full rounded-full ${info.dotClass} opacity-75`} />
+          )}
+          <span className={`relative inline-flex rounded-full h-2 w-2 ${info.dotClass}`} />
+        </span>
+        <span role="status" aria-live="polite" className={`text-[10px] ${info.className}`}>
+          {info.text}
+        </span>
+      </div>
+      {status === 'offline' && showRetryButton && (
+        <button
+          onClick={handleRetry}
+          className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          aria-label="Retry connection"
+        >
+          <RefreshCw className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+export default ApiStatus
+
+

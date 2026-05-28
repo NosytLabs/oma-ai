@@ -1,23 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Code2, Zap, Lock, Globe, Sparkles, Terminal, Copy, Check } from 'lucide-react'
-
-function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(null)
-  
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mediaQuery.matches)
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [])
-  
-  return prefersReducedMotion
-}
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 
 const devCode = `import OpenAI from "openai";
 

@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { checkBudgetThresholds, getBudgetAlertConfig, processBudgetAlert } from "../credits/budget-alerts.js";
+import { logger } from "../lib/logger.js";
 
 interface SpendEntry {
   keyHash: string;
@@ -56,15 +57,15 @@ export async function trackSpend(
       throw new Error("Redis unavailable");
     }
 
-    processQueue().catch(() => {});
+    processQueue().catch(() => {
+      // Queue processing failure is non-critical - spend tracking will retry
+    });
 
     const key = todayKey(keyHash);
     const val = await redis.incrByFloat(key, costCents);
-    if (typeof val === "number" && val === costCents) {
-      await redis.expire(key, 86400);
-    }
+    await redis.set(key, val, { EX: 86400 });
   } catch (err) {
-    console.error("trackSpend failed, queuing for retry:", err);
+    logger.error({ err, keyHash }, "trackSpend failed, queuing for retry");
     if (spendRetryQueue.length < MAX_QUEUE_SIZE) {
       spendRetryQueue.push({ keyHash, costCents, timestamp: Date.now() });
     }
@@ -95,7 +96,7 @@ export function spendLimit() {
     const redis = await getRedisClient();
     const ready = isRedisReady();
     if (!redis || !ready) {
-      console.error("[spend-limit] CRITICAL: Redis unavailable -- failing closed for spend limiting");
+      logger.error("Redis unavailable -- failing closed for spend limiting");
       return c.json(
         { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "rate_limit_unavailable" } },
         503,
@@ -116,7 +117,7 @@ export function spendLimit() {
 
     if (userId) {
       checkAndTriggerBudgetAlerts(userId).catch(err => {
-        console.error("[spend-limit] Budget alert check failed:", err);
+        logger.warn({ err, userId }, "Budget alert check failed");
       });
     }
 

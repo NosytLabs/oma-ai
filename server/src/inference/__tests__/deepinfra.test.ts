@@ -91,12 +91,19 @@ describe("DeepInfra Provider", () => {
     });
 
     it("throws error when API key not configured", async () => {
-      await expect(
-        deepinfra.chatCompletion({
-          model: "deepinfra/meta-llama-3",
-          messages: [{ role: "user", content: "hello" }],
-        })
-      ).rejects.toMatchObject({ status: expect.any(Number) });
+      const { config } = await import("../../config.js");
+      const originalKey = config.DEEPINFRA_API_KEY;
+      (config as any).DEEPINFRA_API_KEY = "";
+      try {
+        await expect(
+          deepinfra.chatCompletion({
+            model: "deepinfra/meta-llama-3",
+            messages: [{ role: "user", content: "hello" }],
+          })
+        ).rejects.toMatchObject({ status: 503 });
+      } finally {
+        (config as any).DEEPINFRA_API_KEY = originalKey;
+      }
     });
 
     it("handles connection failure with 502", async () => {

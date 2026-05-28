@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Gauge, Plus, Trash2, RefreshCw, Save, AlertTriangle, Clock, Key, User } from 'lucide-react'
+import { Gauge, Plus, Trash2, RefreshCw, Save, AlertTriangle, Key, Terminal } from 'lucide-react'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 type RateLimitTier = {
   rpm: number
@@ -163,7 +164,11 @@ export default function AdminRateLimitsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border border-[var(--color-amber)] border-t-transparent rounded-full"
+        />
       </div>
     )
   }
@@ -172,72 +177,82 @@ export default function AdminRateLimitsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-            <Gauge className="w-5 h-5 text-amber-400" />
+          <div className="w-9 h-9 rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10 flex items-center justify-center">
+            <Terminal className="w-4 h-4 text-[var(--color-amber)]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-display">Rate Limits</h1>
-            <p className="text-sm text-zinc-500">Configure API rate limits and overrides</p>
+            <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">Rate Limits</h1>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-widest">Configure API rate limits</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={fetchConfig}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm"
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Refresh</span>
+          </motion.button>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-          {error}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-4 rounded border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 text-[var(--color-error)]"
+        >
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm font-mono">{error}</span>
+        </motion.div>
       )}
 
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
-          <Save className="w-5 h-5 flex-shrink-0" />
-          {success}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-4 rounded border border-[var(--color-success)]/30 bg-[var(--color-success-dim)] text-[var(--color-success)]"
+        >
+          <Save className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm font-mono">{success}</span>
+        </motion.div>
       )}
 
-      <div className="flex gap-1 border-b border-zinc-800">
+      <div className="flex gap-0.5 border-b border-[var(--color-border)]">
         <button
           onClick={() => setActiveTab('tiers')}
-          className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`px-4 py-3 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'tiers'
-              ? 'text-cyan-400 border-cyan-400'
-              : 'text-zinc-500 border-transparent hover:text-zinc-300'
+              ? 'text-[var(--color-cyan)] border-[var(--color-cyan)] bg-[var(--color-accent-dim)]/30'
+              : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
           }`}
         >
-          <Gauge className="w-4 h-4 inline mr-2" />
+          <Gauge className="w-3.5 h-3.5 inline mr-1.5" />
           Tiers
         </button>
         <button
           onClick={() => setActiveTab('overrides')}
-          className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`px-4 py-3 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'overrides'
-              ? 'text-cyan-400 border-cyan-400'
-              : 'text-zinc-500 border-transparent hover:text-zinc-300'
+              ? 'text-[var(--color-cyan)] border-[var(--color-cyan)] bg-[var(--color-accent-dim)]/30'
+              : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
           }`}
         >
-          <Key className="w-4 h-4 inline mr-2" />
+          <Key className="w-3.5 h-3.5 inline mr-1.5" />
           Overrides ({overrides.length})
         </button>
       </div>
 
       {activeTab === 'tiers' && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-            <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
-              <h2 className="font-medium text-white">Rate Limit Tiers</h2>
-              <p className="text-xs text-zinc-500 mt-1">RPM = Requests per minute, TPM = Tokens per minute</p>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+              <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Rate Limit Tiers</h2>
+              <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">RPM = Requests per minute, TPM = Tokens per minute</p>
             </div>
-            <div className="divide-y divide-zinc-800/50">
+            <div className="divide-y divide-[var(--color-border)]/50">
               {DEFAULT_TIERS.map((tierId) => {
                 const info = TIER_INFO[tierId]
                 const tier = editTiers[tierId] || { rpm: 60, tpm: 10000 }
@@ -245,35 +260,29 @@ export default function AdminRateLimitsPage() {
                   <div key={tierId} className="px-4 py-4">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <p className="font-medium text-white">{info.name}</p>
-                        <p className="text-xs text-zinc-500">{info.description}</p>
+                        <p className="font-medium text-[var(--color-text-bright)] text-sm">{info.name}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">{info.description}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-zinc-500 mb-2">RPM</label>
+                        <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">RPM</label>
                         <input
                           type="number"
                           min={1}
                           value={tier.rpm}
-                          onChange={(e) => setEditTiers({
-                            ...editTiers,
-                            [tierId]: { ...editTiers[tierId], rpm: parseInt(e.target.value) || 1 }
-                          })}
-                          className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, rpm: parseInt(e.target.value) || 60 } })}
+                          className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-zinc-500 mb-2">TPM</label>
+                        <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">TPM</label>
                         <input
                           type="number"
-                          min={100}
+                          min={1}
                           value={tier.tpm}
-                          onChange={(e) => setEditTiers({
-                            ...editTiers,
-                            [tierId]: { ...editTiers[tierId], tpm: parseInt(e.target.value) || 100 }
-                          })}
-                          className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, tpm: parseInt(e.target.value) || 10000 } })}
+                          className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
                         />
                       </div>
                     </div>
@@ -283,175 +292,170 @@ export default function AdminRateLimitsPage() {
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             onClick={handleSaveTiers}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-zinc-900 font-medium hover:bg-cyan-400 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 disabled:opacity-50 transition-colors text-sm font-mono"
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save Tier Changes'}
-          </button>
+            <Save className="w-3.5 h-3.5" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </motion.button>
         </div>
       )}
 
       {activeTab === 'overrides' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-zinc-500">
-              Overrides allow setting custom limits for specific users or API keys
-            </p>
-            <button
-              onClick={() => setShowOverrideForm(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-zinc-900 font-medium hover:bg-cyan-400 transition-colors"
+            <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] font-mono">
+              <span>{overrides.length} active overrides</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowOverrideForm(!showOverrideForm)}
+              className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm font-mono transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               Add Override
-            </button>
+            </motion.button>
           </div>
 
           {showOverrideForm && (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-              <h3 className="font-medium text-white">Create Rate Limit Override</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4"
+            >
+              <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Create Override</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2">Target Type</label>
+                  <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Target Type</label>
                   <select
                     value={overrideForm.targetType}
                     onChange={(e) => setOverrideForm({ ...overrideForm, targetType: e.target.value as 'user' | 'api_key' })}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-accent)]/50"
                   >
                     <option value="user">User</option>
                     <option value="api_key">API Key</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2">
-                    {overrideForm.targetType === 'user' ? 'User ID (UUID)' : 'API Key ID (UUID)'}
-                  </label>
+                  <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Target ID</label>
                   <input
                     type="text"
                     value={overrideForm.targetId}
                     onChange={(e) => setOverrideForm({ ...overrideForm, targetId: e.target.value })}
-                    placeholder="Enter UUID"
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                    placeholder="Enter user ID or API key ID"
+                    className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2">RPM (optional)</label>
+                  <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">RPM (optional)</label>
                   <input
                     type="number"
                     min={1}
                     value={overrideForm.rpm}
                     onChange={(e) => setOverrideForm({ ...overrideForm, rpm: e.target.value })}
-                    placeholder="Requests per minute"
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                    placeholder="No limit"
+                    className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2">TPM (optional)</label>
+                  <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">TPM (optional)</label>
                   <input
                     type="number"
-                    min={100}
+                    min={1}
                     value={overrideForm.tpm}
                     onChange={(e) => setOverrideForm({ ...overrideForm, tpm: e.target.value })}
-                    placeholder="Tokens per minute"
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                    placeholder="No limit"
+                    className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs text-zinc-500 mb-2">Expires At (optional)</label>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Expires At (optional)</label>
                   <input
                     type="datetime-local"
                     value={overrideForm.expiresAt}
                     onChange={(e) => setOverrideForm({ ...overrideForm, expiresAt: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50"
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <button
+              <div className="flex items-center gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={handleCreateOverride}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-zinc-900 font-medium hover:bg-cyan-400 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 rounded border border-[var(--color-success)]/30 bg-[var(--color-success-dim)] text-[var(--color-success)] hover:bg-[var(--color-success)]/20 disabled:opacity-50 text-sm font-mono transition-colors"
                 >
-                  <Save className="w-4 h-4" />
                   {saving ? 'Creating...' : 'Create Override'}
-                </button>
+                </motion.button>
                 <button
                   onClick={() => setShowOverrideForm(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                  className="px-4 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm font-mono transition-colors"
                 >
                   Cancel
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-            {overrides.length === 0 ? (
-              <div className="px-4 py-8 text-center text-zinc-500">
-                No rate limit overrides configured
-              </div>
-            ) : (
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="px-4 py-3 font-medium text-zinc-400">Target</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">RPM</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">TPM</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Expires</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Created</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400"></th>
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Target</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Type</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">RPM</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">TPM</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Expires</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Created</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {overrides.map((override) => (
-                    <tr key={override.id} className="border-b border-zinc-800/50">
+                    <tr key={override.id} className="border-b border-[var(--color-border)]/50 hover:bg-[var(--color-surface)]/50">
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {override.targetType === 'user' ? (
-                            <User className="w-4 h-4 text-zinc-500" />
-                          ) : (
-                            <Key className="w-4 h-4 text-zinc-500" />
-                          )}
-                          <span className="text-white">{override.targetType}</span>
-                          <span className="font-mono text-xs text-zinc-500">
-                            {override.targetId.slice(0, 8)}...
-                          </span>
-                        </div>
+                        <span className="font-mono text-sm text-[var(--color-text-secondary)] truncate max-w-[150px] block">{override.targetId}</span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-cyan-400">
-                        {override.rpm || '—'}
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono uppercase ${
+                          override.targetType === 'user' ? 'bg-[var(--color-blue)]/10 text-[var(--color-blue)]' : 'bg-[var(--color-violet)]/10 text-[var(--color-violet)]'
+                        }`}>
+                          {override.targetType}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-cyan-400">
-                        {override.tpm || '—'}
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{override.rpm || '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{override.tpm || '—'}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">
+                        {override.expiresAt ? format(new Date(override.expiresAt), 'MMM d, yyyy') : 'Never'}
                       </td>
-                      <td className="px-4 py-3 text-zinc-400">
-                        {override.expiresAt ? (
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {format(new Date(override.expiresAt), 'MMM d, yyyy HH:mm')}
-                          </div>
-                        ) : (
-                          <span className="text-zinc-600">Never</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-500">
+                      <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">
                         {format(new Date(override.createdAt), 'MMM d, yyyy')}
                       </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleDeleteOverride(override.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
+                          className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
                   ))}
+                  {overrides.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-[var(--color-text-muted)] font-mono">No overrides configured</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-            )}
+            </div>
           </div>
         </div>
       )}

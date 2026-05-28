@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import Link from 'next/link'
 import { Check, Zap, ArrowRight, Coins, Shield, Rocket, Users } from 'lucide-react'
 
@@ -16,21 +17,6 @@ const STEPS = [
   { icon: Coins, title: 'Buy credits', desc: '$1 = 100 credits. 50+ models available.' },
   { icon: Rocket, title: 'Start building', desc: 'OpenAI-compatible API. Integrate in minutes.' },
 ]
-
-function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(null)
-  
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mediaQuery.matches)
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [])
-  
-  return prefersReducedMotion
-}
 
 function AnimatedSection({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const [isVisible, setIsVisible] = useState(false)
@@ -159,8 +145,6 @@ export function PricingTiers() {
             })}
           </div>
         </AnimatedSection>
-
-
 
         <AnimatedSection delay={400} className="mt-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

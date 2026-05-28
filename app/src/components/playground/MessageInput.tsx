@@ -11,14 +11,7 @@ interface MessageInputProps {
   loading: boolean
 }
 
-function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4)
-}
-
-function formatCost(cents: number): string {
-  if (cents < 1) return '<$0.01'
-  return `$${(cents / 100).toFixed(2)}`
-}
+import { estimateTokens } from '@/lib/text'
 
 export function MessageInput({ input, setInput, onSubmit, onStop, loading }: MessageInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -29,15 +22,15 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
   }
 
   return (
-    <div className="relative flex items-end bg-surface border border-border rounded-xl px-2 py-2 transition-all focus-within:border-accent/50">
+    <div className="relative flex items-end bg-[var(--color-void)] border border-[var(--color-border)] px-2 py-2 transition-all focus-within:border-[var(--color-accent)]/50 focus-within:ring-2 focus-within:ring-[var(--color-accent)]/20">
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask anything..."
+        placeholder="$ QUERY"
         aria-label="Message input"
         rows={1}
-        className="flex-1 resize-none bg-transparent px-4 py-3 text-text placeholder-zinc-600 outline-none text-[15px] leading-relaxed"
+        className="flex-1 resize-none bg-transparent px-4 py-3 text-[var(--color-text-secondary)] placeholder-[var(--color-text-muted)] outline-none text-sm font-mono leading-relaxed focus:ring-0"
         disabled={loading}
         style={{ minHeight: '52px', maxHeight: '200px' }}
         onInput={(e) => {
@@ -51,18 +44,18 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
           <button
             onClick={onStop}
             aria-label="Stop generation"
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
+            className="flex h-11 w-11 items-center justify-center bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] border border-[var(--color-border)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         ) : (
           <button
             onClick={onSubmit}
             disabled={!input.trim()}
             aria-label="Send message"
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-void transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none animate-pulse-glow"
+            className="flex h-11 w-11 items-center justify-center bg-[var(--color-accent)] text-[var(--color-text-inverse)] font-semibold transition-all hover:bg-[var(--color-accent-hover)] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -85,16 +78,14 @@ export function CostEstimate({ inputText, model }: CostEstimateProps) {
   const totalCost = inputCost + estimatedOutputCost
 
   return (
-    <div className="flex items-center gap-4 text-xs">
-      <div className="flex items-center gap-1.5 text-zinc-500">
+    <div className="flex items-center gap-4 text-[10px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
+      <div className="flex items-center gap-1.5">
         <MessageSquare className="w-3 h-3" />
-        <span className="font-mono">{inputTokens}</span>
-        <span>tokens</span>
+        <span>{inputTokens} TK</span>
       </div>
-      <div className="flex items-center gap-1.5 text-secondary">
+      <div className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
         <Coins className="w-3 h-3" />
-        <span className="font-mono">{formatCost(totalCost * 100)}</span>
-        <span>est.</span>
+        <span>${totalCost.toFixed(4)} EST</span>
       </div>
     </div>
   )

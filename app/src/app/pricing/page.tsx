@@ -67,10 +67,10 @@ const CATEGORIES: { key: Category; label: string }[] = [
 
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> = {
   all: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]' },
-  frontier: { active: 'bg-[var(--color-accent)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
-  premium: { active: 'bg-[var(--color-accent)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
+  frontier: { active: 'bg-[var(--color-accent)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
+  premium: { active: 'bg-[var(--color-accent)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
   mid: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-cyan)] border border-[var(--color-cyan)]/30' },
-  budget: { active: 'bg-[var(--color-success)] text-white', inactive: 'bg-[var(--color-surface)] text-[var(--color-success)] border border-[var(--color-success)]/30' },
+  budget: { active: 'bg-[var(--color-success)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-success)] border border-[var(--color-success)]/30' },
 }
 
 const PAYMENT_METHODS = [
@@ -118,21 +118,32 @@ const FAQ_ITEMS = [
 
 function fmtPrice(n: number): string {
   if (n < 0.01) return '$0.01'
-  if (n < 1) return `$${n.toFixed(2)}`
+  if (n < 1) return `$${n.toFixed(4)}`
   return `$${n.toFixed(2)}`
 }
 
-function AccordionItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
+function AccordionItem({ item, isOpen, onToggle, index }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void; index: number }) {
+  const buttonId = `faq-button-${index}`
+  const panelId = `faq-panel-${index}`
+  
   return (
     <div className="border-b border-[var(--color-border)]">
       <button
+        id={buttonId}
         onClick={onToggle}
         className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-[var(--color-text-bright)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
       >
         <span className="font-medium text-[var(--color-text)]">{item.q}</span>
         <ChevronDown className={`h-5 w-5 text-[var(--color-text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}>
+      <div 
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
+        className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}
+      >
         <p className="text-sm text-[var(--color-text-secondary)]">{item.a}</p>
       </div>
     </div>
@@ -171,7 +182,7 @@ export default function PricingPage() {
             <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-widest">payment methods</span>
             <div className="h-px flex-1 bg-[var(--color-border)]" />
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {PAYMENT_METHODS.map((method) => {
               const Icon = method.icon
               return (
@@ -213,16 +224,16 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* ── Model Table ── */}
-        <div className="mb-12">
+        {/* ── Model Table - Mobile Responsive ── */}
+        <div className="mb-16">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
-            <div className="border-b border-[var(--color-border)] px-6 py-4">
+            <div className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
               <div className="flex flex-wrap gap-2 mb-4">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat.key}
                     onClick={() => setCategory(cat.key)}
-                    className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-all duration-150 ${
+                    className={`px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-all duration-150 ${
                       category === cat.key
                         ? CATEGORY_STYLES[cat.key].active
                         : CATEGORY_STYLES[cat.key].inactive
@@ -234,40 +245,52 @@ export default function PricingPage() {
               </div>
               <p className="text-xs text-[var(--color-text-muted)] font-mono">{filtered.length} models</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Model</th>
-                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Provider</th>
-                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Input / 1M</th>
-                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Output / 1M</th>
-                    <th className="px-4 py-3 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Ctx</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((m, i) => (
-                    <tr key={m.id} className={`border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-[var(--color-text-bright)]">{m.name}</span>
-                        <span className="ml-2 text-xs text-[var(--color-text-muted)] font-mono">{m.id}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-mono font-medium ${
-                          m.provider === 'Venice' ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' :
-                          m.provider === 'AntSeed' ? 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' :
-                          'bg-[var(--color-secondary)]/20 text-[var(--color-secondary)]'
-                        }`}>
-                          {m.provider}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-cyan)]">{fmtPrice(m.inputPer1M)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-text-secondary)]">{fmtPrice(m.outputPer1M)}</td>
-                      <td className="px-4 py-3 text-right text-xs text-[var(--color-text-muted)] font-mono">{m.ctx}</td>
+            
+            {/* Horizontal scroll wrapper with gradient hint */}
+            <div className="relative">
+              {/* Right gradient hint for scrollable content */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent pointer-events-none z-10 hidden sm:block" />
+              
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
+                <table className="w-full text-left min-w-[640px] sm:min-w-0">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Model</th>
+                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Provider</th>
+                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Input / 1M</th>
+                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Output / 1M</th>
+                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Ctx</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filtered.map((m, i) => (
+                      <tr key={m.id} className={`border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface-elevated)]/30' : ''}`}>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-medium text-[var(--color-text-bright)]">{m.name}</span>
+                          <span className="ml-2 text-xs text-[var(--color-text-secondary)] font-mono hidden sm:inline">{m.id}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
+                            m.provider === 'Venice' ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' :
+                            m.provider === 'AntSeed' ? 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' :
+                            'bg-[var(--color-secondary)]/20 text-[var(--color-secondary)]'
+                          }`}>
+                            {m.provider}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-cyan)]">{fmtPrice(m.inputPer1M)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-text-secondary)]">{fmtPrice(m.outputPer1M)}</td>
+                        <td className="px-4 py-3 text-right text-xs text-[var(--color-text-secondary)] font-mono">{m.ctx}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Mobile scroll indicator - swipe hint */}
+              <div className="sm:hidden flex items-center justify-center py-2 text-[10px] text-[var(--color-text-muted)]">
+                <span className="font-mono">Swipe to scroll &rarr;</span>
+              </div>
             </div>
           </div>
         </div>
@@ -285,17 +308,18 @@ export default function PricingPage() {
                 item={item}
                 isOpen={openFaq === i}
                 onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+                index={i}
               />
             ))}
           </div>
         </div>
 
         {/* ── CTA ── */}
-        <div className="mb-12 text-center">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <div className="mb-12 py-8">
+          <div className="flex flex-col items-center gap-4">
             <Link
               href="/dashboard"
-              className="btn-primary text-sm px-6 py-3"
+              className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center"
             >
               <Zap className="h-4 w-4 mr-2" />
               Start AI Inference
@@ -303,12 +327,12 @@ export default function PricingPage() {
             </Link>
             <Link
               href="/deposit"
-              className="btn-secondary text-sm px-6 py-3"
+              className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center"
             >
               <Coins className="h-4 w-4 mr-2" />
               Deposit Crypto
             </Link>
-            <Link href="/models" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors">
+            <Link href="/models" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors px-4 py-3 text-center">
               View All Models
               <ArrowRight className="w-4 h-4 ml-1 inline-block" />
             </Link>

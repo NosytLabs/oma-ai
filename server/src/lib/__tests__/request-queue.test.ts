@@ -34,6 +34,38 @@ const mockRedisClient = vi.hoisted(() => ({
     return null;
   }),
   del: vi.fn().mockImplementation(() => 1),
+  lRem: vi.fn().mockImplementation(() => 1),
+  lPop: vi.fn().mockImplementation(() => {
+    if (!redisAvailable) return null;
+    return null;
+  }),
+  multi: vi.fn().mockImplementation(() => ({
+    rPush: vi.fn().mockReturnThis(),
+    hIncrBy: vi.fn().mockReturnThis(),
+    sAdd: vi.fn().mockReturnThis(),
+    sRem: vi.fn().mockReturnThis(),
+    lRem: vi.fn().mockReturnThis(),
+    exec: vi.fn().mockResolvedValue([]),
+  })),
+  hGet: vi.fn().mockImplementation(() => {
+    if (!redisAvailable) return null;
+    return null;
+  }),
+  hIncrBy: vi.fn().mockImplementation(() => 0),
+  sAdd: vi.fn().mockImplementation(() => 1),
+  sIsMember: vi.fn().mockImplementation(() => false),
+  sRem: vi.fn().mockImplementation(() => 1),
+  keys: vi.fn().mockImplementation(() => []),
+  eval: vi.fn().mockImplementation((script: string, _numkeys: number, ..._args: (string | number)[]) => {
+    if (!redisAvailable) throw new Error("Redis not available");
+    if (typeof script === 'string' && script.includes('RPUSH')) {
+      return [1, 6];
+    }
+    if (typeof script === 'string' && script.includes('LPOP')) {
+      return [null, 0];
+    }
+    return [1, 0];
+  }),
 }));
 
 vi.mock("../redis-client.js", () => ({
@@ -50,9 +82,8 @@ describe("request-queue", () => {
   });
 
   describe("enqueueRequest", () => {
-    it("should push request to Redis list", async () => {
-      mockRedisClient.llen.mockResolvedValueOnce(5);
-      mockRedisClient.lPush.mockResolvedValueOnce(1);
+    it("should push request to Redis list using eval", async () => {
+      mockRedisClient.eval.mockResolvedValueOnce([1, 6]);
 
       const request = {
         id: "req-123",
@@ -65,14 +96,20 @@ describe("request-queue", () => {
 
       await enqueueRequest(request);
 
-      expect(mockRedisClient.lPush).toHaveBeenCalledWith(
+      expect(mockRedisClient.eval).toHaveBeenCalledWith(
+        expect.stringContaining("RPUSH"),
+        2,
         `${QUEUE_KEY_PREFIX}:pending`,
-        expect.stringContaining("req-123")
+        `oma:queue:users:user-1`,
+        expect.any(Number),
+        expect.stringContaining("req-123"),
+        "user-1",
+        "req-123"
       );
     });
 
     it("should reject when queue exceeds max depth", async () => {
-      mockRedisClient.llen.mockResolvedValueOnce(MAX_QUEUE_DEPTH + 1);
+      mockRedisClient.eval.mockResolvedValueOnce([-1, MAX_QUEUE_DEPTH]);
 
       const request = {
         id: "req-124",
@@ -105,55 +142,39 @@ describe("request-queue", () => {
   describe("getQueueStatus", () => {
     it("should return queue depth and position info", async () => {
       mockRedisClient.llen.mockResolvedValueOnce(5);
-      mockRedisClient.lRange.mockResolvedValueOnce([
-        JSON.stringify({ id: "req-1", userId: "user-1" }),
-      ]);
+      mockRedisClient.hGet.mockResolvedValueOnce("2");
 
       const status = await getQueueStatus("user-1");
 
       expect(status).toMatchObject({
         queueDepth: 5,
-        userPosition: expect.any(Number),
+        userPosition: 1,
       });
       expect(status.inQueue).toBe(true);
     });
 
-    it("should return inQueue false when queue is empty", async () => {
+    it("should return inQueue false when user not in queue", async () => {
       mockRedisClient.llen.mockResolvedValueOnce(0);
-      mockRedisClient.lRange.mockResolvedValueOnce([]);
+      mockRedisClient.hGet.mockResolvedValueOnce(null);
 
       const status = await getQueueStatus("user-1");
 
       expect(status.inQueue).toBe(false);
+      expect(status.userPosition).toBe(-1);
     });
   });
 
   describe("getQueuePosition", () => {
-    it("should return position of specific request", async () => {
-      const request = {
-        id: "req-200",
-        userId: "user-1",
-        apiKeyId: "key-1",
-        body: { model: "gpt-4o", messages: [] },
-        priority: 0,
-        enqueuedAt: Date.now(),
-      };
-
-      mockRedisClient.lRange.mockResolvedValueOnce([
-        JSON.stringify({ id: "req-199", userId: "user-1" }),
-        JSON.stringify(request),
-        JSON.stringify({ id: "req-201", userId: "user-1" }),
-      ]);
+    it("should return 1 if request is in queue", async () => {
+      mockRedisClient.sIsMember.mockResolvedValueOnce(true);
 
       const position = await getQueuePosition("user-1", "req-200");
 
-      expect(position).toBe(2);
+      expect(position).toBe(1);
     });
 
     it("should return -1 if request not found", async () => {
-      mockRedisClient.lRange.mockResolvedValueOnce([
-        JSON.stringify({ id: "req-300", userId: "user-1" }),
-      ]);
+      mockRedisClient.sIsMember.mockResolvedValueOnce(false);
 
       const position = await getQueuePosition("user-1", "nonexistent");
 
@@ -172,7 +193,7 @@ describe("request-queue", () => {
         enqueuedAt: Date.now(),
       };
 
-      mockRedisClient.rpop.mockResolvedValueOnce(JSON.stringify(queuedRequest));
+      mockRedisClient.eval.mockResolvedValueOnce([JSON.stringify(queuedRequest), 1]);
 
       const processed = await processNextRequest();
 
@@ -183,7 +204,7 @@ describe("request-queue", () => {
     });
 
     it("should return null when queue is empty", async () => {
-      mockRedisClient.rpop.mockResolvedValueOnce(null);
+      mockRedisClient.eval.mockResolvedValueOnce([null, 0]);
 
       const processed = await processNextRequest();
 
@@ -192,7 +213,9 @@ describe("request-queue", () => {
   });
 
   describe("removeFromQueue", () => {
-    it("should remove specific request from queue by re-building list", async () => {
+    it("should remove specific request from queue", async () => {
+      mockRedisClient.sIsMember.mockResolvedValueOnce(true);
+
       const requestToRemove = {
         id: "req-500",
         userId: "user-1",
@@ -214,24 +237,36 @@ describe("request-queue", () => {
         JSON.stringify(requestToRemove),
         JSON.stringify(otherRequest),
       ]);
-      mockRedisClient.del.mockResolvedValueOnce(1);
-      mockRedisClient.rPush.mockResolvedValue(1);
+      mockRedisClient.multi.mockReturnValueOnce({
+        lRem: vi.fn().mockReturnThis(),
+        hIncrBy: vi.fn().mockReturnThis(),
+        sRem: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([]),
+      });
 
       const removed = await removeFromQueue("user-1", "req-500");
 
       expect(removed).toBe(true);
-      expect(mockRedisClient.del).toHaveBeenCalled();
+    });
+
+    it("should return false when request not in user set", async () => {
+      mockRedisClient.sIsMember.mockResolvedValueOnce(false);
+
+      const removed = await removeFromQueue("user-1", "nonexistent");
+
+      expect(removed).toBe(false);
     });
   });
 
   describe("clearQueue", () => {
     it("should delete the queue key", async () => {
+      mockRedisClient.keys.mockResolvedValueOnce([]);
       mockRedisClient.del.mockResolvedValueOnce(1);
 
       const result = await clearQueue();
 
       expect(result).toBe(true);
-      expect(mockRedisClient.del).toHaveBeenCalledWith(`${QUEUE_KEY_PREFIX}:pending`);
+      expect(mockRedisClient.keys).toHaveBeenCalledWith("oma:queue:users:*");
     });
   });
 
@@ -265,8 +300,7 @@ describe("request-queue", () => {
 
 describe("rate-limit integration", () => {
   it("should queue request when rate limited instead of rejecting", async () => {
-    mockRedisClient.llen.mockResolvedValueOnce(5);
-    mockRedisClient.lPush.mockResolvedValueOnce(1);
+    mockRedisClient.eval.mockResolvedValueOnce([1, 6]);
 
     const request = {
       id: "req-600",
@@ -279,6 +313,15 @@ describe("rate-limit integration", () => {
 
     await enqueueRequest(request);
 
-    expect(mockRedisClient.lPush).toHaveBeenCalled();
+    expect(mockRedisClient.eval).toHaveBeenCalledWith(
+      expect.stringContaining("RPUSH"),
+      2,
+      `${QUEUE_KEY_PREFIX}:pending`,
+      `oma:queue:users:user-1`,
+      expect.any(Number),
+      expect.stringContaining("req-600"),
+      "user-1",
+      "req-600"
+    );
   });
 });

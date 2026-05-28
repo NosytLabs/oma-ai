@@ -13,7 +13,7 @@ vi.mock('../config.js', () => ({
   },
 }))
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../credits/index.js', () => ({
   addCredits: vi.fn().mockResolvedValue(undefined),
 }))
 

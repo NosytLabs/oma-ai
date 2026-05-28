@@ -145,14 +145,14 @@ export default function SettingsPage() {
           className="text-center"
         >
           <motion.div 
-            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/5"
+            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5"
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 400, damping: 10 }}
           >
-            <Wallet className="h-8 w-8 text-primary" />
+            <Wallet className="h-8 w-8 text-[var(--color-accent)]" />
           </motion.div>
-          <h2 className="mb-2 text-xl font-bold tracking-tight">Connect Wallet</h2>
-          <p className="mb-6 text-sm text-on-surface-variant">
+          <h2 className="mb-2 text-xl font-bold tracking-tight font-syne">Connect Wallet</h2>
+          <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
             Authenticate to access account settings.
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -160,7 +160,7 @@ export default function SettingsPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => connectEvm()} 
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent)]/90"
             >
               <Hexagon className="h-4 w-4" />
               EVM / Base
@@ -178,8 +178,8 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="mt-1 text-xs text-on-surface-variant">
+        <h1 className="text-2xl font-bold tracking-tight font-syne">Settings</h1>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
           Account {loading ? 'Syncing...' : error ? 'Degraded' : 'Nominal'}
         </p>
       </motion.div>
@@ -193,8 +193,8 @@ export default function SettingsPage() {
             className="mb-6 flex items-center gap-3 rounded-xl border border-error/30 bg-error/5 px-4 py-3"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
-            <span className="text-sm text-on-surface">{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto text-on-surface-variant hover:text-on-surface">
+            <span className="text-sm text-[var(--color-text)]">{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
               <X className="h-3.5 w-3.5" />
             </button>
           </motion.div>
@@ -205,9 +205,9 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+        className="mb-6 border border-[var(--color-border)] p-6"
       >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
           <Wallet className="h-3.5 w-3.5" />
           Connected Wallets
         </div>
@@ -217,43 +217,43 @@ export default function SettingsPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low p-4"
+            className="flex items-center gap-3 border border-[var(--color-border)] p-4"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/10">
-              <Hexagon className="h-5 w-5 text-blue-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-blue)]/30 bg-[var(--color-blue)]/10">
+              <Hexagon className="h-5 w-5 text-[var(--color-blue)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-sm font-bold">EVM Wallet</span>
-                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-400">Base</span>
-              </div>
-              {evmAddress ? (
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-primary break-all">{evmAddress}</span>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleCopy(evmAddress, 'evm')}
-                    className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-surface-container-high"
-                  >
-                    {copied === 'evm' ? (
-                      <Check className="h-3.5 w-3.5 text-green-500" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5 text-on-surface-variant" />
-                    )}
-                  </motion.button>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm font-bold text-[var(--color-text)]">EVM Wallet</span>
+                  <span className="rounded-full bg-[var(--color-blue)]/20 px-2 py-0.5 text-[10px] font-bold text-[var(--color-blue)]">Base</span>
                 </div>
-              ) : (
-                <span className="text-xs text-on-surface-variant">Not connected</span>
-              )}
-            </div>
+                {evmAddress ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-[var(--color-cyan)] break-all">{evmAddress}</span>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCopy(evmAddress, 'evm')}
+                      className="shrink-0 rounded-lg p-2.5 transition-colors hover:bg-[var(--color-surface)]"
+                    >
+                      {copied === 'evm' ? (
+                        <Check className="h-3.5 w-3.5 text-[var(--color-success)]" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 text-[var(--color-text-muted)]" />
+                      )}
+                    </motion.button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-[var(--color-text-muted)]">Not connected</span>
+                )}
+              </div>
             {evmAddress ? (
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleUnlinkEvm}
                 disabled={unlinkingEvm}
-                className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 px-3 py-1.5 text-[10px] font-semibold text-secondary transition-all hover:bg-secondary/5 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-amber)]/30 px-3 py-1.5 text-[10px] font-semibold text-[var(--color-amber)] transition-all hover:bg-[var(--color-amber)]/5 disabled:opacity-40"
               >
                 {unlinkingEvm ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => connectEvm()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[10px] font-semibold text-white"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-cyan)] bg-[var(--color-void)] px-3 py-1.5 text-[10px] font-semibold text-[var(--color-cyan)]"
               >
                 <Link2 className="h-3 w-3" />
                 Connect
@@ -281,21 +281,21 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+        className="mb-6 border border-[var(--color-border)] p-6"
       >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
           <Fingerprint className="h-3.5 w-3.5" />
           Account Number
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+        <div className="flex items-center gap-3 border border-[var(--color-border)] px-4 py-4">
           {user?.accountNumber ? (
             <>
               <div className="flex-1 min-w-0">
-                <div className="text-lg font-mono font-bold tracking-wider text-primary">
+                <div className="text-lg font-mono font-bold tracking-wider text-[var(--color-cyan)]">
                   {user.accountNumber}
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-on-surface-variant">
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
                   <Shield className="h-3 w-3" />
                   <span>Mullvad-style account number for wallet-free login</span>
                 </div>
@@ -304,22 +304,22 @@ export default function SettingsPage() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleCopy(user.accountNumber!, 'accountNumber')}
-                className="rounded-lg p-2 transition-colors hover:bg-surface-container-high"
+                className="rounded-lg p-2.5 transition-colors hover:bg-[var(--color-surface)]"
               >
                 {copied === 'accountNumber' ? (
-                  <Check className="h-5 w-5 text-green-500" />
+                  <Check className="h-5 w-5 text-[var(--color-success)]" />
                 ) : (
-                  <Copy className="h-5 w-5 text-on-surface-variant" />
+                  <Copy className="h-5 w-5 text-[var(--color-text-muted)]" />
                 )}
               </motion.button>
             </>
           ) : (
             <>
               <div className="flex-1">
-                <div className="text-sm text-on-surface-variant">
+                <div className="text-sm text-[var(--color-text-muted)]">
                   No account number generated yet
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-on-surface-variant">
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
                   <Shield className="h-3 w-3" />
                   <span>Generate to enable wallet-free login with Solana</span>
                 </div>
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGenerateAccountNumber}
                 disabled={generatingAccount}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-primary/90 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-cyan)] bg-[var(--color-void)] px-4 py-2 text-xs font-semibold text-[var(--color-cyan)] transition-all hover:bg-[var(--color-cyan)]/10 disabled:opacity-40"
               >
                 {generatingAccount ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -347,9 +347,9 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+        className="mb-6 border border-[var(--color-border)] p-6"
       >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
           <UserIcon className="h-3.5 w-3.5" />
           Account Information
         </div>
@@ -358,12 +358,12 @@ export default function SettingsPage() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.25 }}
-            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+            className="flex items-center gap-3 border border-[var(--color-border)] px-4 py-3"
           >
-            <Fingerprint className="h-4 w-4 shrink-0 text-on-surface-variant" />
+            <Fingerprint className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
             <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">User ID</span>
-              <div className="text-sm text-on-surface font-mono">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">User ID</span>
+              <div className="text-sm text-[var(--color-text)] font-mono">
                 {user?.id || '---'}
               </div>
             </div>
@@ -372,12 +372,12 @@ export default function SettingsPage() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+            className="flex items-center gap-3 border border-[var(--color-border)] px-4 py-3"
           >
-            <Calendar className="h-4 w-4 shrink-0 text-on-surface-variant" />
+            <Calendar className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
             <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">Account Created</span>
-              <div className="text-sm text-on-surface">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Account Created</span>
+              <div className="text-sm text-[var(--color-text)]">
                 {user?.createdAt ? formatDate(user.createdAt) : '---'}
               </div>
             </div>
@@ -386,12 +386,12 @@ export default function SettingsPage() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.35 }}
-            className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+            className="flex items-center gap-3 border border-[var(--color-border)] px-4 py-3"
           >
-            <Shield className="h-4 w-4 shrink-0 text-on-surface-variant" />
+            <Shield className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
             <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">Authentication</span>
-              <div className="text-sm text-on-surface">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Authentication</span>
+              <div className="text-sm text-[var(--color-text)]">
                 SIWE (EIP-4361) Wallet Auth
               </div>
             </div>
@@ -403,10 +403,10 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mb-6 rounded-2xl border border-outline-variant/30 bg-white p-6 shadow-sm"
+        className="mb-6 border border-[var(--color-border)] p-6"
       >
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
             <Key className="h-3.5 w-3.5" />
             API Keys
           </div>
@@ -415,7 +415,7 @@ export default function SettingsPage() {
             whileTap={{ scale: 0.98 }}
             onClick={handleLogout}
             disabled={loggingOut}
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 transition-all hover:bg-amber-500/5 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 border border-[var(--color-amber)]/30 px-3 py-1.5 text-[10px] font-semibold text-[var(--color-amber)] transition-all hover:bg-[var(--color-amber)]/5 disabled:opacity-40"
           >
             {loggingOut ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -428,8 +428,8 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           {apiKeys.length === 0 ? (
-            <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-6 text-center">
-              <p className="text-sm text-on-surface-variant">No API keys yet. Connect your wallet to generate one.</p>
+            <div className="border border-[var(--color-border)] px-4 py-6 text-center">
+              <p className="text-sm text-[var(--color-text-muted)]">No API keys yet. Connect your wallet to generate one.</p>
             </div>
           ) : (
             apiKeys.map((key, index) => (
@@ -438,19 +438,19 @@ export default function SettingsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 + index * 0.05 }}
-                className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+                className="flex items-center gap-3 border border-[var(--color-border)] px-4 py-3"
               >
-                <Key className="h-4 w-4 shrink-0 text-on-surface-variant" />
+                <Key className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">{key.name}</span>
+                    <span className="text-sm font-semibold text-[var(--color-text)]">{key.name}</span>
                     {key.name === 'Default wallet key' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[9px] font-bold text-blue-600">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-blue)]/10 px-2 py-0.5 text-[9px] font-bold text-[var(--color-blue)]">
                         Primary
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[10px] text-on-surface-variant mt-0.5">
+                  <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-muted)] mt-0.5">
                     <span className="font-mono">{key.prefix}***</span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-2.5 w-2.5" />
@@ -467,12 +467,12 @@ export default function SettingsPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleCopy(key.prefix + '...', key.id)}
-                  className="rounded-lg p-1.5 transition-colors hover:bg-surface-container-high"
+                  className="rounded-lg p-2.5 transition-colors hover:bg-[var(--color-surface)]"
                 >
                   {copied === key.id ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
+                    <Check className="h-3.5 w-3.5 text-[var(--color-success)]" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 text-on-surface-variant" />
+                    <Copy className="h-3.5 w-3.5 text-[var(--color-text-muted)]" />
                   )}
                 </motion.button>
               </motion.div>
@@ -485,19 +485,19 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="rounded-2xl border border-error/20 bg-error/5 p-6"
+        className="border border-[var(--color-red)]/20 p-6"
       >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-error">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-red)]">
           <ShieldOff className="h-3.5 w-3.5" />
           Danger Zone
         </div>
 
-        <div className="rounded-xl border border-error/20 bg-white p-4">
+        <div className="border border-[var(--color-red)]/20 p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-error" />
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-[var(--color-red)]" />
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-error mb-1">Delete Account</h3>
-              <p className="text-xs text-on-surface-variant mb-4">
+              <h3 className="text-sm font-bold text-[var(--color-red)] mb-1">Delete Account</h3>
+              <p className="text-xs text-[var(--color-text-muted)] mb-4">
                 Permanently delete your OMA account, all API keys, credits, and staking positions.
                 This action cannot be undone. Credits are non-redeemable and will be forfeited.
               </p>
@@ -511,7 +511,7 @@ export default function SettingsPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-error px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-error/90"
+                    className="inline-flex items-center gap-1.5 border border-[var(--color-red)] bg-[var(--color-red)] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[var(--color-red)]/90"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete Account
@@ -521,13 +521,13 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="rounded-xl border border-error/40 bg-surface-container-low p-4"
+                    className="border border-[var(--color-red)]/40 p-4"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-4 w-4 text-error" />
-                      <span className="text-sm font-bold text-error">Final Confirmation</span>
+                      <AlertTriangle className="h-4 w-4 text-[var(--color-red)]" />
+                      <span className="text-sm font-bold text-[var(--color-red)]">Final Confirmation</span>
                     </div>
-                    <p className="text-xs text-on-surface-variant mb-4">
+                    <p className="text-xs text-[var(--color-text-muted)] mb-4">
                       Are you absolutely sure? All data will be permanently destroyed.
                       Remaining credits will be burned. Staked OMA will be returned after cooldown.
                     </p>
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={handleDeleteAccount}
                         disabled={deleting}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-error py-3 text-xs font-semibold text-white disabled:opacity-40"
+                        className="inline-flex items-center justify-center gap-2 border border-[var(--color-red)] bg-[var(--color-red)] px-6 py-3 text-xs font-semibold text-white disabled:opacity-40"
                       >
                         {deleting ? (
                           <><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</>
@@ -548,7 +548,7 @@ export default function SettingsPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowDeleteConfirm(false)}
                         disabled={deleting}
-                        className="flex-1 rounded-full border border-outline-variant py-3 text-xs font-semibold transition-all hover:bg-surface-container-low"
+                        className="flex-1 border border-[var(--color-border)] py-3 text-xs font-semibold text-[var(--color-text)] transition-all hover:bg-[var(--color-surface)]"
                       >
                         Cancel
                       </motion.button>

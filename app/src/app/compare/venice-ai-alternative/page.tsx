@@ -1,78 +1,104 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Layers, LayoutDashboard, RefreshCw, ArrowRight, CheckCircle, CreditCard } from 'lucide-react'
-
-export const metadata: Metadata = {
-  title: 'Venice AI Alternative - Gateway Layer for Easy Access',
-  description: 'OMA provides an intelligent gateway layer on top of Venice AI. Enjoy credits, dashboard analytics, smart routing, and a more accessible developer experience.',
-  keywords: ['Venice AI alternative', 'Venice API gateway', 'AI inference gateway', 'Venice credits', 'AI API dashboard'],
-  openGraph: {
-    title: 'Venice AI Alternative - Gateway Layer for Easy Access | OMA AI',
-    description: 'An intelligent layer on top of Venice AI with credits, dashboards, and smart routing.',
-    type: 'website',
-  },
-}
+import { motion } from 'framer-motion'
 
 export default function VeniceAIAlternativePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-4xl px-4 py-16">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-indigo-600"
+    <div className="min-h-[calc(100vh-4rem)] px-4 py-12">
+      <div className="mx-auto max-w-5xl">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Link>
+          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-[var(--color-accent)]">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Home
+          </Link>
+        </motion.div>
 
-        <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600">
-            <Layers className="h-4 w-4" />
-            Gateway Layer
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
+          className="mb-16"
+        >
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-3 py-1.5">
+              <Layers className="h-3.5 w-3.5 text-[var(--color-accent)]" />
+              <span className="text-xs font-mono font-semibold text-[var(--color-accent)]">Gateway Layer</span>
+            </div>
           </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-            Venice AI Alternative - <span className="gradient-text">Gateway Layer for Easy Access</span>
+
+          <h1 className="mb-6 font-syne text-4xl font-bold tracking-tight md:text-5xl" style={{ color: 'var(--color-text-bright)' }}>
+            Venice AI Alternative —
+            <span className="gradient-text">Gateway Layer for Easy Access</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-slate-600">
+
+          <p className="max-w-2xl text-base leading-relaxed text-text">
             OMA sits on top of Venice AI, adding intelligent routing, credit management, and a developer-friendly dashboard while maintaining Venice&apos;s powerful inference capabilities.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mb-16 grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50">
-              <CreditCard className="h-6 w-6 text-indigo-600" />
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
+          className="mb-16"
+        >
+          <div className="mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
+              <span className="font-mono text-xs text-text-muted">{'//'} enhancements</span>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-900">Credits System</h3>
-            <p className="text-sm text-slate-600">
-              Pre-purchase credits with crypto and pay per token. No need to manage multiple transactions or worry about per-request crypto fees.
-            </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50">
-              <LayoutDashboard className="h-6 w-6 text-indigo-600" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { icon: CreditCard, label: '01', title: 'Credits System', desc: 'Pre-purchase credits with crypto and pay per token. No need to manage multiple transactions or worry about per-request crypto fees.' },
+              { icon: LayoutDashboard, label: '02', title: 'Dashboard Analytics', desc: 'Track usage, monitor costs, and analyze model performance through an intuitive dashboard built for developers.' },
+              { icon: RefreshCw, label: '03', title: 'Smart Routing', desc: 'Intelligent request routing with automatic failover ensures your applications stay running even if a backend experiences issues.' },
+            ].map((card, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
+                className="group relative overflow-hidden rounded-xl border border-border bg-panel p-6 transition-all hover:border-[var(--color-cyan)]/30"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-cyan)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="relative">
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="font-mono text-xs text-text-muted">{card.label}</span>
+                    <div className="h-px flex-1 bg-[var(--color-border)]" />
+                  </div>
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface">
+                    <card.icon className="h-5 w-5 text-[var(--color-cyan)]" />
+                  </div>
+                  <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
+                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4, ease: 'easeOut' }}
+          className="mb-16"
+        >
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
+              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">What OMA Adds to Venice</h2>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-900">Dashboard Analytics</h3>
-            <p className="text-sm text-slate-600">
-              Track usage, monitor costs, and analyze model performance through an intuitive dashboard built for developers.
-            </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50">
-              <RefreshCw className="h-6 w-6 text-indigo-600" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-900">Smart Routing</h3>
-            <p className="text-sm text-slate-600">
-              Intelligent request routing with automatic failover ensures your applications stay running even if a backend experiences issues.
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">What OMA Adds to Venice</h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               { title: 'Credit System', desc: 'Pre-purchase tokens and pay as you go without per-request blockchain overhead' },
               { title: 'Unified Dashboard', desc: 'Monitor usage, costs, and model performance in one place' },
@@ -81,74 +107,91 @@ export default function VeniceAIAlternativePage() {
               { title: 'Developer Tools', desc: 'OpenAI-compatible API, making migration from other providers seamless' },
               { title: '100+ Crypto Tokens', desc: 'Pay with any of 100+ supported cryptocurrencies via Houdini Swap' },
             ].map((item, index) => (
-              <div key={index} className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4">
-                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
-                <div>
-                  <span className="font-semibold text-slate-900">{item.title}: </span>
-                  <span className="text-slate-600">{item.desc}</span>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
+                className="group flex items-start gap-4 rounded-lg border border-border bg-panel p-4 transition-all hover:border-[var(--color-cyan)]/30"
+              >
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
+                  <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
                 </div>
-              </div>
+                <div>
+                  <span className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{item.title}: </span>
+                  <span className="text-sm text-[var(--color-text)]">{item.desc}</span>
+                </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm mb-16">
-          <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">Still Powered by Venice</h2>
-          <p className="mb-4 text-center text-slate-600">
-            OMA doesn&apos;t replace Venice—it enhances it. When you use OMA, your requests still route through Venice AI&apos;s infrastructure, benefiting from their:
-          </p>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <h3 className="mb-2 font-semibold text-slate-900">High-Quality Models</h3>
-              <p className="text-sm text-slate-600">Access to Claude 3.5, GPT-4, Gemini Pro, and other leading models through Venice</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4">
-              <h3 className="mb-2 font-semibold text-slate-900">Reliable Infrastructure</h3>
-              <p className="text-sm text-slate-600">Venice&apos;s established data centers and redundancy ensure consistent uptime</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4">
-              <h3 className="mb-2 font-semibold text-slate-900">Privacy-Focused</h3>
-              <p className="text-sm text-slate-600">Venice&apos;s commitment to minimal data logging complements OMA&apos;s approach</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4">
-              <h3 className="mb-2 font-semibold text-slate-900">Competitive Pricing</h3>
-              <p className="text-sm text-slate-600">OMA passes through Venice&apos;s competitive model pricing with our credit markup</p>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.5, ease: 'easeOut' }}
+          className="mb-16"
+        >
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
+              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Still Powered by Venice</h2>
             </div>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Start Using OMA Today</h2>
-          <p className="mb-6 text-slate-600">
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              { title: 'High-Quality Models', desc: 'Access to Claude Opus 4.7, GPT-4o, Gemini 3.1 Pro, and other leading models through Venice' },
+              { title: 'Reliable Infrastructure', desc: 'Venice\'s established data centers and redundancy ensure consistent uptime' },
+              { title: 'Privacy-Focused', desc: 'Venice\'s commitment to minimal data logging complements OMA\'s approach' },
+              { title: 'Competitive Pricing', desc: 'OMA passes through Venice\'s competitive model pricing with our credit markup' },
+            ].map((card, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 + i * 0.1, ease: 'easeOut' }}
+                className="rounded-xl border border-border bg-surface p-5"
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-cyan)]" />
+                  <h3 className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
+                </div>
+                <p className="text-sm text-[var(--color-text-muted)]">{card.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
+          className="rounded-xl border border-border bg-panel p-8 text-center"
+        >
+          <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Start Using OMA Today</h2>
+          <p className="mb-6 text-sm text-text">
             Get the Venice experience with added convenience. No account needed—just connect your wallet.
           </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700">
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href="/dashboard" className="btn-primary group">
               Get Started
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link href="/docs" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-300 hover:text-indigo-600">
+            <Link href="/docs" className="btn-secondary">
               Read Docs
             </Link>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 text-sm text-slate-500">
-          <Link href="/compare/openrouter-alternative" className="hover:text-indigo-600">
-            OpenRouter Alternative
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/crypto-payments" className="hover:text-indigo-600">
-            Crypto Payments
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/private-ai-api" className="hover:text-indigo-600">
-            Private AI API
-          </Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/pricing" className="hover:text-indigo-600">
-            Pricing
-          </Link>
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+          <Link href="/compare/openrouter-alternative" className="hover:text-[var(--color-accent)] transition-colors">OpenRouter Alternative</Link>
+          <span className="text-[var(--color-border)]">{'//'}</span>
+          <Link href="/crypto-payments" className="hover:text-[var(--color-accent)] transition-colors">Crypto Payments</Link>
+          <span className="text-[var(--color-border)]">{'//'}</span>
+          <Link href="/private-ai-api" className="hover:text-[var(--color-accent)] transition-colors">Private AI API</Link>
+          <span className="text-[var(--color-border)]">{'//'}</span>
+          <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
         </div>
       </div>
     </div>

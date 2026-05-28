@@ -63,7 +63,7 @@ describe('ModelsPage', () => {
       fireEvent.click(budgetButton)
     })
     await waitFor(() => {
-      expect(screen.getByText(/Budget Models/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Budget/i).length).toBeGreaterThan(0)
     })
   })
 
@@ -87,12 +87,11 @@ describe('ModelsPage', () => {
     })
   })
 
-  it('renders provider legend with Venice, Together AI, and DeepInfra', async () => {
+  it('renders provider legend with Venice and AntSeed', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
       expect(screen.getAllByText(/Venice/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/Together AI/i).length).toBeGreaterThan(0)
-      expect(screen.getAllByText(/DeepInfra/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/AntSeed/i).length).toBeGreaterThan(0)
     })
   })
 

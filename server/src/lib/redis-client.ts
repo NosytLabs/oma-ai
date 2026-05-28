@@ -3,63 +3,95 @@ import { config } from "../config.js";
 
 let redisClient: ReturnType<typeof createClient> | null = null;
 let redisReady = false;
+let connectionFailed = false;
+let connectionAttempted = false;
+let reconnectAttempts = 0;
+let connectionPromise: Promise<ReturnType<typeof createClient> | null> | null = null;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
-export async function getRedisClient() {
-  if (redisClient && redisReady) return redisClient;
+async function createRedisConnection(): Promise<ReturnType<typeof createClient> | null> {
+  const url = config.REDIS_URL ?? "redis://localhost:6379";
+  
+  let parsedUrl: URL;
   try {
-    if (!redisClient) {
-      const url = config.REDIS_URL ?? "redis://localhost:6379";
-
-      const redisOptions: Record<string, unknown> = {
-        url,
-        socket: {
-          keepAlive: true,
-          connectTimeout: 10000,
-        },
-      };
-
-      try {
-        const parsed = new URL(url);
-        if (parsed.password) {
-          redisOptions.password = parsed.password;
-        }
-      } catch {
-        // Invalid URL, skip password extraction
-      }
-
-      if (url.startsWith("rediss://")) {
-        (redisOptions.socket as Record<string, unknown>).tls = true;
-      }
-
-      redisClient = createClient(redisOptions as Parameters<typeof createClient>[0]);
-      (redisClient as unknown as { commandTimeout: number }).commandTimeout = 5000;
-      redisClient.on("error", () => { redisReady = false; });
-      redisClient.on("ready", () => { redisReady = true; });
-      await redisClient.connect();
-      redisReady = true;
-    }
-    return redisClient;
+    parsedUrl = new URL(url);
   } catch {
-    redisReady = false;
+    connectionFailed = true;
+    return null;
+  }
+  
+  try {
+    const client = createClient({
+      url: parsedUrl.toString(),
+      socket: {
+        connectTimeout: 2000,
+        reconnectStrategy: (retries: number) => {
+          if (retries > MAX_RECONNECT_ATTEMPTS) {
+            connectionFailed = true;
+            reconnectAttempts = retries;
+            return false;
+          }
+          const delay = Math.min(retries * 100, 3000);
+          reconnectAttempts = retries;
+          return delay;
+        },
+      },
+    });
+    
+    client.on("error", () => {
+      connectionFailed = true;
+    });
+    client.on("ready", () => {
+      redisReady = true;
+    });
+    
+    await Promise.race([
+      client.connect(),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("timeout")), 2000)
+      ),
+    ]);
+    
+    return client;
+  } catch {
+    connectionFailed = true;
     return null;
   }
 }
 
+export async function getRedisClient() {
+  if (connectionFailed && connectionAttempted && reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    return null;
+  }
+  
+  if (redisClient && redisReady) {
+    return redisClient;
+  }
+  
+  if (!connectionPromise) {
+    connectionAttempted = true;
+    connectionPromise = createRedisConnection().then((client) => {
+      if (client) {
+        redisClient = client;
+        redisReady = true;
+      }
+      return client;
+    }).finally(() => {
+      connectionPromise = null;
+    });
+  }
+  
+  return connectionPromise;
+}
+
 export async function closeRedisClient(): Promise<void> {
   if (redisClient) {
-    await redisClient.quit();
+    try {
+      await redisClient.quit();
+    } catch { /* ignore */ }
     redisClient = null;
     redisReady = false;
   }
-}
-
-if (config.NODE_ENV !== "test") {
-  process.on("SIGTERM", async () => {
-    await closeRedisClient();
-  });
-  process.on("SIGINT", async () => {
-    await closeRedisClient();
-  });
 }
 
 export function isRedisReady(): boolean {
@@ -76,4 +108,10 @@ export async function redisHealthCheck(): Promise<{ status: string; latency?: nu
   } catch {
     return { status: "error" };
   }
+}
+
+export function resetRedisConnectionState(): void {
+  connectionFailed = false;
+  connectionAttempted = false;
+  reconnectAttempts = 0;
 }

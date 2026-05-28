@@ -1,35 +1,49 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Syne, Inter } from 'next/font/google'
-import { WalletProvider } from '@/components/wallet-provider'
+import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastProvider } from '@/components/ui/Toast'
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import './globals.css'
 
+// Font optimization with proper subset loading
 const syne = Syne({
   subsets: ['latin'],
   variable: '--font-syne',
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'sans-serif'],
 })
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'sans-serif'],
 })
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
 
+export const viewport: Viewport = {
+  // themeColor must be a literal hex — CSS vars not supported in metadata
+  themeColor: '#00ffc8',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'OMA AI — Permissionless Inference Gateway',
+    default: 'OMA AI - One Man Army // Open Model Access',
     template: '%s | OMA AI',
   },
   description:
-    'OpenAI-compatible API gateway. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference. Access GPT, Claude, Gemini, and 50+ models.',
-  keywords: ['AI API', 'OpenAI compatible', 'cryptocurrency payments', 'privacy-first AI', 'inference gateway', 'GPT', 'Claude', 'Venice AI', 'AntSeed'],
+    'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
+  keywords: ['AI', 'inference', 'LLM', 'OpenAI', 'Anthropic', 'crypto', 'payments', 'API', 'developers'],
   authors: [{ name: 'OMA AI' }],
   creator: 'OMA AI',
   publisher: 'OMA AI',
@@ -46,26 +60,35 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OMA AI — Permissionless Inference Gateway',
-    description: 'OpenAI-compatible API. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference.',
+    title: 'OMA AI - One Man Army // Open Model Access',
+    description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required.',
     site: '@oma_ai',
     creator: '@oma_ai',
+    images: ['/og-image.png'],
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: BASE_URL,
+    url: 'https://oma-ai.com',
     siteName: 'OMA AI',
-    title: 'OMA AI — Permissionless Inference Gateway',
-    description: 'OpenAI-compatible API. Pay with 100+ cryptocurrencies. Low-friction access, privacy-first inference.',
+    title: 'OMA AI - One Man Army // Open Model Access',
+    description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'OMA AI - Permissionless Inference Gateway',
+        alt: 'OMA AI - One Man Army // Open Model Access',
       },
     ],
+  },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.png',
+  },
+  manifest: '/manifest.json',
+  other: {
+    'theme-color': '#00ffc8',
   },
 }
 
@@ -75,21 +98,32 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${inter.variable}`}>
+    <html lang="en" className={`${syne.variable} ${inter.variable}`} style={{ scrollBehavior: 'smooth' }}>
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.png" sizes="any" />
+        <link rel="preconnect" href="https://eth.coinbase.com" />
+        <link rel="preconnect" href="https://base-rpc.publicnode.com" />
+        <link rel="preconnect" href="https://api.jup.ag" />
+        <link rel="preconnect" href="https://verify.walletconnect.com" />
+        <link rel="dns-prefetch" href="https://*.walletconnect.com" />
+        <link rel="dns-prefetch" href="https://*.coinbase.com" />
       </head>
       <body className="min-h-screen bg-void text-text font-sans antialiased">
-        <WalletProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-[100] focus:bg-[var(--color-green)] focus:text-[var(--color-void)] focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold"
+        >
+          Skip to main content
+        </a>
+        <ConnectWalletWrapper>
           <ToastProvider>
             <Navbar />
-            <main className="pt-20">
+            <main id="main-content" className="pt-16" tabIndex={-1}>
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>
             <Footer />
           </ToastProvider>
-        </WalletProvider>
+        </ConnectWalletWrapper>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   )

@@ -1,0 +1,356 @@
+import { Hono } from "hono";
+import { z } from "zod";
+import { sessionAuth } from "../auth/middleware.js";
+import { auditLog } from "../middleware/audit.js";
+import { getBalance, invalidateBalanceCache } from "../credits/index.js";
+import { db } from "../db/client.js";
+import { withdrawals, creditBalances } from "../db/schema.js";
+import { eq, sql, and, gte } from "drizzle-orm";
+import { config } from "../config.js";
+
+const DAILY_WITHDRAWAL_LIMIT_CENTS = 5_000_000;
+const WEEKLY_WITHDRAWAL_LIMIT_CENTS = 20_000_000;
+
+async function getRecentWithdrawalSum(userId: string, since: Date): Promise<number> {
+  const result = await db
+    .select({
+      total: sql<number>`COALESCE(SUM(${withdrawals.amountCents}::numeric), 0)`,
+    })
+    .from(withdrawals)
+    .where(
+      and(
+        eq(withdrawals.userId, userId),
+        gte(withdrawals.createdAt, since)
+      )
+    );
+  return parseInt(String(result[0]?.total ?? 0), 10);
+}
+
+async function checkWithdrawalLimits(userId: string, amountCents: number): Promise<{
+  allowed: boolean;
+  reason?: string;
+  dailyLimit?: number;
+  weeklyLimit?: number;
+  dailyUsed?: number;
+  weeklyUsed?: number;
+}> {
+  const now = new Date();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const [dailySum, weeklySum] = await Promise.all([
+    getRecentWithdrawalSum(userId, dayAgo),
+    getRecentWithdrawalSum(userId, weekAgo),
+  ]);
+
+  const dailyRemaining = DAILY_WITHDRAWAL_LIMIT_CENTS - dailySum;
+  const weeklyRemaining = WEEKLY_WITHDRAWAL_LIMIT_CENTS - weeklySum;
+
+  if (dailySum + amountCents > DAILY_WITHDRAWAL_LIMIT_CENTS) {
+    return {
+      allowed: false,
+      reason: `Daily withdrawal limit exceeded. You have $${(dailyRemaining / 100).toFixed(2)} remaining for today.`,
+      dailyLimit: DAILY_WITHDRAWAL_LIMIT_CENTS,
+      weeklyLimit: WEEKLY_WITHDRAWAL_LIMIT_CENTS,
+      dailyUsed: dailySum,
+      weeklyUsed: weeklySum,
+    };
+  }
+
+  if (weeklySum + amountCents > WEEKLY_WITHDRAWAL_LIMIT_CENTS) {
+    return {
+      allowed: false,
+      reason: `Weekly withdrawal limit exceeded. You have $${(weeklyRemaining / 100).toFixed(2)} remaining for this week.`,
+      dailyLimit: DAILY_WITHDRAWAL_LIMIT_CENTS,
+      weeklyLimit: WEEKLY_WITHDRAWAL_LIMIT_CENTS,
+      dailyUsed: dailySum,
+      weeklyUsed: weeklySum,
+    };
+  }
+
+  return {
+    allowed: true,
+    dailyLimit: DAILY_WITHDRAWAL_LIMIT_CENTS,
+    weeklyLimit: WEEKLY_WITHDRAWAL_LIMIT_CENTS,
+    dailyUsed: dailySum,
+    weeklyUsed: weeklySum,
+  };
+}
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
+import type { OmaEnv } from "../types.js";
+
+const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+const withdrawalRequestSchema = z.object({
+  amount: z.number().positive().max(100000),
+  toAddress: z.string().regex(EVM_ADDRESS_RE, "Invalid EVM address format"),
+  chainId: z.number().int().positive().optional().default(8453),
+});
+
+export const withdrawalRoutes = new Hono<OmaEnv>();
+
+withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = withdrawalRequestSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json({ error: { message: "Invalid request", type: "validation_error", details: parsed.error.flatten() } }, 400);
+  }
+  const { amount, toAddress, chainId } = parsed.data;
+
+  const balance = await getBalance(userId);
+  const balanceUsd = parseFloat(balance.balanceCents) / 100;
+
+  if (balanceUsd < amount) {
+    return c.json({
+      error: {
+        message: `Insufficient balance. You have $${balanceUsd.toFixed(2)} but want to withdraw $${amount.toFixed(2)}`,
+        type: "insufficient_balance",
+      },
+    }, 400);
+  }
+
+  const amountCents = Math.round(amount * 100);
+  const limitCheck = await checkWithdrawalLimits(userId, amountCents);
+  if (!limitCheck.allowed) {
+    return c.json({
+      error: {
+        message: limitCheck.reason,
+        type: "withdrawal_limit_exceeded",
+        details: {
+          dailyLimit: limitCheck.dailyLimit! / 100,
+          weeklyLimit: limitCheck.weeklyLimit! / 100,
+          dailyUsed: limitCheck.dailyUsed! / 100,
+          weeklyUsed: limitCheck.weeklyUsed! / 100,
+        },
+      },
+    }, 400);
+  }
+
+  const protocolFeePercent = 0.001;
+  const protocolFee = amount * protocolFeePercent;
+  const networkFeeEstimate = 0.01;
+  const netAmount = amount - protocolFee - networkFeeEstimate;
+
+  return c.json({
+    amount: amount,
+    netAmount: Math.max(0, netAmount),
+    protocolFee: protocolFee,
+    networkFee: networkFeeEstimate,
+    toAddress,
+    chainId,
+    estimatedArrival: "5-30 minutes",
+    validFor: 300,
+  });
+});
+
+withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const parsed = withdrawalRequestSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json({ error: { message: "Invalid request", type: "validation_error", details: parsed.error.flatten() } }, 400);
+  }
+  const { amount, toAddress, chainId } = parsed.data;
+
+  const balance = await getBalance(userId);
+  const balanceCents = parseInt(balance.balanceCents, 10);
+  const amountCents = Math.round(amount * 100);
+
+  if (balanceCents < amountCents) {
+    return c.json({
+      error: {
+        message: "Insufficient balance for withdrawal",
+        type: "insufficient_balance",
+      },
+    }, 400);
+  }
+
+  const limitCheck = await checkWithdrawalLimits(userId, amountCents);
+  if (!limitCheck.allowed) {
+    return c.json({
+      error: {
+        message: limitCheck.reason,
+        type: "withdrawal_limit_exceeded",
+        details: {
+          dailyLimit: limitCheck.dailyLimit! / 100,
+          weeklyLimit: limitCheck.weeklyLimit! / 100,
+          dailyUsed: limitCheck.dailyUsed! / 100,
+          weeklyUsed: limitCheck.weeklyUsed! / 100,
+        },
+      },
+    }, 400);
+  }
+
+  const protocolFeePercent = 0.001;
+  const protocolFee = amountCents * protocolFeePercent;
+  const networkFeeCents = 100;
+  const netAmountCents = amountCents - Math.round(protocolFee) - networkFeeCents;
+
+  if (netAmountCents <= 0) {
+    return c.json({
+      error: {
+        message: "Withdrawal amount too small to cover fees",
+        type: "validation_error",
+      },
+    }, 400);
+  }
+
+  try {
+    const [withdrawal] = await db.insert(withdrawals).values({
+      userId,
+      type: "usdc_withdrawal",
+      amountCents: String(amountCents),
+      netAmountCents: String(netAmountCents),
+      feeCents: String(Math.round(protocolFee) + networkFeeCents),
+      toAddress,
+      chainId: String(chainId),
+      status: "pending",
+      txHash: null,
+    }).returning();
+
+    await db.update(creditBalances)
+      .set({
+        balanceCents: sql`${creditBalances.balanceCents} - ${amountCents}`,
+        totalUsedCents: sql`${creditBalances.totalUsedCents} + ${amountCents}`,
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(creditBalances.userId, userId));
+
+    await invalidateBalanceCache(userId);
+
+    const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
+    const userAgent = c.req.header("user-agent") || undefined;
+
+    await auditLog({
+      userId,
+      action: "WITHDRAWAL_CREATED",
+      resource: "withdrawals",
+      resourceId: withdrawal.id,
+      metadata: { amount: amountCents, netAmount: netAmountCents, toAddress, chainId },
+      ipAddress,
+      userAgent,
+    });
+
+    return c.json({
+      withdrawalId: withdrawal.id,
+      amount: amount,
+      netAmount: netAmountCents / 100,
+      status: "pending",
+      estimatedArrival: "5-30 minutes",
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[withdraw] Withdrawal failed: userId=${userId}, amount=${amount}, error=${message}`);
+    return c.json({ error: { message, type: "withdrawal_error" } }, 500);
+  }
+});
+
+withdrawalRoutes.get("/v1/withdraw/history", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const limit = Math.min(parseInt(c.req.query("limit") || "20", 10), 100);
+  const offset = parseInt(c.req.query("offset") || "0", 10);
+
+  const history = await db.select().from(withdrawals)
+    .where(eq(withdrawals.userId, userId))
+    .orderBy(sql`${withdrawals.createdAt} DESC`)
+    .limit(limit)
+    .offset(offset);
+
+  return c.json({
+    withdrawals: history.map((w: typeof withdrawals.$inferSelect) => ({
+      id: w.id,
+      amount: parseFloat(w.amountCents) / 100,
+      netAmount: parseFloat(w.netAmountCents) / 100,
+      fee: parseFloat(w.feeCents) / 100,
+      toAddress: w.toAddress,
+      status: w.status,
+      txHash: w.txHash,
+      createdAt: w.createdAt,
+      completedAt: w.completedAt,
+    })),
+    pagination: { limit, offset, hasMore: history.length === limit },
+  });
+});
+
+withdrawalRoutes.get("/v1/withdraw/:id", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const withdrawalId = c.req.param("id") as string;
+
+  const [withdrawal] = await db.select().from(withdrawals)
+    .where(eq(withdrawals.id, withdrawalId))
+    .limit(1);
+
+  if (!withdrawal) {
+    return c.json({ error: { message: "Withdrawal not found", type: "not_found" } }, 404);
+  }
+
+  if (withdrawal.userId !== userId) {
+    return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
+  }
+
+  return c.json({
+    id: withdrawal.id,
+    amount: parseFloat(withdrawal.amountCents) / 100,
+    netAmount: parseFloat(withdrawal.netAmountCents) / 100,
+    fee: parseFloat(withdrawal.feeCents) / 100,
+    toAddress: withdrawal.toAddress,
+    status: withdrawal.status,
+    txHash: withdrawal.txHash,
+    createdAt: withdrawal.createdAt,
+    completedAt: withdrawal.completedAt,
+  });
+});
+
+withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const withdrawalId = c.req.param("id") as string;
+  const body = await c.req.json();
+  const txHash = body.txHash as string | undefined;
+
+  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+    return c.json({ error: { message: "Invalid transaction hash", type: "validation_error" } }, 400);
+  }
+
+  const [withdrawal] = await db.select().from(withdrawals)
+    .where(eq(withdrawals.id, withdrawalId))
+    .limit(1);
+
+  if (!withdrawal) {
+    return c.json({ error: { message: "Withdrawal not found", type: "not_found" } }, 404);
+  }
+
+  if (withdrawal.userId !== userId) {
+    return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
+  }
+
+  if (withdrawal.status !== "pending") {
+    return c.json({ error: { message: "Withdrawal already processed", type: "invalid_state" } }, 400);
+  }
+
+  const client = createPublicClient({
+    chain: base,
+    transport: http(config.CHAIN_RPC_URL),
+  });
+
+  try {
+    const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
+
+    if (!receipt || receipt.status !== "success") {
+      return c.json({ error: { message: "Transaction failed on-chain", type: "tx_failed" } }, 400);
+    }
+
+    await db.update(withdrawals)
+      .set({
+        status: "completed",
+        txHash,
+        completedAt: new Date(),
+      })
+      .where(eq(withdrawals.id, withdrawalId));
+
+    return c.json({ status: "completed", txHash });
+  } catch (err) {
+    console.error(`[withdraw] Confirmation check failed:`, err);
+    return c.json({ error: { message: "Failed to verify transaction", type: "verification_error" } }, 500);
+  }
+});

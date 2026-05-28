@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import app from '../index.js';
 import { validateApiKey } from '../auth/api-keys.js';
-import { getBalance, deductCredits } from '../credits/balance.js';
+import { getBalance, deductCredits } from '../credits/index.js';
 import { trackSpend } from '../middleware/spend-limit.js';
+import { scheduleCreditExpiry } from '../jobs/credit-expiry.js';
+import { scheduleSubscriptionCheck } from '../jobs/subscription-cron.js';
+import { scheduleNonceCleanup } from '../jobs/nonce-cleanup.js';
 
 vi.mock('@hono/node-server', () => ({
   serve: vi.fn(),
@@ -18,12 +21,18 @@ vi.mock('../jobs/subscription-cron.js', () => ({
   processExpiredSubscriptions: vi.fn(),
 }));
 
+vi.mock('../jobs/nonce-cleanup.js', () => ({
+  scheduleNonceCleanup: vi.fn(),
+  stopNonceCleanup: vi.fn(),
+}));
+
 vi.mock('../config.js', () => ({
   config: {
     PORT: 3001,
     DATABASE_URL: 'postgres://localhost/test',
     JWT_SECRET: 'testsecret',
     RECEIPT_HMAC_SECRET: 'testsecret',
+    NODE_ENV: 'test',
     SPEND_LIMIT_DAILY_CENTS: 1000,
     TINYFISH_API_KEY: 'testkey',
   }
@@ -52,7 +61,7 @@ vi.mock('../auth/siwe.js', () => ({
   verifySessionToken: vi.fn(),
 }));
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../credits/index.js', () => ({
   getBalance: vi.fn().mockResolvedValue({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null }),
   deductCredits: vi.fn(),
 }));
@@ -77,6 +86,14 @@ vi.mock('../inference/tinyfish.js', () => ({
     page: 1
   }),
 }));
+
+describe('Server bootstrap', () => {
+  it('does not start background jobs during tests', () => {
+    expect(scheduleCreditExpiry).not.toHaveBeenCalled();
+    expect(scheduleSubscriptionCheck).not.toHaveBeenCalled();
+    expect(scheduleNonceCleanup).not.toHaveBeenCalled();
+  });
+});
 
 describe('Search API', () => {
   beforeEach(() => {

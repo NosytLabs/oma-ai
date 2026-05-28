@@ -78,13 +78,13 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-medium text-white">Usage Over Time</h3>
+            <Activity className="w-3.5 h-3.5 text-[var(--color-cyan)]" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Usage Over Time</h3>
           </div>
-          <div className="h-[280px]">
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.dailyUsage}>
                 <defs>
@@ -97,14 +97,14 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                 <XAxis
                   dataKey="date"
                   stroke="#71717a"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => format(new Date(value), 'MMM d')}
                 />
                 <YAxis
                   stroke="#71717a"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
@@ -113,8 +113,8 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                   contentStyle={{
                     backgroundColor: '#18181b',
                     border: '1px solid #3f3f46',
-                    borderRadius: '8px',
-                    fontSize: '12px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
                   }}
                   formatter={(value: unknown, name: unknown) => [
                     name === 'totalRequests' ? formatNumber(value as number) : formatCurrency(value as number),
@@ -133,20 +133,20 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-medium text-white">Cost Breakdown</h3>
+            <Activity className="w-3.5 h-3.5 text-[var(--color-amber)]" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Cost Breakdown</h3>
           </div>
-          <div className="h-[280px]">
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={costBreakdownData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  innerRadius={55}
+                  outerRadius={80}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -158,8 +158,8 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                   contentStyle={{
                     backgroundColor: '#18181b',
                     border: '1px solid #3f3f46',
-                    borderRadius: '8px',
-                    fontSize: '12px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
                   }}
                   formatter={(value: unknown) => [formatCurrency(value as number), 'Cost']}
                 />
@@ -168,32 +168,32 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
           </div>
           <div className="mt-4 space-y-2">
             {costBreakdownData.slice(0, 4).map((item, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
+              <div key={i} className="flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-zinc-400 truncate">{item.name}</span>
+                  <span className="text-[var(--color-text-muted)] font-mono truncate">{item.name}</span>
                 </div>
-                <span className="text-white font-mono">{formatCurrency(item.value)}</span>
+                <span className="text-[var(--color-text-bright)] font-mono">{formatCurrency(item.value)}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Cpu className="w-4 h-4 text-purple-400" />
-            <h3 className="text-sm font-medium text-white">Top Models (Requests)</h3>
+            <Cpu className="w-3.5 h-3.5 text-[var(--color-violet)]" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Top Models (Requests)</h3>
           </div>
-          <div className="h-[280px]">
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topModelsData} layout="vertical" margin={{ left: 0, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
                 <XAxis
                   type="number"
                   stroke="#71717a"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
@@ -202,17 +202,17 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                   type="category"
                   dataKey="name"
                   stroke="#71717a"
-                  fontSize={10}
+                  fontSize={9}
                   tickLine={false}
                   axisLine={false}
-                  width={100}
+                  width={90}
                 />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#18181b',
                     border: '1px solid #3f3f46',
-                    borderRadius: '8px',
-                    fontSize: '12px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
                   }}
                   formatter={(value: unknown) => [formatNumber(value as number), 'Requests']}
                   labelFormatter={(label) => topModelsData.find(t => t.name === label)?.fullName || label}
@@ -227,25 +227,25 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-medium text-white">Provider Distribution</h3>
+            <BarChart3 className="w-3.5 h-3.5 text-[var(--color-success)]" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Provider Distribution</h3>
           </div>
-          <div className="h-[280px]">
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={providerData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                 <XAxis
                   dataKey="name"
                   stroke="#71717a"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   stroke="#71717a"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
@@ -254,8 +254,8 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                   contentStyle={{
                     backgroundColor: '#18181b',
                     border: '1px solid #3f3f46',
-                    borderRadius: '8px',
-                    fontSize: '12px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
                   }}
                   formatter={(value: unknown) => [
                     (value as number) >= 1000 ? formatNumber(value as number) : formatCurrency(value as number),
@@ -274,24 +274,24 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
       </div>
 
       {analytics.providerHealth && analytics.providerHealth.length > 0 && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-medium text-white">Provider Health</h3>
+            <Clock className="w-3.5 h-3.5 text-[var(--color-cyan)]" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Provider Health</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {analytics.providerHealth.map((provider) => (
               <div
                 key={provider.provider}
-                className={`rounded-lg p-3 ${
-                  provider.isUp ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'
+                className={`rounded p-3 ${
+                  provider.isUp ? 'border border-[var(--color-success)]/20 bg-[var(--color-success-dim)]' : 'border border-[var(--color-error)]/20 bg-[var(--color-error)]/10'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-white capitalize">{provider.provider}</span>
-                  <div className={`w-2 h-2 rounded-full ${provider.isUp ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-sm font-medium text-[var(--color-text-bright)] capitalize">{provider.provider}</span>
+                  <div className={`w-2 h-2 rounded-full ${provider.isUp ? 'bg-[var(--color-success)]' : 'bg-[var(--color-error)]'}`} />
                 </div>
-                <div className="text-xs text-zinc-500 space-y-1">
+                <div className="text-[10px] text-[var(--color-text-muted)] font-mono space-y-1">
                   <p>Latency: {provider.latencyMs ? `${provider.latencyMs}ms` : 'N/A'}</p>
                   <p>Error Rate: {provider.errorRate ? `${(provider.errorRate * 100).toFixed(1)}%` : '0%'}</p>
                 </div>
@@ -301,22 +301,22 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
-          <h3 className="font-medium text-white">Token Usage Summary</h3>
+      <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+          <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Token Usage Summary</h3>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-zinc-800/50">
+        <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]/50">
           <div className="px-4 py-4 text-center">
-            <p className="text-xs text-zinc-500 mb-1">Input Tokens</p>
-            <p className="text-xl font-bold text-cyan-400">{formatNumber(analytics.summary.totalInputTokens)}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1">Input Tokens</p>
+            <p className="text-xl font-bold font-mono text-[var(--color-cyan)]">{formatNumber(analytics.summary.totalInputTokens)}</p>
           </div>
           <div className="px-4 py-4 text-center">
-            <p className="text-xs text-zinc-500 mb-1">Output Tokens</p>
-            <p className="text-xl font-bold text-amber-400">{formatNumber(analytics.summary.totalOutputTokens)}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1">Output Tokens</p>
+            <p className="text-xl font-bold font-mono text-[var(--color-amber)]">{formatNumber(analytics.summary.totalOutputTokens)}</p>
           </div>
           <div className="px-4 py-4 text-center">
-            <p className="text-xs text-zinc-500 mb-1">Total Cost</p>
-            <p className="text-xl font-bold text-white">{formatCurrency(analytics.summary.totalCost)}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1">Total Cost</p>
+            <p className="text-xl font-bold font-mono text-[var(--color-text-bright)]">{formatCurrency(analytics.summary.totalCost)}</p>
           </div>
         </div>
       </div>

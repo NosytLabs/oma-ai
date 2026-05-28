@@ -115,8 +115,7 @@ describe('rate-limit middleware', () => {
         'tb:user:123',
         60,
         20,
-        1,
-        expect.any(Number)
+        1
       )
     })
 
@@ -196,9 +195,8 @@ describe('rate-limit middleware', () => {
         "tb:key-123",
         expect.any(Number),
         expect.any(Number),
-        expect.any(Number),
         expect.any(Number)
-      )
+      );
     })
 
     it('should use userId for rate limit key when no apiKey', async () => {
@@ -215,7 +213,6 @@ describe('rate-limit middleware', () => {
         expect.any(String),
         1,
         "tb:user-456",
-        expect.any(Number),
         expect.any(Number),
         expect.any(Number),
         expect.any(Number)
@@ -237,8 +234,7 @@ describe('rate-limit middleware', () => {
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.any(String),
         1,
-        "tb:ip:5.6.7.8",
-        expect.any(Number),
+        "tb:ip:1.2.3.4",
         expect.any(Number),
         expect.any(Number),
         expect.any(Number)
@@ -246,8 +242,8 @@ describe('rate-limit middleware', () => {
     })
 
     it('should calculate correct retryAfter on rate limit exceeded', async () => {
-      const resetNs = 6000000000 // 6 seconds in nanoseconds
-      mockRedisClient.eval.mockResolvedValue([0, 0, resetNs])
+      const resetMs = 6000 // 6 seconds in milliseconds
+      mockRedisClient.eval.mockResolvedValue([0, 0, resetMs])
 
       const middleware = tokenBucket()
       await middleware(mockContext as Context<OmaEnv>, mockNext)

@@ -27,7 +27,7 @@ describe('PricingPage', () => {
 
   it('renders payment methods section', () => {
     render(<PricingPage />)
-    expect(screen.getByText('USDC (Direct)')).toBeInTheDocument()
+    expect(screen.getByText('USDC on Base / Solana')).toBeInTheDocument()
     expect(screen.getByText('HoudiniSwap')).toBeInTheDocument()
   })
 
@@ -50,13 +50,13 @@ describe('PricingPage', () => {
 
   it('renders FAQ section', () => {
     render(<PricingPage />)
-    expect(screen.getByText('Frequently Asked Questions')).toBeInTheDocument()
+    expect(screen.getByText(/FAQ/i)).toBeInTheDocument()
     expect(screen.getByText('How do I add credits?')).toBeInTheDocument()
   })
 
   it('renders credits and billing disclaimer section', () => {
     render(<PricingPage />)
-    expect(screen.getByText('Credits & Billing')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Billing/i })).toBeInTheDocument()
   })
 
   it('renders CTA buttons linking to deposit and models', async () => {

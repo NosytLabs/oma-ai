@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { WebSocketServer, WebSocket } from "ws";
-import { setupWebSocket } from "../routes/chat-ws.js";
-import { wsChatCompletionSchema } from "../routes/chat-ws.js";
+import { setupWebSocket } from "../routes/chat-ws/index.js";
+import { wsChatCompletionSchema } from "../routes/chat-ws/index.js";
 
 const TEST_SERVER_PORT = 9999;
 

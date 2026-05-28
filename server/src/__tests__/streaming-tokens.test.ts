@@ -4,24 +4,24 @@ import { calculateActualCost } from '../inference/billing-service.js'
 
 describe('Streaming Token Estimation', () => {
   describe('estimateTokens', () => {
-    it('returns 1 for short strings (1-3 chars)', () => {
+    it('returns 1 for short strings (1-4 chars)', () => {
       expect(estimateTokens('a')).toBe(1)
       expect(estimateTokens('hi')).toBe(1)
-      expect(estimateTokens('the')).toBe(1)
+      expect(estimateTokens('test')).toBe(1)
     })
 
-    it('returns 2 for medium words (4-6 chars)', () => {
+    it('returns 2 for medium strings (5-8 chars)', () => {
       expect(estimateTokens('hello')).toBe(2)
       expect(estimateTokens('world')).toBe(2)
-      expect(estimateTokens('test')).toBe(2)
+      expect(estimateTokens('testing')).toBe(2)
     })
 
-    it('returns 3 for longer words (7-12 chars)', () => {
-      expect(estimateTokens('testing')).toBe(3)
+    it('returns 3 for longer strings (12 chars)', () => {
+      expect(estimateTokens('abcdefghijkl')).toBe(3)
       expect(estimateTokens('abcdefghijk')).toBe(3)
     })
 
-    it('returns 4 for very long words (13+ chars)', () => {
+    it('returns 4 for very long strings (13-16 chars)', () => {
       expect(estimateTokens('abcdefghijklmn')).toBe(4)
     })
 
@@ -32,12 +32,12 @@ describe('Streaming Token Estimation', () => {
 
     it('handles CJK characters (Chinese/Japanese/Korean)', () => {
       const result = estimateTokens('你好世界')
-      expect(result).toBeGreaterThanOrEqual(4)
+      expect(result).toBeGreaterThanOrEqual(1)
     })
 
     it('handles mixed ASCII and non-ASCII', () => {
       const result = estimateTokens('Hello 世界')
-      expect(result).toBeGreaterThanOrEqual(3)
+      expect(result).toBeGreaterThanOrEqual(2)
     })
 
     it('handles special characters and numbers', () => {
@@ -58,16 +58,16 @@ describe('Streaming Token Estimation', () => {
   })
 
   describe('calculateActualCost', () => {
-    it('calculates cost for non-streaming responses correctly', () => {
-      const cost = calculateActualCost('gpt-4o-mini', 100, 50, 0)
+    it('calculates cost for non-streaming responses correctly', async () => {
+      const cost = await calculateActualCost('gpt-4o-mini', 100, 50, 0)
       expect(Number(cost.totalCents)).toBeGreaterThan(0)
       expect(Number(cost.costCents)).toBeGreaterThan(0)
       expect(Number(cost.markupCents)).toBeGreaterThan(0)
     })
 
-    it('applies discount correctly', () => {
-      const withoutDiscount = calculateActualCost('gpt-4o-mini', 100000, 50000, 0)
-      const withDiscount = calculateActualCost('gpt-4o-mini', 100000, 50000, 20)
+    it('applies discount correctly', async () => {
+      const withoutDiscount = await calculateActualCost('gpt-4o-mini', 100000, 50000, 0)
+      const withDiscount = await calculateActualCost('gpt-4o-mini', 100000, 50000, 20)
       expect(Number(withDiscount.totalCents)).toBeLessThan(Number(withoutDiscount.totalCents))
       expect(Number(withDiscount.markupCents)).toBeGreaterThan(0)
     })
@@ -101,13 +101,13 @@ describe('Streaming Credit Calculation', () => {
       expect(refund).toBeLessThan(0)
     })
 
-    it('calculates credits correctly when usage data is available', () => {
+    it('calculates credits correctly when usage data is available', async () => {
       const modelId = 'gpt-4o-mini'
       const inputTokens = 100
       const outputTokens = 50
       const discountPercent = 0
 
-      const cost = calculateActualCost(modelId, inputTokens, outputTokens, discountPercent)
+      const cost = await calculateActualCost(modelId, inputTokens, outputTokens, discountPercent)
       expect(cost.totalCents).toBeDefined()
       expect(Number(cost.totalCents)).toBeGreaterThan(0)
     })

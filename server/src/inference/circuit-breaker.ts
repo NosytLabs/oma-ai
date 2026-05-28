@@ -2,13 +2,17 @@ import { getRedisClient } from "../lib/redis-client.js";
 
 const ERROR_THRESHOLD = 5;
 const RESET_TIMEOUT_MS = 30_000;
-const REDIS_TTL_SECONDS = Math.ceil(RESET_TIMEOUT_MS / 1000);
+const MAX_RESET_TIMEOUT_MS = 300_000;
+const HALF_OPEN_SUCCESS_THRESHOLD = 3;
+const REDIS_TTL_SECONDS = Math.ceil(MAX_RESET_TIMEOUT_MS / 1000);
 
 export interface CircuitBreakerState {
   failures: number;
   lastFailure: number;
   state: "closed" | "open" | "half-open";
   consecutiveSuccesses?: number;
+  consecutiveFailures?: number;
+  lastStateChange: number;
 }
 
 const circuitBreakers = new Map<string, CircuitBreakerState>();
@@ -19,6 +23,13 @@ export function getCircuitBreakerKey(provider: string, model?: string): string {
 
 function getRedisCircuitKey(provider: string, model?: string): string {
   return `circuit:provider:${provider}:model:${model || "default"}`;
+}
+
+function calculateBackoffMs(lastFailure: number): number {
+  const elapsed = Date.now() - lastFailure;
+  const exponentialDelay = Math.min(RESET_TIMEOUT_MS * Math.pow(2, Math.floor(elapsed / RESET_TIMEOUT_MS)), MAX_RESET_TIMEOUT_MS);
+  const jitter = Math.random() * 0.1 * exponentialDelay;
+  return Math.min(exponentialDelay + jitter, MAX_RESET_TIMEOUT_MS);
 }
 
 async function getRedisState(key: string): Promise<CircuitBreakerState | null> {
@@ -39,7 +50,7 @@ async function setRedisState(key: string, state: CircuitBreakerState): Promise<v
     if (!redis) return;
     await redis.setEx(key, REDIS_TTL_SECONDS, JSON.stringify(state));
   } catch {
-    // Redis unavailable, in-memory fallback handles it
+    // Redis unavailable - in-memory circuit breaker state is sufficient fallback
   }
 }
 
@@ -50,12 +61,26 @@ export async function recordProviderError(provider: string, model?: string): Pro
   const newState: CircuitBreakerState = (() => {
     const existing = circuitBreakers.get(key);
     const failures = (existing?.failures ?? 0) + 1;
-    const state: CircuitBreakerState = {
+    const consecutiveFailures = (existing?.consecutiveFailures ?? 0) + 1;
+    const now = Date.now();
+    
+    let state: "closed" | "open" | "half-open" = existing?.state ?? "closed";
+    
+    if (state === "half-open") {
+      if (consecutiveFailures >= HALF_OPEN_SUCCESS_THRESHOLD) {
+        state = "open";
+      }
+    } else if (failures >= ERROR_THRESHOLD) {
+      state = "open";
+    }
+    
+    return {
       failures,
-      lastFailure: Date.now(),
-      state: failures >= ERROR_THRESHOLD ? "open" : (existing?.state ?? "closed"),
+      lastFailure: now,
+      state,
+      consecutiveFailures: state === "half-open" ? consecutiveFailures : 0,
+      lastStateChange: state !== existing?.state ? now : (existing?.lastStateChange ?? now),
     };
-    return state;
   })();
 
   circuitBreakers.set(key, newState);
@@ -70,11 +95,15 @@ export async function recordProviderSuccess(provider: string, model?: string): P
   if (!state) return;
 
   if (state.state === "half-open") {
-    state.consecutiveSuccesses = (state.consecutiveSuccesses || 0) + 1;
-    if (state.consecutiveSuccesses >= 3) {
+    const consecutiveSuccesses = (state.consecutiveSuccesses || 0) + 1;
+    if (consecutiveSuccesses >= HALF_OPEN_SUCCESS_THRESHOLD) {
       state.state = "closed";
       state.failures = 0;
       state.consecutiveSuccesses = 0;
+      state.consecutiveFailures = 0;
+      state.lastStateChange = Date.now();
+    } else {
+      state.consecutiveSuccesses = consecutiveSuccesses;
     }
   } else {
     state.failures = Math.max(0, state.failures - 1);
@@ -100,9 +129,12 @@ export async function isCircuitOpen(provider: string, model?: string): Promise<b
   if (!state || state.state === "closed") return false;
 
   if (state.state === "open") {
-    if (Date.now() - state.lastFailure > RESET_TIMEOUT_MS) {
+    const backoffMs = calculateBackoffMs(state.lastFailure);
+    if (Date.now() - state.lastFailure >= backoffMs) {
       state.state = "half-open";
       state.consecutiveSuccesses = 0;
+      state.consecutiveFailures = 0;
+      state.lastStateChange = Date.now();
       await setRedisState(redisKey, state);
       return false;
     }

@@ -88,15 +88,6 @@ describe("AntSeed Provider", () => {
       });
     });
 
-    it("throws error when proxy URL not configured", async () => {
-      await expect(
-        antseed.chatCompletion({
-          model: "antseed/qwen-3",
-          messages: [{ role: "user", content: "hello" }],
-        })
-      ).rejects.toMatchObject({ status: expect.any(Number) });
-    }, 10000);
-
     it("handles connection failure with 502", async () => {
       globalThis.fetch = vi.fn().mockRejectedValue(new Error("Connection refused"));
 

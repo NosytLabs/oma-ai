@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, healthCheck } from "./base.js";
 
 const DEEPINFRA_TIMEOUT_MS = 60_000;
 const DEEPINFRA_STREAM_TIMEOUT_MS = 120_000;
@@ -77,23 +77,11 @@ export async function deepinfraHealthCheck(): Promise<{
   isUp: boolean;
   latencyMs: number;
 }> {
-  if (!config.DEEPINFRA_API_KEY) {
-    return { isUp: false, latencyMs: -1 };
-  }
-
-  const start = Date.now();
-
-  try {
-    const resp = await fetch(deepinfraUrl("/v1/models"), {
-      method: "GET",
-      headers: deepinfraHeaders(),
-      signal: AbortSignal.timeout(10_000),
-    });
-    const latencyMs = Date.now() - start;
-    return { isUp: resp.ok, latencyMs };
-  } catch {
-    return { isUp: false, latencyMs: Date.now() - start };
-  }
+  return healthCheck({
+    getUrl: () => deepinfraUrl("/v1/models"),
+    getHeaders: deepinfraHeaders,
+    keyConfigured: !!config.DEEPINFRA_API_KEY,
+  });
 }
 
 export { chatCompletion as deepinfraChatCompletion };

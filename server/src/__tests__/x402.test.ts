@@ -55,7 +55,7 @@ vi.mock('../auth/siwe.js', () => ({
   verifySessionToken: vi.fn(),
 }))
 
-vi.mock('../credits/balance.js', () => ({
+vi.mock('../credits/index.js', () => ({
   getBalance: vi.fn().mockResolvedValue({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null }),
   getStakingDiscount: vi.fn().mockResolvedValue(0),
   addCredits: vi.fn(),
@@ -188,7 +188,7 @@ describe('x402 Facilitator', () => {
 
   describe('POST /x402/settle', () => {
     it('returns 200 with valid payload', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
       const res = await app.request('/x402/settle', {
         method: 'POST',
         headers: {
@@ -209,7 +209,7 @@ describe('x402 Facilitator', () => {
     })
 
     it('returns 400 with missing fields', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce('user-1')
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
       const res = await app.request('/x402/settle', {
         method: 'POST',
         headers: {

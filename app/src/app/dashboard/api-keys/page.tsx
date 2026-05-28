@@ -10,6 +10,7 @@ import {
   Plus,
   Copy,
   Check,
+  Settings,
   Trash2,
   AlertTriangle,
   Loader2,
@@ -148,14 +149,14 @@ export default function ApiKeysPage() {
       >
         <div className="text-center max-w-md px-4">
           <motion.div 
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-amber-500/10"
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-cyan)]/30 bg-gradient-to-br from-[var(--color-cyan)]/10 to-[var(--color-warning)]/10"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
           >
-            <Wallet className="h-10 w-10 text-cyan-500" />
+            <Wallet className="h-10 w-10 text-[var(--color-cyan)]" />
           </motion.div>
           <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
-          <p className="mb-6 text-zinc-500">Connect your wallet to manage API keys.</p>
+          <p className="mb-6 text-[var(--color-text-muted)]">Connect your wallet to manage API keys.</p>
           <motion.button
             onClick={() => connectEvm()}
             className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
@@ -183,12 +184,12 @@ export default function ApiKeysPage() {
       >
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-cyan-400">Dashboard</Link>
-            <span className="text-zinc-600">/</span>
+            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
+            <span className="text-[var(--color-text-muted)]">/</span>
             <span className="text-sm text-white">API Keys</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">API Keys</h1>
-          <p className="mt-1 text-sm text-zinc-500">Manage your API keys and rate limits</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Manage your API keys and rate limits</p>
         </div>
         <motion.button
           onClick={() => setShowCreateForm(true)}
@@ -204,13 +205,13 @@ export default function ApiKeysPage() {
       <AnimatePresence>
         {error && (
           <motion.div 
-            className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3"
+            className="mb-6 flex items-center gap-3 rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-4 py-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
-            <span className="text-sm text-red-400">{error}</span>
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
+            <span className="text-sm text-[var(--color-error)]">{error}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -218,7 +219,7 @@ export default function ApiKeysPage() {
       <AnimatePresence>
         {showCreateForm && (
           <motion.div 
-            className="mb-6 rounded-xl border border-cyan-500/30 bg-zinc-900/50 p-4"
+            className="mb-6 rounded-xl border border-[var(--color-cyan)]/30 bg-[var(--color-surface)] p-4"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -230,7 +231,7 @@ export default function ApiKeysPage() {
                 onChange={(e) => setNewKeyName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateKey()}
                 placeholder="Key name (e.g. production, staging)"
-                className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-white placeholder:text-zinc-600"
+                className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-white placeholder:text-[var(--color-text-muted)]"
                 autoFocus
                 disabled={creating}
               />
@@ -260,14 +261,14 @@ export default function ApiKeysPage() {
         <SkeletonKeyList count={3} />
       ) : keys.length === 0 ? (
         <motion.div 
-          className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 flex items-center justify-center py-16"
+          className="rounded-xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] flex items-center justify-center py-16"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
           <div className="text-center">
-            <Key className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
+            <Key className="h-12 w-12 mx-auto mb-4 text-[var(--color-text-muted)]" />
             <h3 className="text-lg font-semibold text-white mb-2">No API Keys Yet</h3>
-            <p className="text-sm text-zinc-500 mb-6">Create your first API key to start making requests.</p>
+            <p className="text-sm text-[var(--color-text-muted)] mb-6">Create your first API key to start making requests.</p>
             <motion.button
               onClick={() => setShowCreateForm(true)}
               className="btn-primary flex items-center gap-2 mx-auto py-3 px-6"
@@ -285,26 +286,26 @@ export default function ApiKeysPage() {
             {keys.map((key, index) => (
               <motion.div
                 key={key.id}
-                className="rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-6"
+                className="rounded-xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10">
-                      <Key className="h-6 w-6 text-cyan-500" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/10">
+                      <Key className="h-6 w-6 text-[var(--color-cyan)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-lg font-semibold text-white">{key.name}</h3>
-                        <span className="font-mono text-sm text-zinc-500">{maskKey(key.prefix)}</span>
+                        <span className="font-mono text-sm text-[var(--color-text-muted)]">{maskKey(key.prefix)}</span>
                       </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-zinc-500">
+                      <div className="flex items-center gap-4 mt-1 text-xs text-[var(--color-text-muted)]">
                         <span>Created {key.createdAt ? new Date(key.createdAt).toLocaleDateString() : 'N/A'}</span>
                         {key.lastUsedAt && (
                           <>
-                            <span className="text-zinc-700">|</span>
+                            <span className="text-[var(--color-text-muted)]">|</span>
                             <span>Last used {formatTime(key.lastUsedAt)}</span>
                           </>
                         )}
@@ -315,13 +316,13 @@ export default function ApiKeysPage() {
                   <div className="flex items-center gap-3">
                     <motion.button
                       onClick={() => handleCopy(key.prefix, `prefix-${key.id}`)}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm transition-colors hover:bg-zinc-800 hover:text-cyan-400"
+                      className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
                     >
                       {copied === `prefix-${key.id}` ? (
                         <>
-                          <Check className="h-4 w-4 text-emerald-500" />
+                          <Check className="h-4 w-4 text-[var(--color-green)]" />
                           Copied
                         </>
                       ) : (
@@ -336,8 +337,8 @@ export default function ApiKeysPage() {
                       onClick={() => setEditingLimits(editingLimits === key.id ? null : key.id)}
                       className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                         editingLimits === key.id 
-                          ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' 
-                          : 'border-zinc-700 hover:bg-zinc-800 hover:text-cyan-400'
+                          ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
+                          : 'border-[var(--color-border)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
@@ -349,7 +350,7 @@ export default function ApiKeysPage() {
                     <motion.button
                       onClick={() => handleRevokeKey(key.id)}
                       disabled={revokingId === key.id}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 hover:border-red-500/50 disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/10 hover:border-[var(--color-error)]/50 disabled:opacity-50"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -366,14 +367,14 @@ export default function ApiKeysPage() {
                 <AnimatePresence>
                   {editingLimits === key.id && (
                     <motion.div
-                      className="mt-4 pt-4 border-t border-zinc-800/50"
+                      className="mt-4 pt-4 border-t border-[var(--color-border)]/50"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Requests per Minute</label>
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Requests per Minute</label>
                           <input
                             type="number"
                             value={rateLimits[key.id]?.requestsPerMinute ?? 60}
@@ -381,13 +382,13 @@ export default function ApiKeysPage() {
                               ...prev,
                               [key.id]: { ...prev[key.id], requestsPerMinute: parseInt(e.target.value) || 0 }
                             }))}
-                            className="w-full text-sm font-medium bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-cyan-500/50"
+                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                             min={1}
                             max={10000}
                           />
                         </div>
                         <div>
-                          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Requests per Day</label>
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Requests per Day</label>
                           <input
                             type="number"
                             value={rateLimits[key.id]?.requestsPerDay ?? 10000}
@@ -395,7 +396,7 @@ export default function ApiKeysPage() {
                               ...prev,
                               [key.id]: { ...prev[key.id], requestsPerDay: parseInt(e.target.value) || 0 }
                             }))}
-                            className="w-full text-sm font-medium bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-cyan-500/50"
+                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                             min={1}
                             max={1000000}
                           />
@@ -435,49 +436,49 @@ export default function ApiKeysPage() {
             exit={{ opacity: 0 }}
           >
             <motion.div 
-              className="w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-zinc-900 p-6"
+              className="w-full max-w-lg rounded-2xl border border-[var(--color-cyan)]/30 bg-[var(--color-surface)] p-6"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25 }}
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10">
-                  <Key className="h-6 w-6 text-cyan-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
+                  <Key className="h-6 w-6 text-[var(--color-cyan)]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">API Key Created</h3>
-                  <p className="text-xs text-zinc-500">Copy this key now - it will not be shown again</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">Copy this key now - it will not be shown again</p>
                 </div>
               </div>
 
-              <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
-                <span className="text-sm text-amber-500">This key will only be shown once. Copy it now.</span>
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-3">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-warning)]" />
+                <span className="text-sm text-[var(--color-warning)]">This key will only be shown once. Copy it now.</span>
               </div>
 
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 p-4">
-                <code className="flex-1 break-all text-sm text-cyan-400 font-mono">{createdKey.key}</code>
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-void)] p-4">
+                <code className="flex-1 break-all text-sm text-[var(--color-cyan)] font-mono">{createdKey.key}</code>
                 <motion.button
                   onClick={() => handleCopy(createdKey.key, `full-${createdKey.id}`)}
-                  className="shrink-0 rounded-lg p-2 transition-colors hover:bg-zinc-800 hover:text-cyan-400"
+                  className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {copied === `full-${createdKey.id}` ? <Check className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5" />}
+                  {copied === `full-${createdKey.id}` ? <Check className="h-5 w-5 text-[var(--color-green)]" /> : <Copy className="h-5 w-5" />}
                 </motion.button>
               </div>
 
-              <div className="mb-6 p-4 rounded-xl bg-zinc-800/50 border border-zinc-700">
+              <div className="mb-6 p-4 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)]">
                 <h4 className="text-sm font-semibold text-white mb-3">Quick Start</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-2">
-                    <span className="text-cyan-400 font-mono">curl</span>
-                    <span className="text-zinc-400">-X POST https://api.oma-ai.com/v1/chat/completions</span>
+                    <span className="text-[var(--color-cyan)] font-mono">curl</span>
+                    <span className="text-[var(--color-text-muted)]">-X POST https://api.oma-ai.com/v1/chat/completions</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-zinc-500">-H &quot;Authorization: Bearer&quot; </span>
-                    <span className="text-amber-400 font-mono">{createdKey.prefix}...&quot;</span>
+                    <span className="text-[var(--color-text-muted)]">-H {`"`}Authorization: Bearer{`"`} </span>
+                    <span className="text-[var(--color-warning)] font-mono">{createdKey.prefix}{'"'}...</span>
                   </div>
                 </div>
               </div>
@@ -495,14 +496,5 @@ export default function ApiKeysPage() {
         )}
       </AnimatePresence>
     </motion.div>
-  )
-}
-
-function Settings({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
   )
 }

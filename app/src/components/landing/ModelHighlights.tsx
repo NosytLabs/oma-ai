@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Sparkles, Server, ArrowRight, TrendingUp, Cpu, Coins, Zap, Infinity, Hash } from 'lucide-react'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 
 interface ModelCard {
   name: string
@@ -21,21 +22,6 @@ interface FreeModelCard {
   badge: string
 }
 
-function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
-  
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mediaQuery.matches)
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [])
-  
-  return prefersReducedMotion
-}
-
 function ModelCardComponent({
   model,
   isVisible,
@@ -45,7 +31,7 @@ function ModelCardComponent({
   model: ModelCard
   isVisible: boolean
   delay: number
-  reducedMotion?: boolean
+  reducedMotion?: boolean | null
 }) {
   return (
     <div
@@ -103,7 +89,7 @@ function FreeModelCardComponent({
   model: FreeModelCard
   isVisible: boolean
   delay: number
-  reducedMotion?: boolean
+  reducedMotion?: boolean | null
 }) {
   return (
     <div

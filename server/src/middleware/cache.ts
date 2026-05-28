@@ -2,6 +2,7 @@ import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 import { createHash } from "crypto";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 let redisReady = false;
 
@@ -160,7 +161,8 @@ export function createCacheMiddleware(options: CacheOptions = {}) {
           const text = await c.res.text();
           responseBody = JSON.parse(text);
         } catch {
-          // Non-JSON response, skip caching
+          // Non-JSON response, skip caching but continue the response
+          c.header("X-Cache-Hit", "false");
           return;
         }
 
@@ -181,7 +183,7 @@ export function createCacheMiddleware(options: CacheOptions = {}) {
         c.header("Cache-Control", `private, max-age=${ttlSeconds}`);
       }
     } catch (err) {
-      console.error("[cache] Redis operation failed:", err);
+      logger.error({ err }, "Redis operation failed in cache middleware");
       // On Redis error, proceed without caching
       return next();
     }
@@ -210,7 +212,7 @@ export async function invalidateCache(keyPattern: string): Promise<number> {
 
   try {
     const pattern = `${keyPattern}:response:*`;
-    let cursor = 0;
+    let cursor = "0";
     let totalDeleted = 0;
 
     do {
@@ -222,11 +224,11 @@ export async function invalidateCache(keyPattern: string): Promise<number> {
         const deleted = await redis.del(keys);
         totalDeleted += deleted;
       }
-    } while (cursor !== 0);
+    } while (cursor !== "0");
 
     return totalDeleted;
   } catch (err) {
-    console.error("[cache] Invalidation failed:", err);
+    logger.warn({ err, keyPattern }, "Cache invalidation failed");
     return 0;
   }
 }

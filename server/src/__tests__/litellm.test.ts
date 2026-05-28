@@ -270,8 +270,8 @@ describe("LiteLLM Circuit Breaker and Routing", () => {
       expect(choice.provider).toBe("venice"); // preferred fallback is venice/antseed
     });
 
-    it("calculates appropriate model pricing for custom litellm models", () => {
-      const pricing = getModelPricing("litellm/my-custom-model");
+    it("calculates appropriate model pricing for custom litellm models", async () => {
+      const pricing = await getModelPricing("litellm/my-custom-model");
       expect(pricing.provider).toBe("litellm");
       expect(pricing.inputPer1k).toBe(0.0015);
       expect(pricing.outputPer1k).toBe(0.002);

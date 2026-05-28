@@ -88,7 +88,7 @@ oma/
 ├── server/src/              # Hono.js API server
 │   ├── routes/             # API endpoints
 │   │   ├── auth.ts         # SIWE authentication
-│   │   ├── chat.ts         # Inference endpoints
+│   │   ├── chat/index.ts   # Inference endpoints (split by modality)
 │   │   ├── deposit.ts      # Payment deposits
 │   │   ├── models.ts       # Model listing
 │   │   ├── onramp.ts       # Fiat on-ramp
@@ -139,7 +139,7 @@ oma/
 |------|---------|
 | `server/src/index.ts` | Main server entry point |
 | `server/src/config.ts` | Environment validation |
-| `server/src/routes/chat.ts` | /v1/chat/completions endpoint |
+| `server/src/routes/chat/index.ts` | /v1/chat/completions endpoint (split by modality) |
 | `server/src/inference/router.ts` | AI routing with failover |
 | `server/src/middleware/rate-limit.ts` | Rate limiting |
 | `app/src/app/page.tsx` | Landing page |

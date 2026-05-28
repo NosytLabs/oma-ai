@@ -21,8 +21,9 @@ export async function getCircuitBreakerState(): Promise<{ omaBonusPercent: numbe
   if (redis && isRedisReady()) {
     const data = await redis.hGetAll(PRICE_GUARD_KEY);
     if (data && Object.keys(data).length > 0) {
+      const parsedBonus = parseInt(data.omaBonusPercent, 10);
       cachedState = {
-        omaBonusPercent: parseInt(data.omaBonusPercent, 10) ?? 5,
+        omaBonusPercent: !isNaN(parsedBonus) && parsedBonus >= 0 ? parsedBonus : 5,
         omaDepositsAllowed: data.omaDepositsAllowed === "true",
       };
       lastPersistedAt = Date.now();

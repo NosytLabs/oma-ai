@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Activity, TrendingUp, DollarSign, Users, BarChart3 } from 'lucide-react'
+import { Activity, TrendingUp, DollarSign, Users, BarChart3, Terminal, RefreshCw } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { motion, useReducedMotion } from 'framer-motion'
 
 const AnalyticsCharts = dynamic(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.AnalyticsCharts })), { ssr: false })
 
@@ -54,6 +55,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>('30d')
   const [loading, setLoading] = useState(true)
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null)
+  const shouldAnimate = !useReducedMotion()
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true)
@@ -76,21 +78,39 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5 text-cyan-400 animate-spin" />
-          <span className="text-zinc-400">Loading analytics...</span>
+          <motion.div
+            animate={shouldAnimate ? { rotate: 360 } : { rotate: 0 }}
+            transition={shouldAnimate ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0 }}
+            className="w-5 h-5 border border-[var(--color-cyan)] border-t-transparent rounded-full"
+          />
+          <span className="text-[var(--color-text-muted)] font-mono text-sm">Loading analytics...</span>
         </div>
       </div>
     )
   }
 
-  if (!analytics) {
+  if (!analytics || !analytics.summary) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] flex items-center justify-center">
         <div className="text-center">
-          <BarChart3 className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-          <p className="text-zinc-400">Failed to load analytics</p>
+          <div className="w-16 h-16 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-6">
+            <BarChart3 className="w-8 h-8 text-[var(--color-accent)]" />
+          </div>
+          <h2 className="text-xl font-bold font-mono text-[var(--color-text-bright)] mb-2">No Analytics Data</h2>
+          <p className="text-[var(--color-text-muted)] font-mono text-sm max-w-md mx-auto mb-6">
+            Analytics data will populate once there is API usage on the gateway. Try refreshing or selecting a different period.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={fetchAnalytics}
+              className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 transition-colors text-sm font-mono"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -98,69 +118,79 @@ export default function AnalyticsPage() {
 
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="border-b border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)]">
+      <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="max-w-[95rem] mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-cyan-400" />
+              <div className="w-9 h-9 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 flex items-center justify-center">
+                <Terminal className="w-4 h-4 text-[var(--color-cyan)]" />
               </div>
               <div>
-                <h1 className="text-xl font-bold font-display">Usage Analytics</h1>
-                <p className="text-xs text-zinc-500">System-wide metrics and insights</p>
+                <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">Usage Analytics</h1>
+                <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-widest">System-wide metrics</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {(['7d', '30d', '90d'] as Period[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    period === p
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+              <div className="flex items-center gap-1">
+                {(['7d', '30d', '90d'] as Period[]).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
+                      period === p
+                        ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30'
+                        : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={fetchAnalytics}
+                className="p-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </motion.button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Total Requests</span>
+      <div className="max-w-[95rem] mx-auto px-4 py-6 space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Requests</span>
             </div>
-            <p className="text-2xl font-bold text-white">{formatNumber(analytics.summary.totalRequests)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatNumber(analytics.summary.totalRequests)}</p>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Total Revenue</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Revenue</span>
             </div>
-            <p className="text-2xl font-bold text-emerald-400">{formatCurrency(analytics.summary.totalRevenue)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(analytics.summary.totalRevenue)}</p>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Gross Profit</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Gross Profit</span>
             </div>
-            <p className="text-2xl font-bold text-cyan-400">{formatCurrency(analytics.summary.grossProfit)}</p>
-            <p className="text-xs text-zinc-500 mt-1">Margin: {analytics.summary.margin}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCurrency(analytics.summary.grossProfit)}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {analytics.summary.margin}</p>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Active Users</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Active Users</span>
             </div>
-            <p className="text-2xl font-bold text-white">{formatNumber(analytics.summary.uniqueUsers)}</p>
-            <p className="text-xs text-zinc-500 mt-1">of {formatNumber(analytics.summary.totalUsers)} total</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatNumber(analytics.summary.uniqueUsers)}</p>
+            <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">of {formatNumber(analytics.summary.totalUsers)} total</p>
           </div>
         </div>
 

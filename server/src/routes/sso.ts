@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { requireTeamRole } from "../middleware/rbac.js";
 import { db } from "../db/client.js";
 import { ssoConnections, teamMembers, teams } from "../db/schema.js";
@@ -17,17 +17,23 @@ function base64Decode(base64: string): string {
 }
 
 function extractSamlAttributes(xml: string): { email: string | null; domain: string | null; nameId: string | null; attributes: Record<string, string> } {
+  const result: { email: string | null; domain: string | null; nameId: string | null; attributes: Record<string, string> } = {
+    email: null,
+    domain: null,
+    nameId: null,
+    attributes: {},
+  };
+
   const emailMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*email[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
   const domainMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*domain[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
   const nameIdMatch = xml.match(/<saml(?:2)?:NameID[^>]*>([^<]+)<\/saml(?:2)?:NameID>/i);
   const emailAttrMatch = xml.match(/<(?:saml2:AttributeValue|saml:AttributeValue)[^>]*>([^<@]+@[^<]+)<\/(?:saml2:AttributeValue|saml:AttributeValue)>/i);
 
-  return {
-    email: emailMatch?.[1] || nameIdMatch?.[1] || emailAttrMatch?.[1] || null,
-    domain: domainMatch?.[1] || null,
-    nameId: nameIdMatch?.[1] || null,
-    attributes: {},
-  };
+  result.email = emailMatch?.[1] || nameIdMatch?.[1] || emailAttrMatch?.[1] || null;
+  result.domain = domainMatch?.[1] || null;
+  result.nameId = nameIdMatch?.[1] || null;
+
+  return result;
 }
 
 async function validateSamlSignature(xml: string, certificate: string | null): Promise<boolean> {
@@ -58,12 +64,11 @@ async function validateSamlSignature(xml: string, certificate: string | null): P
     const cleanCert = certMatch[1].replace(/\s+/g, "");
     const configuredCert = certificate.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, "");
 
-    if (cleanCert !== configuredCert) {
+    if (cleanCert.length !== configuredCert.length || !timingSafeEqual(Buffer.from(cleanCert), Buffer.from(configuredCert))) {
       console.warn("[SECURITY] SAML response certificate does not match configured certificate. Rejecting.");
       return false;
     }
 
-    console.log("[SECURITY] SAML signature element structurally valid. Certificate fingerprint matches configured IdP cert.");
     return true;
   } catch (err) {
     console.error("[SECURITY] SAML signature validation error:", err);
@@ -194,7 +199,7 @@ ssoRouter.post("/saml/acs", async (c) => {
     return c.json({ error: { message: "Team not found for SSO connection", code: "team_not_found" } }, 500);
   }
 
-  const sessionToken = await generateSessionToken(user.id);
+  const sessionToken = await generateSessionToken(user.id, "sso");
   const exchangeCode = randomBytes(32).toString("hex");
 
   const redis = await getRedisClient();

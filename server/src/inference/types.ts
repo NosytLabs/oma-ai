@@ -13,6 +13,7 @@ export interface InferenceRequest {
   temperature?: number
   max_tokens?: number
   stream?: boolean
+  timeout?: number
   tools?: Array<Record<string, unknown>>
   response_format?: Record<string, unknown>
 }
@@ -33,7 +34,7 @@ export interface InferenceResponse {
 export interface ModelPricing {
   inputPer1k: number
   outputPer1k: number
-  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra'
+  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra' | 'groq' | 'cerebras' | 'bedrock'
   markup: number
 }
 

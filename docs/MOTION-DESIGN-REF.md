@@ -1,10 +1,8 @@
 # OMA AI Gateway - Motion Design Reference
 
-> Building a better future with delightful animations.
-
 ## Overview
 
-This document establishes the motion design system for OMA AI Gateway. It synthesizes industry best practices from LottieFiles Motion Design Skill, Web3 design patterns, and modern UI animation standards.
+This document defines the motion design system for OMA AI Gateway, based on LottieFiles Motion Design principles, Web3 design patterns, and modern UI animation standards.
 
 ---
 
@@ -229,4 +227,3 @@ Every significant animation should have:
 
 ---
 
-*For additional motion design resources, visit [LottieFiles Motion Design Skill](https://lottiefiles.com/motion-design).*

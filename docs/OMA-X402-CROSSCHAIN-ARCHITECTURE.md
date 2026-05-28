@@ -2,9 +2,9 @@
 
 ## Overview
 
-OMA acts as an **x402 facilitator** that bridges HoudiniSwap's 20+ supported chains into the x402 payment ecosystem. This enables AI inference access from any chain HoudiniSwap supports -- not just Base and Solana.
+OMA acts as an **x402 facilitator** that bridges HoudiniSwap's 20+ supported chains into the x402 payment ecosystem. This enables AI inference access from any chain HoudiniSwap supports.
 
-**Flow:** User (any chain) -> HoudiniSwap -> OMA Facilitator -> x402 Settlement -> AI Inference
+**Flow:** User (any chain) → HoudiniSwap → OMA Facilitator → x402 Settlement → AI Inference
 
 ## Competitive Landscape
 
@@ -23,19 +23,18 @@ OMA acts as an **x402 facilitator** that bridges HoudiniSwap's 20+ supported cha
 ## Architecture
 
 ```
-                    HoudiniSwap          OMA Facilitator
-User (any chain) ------> Deposit Address -----> Verify & Settle
-         |                    |                      |
-         |                    v                      v
-         |              Swap to USDC            Generate x402
-         |              on Base/Solana           Receipt
-         |                    |                      |
-         |                    v                      v
-         |              Webhook/Poll           Proxy to Inference
-         |              confirmation           (Venice/AntSeed)
-         |                                           |
-         v                                           v
-    Pay in BTC,     ----> Credits Issued ----> Stream Response
+User (any chain) ─────> Deposit Address ─────> Verify & Settle
+         │                    │                      │
+         │                    ▼                      ▼
+         │              Swap to USDC            Generate x402
+         │              on Base/Solana           Receipt
+         │                    │                      │
+         │                    ▼                      ▼
+         │              Webhook/Poll           Proxy to Inference
+         │              confirmation           (Venice/AntSeed)
+         │                                           │
+         ▼                                           ▼
+    Pay in BTC,     ────> Credits Issued ────> Stream Response
     ETH, SOL, XMR,        (PostgreSQL)        back to User
     TRX, BNB, etc
 ```
@@ -43,14 +42,15 @@ User (any chain) ------> Deposit Address -----> Verify & Settle
 ## Payment Flows
 
 ### Flow 1: Credit-Based (Existing, Enhanced)
-User deposits via HoudiniSwap -> swap settles -> credits issued -> user calls inference with API key (Bearer token) -> credits deducted per token.
+User deposits via HoudiniSwap → swap settles → credits issued → user calls inference with API key → credits deducted per token.
 
 ### Flow 2: x402 Direct (New)
-User sends x402 PAYMENT-SIGNATURE header with HoudiniSwap order reference -> facilitator verifies deposit settled -> generates x402 receipt -> proxies inference request -> streams response.
+User sends x402 PAYMENT-SIGNATURE header with HoudiniSwap order reference → facilitator verifies deposit settled → generates x402 receipt → proxies inference request → streams response.
 
 This enables **agent-native payments** where autonomous agents pay per-request without pre-funded accounts.
 
 ### Flow 3: Cross-Chain Quote + Pay (New)
+
 1. Agent requests quote: `POST /v1/x402/quote`
 2. OMA returns: total cost in source token (inference fee + HoudiniSwap fee + facilitator margin)
 3. Agent creates deposit: `POST /v1/x402/deposit` with quoteId
@@ -132,7 +132,7 @@ For complete API endpoint documentation, see [API-DOCUMENTATION.md](API-DOCUMENT
 
 ## Implementation Phases
 
-1. **Phase 1 (MVP)**: Quote -> Deposit -> Settlement -> Credits
+1. **Phase 1 (MVP)**: Quote → Deposit → Settlement → Credits
 2. **Phase 2**: x402 direct proxy with wait-on-settle
 3. **Phase 3**: WebSocket subscriptions for real-time settlement notifications
 4. **Phase 4**: AntSeed P2P payment channels for sub-second settlement

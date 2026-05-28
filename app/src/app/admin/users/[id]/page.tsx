@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, use, useCallback } from 'react'
-import { ArrowLeft, CreditCard, DollarSign, Key, TrendingUp, RefreshCw, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CreditCard, DollarSign, Key, TrendingUp, RefreshCw, ExternalLink, Terminal } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 type UserDetail = {
   user: {
@@ -94,10 +95,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" />
-          <span className="text-zinc-400">Loading user details...</span>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5 border border-[var(--color-cyan)] border-t-transparent rounded-full"
+          />
+          <span className="text-[var(--color-text-muted)] font-mono text-sm">Loading user details...</span>
         </div>
       </div>
     )
@@ -105,18 +110,18 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   if (error || !userDetail) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <Link href="/admin" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6">
+      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)]">
+        <div className="max-w-[95rem] mx-auto px-4 py-6">
+          <Link href="/admin" className="inline-flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] mb-6 text-sm font-mono">
             <ArrowLeft className="w-4 h-4" />
             Back to Admin
           </Link>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
-            <p className="text-xl font-bold text-white mb-2">User Not Found</p>
-            <p className="text-zinc-500 mb-4">{error || 'The requested user does not exist.'}</p>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+            <p className="text-xl font-bold text-[var(--color-text-bright)] mb-2 font-syne">User Not Found</p>
+            <p className="text-[var(--color-text-muted)] font-mono mb-4">{error || 'The requested user does not exist.'}</p>
             <button
               onClick={() => router.push('/admin')}
-              className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+              className="px-4 py-2 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 text-[var(--color-cyan)] hover:bg-[var(--color-cyan)]/20 text-sm font-mono"
             >
               Return to Admin
             </button>
@@ -129,77 +134,84 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const { user, balance, apiKeys, recentUsage, recentDeposits } = userDetail
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="border-b border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)]">
+      <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="max-w-[95rem] mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href="/admin"
-                className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded border border-[var(--color-border)] hover:border-[var(--color-border-bright)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4" />
               </Link>
-              <div>
-                <h1 className="text-xl font-bold font-display">User Details</h1>
-                <p className="text-xs text-zinc-500 font-mono">{user.address}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] flex items-center justify-center">
+                  <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">User Details</h1>
+                  <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-widest">{user.address}</p>
+                </div>
               </div>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={fetchUserDetail}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5" />
               Refresh
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[95rem] mx-auto px-4 py-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Current Balance</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Current Balance</span>
             </div>
-            <p className="text-2xl font-bold text-cyan-400">{formatCredits(balance.balanceCredits)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCredits(balance.balanceCredits)}</p>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Total Deposited</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Deposited</span>
             </div>
-            <p className="text-2xl font-bold text-emerald-400">{formatCurrency(balance.totalDeposited)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(balance.totalDeposited)}</p>
           </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Total Used</span>
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Used</span>
             </div>
-            <p className="text-2xl font-bold text-amber-400">{formatCurrency(balance.totalUsed)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatCurrency(balance.totalUsed)}</p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <h2 className="text-lg font-medium text-white mb-4">Account Information</h2>
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)] mb-4">Account Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Wallet Address (EVM)</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Wallet Address (EVM)</label>
                 <div className="flex items-center gap-2">
-                  <p className="font-mono text-sm text-white">{user.address}</p>
-                  <button className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-white">
+                  <p className="font-mono text-sm text-[var(--color-text-bright)] break-all">{user.address}</p>
+                  <button className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0">
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
               </div>
               {user.solanaAddress && (
                 <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Solana Address</label>
+                  <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Solana Address</label>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-sm text-white">{user.solanaAddress}</p>
-                    <button className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-white">
+                    <p className="font-mono text-sm text-[var(--color-text-bright)] break-all">{user.solanaAddress}</p>
+                    <button className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0">
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   </div>
@@ -207,58 +219,58 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               )}
               {user.accountNumber && (
                 <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Account Number</label>
-                  <p className="font-mono text-sm text-cyan-400">{user.accountNumber}</p>
+                  <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Account Number</label>
+                  <p className="font-mono text-sm text-[var(--color-cyan)]">{user.accountNumber}</p>
                 </div>
               )}
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Member Since</label>
-                <p className="text-sm text-white">{formatDate(user.createdAt)}</p>
+                <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Member Since</label>
+                <p className="text-sm text-[var(--color-text-bright)] font-mono">{formatDate(user.createdAt)}</p>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">API Keys</label>
-                <p className="text-sm text-white">{apiKeys.length} key{apiKeys.length !== 1 ? 's' : ''}</p>
+                <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">API Keys</label>
+                <p className="text-sm text-[var(--color-text-bright)]">{apiKeys.length} key{apiKeys.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-white">API Keys ({apiKeys.length})</h2>
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
+            <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">API Keys ({apiKeys.length})</h2>
           </div>
           {apiKeys.length === 0 ? (
-            <div className="px-5 py-8 text-center text-zinc-500">No API keys found</div>
+            <div className="px-5 py-8 text-center text-[var(--color-text-muted)] font-mono text-sm">No API keys found</div>
           ) : (
-            <div className="divide-y divide-zinc-800/50">
+            <div className="divide-y divide-[var(--color-border)]/50">
               {apiKeys.map((key) => (
                 <div key={key.id} className="px-5 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                      <Key className="w-5 h-5 text-cyan-400" />
+                    <div className="w-10 h-10 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 flex items-center justify-center">
+                      <Key className="w-5 h-5 text-[var(--color-cyan)]" />
                     </div>
                     <div>
-                      <p className="font-mono text-sm text-cyan-400">{key.keyPrefix}***</p>
-                      <p className="text-xs text-zinc-500">{key.name}</p>
+                      <p className="font-mono text-sm text-[var(--color-cyan)]">{key.keyPrefix}***</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">{key.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="text-xs text-zinc-500">Total Requests</p>
-                      <p className="text-sm font-mono text-white">{key.totalRequests.toLocaleString()}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Requests</p>
+                      <p className="text-sm font-mono text-[var(--color-text-bright)]">{key.totalRequests.toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-zinc-500">Total Spend</p>
-                      <p className="text-sm font-mono text-amber-400">{formatCurrency(key.totalSpend)}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Spend</p>
+                      <p className="text-sm font-mono text-[var(--color-amber)]">{formatCurrency(key.totalSpend)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-zinc-500">Created</p>
-                      <p className="text-sm text-zinc-400">{formatDateShort(key.createdAt)}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Created</p>
+                      <p className="text-sm text-[var(--color-text-secondary)] font-mono">{formatDateShort(key.createdAt)}</p>
                     </div>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      key.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-700 text-zinc-500'
+                    <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider ${
+                      key.active ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)]'
                     }`}>
                       {key.active ? 'Active' : 'Inactive'}
                     </span>
@@ -269,38 +281,38 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
 
-        <div className="rounded-xl border border-zinc-800 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800 bg-zinc-900/50">
-            <h2 className="text-lg font-medium text-white">Recent Usage (Last 100 Requests)</h2>
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+            <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Recent Usage (Last 100 Requests)</h2>
           </div>
           {recentUsage.length === 0 ? (
-            <div className="px-5 py-8 text-center text-zinc-500">No usage records found</div>
+            <div className="px-5 py-8 text-center text-[var(--color-text-muted)] font-mono text-sm">No usage records found</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/30">
-                    <th className="px-4 py-3 font-medium text-zinc-400">Model</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Provider</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400 text-right">Input Tokens</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400 text-right">Output Tokens</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400 text-right">Cost</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Timestamp</th>
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Model</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Provider</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">Input Tokens</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">Output Tokens</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">Cost</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Timestamp</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentUsage.map((usage) => (
-                    <tr key={usage.id} className="border-b border-zinc-800/50">
+                    <tr key={usage.id} className="border-b border-[var(--color-border)]/50">
                       <td className="px-4 py-3">
-                        <span className="font-mono text-sm text-white">{usage.model}</span>
+                        <span className="font-mono text-sm text-[var(--color-text-bright)]">{usage.model}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-zinc-500 capitalize">{usage.provider}</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)] capitalize">{usage.provider}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-zinc-400">{usage.inputTokens.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono text-zinc-400">{usage.outputTokens.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono text-cyan-400">{formatCurrency(usage.cost)}</td>
-                      <td className="px-4 py-3 text-zinc-500">{format(usage.createdAt, 'MMM d, h:mm a')}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.inputTokens.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.outputTokens.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatCurrency(usage.cost)}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{format(usage.createdAt, 'MMM d, h:mm a')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -309,51 +321,51 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
 
-        <div className="rounded-xl border border-zinc-800 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800 bg-zinc-900/50">
-            <h2 className="text-lg font-medium text-white">Deposit History</h2>
+        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+            <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Deposit History</h2>
           </div>
           {recentDeposits.length === 0 ? (
-            <div className="px-5 py-8 text-center text-zinc-500">No deposits found</div>
+            <div className="px-5 py-8 text-center text-[var(--color-text-muted)] font-mono text-sm">No deposits found</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/30">
-                    <th className="px-4 py-3 font-medium text-zinc-400">Type</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400 text-right">Amount</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400 text-right">Credits</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Status</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">TX Hash</th>
-                    <th className="px-4 py-3 font-medium text-zinc-400">Date</th>
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Type</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">Amount</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] text-right">Credits</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Status</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">TX Hash</th>
+                    <th className="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentDeposits.map((deposit) => (
-                    <tr key={deposit.id} className="border-b border-zinc-800/50">
+                    <tr key={deposit.id} className="border-b border-[var(--color-border)]/50">
                       <td className="px-4 py-3">
-                        <span className="text-sm text-white capitalize">{deposit.type}</span>
+                        <span className="text-sm text-[var(--color-text-bright)] capitalize">{deposit.type}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-emerald-400">{formatCurrency(deposit.amount)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-cyan-400">{deposit.credits.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatCurrency(deposit.amount)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{deposit.credits.toLocaleString()}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          deposit.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                          deposit.status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
-                          deposit.status === 'settling' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-zinc-700 text-zinc-500'
+                        <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider ${
+                          deposit.status === 'completed' ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' :
+                          deposit.status === 'pending' ? 'bg-[var(--color-amber)]/10 text-[var(--color-amber)]' :
+                          deposit.status === 'settling' ? 'bg-[var(--color-blue)]/10 text-[var(--color-blue)]' :
+                          'bg-[var(--color-surface)] text-[var(--color-text-muted)]'
                         }`}>
                           {deposit.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         {deposit.txHash ? (
-                          <span className="font-mono text-xs text-zinc-500">{deposit.txHash.slice(0, 10)}...</span>
+                          <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{deposit.txHash.slice(0, 10)}...</span>
                         ) : (
-                          <span className="text-zinc-600">-</span>
+                          <span className="text-[var(--color-text-muted)]">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-zinc-500">{formatDate(deposit.createdAt)}</td>
+                      <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{formatDate(deposit.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
