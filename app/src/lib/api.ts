@@ -1,24 +1,78 @@
-const API = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
+import { getSessionToken } from './cookies';
 
-const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
-const DEFAULT_TTL = 60000;
-const STALE_TTL = 300000;
+// API client with optimized caching and request deduplication
 
+const API = typeof window !== 'undefined' 
+  ? '/api' 
+  : (process.env.NEXT_PUBLIC_API_URL || process.env.OPENAI_BASE_URL || 'http://localhost:3001');
+
+// Request deduplication - prevents duplicate concurrent requests
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+// Generic response cache with TTL support
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const DEFAULT_TTL = 60000; // 60 seconds default cache TTL
+const STALE_TTL = 300000;  // 5 minutes for stale-while-revalidate
+
+// Custom error class for API errors with proper typing
+export class ApiError extends Error {
+  status: number;
+  body: unknown;
+  isNetworkError: boolean;
+
+  constructor(status: number, message: string, body?: unknown, isNetworkError = false) {
+    super(`[${status}] ${message}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+    this.isNetworkError = isNetworkError;
+  }
+}
+
+export class BackendUnavailableError extends Error {
+  constructor() {
+    super('Backend server is not running. Please ensure the API server is started on port 3001.');
+    this.name = 'BackendUnavailableError';
+  }
+}
+
+/**
+ * Get cached data by key with TTL validation.
+ * Returns null if entry doesn't exist or is expired.
+ */
 function getCached<T>(key: string): T | null {
-  const entry = cache.get(key);
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
   if (!entry) return null;
-  if (Date.now() > entry.timestamp + entry.ttl) {
+  
+  const age = Date.now() - entry.timestamp;
+  if (age > entry.ttl) {
     cache.delete(key);
     return null;
   }
-  return entry.data as T;
+  return entry.data;
 }
 
-function setCache(key: string, data: unknown, ttl = DEFAULT_TTL) {
-  cache.set(key, { data, timestamp: Date.now(), ttl });
+/**
+ * Set cache entry with optional custom TTL.
+ */
+function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
+  cache.set(key, { 
+    data, 
+    timestamp: Date.now(), 
+    ttl 
+  });
 }
 
-function invalidateCache(pattern?: string) {
+/**
+ * Invalidate cache entries by pattern or completely clear.
+ */
+function invalidateCache(pattern?: string): void {
   if (!pattern) {
     cache.clear();
     return;
@@ -28,62 +82,94 @@ function invalidateCache(pattern?: string) {
   }
 }
 
-class ApiError extends Error {
-  status: number;
-  body: unknown;
-
-  constructor(status: number, message: string, body?: unknown) {
-    super(`[${status}] ${message}`);
-    this.name = 'ApiError';
-    this.status = status;
-    this.body = body;
-  }
-}
-
-function getSessionToken(): string | null {
+/**
+ * Get session token from cookies with SSR safety.
+ */
+function getSessionTokenFromCookies(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('oma_session');
+  return getSessionToken();
 }
 
+/**
+ * Core request function with:
+ * - Request deduplication (prevents duplicate concurrent requests)
+ * - Abort controller with configurable timeout
+ * - Proper error handling with typed ApiError
+ * - Automatic cleanup of pending requests
+ */
 async function request<T>(
   path: string,
   opts: RequestInit = {},
 ): Promise<T> {
-  const token = getSessionToken();
+  // Create unique request key for deduplication
+  const requestKey = `${opts.method || 'GET'}:${path}`;
+  
+  // Return existing pending request if available (deduplication)
+  if (pendingRequests.has(requestKey)) {
+    return pendingRequests.get(requestKey) as Promise<T>;
+  }
+  
+  const token = getSessionTokenFromCookies();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...(opts.headers as Record<string, string> | undefined),
   };
 
+  // Add auth header if token exists
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Abort controller for request timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const res = await fetch(`${API}${path}`, {
-    ...opts,
-    headers,
-    signal: controller.signal,
-  });
-
-  clearTimeout(timeoutId);
-
-  if (!res.ok) {
-    let message = res.statusText;
-    let body: unknown;
+  const fetchPromise = (async () => {
     try {
-      body = await res.json();
-      if (body && typeof body === 'object' && 'error' in body) {
-        message = (body as { error: string }).error;
-      }
-    } catch {}
-    throw new ApiError(res.status, message, body);
-  }
+      const res = await fetch(`${API}${path}`, {
+        ...opts,
+        headers,
+        signal: controller.signal,
+      });
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        let message = res.statusText;
+        let body: unknown;
+        try {
+          body = await res.json();
+          if (body && typeof body === 'object' && 'error' in body) {
+            message = (body as { error: string }).error;
+          }
+        } catch {
+          // Response body is not JSON, use status text
+        }
+        throw new ApiError(res.status, message, body);
+      }
+
+      if (res.status === 204) return undefined as T;
+      
+      const data = await res.json();
+      return data as T;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new BackendUnavailableError();
+      }
+      if (error instanceof ApiError) throw error;
+      throw error;
+    }
+  })();
+
+  pendingRequests.set(requestKey, fetchPromise);
+  
+  try {
+    return await fetchPromise;
+  } finally {
+    pendingRequests.delete(requestKey);
+  }
 }
 
 export interface NonceResponse {
@@ -254,7 +340,15 @@ export type OrderStatus =
 
 export interface HealthResponse {
   status: string;
+  version: string;
+  service: string;
   uptime: number;
+  correlationId: string;
+  checks: {
+    redis?: { status: string; latency?: number };
+    database?: { status: string; latency?: number };
+    venice?: { status: string; latency?: number };
+  };
 }
 
 export interface X402VerifyResponse {
@@ -285,8 +379,6 @@ export interface ChatCompletionsResponse {
     total_tokens: number;
   };
 }
-
-export { ApiError };
 
 export interface WalletResponse {
   address: string;
@@ -339,6 +431,21 @@ export const api = {
       });
     },
 
+    solana: {
+      getChallenge(address: string) {
+        return request<{ message: string }>('/auth/solana/challenge', {
+          method: 'POST',
+          body: JSON.stringify({ address }),
+        });
+      },
+      verify(address: string, message: string, signature: string) {
+        return request<{ token: string }>('/auth/solana/verify', {
+          method: 'POST',
+          body: JSON.stringify({ address, message, signature }),
+        });
+      },
+    },
+
     wallet(message: string, signature: string) {
       return request<WalletResponse>('/auth/wallet', {
         method: 'POST',
@@ -362,6 +469,10 @@ export const api = {
       return request<void>('/account', { method: 'DELETE' });
     },
 
+    getCsrfToken() {
+      return request<{ token: string }>('/auth/csrf-token');
+    },
+
     createAccountNumber() {
       return request<{ accountNumber: string }>('/auth/account/create', { method: 'POST' });
     },
@@ -383,7 +494,7 @@ export const api = {
     const cached = getCached<BalanceResponse>(cacheKey);
     if (cached) return Promise.resolve(cached);
     return request<BalanceResponse>('/v1/balance').then(data => {
-      setCache(cacheKey, data, 30000);
+      setCache(cacheKey, data, 120000);
       return data;
     });
   },
@@ -454,6 +565,67 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ quoteId, fromCoin, fromAmount, refundAddress }),
       });
+    },
+
+    getStatus() {
+      return request<{
+        deposits: Array<{
+          id: string;
+          type: string;
+          status: string;
+          amountUsd: string;
+          creditsIssued: string;
+          txHash: string | null;
+          createdAt: string;
+          completedAt: string | null;
+        }>;
+      }>('/v1/deposit/status');
+    },
+
+    getById(depositId: string) {
+      return request<{
+        deposit: {
+          id: string;
+          type: string;
+          status: string;
+          amountUsd: string;
+          creditsIssued: string;
+          txHash: string | null;
+          houdiniId: string | null;
+          createdAt: string;
+          completedAt: string | null;
+        };
+        retryStatus: {
+          attempts: number;
+          canRetry: boolean;
+          nextRetryAt: string | null;
+          status: string;
+        } | null;
+      }>(`/v1/deposit/${depositId}`);
+    },
+
+    retry(depositId: string) {
+      return request<{ success: boolean; message: string }>(
+        `/v1/deposit/${depositId}/retry`,
+        { method: 'POST' }
+      );
+    },
+
+    getNotifications() {
+      return request<{
+        notifications: Array<{
+          id: string;
+          depositId: string;
+          type: string;
+          status: string;
+          amountUsd: string | null;
+          creditsIssued: string | null;
+          txHash: string | null;
+          method: string | null;
+          createdAt: string;
+          notifiedAt: string | null;
+        }>;
+      }>('/v1/notifications');
     },
   },
 
@@ -575,5 +747,78 @@ export const api = {
         }>;
         pagination: { page: number; limit: number; total: number; pages: number };
       }>(`/admin/keys?page=${page}&limit=${limit}`),
+  },
+
+  webhooks: {
+    list() {
+      return request<{
+        subscriptions: Array<{
+          id: string;
+          url: string;
+          event: string;
+          events: string[];
+          active: boolean;
+          lastNotificationAt: string | null;
+          lastNotificationStatus: string | null;
+          notificationCount: number;
+          createdAt: string;
+        }>;
+      }>('/v1/webhooks');
+    },
+
+    create(data: { url: string; events?: string[]; secret?: string }) {
+      return request<{ id: string; success: boolean }>('/v1/webhooks', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    delete(subscriptionId: string) {
+      return request<{ success: boolean }>(
+        `/v1/webhooks/${subscriptionId}`,
+        { method: 'DELETE' }
+      );
+    },
+  },
+
+  recoveries: {
+    list() {
+      return request<{
+        recoveries: Array<{
+          id: string;
+          originalTxHash: string;
+          recoveryTxHash: string | null;
+          amountUsd: string;
+          status: string;
+          rejectionReason: string | null;
+          createdAt: string;
+          completedAt: string | null;
+        }>;
+      }>('/v1/recoveries');
+    },
+
+    initiate(data: { wrongNetworkTxHash: string; recoveryTxHash: string }) {
+      return request<{
+        success: boolean;
+        recoveryId: string;
+        creditsRecovered: number;
+      }>('/v1/recoveries', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    scan(address: string) {
+      return request<{
+        deposits: Array<{
+          txHash: string;
+          amount: string;
+          fromAddress: string;
+          toAddress: string;
+          blockNumber: string;
+          timestamp: string;
+        }>;
+      }>(`/v1/recoveries/scan?address=${address}`);
+    },
   },
 };

@@ -46,9 +46,9 @@
   /* Text hierarchy - WCAG 2.1 AA compliant (4.5:1 contrast ratio) */
   --color-text: #e4e4e7;
   --color-text-bright: #ffffff;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #8080a0;
-  --color-text-tertiary: #6b6b75;
+  --color-text-secondary: #c4c4d0;
+  --color-text-muted: #9898a8;
+  --color-text-tertiary: #78788a;
   --color-text-inverse: #0a0a0f;
   
   /* Message bubbles - Chat UI */
