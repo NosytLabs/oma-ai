@@ -177,7 +177,13 @@ export function Hero() {
   useEffect(() => {
     setMounted(true)
 
+    let lastUpdate = 0
     const handleMouseMove = (e: MouseEvent) => {
+      // Throttle to 20fps (50ms) to prevent performance issues
+      const now = Date.now()
+      if (now - lastUpdate < 50) return
+      lastUpdate = now
+      
       if (heroRef.current) {
         const rect = heroRef.current.getBoundingClientRect()
         setMousePos({
