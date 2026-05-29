@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Route, Globe, Server, Boxes, GitBranch } from 'lucide-react'
+import { MODELS as CENTRALIZED_MODELS } from '@/lib/models-data'
 
 export const metadata: Metadata = {
   title: 'OMA AI - One Man Army // Open Model Access',
@@ -16,15 +17,24 @@ export const metadata: Metadata = {
   },
 }
 
+// Transform centralized models data to match the format expected by the UI
 const MODELS = [
-  { id: 'deepseek-v3', provider: 'Venice', ctx: '64k', tier: 'premium' },
-  { id: 'llama-3.3-70b', provider: 'Venice/AntSeed', ctx: '128k', tier: 'mid' },
-  { id: 'qwen3-480b', provider: 'AntSeed', ctx: '32k', tier: 'premium' },
-  { id: 'gemma-3-27b', provider: 'Venice', ctx: '8k', tier: 'mid' },
-  { id: 'llama-3.2-3b', provider: 'Venice', ctx: '8k', tier: 'budget' },
+  // Models from centralized data (Venice and AntSeed)
+  ...CENTRALIZED_MODELS
+    .filter(model => 
+      ['deepseek-v3', 'llama-3.3-70b', 'qwen3-480b', 'gemma-3-27b', 'llama-3.2-3b', 'deepseek-r1'].includes(model.id)
+    )
+    .map(model => ({
+      id: model.id,
+      provider: model.provider === 'Venice' && model.id === 'llama-3.3-70b' ? 'Venice/AntSeed' : 
+               model.provider === 'AntSeed' && model.id === 'qwen3-480b' ? 'AntSeed' :
+               model.provider,
+      ctx: model.contextLength.toLowerCase(),
+      tier: model.tier
+    })),
+  // Hardcoded models for other providers not yet in centralized data
   { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128k', tier: 'mid' },
   { id: 'mistral-7b', provider: 'Together', ctx: '8k', tier: 'budget' },
-  { id: 'deepseek-r1', provider: 'Venice', ctx: '64k', tier: 'premium' },
 ]
 
 export default function HomePage() {
@@ -38,7 +48,7 @@ export default function HomePage() {
               {'>'} OMA AI GATEWAY — 50+ models across 6 providers. Pay with crypto.
             </p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-[var(--color-text-bright)] font-bold mb-6 tracking-tight leading-[1.1] font-syne" style={{ overflowWrap: 'anywhere', minWidth: 0 }}>
-              Route inference<br className="hidden sm:block" />
+              Route inference{' '}<br className="hidden sm:block" />
               across 50+ models.<br />
               <span className="text-[var(--color-accent)]">One Man Army.</span>
             </h1>
@@ -168,10 +178,10 @@ export default function HomePage() {
               </div>
               <div className="col-span-2 lg:col-span-1 group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300">
                 <div className="w-12 h-12 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-3">
-                  <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-[var(--color-accent)]">
-                    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                    <path d="M12 8v4l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
+                   <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-[var(--color-accent)]">
+                     <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                     <path d="M12 8v4l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                   </svg>
                 </div>
                 <span className="text-4xl text-[var(--color-text-bright)] font-bold block mb-2 group-hover:text-[var(--color-accent)] transition-colors">100+</span>
                 <span className="text-sm text-[var(--color-text-secondary)]">cryptocurrencies</span>

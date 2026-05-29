@@ -9,7 +9,6 @@ import { logger } from "../../lib/logger.js";
 import {
   getModelLimits,
   getRateLimitKey,
-  getRightmostIp,
   type RateLimitResult,
   type RedisEvalResult,
 } from "./utils.js";
@@ -227,15 +226,15 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
     }
 
     try {
-      let rateLimitKey: string;
-      if (apiKey) {
-        rateLimitKey = `tb:model:${apiKey.id}:${model}`;
-      } else {
-        const ip = getRightmostIp(c.req.header("x-forwarded-for"))
-          || c.req.header("x-real-ip")
-          || "unknown";
-        rateLimitKey = `tb:model:ip:${ip}:${model}`;
-      }
+       let rateLimitKey: string;
+       if (apiKey) {
+         rateLimitKey = `tb:model:${apiKey.id}:${model}`;
+       } else {
+          // Use x-real-ip (set by reverse proxy, can't be spoofed by client)
+          // or first entry in x-forwarded-for (client IP as seen by proxy)
+          const ip = c.req.header('x-real-ip') || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+          rateLimitKey = `tb:model:ip:${ip}:${model}`;
+       }
 
       const rpmKey = `${rateLimitKey}:rpm`;
       const rpmResult = await checkRpmLimit(redis, rpmKey, modelLimits.rpm, 60);

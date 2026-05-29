@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { generateSessionToken, getOrCreateUser } from "../auth/siwe.js";
 import { config } from "../config.js";
 import { getRedisClient } from "../lib/redis-client.js";
+import { XMLParser } from "fast-xml-parser";
 
 export const ssoRouter = new Hono<{ Variables: { user: { id: string }, teamRole?: string } }>();
 
@@ -17,24 +18,85 @@ function base64Decode(base64: string): string {
 }
 
 function extractSamlAttributes(xml: string): { email: string | null; domain: string | null; nameId: string | null; attributes: Record<string, string> } {
-  const result: { email: string | null; domain: string | null; nameId: string | null; attributes: Record<string, string> } = {
-    email: null,
-    domain: null,
-    nameId: null,
-    attributes: {},
-  };
+   const result: { email: string | null; domain: string | null; nameId: string | null; attributes: Record<string, string> } = {
+     email: null,
+     domain: null,
+     nameId: null,
+     attributes: {},
+   };
 
-  const emailMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*email[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
-  const domainMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*domain[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
-  const nameIdMatch = xml.match(/<saml(?:2)?:NameID[^>]*>([^<]+)<\/saml(?:2)?:NameID>/i);
-  const emailAttrMatch = xml.match(/<(?:saml2:AttributeValue|saml:AttributeValue)[^>]*>([^<@]+@[^<]+)<\/(?:saml2:AttributeValue|saml:AttributeValue)>/i);
+   try {
+      const xmlParser = new XMLParser({
+        attributeNamePrefix: "",
+        textNodeName: "#text",
+        ignoreAttributes: false,
+        removeNSPrefix: false,
+        allowBooleanAttributes: false,
+        parseTagValue: true,
+        parseAttributeValue: true,
+        trimValues: true,
+        cdataPropName: false,
+        stopNodes: ["parser-error"]
+      });
+      const parsed = xmlParser.parse(xml);
 
-  result.email = emailMatch?.[1] || nameIdMatch?.[1] || emailAttrMatch?.[1] || null;
-  result.domain = domainMatch?.[1] || null;
-  result.nameId = nameIdMatch?.[1] || null;
+       // Extract attributes from Saml2Attribute or saml:Attribute
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       const extractAttributes = (obj: any): Record<string, string> => {
+         const attrs: Record<string, string> = {};
+         if (!obj) return attrs;
+         
+         // Handle both saml:Attribute and saml2:Attribute
+         const attributes = obj["saml:Attribute"] || obj["saml2:Attribute"] || obj.Attribute || [];
+         const attrArray = Array.isArray(attributes) ? attributes : [attributes];
+         
+         for (const attr of attrArray) {
+           if (attr && attr["$"] && attr["$"]["Name"]) {
+             const name = attr["$"]["Name"];
+             const value = attr["saml:AttributeValue"] || attr["saml2:AttributeValue"] || attr["AttributeValue"] || "";
+             attrs[name] = typeof value === "string" ? value : String(value);
+           }
+         }
+         
+         return attrs;
+       };
 
-  return result;
-}
+     // Extract NameID
+     const nameId = parsed["saml:NameID"] || parsed["saml2:NameID"] || parsed.NameID || null;
+     result.nameId = typeof nameId === "string" ? nameId : null;
+
+     // Extract attributes
+     result.attributes = extractAttributes(parsed);
+
+     // Extract email from attributes or NameID
+     result.email = result.attributes.Email || result.attributes.EmailAddress || result.nameId || null;
+
+     // Extract domain from email or attributes
+     if (result.email && typeof result.email === "string") {
+       const emailParts = result.email.split("@");
+       if (emailParts.length === 2) {
+         result.domain = emailParts[1];
+       }
+     } else if (result.attributes.Domain) {
+       result.domain = result.attributes.Domain;
+     }
+
+   } catch (err) {
+     // If XML parsing fails, fall back to regex-based extraction for backward compatibility
+     console.warn("[SECURITY] XML parsing failed, falling back to regex extraction:", err);
+     
+     const emailMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*email[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
+     const domainMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*domain[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
+     const nameIdMatch = xml.match(/<saml(?:2)?:NameID[^>]*>([^<]+)<\/saml(?:2)?:NameID>/i);
+     const emailAttrMatch = xml.match(/<(?:saml2:AttributeValue|saml:AttributeValue)[^>]*>([^<]+@[^<]+)<\/(?:saml2:AttributeValue|saml:AttributeValue)>/i);
+
+     result.email = emailMatch?.[1] || nameIdMatch?.[1] || emailAttrMatch?.[1] || null;
+     result.domain = domainMatch?.[1] || null;
+     result.nameId = nameIdMatch?.[1] || null;
+   }
+
+   return result;
+ }
 
 async function validateSamlSignature(xml: string, certificate: string | null): Promise<boolean> {
   if (!certificate) {
