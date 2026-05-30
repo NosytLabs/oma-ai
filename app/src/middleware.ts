@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/admin', '/settings']
+const PROTECTED_PATHS = ['/dashboard', '/admin', '/settings', '/deposit', '/playground']
 const SESSION_COOKIE_NAME = 'oma_session'
 
 export function middleware(request: NextRequest) {
@@ -20,5 +20,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/settings/:path*'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/settings/:path*', '/deposit/:path*', '/playground/:path*'],
 }

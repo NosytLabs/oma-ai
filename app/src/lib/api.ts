@@ -101,8 +101,9 @@ async function request<T>(
   path: string,
   opts: RequestInit = {},
 ): Promise<T> {
-  // Create unique request key for deduplication
-  const requestKey = `${opts.method || 'GET'}:${path}`;
+// Create unique request key for deduplication (include body hash for POST to avoid collisions)
+  const bodyHash = opts.body ? JSON.stringify(opts.body) : '';
+  const requestKey = `${opts.method || 'GET'}:${path}:${bodyHash.slice(0, 64)}`;
   
   // Return existing pending request if available (deduplication)
   if (pendingRequests.has(requestKey)) {
@@ -658,6 +659,8 @@ export const api = {
     getApiKeys: () => api.auth.listKeys(),
     createApiKey: (name: string) => request<ApiKeyWithSecret>('/keys', { method: 'POST', body: JSON.stringify({ name }) }),
     revokeApiKey: (id: string) => request<void>(`/keys/${id}`, { method: 'DELETE' }),
+    updateApiKeyRateLimits: (id: string, limits: { rpm?: number; tpm?: number; expiresAt?: string }) =>
+      request<void>(`/keys/${id}`, { method: 'PATCH', body: JSON.stringify(limits) }),
     getUsage: () => api.usage(),
     depositUsdc: (amount: number, txHash: string) => api.deposit.usdc(amount, txHash),
     depositOma: (amount: number, txHash: string) => api.deposit.oma(amount, txHash),

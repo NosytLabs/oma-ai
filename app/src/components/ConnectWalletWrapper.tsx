@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 
 const WalletSkeleton = () => (
@@ -33,5 +33,11 @@ export function ConnectWalletWrapper({ children }: ConnectWalletWrapperProps) {
     return <WalletSkeleton />
   }
 
-  return <WalletProvider>{children}</WalletProvider>
+  return (
+    <Suspense fallback={<WalletSkeleton />}>
+      <WalletProvider>
+        {children}
+      </WalletProvider>
+    </Suspense>
+  )
 }
