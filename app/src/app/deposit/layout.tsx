@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
 
 export const metadata: Metadata = {
   title: 'Deposit Credits',
@@ -14,5 +15,5 @@ export default function DepositLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <ConnectWalletWrapper>{children}</ConnectWalletWrapper>
 }

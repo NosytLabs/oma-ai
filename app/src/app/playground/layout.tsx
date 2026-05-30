@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
 
 export const metadata: Metadata = {
   title: 'API Playground | OMA AI',
@@ -22,5 +23,5 @@ export default function PlaygroundLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <ConnectWalletWrapper>{children}</ConnectWalletWrapper>
 }

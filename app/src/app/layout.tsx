@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Syne, Inter } from 'next/font/google'
-import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
+import { Syne, Inter, JetBrains_Mono } from 'next/font/google'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -8,7 +7,6 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import './globals.css'
 
-// Font optimization with proper subset loading
 const syne = Syne({
   subsets: ['latin'],
   variable: '--font-syne',
@@ -23,6 +21,14 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   fallback: ['system-ui', 'sans-serif'],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+  preload: true,
+  fallback: ['Consolas', 'Monaco', 'monospace'],
 })
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
@@ -98,7 +104,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${inter.variable}`} style={{ scrollBehavior: 'smooth' }}>
+    <html lang="en" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`} style={{ scrollBehavior: 'smooth' }}>
       <head>
         <link rel="preconnect" href="https://eth.coinbase.com" />
         <link rel="preconnect" href="https://base-rpc.publicnode.com" />
@@ -114,15 +120,13 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <ConnectWalletWrapper>
-          <ToastProvider>
-            <Navbar />
-            <main id="main-content" className="pt-16" tabIndex={-1}>
-              <ErrorBoundary>{children}</ErrorBoundary>
-            </main>
-            <Footer />
-          </ToastProvider>
-        </ConnectWalletWrapper>
+        <ToastProvider>
+          <Navbar />
+          <main id="main-content" className="pt-16" tabIndex={-1}>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
+          <Footer />
+        </ToastProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>
