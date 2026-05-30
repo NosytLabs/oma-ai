@@ -134,11 +134,17 @@ export default function ApiKeysPage() {
     }
   }, [toast])
 
-  const handleSaveLimits = useCallback((keyId: string) => {
+  const handleSaveLimits = useCallback(async (keyId: string) => {
     if (!keyId || !rateLimits[keyId]) return;
+    const limits = rateLimits[keyId]!;
+    try {
+      await api.oma.updateApiKeyRateLimits(keyId, { rpm: limits.requestsPerMinute, tpm: limits.requestsPerDay });
+      toast.success('Rate limits updated');
+    } catch {
+      toast.error('Failed to update rate limits');
+    }
     setEditingLimits(null);
-    toast.success('Rate limits updated for ' + (keys.find(k => k.id === keyId)?.name || 'key'));
-  }, [rateLimits, keys, toast])
+  }, [rateLimits, toast])
 
   if (!isConnected) {
     return (

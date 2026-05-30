@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { Wallet, Zap } from 'lucide-react'
 
 interface ConnectWalletViewProps {
@@ -10,11 +11,17 @@ interface ConnectWalletViewProps {
 export function ConnectWalletView({ onConnect }: ConnectWalletViewProps) {
   return (
     <motion.div
-      className="flex min-h-screen items-center justify-center"
+      className="relative flex min-h-screen items-center justify-center"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      <Link
+        href="/"
+        className="absolute top-6 left-6 flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
+      >
+        ← Home
+      </Link>
       <div className="text-center max-w-md px-4">
         <motion.div
           className="mx-auto mb-6 flex h-20 w-20 items-center justify-center border border-[var(--color-border)] bg-[var(--color-void)]"

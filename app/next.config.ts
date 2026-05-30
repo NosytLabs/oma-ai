@@ -7,8 +7,22 @@ const nextConfig: NextConfig = {
   
   // React 19 and Next.js 15 optimizations
   experimental: {
-    // Optimize package imports for better tree-shaking
-    optimizePackageImports: ['lucide-react', 'framer-motion', 'wagmi', 'viem', 'recharts'],
+    optimizePackageImports: [
+      'lucide-react', 
+      'framer-motion', 
+      'wagmi', 
+      'viem', 
+      'recharts',
+      '@tanstack/react-query',
+      '@solana/wallet-adapter-base',
+      '@solana/wallet-adapter-react',
+      '@coinbase/wallet-sdk',
+      '@walletconnect/ethereum-provider',
+      '@metamask/sdk',
+      '@safe-global/safe-apps-provider',
+      'siwe',
+      'react-markdown',
+    ],
   },
   
   // Webpack optimizations for bundle size reduction

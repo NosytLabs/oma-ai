@@ -255,11 +255,11 @@ export default function PricingPage() {
                 <table className="w-full text-left min-w-[640px] sm:min-w-0">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Model</th>
-                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Provider</th>
-                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Input / 1M</th>
-                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Output / 1M</th>
-                      <th className="px-4 py-4 text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Ctx</th>
+                      <th scope="col" className="px-4 py-4 text-xs font-syne font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Model</th>
+                      <th scope="col" className="px-4 py-4 text-xs font-syne font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Provider</th>
+                      <th scope="col" className="px-4 py-4 text-xs font-syne font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Input / 1M</th>
+                      <th scope="col" className="px-4 py-4 text-xs font-syne font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Output / 1M</th>
+                      <th scope="col" className="px-4 py-4 text-xs font-syne font-semibold uppercase tracking-widest text-[var(--color-text-muted)] text-right">Ctx</th>
                     </tr>
                   </thead>
                   <tbody>

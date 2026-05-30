@@ -49,3 +49,4 @@ app/remaining_components_audit.md
 app/data_fetching_audit.md
 app/security_audit.md
 webwright_audit/
+.vercel

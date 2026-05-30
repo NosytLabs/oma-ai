@@ -47,7 +47,7 @@
   --color-text: #e4e4e7;
   --color-text-bright: #ffffff;
   --color-text-secondary: #c4c4d0;
-  --color-text-muted: #9898a8;
+  --color-text-muted: #b3b3b8;
   --color-text-tertiary: #78788a;
   --color-text-inverse: #0a0a0f;
   
@@ -111,6 +111,7 @@
   /* Typography */
   --font-syne: "Syne", sans-serif;
   --font-inter: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, Monaco, monospace;
 }
 
 [data-theme="light"] {

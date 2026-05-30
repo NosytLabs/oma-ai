@@ -267,7 +267,7 @@ export function ModelHighlights() {
             <Sparkles className="w-4 h-4 text-[var(--color-cyan)]" />
             <span className="text-sm font-medium text-[var(--color-cyan)] font-mono">50+ models available</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-mono font-bold tracking-tight text-[var(--color-text)] mb-4">
+          <h2 className="text-4xl md:text-5xl font-syne font-bold tracking-tight text-[var(--color-text)] mb-4">
             Every model. One API.
           </h2>
           <p className="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">
@@ -307,7 +307,7 @@ export function ModelHighlights() {
               <Zap className="w-4 h-4 text-[var(--color-success)]" />
               <span className="text-sm font-medium text-[var(--color-success)] font-mono">No credit card required</span>
             </div>
-            <h3 className="text-2xl md:text-3xl font-mono font-bold text-[var(--color-text)] mb-2">Budget Models</h3>
+            <h3 className="text-2xl md:text-3xl font-syne font-bold text-[var(--color-text)] mb-2">Budget Models</h3>
             <p className="text-[var(--color-text-muted)]">Low-cost models to get started</p>
           </div>
 

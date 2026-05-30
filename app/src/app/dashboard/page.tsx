@@ -201,9 +201,9 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="sr-only">Dashboard</h1>
       <main id="dashboard-content" className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-surface)] selection:text-[var(--color-text)]">
         <div className="p-4 md:p-8 pt-20">
+          <h1 className="text-2xl md:text-3xl font-bold mb-8 text-[var(--color-text-bright)]">Dashboard</h1>
 
         {error && (
           <div className="mb-6 flex items-center justify-between border border-[var(--color-accent-dim)] bg-[var(--color-error-bg)] p-4 text-xs uppercase tracking-widest text-[var(--color-error)]">

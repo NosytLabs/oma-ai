@@ -155,9 +155,9 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <button className="model-card-cta" style={{ flex: 1 }}>
+        <Link href={`/playground?model=${encodeURIComponent(model.id)}`} className="model-card-cta" style={{ flex: 1 }}>
           Use in Playground
-        </button>
+        </Link>
         <button className="model-card-arrow" aria-label="View details">
           <ArrowRight className="h-4 w-4" />
         </button>
@@ -359,7 +359,7 @@ const NoResults = ({ onReset }: { onReset: () => void }) => (
   <div className="flex flex-col items-center justify-center py-20">
     <Search className="mb-4 h-12 w-12" style={{ color: 'var(--color-border-bright)' }} />
     <p className="text-lg font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>No models match your criteria</p>
-    <button onClick={onReset} className="text-sm" style={{ color: 'var(--color-cyan)' }}>
+    <button onClick={onReset} aria-label="Reset filters" className="text-sm" style={{ color: 'var(--color-cyan)' }}>
       Reset filters
     </button>
   </div>

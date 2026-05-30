@@ -1,7 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useRef, useEffect, useCallback, useDeferredValue, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useDeferredValue, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -76,8 +77,10 @@ const API_URL = '/api/v1/chat/completions'
 const MAX_MESSAGE_LENGTH = 100 * 1024
 const BATCH_INTERVAL_MS = 250
 
-export default function PlaygroundPage() {
-  const [model, setModel] = useState('deepseek-v4-pro')
+function PlaygroundContent() {
+  const searchParams = useSearchParams()
+  const defaultModel = searchParams.get('model') || 'deepseek-v3'
+  const [model, setModel] = useState(defaultModel)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -532,6 +535,14 @@ export default function PlaygroundPage() {
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>ERR: {error}</span>
+                    {error.includes('API key') && (
+                      <a
+                        href="/dashboard/api-keys"
+                        className="ml-2 px-2 py-0.5 bg-[var(--color-accent)] text-[var(--color-text-inverse)] text-[10px] font-bold uppercase tracking-wider hover:bg-[var(--color-accent-hover)] transition-colors"
+                      >
+                        Get API Key →
+                      </a>
+                    )}
                   </div>
                   <button onClick={() => setError(null)} className="p-1 hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
                     <X className="w-3 h-3" />
@@ -639,5 +650,29 @@ export default function PlaygroundPage() {
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+function PlaygroundLoadingFallback() {
+  return (
+    <div className="flex flex-col gap-6 p-4 max-w-4xl mx-auto">
+      <Skeleton className="h-8 w-48" />
+      <div className="flex gap-4">
+        <Skeleton className="w-10 h-10 shrink-0 rounded" />
+        <div className="flex flex-col max-w-[80%] gap-2 flex-1">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
+      <Skeleton className="h-16 w-full" />
+    </div>
+  )
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={<PlaygroundLoadingFallback />}>
+      <PlaygroundContent />
+    </Suspense>
   )
 }

@@ -22,13 +22,14 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
   }
 
   return (
-    <div className="relative flex items-end bg-[var(--color-void)] border border-[var(--color-border)] px-2 py-2 transition-all focus-within:border-[var(--color-accent)]/50 focus-within:ring-2 focus-within:ring-[var(--color-accent)]/20">
+    <div className="relative flex items-end bg-[var(--color-void)] border border-[var(--color-border)] px-2 py-2 transition-all focus-within:border-[var(--color-accent)]/50 focus-within:ring-2 focus-within:ring-[var(--color-accent)]/20" role="search">
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="$ QUERY"
-        aria-label="Message input"
+        aria-label="Enter your message"
+        aria-describedby="message-hint"
         rows={1}
         className="flex-1 resize-none bg-transparent px-4 py-3 text-[var(--color-text-secondary)] placeholder-[var(--color-text-muted)] outline-none text-sm font-mono leading-relaxed focus:ring-0"
         disabled={loading}
@@ -53,12 +54,14 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
             onClick={onSubmit}
             disabled={!input.trim()}
             aria-label="Send message"
+            aria-describedby="message-hint"
             className="flex h-11 w-11 items-center justify-center bg-[var(--color-accent)] text-[var(--color-text-inverse)] font-semibold transition-all hover:bg-[var(--color-accent-hover)] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
           >
             <Send className="w-4 h-4" />
           </button>
         )}
       </div>
+      <span id="message-hint" className="sr-only">Shift+Enter for new line, Enter to send</span>
     </div>
   )
 }

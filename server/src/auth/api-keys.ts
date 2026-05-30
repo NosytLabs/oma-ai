@@ -57,9 +57,9 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
   ).returning();
   if (results.length === 0) return null;
   const apiKey = results[0];
-  const storedPrefix = apiKey.keyPrefix;
-  const rawPrefix = rawKey.slice(0, storedPrefix.length);
-  if (!timingSafeEqual(storedPrefix, rawPrefix)) return null;
+  const rawPrefix = rawKey.slice(0, 12);
+  const rawPrefixHash = crypto.createHash("sha256").update(rawPrefix).digest("hex");
+  if (!timingSafeEqual(apiKey.keyPrefix, rawPrefixHash)) return null;
   if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
     return { ...apiKey, expired: true };
   }

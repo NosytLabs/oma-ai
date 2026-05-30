@@ -38,7 +38,7 @@ export function CtaFooter() {
       
       <div className="max-w-4xl mx-auto relative z-10">
         <div className={`text-center transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h2 className="text-4xl md:text-5xl font-mono font-bold tracking-tight text-[var(--color-text)] mb-4">
+          <h2 className="text-4xl md:text-5xl font-syne font-bold tracking-tight text-[var(--color-text)] mb-4">
             Start Building in 2 Minutes
           </h2>
           <p className="text-lg text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-10">

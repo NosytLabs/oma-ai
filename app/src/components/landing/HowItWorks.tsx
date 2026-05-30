@@ -137,7 +137,7 @@ export function HowItWorks() {
             <Check className="w-4 h-4 text-[var(--color-cyan)]" />
             <span className="text-sm font-medium text-[var(--color-cyan)] font-mono">No signup required</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-mono font-bold tracking-tight text-[var(--color-text)] mb-4">
+          <h2 className="text-4xl md:text-5xl font-syne font-bold tracking-tight text-[var(--color-text)] mb-4">
             Get started in minutes
           </h2>
           <p className="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">

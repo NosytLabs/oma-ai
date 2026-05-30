@@ -49,7 +49,7 @@ export function TrustedBy() {
           <p className="text-sm font-semibold uppercase tracking-widest text-[var(--color-text-muted)] mb-4 font-mono">
             Routing across multiple AI providers
           </p>
-          <h2 className="text-3xl md:text-4xl font-mono font-bold tracking-tight text-[var(--color-text-secondary)]">
+          <h2 className="text-3xl md:text-4xl font-syne font-bold tracking-tight text-[var(--color-text-secondary)]">
             ONE MAN ARMY
           </h2>
         </div>

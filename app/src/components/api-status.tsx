@@ -76,7 +76,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
           )}
           <span className={`relative inline-flex rounded-full h-2 w-2 ${info.dotClass}`} />
         </span>
-        <span role="status" aria-live="polite" className={`text-[10px] ${info.className}`}>
+        <span role="status" aria-live="polite" aria-label={`API Status: ${info.text}`} className={`text-[10px] ${info.className}`}>
           {info.text}
         </span>
       </div>

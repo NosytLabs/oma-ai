@@ -88,7 +88,7 @@ export function PricingTiers() {
                   <Zap className="w-6 h-6 text-[var(--color-cyan)]" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-mono font-bold text-[var(--color-text)]">Starter Credits</h3>
+                  <h3 className="text-2xl font-syne font-bold text-[var(--color-text)]">Starter Credits</h3>
                   <p className="text-[var(--color-cyan)] font-medium font-mono">Try at low cost</p>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export function PricingTiers() {
 
         <AnimatedSection delay={200} className="mb-16">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-mono font-bold text-[var(--color-text)] mb-2">How It Works</h3>
+            <h3 className="text-2xl font-syne font-bold text-[var(--color-text)] mb-2">How It Works</h3>
             <p className="text-[var(--color-text-muted)]">Start in minutes, scale infinitely</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -155,7 +155,7 @@ export function PricingTiers() {
               { value: '0%', label: 'Subscription' },
             ].map((stat) => (
               <div key={stat.label} className="text-center p-4 rounded border border-[var(--color-border)] bg-[var(--color-surface)]">
-                <div className="text-2xl md:text-3xl font-mono font-bold text-[var(--color-text)] mb-1">{stat.value}</div>
+                <div className="text-2xl md:text-3xl font-syne font-bold text-[var(--color-text)] mb-1">{stat.value}</div>
                 <div className="text-xs text-[var(--color-text-muted)]">{stat.label}</div>
               </div>
             ))}

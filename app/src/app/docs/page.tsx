@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, createContext, useContext, ReactNode, useId } from 'react'
+import Link from 'next/link'
 import {
   BookOpen, Key, Gauge, Copy, Check, Terminal, Shield, Zap,
   Lock, AlertCircle, DollarSign, Sun, Moon, Menu, X, ChevronRight, Play,
@@ -966,9 +967,15 @@ function DocsContent() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
                 <BookOpen className="h-4 w-4" />
               </div>
-              <div>
-                <h1 className="font-semibold text-text">Developer Portal</h1>
-                <p className="text-xs text-text-muted">OMA AI Gateway Documentation</p>
+              <div className="flex flex-col">
+                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5">
+                  <Link href="/" className="hover:text-text transition-colors">Home</Link>
+                  <span className="opacity-50">›</span>
+                  <span className="text-text-secondary">Developer Portal</span>
+                  <span className="opacity-50">›</span>
+                  <span className="text-text">API Docs</span>
+                </nav>
+                <h1 className="font-semibold text-text text-sm">OMA AI Gateway Documentation</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
