@@ -63,7 +63,7 @@ export function extractClientIp(c: Context<OmaEnv>): string {
     if (ips.length > 0) {
       const rightmostIp = ips[ips.length - 1];
       if (isTrustedProxy(rightmostIp)) {
-        return ips[0];
+        return rightmostIp;
       }
     }
   }

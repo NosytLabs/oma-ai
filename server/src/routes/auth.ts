@@ -9,8 +9,8 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { db } from "../db/client.js";
-import { users, apiKeys, subscriptions, auditLogs } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { users, apiKeys, subscriptions, auditLogs, rateLimitOverrides } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { createHash, randomBytes, createHmac, timingSafeEqual } from "crypto";
@@ -64,7 +64,8 @@ function generateAccountNumber(): string {
   for (let i = 0; i < 3; i++) {
     let segment = "";
     for (let j = 0; j < 4; j++) {
-      segment += chars[randomBytes(1)[0] % chars.length];
+      const randomValue = randomBytes(4).readUInt32BE(0);
+      segment += chars[randomValue % chars.length];
     }
     segments.push(segment);
   }
@@ -106,6 +107,12 @@ const solanaVerifySchema = z.object({
 
 const createKeySchema = z.object({
   name: z.string().min(1).max(100),
+});
+
+const rateLimitOverrideSchema = z.object({
+  rpm: z.number().min(1).optional(),
+  tpm: z.number().min(100).optional(),
+  expiresAt: z.string().datetime().optional(),
 });
 
 function buildStandaloneAccountAddress(accountNumber: string): string {
@@ -335,8 +342,8 @@ authRoutes.post("/auth/2fa/disable", sessionAuth, async (c) => {
 
   let secret: string;
   try {
-    const parsed = JSON.parse(user.twoFactorSecret!);
-    secret = decryptSecret(parsed.encrypted, parsed.iv, parsed.authTag);
+    const parsed2 = JSON.parse(user.twoFactorSecret!);
+    secret = decryptSecret(parsed2.encrypted, parsed2.iv, parsed2.authTag);
   } catch {
     return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
   }
@@ -515,6 +522,40 @@ authRoutes.delete("/keys/:id", sessionAuth, async (c) => {
   const keyId = c.req.param("id") ?? "";
   const result = await revokeApiKey(String(userId), keyId);
   if (!result) return c.json({ error: { message: "API key not found", type: "not_found" } }, 404);
+  return c.json({ success: true });
+});
+
+authRoutes.patch("/keys/:id", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const keyId = c.req.param("id") ?? "";
+  const parsed = rateLimitOverrideSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+
+  const existing = await db.select({ id: apiKeys.id }).from(apiKeys).where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId))).limit(1);
+  if (!existing.length) return c.json({ error: { message: "API key not found", type: "not_found" } }, 404);
+
+  const { rpm, tpm, expiresAt } = parsed.data;
+
+  const [existingOverride] = await db
+    .select()
+    .from(rateLimitOverrides)
+    .where(and(eq(rateLimitOverrides.targetType, "api_key"), eq(rateLimitOverrides.targetId, keyId)))
+    .limit(1);
+
+  if (existingOverride) {
+    await db.update(rateLimitOverrides)
+      .set({ rpm: rpm ?? existingOverride.rpm, tpm: tpm ?? existingOverride.tpm, expiresAt: expiresAt ? new Date(expiresAt) : existingOverride.expiresAt })
+      .where(eq(rateLimitOverrides.id, existingOverride.id));
+  } else {
+    await db.insert(rateLimitOverrides).values({
+      targetType: "api_key",
+      targetId: keyId,
+      rpm,
+      tpm,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    });
+  }
+
   return c.json({ success: true });
 });
 

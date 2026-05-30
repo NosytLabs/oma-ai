@@ -8,13 +8,14 @@ let _dbInitFailed = false;
 
 export function getDb() {
   if (_dbInitFailed) {
+    console.error("[db] FATAL: Database initialization failed. Using mock DB - all queries return empty results. This indicates a misconfigured DATABASE_URL or the database is unreachable.");
     return null as unknown as ReturnType<typeof drizzle>;
   }
   
   if (!_db) {
     const dbUrl = config.DATABASE_URL;
     if (!dbUrl || !dbUrl.includes("://")) {
-      console.log("[db] DATABASE_URL not configured or invalid, using mock mode");
+      console.error("[db] FATAL: DATABASE_URL not configured or invalid. Using mock DB - all queries return empty results.");
       _dbInitFailed = true;
       return null as unknown as ReturnType<typeof drizzle>;
     }
@@ -22,7 +23,7 @@ export function getDb() {
       const sql = neon(dbUrl);
       _db = drizzle(sql, { schema });
     } catch (err) {
-      console.log("[db] Failed to initialize:", err instanceof Error ? err.message : String(err));
+      console.error("[db] FATAL: Failed to initialize database connection:", err instanceof Error ? err.message : String(err), ". Using mock DB - all queries return empty results.");
       _dbInitFailed = true;
       return null as unknown as ReturnType<typeof drizzle>;
     }

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual, createHash as nodeCreateHash } from "node:crypto";
 import { requireTeamRole } from "../middleware/rbac.js";
 import { db } from "../db/client.js";
 import { ssoConnections, teamMembers, teams } from "../db/schema.js";
@@ -126,7 +126,10 @@ async function validateSamlSignature(xml: string, certificate: string | null): P
     const cleanCert = certMatch[1].replace(/\s+/g, "");
     const configuredCert = certificate.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, "");
 
-    if (cleanCert.length !== configuredCert.length || !timingSafeEqual(Buffer.from(cleanCert), Buffer.from(configuredCert))) {
+    const cleanHash = nodeCreateHash("sha256").update(cleanCert).digest();
+    const configuredHash = nodeCreateHash("sha256").update(configuredCert).digest();
+
+    if (!timingSafeEqual(cleanHash, configuredHash)) {
       console.warn("[SECURITY] SAML response certificate does not match configured certificate. Rejecting.");
       return false;
     }
