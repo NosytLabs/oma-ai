@@ -4,9 +4,7 @@ import * as litellm from "./litellm.js";
 import * as openrouter from "./openrouter.js";
 import * as together from "./together.js";
 import * as deepinfra from "./deepinfra.js";
-import * as groq from "./groq.js";
-import * as cerebras from "./cerebras.js";
-import * as bedrock from "./bedrock.js";
+import * as surplus from "./surplus.js";
 import { reportProviderResult } from "./provider-result.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
@@ -54,12 +52,8 @@ export async function callProvider(
       resp = await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0]);
     } else if (provider === "deepinfra") {
       resp = await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0]);
-    } else if (provider === "groq") {
-      resp = await groq.groqChatCompletion(reqBody as Parameters<typeof groq.groqChatCompletion>[0]);
-    } else if (provider === "cerebras") {
-      resp = await cerebras.cerebrasChatCompletion(reqBody as Parameters<typeof cerebras.cerebrasChatCompletion>[0]);
-    } else if (provider === "bedrock") {
-      resp = await bedrock.bedrockChatCompletion(reqBody as Parameters<typeof bedrock.bedrockChatCompletion>[0]);
+    } else if (provider === "surplus") {
+      resp = await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
     } else {
       resp = await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0]);
     }

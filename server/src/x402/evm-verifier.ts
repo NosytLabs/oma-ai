@@ -4,8 +4,6 @@ import { config } from "../config.js";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import type { PaymentPayload, PaymentResponse } from "./types.js";
 
-const EVM_PUBLIC_RPC_FALLBACK = "https://base-rpc.publicnode.com";
-
 export async function verifyEvmPayment(
   signature: string,
   authorization: string,
@@ -142,10 +140,6 @@ export async function verifyEvmPayment(
       }
     }
 
-    try {
-      return await attemptVerification(EVM_PUBLIC_RPC_FALLBACK, undefined);
-    } catch {
-      return { valid: false, error: `EVM verification failed` };
-    }
+    return { valid: false, error: `EVM verification failed: no trusted RPC available` };
   }
 }

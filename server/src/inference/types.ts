@@ -34,7 +34,7 @@ export interface InferenceResponse {
 export interface ModelPricing {
   inputPer1k: number
   outputPer1k: number
-  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra' | 'groq' | 'cerebras' | 'bedrock'
+  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra' | 'surplus'
   markup: number
 }
 

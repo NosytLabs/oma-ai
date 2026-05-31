@@ -140,11 +140,14 @@ export function createTrackingStream(
 
           if (controller.desiredSize !== null && controller.desiredSize <= 0) {
             await new Promise<void>((resolve) => {
+              let delay = 10;
+              const maxDelay = 500;
               const checkSize = () => {
                 if (controller.desiredSize !== null && controller.desiredSize > 0) {
                   resolve();
                 } else {
-                  setTimeout(checkSize, 10);
+                  setTimeout(checkSize, delay);
+                  delay = Math.min(delay * 1.5, maxDelay);
                 }
               };
               checkSize();

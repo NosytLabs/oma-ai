@@ -12,7 +12,7 @@ export interface ProviderEndpoints {
 }
 
 export interface ProviderFactoryConfig {
-  name: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "groq" | "cerebras" | "bedrock";
+  name: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "surplus";
   apiKeyConfigPath?: string;
   baseUrl: string;
   endpoints: ProviderEndpoints;
@@ -74,7 +74,7 @@ export function createProvider<T extends BaseInferenceProvider>(
 }
 
 export async function healthCheck(
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "groq" | "cerebras" | "bedrock",
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "surplus",
   baseUrl: string,
   healthPath: string,
   timeoutMs: number = DEFAULT_HEALTH_CHECK_TIMEOUT_MS

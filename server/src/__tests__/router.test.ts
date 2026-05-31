@@ -103,7 +103,7 @@ describe('Router', () => {
       stream: false as const,
     }
 
-    it('does not refund credits when non-streaming call succeeds with error JSON', async () => {
+it('does not refund credits when non-streaming call succeeds with error JSON', async () => {
       const { isProviderAvailable } = await import('../inference/provider-health.js')
       vi.mocked(isProviderAvailable).mockResolvedValue(true)
 
@@ -111,13 +111,13 @@ describe('Router', () => {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       })
-      
-      const { chatCompletion } = await import('../inference/venice.js')
+
+      const { chatCompletion } = await import('../inference/antseed.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-      
+
       const { refundCredits } = await import('../credits/index.js')
       vi.mocked(refundCredits).mockResolvedValue(undefined)
-      
+
       const result = await router.handleChatCompletion('user-1', 'key-1', mockBody)
       expect(result.response).toBeInstanceOf(Response)
       expect(refundCredits).not.toHaveBeenCalled()
@@ -126,7 +126,7 @@ describe('Router', () => {
     it('handles streaming response correctly', async () => {
       const { isProviderAvailable } = await import('../inference/provider-health.js')
       vi.mocked(isProviderAvailable).mockResolvedValue(true)
-      
+
       const streamBody = new ReadableStream({
         start(controller) {
           const encoder = new TextEncoder()
@@ -135,18 +135,18 @@ describe('Router', () => {
           controller.close()
         },
       })
-      
+
       const mockResp = new Response(streamBody, {
         status: 200,
         headers: { 'Content-Type': 'text/event-stream' },
       })
-      
-      const { chatCompletion } = await import('../inference/venice.js')
+
+      const { chatCompletion } = await import('../inference/antseed.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-       
+
        const result = await router.handleChatCompletion('user-1', 'key-1', { ...mockBody, stream: true })
-       
-       expect(result.provider).toBe('venice')
+
+       expect(result.provider).toBe('antseed')
        expect(result.response).toBeInstanceOf(Response)
        expect(result.response.headers.get('Content-Type')).toContain('text/event-stream')
     })

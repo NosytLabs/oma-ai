@@ -11,11 +11,9 @@ export interface ModelDef {
   openrouterId?: string;
   togetherId?: string;
   deepinfraId?: string;
-  groqId?: string;
-  cerebrasId?: string;
-  bedrockId?: string;
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock" | "both" | "all";
-  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock";
+  surplusId?: string;
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "both" | "all";
+  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus";
   inputPricePer1M: number;
   outputPricePer1M: number;
   markupPercent: number;
@@ -66,86 +64,6 @@ export let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
-  "groq/llama-3.3-70b": {
-    id: "groq/llama-3.3-70b",
-    provider: "groq" as const,
-    primaryProvider: "groq" as const,
-    inputPricePer1M: 0.59,
-    outputPricePer1M: 0.79,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 8192,
-    supportsStreaming: true,
-    displayName: "Llama 3.3 70B (Groq)",
-    capabilities: ["chat", "code"],
-    description: "Meta's 70B model with ultra-fast inference on Groq",
-    creditsPerMillionInput: 590,
-    creditsPerMillionOutput: 790,
-  },
-  "groq/llama-3.1-8b-instant": {
-    id: "groq/llama-3.1-8b-instant",
-    provider: "groq" as const,
-    primaryProvider: "groq" as const,
-    inputPricePer1M: 0.05,
-    outputPricePer1M: 0.08,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 8192,
-    supportsStreaming: true,
-    displayName: "Llama 3.1 8B Instant (Groq)",
-    capabilities: ["chat"],
-    description: "Ultra-fast budget model on Groq",
-    creditsPerMillionInput: 50,
-    creditsPerMillionOutput: 80,
-  },
-  "groq/mixtral-8x7b": {
-    id: "groq/mixtral-8x7b",
-    provider: "groq" as const,
-    primaryProvider: "groq" as const,
-    inputPricePer1M: 0.24,
-    outputPricePer1M: 0.24,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 32768,
-    supportsStreaming: true,
-    displayName: "Mixtral 8x7B (Groq)",
-    capabilities: ["chat", "code"],
-    description: "Fast Mixture-of-Experts model on Groq",
-    creditsPerMillionInput: 240,
-    creditsPerMillionOutput: 240,
-  },
-  "cerebras/llama-3.3-70b": {
-    id: "cerebras/llama-3.3-70b",
-    provider: "cerebras" as const,
-    primaryProvider: "cerebras" as const,
-    inputPricePer1M: 0.60,
-    outputPricePer1M: 0.60,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 8192,
-    supportsStreaming: true,
-    displayName: "Llama 3.3 70B (Cerebras)",
-    capabilities: ["chat", "code"],
-    description: "Ultra-fast inference on Cerebras wafer scale engine",
-    creditsPerMillionInput: 600,
-    creditsPerMillionOutput: 600,
-  },
-  "cerebras/llama-3.1-8b": {
-    id: "cerebras/llama-3.1-8b",
-    provider: "cerebras" as const,
-    primaryProvider: "cerebras" as const,
-    inputPricePer1M: 0.10,
-    outputPricePer1M: 0.10,
-    markupPercent: 10,
-    category: "budget",
-    maxTokens: 8192,
-    supportsStreaming: true,
-    displayName: "Llama 3.1 8B (Cerebras)",
-    capabilities: ["chat"],
-    description: "Fast budget model on Cerebras",
-    creditsPerMillionInput: 100,
-    creditsPerMillionOutput: 100,
-  },
   "deepseek-v3": {
     id: "deepseek-v3",
     veniceId: "deepseek-v3",
@@ -162,40 +80,6 @@ const FALLBACK_MODELS: Record<string, ModelDef> = {
     description: "DeepSeek's latest flagship model",
     creditsPerMillionInput: 500,
     creditsPerMillionOutput: 1500,
-  },
-  "bedrock/claude-3.5-sonnet": {
-    id: "bedrock/claude-3.5-sonnet",
-    provider: "bedrock" as const,
-    primaryProvider: "bedrock" as const,
-    bedrockId: "claude-3-5-sonnet",
-    inputPricePer1M: 3.00,
-    outputPricePer1M: 15.00,
-    markupPercent: 10,
-    category: "premium",
-    maxTokens: 200000,
-    supportsStreaming: true,
-    displayName: "Claude 3.5 Sonnet (Bedrock)",
-    capabilities: ["chat", "code", "reasoning", "vision"],
-    description: "Anthropic Claude 3.5 Sonnet on AWS Bedrock",
-    creditsPerMillionInput: 3000,
-    creditsPerMillionOutput: 15000,
-  },
-  "bedrock/llama-3.1-70b": {
-    id: "bedrock/llama-3.1-70b",
-    provider: "bedrock" as const,
-    primaryProvider: "bedrock" as const,
-    bedrockId: "llama-3.1-70b-instruct",
-    inputPricePer1M: 0.65,
-    outputPricePer1M: 2.75,
-    markupPercent: 10,
-    category: "mid",
-    maxTokens: 128000,
-    supportsStreaming: true,
-    displayName: "Llama 3.1 70B (Bedrock)",
-    capabilities: ["chat", "code"],
-    description: "Meta Llama 3.1 70B on AWS Bedrock",
-    creditsPerMillionInput: 650,
-    creditsPerMillionOutput: 2750,
   },
   "llama-3.3-70b": {
     id: "llama-3.3-70b",

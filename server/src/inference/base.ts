@@ -70,7 +70,7 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
@@ -86,7 +86,7 @@ export abstract class BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           this.config.mapError(resp.status, text);
@@ -144,7 +144,7 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
@@ -160,7 +160,7 @@ export abstract class BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           this.config.mapError(resp.status, text);

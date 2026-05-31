@@ -230,7 +230,6 @@ function createReceiptPayload(
 
 import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
 
-const EVM_PUBLIC_RPC_FALLBACK = "https://base-rpc.publicnode.com";
 const SOLANA_PUBLIC_RPC_FALLBACK = "https://rpc.ankr.com/solana";
 
 async function fetchWithFallback(
@@ -390,11 +389,7 @@ async function verifyEvmPayment(
       }
     }
 
-    try {
-      return await attemptVerification(EVM_PUBLIC_RPC_FALLBACK, undefined);
-    } catch {
-      return { valid: false, error: `EVM verification failed` };
-    }
+    return { valid: false, error: `EVM verification failed: no trusted RPC available` };
   }
 }
 

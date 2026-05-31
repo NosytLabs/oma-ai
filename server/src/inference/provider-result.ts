@@ -1,6 +1,6 @@
 import { getRedisClient } from "../lib/redis-client.js";
 
-type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock";
+type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus";
 
 interface ProviderResultRecord {
   provider: Provider;

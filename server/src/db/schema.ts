@@ -10,6 +10,7 @@ import {
   pgEnum,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const depositStatusEnum = pgEnum("deposit_status", [
   "pending",
@@ -32,7 +33,7 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "wrong_network_recovery",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock"]);
+export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock", "surplus"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -142,6 +143,7 @@ export const usageRecords = pgTable(
     uniqueIndex("uq_usage_request_id").on(t.requestId),
     index("idx_usage_user_created").on(t.userId, t.createdAt),
     index("idx_usage_records_provider").on(t.provider),
+    index("idx_usage_user_created_model").on(t.userId, t.createdAt, t.model),
   ]
 );
 
@@ -175,6 +177,7 @@ amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
     index("idx_credit_batches_expiry").on(t.expiresAt),
     index("idx_credit_batches_user_remaining").on(t.userId, t.remainingCents),
     index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
+    index("idx_credit_batches_remaining_positive").on(t.userId).where(sql`${t.remainingCents} > 0`),
   ]
 );
 
@@ -564,6 +567,7 @@ export const auditLogs = pgTable(
     index("idx_audit_logs_created").on(t.createdAt),
     index("idx_audit_logs_user_action").on(t.userId, t.action),
     index("idx_audit_logs_user_created").on(t.userId, t.createdAt),
+    index("idx_audit_logs_user_action_created").on(t.userId, t.action, t.createdAt),
   ]
 );
 

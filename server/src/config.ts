@@ -31,6 +31,7 @@ const envSchema = z.object({
   BEDROCK_ACCESS_KEY_ID: z.string().min(1).optional(),
   BEDROCK_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   BEDROCK_REGION: z.string().min(1).default("us-east"),
+  SURPLUS_WALLET_PRIVATE_KEY: z.string().min(1).optional(),
   HOUDINI_API_KEY: z.string().min(1).optional(),
   HOUDINI_API_SECRET: z.string().min(1).optional(),
   HOUDINI_PARTNER_ID: z.string().min(1).optional(),

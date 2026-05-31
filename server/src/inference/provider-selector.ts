@@ -5,29 +5,18 @@ import { parseProviderWeights, parseModelWeights } from "../lib/router-utils.js"
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "groq" | "cerebras" | "bedrock";
+export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus";
 
-export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "groq", "cerebras", "bedrock"];
+export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus"];
 
-const PROPRIETARY_PREFIXES = ["anthropic/", "openai/", "gpt-", "claude-", "gemini-", "grok-", "o3", "venice/", "stabilityai/", "openrouter/"];
+const _PROPRIETARY_PREFIXES = ["anthropic/", "openai/", "gpt-", "claude-", "gemini-", "grok-", "o3", "venice/", "stabilityai/", "openrouter/"];
 const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
-const GROQ_PREFIXES = ["groq/"];
-const CEREBRAS_PREFIXES = ["cerebras/"];
 
 function inferProviderFromModel(model: string): Provider {
   if (model.startsWith("openrouter/") || model.startsWith("openai/")) return "openrouter";
   if (model.startsWith("litellm/")) return "litellm";
   if (model.startsWith("together/")) return "together";
   if (model.startsWith("deepinfra/")) return "deepinfra";
-  for (const prefix of GROQ_PREFIXES) {
-    if (model.startsWith(prefix)) return "groq";
-  }
-  for (const prefix of CEREBRAS_PREFIXES) {
-    if (model.startsWith(prefix)) return "cerebras";
-  }
-  for (const prefix of PROPRIETARY_PREFIXES) {
-    if (model.startsWith(prefix)) return "venice";
-  }
   for (const prefix of OPENSOURCE_PREFIXES) {
     if (model.startsWith(prefix)) return "antseed";
   }
@@ -54,8 +43,6 @@ function selectProviderWeighted(weights: Map<Provider, number>, available: Provi
 
 function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string {
   if (!modelDef) {
-    if (model.startsWith("groq/")) return model.replace("groq/", "");
-    if (model.startsWith("cerebras/")) return model.replace("cerebras/", "");
     if (model.startsWith("litellm/")) return model.replace("litellm/", "");
     return model;
   }
@@ -66,9 +53,7 @@ function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, mo
     openrouter: modelDef.openrouterId ?? modelDef.id, 
     together: modelDef.togetherId ?? modelDef.id, 
     deepinfra: modelDef.deepinfraId ?? modelDef.id,
-    groq: modelDef.groqId ?? modelDef.id,
-    cerebras: modelDef.cerebrasId ?? modelDef.id,
-    bedrock: modelDef.bedrockId ?? modelDef.id,
+    surplus: modelDef.surplusId ?? modelDef.id,
   };
   return idMap[provider] ?? modelDef.id;
 }

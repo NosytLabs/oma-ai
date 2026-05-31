@@ -48,15 +48,24 @@ export async function createApiKey(userId: string, name: string) {
 export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
   const now = new Date();
-  const results = await db.update(apiKeys).set({ lastUsedAt: now }).where(
-    and(
-      eq(apiKeys.keyHash, keyHash),
-      eq(apiKeys.active, true),
-      or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
-    )
-  ).returning();
-  if (results.length === 0) return null;
-  const apiKey = results[0];
+
+  const result = await db.transaction(async (tx) => {
+    const [apiKey] = await tx.select().from(apiKeys).where(
+      and(
+        eq(apiKeys.keyHash, keyHash),
+        eq(apiKeys.active, true),
+        or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
+      )
+    ).for("update");
+
+    if (!apiKey) return null;
+
+    await tx.update(apiKeys).set({ lastUsedAt: now }).where(eq(apiKeys.id, apiKey.id));
+    return apiKey;
+  });
+
+  if (!result) return null;
+  const apiKey = result;
   const rawPrefix = rawKey.slice(0, 12);
   const rawPrefixHash = crypto.createHash("sha256").update(rawPrefix).digest("hex");
   if (!timingSafeEqual(apiKey.keyPrefix, rawPrefixHash)) return null;
