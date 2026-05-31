@@ -1,3 +1,4 @@
+import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
 import { logger } from "../lib/logger.js";
@@ -49,21 +50,41 @@ async function surplusFetch(
   endpoint: string,
   options: RequestInit & { paymentSignature?: string } = {}
 ): Promise<Response> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
-  };
+  const tracer = trace.getTracer("oma-server");
+  const url = `${SURPLUS_BASE_URL}${endpoint}`;
 
-  if (options.paymentSignature) {
-    headers["PAYMENT-SIGNATURE"] = options.paymentSignature;
-  }
+  return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
+    try {
+      span.setAttribute("llm.provider", "surplus");
+      span.setAttribute("http.method", options.method ?? "GET");
+      span.setAttribute("http.url", url);
 
-  const response = await fetch(`${SURPLUS_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...((options.headers as Record<string, string>) || {}),
+      };
+
+      if (options.paymentSignature) {
+        headers["PAYMENT-SIGNATURE"] = options.paymentSignature;
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      span.setAttribute("http.status_code", response.status);
+      span.setStatus({ code: SpanStatusCode.OK });
+      return response;
+    } catch (err) {
+      span.setAttribute("error", true);
+      span.setAttribute("error.type", err instanceof Error ? err.constructor.name : "UnknownError");
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      throw err;
+    } finally {
+      span.end();
+    }
   });
-
-  return response;
 }
 
 export async function surplusChatCompletion(body: {
@@ -72,6 +93,7 @@ export async function surplusChatCompletion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
+  const tracer = trace.getTracer("oma-server");
   const endpoint = `/x402/api/inference/${SURPLUS_API_VERSION}/chat/completions`;
   const requestBody = {
     model: body.model,
@@ -82,80 +104,94 @@ export async function surplusChatCompletion(body: {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SURPLUS_TIMEOUT_MS);
 
-  try {
-    const probeResponse = await surplusFetch(endpoint, {
-      method: "POST",
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    });
+  return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
+    try {
+      span.setAttribute("llm.provider", "surplus");
+      span.setAttribute("llm.model", body.model);
+      span.setAttribute("http.method", "POST");
+      span.setAttribute("http.url", `${SURPLUS_BASE_URL}${endpoint}`);
 
-    if (probeResponse.status === 402) {
-      clearTimeout(timeout);
-
-      const paymentRequiredHeader =
-        probeResponse.headers.get("PAYMENT-REQUIRED") ||
-        probeResponse.headers.get("x-payment-required");
-
-      if (!paymentRequiredHeader) {
-        throw Object.assign(
-          new Error("Surplus x402 payment required but no payment header returned"),
-          { status: 402 }
-        );
-      }
-
-      const paymentData = JSON.parse(
-        Buffer.from(paymentRequiredHeader, "base64").toString("utf-8")
-      ) as SurplusPaymentRequirement;
-
-      const paymentPayload = await buildPaymentPayload(paymentData, body);
-      const _signature = await signPayment(paymentPayload);
-
-      const retryResponse = await surplusFetch(endpoint, {
+      const probeResponse = await surplusFetch(endpoint, {
         method: "POST",
         body: JSON.stringify(requestBody),
         signal: controller.signal,
-        paymentSignature: Buffer.from(JSON.stringify(paymentPayload)).toString("base64"),
       });
 
-      if (retryResponse.status === 402) {
-        const errorData =
-          (await tryParseErrorResponse(retryResponse)) ||
-          "Surplus payment rejected";
-        throw Object.assign(new Error(`Surplus payment failed: ${errorData}`), {
-          status: 402,
+      if (probeResponse.status === 402) {
+        clearTimeout(timeout);
+
+        const paymentRequiredHeader =
+          probeResponse.headers.get("PAYMENT-REQUIRED") ||
+          probeResponse.headers.get("x-payment-required");
+
+        if (!paymentRequiredHeader) {
+          throw Object.assign(
+            new Error("Surplus x402 payment required but no payment header returned"),
+            { status: 402 }
+          );
+        }
+
+        const paymentData = JSON.parse(
+          Buffer.from(paymentRequiredHeader, "base64").toString("utf-8")
+        ) as SurplusPaymentRequirement;
+
+        const paymentPayload = await buildPaymentPayload(paymentData, body);
+        const _signature = await signPayment(paymentPayload);
+
+        const retryResponse = await surplusFetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+          paymentSignature: Buffer.from(JSON.stringify(paymentPayload)).toString("base64"),
         });
+
+        span.setAttribute("http.status_code", retryResponse.status);
+
+        if (retryResponse.status === 402) {
+          const errorData =
+            (await tryParseErrorResponse(retryResponse)) ||
+            "Surplus payment rejected";
+          throw Object.assign(new Error(`Surplus payment failed: ${errorData}`), {
+            status: 402,
+          });
+        }
+
+        if (!retryResponse.ok) {
+          const errorData = await tryParseErrorResponse(retryResponse);
+          throw Object.assign(
+            new Error(`Surplus error: ${retryResponse.status} - ${errorData}`),
+            { status: 502 }
+          );
+        }
+
+        span.setStatus({ code: SpanStatusCode.OK });
+        return retryResponse;
       }
 
-      if (!retryResponse.ok) {
-        const errorData = await tryParseErrorResponse(retryResponse);
+      span.setAttribute("http.status_code", probeResponse.status);
+
+      if (!probeResponse.ok) {
+        clearTimeout(timeout);
+        const errorData = await tryParseErrorResponse(probeResponse);
         throw Object.assign(
-          new Error(`Surplus error: ${retryResponse.status} - ${errorData}`),
+          new Error(`Surplus error: ${probeResponse.status} - ${errorData}`),
           { status: 502 }
         );
       }
 
-      return retryResponse;
-    }
-
-    if (!probeResponse.ok) {
       clearTimeout(timeout);
-      const errorData = await tryParseErrorResponse(probeResponse);
-      throw Object.assign(
-        new Error(`Surplus error: ${probeResponse.status} - ${errorData}`),
-        { status: 502 }
-      );
+      span.setStatus({ code: SpanStatusCode.OK });
+      return probeResponse;
+    } catch (err) {
+      span.setAttribute("error", true);
+      span.setAttribute("error.type", err instanceof Error ? err.constructor.name : "UnknownError");
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+      span.end();
     }
-
-    clearTimeout(timeout);
-    return probeResponse;
-  } catch (err) {
-    clearTimeout(timeout);
-    if ((err as { status?: number }).status) throw err;
-    throw Object.assign(
-      new Error(`Surplus request failed: ${(err as Error).message}`),
-      { status: 502 }
-    );
-  }
+  });
 }
 
 async function buildPaymentPayload(
@@ -258,36 +294,51 @@ async function signPayment(
 }
 
 export async function surplusListModels(): Promise<SurplusModelsResponse> {
+  const tracer = trace.getTracer("oma-server");
   const endpoint = `/api/inference/${SURPLUS_API_VERSION}/models`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
 
-  try {
-    const response = await surplusFetch(endpoint, {
-      method: "GET",
-      signal: controller.signal,
-    });
+  return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
+    try {
+      span.setAttribute("llm.provider", "surplus");
+      span.setAttribute("http.method", "GET");
+      span.setAttribute("http.url", `${SURPLUS_BASE_URL}${endpoint}`);
 
-    clearTimeout(timeout);
+      const response = await surplusFetch(endpoint, {
+        method: "GET",
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const errorData = await tryParseErrorResponse(response);
+      clearTimeout(timeout);
+
+      span.setAttribute("http.status_code", response.status);
+
+      if (!response.ok) {
+        const errorData = await tryParseErrorResponse(response);
+        throw Object.assign(
+          new Error(`Surplus list models error: ${response.status} - ${errorData}`),
+          { status: 502 }
+        );
+      }
+
+      span.setStatus({ code: SpanStatusCode.OK });
+      return response.json() as Promise<SurplusModelsResponse>;
+    } catch (err) {
+      clearTimeout(timeout);
+      span.setAttribute("error", true);
+      span.setAttribute("error.type", err instanceof Error ? err.constructor.name : "UnknownError");
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      if ((err as { status?: number }).status) throw err;
       throw Object.assign(
-        new Error(`Surplus list models error: ${response.status} - ${errorData}`),
+        new Error(`Surplus list models failed: ${(err as Error).message}`),
         { status: 502 }
       );
+    } finally {
+      span.end();
     }
-
-    return response.json() as Promise<SurplusModelsResponse>;
-  } catch (err) {
-    clearTimeout(timeout);
-    if ((err as { status?: number }).status) throw err;
-    throw Object.assign(
-      new Error(`Surplus list models failed: ${(err as Error).message}`),
-      { status: 502 }
-    );
-  }
+  });
 }
 
 export async function surplusHealthCheck(): Promise<{
@@ -295,30 +346,46 @@ export async function surplusHealthCheck(): Promise<{
   latencyMs?: number;
   error?: string;
 }> {
+  const tracer = trace.getTracer("oma-server");
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
+  const endpoint = `/api/inference/${SURPLUS_API_VERSION}/models`;
 
-  try {
-    const endpoint = `/api/inference/${SURPLUS_API_VERSION}/models`;
-    const response = await surplusFetch(endpoint, {
-      method: "GET",
-      signal: controller.signal,
-    });
+  return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
+    try {
+      span.setAttribute("llm.provider", "surplus");
+      span.setAttribute("http.method", "GET");
+      span.setAttribute("http.url", `${SURPLUS_BASE_URL}${endpoint}`);
 
-    clearTimeout(timeout);
-    return {
-      isUp: response.ok,
-      latencyMs: Date.now() - start,
-    };
-  } catch (err) {
-    clearTimeout(timeout);
-    return {
-      isUp: false,
-      latencyMs: Date.now() - start,
-      error: String(err),
-    };
-  }
+      const response = await surplusFetch(endpoint, {
+        method: "GET",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      span.setAttribute("http.status_code", response.status);
+      span.setStatus({ code: SpanStatusCode.OK });
+
+      return {
+        isUp: response.ok,
+        latencyMs: Date.now() - start,
+      };
+    } catch (err) {
+      clearTimeout(timeout);
+      span.setAttribute("error", true);
+      span.setAttribute("error.type", err instanceof Error ? err.constructor.name : "UnknownError");
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      return {
+        isUp: false,
+        latencyMs: Date.now() - start,
+        error: String(err),
+      };
+    } finally {
+      span.end();
+    }
+  });
 }
 
 async function tryParseErrorResponse(response: Response): Promise<string> {

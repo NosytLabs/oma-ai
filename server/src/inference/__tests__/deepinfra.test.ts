@@ -36,6 +36,14 @@ vi.mock("../provider-health.js", () => ({
   releaseProvider: vi.fn(),
 }));
 
+vi.mock("../base.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../base.js")>();
+  return {
+    ...actual,
+    withRetry: vi.fn((fn: () => Promise<unknown>) => fn()),
+  };
+});
+
 import * as deepinfra from "../deepinfra.js";
 
 describe("DeepInfra Provider", () => {

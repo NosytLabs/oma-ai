@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper, healthCheck } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, healthCheck, withRetry } from "./base.js";
 
 const TOGETHER_TIMEOUT_MS = 30_000;
 const TOGETHER_STREAM_TIMEOUT_MS = 120_000;
@@ -51,7 +51,11 @@ export async function chatCompletion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  return provider.chatCompletion(body);
+  return withRetry(() => provider.chatCompletion(body), {
+    onRetry: (attempt, delay, err) => {
+      console.warn(`Together AI request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+    },
+  });
 }
 
 export async function completion(body: {
@@ -61,7 +65,11 @@ export async function completion(body: {
   stream?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
-  return provider.completion(body);
+  return withRetry(() => provider.completion(body), {
+    onRetry: (attempt, delay, err) => {
+      console.warn(`Together AI completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+    },
+  });
 }
 
 export function streamChatCompletion(body: {
