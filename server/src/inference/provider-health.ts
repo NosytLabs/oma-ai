@@ -363,8 +363,17 @@ function getProviderBaseUrl(provider: Provider): string {
   return baseUrls[provider];
 }
 
-function getProviderHealthPath(_provider: Provider): string {
-  return "/v1/models";
+function getProviderHealthPath(provider: Provider): string {
+  switch (provider) {
+    case "openrouter":
+      return "/api/v1/models";
+    case "deepinfra":
+      return "/v1/openai/models";
+    case "surplus":
+      return "/api/inference/v1/models";
+    default:
+      return "/v1/models";
+  }
 }
 
 let probeInterval: ReturnType<typeof setInterval> | null = null;

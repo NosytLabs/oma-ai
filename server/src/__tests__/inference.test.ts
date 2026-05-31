@@ -373,13 +373,70 @@ describe('Inference Routes', () => {
   })
 
   describe('POST /v1/completions', () => {
-    it('returns 200 (deprecated endpoint mocked)', async () => {
+    it('translates prompt payloads into chat messages before inference', async () => {
+      vi.mocked(validateApiKey).mockResolvedValueOnce(validKey)
+      vi.mocked(getBalance).mockResolvedValueOnce({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null })
+      vi.mocked(handleChatCompletion).mockResolvedValueOnce({
+        response: new Response(JSON.stringify({
+          id: 'chat-1',
+          object: 'chat.completion',
+          created: 123,
+          model: 'llama-3.3-70b',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'Once upon a time' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 10, completion_tokens: 5 },
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        provider: 'venice',
+      })
+
       const res = await app.request('/v1/completions', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ model: 'llama-3.3-70b', prompt: 'Once upon a time' }),
+        body: JSON.stringify({ model: 'llama-3.3-70b', prompt: 'Once upon a time', max_tokens: 64, top_p: 0.8 }),
       })
-      expect(res.status).toBeGreaterThanOrEqual(200)
+      expect(res.status).toBe(200)
+      expect(handleChatCompletion).toHaveBeenCalledWith(
+        'user-1',
+        'key-1',
+        expect.objectContaining({
+          model: 'llama-3.3-70b',
+          stream: false,
+          max_tokens: 64,
+          top_p: 0.8,
+          messages: [{ role: 'user', content: 'Once upon a time' }],
+        }),
+      )
+
+      const body = await res.json()
+      expect(body).toMatchObject({
+        id: 'chat-1',
+        object: 'text_completion',
+        model: 'llama-3.3-70b',
+        choices: [{ text: 'Once upon a time', finish_reason: 'stop' }],
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+      })
+    })
+
+    it('rejects prompt arrays because batched completions are unsupported', async () => {
+      vi.mocked(validateApiKey).mockResolvedValueOnce(validKey)
+      vi.mocked(getBalance).mockResolvedValueOnce({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null })
+
+      const res = await app.request('/v1/completions', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ model: 'llama-3.3-70b', prompt: ['Once', 'upon a time'] }),
+      })
+
+      expect(res.status).toBe(400)
+      expect(handleChatCompletion).not.toHaveBeenCalled()
+      await expect(res.json()).resolves.toMatchObject({
+        error: {
+          type: 'invalid_request_error',
+          code: 'unsupported_prompt_array',
+        },
+      })
     })
   })
 

@@ -22,9 +22,9 @@ const mapTogetherError = createErrorMapper("Together AI");
 class TogetherProvider extends BaseInferenceProvider {
   protected readonly config = {
     name: "together",
-    chatCompletionPath: "/v1/chat/completions",
-    completionPath: "/v1/completions",
-    healthPath: "/v1/models",
+    chatCompletionPath: "/chat/completions",
+    completionPath: "/completions",
+    healthPath: "/models",
     defaultTimeoutMs: TOGETHER_TIMEOUT_MS,
     streamTimeoutMs: TOGETHER_STREAM_TIMEOUT_MS,
     getUrl: togetherUrl,
@@ -86,7 +86,7 @@ export async function togetherHealthCheck(): Promise<{
   latencyMs: number;
 }> {
   return healthCheck({
-    getUrl: () => togetherUrl("/v1/models"),
+    getUrl: () => togetherUrl("/models"),
     getHeaders: togetherHeaders,
     keyConfigured: !!config.TOGETHER_API_KEY,
   });

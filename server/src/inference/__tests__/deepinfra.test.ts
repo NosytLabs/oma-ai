@@ -90,7 +90,7 @@ describe("DeepInfra Provider", () => {
       expect(res.status).toBe(200);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe("https://api.deepinfra.com/v1/openai/v1/chat/completions");
+      expect(url).toBe("https://api.deepinfra.com/v1/openai/chat/completions");
       expect(init?.method).toBe("POST");
       expect(init?.headers).toEqual({
         "Content-Type": "application/json",
@@ -170,6 +170,21 @@ describe("DeepInfra Provider", () => {
       ).rejects.toMatchObject({
         status: 500,
       });
+    });
+  });
+
+  describe("deepinfraHealthCheck", () => {
+    it("uses the base-url relative models endpoint", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+
+      const status = await deepinfra.deepinfraHealthCheck();
+      expect(status.isUp).toBe(false);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "https://api.deepinfra.com/v1/openai/models",
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: "Bearer sk-deepinfra-test-key" }),
+        })
+      );
     });
   });
 });

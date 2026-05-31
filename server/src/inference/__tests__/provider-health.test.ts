@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mockRedisClientRef = vi.hoisted(() => ({
   current: null as any,
@@ -54,6 +54,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockRedisClientRef.current = null
   mockRedisClientRef.ready = false
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  stopBackgroundProbing()
 })
 
 describe('CircuitState', () => {
@@ -304,6 +309,30 @@ describe('background probing', () => {
     stopBackgroundProbing()
     expect(() => startBackgroundProbing()).not.toThrow()
     stopBackgroundProbing()
+  })
+
+  it('probes provider-specific model endpoints', async () => {
+    vi.useFakeTimers()
+    const { healthCheck } = await import('../provider-factory.js')
+
+    startBackgroundProbing(1)
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
+      'openrouter',
+      'https://openrouter.ai',
+      '/api/v1/models',
+    )
+    expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
+      'deepinfra',
+      'https://api.deepinfra.com',
+      '/v1/openai/models',
+    )
+    expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
+      'surplus',
+      'https://api.surplusintelligence.ai',
+      '/api/inference/v1/models',
+    )
   })
 })
 

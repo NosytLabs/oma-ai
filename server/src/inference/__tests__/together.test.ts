@@ -90,7 +90,7 @@ describe("Together AI Provider", () => {
       expect(res.status).toBe(200);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe("https://api.together.xyz/v1/v1/chat/completions");
+      expect(url).toBe("https://api.together.xyz/v1/chat/completions");
       expect(init?.method).toBe("POST");
       expect(init?.headers).toEqual({
         "Content-Type": "application/json",
@@ -186,6 +186,12 @@ describe("Together AI Provider", () => {
 
       const status = await together.togetherHealthCheck();
       expect(status.isUp).toBe(false);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "https://api.together.xyz/v1/models",
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: "Bearer sk-together-test-key" }),
+        })
+      );
     });
   });
 
@@ -212,7 +218,7 @@ describe("Together AI Provider", () => {
       expect(res.status).toBe(200);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       const [url] = fetchSpy.mock.calls[0];
-      expect(url).toBe("https://api.together.xyz/v1/v1/completions");
+      expect(url).toBe("https://api.together.xyz/v1/completions");
     });
   });
 });

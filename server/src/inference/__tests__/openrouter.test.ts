@@ -91,7 +91,7 @@ describe("OpenRouter Provider", () => {
       expect(res.status).toBe(200);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe("https://openrouter.ai/api/v1/v1/chat/completions");
+      expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
       expect(init?.method).toBe("POST");
       expect(init?.headers).toMatchObject({
         "Content-Type": "application/json",
@@ -165,6 +165,12 @@ describe("OpenRouter Provider", () => {
 
       const status = await openrouter.openrouterHealthCheck();
       expect(status.isUp).toBe(false);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "https://openrouter.ai/api/v1/models",
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: "Bearer sk-or-test-key" }),
+        })
+      );
     });
   });
 

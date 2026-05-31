@@ -22,9 +22,9 @@ const mapDeepinfraError = createErrorMapper("DeepInfra");
 class DeepInfraProvider extends BaseInferenceProvider {
   protected readonly config = {
     name: "deepinfra",
-    chatCompletionPath: "/v1/chat/completions",
-    completionPath: "/v1/completions",
-    healthPath: "/v1/models",
+    chatCompletionPath: "/chat/completions",
+    completionPath: "/completions",
+    healthPath: "/models",
     defaultTimeoutMs: DEEPINFRA_TIMEOUT_MS,
     streamTimeoutMs: DEEPINFRA_STREAM_TIMEOUT_MS,
     getUrl: deepinfraUrl,
@@ -86,7 +86,7 @@ export async function deepinfraHealthCheck(): Promise<{
   latencyMs: number;
 }> {
   return healthCheck({
-    getUrl: () => deepinfraUrl("/v1/models"),
+    getUrl: () => deepinfraUrl("/models"),
     getHeaders: deepinfraHeaders,
     keyConfigured: !!config.DEEPINFRA_API_KEY,
   });

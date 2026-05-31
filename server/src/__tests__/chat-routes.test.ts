@@ -110,15 +110,34 @@ vi.mock('../credits/houdini-client.js', () => ({
   },
 }))
 
-function freshChatResponse() {
+  function freshChatResponse() {
   return {
     response: new Response(JSON.stringify({
       id: 'chat-1', choices: [{ message: { role: 'assistant', content: 'hello' } }],
       usage: { prompt_tokens: 10, completion_tokens: 5 },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
-    provider: 'venice',
+      provider: 'venice',
+    }
   }
-}
+
+  function freshChatStreamResponse() {
+    const encoder = new TextEncoder()
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: {"id":"chat-1","object":"chat.completion.chunk","created":123,"model":"llama-3.3-70b","choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}\n\n'))
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+        controller.close()
+      },
+    })
+
+    return {
+      response: new Response(body, {
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+      }),
+      provider: 'venice',
+    }
+  }
 
 vi.mock('../inference/router.js', () => ({
   handleChatCompletion: vi.fn().mockImplementation(() =>
@@ -351,7 +370,7 @@ describe('Chat Routes', () => {
   })
 
   describe('POST /v1/completions', () => {
-    it('returns 200 (deprecated endpoint mocked)', async () => {
+    it('returns legacy text-completion shape for prompt requests', async () => {
       const res = await app.request('/v1/completions', {
         method: 'POST',
         headers: jsonHeaders(),
@@ -360,7 +379,36 @@ describe('Chat Routes', () => {
           prompt: 'Once upon a time',
         }),
       })
-      expect(res.status).toBeGreaterThanOrEqual(200)
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body).toMatchObject({
+        id: 'chat-1',
+        object: 'text_completion',
+        choices: [{ text: 'hello' }],
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+      })
+    })
+
+    it('translates streamed chat chunks into legacy completion chunks', async () => {
+      const { handleChatCompletion } = await import('../inference/router.js')
+      vi.mocked(handleChatCompletion).mockResolvedValueOnce(freshChatStreamResponse())
+
+      const res = await app.request('/v1/completions', {
+        method: 'POST',
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          model: 'llama-3.3-70b',
+          prompt: 'Once upon a time',
+          stream: true,
+        }),
+      })
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toContain('text/event-stream')
+      const body = await res.text()
+      expect(body).toContain('"object":"text_completion"')
+      expect(body).toContain('"text":"hello"')
+      expect(body).toContain('data: [DONE]')
     })
   })
 

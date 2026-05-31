@@ -202,7 +202,7 @@ function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean 
       return false;
     }
     const weightEntries = weightsStr.split(",");
-    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra"];
+    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus"];
     let totalWeight = 0;
     for (const we of weightEntries) {
       const [provider, weight] = we.split(":").map(s => s.trim());

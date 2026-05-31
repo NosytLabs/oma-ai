@@ -39,6 +39,13 @@ export interface SurplusModelsResponse {
   }>;
 }
 
+interface SurplusPaymentSignatureEnvelope {
+  x402Version: string;
+  signature: string;
+  authorization: string;
+  payload: Record<string, unknown>;
+}
+
 interface SurplusErrorResponse {
   error?: {
     message?: string;
@@ -136,13 +143,19 @@ export async function surplusChatCompletion(body: {
         ) as SurplusPaymentRequirement;
 
         const paymentPayload = await buildPaymentPayload(paymentData, body);
-        const _signature = await signPayment(paymentPayload);
+        const signature = await signPayment(paymentPayload);
+        const paymentSignature: SurplusPaymentSignatureEnvelope = {
+          x402Version: String(paymentData.x402Version),
+          signature,
+          authorization: "",
+          payload: paymentPayload,
+        };
 
         const retryResponse = await surplusFetch(endpoint, {
           method: "POST",
           body: JSON.stringify(requestBody),
           signal: controller.signal,
-          paymentSignature: Buffer.from(JSON.stringify(paymentPayload)).toString("base64"),
+          paymentSignature: JSON.stringify(paymentSignature),
         });
 
         span.setAttribute("http.status_code", retryResponse.status);

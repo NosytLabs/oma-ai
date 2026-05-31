@@ -26,9 +26,9 @@ const mapOpenrouterError = createErrorMapper("OpenRouter");
 class OpenRouterProvider extends BaseInferenceProvider {
   protected readonly config = {
     name: "openrouter",
-    chatCompletionPath: "/v1/chat/completions",
-    completionPath: "/v1/completions",
-    healthPath: "/v1/models",
+    chatCompletionPath: "/chat/completions",
+    completionPath: "/completions",
+    healthPath: "/models",
     defaultTimeoutMs: OPENROUTER_TIMEOUT_MS,
     streamTimeoutMs: OPENROUTER_STREAM_TIMEOUT_MS,
     getUrl: openrouterUrl,
@@ -90,7 +90,7 @@ export async function openrouterHealthCheck(): Promise<{
   latencyMs: number;
 }> {
   return healthCheck({
-    getUrl: () => openrouterUrl("/v1/models"),
+    getUrl: () => openrouterUrl("/models"),
     getHeaders: openrouterHeaders,
     keyConfigured: !!config.OPENROUTER_API_KEY,
   });
