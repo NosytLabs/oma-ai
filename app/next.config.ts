@@ -143,9 +143,9 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)\\.(html|htm)",
         headers: [
-          {
+{
             key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
+            value: "no-cache, no-store, must-revalidate, proxy-revalidate",
           },
         ],
       },

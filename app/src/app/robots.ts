@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/dashboard', '/settings', '/deposit', '/stake', '/api-keys'],
+        disallow: ['/api/', '/settings', '/api-keys'],
       },
     ],
     sitemap: 'https://oma-ai.com/sitemap.xml',

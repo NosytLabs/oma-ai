@@ -61,10 +61,19 @@ export function extractClientIp(c: Context<OmaEnv>): string {
   if (xForwardedFor && TRUSTED_PROXIES.size > 0) {
     const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
     if (ips.length > 0) {
-      const rightmostIp = ips[ips.length - 1];
-      if (isTrustedProxy(rightmostIp)) {
-        return rightmostIp;
+      // SECURITY: When we have trusted proxies, the FIRST IP in the chain
+      // was added by the rightmost trusted proxy - it represents the
+      // original client that connected to our trusted proxy.
+      // We must verify the chain ends with a trusted proxy.
+      const firstIp = ips[0];
+      const lastIp = ips[ips.length - 1];
+      
+      // Only trust first IP if last IP is a trusted proxy (proxy chain validated)
+      if (isTrustedProxy(lastIp)) {
+        return firstIp;
       }
+      // Last IP is not a trusted proxy - possible spoofing attempt
+      // Fall through to xRealIp
     }
   }
 

@@ -63,9 +63,12 @@ function generateAccountNumber(): string {
   const segments = [];
   for (let i = 0; i < 3; i++) {
     let segment = "";
+    // Use 8 bytes (64 bits) of entropy per segment for security
+    const bytes = randomBytes(8);
     for (let j = 0; j < 4; j++) {
-      const randomValue = randomBytes(4).readUInt32BE(0);
-      segment += chars[randomValue % chars.length];
+      // Use two bytes per character to avoid modulo bias
+      const combined = bytes[j * 2] * 256 + bytes[j * 2 + 1];
+      segment += chars[combined % chars.length];
     }
     segments.push(segment);
   }

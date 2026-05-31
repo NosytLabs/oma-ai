@@ -41,10 +41,12 @@ import { generateCorrelationId } from "./tracing.js";
 import { reloadModelCatalog } from "./inference/models.js";
 import { stopBackgroundDbSync, stopBackgroundProbing, stopCacheCleanup } from "./inference/provider-health.js";
 import { stopQueueProcessor } from "./lib/request-queue.js";
+import { initProviderResultReporter } from "./inference/provider-result.js";
 
 reloadModelCatalog();
 
 if (config.NODE_ENV !== "test") {
+  initProviderResultReporter();
   scheduleCreditExpiry();
   scheduleSubscriptionCheck();
   scheduleNonceCleanup();

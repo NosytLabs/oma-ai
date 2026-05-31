@@ -55,11 +55,11 @@ export function CtaFooter() {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
             <Link
-              href="/deposit"
+              href="/dashboard"
               className="btn-secondary text-lg px-8 py-4"
             >
               <Coins className="w-5 h-5 mr-2" />
-              Deposit Crypto
+              Manage Funds
             </Link>
             <Link
               href="/docs"
@@ -76,17 +76,17 @@ export function CtaFooter() {
               <span className="text-sm font-medium text-[var(--color-secondary)] font-mono">Exclusive Benefit</span>
             </div>
             <h3 className="text-2xl font-mono font-bold text-[var(--color-text)] mb-3">
-              Stake OMA for up to 15% discount
+              Earn OMA rewards
             </h3>
             <p className="text-[var(--color-text-secondary)] mb-6 max-w-lg mx-auto">
               Hold OMA tokens to unlock tiered discounts on all API calls. Plus get +5% bonus when depositing with OMA.
             </p>
             <Link
-              href="/stake"
+              href="/dashboard"
               className="inline-flex items-center gap-2 px-6 py-3 rounded border border-[var(--color-secondary)]/30 bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] font-medium hover:bg-[var(--color-secondary)]/20 hover:border-[var(--color-secondary)]/50 transition-all"
             >
               <Zap className="w-4 h-4" />
-              Start Staking
+              Get Started
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
