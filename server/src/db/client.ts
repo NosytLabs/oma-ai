@@ -2,30 +2,40 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema.js";
 import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbInitFailed = false;
 
 export function getDb() {
   if (_dbInitFailed) {
-    console.error("[db] FATAL: Database initialization failed. Using mock DB - all queries return empty results. This indicates a misconfigured DATABASE_URL or the database is unreachable.");
-    return null as unknown as ReturnType<typeof drizzle>;
+    if (process.env.NODE_ENV === "test") {
+      return null as unknown as ReturnType<typeof drizzle>;
+    }
+    logger.fatal("Database initialization previously failed. Refusing to continue with a mock DB in non-test environments.");
+    process.exit(1);
   }
-  
+
   if (!_db) {
     const dbUrl = config.DATABASE_URL;
     if (!dbUrl || !dbUrl.includes("://")) {
-      console.error("[db] FATAL: DATABASE_URL not configured or invalid. Using mock DB - all queries return empty results.");
       _dbInitFailed = true;
-      return null as unknown as ReturnType<typeof drizzle>;
+      if (process.env.NODE_ENV === "test") {
+        throw new Error("DATABASE_URL is required");
+      }
+      logger.fatal("DATABASE_URL not configured or invalid. Refusing to start with a mock DB in non-test environments.");
+      process.exit(1);
     }
     try {
       const sql = neon(dbUrl);
       _db = drizzle(sql, { schema });
     } catch (err) {
-      console.error("[db] FATAL: Failed to initialize database connection:", err instanceof Error ? err.message : String(err), ". Using mock DB - all queries return empty results.");
       _dbInitFailed = true;
-      return null as unknown as ReturnType<typeof drizzle>;
+      if (process.env.NODE_ENV === "test") {
+        throw err;
+      }
+      logger.fatal({ err }, "Failed to initialize database connection. Refusing to start with a mock DB in non-test environments.");
+      process.exit(1);
     }
   }
   return _db;

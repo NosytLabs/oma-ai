@@ -52,6 +52,11 @@ import { initProviderResultReporter } from "./inference/provider-result.js";
 
 reloadModelCatalog();
 
+if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
+  logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
+  process.exit(1);
+}
+
 if (config.NODE_ENV !== "test") {
   initProviderResultReporter();
   startBackgroundDbSync();

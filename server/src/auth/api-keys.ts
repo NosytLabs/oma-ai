@@ -4,8 +4,10 @@ import { db } from "../db/client.js";
 import { apiKeys, type ApiKey } from "../db/schema.js";
 import { eq, and, or, isNull, gt } from "drizzle-orm";
 import { config } from "../config.js";
+import { getRedisClient } from "../lib/redis-client.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
+const API_KEY_CACHE_TTL_SECONDS = 300;
 
 function timingSafeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a, "utf8");
@@ -49,6 +51,27 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
   const now = new Date();
 
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      const cached = await redis.get(`apikey:${keyHash}`);
+      if (cached) {
+        const apiKey = JSON.parse(cached) as ApiKey;
+        const rawPrefix = rawKey.slice(0, 12);
+        if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
+        if (apiKey.active === false) {
+          await redis.del(`apikey:${keyHash}`);
+          return null;
+        }
+        if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
+          return { ...apiKey, expired: true };
+        }
+        await redis.setEx(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
+        return apiKey;
+      }
+    } catch { /* ignore cache errors */ }
+  }
+
   const result = await db.transaction(async (tx) => {
     const [apiKey] = await tx.select().from(apiKeys).where(
       and(
@@ -67,11 +90,17 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
   if (!result) return null;
   const apiKey = result;
   const rawPrefix = rawKey.slice(0, 12);
-  const rawPrefixHash = crypto.createHash("sha256").update(rawPrefix).digest("hex");
-  if (!timingSafeEqual(apiKey.keyPrefix, rawPrefixHash)) return null;
+  if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
   if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
     return { ...apiKey, expired: true };
   }
+
+  if (redis) {
+    try {
+      await redis.setEx(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
+    } catch { /* ignore cache errors */ }
+  }
+
   return apiKey;
 }
 
@@ -111,6 +140,14 @@ export async function revokeApiKey(userId: string, keyId: string) {
   const result = await db.update(apiKeys).set({ active: false }).where(
     and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId))
   ).returning();
+  if (result.length > 0) {
+    const redis = await getRedisClient();
+    if (redis) {
+      try {
+        await redis.del(`apikey:${result[0].keyHash}`);
+      } catch { /* ignore cache errors */ }
+    }
+  }
   return result.length > 0 ? result[0] : null;
 }
 
@@ -133,6 +170,14 @@ export async function refreshApiKey(userId: string, keyId: string) {
   const expiresAt = config.DEFAULT_KEY_EXPIRY_DAYS > 0 ? addDays(config.DEFAULT_KEY_EXPIRY_DAYS) : null;
 
   await db.update(apiKeys).set({ active: false }).where(eq(apiKeys.id, keyId));
+  {
+    const redis = await getRedisClient();
+    if (redis) {
+      try {
+        await redis.del(`apikey:${existing.keyHash}`);
+      } catch { /* ignore cache errors */ }
+    }
+  }
 
   const [created] = await db.insert(apiKeys).values({
     userId,

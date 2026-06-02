@@ -47,6 +47,7 @@ export function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:text-[var(--color-accent)] active:translate-y-px transition-all duration-150 rounded-sm py-1 px-2 -mx-2 ${
                       isActive
                         ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)] border-b border-[var(--color-accent)]'

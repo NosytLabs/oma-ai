@@ -10,6 +10,7 @@ const FOOTER_LINKS = [
   { label: 'Docs', href: '/docs' },
   { label: 'Playground', href: '/playground' },
   { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Admin', href: '/admin' },
   { label: 'Deposit', href: '/deposit' },
   { label: 'Crypto Payments', href: '/crypto-payments' },
   { label: 'Terms', href: '/terms' },

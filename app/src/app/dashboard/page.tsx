@@ -202,11 +202,11 @@ export default function DashboardPage() {
   return (
     <div>
       <main id="dashboard-content" className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-surface)] selection:text-[var(--color-text)]">
-        <div className="p-4 md:p-8 pt-20">
+        <div className="p-4 md:p-8 pt-4">
           <h1 className="text-2xl md:text-3xl font-bold mb-8 text-[var(--color-text-bright)]">Dashboard</h1>
 
         {error && (
-          <div className="mb-6 flex items-center justify-between border border-[var(--color-accent-dim)] bg-[var(--color-error-bg)] p-4 text-xs uppercase tracking-widest text-[var(--color-error)]">
+          <div role="alert" aria-live="polite" className="mb-6 flex items-center justify-between border border-[var(--color-accent-dim)] bg-[var(--color-error-bg)] p-4 text-xs uppercase tracking-widest text-[var(--color-error)]">
             <div className="flex items-center gap-3">
               {backendError ? (
                 <>

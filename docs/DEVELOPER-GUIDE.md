@@ -160,6 +160,36 @@ All OpenAI SDK calls work the same - just change the key and base URL.
 
 ---
 
+## Dual-Cookie Scheme
+
+OMA uses **two separate cookies** that serve different purposes. Confusing them is a common source of bugs.
+
+| Cookie | Set by | Purpose | Read by | Lifetime | Attributes |
+|--------|--------|---------|---------|----------|------------|
+| `oma_session` | `app/src/lib/auth.ts` (SIWE flow) | Proves the user is **logged in** to the dashboard/admin UI. Contains a short-lived JWT (HS256, `iss=oma-ai`, `aud=oma-ai-api`, 24h exp) signed by `JWT_SECRET`. | `app/src/middleware.ts` (Edge runtime, verifies with `jose.jwtVerify`) to gate dashboard/admin routes, and client UI to show logged-in state. | 24h sliding | `HttpOnly; SameSite=Lax; Secure` (prod) |
+| `oma_api_key` | `server/src/auth/api-keys.ts` (`createApiKeyCookieHeader`) | Carries the user's **`oma_sk_...` API key** for the **first browser request** after login so server-side routes (e.g. `/v1/chat/completions` from a server-rendered page) can authenticate without a separate `Authorization` header. | `server/src/auth/middleware.ts` (`bearerAuth`) as a fallback to the `Authorization: Bearer` header. | 7 days, sliding via login | `HttpOnly; SameSite=Lax; Secure` (prod) |
+
+### Why two cookies?
+
+- **`oma_session`** answers "who is this user?" — used by the **frontend** to decide what UI to render and by **middleware** to gate protected pages. It is **never** sent to the `/v1/*` API surface as a credential.
+- **`oma_api_key`** answers "what API key should the browser use to call the API?" — it lets the **same** browser tab call `/v1/chat/completions` from a client component without re-prompting for the key. For server-to-server or `curl` use, the key is passed via `Authorization: Bearer oma_sk_...` instead, and `oma_api_key` is irrelevant.
+
+### Lifecycle
+
+1. User signs in with SIWE → server issues a JWT and the app sets `oma_session`.
+2. Server sets `oma_api_key` (if the user has an active key) so the first API call from the dashboard works.
+3. On `oma_api_key` rotation/revocation the server emits a `Set-Cookie: oma_api_key=; Max-Age=0` to clear it (`createLogoutCookieHeader`).
+4. On `oma_session` expiry the frontend middleware redirects to `/`; the API key cookie may still be valid and is re-used after the next sign-in.
+
+### Security notes
+
+- **Never** use `oma_session` as an API credential. The server's `bearerAuth` only accepts `oma_api_key` or the `Authorization: Bearer` header.
+- **Never** send `oma_api_key` in the `Authorization` header in client code — let the cookie travel automatically for same-origin requests.
+- The two cookies are intentionally independent: revoking an API key does **not** log the user out, and a session timeout does **not** invalidate the API key.
+- In production, both cookies are `Secure`. The cookie helpers (`createApiKeyCookieHeader`, `createLogoutCookieHeader`) flip this based on `config.NODE_ENV`.
+
+---
+
 ## Pricing (Credits)
 
 | Model Tier | Examples | Cost per 1M input tokens |

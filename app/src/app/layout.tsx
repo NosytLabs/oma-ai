@@ -35,7 +35,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
 
 export const viewport: Viewport = {
   // themeColor must be a literal hex — CSS vars not supported in metadata
-  themeColor: '#00ffc8',
+  themeColor: '#0a0a0f',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -93,9 +93,6 @@ export const metadata: Metadata = {
     shortcut: '/favicon.png',
   },
   manifest: '/manifest.json',
-  other: {
-    'theme-color': '#00ffc8',
-  },
 }
 
 export default function RootLayout({
