@@ -1,6 +1,20 @@
 # CRITICAL-1 Deployment Runbook — `www.oma-ai.com` / `api.oma-ai.com`
 
-> **Status (as of 2026-06-02)**: BLOCKER. `https://www.oma-ai.com/` serves *NosytLabs MCP Marketplace* (a different product). `https://api.oma-ai.com/` returns `404 DEPLOYMENT_NOT_FOUND`. The OMA AI Gateway in this repo (`oma/`) is not deployed to its documented domain. See screenshot `docs/screenshots/audit-2026-06-02/00-production-url-mismatch.png`.
+> **Status (as of 2026-06-03)**: BLOCKER. `https://www.oma-ai.com/` serves *NosytLabs MCP Marketplace* (a different product). `https://api.oma-ai.com/` returns `404 DEPLOYMENT_NOT_FOUND`. The OMA AI Gateway in this repo (`oma/`) is not deployed to its documented domain. See screenshot `docs/screenshots/audit-2026-06-02/00-production-url-mismatch.png`.
+>
+> **Verified 2026-06-03 via Vercel MCP**: None of the 5 Vercel projects in the Nosyt team owns `oma-ai.com`. The `oma` Vercel project (see inventory below) is deployed and running at `oma-5lzp2ffak-nosyt.vercel.app` but has no custom domain attached. The MCP Marketplace content is being served from outside the Nosyt Vercel team — possibly a different Vercel account/team or an unrelated hosting provider.
+
+### Vercel project inventory (Nosyt team, 2026-06-03)
+
+| Project | Project ID | Stack | Live | Custom domains |
+|---|---|---|---|---|
+| `app` | `prj_Torz4rhQ1Eg5L26dDjOLCTICbWf2` | Next.js | false | none |
+| `backend` | `prj_nhY2jlHDJkcLC9fMzYp5Sq62TlvT` | (Hono) | false | none (only `*.vercel.app`) |
+| `oma` | `prj_MxWsqxnOm8814KKkNzYo4oscjjOi` | (Hono+Next hybrid) | false | none (only `oma-5lzp2ffak-nosyt.vercel.app` and alias variants) |
+| `excited-hawking` | `prj_rsHsDU9PWP1ZSG5wtq9XG1USpai7` | Vite | n/a | none (1 ERROR deployment) |
+| `theydidntask.com` | `prj_vQr1pwDxmCTU1LF4gC30JbHJeDCB` | (not inspected) | n/a | n/a |
+
+**Conclusion:** The `oma` Vercel project is the natural target for `oma-ai.com` (and `api.oma-ai.com`). It is the only OMA-related project with a successful READY-state production deployment.
 >
 > **Goal**: `www.oma-ai.com` returns the Next.js app (`oma/app/`), `api.oma-ai.com` returns the Hono gateway (`oma/server/`), and the two talk to each other with CORS and auth wired correctly.
 
