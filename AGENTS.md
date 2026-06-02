@@ -159,7 +159,6 @@ oma/
 │   ├── hooks/                 # React hooks
 │   ├── lib/                   # Frontend utilities
 │   └── test/                  # Frontend tests
-├── packages/shared/           # Shared TS package
 ├── contracts/                 # Solidity (OMA.sol)
 ├── deploy/coolify/            # Self-hosted deploy configs
 ├── docs/                      # Audit reports, runbooks, architecture
