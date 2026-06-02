@@ -148,7 +148,7 @@ if (config.FACILITATOR_MODE === "mock" && isProductionEnv) {
 if (isProductionEnv) {
   for (const key of ["TREASURY_BASE_ADDRESS"] as const) {
     if (PLACEHOLDER_ADDRESSES.includes(config[key])) {
-      throw new Error(`FATAL: ${key}=${config[key]} is a placeholder address. Set a real address in production.`);
+      throw new Error(`FATAL: ${key} is a placeholder address. Set a real address in production.`);
     }
   }
 }

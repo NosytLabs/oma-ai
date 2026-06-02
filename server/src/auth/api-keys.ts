@@ -201,7 +201,8 @@ export async function refreshApiKey(userId: string, keyId: string) {
 export function createApiKeyCookieHeader(apiKey: string): string {
   const isDev = config.NODE_ENV === "development";
   const maxAge = 7 * 24 * 60 * 60;
-  let cookie = `oma_api_key=${apiKey}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  const name = isDev ? "oma_api_key" : "__Host-oma_api_key";
+  let cookie = `${name}=${apiKey}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
   if (!isDev) {
     cookie += "; Secure";
   }
@@ -210,7 +211,8 @@ export function createApiKeyCookieHeader(apiKey: string): string {
 
 export function createLogoutCookieHeader(): string {
   const isDev = config.NODE_ENV === "development";
-  let cookie = "oma_api_key=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+  const name = isDev ? "oma_api_key" : "__Host-oma_api_key";
+  let cookie = `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
   if (!isDev) {
     cookie += "; Secure";
   }
