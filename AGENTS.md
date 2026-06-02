@@ -49,7 +49,8 @@ cd server && npm run dev
 ```env
 # Required
 DATABASE_URL=postgresql://user:pass@host/database
-JWT_SECRET=your-40-char-secret-key-here
+JWT_SECRET=dev-secret-change-me-in-prod-32ch  # 32 chars OK for dev; 40+ required for prod
+ENCRYPTION_KEY=<32-byte AES key, base64 or hex> # AES-256-GCM at-rest (TOTP 2FA)
 VENICE_API_KEY=sk-...
 
 # Optional
@@ -85,50 +86,84 @@ Before any commit, ensure:
 
 ```
 oma/
-├── server/src/              # Hono.js API server
-│   ├── routes/             # API endpoints
-│   │   ├── auth.ts         # SIWE authentication
-│   │   ├── chat/index.ts   # Inference endpoints (split by modality)
-│   │   ├── deposit.ts      # Payment deposits
-│   │   ├── models.ts       # Model listing
-│   │   ├── onramp.ts       # Fiat on-ramp
-│   │   └── credits/        # OMA credits & staking
-│   ├── inference/          # AI provider routing
-│   │   ├── router.ts       # Circuit breaker + failover
-│   │   ├── venice.ts       # Venice AI integration
-│   │   ├── antseed.ts      # AntSeed backup
-│   │   ├── litellm.ts      # LiteLLM integration
-│   │   ├── models.ts       # Model catalog
-│   │   ├── tinyfish.ts      # TinyFish web search
-│   │   ├── tinyfish-fetch.ts # TinyFish web fetch
-│   │   └── provider-health.ts
-│   ├── credits/            # Credit system
-│   │   ├── balance.ts      # Balance management
-│   │   ├── deposit.ts      # Deposit processing
-│   │   └── oracle.ts       # Price oracle
-│   ├── x402/               # Payment facilitator
-│   │   ├── facilitator.ts  # x402 implementation
-│   │   └── crosschain.ts   # Cross-chain deposits
-│   ├── auth/               # Auth utilities
-│   │   ├── siwe.ts         # SIWE implementation
-│   │   ├── api-keys.ts     # API key management
-│   │   └── middleware.ts   # Auth middleware
-│   └── db/                 # Database
-│       ├── schema.ts       # Drizzle schema
-│       └── client.ts       # DB client
-├── app/src/                # Next.js frontend
-│   ├── app/               # Pages (App Router)
-│   │   ├── page.tsx        # Landing
-│   │   ├── dashboard/     # User dashboard
-│   │   ├── deposit/        # Deposit page
-│   │   ├── pricing/        # Pricing page
-│   │   ├── models/         # Model showcase
-│   │   ├── playground/     # API playground
-│   │   └── docs/           # Documentation
-│   └── components/         # UI components
-├── contracts/             # Solidity contracts
-├── deploy/coolify/        # Coolify deployment configs
-└── docs/                  # Documentation
+├── server/src/                # Hono.js API server (Node 22, TypeScript ESM)
+│   ├── index.ts               # Entry point (port 3001, /health, WebSocket)
+│   ├── config.ts              # Environment validation
+│   ├── constants.ts, tracing.ts, types.ts
+│   ├── auth/                  # SIWE + Solana + API key auth
+│   │   ├── api-keys.ts, encryption.ts, middleware.ts
+│   │   └── siwe.ts, solana.ts
+│   ├── credits/               # Credit engine (15 modules)
+│   │   ├── add-credits.ts, balance.ts, budget-alerts.ts
+│   │   ├── cctp-client.ts, deduction.ts, deposit.ts
+│   │   ├── deposit-router.ts, houdini-client.ts
+│   │   ├── index.ts, lifi-client.ts, oracle.ts
+│   │   ├── preflight.ts, price-guard.ts, refunds.ts
+│   │   └── staking.ts
+│   ├── db/                    # Drizzle ORM + Postgres
+│   │   ├── client.ts, schema.ts
+│   ├── inference/             # Multi-provider AI routing (24 modules)
+│   │   ├── router.ts          # Circuit breaker + failover
+│   │   ├── venice.ts, antseed.ts, litellm.ts
+│   │   ├── openrouter.ts, together.ts, deepinfra.ts
+│   │   ├── tinyfish.ts, tinyfish-fetch.ts
+│   │   ├── models.ts          # Model catalog
+│   │   ├── provider-factory.ts, provider-selector.ts
+│   │   ├── provider-health.ts, provider-result.ts
+│   │   ├── call-provider.ts, stream-tracker.ts
+│   │   ├── credit-preflight.ts, billing-service.ts
+│   │   ├── usage-service.ts, cheaptokens.ts, surplus.ts
+│   │   ├── base.ts, circuit-breaker.ts, types.ts
+│   ├── jobs/                  # Background cron jobs (6)
+│   │   ├── credit-expiry.ts, subscription-cron.ts
+│   │   ├── deposit-notifications.ts, deposit-recovery.ts
+│   │   ├── deposit-retry.ts, nonce-cleanup.ts
+│   ├── lib/                   # Shared server utilities (9)
+│   │   ├── api-errors.ts, dlq.ts, logger.ts
+│   │   ├── quote-cache.ts, rate-limit-config.ts
+│   │   ├── redis-client.ts, request-queue.ts
+│   │   ├── router-utils.ts, settlement-retry.ts
+│   │   └── validation.ts
+│   ├── middleware/            # Request middleware (8)
+│   │   ├── audit.ts, cache.ts, idempotency.ts
+│   │   ├── rate-limit.ts, rbac.ts, security.ts
+│   │   └── spend-limit.ts, timeout.ts
+│   ├── routes/                # API endpoints
+│   │   ├── auth.ts, config.ts, credits.ts
+│   │   ├── models.ts, onramp.ts, refunds.ts, search.ts
+│   │   ├── analytics.ts, analytics-admin.ts
+│   │   ├── export.ts, fetch.ts, invoices.ts
+│   │   ├── jupiter.ts, queue.ts, sso.ts
+│   │   ├── subscriptions.ts, teams.ts, withdraw.ts
+│   │   ├── admin/             # Admin endpoints (subdir)
+│   │   ├── chat/              # OpenAI-compatible chat (modality-split)
+│   │   ├── chat-ws/           # WebSocket streaming
+│   │   └── deposit/           # Multi-protocol deposit (usdc, status, lifi, houdini, cctp, balance, router)
+│   ├── x402/                  # x402 payment facilitator (7)
+│   │   ├── facilitator.ts, crosschain.ts
+│   │   ├── evm-verifier.ts, solana-verifier.ts
+│   │   ├── settlement-cache.ts, signing.ts
+│   │   └── types.ts
+│   ├── types/bs58.d.ts        # Type augmentations
+│   └── __tests__/             # 22 vitest test files
+├── app/src/                   # Next.js 15 frontend (React 19, Tailwind 4)
+│   ├── app/                   # App Router pages
+│   │   ├── page.tsx           # Landing
+│   │   ├── dashboard/         # User dashboard
+│   │   ├── deposit/           # Deposit page
+│   │   ├── pricing/           # Pricing page
+│   │   ├── models/            # Model showcase
+│   │   ├── playground/        # API playground
+│   │   └── docs/              # Documentation
+│   ├── components/            # UI components
+│   ├── hooks/                 # React hooks
+│   ├── lib/                   # Frontend utilities
+│   └── test/                  # Frontend tests
+├── packages/shared/           # Shared TS package
+├── contracts/                 # Solidity (OMA.sol)
+├── deploy/coolify/            # Self-hosted deploy configs
+├── docs/                      # Audit reports, runbooks, architecture
+└── scripts/                   # start-dev.sh, deploy.sh
 ```
 
 ---
@@ -214,9 +249,9 @@ curl http://localhost:3001/health
 - Fix any type errors before committing
 
 ### Auth not working
-- Verify `JWT_SECRET` is 40+ characters
+- Verify `JWT_SECRET` is 32+ characters (40+ required for production)
 - Check `FACILITATOR_MODE` is set correctly (mock for dev)
 
 ---
 
-*Last updated: 2026-05-22*
+*Last updated: 2026-06-03*
