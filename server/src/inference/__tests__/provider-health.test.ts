@@ -38,6 +38,12 @@ vi.mock('../provider-factory.js', () => ({
   getProviderHealthPath: vi.fn().mockReturnValue('/v1/models'),
 }))
 
+vi.mock('../surplus.js', () => ({
+  surplusHealthCheck: vi.fn().mockResolvedValue({ isUp: true, latencyMs: 100 }),
+  surplusListModels: vi.fn().mockResolvedValue({ object: 'list', data: [] }),
+  surplusChatCompletion: vi.fn(),
+}))
+
 import {
   checkProviderHealth,
   reportProviderResult,
@@ -314,6 +320,7 @@ describe('background probing', () => {
   it('probes provider-specific model endpoints', async () => {
     vi.useFakeTimers()
     const { healthCheck } = await import('../provider-factory.js')
+    const { surplusHealthCheck } = await import('../surplus.js')
 
     startBackgroundProbing(1)
     await vi.advanceTimersByTimeAsync(1)
@@ -328,10 +335,11 @@ describe('background probing', () => {
       'https://api.deepinfra.com',
       '/v1/openai/models',
     )
-    expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
+    expect(vi.mocked(surplusHealthCheck)).toHaveBeenCalled()
+    expect(vi.mocked(healthCheck)).not.toHaveBeenCalledWith(
       'surplus',
-      'https://api.surplusintelligence.ai',
-      '/api/inference/v1/models',
+      expect.anything(),
+      expect.anything(),
     )
   })
 })

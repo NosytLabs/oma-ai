@@ -739,3 +739,19 @@ export const withdrawals = pgTable(
 export const withdrawalsRelations = relations(withdrawals, ({ one }) => ({
   user: one(users, { fields: [withdrawals.userId], references: [users.id] }),
 }));
+
+export const byokKeys = pgTable(
+  "byok_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    byokKeyId: text("byok_key_id").notNull().unique(),
+    provider: text("provider").notNull(),
+    name: text("name").notNull(),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_byok_keys_provider").on(t.provider),
+    index("idx_byok_keys_byok_id").on(t.byokKeyId),
+  ]
+);

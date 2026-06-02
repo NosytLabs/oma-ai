@@ -3,6 +3,7 @@ import { providerHealth } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { healthCheck } from "./provider-factory.js";
+import { surplusHealthCheck } from "./surplus.js";
 
 const FAILURE_THRESHOLD = 5;
 const RECOVERY_TIMEOUT_MS = 60_000;
@@ -345,7 +346,17 @@ async function probeIdleProviders(): Promise<void> {
   for (const provider of ALL_PROVIDERS) {
     const lastTraffic = lastTrafficAt.get(provider) ?? 0;
     if (now - lastTraffic < IDLE_THRESHOLD_MS) continue;
-    const { isUp, latencyMs } = await healthCheck(provider, getProviderBaseUrl(provider), getProviderHealthPath(provider));
+    let isUp: boolean;
+    let latencyMs: number;
+    if (provider === "surplus") {
+      const result = await surplusHealthCheck();
+      isUp = result.isUp;
+      latencyMs = result.latencyMs ?? 0;
+    } else {
+      const result = await healthCheck(provider, getProviderBaseUrl(provider), getProviderHealthPath(provider));
+      isUp = result.isUp;
+      latencyMs = result.latencyMs;
+    }
     await reportProviderResult(provider, isUp, latencyMs);
   }
 }

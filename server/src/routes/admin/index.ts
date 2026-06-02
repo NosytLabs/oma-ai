@@ -9,6 +9,8 @@ import { keysRoutes } from "./keys.js";
 import { invoicesRoutes } from "./invoices.js";
 import { dlqRoutes } from "./dlq.js";
 import { auditLogsRoutes } from "./audit-logs.js";
+import { byokRoutes } from "./byok.js";
+import { surplusRoutes } from "./surplus.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
@@ -23,3 +25,5 @@ adminRoutes.route("/", keysRoutes);
 adminRoutes.route("/", invoicesRoutes);
 adminRoutes.route("/", dlqRoutes);
 adminRoutes.route("/", auditLogsRoutes);
+adminRoutes.route("/", byokRoutes);
+adminRoutes.route("/", surplusRoutes);

@@ -49,6 +49,7 @@ import {
 } from "./inference/provider-health.js";
 import { stopQueueProcessor } from "./lib/request-queue.js";
 import { initProviderResultReporter } from "./inference/provider-result.js";
+import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheaptokens.js";
 
 reloadModelCatalog();
 
@@ -68,6 +69,9 @@ if (config.NODE_ENV !== "test") {
   scheduleDepositRetry();
   scheduleWrongNetworkRecovery();
   scheduleDepositNotifications();
+  triggerCheapTokensRefresh().catch((err) => {
+    logger.warn({ error: (err as Error).message }, "[cheaptokens] initial refresh failed");
+  });
 }
 
 const app = new Hono<OmaEnv>();
