@@ -252,6 +252,13 @@ curl http://localhost:3001/health
 - Verify `JWT_SECRET` is 32+ characters (40+ required for production)
 - Check `FACILITATOR_MODE` is set correctly (mock for dev)
 
+### Two `.vercel/project.json` files (root + app)
+This is intentional. The monorepo has two Vercel projects:
+- Root `.vercel/project.json` → `oma` (API server, legacy Vercel deploy)
+- `app/.vercel/project.json` → `app` (Next.js frontend, current Vercel deploy)
+
+Both are gitignored (line in `.gitignore`). The Vercel CLI writes these on every `vercel`/`vercel link` invocation. Do not delete them.
+
 ---
 
 *Last updated: 2026-06-03*
