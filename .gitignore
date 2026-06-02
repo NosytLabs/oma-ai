@@ -45,6 +45,7 @@ app/dev.err
 public/
 scripts/remove-duplicate-hooks.ts
 server/tsconfig.tsbuildinfo
+app/tsconfig.tsbuildinfo
 app/remaining_components_audit.md
 app/data_fetching_audit.md
 app/security_audit.md

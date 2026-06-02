@@ -46,7 +46,7 @@ const envSchema = z.object({
   SOLANA_RPC_URL: z.string().min(1).default("https://api.mainnet-beta.solana.com"),
   SOLANA_RPC_URL_FALLBACK: z.string().optional(),
   FACILITATOR_MODE: z.enum(["mock", "live"]).default("mock"),
-  FACILITATOR_PRIVATE_KEY: z.string().min(1).optional(),
+  FACILITATOR_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
   TREASURY_SOLANA_ADDRESS: z.string().min(1).optional(),
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x3333333333333333333333333333333333333333"),
   PORT: z.coerce.number().default(3001),
