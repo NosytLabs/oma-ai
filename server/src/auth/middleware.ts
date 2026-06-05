@@ -36,11 +36,21 @@ if (isProductionEnv) {
 }
 
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
+  // Accept the API key from either the Authorization header (server-to-server,
+  // CLI tools, custom integrations) OR the `oma_api_key` / `__Host-oma_api_key`
+  // HttpOnly cookie (browser requests where JS cannot read HttpOnly cookies).
+  let rawKey: string | null = null;
   const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    rawKey = authHeader.slice(7);
+  } else {
+    const cookieHeader = c.req.header("Cookie") || "";
+    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
+    if (match) rawKey = decodeURIComponent(match[1]);
+  }
+  if (!rawKey) {
     return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
   }
-  const rawKey = authHeader.slice(7);
   const apiKey = await validateApiKey(rawKey);
   if (!apiKey) {
     return c.json({ error: { message: "Invalid API key", type: "authentication_error" } }, 401);
@@ -111,9 +121,16 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
 }
 
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
+  let rawKey: string | null = null;
   const authHeader = c.req.header("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    const rawKey = authHeader.slice(7);
+    rawKey = authHeader.slice(7);
+  } else {
+    const cookieHeader = c.req.header("Cookie") || "";
+    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
+    if (match) rawKey = decodeURIComponent(match[1]);
+  }
+  if (rawKey) {
     const apiKey = await validateApiKey(rawKey);
     if (apiKey) {
       c.set("apiKey", apiKey);

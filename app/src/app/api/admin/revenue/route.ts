@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../auth'
 import { rateLimitMiddleware } from '../rate-limit'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { API_URL } from '@/lib/api/admin-config'
 
 export async function GET(request: Request) {
   const rateLimitResponse = rateLimitMiddleware(request)
   if (rateLimitResponse) return rateLimitResponse
 
   const { searchParams } = new URL(request.url)
-  const validPeriods = ['24h', '7d', '30d', '90d']
+  const validPeriods = ['24h', '7d', '30d', '90d', 'all']
   const period = validPeriods.includes(searchParams.get('period') || '') ? searchParams.get('period') : '30d'
 
   try {
@@ -18,7 +17,7 @@ export async function GET(request: Request) {
       return unauthorizedAdminResponse()
     }
 
-    const res = await fetch(`${API_URL}/admin/revenue?period=${period}`, {
+    const res = await fetch(`${API_URL}/v1/admin/revenue?period=${period}`, {
       headers: {
         'Authorization': authorization,
       },

@@ -13,7 +13,7 @@ export default function VeniceAIAlternativePage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-[var(--color-accent)]">
+          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Home
           </Link>
@@ -37,7 +37,7 @@ export default function VeniceAIAlternativePage() {
             <span className="gradient-text">Gateway Layer for Easy Access</span>
           </h1>
 
-          <p className="max-w-2xl text-base leading-relaxed text-text">
+          <p className="max-w-2xl text-base leading-relaxed text-[var(--color-text)]">
             OMA sits on top of Venice AI, adding intelligent routing, credit management, and a developer-friendly dashboard while maintaining Venice&apos;s powerful inference capabilities.
           </p>
         </motion.div>
@@ -51,7 +51,7 @@ export default function VeniceAIAlternativePage() {
           <div className="mb-6">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <span className="font-mono text-xs text-text-muted">{'//'} enhancements</span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">{'//'} enhancements</span>
             </div>
           </div>
 
@@ -66,15 +66,15 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-border bg-panel p-6 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-cyan)]/30"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-cyan)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-2">
-                    <span className="font-mono text-xs text-text-muted">{card.label}</span>
+                    <span className="font-mono text-xs text-[var(--color-text-muted)]">{card.label}</span>
                     <div className="h-px flex-1 bg-[var(--color-border)]" />
                   </div>
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface">
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
                     <card.icon className="h-5 w-5 text-[var(--color-cyan)]" />
                   </div>
                   <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
@@ -112,7 +112,7 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-border bg-panel p-4 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-cyan)]/30"
               >
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
                   <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
@@ -151,7 +151,7 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.6 + i * 0.1, ease: 'easeOut' }}
-                className="rounded-xl border border-border bg-surface p-5"
+                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
               >
                 <div className="mb-2 flex items-center gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-cyan)]" />
@@ -167,10 +167,10 @@ export default function VeniceAIAlternativePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
-          className="rounded-xl border border-border bg-panel p-8 text-center"
+          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center"
         >
           <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Start Using OMA Today</h2>
-          <p className="mb-6 text-sm text-text">
+          <p className="mb-6 text-sm text-[var(--color-text)]">
             Get the Venice experience with added convenience. No account needed—just connect your wallet.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -184,7 +184,7 @@ export default function VeniceAIAlternativePage() {
           </div>
         </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-[var(--color-text-muted)]">
           <Link href="/compare/openrouter-alternative" className="hover:text-[var(--color-accent)] transition-colors">OpenRouter Alternative</Link>
           <span className="text-[var(--color-border)]">{'//'}</span>
           <Link href="/crypto-payments" className="hover:text-[var(--color-accent)] transition-colors">Crypto Payments</Link>

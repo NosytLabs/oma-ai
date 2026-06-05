@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Calculator, RefreshCw, Save, AlertTriangle, Terminal } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -25,9 +26,7 @@ const PROVIDERS: ProviderInfo[] = [
 ]
 
 export default function AdminFeesPage() {
-  const [_config, setConfig] = useState<FeeConfig | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -37,56 +36,53 @@ export default function AdminFeesPage() {
     markup: 10,
   })
 
-  const fetchConfig = async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const feesQuery = useQuery<FeeConfig>({
+    queryKey: ['adminFeesConfig'],
+    queryFn: async () => {
       const res = await fetch('/api/admin/config/fees')
+      if (!res.ok) throw new Error('Failed to fetch fee configuration')
       const data = await res.json()
       if (data.config) {
-        setConfig(data.config)
         const values: Record<string, number> = {}
         for (const [key, val] of Object.entries(data.config.providers)) {
           values[key] = (val as { markupPercent: number }).markupPercent
         }
         setEditValues(values)
       }
-    } catch (_err) {
-      setError('Failed to fetch fee configuration')
-    }
-    setLoading(false)
-  }
+      return data.config
+    },
+    staleTime: 30_000,
+  })
 
-  useEffect(() => {
-    fetchConfig()
-  }, [])
-
-  const handleSave = async () => {
-    setSaving(true)
-    setError(null)
-    setSuccess(null)
-    try {
-      const newConfig = { providers: {} }
-      for (const [key, val] of Object.entries(editValues)) {
-        (newConfig.providers as Record<string, { markupPercent: number }>)[key] = { markupPercent: val }
-      }
+  const saveMutation = useMutation({
+    mutationFn: async (newConfig: FeeConfig) => {
       const res = await fetch('/api/admin/config/fees', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: newConfig }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        setError(data.error?.message || 'Failed to save')
-      } else {
-        setSuccess('Fee configuration saved successfully')
-        setConfig(newConfig)
-      }
-    } catch (_err) {
-      setError('Failed to save fee configuration')
+      if (!res.ok) throw new Error(data.error?.message || 'Failed to save')
+      return newConfig
+    },
+    onSuccess: (newConfig) => {
+      setSuccess('Fee configuration saved successfully')
+      queryClient.setQueryData(['adminFeesConfig'], newConfig)
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Failed to save fee configuration')
+    },
+  })
+
+  const handleSave = useCallback(async () => {
+    setError(null)
+    setSuccess(null)
+    const newConfig: FeeConfig = { providers: {} as FeeConfig['providers'] }
+    for (const [key, val] of Object.entries(editValues)) {
+      newConfig.providers[key] = { markupPercent: val }
     }
-    setSaving(false)
-  }
+    saveMutation.mutate(newConfig)
+  }, [editValues, saveMutation])
 
   const calculateMargin = () => {
     const base = calculatorInput.baseCost
@@ -97,7 +93,17 @@ export default function AdminFeesPage() {
     return { totalCost, margin, marginPercent }
   }
 
-  if (loading) {
+  useEffect(() => {
+    if (success || error) {
+      const t = setTimeout(() => {
+        setSuccess(null)
+        setError(null)
+      }, 4000)
+      return () => clearTimeout(t)
+    }
+  }, [success, error])
+
+  if (feesQuery.isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <motion.div
@@ -125,7 +131,7 @@ export default function AdminFeesPage() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={fetchConfig}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['adminFeesConfig'] })}
             className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -135,11 +141,11 @@ export default function AdminFeesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 text-[var(--color-cyan)] hover:bg-[var(--color-cyan)]/20 disabled:opacity-50 transition-colors text-sm font-mono"
           >
             <Save className="w-3.5 h-3.5" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
           </motion.button>
         </div>
       </div>

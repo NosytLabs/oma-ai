@@ -190,23 +190,6 @@ describe("LiteLLM Provider client", () => {
       expect(url).toBe("http://localhost:4000/v1/completions");
     });
   });
-
-  describe("litellmHealthCheck", () => {
-    it("returns active health and latency under normal conditions", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(new Response("OK", { status: 200 }));
-
-      const status = await litellm.litellmHealthCheck();
-      expect(status.isUp).toBe(true);
-      expect(status.latencyMs).toBeGreaterThanOrEqual(0);
-    });
-
-    it("returns down state if health check fails or times out", async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Timeout"));
-
-      const status = await litellm.litellmHealthCheck();
-      expect(status.isUp).toBe(false);
-    });
-  });
 });
 
 describe("LiteLLM Circuit Breaker and Routing", () => {

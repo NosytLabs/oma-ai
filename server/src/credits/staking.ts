@@ -38,13 +38,3 @@ export async function getStakingDiscount(userId: string): Promise<number> {
     return 0
   }
 }
-
-export async function invalidateStakingDiscountCache(userId: string): Promise<void> {
-  const redis = await getRedisClient()
-  if (!redis) return
-  try {
-    await redis.del(`staking:discount:${userId}`)
-  } catch {
-    // Cache invalidation failure is non-critical
-  }
-}

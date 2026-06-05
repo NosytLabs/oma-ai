@@ -96,7 +96,7 @@ vi.mock('../credits/oracle.js', () => ({
   getOmaUsdPrice: vi.fn().mockResolvedValue(0.10),
 }))
 
-vi.mock('../credits/circuit-breaker.js', () => ({
+vi.mock('../inference/circuit-breaker.js', () => ({
   checkCircuitBreaker: vi.fn().mockResolvedValue({ omaDepositsAllowed: true, omaBonusPercent: 5, reason: null }),
   checkOracleCircuitBreaker: vi.fn().mockResolvedValue(false),
 }))

@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../../auth'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { rateLimitMiddleware } from '../../rate-limit'
+import { API_URL } from '@/lib/api/admin-config'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimitResponse = rateLimitMiddleware(request)
+  if (rateLimitResponse) return rateLimitResponse
+
   const { id } = await params
 
   try {
@@ -16,7 +19,7 @@ export async function GET(
       return unauthorizedAdminResponse()
     }
 
-    const res = await fetch(`${API_URL}/admin/users/${id}`, {
+    const res = await fetch(`${API_URL}/v1/admin/users/${id}`, {
       headers: {
         'Authorization': authorization,
       },
@@ -32,6 +35,9 @@ export async function GET(
     return NextResponse.json(data)
   } catch (err) {
     console.error('Admin user detail proxy error:', err)
+    if (err instanceof TypeError || (err as { code?: string })?.code === 'ECONNREFUSED' || (err as { cause?: { code?: string } })?.cause?.code === 'ECONNREFUSED') {
+      return NextResponse.json({ error: { message: 'Backend unavailable' } }, { status: 503 })
+    }
     return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 })
   }
 }

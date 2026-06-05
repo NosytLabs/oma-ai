@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useId, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useId, useEffect, useRef, ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 
@@ -34,8 +34,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const prefersReducedMotion = useReducedMotion() ?? false
   // React 19 useId hook for unique ID generation
   const uniqueId = useId()
+  // Track auto-dismiss timers so we can clear them on manual dismiss / unmount
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   const dismiss = useCallback((id: string) => {
+    const timer = timersRef.current.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      timersRef.current.delete(id)
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
@@ -43,11 +50,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     // Use cryptographically secure ID generation
     const id = `${uniqueId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
     setToasts((prev) => [...prev, { id, message, type }])
-    
-    // Auto-dismiss after 4 seconds
-    const timeoutId = setTimeout(() => dismiss(id), 4000)
-    return () => clearTimeout(timeoutId)
-  }, [dismiss, uniqueId])
+
+    // Auto-dismiss after 4 seconds (timer tracked so manual dismiss can cancel it)
+    const timeoutId = setTimeout(() => {
+      timersRef.current.delete(id)
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 4000)
+    timersRef.current.set(id, timeoutId)
+  }, [uniqueId])
+
+  // Clear all pending timers when the provider unmounts
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => {
+      timers.forEach((t) => clearTimeout(t))
+      timers.clear()
+    }
+  }, [])
 
   const success = useCallback((message: string) => toast(message, 'success'), [toast])
   const error = useCallback((message: string) => toast(message, 'error'), [toast])
@@ -100,7 +119,7 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-black/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-white/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
       >
         <X className="h-4 w-4 text-[var(--color-text-secondary)]" />
       </button>

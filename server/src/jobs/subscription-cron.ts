@@ -1,6 +1,7 @@
 import { db } from "../db/client.js";
 import { subscriptions, plans, creditBatches, creditBalances } from "../db/schema.js";
 import { eq, lt, and } from "drizzle-orm";
+import { logger } from "../lib/logger.js";
 
 const SUBSCRIPTION_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -75,10 +76,10 @@ export async function processExpiredSubscriptions(): Promise<{
   }
 
   if (expiredCount > 0) {
-    console.log(`[subscription-cron] Canceled ${expiredCount} expired subscriptions`);
+    logger.info(`[subscription-cron] Canceled ${expiredCount} expired subscriptions`);
   }
   if (renewedCount > 0) {
-    console.log(`[subscription-cron] Renewed ${renewedCount} subscriptions and granted credits`);
+    logger.info(`[subscription-cron] Renewed ${renewedCount} subscriptions and granted credits`);
   }
 
   return { expiredCount, renewedCount };
@@ -89,7 +90,7 @@ export function scheduleSubscriptionCheck(): ReturnType<typeof setInterval> {
     try {
       await processExpiredSubscriptions();
     } catch (err: unknown) {
-      console.error(`[subscription-cron] Failed: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(`[subscription-cron] Failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 

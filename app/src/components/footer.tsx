@@ -1,76 +1,94 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { OmaLogo } from '@/components/ui/oma-logo'
 import { ApiStatus } from './api-status'
 
-const FOOTER_LINKS = [
-  { label: 'Models', href: '/models' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Docs', href: '/docs' },
-  { label: 'Playground', href: '/playground' },
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Admin', href: '/admin' },
-  { label: 'Deposit', href: '/deposit' },
-  { label: 'Crypto Payments', href: '/crypto-payments' },
-  { label: 'Terms', href: '/terms' },
-  { label: 'Privacy', href: '/privacy' },
+const FOOTER_NAV = [
+  { label: 'models', href: '/models' },
+  { label: 'pricing', href: '/pricing' },
+  { label: 'docs', href: '/docs' },
+  { label: 'playground', href: '/playground' },
+  { label: 'dashboard', href: '/dashboard' },
+  { label: 'deposit', href: '/deposit' },
+  { label: 'terms', href: '/terms' },
+  { label: 'privacy', href: '/privacy' },
 ]
 
 export function Footer() {
+  const year = new Date().getFullYear()
+  const pathname = usePathname() ?? ''
   return (
-    <footer aria-label="Site footer" className="border-t border-[var(--color-border)] bg-[var(--color-void)] font-mono text-xs">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-12">
-          
-          <div className="flex flex-col gap-6 max-w-sm">
-            <Link href="/" className="inline-flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm">
+    <footer aria-label="Site footer" className="border-t border-[var(--color-border)] bg-[var(--color-void)] font-mono">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid gap-10 lg:grid-cols-[2fr_3fr]">
+          <div className="flex flex-col gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm w-fit"
+            >
               <OmaLogo size="sm" />
-              <div className="flex items-baseline gap-2">
-                <span className="text-base font-bold tracking-tight text-[var(--color-text-bright)] group-hover:text-[var(--color-accent)] transition-colors duration-150">OMA</span>
-                <span className="text-[10px] tracking-widest text-[var(--color-text-muted)]">SYS</span>
-              </div>
+              <span className="text-sm text-[var(--color-text-bright)] font-semibold">oma</span>
+              <span className="text-[var(--color-text-muted)] text-xs">·sys</span>
             </Link>
-            
-            <p className="text-[var(--color-text-secondary)] leading-relaxed">
-              One Man Army. Permissionless inference gateway. Access 50+ models with crypto-native payments. No credit card required.
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed max-w-md">
+              Permissionless AI inference. One key, every model, pay in crypto. No account required.
+              <br />
+              Base chain · mainnet. Built and operated by the OMA collective.
             </p>
-            
-            <ApiStatus showRetryButton={false} />
+            <div className="flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
+              <ApiStatus showRetryButton={false} />
+              <span className="hidden sm:inline">·</span>
+              <a
+                href="https://github.com/oma-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors"
+              >
+                github.com/oma-ai
+              </a>
+              <span>·</span>
+              <a
+                href="https://twitter.com/oma_ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors"
+              >
+                @oma_ai
+              </a>
+            </div>
           </div>
 
-          <div className="w-full lg:w-auto">
-            <nav aria-label="Footer navigation">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)] mb-6 border-b border-[var(--color-border)] pb-2">
-                Index
-              </p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-0">
-              {FOOTER_LINKS.map((link) => (
+          <nav aria-label="Footer navigation" className="text-[11px]">
+            <p className="text-[var(--color-text-muted)] mb-3 uppercase tracking-widest text-[10px]">Index</p>
+            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1.5">
+              {FOOTER_NAV.map((link) => {
+                const isCurrent = pathname === link.href || pathname.startsWith(link.href + '/')
+                return (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[var(--color-text)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] focus-visible:text-[var(--color-accent)] active:translate-y-px transition-all duration-150 rounded-sm flex min-h-10 items-center gap-3 py-2 pl-4 relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-px before:h-3 before:bg-[var(--color-text-muted)] before:opacity-40"
+                    aria-current={isCurrent ? 'page' : undefined}
+                    className="inline-flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors py-1"
                   >
-                    {link.label}
+                    <span className="text-[var(--color-text-muted)]" aria-hidden="true">·</span>
+                    <span>{link.label}</span>
                   </Link>
                 </li>
-              ))}
+                )
+              })}
             </ul>
-            </nav>
-          </div>
-          
+          </nav>
         </div>
 
-        <div className="mt-16 pt-6 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[var(--color-text-muted)]">
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-            <span>© {new Date().getFullYear()} OMA AI</span>
-            <span className="hidden sm:inline-block w-px h-3 bg-[var(--color-border)]" />
-            <a href="https://github.com/oma-ai" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" className="inline-flex min-h-10 items-center hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] rounded-sm transition-colors px-1 -mx-1">GITHUB</a>
-            <a href="https://twitter.com/oma_ai" target="_blank" rel="noopener noreferrer" aria-label="Twitter account" className="inline-flex min-h-10 items-center hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] rounded-sm transition-colors px-1 -mx-1">TWITTER</a>
-          </div>
-          <div className="uppercase tracking-widest">
-            BASE_CHAIN // ONE MAN ARMY v1.0.0
-          </div>
+        <div className="mt-10 pt-5 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] leading-relaxed">
+          <p>
+            © {year} OMA AI · base chain // one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev'} · last deploy {new Date().toISOString().slice(0, 10)}
+          </p>
+          <p className="mt-1">
+            Inference routes to upstream providers. Uptime is best-effort, not guaranteed. Verify before you bet on it.
+          </p>
         </div>
       </div>
     </footer>

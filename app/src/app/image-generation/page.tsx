@@ -31,19 +31,8 @@ export default function ImageGenerationPage() {
   const [error, setError] = useState<string | null>(null)
   const toast = useToast()
 
-  const getApiKeyFromCookie = useCallback(() => {
-    const match = document.cookie.match(/oma_api_key=([^;]+)/)
-    return match ? match[1] : null
-  }, [])
-
   const generate = useCallback(async () => {
     if (!prompt.trim() || loading) return
-
-    const apiKey = getApiKeyFromCookie()
-    if (!apiKey) {
-      toast.error('Enter your API key in Settings first')
-      return
-    }
 
     setLoading(true)
     setError(null)
@@ -51,13 +40,16 @@ export default function ImageGenerationPage() {
     try {
       const resp = await fetch(API_URL, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({ model, prompt: prompt.trim(), n: count, size }),
       })
 
+      if (resp.status === 401) {
+        throw new Error('Connect your wallet to generate an API key')
+      }
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => null)
         throw new Error(errBody?.error?.message || `HTTP ${resp.status}`)
@@ -74,7 +66,7 @@ export default function ImageGenerationPage() {
     } finally {
       setLoading(false)
     }
-  }, [prompt, model, count, size, loading, toast, getApiKeyFromCookie])
+  }, [prompt, model, count, size, loading, toast])
 
   const downloadImage = useCallback(async (url: string, index: number) => {
     try {
@@ -124,7 +116,12 @@ export default function ImageGenerationPage() {
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
-                <select value={model} onChange={(e) => setModel(e.target.value)} disabled={loading}>
+                <select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  disabled={loading}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {IMAGE_MODELS.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
@@ -133,7 +130,12 @@ export default function ImageGenerationPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Size</label>
-                <select value={size} onChange={(e) => setSize(e.target.value)} disabled={loading}>
+                <select
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  disabled={loading}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {SIZE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
                   ))}
@@ -237,7 +239,7 @@ export default function ImageGenerationPage() {
         {!loading && images.length === 0 && !error && (
           <div className="mt-16 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center mb-6 shadow-xl">
-              <ImageIconComponent className="w-10 h-10 text-white" />
+              <ImageIconComponent className="w-10 h-10 text-[var(--color-text-inverse)]" />
             </div>
             <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Describe what you want to see</h2>
             <p className="text-[var(--color-text)] max-w-md">

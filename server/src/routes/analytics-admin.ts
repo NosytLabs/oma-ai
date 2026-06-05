@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/client.js";
 import { usageRecords, providerHealth, users } from "../db/schema.js";
-import { desc, sql, count, sql as drizzleSql } from "drizzle-orm";
+import { desc, count, sql as drizzleSql } from "drizzle-orm";
 import { sessionAuth, requireAdmin } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 
@@ -70,7 +70,7 @@ adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
     .limit(20);
 
     const dailyUsage = await db.select({
-      date: sql<string>`date(${usageRecords.createdAt})`,
+      date: drizzleSql<string>`date(${usageRecords.createdAt})`,
       totalRequests: count(usageRecords.id),
       totalRevenueCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
       totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.costCents}), 0)`,
@@ -79,8 +79,8 @@ adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
     })
     .from(usageRecords)
     .where(drizzleSql`${usageRecords.createdAt} >= ${dateFilter}`)
-    .groupBy(sql`date(${usageRecords.createdAt})`)
-    .orderBy(sql`date(${usageRecords.createdAt})`);
+    .groupBy(drizzleSql`date(${usageRecords.createdAt})`)
+    .orderBy(drizzleSql`date(${usageRecords.createdAt})`);
 
     const providerStatus = await db.select().from(providerHealth);
 

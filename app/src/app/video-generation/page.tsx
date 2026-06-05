@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { Sparkles, Loader2, Download, Film, Image as ImageIcon, Plus } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
 import { FileUpload } from '@/components/ui/FileUpload'
@@ -56,9 +56,12 @@ export default function VideoGenerationPage() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const toast = useToast()
 
-  const availableModels = mode === 'text-to-video'
-    ? VIDEO_MODELS.filter(m => m.mode === 'text-to-video')
-    : VIDEO_MODELS.filter(m => m.mode === 'image-to-video')
+  const availableModels = useMemo(() =>
+    mode === 'text-to-video'
+      ? VIDEO_MODELS.filter(m => m.mode === 'text-to-video')
+      : VIDEO_MODELS.filter(m => m.mode === 'image-to-video'),
+    [mode]
+  )
 
   useEffect(() => {
     const firstModel = availableModels[0]
@@ -70,11 +73,6 @@ export default function VideoGenerationPage() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [])
-
-  const getApiKeyFromCookie = useCallback(() => {
-    const match = document.cookie.match(/oma_api_key=([^;]+)/)
-    return match ? match[1] : null
   }, [])
 
   const startPolling = useCallback((qId: string) => {
@@ -93,11 +91,17 @@ export default function VideoGenerationPage() {
       }
 
       try {
-        const apiKey = getApiKeyFromCookie()
         const resp = await fetch(`${RETRIEVE_URL}?queue_id=${qId}`, {
-          headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+          credentials: 'include',
         })
 
+        if (resp.status === 401) {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setPolling(false)
+          setLoading(false)
+          toast.error('API key expired or invalid. Please check your credentials.')
+          return
+        }
         if (!resp.ok) return
 
         const json = await resp.json()
@@ -112,16 +116,10 @@ export default function VideoGenerationPage() {
         // retry
       }
     }, 3000)
-  }, [toast, getApiKeyFromCookie])
+  }, [toast])
 
   const generate = useCallback(async () => {
     if (!prompt.trim() || loading) return
-
-    const apiKey = getApiKeyFromCookie()
-    if (!apiKey) {
-      toast.error('Enter your API key in Settings first')
-      return
-    }
 
     setLoading(true)
     setError(null)
@@ -140,13 +138,16 @@ export default function VideoGenerationPage() {
     try {
       const resp = await fetch(API_URL, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
       })
 
+      if (resp.status === 401) {
+        throw new Error('Connect your wallet to generate an API key')
+      }
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => null)
         throw new Error(errBody?.error?.message || `HTTP ${resp.status}`)
@@ -161,7 +162,7 @@ export default function VideoGenerationPage() {
       toast.error(msg)
       setLoading(false)
     }
-  }, [prompt, model, aspectRatio, duration, resolution, imageUrl, loading, toast, startPolling, getApiKeyFromCookie])
+  }, [prompt, model, aspectRatio, duration, resolution, imageUrl, loading, toast, startPolling])
 
   const downloadVideo = useCallback(async () => {
     if (!videoUrl) return
@@ -263,7 +264,12 @@ mode === 'image-to-video'
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
-                <select value={model} onChange={(e) => setModel(e.target.value)} disabled={loading || polling}>
+                <select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  disabled={loading || polling}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {availableModels.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} (${m.price.toFixed(2)})
@@ -274,7 +280,12 @@ mode === 'image-to-video'
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Aspect Ratio</label>
-                <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} disabled={loading || polling}>
+                <select
+                  value={aspectRatio}
+                  onChange={(e) => setAspectRatio(e.target.value)}
+                  disabled={loading || polling}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {ASPECT_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -283,7 +294,12 @@ mode === 'image-to-video'
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Duration</label>
-                <select value={duration} onChange={(e) => setDuration(e.target.value)} disabled={loading || polling}>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  disabled={loading || polling}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {DURATION_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -292,7 +308,12 @@ mode === 'image-to-video'
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Resolution</label>
-                <select value={resolution} onChange={(e) => setResolution(e.target.value)} disabled={loading || polling}>
+                <select
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  disabled={loading || polling}
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                >
                   {RESOLUTION_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -383,7 +404,7 @@ mode === 'image-to-video'
         {!loading && !polling && !videoUrl && !error && (
           <div className="mt-16 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center mb-6 shadow-xl">
-              <Film className="w-10 h-10 text-white" />
+              <Film className="w-10 h-10 text-[var(--color-text-inverse)]" />
             </div>
             <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Describe the video you want</h2>
             <p className="text-[var(--color-text)] max-w-md">

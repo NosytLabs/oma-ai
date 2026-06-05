@@ -198,7 +198,7 @@ export function SettingsPanel({
                 aria-label="Stream responses"
                 className={`relative w-9 h-4 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] ${stream ? 'bg-[var(--color-success)]' : 'bg-[var(--color-surface-elevated)]'}`}
               >
-                <span className={`absolute top-0.25 left-0.25 w-3.5 h-3.5 rounded-full bg-[var(--color-border)] transition-transform ${stream ? 'translate-x-5' : ''}`} />
+                <span className={`absolute top-0.25 left-0.25 w-3.5 h-3.5 rounded-full bg-[var(--color-text-inverse)] transition-transform ${stream ? 'translate-x-5' : ''}`} />
               </button>
             </div>
           </motion.div>

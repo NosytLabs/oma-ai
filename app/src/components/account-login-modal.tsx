@@ -160,10 +160,10 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
 
   return (
     <>
-      <button className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm cursor-default" onClick={onClose} aria-label="Close modal" />
-      <div 
+      <div role="presentation" className="fixed inset-0 z-[100] bg-[var(--color-overlay)]/60 backdrop-blur-sm cursor-default" onClick={onClose} />
+      <div
         ref={modalRef}
-        className="fixed z-[101] mx-4 w-full max-w-md border-[var(--color-cyan)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl" 
+        className="fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-cyan)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

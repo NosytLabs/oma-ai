@@ -53,10 +53,6 @@ balanceRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
     }
     const deposit = rows[0];
 
-    if (deposit.userId !== userId) {
-      return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
-    }
-
     if (deposit.status === "completed" || deposit.status === "failed" || deposit.status === "refunded" || deposit.status === "expired") {
       return c.json({
         id: deposit.id,

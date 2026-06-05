@@ -1,9 +1,19 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useWallet } from '@/components/wallet-provider'
 import { api, type BalanceResponse } from '@/lib/api'
 import { useToast } from '@/components/ui/Toast'
-import { BarChartComponent, generateCostData, DonutChart, generateModelData } from '@/components/ui/charts'
+import { generateCostData, generateModelData } from '@/components/ui/charts'
+
+const BarChartComponent = dynamic(
+  () => import('@/components/ui/charts').then((m) => m.BarChartComponent),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded bg-[var(--color-surface)]" /> }
+)
+const DonutChart = dynamic(
+  () => import('@/components/ui/charts').then((m) => m.DonutChart),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded bg-[var(--color-surface)]" /> }
+)
 import {
   Wallet,
   Coins,
@@ -17,7 +27,8 @@ import {
   Settings,
   Zap,
 } from 'lucide-react'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
@@ -37,11 +48,19 @@ const AMOUNT_PRESETS = [10, 25, 50, 100, 250]
 export default function CreditsPage() {
   const { isConnected, connectEvm } = useWallet()
   const toast = useToast()
+  const queryClient = useQueryClient()
 
-  const [balance, setBalance] = useState<BalanceResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const balanceQuery = useQuery({
+    queryKey: ['balance'],
+    queryFn: () => api.oma.getBalance(),
+    enabled: isConnected,
+    staleTime: 60_000,
+  })
+
+  const balance: BalanceResponse | null = balanceQuery.data ?? null
+  const loading = balanceQuery.isLoading
+  const refreshing = balanceQuery.isFetching && !balanceQuery.isLoading
+  const error = balanceQuery.error instanceof Error ? balanceQuery.error.message : balanceQuery.error ? 'Failed to load credits data' : null
 
   const [buyAmount, setBuyAmount] = useState('')
   const [selectedPayment, setSelectedPayment] = useState<'usdc' | 'sol'>('usdc')
@@ -50,37 +69,14 @@ export default function CreditsPage() {
   const [autoReload, setAutoReload] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
-  const [history, setHistory] = useState<CreditHistoryItem[]>([])
+  const [history] = useState<CreditHistoryItem[]>([])
 
   const costData = useMemo(() => generateCostData(30), [])
   const modelData = useMemo(() => generateModelData(), [])
 
-  const fetchData = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true)
-    else setRefreshing(true)
-    setError(null)
-    try {
-      const bal = await api.oma.getBalance()
-      setBalance(bal)
-      setHistory([
-        { id: '1', type: 'deposit', amount: 5000, source: 'USDC(Base)', status: 'completed', createdAt: new Date(Date.now() - 86400000).toISOString() },
-        { id: '2', type: 'usage', amount: -127, source: 'GPT-4o', status: 'completed', createdAt: new Date(Date.now() - 43200000).toISOString() },
-        { id: '3', type: 'deposit', amount: 2500, source: 'USDC(Solana)', status: 'completed', createdAt: new Date(Date.now() - 172800000).toISOString() },
-        { id: '4', type: 'usage', amount: -89, source: 'Claude Sonnet', status: 'completed', createdAt: new Date(Date.now() - 259200000).toISOString() },
-      ])
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to load credits data'
-      setError(msg)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isConnected) return
-    fetchData(true)
-  }, [isConnected, fetchData])
+  const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['balance'] })
+  }, [queryClient])
 
 const handleBuyCredits = async () => {
     if (!buyAmount || parseFloat(buyAmount) <= 0) return;
@@ -90,7 +86,7 @@ const handleBuyCredits = async () => {
       const result = await api.oma.purchaseCredits(amountCents, selectedPayment);
       toast.success(`Successfully purchased ${result.creditsAdded} credits!`);
       setBuyAmount('');
-      fetchData();
+      refetch();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to process payment';
       toast.error(msg);
@@ -145,9 +141,9 @@ const handleBuyCredits = async () => {
           <div className="flex items-center gap-3 mb-1">
             <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
             <span className="text-[var(--color-text-muted)]">/</span>
-            <span className="text-sm text-white">Credits</span>
+            <span className="text-sm text-[var(--color-text-bright)]">Credits</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Credits</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-bright)]">Credits</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">Balance, purchases, and usage breakdown</p>
         </div>
         <div className="flex items-center gap-3">
@@ -161,7 +157,7 @@ const handleBuyCredits = async () => {
             Settings
           </motion.button>
           <motion.button
-            onClick={() => fetchData()}
+            onClick={() => refetch()}
             disabled={refreshing}
             className="btn-secondary flex items-center gap-2 py-2 px-4"
             whileHover={{ scale: 1.02 }}
@@ -200,13 +196,13 @@ const handleBuyCredits = async () => {
               <Coins className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Current Balance</h2>
+              <h2 className="text-lg font-semibold text-[var(--color-text-bright)]">Current Balance</h2>
               <p className="text-xs text-[var(--color-text-muted)]">Available credits</p>
             </div>
           </div>
 
           <div className="mb-6">
-            <div className="text-5xl font-bold tracking-tight text-white mb-1">
+            <div className="text-5xl font-bold tracking-tight text-[var(--color-text-bright)] mb-1">
               {loading && !balance ? (
                 <span className="text-[var(--color-text-muted)]">$0.00</span>
               ) : (
@@ -239,7 +235,7 @@ const handleBuyCredits = async () => {
               <CreditCard className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Buy Credits</h2>
+              <h2 className="text-lg font-semibold text-[var(--color-text-bright)]">Buy Credits</h2>
               <p className="text-xs text-[var(--color-text-muted)]">USDC or SOL payment</p>
             </div>
           </div>
@@ -332,11 +328,11 @@ const handleBuyCredits = async () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <h3 className="text-lg font-semibold text-white mb-4">Auto-Reload Settings</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-bright)] mb-4">Auto-Reload Settings</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">Auto-reload credits</p>
+                  <p className="font-medium text-[var(--color-text-bright)]">Auto-reload credits</p>
                   <p className="text-sm text-[var(--color-text-muted)]">Automatically purchase credits when balance falls below threshold</p>
                 </div>
                 <motion.button
@@ -354,7 +350,7 @@ const handleBuyCredits = async () => {
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <span className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform ${
+                  <span className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-[var(--color-text-bright)] transition-transform ${
                     autoReload ? 'translate-x-5' : ''
                   }`} />
                 </motion.button>
@@ -392,7 +388,7 @@ const handleBuyCredits = async () => {
           transition={{ delay: 0.3 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">30-Day Costs</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">30-Day Costs</h3>
             <div className="text-sm text-[var(--color-text-muted)]">${costData.reduce((sum, d) => sum + d.cost, 0).toFixed(2)} total</div>
           </div>
           <BarChartComponent data={costData} />
@@ -405,7 +401,7 @@ const handleBuyCredits = async () => {
           transition={{ delay: 0.4 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Usage by Model</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">Usage by Model</h3>
           </div>
           <DonutChart data={modelData} />
           <div className="mt-4 flex flex-wrap gap-3">
@@ -427,7 +423,7 @@ const handleBuyCredits = async () => {
       >
         <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--color-border)]/50">
           <History className="h-5 w-5 text-[var(--color-cyan)]" />
-          <h3 className="text-lg font-semibold text-white">Credit History</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">Credit History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">

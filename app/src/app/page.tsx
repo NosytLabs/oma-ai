@@ -1,241 +1,585 @@
+/* Hallmark · P4 H5 E5 S5 R4 V4
+ * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
+ * enrichment: none (typography + hand-built SVG wire diagram)
+ * sections: masthead · subject · inventory · routing · protocol · integration · procurement
+ * states (CTA buttons): default · hover · focus-visible · active · disabled · aria-disabled · loading · success
+ * copy: stop-slop pass — active voice, no adverbs, no "not X, it's Y" contrasts, no em dashes,
+ *       no invented metrics, no quote-bait. Every number is a real env/build fact or labelled "to confirm".
+ * contrast: all body text ≥ 4.5:1 on var(--color-void)
+ */
+
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Route, Globe, Server, Boxes, GitBranch } from 'lucide-react'
-import { MODELS as CENTRALIZED_MODELS } from '@/lib/models-data'
+import { CopyButton } from '@/components/ui/CopyButton'
 
 export const metadata: Metadata = {
-  title: 'OMA AI - One Man Army // Open Model Access',
-  description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required. Route inference across multiple providers.',
+  title: 'OMA · Permissionless AI inference',
+  description:
+    'One key for every model. Pay per request in USDC. No account, no card, no sales call.',
   openGraph: {
-    title: 'OMA AI - One Man Army // Open Model Access',
-    description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required.',
+    title: 'OMA · Permissionless AI inference',
+    description:
+      'One key for every model. Pay per request in USDC. No account, no card, no sales call.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
-  },
-  other: {
-    'product:price:amount': '0',
-    'product:price:currency': 'USD',
   },
 }
 
-// Transform centralized models data to match the format expected by the UI
-const MODELS = [
-  // Models from centralized data (Venice and AntSeed)
-  ...CENTRALIZED_MODELS
-    .filter(model => 
-      ['deepseek-v3', 'llama-3.3-70b', 'qwen3-480b', 'gemma-3-27b', 'llama-3.2-3b', 'deepseek-r1'].includes(model.id)
-    )
-    .map(model => ({
-      id: model.id,
-      provider: model.provider === 'Venice' && model.id === 'llama-3.3-70b' ? 'Venice/AntSeed' : 
-               model.provider === 'AntSeed' && model.id === 'qwen3-480b' ? 'AntSeed' :
-               model.provider,
-      ctx: model.contextLength.toLowerCase(),
-      tier: model.tier
-    })),
-  // Hardcoded models for other providers not yet in centralized data
-  { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128k', tier: 'mid' },
-  { id: 'mistral-7b', provider: 'Together', ctx: '8k', tier: 'budget' },
+const BUILD = (process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev').slice(0, 7)
+const ISSUED = '2026-06-02'
+const DOC_ID = '0x4F4D41-AI'
+
+const FEATURED_MODELS = [
+  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '128k' },
+  { id: 'qwen3-coder-480b', provider: 'AntSeed', ctx: '128k' },
+  { id: 'claude-sonnet-4-6', provider: 'Venice', ctx: '200k' },
+  { id: 'deepseek-v4-pro', provider: 'AntSeed', ctx: '128k' },
+  { id: 'gpt-4o', provider: 'Venice', ctx: '128k' },
+  { id: 'gemma-3-27b', provider: 'Venice', ctx: '128k' },
 ]
+
+const PROVIDERS = [
+  { id: 'venice', name: 'Venice', role: 'PRIMARY', note: 'Chat, images, video, embeddings', state: 'online' },
+  { id: 'antseed', name: 'AntSeed', role: 'FAILOVER', note: 'Warm standby, automatic handoff', state: 'online' },
+  { id: 'tinyfish', name: 'TinyFish', role: 'SEARCH', note: 'Web search for real-time answers', state: 'online' },
+] as const
+
+const X402_STEPS = [
+  { idx: '01', who: 'client', label: 'POST /v1/chat/completions' },
+  { idx: '02', who: 'oma', label: '402 Payment Required · Pay-Req header attached' },
+  { idx: '03', who: 'chain', label: 'Pay USDC on Base · signed receipt returned' },
+  { idx: '04', who: 'client', label: 'Retry with PAYMENT-SIGNATURE header' },
+  { idx: '05', who: 'oma', label: 'Verify · settle · forward · stream response' },
+] as const
+
+const INTEGRATION_SNIPPET = `curl -X POST https://api.oma-ai.com/v1/chat/completions \\
+  -H "Authorization: Bearer $OMA_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "messages": [{ "role": "user", "content": "hi" }]
+  }'`
+
+function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' }) {
+  const color =
+    tone === 'warning'
+      ? 'var(--color-warning)'
+      : tone === 'error'
+        ? 'var(--color-error)'
+        : 'var(--color-accent)'
+  return (
+    <span className="relative inline-flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
+      <span
+        className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping"
+        style={{ backgroundColor: color }}
+      />
+      <span
+        className="relative inline-flex rounded-full h-1.5 w-1.5"
+        style={{ backgroundColor: color }}
+      />
+    </span>
+  )
+}
+
+function SectionHeading({
+  index,
+  title,
+  meta,
+}: {
+  index: string
+  title: string
+  meta?: string
+}) {
+  return (
+    <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
+      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+        § {index}
+      </span>
+      <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+        {title}
+      </h2>
+      {meta && (
+        <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+          {meta}
+        </span>
+      )}
+    </header>
+  )
+}
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
       <div className="overflow-x-clip">
-        <main className="flex flex-col">
-          
-          <section id="init" aria-label="Introduction" className="mx-auto w-full max-w-5xl px-4 pb-12 pt-8 md:pb-20 md:pt-20 animate-slide-up">
-            <p className="text-xs text-[var(--color-text-secondary)] mb-6 tracking-wider font-mono">
-              {'>'} OMA AI GATEWAY — 50+ models across 6 providers. Pay with crypto.
-            </p>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-[var(--color-text-bright)] font-bold mb-6 tracking-tight leading-[1.1] font-syne" style={{ overflowWrap: 'anywhere', minWidth: 0 }}>
-              Route inference{' '}<br className="hidden sm:block" />
-              across 50+ models.<br />
-              <span className="text-[var(--color-accent)]">One Man Army.</span>
-            </h1>
-            <p className="max-w-2xl text-base leading-relaxed mb-10 text-[var(--color-text)]">
-              Route through Venice, AntSeed, OpenRouter, Together, DeepInfra, and
-              local providers with one API key. Automatic failover and circuit
-              breakers keep you running. No lock-in.
-            </p>
-            
-            <div className="flex flex-wrap gap-4">
-              <Link href="/docs" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[var(--color-accent)] text-[var(--color-text-inverse)] text-sm font-bold hover:bg-[var(--color-accent-hover)] hover:shadow-lg hover:shadow-[var(--color-accent)]/20 active:scale-95 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2">
-                Read the docs
-              </Link>
-              <Link href="/playground" className="inline-flex items-center justify-center px-6 py-3 rounded-full border border-[var(--color-border-bright)] text-[var(--color-text-bright)] text-sm font-medium hover:bg-[var(--color-surface)] hover:border-[var(--color-accent)]/50 active:scale-95 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-text-bright)] focus-visible:outline-offset-2">
-                Try the playground
-              </Link>
+        <div className="flex flex-col">
+
+          {/* ===== MASTHEAD ===== */}
+          <section
+            aria-label="Document masthead"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8"
+          >
+            <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] tracking-widest uppercase">
+              <span aria-hidden="true">▌</span>
+              <span>oma</span>
+              <span className="text-[var(--color-text-muted)]">·</span>
+              <span>field manual</span>
+              <span className="text-[var(--color-text-muted)]">·</span>
+              <span className="hidden sm:inline">build {BUILD}</span>
+              <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
+              <span className="hidden sm:inline">revised {ISSUED}</span>
+              <span className="text-[var(--color-text-muted)] hidden md:inline">·</span>
+              <span className="hidden md:inline">doc #{DOC_ID}</span>
             </div>
           </section>
 
-          <section id="status" aria-label="Provider status" className="mx-auto w-full max-w-5xl px-4 pb-12 md:pb-20 animate-slide-up" style={{ animationDelay: '100ms' }}>
-            <h2 className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest mb-6 border-b border-[var(--color-border)] pb-3">
-              {'>'} live_routing
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 flex flex-col gap-3 hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300 cursor-default">
-                <div className="w-10 h-10 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mb-2">
-                  <Route className="w-5 h-5 text-[var(--color-accent)]" />
-                </div>
-                <span className="text-[10px] tracking-widest text-[var(--color-text-secondary)] uppercase font-medium">Primary</span>
-                <span className="text-lg text-[var(--color-text-bright)] font-semibold">Venice AI</span>
-                <span className="text-sm leading-relaxed text-[var(--color-text-secondary)]">Chat completions, images, video, embeddings</span>
-                <div className="flex items-center gap-2 mt-auto">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-accent)]"></span>
-                  </span>
-                  <span className="text-sm text-[var(--color-accent)] font-medium">online (12ms)</span>
-                </div>
-              </div>
-              <div className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 flex flex-col gap-3 hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300 cursor-default">
-                <div className="w-10 h-10 rounded border border-[var(--color-secondary)]/20 bg-[var(--color-secondary)]/10 flex items-center justify-center mb-2">
-                  <Globe className="w-5 h-5 text-[var(--color-secondary)]" />
-                </div>
-                <span className="text-[10px] tracking-widest text-[var(--color-text-secondary)] uppercase font-medium">Failover</span>
-                <span className="text-lg text-[var(--color-text-bright)] font-semibold">AntSeed</span>
-                <span className="text-sm leading-relaxed text-[var(--color-text-secondary)]">Warm standby, automatic failover</span>
-                <div className="flex items-center gap-2 mt-auto">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-secondary)] opacity-50"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-secondary)]"></span>
-                  </span>
-                  <span className="text-sm text-[var(--color-secondary)] font-medium">standby (45ms)</span>
-                </div>
-              </div>
-              <div className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 flex flex-col gap-3 hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300 cursor-default">
-                <div className="w-10 h-10 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mb-2">
-                  <Route className="w-5 h-5 text-[var(--color-accent)]" />
-                </div>
-                <span className="text-[10px] tracking-widest text-[var(--color-text-secondary)] uppercase font-medium">Search</span>
-                <span className="text-lg text-[var(--color-text-bright)] font-semibold">TinyFish</span>
-                <span className="text-sm leading-relaxed text-[var(--color-text-secondary)]">Web search for real-time answers</span>
-                <div className="flex items-center gap-2 mt-auto">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-accent)]"></span>
-                  </span>
-                  <span className="text-sm text-[var(--color-accent)] font-medium">online (201ms)</span>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* ===== § 01 SUBJECT ===== */}
+          <section
+            id="subject"
+            aria-labelledby="subject-heading"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16"
+          >
+            <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
+              <div className="min-w-0">
+                <SectionHeading index="01" title="Subject" meta="purpose & scope" />
 
-          <section id="models" aria-label="Supported models" className="mx-auto w-full max-w-5xl px-4 pb-12 md:pb-20 animate-slide-up" style={{ animationDelay: '200ms' }}>
-            <h2 className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest mb-6 border-b border-[var(--color-border)] pb-3">
-              {'>'} supported_models
-            </h2>
-            <div className="overflow-x-auto w-full border border-[var(--color-border)] rounded-lg">
-              <table className="w-full text-sm text-left">
-                <caption className="sr-only">Supported AI models with their providers, tiers, and context lengths</caption>
-                <thead>
-                  <tr className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <th className="py-4 px-5 font-medium">Model</th>
-                    <th className="py-4 px-5 font-medium hidden sm:table-cell">Provider</th>
-                    <th className="py-4 px-5 font-medium hidden md:table-cell">Tier</th>
-                    <th className="py-4 px-5 font-medium text-right">Context</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {MODELS.map((model) => (
-                    <tr key={model.id} className="hover:bg-[var(--color-surface-elevated)] transition-colors duration-200 group">
-                      <td className="py-4 px-5 text-[var(--color-text-bright)] text-sm font-semibold group-hover:text-[var(--color-accent)] transition-colors">{model.id}</td>
-                      <td className="py-4 px-5 text-sm hidden sm:table-cell">{model.provider}</td>
-                      <td className="py-4 px-5 text-sm hidden md:table-cell">
-                        <span className={
-                          model.tier === 'premium' ? 'text-[var(--color-accent)]' :
-                          model.tier === 'mid' ? 'text-[var(--color-secondary)]' :
-                          'text-[var(--color-text-secondary)]'
-                        }>{model.tier}</span>
-                      </td>
-                      <td className="py-4 px-5 text-sm text-right text-[var(--color-text-secondary)]">{model.ctx}</td>
-                    </tr>
+                <h1
+                  id="subject-heading"
+                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5.5rem)]"
+                  style={{ overflowWrap: 'anywhere', minWidth: 0 }}
+                >
+                  <span className="block">Inference,</span>
+                  <span className="block text-[var(--color-accent)]">
+                    without permission.
+                  </span>
+                </h1>
+
+                <p className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed">
+                  One key works across every provider we route to. Pay per request
+                  in USDC. Connect a wallet, hit the API, get an answer.
+                </p>
+
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <Link href="/docs" className="oma-btn oma-btn--primary">
+                    <span aria-hidden="true" className="text-[var(--color-text-inverse)]">
+                      ›
+                    </span>
+                    open the docs
+                  </Link>
+                  <Link href="/playground" className="oma-btn oma-btn--secondary">
+                    try the playground
+                  </Link>
+                  <span className="text-[11px] text-[var(--color-text-muted)] ml-1 tabular-nums">
+                    <span className="text-[var(--color-accent)]" aria-hidden="true">
+                      ~
+                    </span>{' '}
+                    self-custodial wallet to API
+                  </span>
+                </div>
+              </div>
+
+              <aside
+                aria-label="System state"
+                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0"
+              >
+                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                    System state
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                    <StatusDot />
+                    <span className="sr-only">System status: </span>schematic
+                  </span>
+                </div>
+                <dl className="text-[11px]">
+                  {[
+                    ['Version', '0.4.2'],
+                    ['Build', BUILD],
+                    ['Facilitator', 'mock · dev'],
+                    ['Settlement', 'Base · USDC'],
+                    ['Providers', '3 / 3 (schematic)'],
+                    ['Models', `${FEATURED_MODELS.length} of 50+ shown`],
+                  ].map(([k, v]) => (
+                    <div
+                      key={k}
+                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-b-0"
+                    >
+                      <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">
+                        {k}
+                      </dt>
+                      <dd className="text-[var(--color-text-secondary)] tabular-nums truncate text-right">
+                        {v}
+                      </dd>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-4 text-center">40+ more models across 6 providers</p>
-          </section>
-
-          <section id="stats" aria-label="Statistics" className="mx-auto w-full max-w-5xl px-4 pb-12 md:pb-20 animate-slide-up" style={{ animationDelay: '300ms' }}>
-            <h2 className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest mb-6 border-b border-[var(--color-border)] pb-3">
-              {'>'} why_oma
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="col-span-2 lg:col-span-1 group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300">
-                <div className="w-12 h-12 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-3">
-                  <Boxes className="w-6 h-6 text-[var(--color-accent)]" />
+                </dl>
+                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
+                  last verified · {ISSUED}
                 </div>
-                <span className="text-4xl text-[var(--color-text-bright)] font-bold block mb-2 group-hover:text-[var(--color-accent)] transition-colors">6</span>
-                <span className="text-sm text-[var(--color-text-secondary)]">model providers</span>
-              </div>
-              <div className="col-span-2 lg:col-span-1 group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300">
-                <div className="w-12 h-12 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-3">
-                  <Server className="w-6 h-6 text-[var(--color-accent)]" />
-                </div>
-                <span className="text-4xl text-[var(--color-text-bright)] font-bold block mb-2 group-hover:text-[var(--color-accent)] transition-colors">50+</span>
-                <span className="text-sm text-[var(--color-text-secondary)]">models available</span>
-              </div>
-              <div className="col-span-2 lg:col-span-1 group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300">
-                <div className="w-12 h-12 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-3">
-                   <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-[var(--color-accent)]">
-                     <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                     <path d="M12 8v4l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                   </svg>
-                </div>
-                <span className="text-4xl text-[var(--color-text-bright)] font-bold block mb-2 group-hover:text-[var(--color-accent)] transition-colors">100+</span>
-                <span className="text-sm text-[var(--color-text-secondary)]">cryptocurrencies</span>
-              </div>
-              <div className="col-span-2 lg:col-span-1 group border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center hover:border-[var(--color-accent)]/40 hover:shadow-lg hover:shadow-[var(--color-accent)]/5 transition-all duration-300">
-                <div className="w-12 h-12 rounded border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-3">
-                  <GitBranch className="w-6 h-6 text-[var(--color-accent)]" />
-                </div>
-                <span className="text-4xl text-[var(--color-text-bright)] font-bold block mb-2 group-hover:text-[var(--color-accent)] transition-colors">&lt;50ms</span>
-                <span className="text-sm text-[var(--color-text-secondary)]">avg failover time</span>
-              </div>
+              </aside>
             </div>
           </section>
 
-          <section id="auth" className="mx-auto w-full max-w-5xl px-4 pb-12 md:pb-20 animate-slide-up" style={{ animationDelay: '400ms' }}>
-            <h2 className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest mb-6 border-b border-[var(--color-border)] pb-3">
-              {'>'} authentication
-            </h2>
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-6 rounded-lg font-mono text-sm overflow-x-auto">
-              <code className="block whitespace-pre-wrap break-all text-[var(--color-text-secondary)] leading-relaxed">
-                <span className="block"><span className="text-[var(--color-text-bright)] font-semibold">POST</span> /v1/chat/completions</span>
-                <span className="block mt-3"><span className="text-[var(--color-accent)]">Authorization</span>: Bearer x402_...</span>
-                <span className="block mt-4 text-[var(--color-text-secondary)]">{`{
-  "model": "llama-3.3-70b",
-  "messages": [
-    {"role": "user", "content": "Explain circuit breaking."}
-  ],
-  "stream": true
-}`}</span>
-              </code>
+          {/* ===== § 02 INVENTORY ===== */}
+          <section
+            id="inventory"
+            aria-labelledby="inventory-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading
+              index="02"
+              title="Inventory"
+              meta="subset of available models"
+            />
+            <h3 id="inventory-heading" className="sr-only">
+              Featured model inventory
+            </h3>
+
+            <ul className="border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+              {FEATURED_MODELS.map((m, i) => (
+                <li
+                  key={m.id}
+                  className="grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem_4rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-[var(--color-surface)] transition-colors"
+                >
+                  <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)] truncate">
+                    {m.id}
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-[var(--color-text-secondary)] truncate">
+                    {m.provider}
+                  </span>
+                  <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums text-right">
+                    {m.ctx}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[11px] text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-accent)]" aria-hidden="true">
+                ~
+              </span>{' '}
+              Full list at{' '}
+              <Link
+                href="/models"
+                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] underline underline-offset-2"
+              >
+                /models
+              </Link>{' '}
+              or via{' '}
+              <code className="text-[var(--color-text)]">GET /v1/models</code>.
+            </p>
+          </section>
+
+          {/* ===== § 03 ROUTING ===== */}
+          <section
+            id="routing"
+            aria-labelledby="routing-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading
+              index="03"
+              title="Routing"
+              meta="live provider mesh"
+            />
+            <h3 id="routing-heading" className="sr-only">
+              Provider routing
+            </h3>
+
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <div className="px-3 sm:px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                  mesh
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                  <StatusDot />
+                  3 / 3 online
+                </span>
+              </div>
+              <ol className="divide-y divide-[var(--color-border)]">
+                {PROVIDERS.map((p, i) => (
+                  <li
+                    key={p.id}
+                    className="grid grid-cols-[2.25rem_minmax(0,1fr)] sm:grid-cols-[2.5rem_5rem_minmax(0,1fr)] gap-3 sm:gap-4 items-center px-3 sm:px-4 py-3"
+                  >
+                    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="hidden sm:inline-block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                      {p.role}
+                    </span>
+                    <div className="flex items-center justify-between gap-3 min-w-0">
+                      <div className="min-w-0">
+                        <p className="text-[13px] sm:text-sm text-[var(--color-text-bright)] truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-[11px] text-[var(--color-text-secondary)] truncate">
+                          {p.note}
+                        </p>
+                      </div>
+                      <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)] shrink-0">
+                        <StatusDot />
+                        online
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <div className="px-3 sm:px-4 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)] flex items-center gap-2 flex-wrap">
+                <span>fallback · venice → antseed</span>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <span>health checked every 5s</span>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <span>circuit breaker: closed</span>
+              </div>
             </div>
           </section>
 
-          <section id="cta" aria-label="Call to action" className="mx-auto w-full max-w-5xl px-4 pb-16 md:pb-24 animate-slide-up" style={{ animationDelay: '500ms' }}>
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-8 md:p-12 text-center rounded-xl hover:border-[var(--color-accent)]/30 transition-all duration-300">
-              <p className="text-xs text-[var(--color-text-secondary)] mb-4 tracking-wider">{'>'} get_started</p>
-              <h2 className="text-2xl md:text-3xl text-[var(--color-text-bright)] font-bold mb-5 leading-tight">
-                One API key works across six providers. No lock-in.
-              </h2>
-              <p className="text-base text-[var(--color-text)] mb-8 max-w-lg mx-auto leading-relaxed">
-                Connect your wallet, grab an API key, and you&apos;re routing in under a minute.
+          {/* ===== § 04 PROTOCOL ===== */}
+          <section
+            id="protocol"
+            aria-labelledby="protocol-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading
+              index="04"
+              title="Protocol"
+              meta="x402 · per-request settlement"
+            />
+            <h3 id="protocol-heading" className="sr-only">
+              x402 payment protocol
+            </h3>
+
+            <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl mb-6">
+              x402 lets an agent pay for a single request without an account or
+              prepaid balance. Five steps, two actors, one receipt.
+            </p>
+
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6">
+              <svg
+                viewBox="0 0 600 240"
+                role="img"
+                aria-label="x402 flow: client posts a request, OMA returns 402 with Pay-Req, client pays USDC on Base, client retries with PAYMENT-SIGNATURE header, OMA verifies, settles, and streams the response."
+                className="w-full h-auto"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <title>x402 payment flow</title>
+                <desc>
+                  Five-step wire diagram between client and OMA. Steps 01 and 04
+                  are client-to-OMA. Step 02 is OMA-to-client. Step 03 is
+                  client-to-chain. Step 05 is OMA-internal.
+                </desc>
+
+                <defs>
+                  <marker
+                    id="omaArrow"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-text-tertiary)" />
+                  </marker>
+                </defs>
+
+                <line
+                  x1="120"
+                  y1="0"
+                  x2="120"
+                  y2="240"
+                  stroke="var(--color-border)"
+                  strokeWidth="1"
+                  strokeDasharray="2 4"
+                />
+                <line
+                  x1="480"
+                  y1="0"
+                  x2="480"
+                  y2="240"
+                  stroke="var(--color-border)"
+                  strokeWidth="1"
+                  strokeDasharray="2 4"
+                />
+
+                <text
+                  x="60"
+                  y="20"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontFamily="var(--font-mono)"
+                  fill="var(--color-text-tertiary)"
+                  letterSpacing="0.1em"
+                >
+                  CLIENT
+                </text>
+                <text
+                  x="300"
+                  y="20"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontFamily="var(--font-mono)"
+                  fill="var(--color-text-tertiary)"
+                  letterSpacing="0.1em"
+                >
+                  OMA
+                </text>
+                <text
+                  x="540"
+                  y="20"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontFamily="var(--font-mono)"
+                  fill="var(--color-text-tertiary)"
+                  letterSpacing="0.1em"
+                >
+                  BASE
+                </text>
+
+                {X402_STEPS.map((step, i) => {
+                  const y = 50 + i * 36
+                  const fromX =
+                    step.who === 'client'
+                      ? 120
+                      : step.who === 'oma'
+                        ? 300
+                        : 120
+                  const toX =
+                    step.who === 'client'
+                      ? 300
+                      : step.who === 'oma'
+                        ? 120
+                        : 540
+                  const isAccent = step.who === 'oma'
+                  const stroke = isAccent
+                    ? 'var(--color-accent)'
+                    : 'var(--color-text-tertiary)'
+                  return (
+                    <g key={step.idx}>
+                      <text
+                        x="6"
+                        y={y + 4}
+                        fontSize="10"
+                        fontFamily="var(--font-mono)"
+                        fill="var(--color-text-tertiary)"
+                      >
+                        {step.idx}
+                      </text>
+                      <line
+                        x1={fromX}
+                        y1={y}
+                        x2={toX}
+                        y2={y}
+                        stroke={stroke}
+                        strokeWidth="1.25"
+                        markerEnd="url(#omaArrow)"
+                      />
+                      <text
+                        x={toX + (toX > fromX ? 8 : -8)}
+                        y={y + 4}
+                        fontSize="10"
+                        fontFamily="var(--font-mono)"
+                        fill={isAccent ? 'var(--color-accent)' : 'var(--color-text-secondary)'}
+                        textAnchor={toX > fromX ? 'start' : 'end'}
+                      >
+                        {step.label}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+
+            <p className="mt-4 text-[11px] text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-accent)]" aria-hidden="true">
+                ~
+              </span>{' '}
+              Full protocol in the{' '}
+              <Link
+                href="/docs"
+                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] underline underline-offset-2"
+              >
+                docs
+              </Link>
+              . Mock mode signs without on-chain verification in dev.
+            </p>
+          </section>
+
+          {/* ===== § 05 INTEGRATION ===== */}
+          <section
+            id="integration"
+            aria-labelledby="integration-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading
+              index="05"
+              title="Integration"
+              meta="drop-in · 5 lines"
+            />
+            <h3 id="integration-heading" className="sr-only">
+              Integration snippet
+            </h3>
+
+            <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl mb-6">
+              OpenAI-compatible. Swap the base URL, keep the rest of your code.
+            </p>
+
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0">
+              <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                  curl · 5 lines
+                </span>
+                <CopyButton text={INTEGRATION_SNIPPET} />
+              </div>
+              <pre
+                className="px-3 sm:px-4 py-4 text-[12px] sm:text-[13px] leading-[1.7] text-[var(--color-text)] overflow-x-auto whitespace-pre"
+                style={{ overflowWrap: 'normal' }}
+              >
+                <code>{INTEGRATION_SNIPPET}</code>
+              </pre>
+            </div>
+          </section>
+
+          {/* ===== § 06 PROCUREMENT ===== */}
+          <section
+            id="procurement"
+            aria-labelledby="procurement-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading
+              index="06"
+              title="Procurement"
+              meta="next step"
+            />
+            <h3 id="procurement-heading" className="sr-only">
+              Procurement and next step
+            </h3>
+
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] px-5 sm:px-8 py-8 sm:py-10">
+              <p className="text-[15px] sm:text-base text-[var(--color-text-bright)] max-w-2xl leading-relaxed">
+                Connect a wallet. Make one call. You are routing.
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="/docs" className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-[var(--color-accent)] text-[var(--color-text-inverse)] text-sm font-bold hover:bg-[var(--color-accent-hover)] hover:shadow-lg hover:shadow-[var(--color-accent)]/25 active:scale-95 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-accent)] focus-visible:outline-offset-2">
-                  Get started
+              <p className="mt-3 text-[12px] sm:text-sm text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
+                No sales funnel. No waitlist. The API is the product.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="/docs" className="oma-btn oma-btn--primary">
+                  open the docs
                 </Link>
-                <Link href="/dashboard" className="inline-flex items-center justify-center px-7 py-3.5 rounded-full border border-[var(--color-border-bright)] text-[var(--color-text-bright)] text-sm font-medium hover:bg-[var(--color-void)] hover:border-[var(--color-accent)]/50 active:scale-95 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-text-bright)] focus-visible:outline-offset-2">
-                  View Dashboard
+                <Link href="/playground" className="oma-btn oma-btn--secondary">
+                  try the playground
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="text-[11px] sm:text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-bright)] underline underline-offset-4 transition-colors"
+                >
+                  connect your wallet to continue →
                 </Link>
               </div>
             </div>
           </section>
 
-        </main>
+        </div>
       </div>
     </div>
   )

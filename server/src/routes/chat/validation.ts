@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { config } from "../../config.js";
-import { USDC_BASE } from "../../constants.js";
 
 export const MAX_MESSAGE_CONTENT_BYTES = 100_000;
 export const MAX_MESSAGES = 100;
@@ -18,28 +16,6 @@ export function checkRequestBodySizeLimit(
     }
   }
   return true;
-}
-
-export function createInsufficientCreditsPayReq(
-  returnToUrl: string,
-  amountCents: number = 1,
-) {
-  const now = Math.floor(Date.now() / 1000);
-  const paymentURL = `https://pay.oma-ai.com/x402/deposit?network=base&asset=USDC&return_to=${encodeURIComponent(returnToUrl)}`;
-  return {
-    x402Version: "1" as const,
-    scheme: "evm" as const,
-    networkId: "base",
-    asset: USDC_BASE,
-    amount: (amountCents / 100).toFixed(2),
-    payee:
-      config.HOUDINI_ADDRESS_TO ||
-      "0x0000000000000000000000000000000000000000",
-    maxAmountRequired: (amountCents / 100).toFixed(2),
-    validBefore: now + 3600,
-    validAfter: now,
-    "payment-URL": paymentURL,
-  };
 }
 
 export function validateMessageContent(content: unknown): boolean {

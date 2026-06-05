@@ -21,4 +21,6 @@ export function maskKey(prefix: string): string {
   return `${prefix}****`
 }
 
-export { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+export function formatUsd(amount: number, decimals = 2): string {
+  return `$${amount.toFixed(decimals)}`
+}

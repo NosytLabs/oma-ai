@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../auth'
 import { rateLimitMiddleware } from '../rate-limit'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { API_URL } from '@/lib/api/admin-config'
 
 export async function GET(request: Request) {
   const rateLimitResponse = rateLimitMiddleware(request)
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
       return unauthorizedAdminResponse()
     }
 
-    const res = await fetch(`${API_URL}/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`, {
+    const res = await fetch(`${API_URL}/v1/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`, {
       headers: {
         'Authorization': authorization,
       },
@@ -35,6 +34,9 @@ export async function GET(request: Request) {
     return NextResponse.json(data)
   } catch (err) {
     console.error('Admin users proxy error:', err)
+    if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('ECONNREFUSED'))) {
+      return NextResponse.json({ error: { message: 'Backend unavailable' } }, { status: 503 })
+    }
     return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 })
   }
 }

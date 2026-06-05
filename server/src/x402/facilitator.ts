@@ -940,6 +940,20 @@ x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
 });
 
+x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
+  return c.json(
+    {
+      error: {
+        message: "x402 direct proxy is not yet enabled. Use the credit-proxy flow via /v1/chat/completions with an API key, or call /v1/x402/quote to deposit credits first.",
+        type: "not_implemented",
+        code: "x402_proxy_pending",
+        docs: "https://github.com/anomalyco/oma#x402-payments",
+      },
+    },
+    501,
+  );
+});
+
 // ============================================================
 // Payment Middleware
 // ============================================================

@@ -1,6 +1,7 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper, healthCheck, withRetry } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
+import { logger } from "../lib/logger.js";
 
 const OPENROUTER_TIMEOUT_MS = 30_000;
 const OPENROUTER_STREAM_TIMEOUT_MS = 120_000;
@@ -57,7 +58,7 @@ export async function chatCompletion(body: {
 }): Promise<Response> {
   return withRetry(() => provider.chatCompletion(body), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`OpenRouter request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn(`OpenRouter request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
     },
   });
 }
@@ -71,7 +72,7 @@ export async function completion(body: {
 }): Promise<Response> {
   return withRetry(() => provider.completion(body), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`OpenRouter completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn(`OpenRouter completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
     },
   });
 }
@@ -83,17 +84,6 @@ export function streamChatCompletion(body: {
   [key: string]: unknown;
 }): Promise<Response> {
   return provider.streamChatCompletion(body);
-}
-
-export async function openrouterHealthCheck(): Promise<{
-  isUp: boolean;
-  latencyMs: number;
-}> {
-  return healthCheck({
-    getUrl: () => openrouterUrl("/models"),
-    getHeaders: openrouterHeaders,
-    keyConfigured: !!config.OPENROUTER_API_KEY,
-  });
 }
 
 export interface BYOKKey {
@@ -165,16 +155,16 @@ export async function addVeniceAsBYOK(
     const veniceKey = existingKeys.find((k) => k.provider === "venice");
 
     if (veniceKey) {
-      console.log("[openrouter] Venice BYOK key already exists:", veniceKey.id);
+      logger.info("[openrouter] Venice BYOK key already exists: %s", veniceKey.id);
       return { success: true, byokKey: veniceKey };
     }
 
     const newKey = await createBYOKKey("venice", veniceApiKey, "Venice AI (BYOK)");
-    console.log("[openrouter] Created Venice BYOK key:", newKey.id);
+    logger.info("[openrouter] Created Venice BYOK key: %s", newKey.id);
     return { success: true, byokKey: newKey };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[openrouter] Failed to add Venice BYOK key:", message);
+    logger.error("[openrouter] Failed to add Venice BYOK key: %s", message);
     return { success: false, error: message };
   }
 }
@@ -205,11 +195,11 @@ export async function configureBYOKOrdering(
       throw new Error(`Failed to configure BYOK ordering: ${text.slice(0, 500)}`);
     }
 
-    console.log("[openrouter] BYOK ordering configured:", JSON.stringify(orderingConfig));
+    logger.info("[openrouter] BYOK ordering configured: %s", JSON.stringify(orderingConfig));
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[openrouter] Failed to configure BYOK ordering:", message);
+    logger.error("[openrouter] Failed to configure BYOK ordering: %s", message);
     return { success: false, error: message };
   }
 }

@@ -9,7 +9,8 @@ import { requestTimeout } from "../../middleware/timeout.js";
 import { trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
-import { createInsufficientCreditsPayReq } from "./validation.js";
+import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
+import { logger } from "../../lib/logger.js";
 
 const audioSpeechSchema = z.object({
   model: z.string().min(1).max(100),
@@ -41,9 +42,7 @@ audioRouter.post("/v1/audio/speech", async (c) => {
 
   const bal = await getBalance(userId);
   if (Number(bal.balanceCents) <= 0) {
-    const payReq = createInsufficientCreditsPayReq(c.req.url, totalCents);
-    c.header("Pay-Req", JSON.stringify(payReq));
-    return c.json({ error: { message: "Insufficient credits", type: "insufficient_quota" } }, 402);
+    return createInsufficientCreditsPayReq(c, totalCents, Number(bal.balanceCents));
   }
 
   try {
@@ -63,7 +62,7 @@ audioRouter.post("/v1/audio/speech", async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "inference_error";
-    console.error(`[chat] /v1/audio/speech error:`, err);
+    logger.error({ err }, "[chat] /v1/audio/speech error:");
     return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });
@@ -91,9 +90,7 @@ audioRouter.post("/v1/audio/transcriptions", async (c) => {
   const transcriptionCost = 1;
   const bal = await getBalance(userId);
   if (Number(bal.balanceCents) <= 0) {
-    const payReq = createInsufficientCreditsPayReq(c.req.url, transcriptionCost);
-    c.header("Pay-Req", JSON.stringify(payReq));
-    return c.json({ error: { message: "Insufficient credits", type: "insufficient_quota" } }, 402);
+    return createInsufficientCreditsPayReq(c, transcriptionCost, Number(bal.balanceCents));
   }
 
   try {
@@ -117,7 +114,7 @@ audioRouter.post("/v1/audio/transcriptions", async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "inference_error";
-    console.error(`[chat] /v1/audio/transcriptions error:`, err);
+    logger.error({ err }, "[chat] /v1/audio/transcriptions error:");
     return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });

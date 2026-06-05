@@ -34,7 +34,7 @@ function generateCsrfToken(): string {
 function validateCsrfToken(token: string, secret?: string): boolean {
   const csrfSecret = secret || config.CSRF_SECRET;
   if (!csrfSecret) {
-    console.error("[auth] CSRF_SECRET not configured - rejecting token validation");
+    logger.error("[auth] CSRF_SECRET not configured - rejecting token validation");
     return false;
   }
   const parts = token.split(':');

@@ -1,6 +1,7 @@
 import { db } from "../db/client.js";
 import { creditBatches, creditBalances } from "../db/schema.js";
 import { eq, lt, gt, and, sql, inArray } from "drizzle-orm";
+import { logger } from "../lib/logger.js";
 
 const EXPIRY_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ACTIVE_EXTENSION_DAYS = 90;
@@ -57,7 +58,7 @@ export async function processExpiredCredits(): Promise<{
   }
 
   if (expiredBatches.length > 0) {
-    console.log(`[credit-expiry] Expired ${expiredBatches.length} batches worth ${(expiredAmount / 100).toFixed(2)} credits (breakage), ${affectedUserIds.size} users affected`);
+    logger.info(`[credit-expiry] Expired ${expiredBatches.length} batches worth ${(expiredAmount / 100).toFixed(2)} credits (breakage), ${affectedUserIds.size} users affected`);
   }
 
   const extensionCutoff = new Date();
@@ -97,7 +98,7 @@ export async function processExpiredCredits(): Promise<{
   }
 
   if (extendedBatchCount > 0) {
-    console.log(`[credit-expiry] Extended ${extendedBatchCount} batches for ${activeUsers.length} active users`);
+    logger.info(`[credit-expiry] Extended ${extendedBatchCount} batches for ${activeUsers.length} active users`);
   }
 
   return { expiredCount: expiredBatches.length, expiredAmount, extendedBatchCount };
@@ -108,7 +109,7 @@ export function scheduleCreditExpiry(): ReturnType<typeof setInterval> {
     try {
       await processExpiredCredits();
     } catch (err: unknown) {
-      console.error(`[credit-expiry] Failed: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(`[credit-expiry] Failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 

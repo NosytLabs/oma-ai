@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Use Cases | OMA',
+  title: 'Use Cases',
   description: 'Explore what OMA can build for you — AI agents, apps, and chatbots.',
 }
 

@@ -173,28 +173,6 @@ describe("Together AI Provider", () => {
     });
   });
 
-  describe("togetherHealthCheck", () => {
-    it("returns down state if health check fails", async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-      const status = await together.togetherHealthCheck();
-      expect(status.isUp).toBe(false);
-    });
-
-    it("returns down state if health check returns non-ok status", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
-
-      const status = await together.togetherHealthCheck();
-      expect(status.isUp).toBe(false);
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.together.xyz/v1/models",
-        expect.objectContaining({
-          headers: expect.objectContaining({ Authorization: "Bearer sk-together-test-key" }),
-        })
-      );
-    });
-  });
-
   describe("completion", () => {
     it("successfully sends legacy text completions requests", async () => {
       const mockResponse = new Response(

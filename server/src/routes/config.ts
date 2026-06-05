@@ -5,6 +5,7 @@ import { eq, desc, count } from "drizzle-orm";
 import { sessionAuth, requireAdmin } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 import { z } from "zod";
+import { logger } from "../lib/logger.js";
 
 export const configRoutes = new Hono<OmaEnv>();
 
@@ -59,7 +60,7 @@ configRoutes.get("/v1/admin/config/fees", async (c) => {
     const parsed = JSON.parse(configs[0].value);
     return c.json({ config: parsed });
   } catch (err) {
-    console.error('Get fee config error:', err);
+    logger.error({ err }, "Get fee config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -87,7 +88,7 @@ configRoutes.put("/v1/admin/config/fees", async (c) => {
     if (err instanceof z.ZodError) {
       return c.json({ error: { message: "Invalid config format", details: err.errors } }, 400);
     }
-    console.error('Update fee config error:', err);
+    logger.error({ err }, "Update fee config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -112,7 +113,7 @@ configRoutes.get("/v1/admin/config/rate-limits", async (c) => {
     const parsed = JSON.parse(configs[0].value);
     return c.json({ config: parsed });
   } catch (err) {
-    console.error('Get rate limit config error:', err);
+    logger.error({ err }, "Get rate limit config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -140,7 +141,7 @@ configRoutes.put("/v1/admin/config/rate-limits", async (c) => {
     if (err instanceof z.ZodError) {
       return c.json({ error: { message: "Invalid config format", details: err.errors } }, 400);
     }
-    console.error('Update rate limit config error:', err);
+    logger.error({ err }, "Update rate limit config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -177,7 +178,7 @@ configRoutes.get("/v1/admin/rate-limit-overrides", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Get rate limit overrides error:', err);
+    logger.error({ err }, "Get rate limit overrides error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -200,7 +201,7 @@ configRoutes.post("/v1/admin/rate-limit-overrides", async (c) => {
     if (err instanceof z.ZodError) {
       return c.json({ error: { message: "Invalid override format", details: err.errors } }, 400);
     }
-    console.error('Create rate limit override error:', err);
+    logger.error({ err }, "Create rate limit override error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -212,7 +213,7 @@ configRoutes.delete("/v1/admin/rate-limit-overrides/:id", async (c) => {
     await db.delete(rateLimitOverrides).where(eq(rateLimitOverrides.id, id));
     return c.json({ success: true });
   } catch (err) {
-    console.error('Delete rate limit override error:', err);
+    logger.error({ err }, "Delete rate limit override error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

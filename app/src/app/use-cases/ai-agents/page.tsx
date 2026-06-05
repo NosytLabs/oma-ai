@@ -7,7 +7,7 @@ import { Zap, ArrowRight, Copy, Check, Brain, Shield, Globe, Cpu } from 'lucide-
 const pythonCode = `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://oma-ai.com/v1",
+    base_url="https://api.oma-ai.com/v1",
     api_key="oma_sk_your_key"
 )
 
@@ -21,7 +21,7 @@ print(response.choices[0].message.content)`
 const jsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://oma-ai.com/v1",
+  baseURL: "https://api.oma-ai.com/v1",
   apiKey: process.env.OMA_API_KEY,
 });
 
@@ -32,7 +32,7 @@ const response = await client.chat.completions.create({
 
 console.log(response.choices[0].message.content);`
 
-const curlCode = `curl https://oma-ai.com/v1/chat/completions \\
+const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -54,10 +54,10 @@ const features = [
 ]
 
 const integrations = [
-  { name: 'LangChain', desc: 'LangChain agent with OpenAI-compatible provider', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://oma-ai.com/v1", model="gpt-4o")' },
-  { name: 'AutoGen', desc: 'Microsoft AutoGen multi-agent framework', code: 'from autogen import ConversableAgent\nagent = ConversableAgent("assistant", llm_config={"model": "gpt-4o", "base_url": "https://oma-ai.com/v1"})' },
-  { name: 'CrewAI', desc: 'CrewAI orchestrating multi-agent workflows', code: 'from crewai import Agent, Task\nagent = Agent(role="researcher", llm_base_url="https://oma-ai.com/v1", llm_model="gpt-4o")' },
-  { name: 'Custom Agents', desc: 'Build your own agent loop with x402 payments', code: 'async def agent_task():\n    async with OpenAI(base_url="https://oma-ai.com/v1") as client:\n        # Agent logic here' },
+  { name: 'LangChain', desc: 'LangChain agent with OpenAI-compatible provider', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="gpt-4o")' },
+  { name: 'AutoGen', desc: 'Microsoft AutoGen multi-agent framework', code: 'from autogen import ConversableAgent\nagent = ConversableAgent("assistant", llm_config={"model": "gpt-4o", "base_url": "https://api.oma-ai.com/v1"})' },
+  { name: 'CrewAI', desc: 'CrewAI orchestrating multi-agent workflows', code: 'from crewai import Agent, Task\nagent = Agent(role="researcher", llm_base_url="https://api.oma-ai.com/v1", llm_model="gpt-4o")' },
+  { name: 'Custom Agents', desc: 'Build your own agent loop with x402 payments', code: 'async def agent_task():\n    async with OpenAI(base_url="https://api.oma-ai.com/v1") as client:\n        # Agent logic here' },
 ]
 
 export default function AIAgentsPage() {
@@ -102,7 +102,7 @@ export default function AIAgentsPage() {
 
         <div className="mt-20">
           <h2 className="font-syne mb-8 text-2xl font-bold text-[var(--color-text)] text-center">Quick Start</h2>
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#0d0d0f]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border)] p-4">
               <div className="flex gap-1">
                 {tabs.map((tab, i) => (
@@ -158,7 +158,7 @@ export default function AIAgentsPage() {
                   <h3 className="font-syne font-semibold text-[var(--color-text)]">{intg.name}</h3>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">{intg.desc}</p>
                 </div>
-                <div className="bg-[#0d0d0f] p-4">
+                <div className="bg-[var(--color-panel)] p-4">
                   <pre className="overflow-x-auto font-mono text-xs text-[var(--color-accent)] whitespace-pre-wrap">{intg.code}</pre>
                 </div>
               </div>

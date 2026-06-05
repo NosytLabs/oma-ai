@@ -1,7 +1,71 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
+
+type HealthStatus = 'checking' | 'online' | 'offline'
+
+const POLL_INTERVAL_MS = 30_000
+const TIMEOUT_MS = 5_000
+
+let cachedStatus: HealthStatus = 'checking'
+let cachedAt = 0
+let inFlight: Promise<void> | null = null
+const listeners = new Set<() => void>()
+
+function emit() {
+  for (const l of listeners) l()
+}
+
+async function pollOnce() {
+  if (inFlight) return inFlight
+  inFlight = (async () => {
+    try {
+      const res = await fetch('/api/health', {
+        method: 'GET',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+      cachedStatus = res.ok ? 'online' : 'offline'
+    } catch {
+      cachedStatus = 'offline'
+    } finally {
+      cachedAt = Date.now()
+      inFlight = null
+      emit()
+    }
+  })()
+  return inFlight
+}
+
+let started = false
+function ensurePolling() {
+  if (started || typeof window === 'undefined') return
+  started = true
+  void pollOnce()
+  setInterval(() => void pollOnce(), POLL_INTERVAL_MS)
+}
+
+function subscribe(cb: () => void) {
+  listeners.add(cb)
+  ensurePolling()
+  return () => {
+    listeners.delete(cb)
+  }
+}
+
+function getSnapshot(): HealthStatus {
+  return cachedStatus
+}
+
+function getServerSnapshot(): HealthStatus {
+  return 'checking'
+}
+
+export function useApiHealth() {
+  const status = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const refresh = useCallback(() => void pollOnce(), [])
+  return { status, refresh, lastCheckedAt: cachedAt }
+}
 
 interface ApiStatusProps {
   onRetry?: () => void
@@ -9,33 +73,10 @@ interface ApiStatusProps {
 }
 
 export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
-  const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking')
-
-  const checkHealth = useCallback(async () => {
-    setStatus('checking')
-    try {
-      const res = await fetch('/api/health', {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000),
-      })
-      if (res.ok) {
-        setStatus('online')
-      } else {
-        setStatus('offline')
-      }
-    } catch {
-      setStatus('offline')
-    }
-  }, [])
-
-  useEffect(() => {
-    checkHealth()
-    const interval = setInterval(checkHealth, 30000)
-    return () => clearInterval(interval)
-  }, [checkHealth])
+  const { status, refresh } = useApiHealth()
 
   const handleRetry = () => {
-    checkHealth()
+    refresh()
     onRetry?.()
   }
 
@@ -94,5 +135,3 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 }
 
 export default ApiStatus
-
-

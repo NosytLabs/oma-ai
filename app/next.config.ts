@@ -14,8 +14,6 @@ const nextConfig: NextConfig = {
       'viem', 
       'recharts',
       '@tanstack/react-query',
-      '@solana/wallet-adapter-base',
-      '@solana/wallet-adapter-react',
       '@coinbase/wallet-sdk',
       '@walletconnect/ethereum-provider',
       '@metamask/sdk',
@@ -27,6 +25,13 @@ const nextConfig: NextConfig = {
   
   // Webpack optimizations for bundle size reduction
   webpack: (config, { isServer }) => {
+    // Allow `.js` extension imports to resolve to `.ts` source files
+    // (NodeNext ESM convention used by app/src/lib/api/* modules).
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias || {}),
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+    };
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -92,10 +97,16 @@ const nextConfig: NextConfig = {
   },
   
   // API rewrites for proxy to backend
+  // Exclude /api/admin/* — those paths have file-based route handlers in
+  // app/src/app/api/admin/* that take priority over the rewrite. Without
+  // this exclusion, dynamic segments like /api/admin/users/[id] would
+  // fall through to the rewrite (shadowing the file route) and return 500
+  // when the backend is unreachable.
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
+        // Non-admin API paths (chat, health, pricing, v1/*) → backend
+        source: "/api/:path((?!admin).*)",
         destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/:path*`,
       },
     ];
@@ -123,10 +134,6 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
         ],
       },
       // Static asset caching headers
@@ -139,11 +146,21 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // HTML caching
+      // API routes - no cache
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
+          },
+        ],
+      },
+      // HTML pages - no cache
       {
         source: "/(.*)\\.(html|htm)",
         headers: [
-{
+          {
             key: "Cache-Control",
             value: "no-cache, no-store, must-revalidate, proxy-revalidate",
           },

@@ -16,6 +16,7 @@ import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 
 import { getRedisClient } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 export const crosschainRoutes = new Hono<OmaEnv>();
 
@@ -200,7 +201,7 @@ crosschainRoutes.post("/v1/x402/deposit", async (c) => {
   try {
     const currentLockValue = await redis.get(lockKey);
     if (currentLockValue !== lockValue) {
-      console.error(`[CROSSCHAIN] Lock ownership verification failed for quote ${quoteId}`);
+      logger.error(`[CROSSCHAIN] Lock ownership verification failed for quote ${quoteId}`);
       return c.json({ error: { message: "Quote lock expired or transferred", type: "lock_error" } }, 409);
     }
 
@@ -477,7 +478,7 @@ function mapHoudiniStatus(status: string, order?: { refundTxHash?: string; refun
       case "FAILED":
       case "EXPIRED": return "failed";
       case "REFUNDED": {
-        console.log(`[CROSSCHAIN] [AUDIT] Refund processed for order. refundTxHash: ${order?.refundTxHash ?? "N/A"}, refundAddress: ${order?.refundAddress ?? "N/A"}`);
+        logger.info(`[CROSSCHAIN] [AUDIT] Refund processed for order. refundTxHash: ${order?.refundTxHash ?? "N/A"}, refundAddress: ${order?.refundAddress ?? "N/A"}`);
         return "refunded";
       }
       case "WAITING":
@@ -521,7 +522,7 @@ async function checkBlockConfirmations(
       confirmations,
     };
   } catch (err) {
-    console.error(`[CROSSCHAIN] Block confirmation check failed for ${txHash}:`, err);
+    logger.error(`[CROSSCHAIN] Block confirmation check failed for ${txHash}: %s`, err);
     return { confirmed: false, currentBlock: 0, confirmations: 0 };
   }
 }

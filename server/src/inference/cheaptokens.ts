@@ -3,6 +3,7 @@ import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config.js";
 import { USDC_BASE } from "../constants.js";
+import { logger } from "../lib/logger.js";
 
 const USDC_ABI = [
   {
@@ -122,7 +123,7 @@ export function getActiveVeniceKey(): string | null {
     return cachedKey;
   }
   triggerRefresh().catch((err) => {
-    console.error("[CheapTokens] Async refresh failed:", err);
+    logger.error("[CheapTokens] Async refresh failed: %s", err);
   });
   return null;
 }
@@ -134,21 +135,21 @@ export async function triggerRefresh(): Promise<void> {
   try {
     const pricing = await client.getPricing();
     if (pricing.active && pricing.discountPriceCents < pricing.standardPriceCents) {
-      console.log(`[CheapTokens] Profit optimization: discount active (${pricing.discountPriceCents}c vs ${pricing.standardPriceCents}c). Fetching reseller key...`);
+      logger.info(`[CheapTokens] Profit optimization: discount active (${pricing.discountPriceCents}c vs ${pricing.standardPriceCents}c). Fetching reseller key...`);
       const supply = await client.getSupply();
       if (supply.availableKeys > 0) {
         const keyInfo = await client.buyKey(pricing.discountPriceCents);
         cachedKey = keyInfo.apiKey;
         cachedExpiry = keyInfo.expiresAt;
-        console.log(`[CheapTokens] Successfully leased Venice key (expires: ${new Date(cachedExpiry).toISOString()})`);
+        logger.info(`[CheapTokens] Successfully leased Venice key (expires: ${new Date(cachedExpiry).toISOString()})`);
       } else {
-        console.warn("[CheapTokens] Discount active but supply is exhausted.");
+        logger.warn("[CheapTokens] Discount active but supply is exhausted.");
       }
     } else {
-      console.log("[CheapTokens] No active discount or not profitable. Falling back to default Venice key.");
+      logger.info("[CheapTokens] No active discount or not profitable. Falling back to default Venice key.");
     }
   } catch (err) {
-    console.error("[CheapTokens] Failed to query or lease reseller key:", err);
+    logger.error("[CheapTokens] Failed to query or lease reseller key: %s", err);
   } finally {
     isRefreshing = false;
   }

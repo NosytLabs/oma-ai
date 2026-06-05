@@ -1,12 +1,7 @@
 import { db } from '../db/client.js'
 import { creditBatches, creditBalances, usageRecords } from '../db/schema.js'
 import { eq, sql, and, gt, desc } from 'drizzle-orm'
-
-export function getExpiryDate(): Date {
-  const d = new Date()
-  d.setDate(d.getDate() + 90)
-  return d
-}
+import { getExpiryDate } from './utils.js'
 
 export async function refundCredits(userId: string, amountCents: string, originalRequestId?: string) {
   const amt = Number(amountCents)

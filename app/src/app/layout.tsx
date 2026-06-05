@@ -4,7 +4,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastProvider } from '@/components/ui/Toast'
-import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
+import { MotionProvider } from '@/components/motion-provider'
 import './globals.css'
 
 const syne = Syne({
@@ -34,8 +34,10 @@ const jetbrainsMono = JetBrains_Mono({
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
 
 export const viewport: Viewport = {
-  // themeColor must be a literal hex — CSS vars not supported in metadata
-  themeColor: '#0a0a0f',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0f' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -92,7 +94,6 @@ export const metadata: Metadata = {
     icon: '/favicon.svg',
     shortcut: '/favicon.png',
   },
-  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
@@ -101,7 +102,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`} style={{ scrollBehavior: 'smooth' }}>
+    <html lang="en" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link rel="preconnect" href="https://eth.coinbase.com" />
         <link rel="preconnect" href="https://base-rpc.publicnode.com" />
@@ -110,7 +111,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://*.walletconnect.com" />
         <link rel="dns-prefetch" href="https://*.coinbase.com" />
       </head>
-      <body className="min-h-screen bg-void text-text font-sans antialiased">
+      <body className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] font-sans antialiased">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-[100] focus:bg-[var(--color-green)] focus:text-[var(--color-void)] focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold"
@@ -118,13 +119,14 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ToastProvider>
-          <Navbar />
-          <main id="main-content" className="pt-16" tabIndex={-1} role="main">
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </main>
-          <Footer />
+          <MotionProvider>
+            <Navbar />
+            <main id="main-content" className="pt-16" tabIndex={-1} role="main">
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </main>
+            <Footer />
+          </MotionProvider>
         </ToastProvider>
-        <ServiceWorkerRegistration />
       </body>
     </html>
   )

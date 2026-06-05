@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
+import { API_URL } from '@/lib/api/admin-config'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001'
 const PROXY_ENABLED = process.env.CHAT_PROXY_ENABLED === 'true'
 
 const PASSTHROUGH_REQUEST_HEADERS = [

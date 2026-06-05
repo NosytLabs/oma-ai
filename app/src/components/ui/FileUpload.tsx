@@ -58,12 +58,12 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
 
   if (preview) {
     return (
-      <div className={`relative rounded-2xl border border-border overflow-hidden ${className}`}>
+      <div className={`relative rounded-2xl border border-[var(--color-border)] overflow-hidden ${className}`}>
         <Image src={preview} alt="Upload preview" fill className="object-cover" />
         <button
           onClick={handleClear}
           aria-label="Remove image"
-          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-xl text-[var(--color-text-muted)] hover:text-rose-600 hover:bg-white shadow-lg transition-all"
+          className="absolute top-3 right-3 p-2 bg-[var(--color-surface)]/90 backdrop-blur-sm rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface)] shadow-lg transition-all"
         >
           <X className="w-4 h-4" />
         </button>
@@ -80,18 +80,18 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
         onClick={() => inputRef.current?.click()}
         className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all ${
           dragOver
-            ? 'border-accent bg-accent-dim/50'
-            : 'border-border hover:border-accent hover:bg-accent-dim/20'
+            ? 'border-[var(--color-accent)] bg-[var(--color-accent-dim)]/50'
+            : 'border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-dim)]/20'
         }`}
       >
-        <div className="w-12 h-12 rounded-2xl bg-accent-dim flex items-center justify-center">
-          <Upload className="w-6 h-6 text-accent" />
+        <div className="w-12 h-12 rounded-2xl bg-[var(--color-accent-dim)] flex items-center justify-center">
+          <Upload className="w-6 h-6 text-[var(--color-accent)]" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-text">
-            Drop an image here or <span className="text-accent">browse</span>
+          <p className="text-sm font-medium text-[var(--color-text)]">
+            Drop an image here or <span className="text-[var(--color-accent)]">browse</span>
           </p>
-          <p className="text-xs text-text-muted mt-1">
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
             PNG, JPG, WebP up to {maxSizeMB}MB
           </p>
         </div>
@@ -105,7 +105,7 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
         className="hidden"
       />
       {error && (
-        <p className="mt-2 text-sm text-rose-500 flex items-center gap-1.5">
+        <p className="mt-2 text-sm text-[var(--color-error)] flex items-center gap-1.5">
           <ImageIcon className="w-4 h-4" />
           {error}
         </p>

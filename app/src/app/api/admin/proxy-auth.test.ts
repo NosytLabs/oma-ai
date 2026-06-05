@@ -56,7 +56,7 @@ describe('admin proxy auth', () => {
     await getKeys(request)
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3001/admin/keys?page=1&limit=100',
+      'http://localhost:3001/v1/admin/keys?page=1&limit=100',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer session-token',

@@ -57,24 +57,20 @@ describe("Teams API", () => {
     app.route("/teams", teamsRouter);
   });
 
-  test("GET /teams - returns user teams", async () => {
+  test("GET /teams - returns 501 not implemented", async () => {
     const res = await app.request("/teams", { headers: { Authorization: "Bearer session-token" } });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(501);
     const body = await res.json() as any;
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.teams)).toBe(true);
+    expect(body.error).toContain("not yet implemented");
   });
 
-  test("POST /teams - creates a new team", async () => {
+  test("POST /teams - returns 501 not implemented", async () => {
     const res = await app.request("/teams", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer session-token" },
       body: JSON.stringify({ name: "New Team", billingEmail: "billing@newteam.com" }),
     });
-    expect(res.status).toBe(201);
-    const body = await res.json() as any;
-    expect(body.success).toBe(true);
-    expect(body.team.name).toBe("New Team");
+    expect(res.status).toBe(501);
   });
 
   test("GET /teams/:teamId - returns team details", async () => {
@@ -85,15 +81,12 @@ describe("Teams API", () => {
     expect(body.team).toBeDefined();
   });
 
-  test("POST /teams/:teamId/members - adds a member", async () => {
+  test("POST /teams/:teamId/members - returns 501 not implemented", async () => {
     const res = await app.request("/teams/team-1/members", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer session-token" },
       body: JSON.stringify({ address: "0x123", role: "member" }),
     });
-    expect(res.status).toBe(201);
-    const body = await res.json() as any;
-    expect(body.success).toBe(true);
-    expect(body.member).toBeDefined();
+    expect(res.status).toBe(501);
   });
 });

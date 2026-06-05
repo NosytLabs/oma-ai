@@ -9,7 +9,6 @@ export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "togeth
 
 export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus"];
 
-const _PROPRIETARY_PREFIXES = ["anthropic/", "openai/", "gpt-", "claude-", "gemini-", "grok-", "o3", "venice/", "stabilityai/", "openrouter/"];
 const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
 
 function inferProviderFromModel(model: string): Provider {

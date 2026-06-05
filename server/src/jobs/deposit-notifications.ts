@@ -2,7 +2,6 @@ import { db } from "../db/client.js";
 import { deposits, users, webhookSubscriptions, depositNotifications } from "../db/schema.js";
 import { eq, and, or } from "drizzle-orm";
 import { getRedisClient } from "../lib/redis-client.js";
-import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import crypto from "crypto";
 
@@ -45,7 +44,7 @@ async function sendWebhook(url: string, payload: WebhookPayload, retries = 0): P
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-OMA-Signature": createSignature(payload),
+
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(10000),
@@ -69,12 +68,6 @@ async function sendWebhook(url: string, payload: WebhookPayload, retries = 0): P
     }
     return false;
   }
-}
-
-function createSignature(payload: WebhookPayload): string {
-  const hmac = crypto.createHmac("sha256", config.RECEIPT_HMAC_SECRET || "dev-secret");
-  hmac.update(JSON.stringify(payload));
-  return hmac.digest("hex");
 }
 
 export async function notifyDepositUpdate(
@@ -127,8 +120,6 @@ export async function notifyDepositUpdate(
       ...additionalData,
     },
   };
-
-  createSignature(payload);
 
   for (const sub of subscriptions) {
     if (!sub.url) continue;

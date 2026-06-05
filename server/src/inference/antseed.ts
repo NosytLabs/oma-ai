@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper, withRetry, healthCheck } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
 
 const ANTSEED_TIMEOUT_MS = 30_000;
 const ANTSEED_STREAM_TIMEOUT_MS = 120_000;
@@ -73,16 +73,6 @@ export function streamChatCompletion(body: {
   [key: string]: unknown;
 }): Promise<Response> {
   return provider.streamChatCompletion(body);
-}
-
-export async function antseedHealthCheck(): Promise<{
-  isUp: boolean;
-  latencyMs: number;
-}> {
-  return healthCheck({
-    getUrl: () => antseedUrl("/health"),
-    keyConfigured: !!config.ANTSEED_PROXY_URL,
-  });
 }
 
 export { chatCompletion as antseedChatCompletion };

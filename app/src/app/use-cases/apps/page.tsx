@@ -7,7 +7,7 @@ import { Rocket, Zap, ArrowRight, Copy, Check, Monitor, Smartphone, Globe, Code 
 const pythonCode = `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://oma-ai.com/v1",
+    base_url="https://api.oma-ai.com/v1",
     api_key="oma_sk_your_key"
 )
 
@@ -21,7 +21,7 @@ print(response.choices[0].message.content)`
 const jsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://oma-ai.com/v1",
+  baseURL: "https://api.oma-ai.com/v1",
   apiKey: process.env.OMA_API_KEY,
 });
 
@@ -32,7 +32,7 @@ const response = await client.chat.completions.create({
 
 console.log(response.choices[0].message.content);`
 
-const curlCode = `curl https://oma-ai.com/v1/chat/completions \\
+const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -54,10 +54,10 @@ const features = [
 ]
 
 const integrations = [
-  { name: 'Next.js', desc: 'Add AI capabilities to Next.js applications', code: 'import OpenAI from "openai";\n\nconst client = new OpenAI({ baseURL: "https://oma-ai.com/v1" });' },
-  { name: 'React Native', desc: 'Integrate AI into mobile apps', code: 'import OpenAI from "openai";\nconst client = new OpenAI({ baseURL: "https://oma-ai.com/v1" });' },
-  { name: 'Flutter', desc: 'Dart SDK for Flutter AI features', code: 'import package:openai/openai.dart;\nfinal client = OpenAI(baseUrl: "https://oma-ai.com/v1");' },
-  { name: 'Electron', desc: 'Build AI-powered desktop apps', code: 'const OpenAI = require("openai");\nconst client = new OpenAI({ baseURL: "https://oma-ai.com/v1" });' },
+  { name: 'Next.js', desc: 'Add AI capabilities to Next.js applications', code: 'import OpenAI from "openai";\n\nconst client = new OpenAI({ baseURL: "https://api.oma-ai.com/v1" });' },
+  { name: 'React Native', desc: 'Integrate AI into mobile apps', code: 'import OpenAI from "openai";\nconst client = new OpenAI({ baseURL: "https://api.oma-ai.com/v1" });' },
+  { name: 'Flutter', desc: 'Dart SDK for Flutter AI features', code: 'import package:openai/openai.dart;\nfinal client = OpenAI(baseUrl: "https://api.oma-ai.com/v1");' },
+  { name: 'Electron', desc: 'Build AI-powered desktop apps', code: 'const OpenAI = require("openai");\nconst client = new OpenAI({ baseURL: "https://api.oma-ai.com/v1" });' },
 ]
 
 export default function AppsPage() {
@@ -128,7 +128,7 @@ export default function AppsPage() {
                 {copied ? <><Check className="h-4 w-4 text-[var(--color-success)]" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy</>}
               </button>
             </div>
-            <div className="bg-[#0d0d0f] p-6 overflow-x-auto">
+            <div className="bg-[var(--color-panel)] p-6 overflow-x-auto">
               <pre className="text-sm text-[var(--color-accent)] font-mono whitespace-pre" aria-live="polite">{tabs[activeTab].code}</pre>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function AppsPage() {
                   <h3 className="font-syne font-semibold text-[var(--color-text)]">{intg.name}</h3>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">{intg.desc}</p>
                 </div>
-                <div className="bg-[#0d0d0f] p-4">
+                <div className="bg-[var(--color-panel)] p-4">
                   <pre className="text-xs text-[var(--color-accent)] font-mono whitespace-pre-wrap">{intg.code}</pre>
                 </div>
               </div>

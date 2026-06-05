@@ -152,28 +152,6 @@ describe("OpenRouter Provider", () => {
     });
   });
 
-  describe("openrouterHealthCheck", () => {
-    it("returns down state if health check fails", async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-      const status = await openrouter.openrouterHealthCheck();
-      expect(status.isUp).toBe(false);
-    });
-
-    it("returns down state if health check returns non-ok status", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
-
-      const status = await openrouter.openrouterHealthCheck();
-      expect(status.isUp).toBe(false);
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://openrouter.ai/api/v1/models",
-        expect.objectContaining({
-          headers: expect.objectContaining({ Authorization: "Bearer sk-or-test-key" }),
-        })
-      );
-    });
-  });
-
   describe("BYOK functions", () => {
     it("createBYOKKey creates a key successfully", async () => {
       const mockKey = { id: "byok-123", provider: "venice", name: "Venice AI (BYOK)", createdAt: "2024-01-01" };

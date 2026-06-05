@@ -172,19 +172,4 @@ describe("DeepInfra Provider", () => {
       });
     });
   });
-
-  describe("deepinfraHealthCheck", () => {
-    it("uses the base-url relative models endpoint", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
-
-      const status = await deepinfra.deepinfraHealthCheck();
-      expect(status.isUp).toBe(false);
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "https://api.deepinfra.com/v1/openai/models",
-        expect.objectContaining({
-          headers: expect.objectContaining({ Authorization: "Bearer sk-deepinfra-test-key" }),
-        })
-      );
-    });
-  });
 });

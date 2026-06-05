@@ -17,8 +17,9 @@ import type { OmaEnv } from "../../types.js";
 import {
   chatCompletionSchema,
   checkRequestBodySizeLimit,
-  createInsufficientCreditsPayReq,
 } from "./validation.js";
+import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
+import { logger } from "../../lib/logger.js";
 
 export const chatCompletionsRouter = new Hono<OmaEnv>();
 
@@ -96,17 +97,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
       if (Number(bal.balanceCents) <= 0) {
         span?.setAttribute("error", true);
         span?.setAttribute("error.type", "insufficient_credits");
-        const payReq = createInsufficientCreditsPayReq(c.req.url, 1);
-        c.header("Pay-Req", JSON.stringify(payReq));
-        return c.json(
-          {
-            error: {
-              message: "Insufficient credits",
-              type: "insufficient_quota",
-            },
-          },
-          402,
-        );
+        return createInsufficientCreditsPayReq(c, 1, Number(bal.balanceCents));
       }
 
       const payload = { model, messages, stream: !!stream, ...rest };
@@ -143,9 +134,9 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
         if (totalCents > 0 && apiKey) {
           trackSpend(apiKey.keyHash, Math.ceil(totalCents)).catch((err) => {
-            console.error(
-              `[spend-limit] Track failed for key ${apiKey.keyHash.slice(0, 8)}:`,
-              err,
+            logger.error(
+              { err, keyPrefix: apiKey.keyHash.slice(0, 8) },
+              "[spend-limit] Track failed",
             );
           });
         }
@@ -166,7 +157,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           (err as { type?: string }).type ?? "inference_error",
         );
         span?.setAttribute("http.status_code", status);
-        console.error(`[chat] /v1/chat/completions error:`, err);
+        logger.error({ err }, "[chat] /v1/chat/completions error:");
         return c.json(
           {
             error: {

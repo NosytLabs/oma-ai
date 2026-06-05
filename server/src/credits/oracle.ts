@@ -1,5 +1,3 @@
-import { db } from "../db/client.js";
-import { oraclePrices } from "../db/schema.js";
 import { config } from "../config.js";
 
 const COINGECKO_OMA_ID = "oma-2";
@@ -100,11 +98,4 @@ export async function getTwap30m(): Promise<number> {
 
 export async function isOracleFresh(): Promise<boolean> {
   return isOracleLive();
-}
-
-export async function recordPrice(source: string, priceUsd: number) {
-  await db.insert(oraclePrices).values({
-    source,
-    priceUsd: String(priceUsd),
-  });
 }

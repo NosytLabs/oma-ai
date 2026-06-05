@@ -94,7 +94,7 @@ function SwapInterface() {
   const { isConnected, evmAddress, connectEvm } = useWallet()
   
   return (
-    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)]">
+    <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_32px_-8px_color-mix(in_srgb,var(--color-void)_8%,transparent)]">
       {!isConnected ? (
         <WalletConnectPrompt onConnect={connectEvm} />
       ) : (
@@ -190,7 +190,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
           { id: 'SOL', symbol: 'SOL', name: 'Solana', decimals: 9, address: '', blockchain: 'SOL' },
           { id: 'XMR', symbol: 'XMR', name: 'Monero', decimals: 12, address: '', blockchain: 'XMR' },
           { id: 'DOGE', symbol: 'DOGE', name: 'Dogecoin', decimals: 8, address: '', blockchain: 'DOGE' },
-          { id: 'ETH', symbol: 'ETH', name: 'Ethereum', decimals: 18, address: '', blockchain: 'ETH' },
+          { id: 'BNB', symbol: 'BNB', name: 'BNB', decimals: 18, address: '', blockchain: 'BNB' },
           { id: 'USDT', symbol: 'USDT', name: 'Tether', decimals: 6, address: '', blockchain: 'ETH' },
         ]
         setTokens(fallback)
@@ -220,7 +220,8 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
         swapState.fromToken.symbol,
         swapState.toToken.symbol,
         swapState.fromAmount,
-        privacyMode ? 'private' : undefined
+        privacyMode ? 'private' : undefined,
+        slippage / 100
       )
 
       if (quotes && quotes.length > 0) {
@@ -240,10 +241,10 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
     } finally {
       setIsLoadingQuote(false)
     }
-  }, [swapState.fromToken, swapState.toToken, swapState.fromAmount, privacyMode])
+  }, [swapState.fromToken, swapState.toToken, swapState.fromAmount, privacyMode, slippage])
 
   const handleExecuteSwap = useCallback(async () => {
-    if (!swapState.quote || !evmAddress) return
+    if (!swapState.quote || !evmAddress || !swapState.fromToken) return
 
     setIsExecuting(true)
     setError('')
@@ -330,8 +331,8 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
                   onClick={() => setSlippage(val)}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                     slippage === val
-                      ? 'text-white'
-                      : 'border text-sm'
+                      ? 'text-[var(--color-void)]'
+                      : 'border'
                   }`}
                   style={slippage === val ? { backgroundColor: 'var(--color-accent)' } : { backgroundColor: 'var(--color-void)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                 >
@@ -348,7 +349,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
                 privacyMode ? 'bg-[var(--color-pink)]' : 'bg-[var(--color-surface)]'
               }`}
             >
-              <div className={`absolute h-4 w-4 rounded-full bg-white shadow transition-all ${
+              <div className={`absolute h-4 w-4 rounded-full bg-[var(--color-text-inverse)] shadow transition-all ${
                 privacyMode ? 'left-6' : 'left-1'
               }`} />
             </button>
@@ -403,7 +404,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
 
       {/* Error State */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm" style={{ borderColor: 'var(--color-error)', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-red)' }}>
+        <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm" style={{ borderColor: 'var(--color-error)', backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, transparent)', color: 'var(--color-error)' }}>
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -626,6 +627,9 @@ function QuoteCard({ swapState, slippage, privacyMode, onBack, onConfirm, isExec
   if (!quote) return null
 
   const exchangeRate = parseFloat(quote.rate) || 0
+  // The Houdini quote API does not return a priceImpact field. Until it does,
+  // surface the user's *slippage tolerance* as the closest meaningful number —
+  // the trade will revert if real impact exceeds this threshold.
   const priceImpact = slippage
 
   return (
@@ -661,7 +665,7 @@ function QuoteCard({ swapState, slippage, privacyMode, onBack, onConfirm, isExec
           <span className="font-mono font-medium">1 {fromToken?.symbol} = {exchangeRate.toFixed(6)} {toToken?.symbol}</span>
         </div>
         <div className="flex justify-between">
-          <span style={{ color: 'var(--color-text-secondary)' }}>Price Impact</span>
+          <span style={{ color: 'var(--color-text-secondary)' }}>Slippage tolerance</span>
           <span className={`font-mono font-medium ${priceImpact > 2 ? 'text-[var(--color-warning)]' : ''}`}
                 style={{ color: priceImpact > 2 ? 'var(--color-warning)' : 'var(--color-success)' }}>
             {priceImpact.toFixed(2)}%
@@ -809,7 +813,7 @@ function DepositAddressCard({ swapState, copied, onCopy, onDone }: DepositAddres
           </div>
         </div>
         <div className="flex items-start gap-3 rounded-xl border p-4 border-[var(--color-success)]/20 bg-[var(--color-success)]/5">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--color-success)', color: 'white' }}>3</div>
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--color-success)', color: 'var(--color-text-inverse)' }}>3</div>
           <div>
             <div className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>Receive {toAmount} {toToken?.symbol}</div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>directly to your connected wallet</div>

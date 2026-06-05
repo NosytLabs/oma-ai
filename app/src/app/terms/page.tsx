@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import { ArrowLeft, FileText, Scale, AlertTriangle, Info } from 'lucide-react'
 
@@ -10,7 +8,7 @@ export default function TermsPage() {
         <div className="mb-10">
           <Link
             href="/"
-            className="mb-6 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-cyan"
+            className="mb-6 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-cyan)]"
           >
             <ArrowLeft className="h-3 w-3" />
             BACK TO HOME
@@ -20,8 +18,8 @@ export default function TermsPage() {
               <Scale className="h-6 w-6 text-[var(--color-cyan)]" />
             </div>
             <div>
-              <h1 className="font-syne text-2xl font-bold tracking-tight text-text">TERMS OF SERVICE</h1>
-              <p className="font-mono mt-1 text-xs text-text-muted">
+              <h1 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text)]">TERMS OF SERVICE</h1>
+              <p className="font-mono mt-1 text-xs text-[var(--color-text-muted)]">
                 LAST UPDATED: 2026-01-01 | STATUS: ACTIVE
               </p>
             </div>
@@ -31,7 +29,7 @@ export default function TermsPage() {
         <div className="mb-8 rounded-xl border border-[var(--color-amber)]/20 bg-[var(--color-amber)]/5 p-5">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--color-amber)] mt-0.5" />
-            <div className="text-sm text-text-muted">
+            <div className="text-sm text-[var(--color-text-muted)]">
               <span className="font-bold text-[var(--color-amber)]">IMPORTANT:</span> By using OMA AI services, {"you're"} agreeing
               to these Terms. If you {"don't"} agree, {"don't"} use the service.
             </div>
@@ -39,12 +37,12 @@ export default function TermsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
               <FileText className="h-4 w-4" />
               1. API USAGE
             </div>
-            <div className="space-y-4 text-sm text-text-muted">
+            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
               <p>
 The OMA AI API gives you access to text generation, chat, embeddings, and image generation. By using the API, you agree to:
               </p>
@@ -69,12 +67,12 @@ The OMA AI API gives you access to text generation, chat, embeddings, and image 
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
               <FileText className="h-4 w-4" />
               2. ACCEPTABLE USE
             </div>
-            <div className="space-y-4 text-sm text-text-muted">
+            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
               <p>{"Don't"} use OMA AI services for:</p>
               <ul className="ml-4 space-y-3">
                 <li className="flex items-start gap-3">
@@ -101,12 +99,12 @@ The OMA AI API gives you access to text generation, chat, embeddings, and image 
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
               <FileText className="h-4 w-4" />
               3. LIMITATIONS OF LIABILITY
             </div>
-            <div className="space-y-4 text-sm text-text-muted">
+            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
               <p>
                 OMA AI provides services &quot;AS IS&quot;. We do not guarantee:
               </p>
@@ -130,12 +128,12 @@ The OMA AI API gives you access to text generation, chat, embeddings, and image 
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
               <FileText className="h-4 w-4" />
               4. CREDIT SYSTEM
             </div>
-            <div className="space-y-4 text-sm text-text-muted">
+            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
               <ul className="ml-4 space-y-3">
                 <li className="flex items-start gap-3">
                   <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
@@ -157,12 +155,12 @@ The OMA AI API gives you access to text generation, chat, embeddings, and image 
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
               <FileText className="h-4 w-4" />
               5. ACCOUNT TERMINATION
             </div>
-            <div className="space-y-4 text-sm text-text-muted">
+            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
               <p>
                 We can suspend or terminate accounts that violate these Terms, abuse the service, or pose a risk to our infrastructure or users. When that happens:
               </p>
@@ -183,12 +181,12 @@ The OMA AI API gives you access to text generation, chat, embeddings, and image 
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/50 bg-panel/50 p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-text-muted">
+          <div className="rounded-xl border border-[var(--color-border)]/50 bg-[var(--color-panel)]/50 p-6">
+            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-text-muted)]">
               <Info className="h-4 w-4" />
               CONTACT
             </div>
-            <div className="text-sm text-text-muted">
+            <div className="text-sm text-[var(--color-text-muted)]">
               For questions about these Terms, contact us at{' '}
               <span className="text-[var(--color-cyan)]">legal@oma-ai.com</span> or via our Discord community.
             </div>

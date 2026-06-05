@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Activity, TrendingUp, DollarSign, Users, BarChart3, Terminal, RefreshCw } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { formatUsd } from '@/lib/utils'
 import { motion, useReducedMotion } from 'framer-motion'
 
 const AnalyticsCharts = dynamic(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.AnalyticsCharts })), { ssr: false })
@@ -73,7 +74,7 @@ export default function AnalyticsPage() {
     fetchAnalytics()
   }, [fetchAnalytics])
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`
+  // formatUsd is imported from @/lib/utils
   const formatNumber = (num: number) => num.toLocaleString()
 
   if (loading) {
@@ -174,14 +175,14 @@ export default function AnalyticsPage() {
               <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Revenue</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(analytics.summary.totalRevenue)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(analytics.summary.totalRevenue)}</p>
           </div>
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Gross Profit</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCurrency(analytics.summary.grossProfit)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(analytics.summary.grossProfit)}</p>
             <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {analytics.summary.margin}</p>
           </div>
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">

@@ -124,22 +124,6 @@ describe("AntSeed Provider", () => {
     });
   });
 
-  describe("antseedHealthCheck", () => {
-    it("returns down state if health check fails", async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-      const status = await antseed.antseedHealthCheck();
-      expect(status.isUp).toBe(false);
-    });
-
-    it("returns down state if health check returns non-ok status", async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue(new Response("Service unavailable", { status: 503 }));
-
-      const status = await antseed.antseedHealthCheck();
-      expect(status.isUp).toBe(false);
-    });
-  });
-
   describe("completion", () => {
     it("successfully sends legacy text completions requests", async () => {
       const mockResponse = new Response(

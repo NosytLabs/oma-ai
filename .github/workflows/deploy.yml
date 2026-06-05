@@ -25,15 +25,35 @@ jobs:
   ci-status-gate:
     name: CI status gate
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_run' }}
+    if: ${{ always() && (github.event_name == 'workflow_run' || github.event_name == 'push') }}
     steps:
-      - name: Check CI result
+      - name: Check CI result for current SHA
+        if: ${{ github.event_name == 'workflow_run' }}
         run: |
           if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
             echo "CI did not pass: ${{ github.event.workflow_run.conclusion }}"
             exit 1
           fi
           echo "CI passed for ${{ github.event.workflow_run.head_sha }}"
+      - name: Check CI status on direct push
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Query the CI workflow run for this exact SHA and refuse to deploy if it's not green.
+          STATUS=$(gh api repos/${{ github.repository }}/commits/${SHA}/check-runs \
+            --jq '[.check_runs[] | select(.name == "Server tests" or .name == "App tests" or .name == "Server typecheck" or .name == "App typecheck")] | map(.conclusion) | unique')
+          echo "CI check-run conclusions for ${SHA}: ${STATUS}"
+          if echo "${STATUS}" | grep -q '"failure"\|"cancelled"\|"timed_out"'; then
+            echo "CI has failing checks; refusing to deploy."
+            exit 1
+          fi
+          # If no CI run has reported yet (e.g. CI workflow still in progress), fail closed.
+          if [ "${STATUS}" = "[]" ]; then
+            echo "No CI results found for ${SHA}; refusing to deploy."
+            exit 1
+          fi
 
   deploy-app:
     name: Deploy app to Vercel

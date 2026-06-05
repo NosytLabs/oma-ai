@@ -14,9 +14,10 @@ import { db } from "../db/client.js";
 import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
 import { config } from "../config.js";
-import { calculateCostCredits } from "../inference/models.js";
+import { calculateCostCredits, getModel } from "../inference/models.js";
 import { validationError } from "../lib/validation.js";
 import { errorResponse } from "../lib/api-errors.js";
+import { logger } from "../lib/logger.js";
 import type { OmaEnv } from "../types.js";
 
 export const creditRoutes = new Hono<OmaEnv>();
@@ -122,7 +123,7 @@ creditRoutes.get("/v1/credits/balance", bearerAuth, async (c) => {
       })),
     });
   } catch (err) {
-    console.error("[credits] Balance error:", err);
+    logger.error({ err }, "[credits] Balance error:");
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
 });
@@ -165,7 +166,7 @@ creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
 
     return c.json({ transactions: transactions.slice(0, limit) });
   } catch (err) {
-    console.error("[credits] Transactions error:", err);
+    logger.error({ err }, "[credits] Transactions error:");
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
 });
@@ -205,7 +206,7 @@ creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
       totalUsageCents: Object.values(modelTotals).reduce((sum, m) => sum + m.totalCents, 0),
     });
   } catch (err) {
-    console.error("[credits] Usage error:", err);
+    logger.error({ err }, "[credits] Usage error:");
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
 });
@@ -249,7 +250,7 @@ creditRoutes.post("/v1/credits/auto-reload", bearerAuth, async (c) => {
       paymentMethod: settings[0]?.paymentMethod ?? paymentMethod ?? "usdc",
     });
   } catch (err) {
-    console.error("[credits] Auto-reload error:", err);
+    logger.error({ err }, "[credits] Auto-reload error:");
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
 });
@@ -320,13 +321,14 @@ creditRoutes.get("/v1/credits/price-estimate", bearerAuth, async (c) => {
 
   try {
     const credits = await calculateCostCredits(model, inputTokens, outputTokens);
+    const modelDef = await getModel(model);
     return c.json({
       model,
       inputTokens,
       outputTokens,
       estimatedCredits: credits,
-      pricePerMillionInput: 0,
-      pricePerMillionOutput: 0,
+      pricePerMillionInput: modelDef?.inputPricePer1M ?? 0,
+      pricePerMillionOutput: modelDef?.outputPricePer1M ?? 0,
     });
   } catch (err) {
     return c.json({ error: { message: (err as Error).message, type: "invalid_request_error" } }, 400);

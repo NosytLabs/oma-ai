@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../auth'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { rateLimitMiddleware } from '../rate-limit'
+import { API_URL } from '@/lib/api/admin-config'
 
 export async function GET(request: Request) {
+  const rateLimitResponse = rateLimitMiddleware(request)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authorization = getAdminAuthorization(request)
     if (!authorization) {

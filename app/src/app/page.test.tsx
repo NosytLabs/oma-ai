@@ -7,53 +7,57 @@ describe('HomePage', () => {
   it('renders routing cards with clarifying descriptions', () => {
     render(<HomePage />)
 
-    expect(screen.getByText('Chat completions, images, video, embeddings')).toBeInTheDocument()
-    expect(screen.getByText('Warm standby, automatic failover')).toBeInTheDocument()
+    expect(screen.getByText('Chat, images, video, embeddings')).toBeInTheDocument()
+    expect(screen.getByText('Warm standby, automatic handoff')).toBeInTheDocument()
     expect(screen.getByText('Web search for real-time answers')).toBeInTheDocument()
   })
 
   it('renders primary CTA links', () => {
     render(<HomePage />)
 
-    expect(screen.getByRole('link', { name: 'Read the docs' })).toHaveAttribute('href', '/docs')
-    expect(screen.getByRole('link', { name: 'Try the playground' })).toHaveAttribute('href', '/playground')
+    const docsLinks = screen.getAllByRole('link', { name: /open the docs/i })
+    const playgroundLinks = screen.getAllByRole('link', { name: /try the playground/i })
+    expect(docsLinks.length).toBeGreaterThan(0)
+    expect(playgroundLinks.length).toBeGreaterThan(0)
+    expect(docsLinks[0]).toHaveAttribute('href', '/docs')
+    expect(playgroundLinks[0]).toHaveAttribute('href', '/playground')
   })
 })
 
 describe('Footer', () => {
   it('renders product links', () => {
     render(<Footer />)
-    expect(screen.getByText('Models')).toBeInTheDocument()
-    expect(screen.getByText('Pricing')).toBeInTheDocument()
-    expect(screen.getByText('Docs')).toBeInTheDocument()
-    expect(screen.getByText('Playground')).toBeInTheDocument()
+    expect(screen.getByText('models')).toBeInTheDocument()
+    expect(screen.getByText('pricing')).toBeInTheDocument()
+    expect(screen.getByText('docs')).toBeInTheDocument()
+    expect(screen.getByText('playground')).toBeInTheDocument()
   })
 
   it('renders legal links', () => {
     render(<Footer />)
-    expect(screen.getByText('Terms')).toBeInTheDocument()
-    expect(screen.getByText('Privacy')).toBeInTheDocument()
+    expect(screen.getByText('terms')).toBeInTheDocument()
+    expect(screen.getByText('privacy')).toBeInTheDocument()
   })
 
   it('renders OMA brand', () => {
     render(<Footer />)
-    expect(screen.getByText('OMA')).toBeInTheDocument()
+    expect(screen.getByText('oma')).toBeInTheDocument()
   })
 
   it('renders GitHub link', () => {
     render(<Footer />)
-    const githubLink = screen.getByText('GITHUB')
+    const githubLink = screen.getByText('github.com/oma-ai')
     expect(githubLink).toBeInTheDocument()
     expect(githubLink).toHaveAttribute('href', 'https://github.com/oma-ai')
   })
 
   it('renders infrastructure status', () => {
     render(<Footer />)
-    expect(screen.getByText('BASE_CHAIN // ONE MAN ARMY v1.0.0')).toBeInTheDocument()
+    expect(screen.getByText(/one man army/i)).toBeInTheDocument()
   })
 
   it('renders copyright', () => {
     render(<Footer />)
-    expect(screen.getByText(/2026 OMA AI/)).toBeInTheDocument()
+    expect(screen.getByText(/OMA AI/)).toBeInTheDocument()
   })
 })

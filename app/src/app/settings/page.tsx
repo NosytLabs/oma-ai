@@ -159,8 +159,8 @@ export default function SettingsPage() {
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => connectEvm()} 
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent)]/90"
+              onClick={() => connectEvm()}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-text-inverse)] shadow-lg shadow-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent)]/90"
             >
               <Hexagon className="h-4 w-4" />
               EVM / Base
@@ -190,9 +190,9 @@ export default function SettingsPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-6 flex items-center gap-3 rounded-xl border border-error/30 bg-error/5 px-4 py-3"
+            className="mb-6 flex items-center gap-3 rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 px-4 py-3"
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
             <span className="text-sm text-[var(--color-text)]">{error}</span>
             <button onClick={() => setError(null)} className="ml-auto text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
               <X className="h-3.5 w-3.5" />
@@ -511,7 +511,7 @@ export default function SettingsPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="inline-flex items-center gap-1.5 border border-[var(--color-red)] bg-[var(--color-red)] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[var(--color-red)]/90"
+                    className="inline-flex items-center gap-1.5 border border-[var(--color-red)] bg-[var(--color-red)] px-4 py-2 text-xs font-semibold text-[var(--color-text-inverse)] transition-all hover:bg-[var(--color-red)]/90"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete Account
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={handleDeleteAccount}
                         disabled={deleting}
-                        className="inline-flex items-center justify-center gap-2 border border-[var(--color-red)] bg-[var(--color-red)] px-6 py-3 text-xs font-semibold text-white disabled:opacity-40"
+                        className="inline-flex items-center justify-center gap-2 border border-[var(--color-red)] bg-[var(--color-red)] px-6 py-3 text-xs font-semibold text-[var(--color-text-inverse)] disabled:opacity-40"
                       >
                         {deleting ? (
                           <><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</>

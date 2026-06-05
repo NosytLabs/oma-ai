@@ -7,7 +7,7 @@ import { MessageSquare, Zap, ArrowRight, Copy, Check, Bot, Users, Layers, Webhoo
 const pythonCode = `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://oma-ai.com/v1",
+    base_url="https://api.oma-ai.com/v1",
     api_key="oma_sk_your_key"
 )
 
@@ -25,7 +25,7 @@ print(response.choices[0].message.content)`
 const jsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://oma-ai.com/v1",
+  baseURL: "https://api.oma-ai.com/v1",
   apiKey: process.env.OMA_API_KEY,
 });
 
@@ -39,7 +39,7 @@ const response = await client.chat.completions.create({
 
 console.log(response.choices[0].message.content);`
 
-const curlCode = `curl https://oma-ai.com/v1/chat/completions \\
+const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -64,9 +64,9 @@ const features = [
 ]
 
 const integrations = [
-  { name: 'Intercom', desc: 'Add AI-powered support to your Intercom inbox', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://oma-ai.com/v1", model="gpt-4o")' },
-  { name: 'Zendesk', desc: 'Automate ticket responses with AI', code: 'from openai import OpenAI\nclient = OpenAI(base_url="https://oma-ai.com/v1")' },
-  { name: 'Discord', desc: 'Build AI Discord bots with slash commands', code: 'import discord\nfrom openai import OpenAI\nclient = OpenAI(base_url="https://oma-ai.com/v1")' },
+  { name: 'Intercom', desc: 'Add AI-powered support to your Intercom inbox', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="gpt-4o")' },
+  { name: 'Zendesk', desc: 'Automate ticket responses with AI', code: 'from openai import OpenAI\nclient = OpenAI(base_url="https://api.oma-ai.com/v1")' },
+  { name: 'Discord', desc: 'Build AI Discord bots with slash commands', code: 'import discord\nfrom openai import OpenAI\nclient = OpenAI(base_url="https://api.oma-ai.com/v1")' },
   { name: 'WhatsApp', desc: 'AI-powered WhatsApp business messages', code: 'from twilio.rest import Client\nclient = Client("ACxxxxxx", "your_auth_token")' },
 ]
 
@@ -138,7 +138,7 @@ export default function ChatbotsPage() {
                 {copied ? <><Check className="h-4 w-4 text-[var(--color-success)]" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy</>}
               </button>
             </div>
-            <div className="bg-[#0d0d0f] p-6 overflow-x-auto">
+            <div className="bg-[var(--color-panel)] p-6 overflow-x-auto">
               <pre className="text-sm text-[var(--color-accent)] font-mono whitespace-pre" aria-live="polite">{tabs[activeTab].code}</pre>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function ChatbotsPage() {
                   <h3 className="font-syne font-semibold text-[var(--color-text)]">{intg.name}</h3>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">{intg.desc}</p>
                 </div>
-                <div className="bg-[#0d0d0f] p-4">
+                <div className="bg-[var(--color-panel)] p-4">
                   <pre className="text-xs text-[var(--color-accent)] font-mono whitespace-pre-wrap">{intg.code}</pre>
                 </div>
               </div>

@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import crypto from "crypto";
 import { verifyMessage } from "viem";
+import { logger } from "../../lib/logger.js";
 
 const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -121,7 +122,7 @@ usdcRoutes.post("/v1/deposit/usdc/signature", sessionAuth, async (c) => {
         return c.json({ error: { message: "Invalid signature. The signature does not match the expected format or signer.", type: "authentication_error" } }, 401);
       }
     } catch (verifyErr) {
-      console.error("[deposit:usdc] Signature verification error:", verifyErr);
+      logger.error({ err: verifyErr }, "[deposit:usdc] Signature verification error:");
       return c.json({ error: { message: "Signature verification failed", type: "authentication_error" } }, 401);
     }
   }
@@ -169,7 +170,7 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
         return c.json({ error: { message: "Invalid signature. The signature does not match the expected format or signer.", type: "authentication_error" } }, 401);
       }
     } catch (verifyErr) {
-      console.error("[deposit:usdc] Signature verification error:", verifyErr);
+      logger.error({ err: verifyErr }, "[deposit:usdc] Signature verification error:");
       return c.json({ error: { message: "Signature verification failed", type: "authentication_error" } }, 401);
     }
   }
@@ -198,7 +199,7 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
     return c.json({ credits: result.creditsCents, depositId: result.depositId });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[deposit:usdc] Deposit failed: amount=${amount}, txHash=${txHash}, error=${message}`);
+    logger.error({ err: message, amount, txHash }, "[deposit:usdc] Deposit failed:");
     return c.json({ error: { message, type: "deposit_error" } }, 500);
   }
 });

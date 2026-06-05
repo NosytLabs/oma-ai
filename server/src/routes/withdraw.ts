@@ -7,6 +7,7 @@ import { db } from "../db/client.js";
 import { withdrawals, creditBalances } from "../db/schema.js";
 import { eq, sql, and, gte } from "drizzle-orm";
 import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 
 const DAILY_WITHDRAWAL_LIMIT_CENTS = 5_000_000;
 const WEEKLY_WITHDRAWAL_LIMIT_CENTS = 20_000_000;
@@ -241,7 +242,7 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[withdraw] Withdrawal failed: userId=${userId}, amount=${amount}, error=${message}`);
+    logger.error({ err: message, userId, amount }, "[withdraw] Withdrawal failed:");
     return c.json({ error: { message, type: "withdrawal_error" } }, 500);
   }
 });
@@ -350,7 +351,7 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
 
     return c.json({ status: "completed", txHash });
   } catch (err) {
-    console.error(`[withdraw] Confirmation check failed:`, err);
+    logger.error({ err }, "[withdraw] Confirmation check failed:");
     return c.json({ error: { message: "Failed to verify transaction", type: "verification_error" } }, 500);
   }
 });

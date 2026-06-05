@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, use, useCallback } from 'react'
+import { use, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CreditCard, DollarSign, Key, TrendingUp, RefreshCw, ExternalLink, Terminal } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
+import { formatUsd } from '@/lib/utils'
 
 type UserDetail = {
   user: {
@@ -53,35 +55,24 @@ type UserDetail = {
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const [userDetail, setUserDetail] = useState<UserDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchUserDetail = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const userDetailQuery = useQuery({
+    queryKey: ['adminUserDetail', id],
+    queryFn: async () => {
       const res = await fetch(`/api/admin/users/${id}`)
-      if (!res.ok) {
-        throw new Error('User not found')
-      }
-      const data = await res.json()
-      setUserDetail(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch user')
-    }
-    setLoading(false)
-  }, [id])
+      if (!res.ok) throw new Error('User not found')
+      return res.json() as Promise<UserDetail>
+    },
+    staleTime: 30_000,
+    retry: false,
+  })
 
-  useEffect(() => {
-    fetchUserDetail()
-  }, [fetchUserDetail])
+  const userDetail = userDetailQuery.data
+  const loading = userDetailQuery.isLoading
+  const error = userDetailQuery.isError ? (userDetailQuery.error instanceof Error ? userDetailQuery.error.message : 'Failed to fetch user') : null
 
-  const formatCredits = (cents: number) => {
-    return `${cents.toLocaleString()} credits`
-  }
-
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`
+  const formatCredits = useMemo(() => (cents: number) => `${cents.toLocaleString()} credits`, [])
+  // formatUsd is imported from @/lib/utils
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
@@ -158,7 +149,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={fetchUserDetail}
+              onClick={() => userDetailQuery.refetch()}
+              aria-label="Refresh user details"
               className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -182,14 +174,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Deposited</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(balance.totalDeposited)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(balance.totalDeposited)}</p>
           </div>
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Used</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatCurrency(balance.totalUsed)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatUsd(balance.totalUsed)}</p>
           </div>
         </div>
 
@@ -201,9 +193,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Wallet Address (EVM)</label>
                 <div className="flex items-center gap-2">
                   <p className="font-mono text-sm text-[var(--color-text-bright)] break-all">{user.address}</p>
-                  <button className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0">
+                  <a
+                    href={`https://basescan.org/address/${user.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View EVM address on BaseScan"
+                    className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0"
+                  >
                     <ExternalLink className="w-3 h-3" />
-                  </button>
+                  </a>
                 </div>
               </div>
               {user.solanaAddress && (
@@ -211,9 +209,15 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Solana Address</label>
                   <div className="flex items-center gap-2">
                     <p className="font-mono text-sm text-[var(--color-text-bright)] break-all">{user.solanaAddress}</p>
-                    <button className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0">
+                    <a
+                      href={`https://solscan.io/account/${user.solanaAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="View Solana address on Solscan"
+                      className="p-1 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] flex-shrink-0"
+                    >
                       <ExternalLink className="w-3 h-3" />
-                    </button>
+                    </a>
                   </div>
                 </div>
               )}
@@ -263,7 +267,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Spend</p>
-                      <p className="text-sm font-mono text-[var(--color-amber)]">{formatCurrency(key.totalSpend)}</p>
+                      <p className="text-sm font-mono text-[var(--color-amber)]">{formatUsd(key.totalSpend)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Created</p>
@@ -311,7 +315,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.inputTokens.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.outputTokens.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatCurrency(usage.cost)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatUsd(usage.cost)}</td>
                       <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{format(usage.createdAt, 'MMM d, h:mm a')}</td>
                     </tr>
                   ))}
@@ -346,7 +350,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       <td className="px-4 py-3">
                         <span className="text-sm text-[var(--color-text-bright)] capitalize">{deposit.type}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatCurrency(deposit.amount)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatUsd(deposit.amount)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{deposit.credits.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider ${

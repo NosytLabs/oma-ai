@@ -1,8 +1,18 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { AreaChartComponent, DonutChart } from '@/components/ui/charts'
+
+const AreaChartComponent = dynamic(
+  () => import('@/components/ui/charts').then((m) => m.AreaChartComponent),
+  { ssr: false, loading: () => <div className="h-48 animate-pulse bg-[var(--color-surface)]" /> }
+)
+
+const DonutChart = dynamic(
+  () => import('@/components/ui/charts').then((m) => m.DonutChart),
+  { ssr: false, loading: () => <div className="h-48 animate-pulse bg-[var(--color-surface)]" /> }
+)
 
 export interface DataPoint {
   date: string

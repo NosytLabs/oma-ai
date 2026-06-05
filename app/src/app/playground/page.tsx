@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { useState, useRef, useEffect, useCallback, useDeferredValue, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -79,7 +80,7 @@ const BATCH_INTERVAL_MS = 250
 
 function PlaygroundContent() {
   const searchParams = useSearchParams()
-  const defaultModel = searchParams.get('model') || 'deepseek-v3'
+  const defaultModel = searchParams.get('model') || 'deepseek-v4-pro'
   const [model, setModel] = useState(defaultModel)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -102,15 +103,6 @@ function PlaygroundContent() {
   const [exportStatus, setExportStatus] = useState<'default'|'loading'|'success'|'error'>('default')
 
   const toast = useToast()
-
-  const getApiKeyFromCookie = useCallback(() => {
-    try {
-      const match = document.cookie.match(/(?:^|;\s*)oma_api_key=([^;]*)/)
-      return match?.[1] || null
-    } catch {
-      return null
-    }
-  }, [])
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -199,9 +191,13 @@ function PlaygroundContent() {
       setSearching(true)
       try {
         const searchResp = await fetch(`/api/v1/search?query=${encodeURIComponent(input.trim())}`, {
-          headers: { 'Authorization': `Bearer ${getApiKeyFromCookie() || ''}` }
+          credentials: 'include',
         })
-        if (searchResp.ok) {
+        if (searchResp.status === 404) {
+          // Endpoint not yet available on the server. Don't make a fuss —
+          // just inform the user once and continue.
+          toast.info('Web search is not yet available on this deployment')
+        } else if (searchResp.ok) {
           const searchData = await searchResp.json()
           if (searchData.results?.length > 0) {
             currentSearchResults = searchData.results.map((r: SearchResult) => ({
@@ -212,32 +208,30 @@ function PlaygroundContent() {
             }))
             const searchContext: Message = {
               role: 'system',
-              content: `Web search results for "${input.trim()}":\n\n${searchData.results.map((r: SearchResult) => 
+              content: `Web search results for "${input.trim()}":\n\n${searchData.results.map((r: SearchResult) =>
                 `- ${r.title}\n  ${r.snippet}\n  Source: ${r.url}`
               ).join('\n\n')}`,
               timestamp: Date.now(),
             }
             messagesWithSearch = [searchContext, ...allMessages]
           }
+        } else {
+          toast.error(`Web search failed (${searchResp.status})`)
         }
       } catch (err) {
         console.warn('Web search failed:', err)
+        toast.error('Web search unavailable — proceeding without search results')
       } finally {
         setSearching(false)
       }
     }
 
       try {
-        const apiKey = getApiKeyFromCookie();
-        if (!apiKey) {
-          throw new Error('No API key found. Please connect your wallet to get an API key.');
-        }
-        
         const response = await fetch(API_URL, {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
           },
         body: JSON.stringify({
           model,
@@ -253,6 +247,9 @@ function PlaygroundContent() {
         signal: abortController.signal,
       })
 
+      if (response.status === 401) {
+        throw new Error('Connect your wallet to generate an API key')
+      }
       if (!response.ok) {
         const errBody = await response.json().catch(() => null)
         const errMsg = errBody?.error?.message || `HTTP ${response.status}: ${response.statusText}`
@@ -360,7 +357,7 @@ function PlaygroundContent() {
       setLoading(false)
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [input, loading, model, temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream, webSearchEnabled, getApiKeyFromCookie])
+  }, [input, loading, model, temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream, webSearchEnabled, toast])
 
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort()
@@ -408,7 +405,9 @@ function PlaygroundContent() {
       const data = { id, messages }
       localStorage.setItem(`oma_share_${id}`, JSON.stringify(data))
       setShareStatus('success')
-      toast.success(`/playground?shared=${id}`)
+      // Note: shared links are local-only (no shared-param hydration yet).
+      // A real share requires the server endpoint to be added.
+      toast.success(`Conversation saved locally (id: ${id.slice(0, 8)})`)
       setTimeout(() => setShareStatus('default'), 2000)
     } catch {
       setShareStatus('error')
@@ -417,7 +416,7 @@ function PlaygroundContent() {
   }, [messages, toast])
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono overflow-hidden">
+    <div className="min-h-dvh h-dvh w-full flex flex-col bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono overflow-hidden">
       <h1 className="sr-only">API Playground</h1>
       {/* Top Nav/Toolbar */}
       <header aria-label="Playground toolbar" className="flex-none h-12 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-void)]/95">
@@ -513,9 +512,9 @@ function PlaygroundContent() {
                 <LazyEmptyState onPreset={handlePreset} />
               ) : (
                 <div className="space-y-8 pb-12">
-                  {deferredMessages.map((msg, i) => (
+                  {deferredMessages.map((msg) => (
                     <LazyChatMessage
-                      key={msg.timestamp || `msg-${i}`}
+                      key={msg.timestamp}
                       msg={msg}
                       loading={loading}
                       onCopy={handleCopy}
@@ -536,12 +535,12 @@ function PlaygroundContent() {
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>ERR: {error}</span>
                     {error.includes('API key') && (
-                      <a
+                      <Link
                         href="/dashboard/api-keys"
                         className="ml-2 px-2 py-0.5 bg-[var(--color-accent)] text-[var(--color-text-inverse)] text-[10px] font-bold uppercase tracking-wider hover:bg-[var(--color-accent-hover)] transition-colors"
                       >
                         Get API Key →
-                      </a>
+                      </Link>
                     )}
                   </div>
                   <button onClick={() => setError(null)} className="p-1 hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]">
@@ -610,7 +609,7 @@ function PlaygroundContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 z-40 bg-[var(--color-overlay)]/80 backdrop-blur-sm"
               onClick={() => setParamsOpen(false)}
             />
           )}

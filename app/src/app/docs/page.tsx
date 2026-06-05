@@ -1,41 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, createContext, useContext, ReactNode, useId } from 'react'
+import { useState, useEffect, useRef, ReactNode, useId } from 'react'
 import Link from 'next/link'
 import {
   BookOpen, Key, Gauge, Copy, Check, Terminal, Shield, Zap,
-  Lock, AlertCircle, DollarSign, Sun, Moon, Menu, X, ChevronRight, Play,
+  Lock, AlertCircle, DollarSign, Menu, X, ChevronRight, Play,
   Package, HardDrive, CheckCircle2
 } from 'lucide-react'
-
-/* ==================== THEME CONTEXT ==================== */
-
-type Theme = 'dark' | 'light'
-
-const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
-  theme: 'dark',
-  toggle: () => {},
-})
-
-function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
-
-  const toggle = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
-
-function useTheme() {
-  return useContext(ThemeContext)
-}
 
 /* ==================== TYPES ==================== */
 
@@ -262,29 +233,12 @@ function fmt(n: number): string {
 
 /* ==================== COMPONENTS ==================== */
 
-function ThemeToggle() {
-  const { theme, toggle } = useTheme()
-  return (
-    <button
-      onClick={toggle}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface hover:border-accent transition-colors"
-      aria-label="Toggle theme"
-    >
-      {theme === 'dark' ? (
-        <Sun className="h-4 w-4 text-[var(--color-warning)]" />
-      ) : (
-        <Moon className="h-4 w-4 text-[var(--color-cyan)]" />
-      )}
-    </button>
-  )
-}
-
 function CopyButton({ text, id }: { text: string; id: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
+      className="absolute right-3 top-3 rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-surface)]/80 p-1.5 text-[var(--color-text-muted)] backdrop-blur-sm transition-all hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)] active:scale-95"
       aria-label={copied ? 'Copied' : 'Copy code'}
       aria-controls={id}
     >
@@ -296,10 +250,10 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 function CodeBlock({ code, title }: { code: string; title?: string }) {
   const id = useId()
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-[#0d0d0f]">
+    <div className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
       {title && (
-        <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
-          <span className="text-xs font-medium text-text-muted font-mono">{title}</span>
+        <div className="flex items-center justify-between border-b border-[var(--color-border)]/50 px-4 py-2">
+          <span className="text-xs font-medium text-[var(--color-text-muted)] font-mono">{title}</span>
         </div>
       )}
       <CopyButton text={code} id={id} />
@@ -312,14 +266,14 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
   const [active, setActive] = useState(0)
   const id = useId()
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-[#0d0d0f]">
-      <div className="flex border-b border-border/50">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
+      <div className="flex border-b border-[var(--color-border)]/50">
         {tabs.map((t, i) => (
           <button
             key={t.label}
             onClick={() => setActive(i)}
             className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
-              i === active ? 'text-[var(--color-cyan)] border-[var(--color-cyan)]' : 'text-text-muted border-transparent hover:text-text-secondary'
+              i === active ? 'text-[var(--color-cyan)] border-[var(--color-cyan)]' : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
             }`}
           >
             {t.label}
@@ -337,12 +291,12 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
 function SectionHeading({ id, icon, title, subtitle }: { id: string; icon: ReactNode; title: string; subtitle: string }) {
   return (
     <div id={id} className="mb-6 flex items-start gap-4 scroll-mt-24">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
         {icon}
       </div>
       <div>
-        <h2 className="text-xl font-bold text-text font-syne">{title}</h2>
-        <p className="mt-1 text-sm text-text-muted">{subtitle}</p>
+        <h2 className="text-xl font-bold text-[var(--color-text)] font-syne">{title}</h2>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{subtitle}</p>
       </div>
     </div>
   )
@@ -385,21 +339,21 @@ function QuickStartSection() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {QUICK_START_STEPS.map((step) => (
-          <div key={step.n} className="rounded-xl border border-border bg-surface/50 p-5">
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent text-sm font-bold font-mono">
+          <div key={step.n} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-bold font-mono">
               {step.n}
             </div>
-            <h3 className="mb-1 font-semibold text-text">{step.title}</h3>
-            <p className="text-sm text-text-muted">{step.desc}</p>
+            <h3 className="mb-1 font-semibold text-[var(--color-text)]">{step.title}</h3>
+            <p className="text-sm text-[var(--color-text-muted)]">{step.desc}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-[#0d0d0f] p-6">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-[var(--color-cyan)]" />
-            <span className="text-sm font-medium text-text">Your First Request</span>
+            <span className="text-sm font-medium text-[var(--color-text)]">Your First Request</span>
           </div>
           <span className="rounded-md bg-[var(--color-cyan)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-cyan)] border border-[var(--color-cyan)]/20">cURL</span>
         </div>
@@ -408,12 +362,12 @@ function QuickStartSection() {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface/50 p-3">
-          <div className="text-xs text-text-muted mb-1">Base URL</div>
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
+          <div className="text-xs text-[var(--color-text-muted)] mb-1">Base URL</div>
           <code className="text-sm text-[var(--color-cyan)]">https://api.oma-ai.com/v1</code>
         </div>
-        <div className="rounded-lg border border-border bg-surface/50 p-3">
-          <div className="text-xs text-text-muted mb-1">SDK Install</div>
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
+          <div className="text-xs text-[var(--color-text-muted)] mb-1">SDK Install</div>
           <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
         </div>
       </div>
@@ -456,9 +410,9 @@ func main() {
       <SectionHeading id="authentication" icon={<Key className="h-5 w-5" />} title="Authentication"
         subtitle="All inference endpoints require a Bearer token API key in the Authorization header." />
 
-      <div className="rounded-xl border border-border bg-[#0d0d0f] p-5 mb-6">
-        <div className="mb-3 text-sm text-text-muted">Authorization Header</div>
-        <div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5 mb-6">
+        <div className="mb-3 text-sm text-[var(--color-text-muted)]">Authorization Header</div>
+        <div className="rounded-lg bg-[var(--color-surface)]/80 border border-[var(--color-border)]/50 p-3 font-mono text-sm">
           <span className="text-[var(--color-warning)]">Authorization:</span> <span className="text-[var(--color-cyan)]">Bearer oma_sk_...</span>
         </div>
       </div>
@@ -478,7 +432,7 @@ func main() {
           <Shield className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
           <div>
             <h4 className="font-semibold text-[var(--color-warning)]">API Key Security</h4>
-            <p className="mt-1 text-sm text-text-muted">
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               Keys use the <code className="text-[var(--color-warning)] font-mono">oma_sk_</code> prefix. Only the SHA-256 hash is stored. Keep your key secret and never commit it to version control.
             </p>
           </div>
@@ -498,10 +452,10 @@ function EndpointsSection() {
 
       <div className="space-y-4">
         {ENDPOINTS.map(ep => (
-          <div key={ep.path} className="rounded-xl border border-border bg-surface/50 overflow-hidden">
+          <div key={ep.path} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 overflow-hidden">
             <button
               onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
-              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface/80"
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[var(--color-surface)]/80"
             >
               <div className="flex items-center gap-3">
                 <span className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
@@ -509,30 +463,30 @@ function EndpointsSection() {
                 }`}>
                   {ep.method}
                 </span>
-                <code className="font-mono text-sm text-text">{ep.path}</code>
+                <code className="font-mono text-sm text-[var(--color-text)]">{ep.path}</code>
               </div>
               <div className="flex items-center gap-2">
                 {ep.method === 'POST' && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-0.5 text-xs text-text-muted border border-border">
+                  <span className="flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-2.5 py-0.5 text-xs text-[var(--color-text-muted)] border border-[var(--color-border)]">
                     <Lock className="h-3 w-3" /> Auth
                   </span>
                 )}
-                <ChevronRight className={`h-4 w-4 text-text-muted transition-transform ${expanded === ep.path ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`h-4 w-4 text-[var(--color-text-muted)] transition-transform ${expanded === ep.path ? 'rotate-90' : ''}`} />
               </div>
             </button>
 
             {expanded === ep.path && (
-              <div className="border-t border-border p-4 space-y-4">
-                <p className="text-sm text-text-muted">{ep.desc}</p>
+              <div className="border-t border-[var(--color-border)] p-4 space-y-4">
+                <p className="text-sm text-[var(--color-text-muted)]">{ep.desc}</p>
 
                 {ep.body && (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Request Body</h4>
-                    <div className="rounded-lg border border-border/50 bg-[#0d0d0f] p-4 space-y-2">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Request Body</h4>
+                    <div className="rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-panel)] p-4 space-y-2">
                       {Object.entries(ep.body).map(([key, val]) => (
                         <div key={key} className="flex gap-3 font-mono text-sm">
                           <span className="text-[var(--color-cyan)] shrink-0">{key}</span>
-                          <span className="text-text-muted">{val}</span>
+                          <span className="text-[var(--color-text-muted)]">{val}</span>
                         </div>
                       ))}
                     </div>
@@ -540,7 +494,7 @@ function EndpointsSection() {
                 )}
 
                 <div>
-                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Response</h4>
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Response</h4>
                   <CodeBlock code={ep.response} />
                 </div>
               </div>
@@ -558,27 +512,27 @@ function RateLimitsSection() {
       <SectionHeading id="rate-limits" icon={<Gauge className="h-5 w-5" />} title="Rate Limits"
         subtitle="Per-plan request and token limits with burst handling." />
 
-      <div className="mb-6 overflow-hidden rounded-xl border border-border">
+      <div className="mb-6 overflow-hidden rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface/50">
-              <th className="px-4 py-3 font-medium text-text-muted">Plan</th>
-              <th className="px-4 py-3 font-medium text-text-muted text-right">RPM</th>
-              <th className="px-4 py-3 font-medium text-text-muted text-right">TPM</th>
-              <th className="px-4 py-3 font-medium text-text-muted text-right">Concurrent</th>
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Plan</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">RPM</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">TPM</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">Concurrent</th>
             </tr>
           </thead>
           <tbody>
             {PLAN_LIMITS.map((p, i) => (
-              <tr key={p.name} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
+              <tr key={p.name} className={`border-b border-[var(--color-border)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${p.badge}`}>
                     {p.name}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.rpm.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.tpm.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.concurrent}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.rpm.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.tpm.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.concurrent}</td>
               </tr>
             ))}
           </tbody>
@@ -586,15 +540,15 @@ function RateLimitsSection() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
-          <h4 className="mb-2 font-semibold text-text">Burst Handling</h4>
-          <p className="text-sm text-text-muted">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Burst Handling</h4>
+          <p className="text-sm text-[var(--color-text-muted)]">
             Token bucket algorithm allows short bursts above the sustained rate. Excess tokens are spilled into the next window.
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
-          <h4 className="mb-2 font-semibold text-text">Rate Limit Headers</h4>
-          <div className="space-y-1 font-mono text-xs text-text-muted">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Rate Limit Headers</h4>
+          <div className="space-y-1 font-mono text-xs text-[var(--color-text-muted)]">
             <div><span className="text-[var(--color-cyan)]">X-RateLimit-Limit</span> - Requests per minute</div>
             <div><span className="text-[var(--color-cyan)]">X-RateLimit-Remaining</span> - Requests left</div>
             <div><span className="text-[var(--color-cyan)]">X-RateLimit-Reset</span> - Seconds until reset</div>
@@ -611,23 +565,23 @@ function PricingSection() {
       <SectionHeading id="pricing" icon={<DollarSign className="h-5 w-5" />} title="Pricing"
         subtitle="Per-model pricing. Input and output priced per million tokens." />
 
-      <div className="mb-6 rounded-xl border border-border overflow-hidden">
+      <div className="mb-6 rounded-xl border border-[var(--color-border)] overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface/50">
-              <th className="px-4 py-3 font-medium text-text-muted">Model</th>
-              <th className="px-4 py-3 text-right font-medium text-text-muted">Input / 1M</th>
-              <th className="px-4 py-3 text-right font-medium text-text-muted">Output / 1M</th>
-              <th className="px-4 py-3 text-right font-medium text-text-muted">Context</th>
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Model</th>
+              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Input / 1M</th>
+              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Output / 1M</th>
+              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Context</th>
             </tr>
           </thead>
           <tbody>
             {MODEL_PRICING.map((m, i) => (
-              <tr key={m.id} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
-                <td className="px-4 py-3 font-medium text-text">{m.name}</td>
+              <tr key={m.id} className={`border-b border-[var(--color-border)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
+                <td className="px-4 py-3 font-medium text-[var(--color-text)]">{m.name}</td>
                 <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{fmt(m.input)}</td>
-                <td className="px-4 py-3 text-right font-mono text-text-secondary">{fmt(m.output)}</td>
-                <td className="px-4 py-3 text-right text-text-muted">{m.ctx}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{fmt(m.output)}</td>
+                <td className="px-4 py-3 text-right text-[var(--color-text-muted)]">{m.ctx}</td>
               </tr>
             ))}
           </tbody>
@@ -639,16 +593,16 @@ function PricingSection() {
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
-            <span className="text-sm text-text-muted">$1 = $1. Billed per token in real-time.</span>
+            <span className="text-sm text-[var(--color-text-muted)]">$1 = $1. Billed per token in real-time.</span>
           </div>
 
           <div className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
-            <span className="text-sm text-text-muted">No minimums or subscriptions</span>
+            <span className="text-sm text-[var(--color-text-muted)]">No minimums or subscriptions</span>
           </div>
           <div className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
-            <span className="text-sm text-text-muted">12-month rolling expiry</span>
+            <span className="text-sm text-[var(--color-text-muted)]">12-month rolling expiry</span>
           </div>
         </div>
       </div>
@@ -703,7 +657,7 @@ const response = await client.chat.completions.create({
           <Zap className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
           <div>
             <h4 className="font-semibold text-[var(--color-warning)]">Venice x402 Protocol</h4>
-            <p className="mt-1 text-sm text-text-muted">
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               x402 enables gasless AI inference payments on Solana and Base. When credits are exhausted,
               the API returns HTTP 402 with payment details. Agents can pay directly without pre-funding.
             </p>
@@ -712,13 +666,13 @@ const response = await client.chat.completions.create({
       </div>
 
       <div className="mb-6">
-        <h4 className="mb-3 text-sm font-semibold text-text">402 Payment Flow</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text)]">402 Payment Flow</h4>
         <CodeBlock code={flowCode} />
       </div>
 
-      <div className="rounded-xl border border-border bg-surface/50 p-5">
-        <h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
-        <p className="text-sm text-text-muted mb-4">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
+        <h4 className="mb-3 font-semibold text-[var(--color-text)]">For AI Agents</h4>
+        <p className="text-sm text-[var(--color-text-muted)] mb-4">
           Enable <code className="text-[var(--color-cyan)] font-mono">x402: true</code> in the SDK to pay per request automatically.
           Ideal for agents that make sporadic API calls and do not want to manage credit balances.
         </p>
@@ -726,17 +680,17 @@ const response = await client.chat.completions.create({
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
-          <h4 className="mb-2 font-semibold text-text">Benefits</h4>
-          <ul className="space-y-1.5 text-sm text-text-muted">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Benefits</h4>
+          <ul className="space-y-1.5 text-sm text-[var(--color-text-muted)]">
             <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> No credit pre-funding</li>
             <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
             <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Per-request billing</li>
           </ul>
         </div>
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
-          <h4 className="mb-2 font-semibold text-text">Supported Chains</h4>
-          <ul className="space-y-1.5 text-sm text-text-muted">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Supported Chains</h4>
+          <ul className="space-y-1.5 text-sm text-[var(--color-text-muted)]">
             <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Base (USDC)</li>
             <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Solana (USDC)</li>
           </ul>
@@ -791,17 +745,17 @@ print(response.json())`
         subtitle="Use the OpenAI SDK with OMA as the base URL." />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <div className="mb-3 flex items-center gap-2">
             <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
-            <span className="font-mono text-sm text-text">npm</span>
+            <span className="font-mono text-sm text-[var(--color-text)]">npm</span>
           </div>
           <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
         </div>
-        <div className="rounded-xl border border-border bg-surface/50 p-4">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <div className="mb-3 flex items-center gap-2">
             <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
-            <span className="font-mono text-sm text-text">pip</span>
+            <span className="font-mono text-sm text-[var(--color-text)]">pip</span>
           </div>
           <code className="text-sm text-[var(--color-cyan)]">pip install openai</code>
         </div>
@@ -813,8 +767,8 @@ print(response.json())`
         { label: 'cURL', lang: 'bash', code: curlCode },
       ]} />
 
-      <div className="mt-6 rounded-xl border border-border bg-surface/50 p-4">
-        <h4 className="mb-3 font-semibold text-text">Vercel AI SDK</h4>
+      <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+        <h4 className="mb-3 font-semibold text-[var(--color-text)]">Vercel AI SDK</h4>
         <CodeBlock code={`import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'oma_sk_...' });
@@ -843,29 +797,29 @@ for attempt in range(5):
       <SectionHeading id="errors" icon={<AlertCircle className="h-5 w-5" />} title="Error Codes"
         subtitle="Standard HTTP status codes returned by the API." />
 
-      <div className="mb-6 overflow-hidden rounded-xl border border-border">
+      <div className="mb-6 overflow-hidden rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface/50">
-              <th className="px-4 py-3 font-medium text-text-muted">Code</th>
-              <th className="px-4 py-3 font-medium text-text-muted">Type</th>
-              <th className="px-4 py-3 font-medium text-text-muted">Description</th>
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Code</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Type</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Description</th>
             </tr>
           </thead>
           <tbody>
             {ERROR_CODES.map(e => (
-              <tr key={e.code} className="border-b border-border/50">
+              <tr key={e.code} className="border-b border-[var(--color-border)]/50">
                 <td className="px-4 py-3 font-mono font-bold text-[var(--color-error)]">{e.code}</td>
                 <td className="px-4 py-3 font-mono text-[var(--color-warning)]">{e.type}</td>
-                <td className="px-4 py-3 text-text-muted">{e.desc}</td>
+                <td className="px-4 py-3 text-[var(--color-text-muted)]">{e.desc}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="rounded-xl border border-border bg-[#0d0d0f] p-5">
-        <h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
+        <h4 className="mb-3 font-semibold text-[var(--color-text)]">Handling Rate Limits</h4>
         <CopyButton text={retryCode} id="retry-code" />
         <pre className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)]"><code>{retryCode}</code></pre>
       </div>
@@ -883,7 +837,7 @@ function Sidebar({ activeId }: { activeId: string }) {
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-void)] shadow-lg lg:hidden"
         aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
         aria-expanded={mobileOpen}
         aria-controls={mobileNavId}
@@ -892,19 +846,19 @@ function Sidebar({ activeId }: { activeId: string }) {
       </button>
 
       {mobileOpen && (
-        <button className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
+        <button className="fixed inset-0 z-40 bg-[var(--color-void)]/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
       )}
 
-      <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+      <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-void)] transition-transform lg:translate-x-0 ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-4">
-          <div className="mb-4 rounded-xl bg-accent/10 p-3 border border-accent/20">
+          <div className="mb-4 rounded-xl bg-[var(--color-accent)]/10 p-3 border border-[var(--color-accent)]/20">
             <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-accent" />
-              <span className="text-sm font-semibold text-accent">OMA API</span>
+              <Terminal className="h-4 w-4 text-[var(--color-accent)]" />
+              <span className="text-sm font-semibold text-[var(--color-accent)]">OMA API</span>
             </div>
-            <p className="mt-1 text-xs text-text-muted">v1.0.0</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">v1.0.0</p>
           </div>
 
           <nav className="space-y-1" aria-label="Documentation navigation">
@@ -918,8 +872,8 @@ function Sidebar({ activeId }: { activeId: string }) {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
                     isActive
-                      ? 'bg-accent/10 text-accent border border-accent/30'
-                      : 'text-text-muted hover:bg-surface hover:text-text'
+                      ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/30'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -961,42 +915,41 @@ function DocsContent() {
       <Sidebar activeId={activeId} />
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-border bg-void/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-void)]/80 backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
                 <BookOpen className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5">
-                  <Link href="/" className="hover:text-text transition-colors">Home</Link>
+                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-0.5">
+                  <Link href="/" className="hover:text-[var(--color-text)] transition-colors">Home</Link>
                   <span className="opacity-50">›</span>
-                  <span className="text-text-secondary">Developer Portal</span>
+                  <span className="text-[var(--color-text-secondary)]">Developer Portal</span>
                   <span className="opacity-50">›</span>
-                  <span className="text-text">API Docs</span>
+                  <span className="text-[var(--color-text)]">API Docs</span>
                 </nav>
-                <h1 className="font-semibold text-text text-sm">OMA AI Gateway Documentation</h1>
+                <h1 className="font-semibold text-[var(--color-text)] text-sm">OMA AI Gateway Documentation</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <a
+              <Link
                 href="/playground"
-                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-void transition-colors hover:bg-accent-hover"
+                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-void)] transition-colors hover:bg-[var(--color-accent-hover)]"
               >
                 <Play className="h-4 w-4" />
                 Playground
-              </a>
+              </Link>
             </div>
           </div>
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <h2 className="text-4xl font-bold tracking-tight text-text font-syne mb-3">
+            <h2 className="text-4xl font-bold tracking-tight text-[var(--color-text)] font-syne mb-3">
               OMA API Documentation
             </h2>
-            <p className="text-lg text-text-muted">
+            <p className="text-lg text-[var(--color-text-muted)]">
               OpenAI-compatible AI inference gateway with crypto payments. Access 30+ models with unified API.
             </p>
           </div>
@@ -1019,9 +972,5 @@ function DocsContent() {
 }
 
 export default function DocsPage() {
-  return (
-    <ThemeProvider>
-      <DocsContent />
-    </ThemeProvider>
-  )
+  return <DocsContent />
 }

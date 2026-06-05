@@ -445,7 +445,7 @@ export default function ModelsPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <motion.header className="mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ backgroundColor: 'var(--color-accent-dim)', border: '1px solid rgba(0, 255, 200, 0.2)' }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ backgroundColor: 'var(--color-accent-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)' }}>
             <Sparkles className="w-4 h-4" style={{ color: 'var(--color-cyan)' }} />
             <span className="text-sm font-medium" style={{ color: 'var(--color-cyan)' }}>{MODELS.length}+ models available</span>
           </div>
@@ -460,7 +460,7 @@ export default function ModelsPage() {
         {budgetModels.length > 0 && tierFilter === 'All' && providerFilter === 'All' && !search && (
           <motion.section className="mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ backgroundColor: 'var(--color-secondary-dim)', color: 'var(--color-secondary)', border: '1px solid rgba(255, 184, 0, 0.2)' }}>
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ backgroundColor: 'var(--color-secondary-dim)', color: 'var(--color-secondary)', border: '1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)' }}>
                 <Sparkles className="h-4 w-4" />
                 Budget Models
               </span>

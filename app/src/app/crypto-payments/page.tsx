@@ -80,7 +80,7 @@ export default function CryptoPaymentsPage() {
       <div className="mx-auto max-w-4xl">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-[var(--color-cyan)] hover:brightness-90"
+          className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-cyan)] hover:brightness-90"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
@@ -94,7 +94,7 @@ export default function CryptoPaymentsPage() {
           <h1 className="font-syne mb-4 text-4xl font-bold tracking-tight text-[var(--color-text)] md:text-5xl">
             Pay for AI API with <span className="text-[var(--color-cyan)]">Crypto</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-text-muted">
+          <p className="mx-auto max-w-2xl text-lg text-[var(--color-text-muted)]">
             Skip the credit card. Pay with 100+ cryptocurrencies directly from your wallet. Low-friction, privacy-first payments powered by Houdini Swap.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function CryptoPaymentsPage() {
           <h2 className="mb-8 text-center font-syne text-2xl font-bold text-[var(--color-text)]">Payment Features</h2>
           <div className="grid gap-6 md:grid-cols-2">
             {PAYMENT_FEATURES.map((feature, index) => (
-              <div key={index} className="rounded-xl border border-border bg-panel p-6 transition-all hover:border-[var(--color-cyan)]/30">
+              <div key={index} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-cyan)]/30">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-cyan)]/10">
                   <feature.icon className="h-6 w-6 text-[var(--color-cyan)]" />
                 </div>
@@ -115,26 +115,26 @@ export default function CryptoPaymentsPage() {
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-center font-syne text-2xl font-bold text-text">x402 Protocol Support</h2>
+          <h2 className="mb-8 text-center font-syne text-2xl font-bold text-[var(--color-text)]">x402 Protocol Support</h2>
           <div className="rounded-xl border border-[var(--color-cyan)]/20 bg-gradient-to-br from-[var(--color-cyan)]/5 to-[var(--color-accent)]/5 p-6">
             <div className="mb-6 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--color-cyan)]/10 px-4 py-2 text-sm font-mono font-medium text-[var(--color-cyan)]">
                 <Zap className="h-4 w-4" />
                 Native x402 Protocol
               </div>
-              <p className="text-text-muted">
+              <p className="text-[var(--color-text-muted)]">
                 OMA AI supports the x402 payment protocol for seamless, gasless AI inference payments on Solana and Base chains.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {X402_FEATURES.map((feature, index) => (
-                <div key={index} className="flex items-start gap-3 rounded-xl bg-surface/50 p-4">
+                <div key={index} className="flex items-start gap-3 rounded-xl bg-[var(--color-surface)]/50 p-4">
                   <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-cyan)]/10">
                     <feature.icon className="h-4 w-4 text-[var(--color-cyan)]" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-text">{feature.title}</h4>
-                    <p className="mt-1 text-sm text-text-muted">{feature.desc}</p>
+                    <h4 className="font-semibold text-[var(--color-text)]">{feature.title}</h4>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">{feature.desc}</p>
                   </div>
                 </div>
               ))}
@@ -144,12 +144,12 @@ export default function CryptoPaymentsPage() {
 
         <div className="mb-16">
           <h2 className="mb-6 text-center font-syne text-2xl font-bold text-[var(--color-text)]">Supported Tokens</h2>
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 grid grid-cols-4 gap-4 sm:grid-cols-8">
               {SUPPORTED_TOKENS.map((token) => (
                 <div
                   key={token.symbol}
-                  className="flex flex-col items-center rounded-xl border border-border bg-surface p-3 text-center"
+                  className="flex flex-col items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center"
                 >
                   <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-cyan)]/10 text-sm font-bold text-[var(--color-cyan)]">
                     {token.symbol.slice(0, 2)}
@@ -158,20 +158,20 @@ export default function CryptoPaymentsPage() {
                 </div>
               ))}
             </div>
-            <p className="text-center text-sm text-text-muted">
+            <p className="text-center text-sm text-[var(--color-text-muted)]">
               Plus 90+ additional tokens including major DeFi tokens, stablecoins, and emerging chains.
             </p>
           </div>
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-6 text-center font-syne text-2xl font-bold text-text">Supported Wallets</h2>
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <h2 className="mb-6 text-center font-syne text-2xl font-bold text-[var(--color-text)]">Supported Wallets</h2>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               {WALLET_OPTIONS.map((wallet) => (
                 <div
                   key={wallet.name}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4"
+                  className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-cyan)]/10 text-[var(--color-cyan)] font-mono font-bold text-sm">
                     {wallet.name.charAt(0)}
@@ -183,7 +183,7 @@ export default function CryptoPaymentsPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-center text-sm text-text-muted">
+            <p className="mt-4 text-center text-sm text-[var(--color-text-muted)]">
               Nightly wallet enables both Solana and EVM (Base) connections via a single wallet.
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function CryptoPaymentsPage() {
           <h2 className="mb-6 text-center font-syne text-2xl font-bold text-[var(--color-text)]">How It Works</h2>
           <div className="space-y-4">
             {HOW_IT_STEPS.map((item, index) => (
-              <div key={index} className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-panel p-4">
+              <div key={index} className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-cyan)] text-sm font-bold text-[var(--color-text-inverse)]">
                   {item.step}
                 </div>
@@ -207,8 +207,8 @@ export default function CryptoPaymentsPage() {
         </div>
 
         <div className="mb-16">
-          <h2 className="mb-6 text-center font-syne text-2xl font-bold text-text">Payment Link Integration</h2>
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <h2 className="mb-6 text-center font-syne text-2xl font-bold text-[var(--color-text)]">Payment Link Integration</h2>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-4 flex items-center gap-2">
               <Link2 className="h-5 w-5 text-[var(--color-cyan)]" />
               <h3 className="text-lg font-semibold text-[var(--color-text)]">Generate Payment Links</h3>
@@ -239,9 +239,9 @@ export default function CryptoPaymentsPage() {
 
         <div className="mb-16">
           <h2 className="mb-6 text-center font-syne text-2xl font-bold text-[var(--color-text)]">OMA Token Benefits</h2>
-          <div className="rounded-xl border border-border bg-panel p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
             <div className="mb-6 text-center">
-              <p className="text-text-muted">
+              <p className="text-[var(--color-text-muted)]">
                 Paying with OMA tokens unlocks additional benefits for power users.
               </p>
             </div>
@@ -261,7 +261,7 @@ export default function CryptoPaymentsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-panel p-6 text-center">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 text-center">
           <h2 className="mb-4 font-syne text-2xl font-bold text-[var(--color-text)]">Ready to Deposit?</h2>
           <p className="mb-6 text-[var(--color-text-muted)]">
               Deposit crypto and start using AI inference in minutes. No hidden fees, full transparency.
@@ -271,13 +271,13 @@ export default function CryptoPaymentsPage() {
               Deposit Crypto
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/swap" className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-6 py-3 font-mono font-medium text-text transition-all hover:border-[var(--color-cyan)] hover:text-[var(--color-cyan)] hover:brightness-90">
+            <Link href="/swap" className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-transparent px-6 py-3 font-mono font-medium text-[var(--color-text)] transition-all hover:border-[var(--color-cyan)] hover:text-[var(--color-cyan)] hover:brightness-90">
               Swap Tokens
             </Link>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 text-sm text-text-muted">
+        <div className="mt-12 flex flex-wrap justify-center gap-4 text-sm text-[var(--color-text-muted)]">
           <Link href="/compare/openrouter-alternative" className="hover:text-[var(--color-cyan)] hover:brightness-90">
             OpenRouter Alternative
           </Link>

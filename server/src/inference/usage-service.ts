@@ -28,9 +28,3 @@ export async function recordUsage(params: UsageRecordParams): Promise<void> {
     totalCents: params.totalCents,
   }).onConflictDoNothing();
 }
-
-export async function recordUsageFromBilling(
-  params: UsageRecordParams
-): Promise<void> {
-  return recordUsage(params);
-}

@@ -76,7 +76,7 @@ export function RecentRequestsTable({ usage, loading, page, limit, onPageChange 
               aria-label="Go to previous page"
               className="flex items-center justify-center border border-[var(--color-border-bright)] bg-[var(--color-surface)] w-8 h-8 text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="text-xs text-[var(--color-text)] px-2" aria-current="page">Page {page} of {totalPages}</span>
             <button
@@ -85,7 +85,7 @@ export function RecentRequestsTable({ usage, loading, page, limit, onPageChange 
               aria-label="Go to next page"
               className="flex items-center justify-center border border-[var(--color-border-bright)] bg-[var(--color-surface)] w-8 h-8 text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>

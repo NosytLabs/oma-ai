@@ -258,8 +258,8 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                     fontSize: '11px',
                   }}
                   formatter={(value: unknown) => [
-                    (value as number) >= 1000 ? formatNumber(value as number) : formatCurrency(value as number),
-                    'Usage'
+                    formatNumber(value as number),
+                    'Requests'
                   ]}
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>

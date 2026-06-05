@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Compare Alternatives | OMA',
+  title: 'Compare Alternatives',
   description:
     'Side-by-side comparisons of OMA AI Gateway vs other platforms: pricing, features, and capabilities.',
 }

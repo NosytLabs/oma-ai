@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Hono } from "hono";
 import { db } from "../db/client.js";
 import { usageRecords } from "../db/schema.js";
-import { desc, sql, count, sql as drizzleSql } from "drizzle-orm";
+import { desc, count, sql as drizzleSql } from "drizzle-orm";
 import { bearerAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 
@@ -62,7 +62,7 @@ analyticsRoutes.get("/v1/analytics/usage", async (c) => {
       .limit(20),
       
       db.select({
-        date: sql<string>`date(${usageRecords.createdAt})`,
+        date: drizzleSql<string>`date(${usageRecords.createdAt})`,
         totalRequests: count(usageRecords.id),
         totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
         totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
@@ -70,8 +70,8 @@ analyticsRoutes.get("/v1/analytics/usage", async (c) => {
       })
       .from(usageRecords)
       .where(drizzleSql`${usageRecords.userId} = ${userId} and ${usageRecords.createdAt} >= ${dateFilter}`)
-      .groupBy(sql`date(${usageRecords.createdAt})`)
-      .orderBy(sql`date(${usageRecords.createdAt})`),
+      .groupBy(drizzleSql`date(${usageRecords.createdAt})`)
+      .orderBy(drizzleSql`date(${usageRecords.createdAt})`),
       
       db.select({
         model: usageRecords.model,

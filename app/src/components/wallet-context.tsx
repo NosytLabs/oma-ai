@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext } from 'react'
 
 export type AuthMethod = 'siwe' | 'solana' | 'account-number' | 'sso' | null;
 export type WalletKind = 'evm' | 'solana' | 'account-number';
@@ -52,34 +52,6 @@ export const WalletContext = createContext<WalletContextValue>({
   canUseSwap: false,
   refreshUser: async () => {},
 })
-
-export function WalletProvider({ children }: { children: ReactNode }) {
-  return <WalletContext.Provider value={{
-    isReady: false,
-    isConnected: false,
-    isAuthenticated: false,
-    authMethod: null,
-    accountNumber: null,
-    connectEvm: () => {},
-    disconnect: async () => {},
-    evmAddress: undefined,
-    evmChain: undefined,
-    solanaAddress: null,
-    signMessage: async (_message: string) => '',
-    isConnecting: false,
-    isAuthenticating: false,
-    availableConnectors: [],
-    activeWallet: null,
-    hasEvmWallet: false,
-    hasSolanaWallet: false,
-    canDepositBase: false,
-    canDepositSolana: false,
-    canUseSwap: false,
-    refreshUser: async () => {},
-  }}>
-    {children}
-  </WalletContext.Provider>
-}
 
 export function useWallet() {
   return useContext(WalletContext)

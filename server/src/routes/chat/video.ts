@@ -9,7 +9,8 @@ import { requestTimeout } from "../../middleware/timeout.js";
 import { trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
-import { createInsufficientCreditsPayReq } from "./validation.js";
+import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
+import { logger } from "../../lib/logger.js";
 
 const videoGenerationSchema = z.object({
   model: z.string().min(1).max(100),
@@ -46,9 +47,7 @@ videoRouter.post("/v1/videos/generations", async (c) => {
 
   const bal = await getBalance(userId);
   if (Number(bal.balanceCents) <= 0) {
-    const payReq = createInsufficientCreditsPayReq(c.req.url, totalCents);
-    c.header("Pay-Req", JSON.stringify(payReq));
-    return c.json({ error: { message: "Insufficient credits", type: "insufficient_quota" } }, 402);
+    return createInsufficientCreditsPayReq(c, totalCents, Number(bal.balanceCents));
   }
 
   try {
@@ -63,7 +62,7 @@ videoRouter.post("/v1/videos/generations", async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "inference_error";
-    console.error(`[chat] /v1/videos/generations error:`, err);
+    logger.error({ err }, "[chat] /v1/videos/generations error:");
     return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });
@@ -83,7 +82,7 @@ videoRouter.get("/v1/videos/retrieve", bearerAuth, async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "inference_error";
-    console.error(`[chat] /v1/videos/retrieve error:`, err);
+    logger.error({ err }, "[chat] /v1/videos/retrieve error:");
     return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });

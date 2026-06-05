@@ -86,7 +86,7 @@ Before any commit, ensure:
 
 ```
 oma/
-├── server/src/                # Hono.js API server (Node 22, TypeScript ESM)
+├── server/src/                # Hono.js API server (Node 20, TypeScript ESM)
 │   ├── index.ts               # Entry point (port 3001, /health, WebSocket)
 │   ├── config.ts              # Environment validation
 │   ├── constants.ts, tracing.ts, types.ts
@@ -139,11 +139,10 @@ oma/
 │   │   ├── chat/              # OpenAI-compatible chat (modality-split)
 │   │   ├── chat-ws/           # WebSocket streaming
 │   │   └── deposit/           # Multi-protocol deposit (usdc, status, lifi, houdini, cctp, balance, router)
-│   ├── x402/                  # x402 payment facilitator (7)
-│   │   ├── facilitator.ts, crosschain.ts
-│   │   ├── evm-verifier.ts, solana-verifier.ts
-│   │   ├── settlement-cache.ts, signing.ts
-│   │   └── types.ts
+│   ├── x402/                  # x402 payment facilitator (3)
+│   │   ├── facilitator.ts     # EVM settlement, 501 stub for /v1/x402/proxy
+│   │   ├── crosschain.ts      # /v1/x402/quote + /v1/x402/deposit
+│   │   └── types.ts           # PaymentPayload, PaymentSignature
 │   ├── types/bs58.d.ts        # Type augmentations
 │   └── __tests__/             # 22 vitest test files
 ├── app/src/                   # Next.js 15 frontend (React 19, Tailwind 4)
@@ -257,6 +256,32 @@ This is intentional. The monorepo has two Vercel projects:
 - `app/.vercel/project.json` → `app` (Next.js frontend, current Vercel deploy)
 
 Both are gitignored (line in `.gitignore`). The Vercel CLI writes these on every `vercel`/`vercel link` invocation. Do not delete them.
+
+### Vitest version drift (intentional)
+- `server` uses `vitest@^3.2.4` (matches Node 20 ESM toolchain)
+- `app` uses `vitest@^4.1.7` (matches Next.js 15 React 19 plugin ecosystem)
+- API is compatible. Do NOT unify majors unless a toolchain change forces it.
+
+### Frontend `lib/api` is split
+The old 827-line `app/src/lib/api.ts` monolith is now split into per-resource modules
+under `app/src/lib/api/`. `app/src/lib/api.ts` is a thin re-export shim — all existing
+`import { api, type Foo } from '@/lib/api'` call sites work unchanged. When adding a
+new endpoint, add it to the relevant `api/*.ts` module and the barrel auto-exposes it.
+
+### Server queue write-side is intentionally kept
+`server/src/lib/request-queue.ts` exposes a full read+write API (`enqueueRequest`,
+`peekQueue`, `removeFromQueue`, `clearQueue`, `startQueueProcessor`) but only the
+read side (`getQueueStatus`, `getQueuePosition`, `getQueueStats`, `getQueueDepth`,
+`processNextRequest`, `stopQueueProcessor`) is wired into routes today. The write
+side is kept as a future-proofing surface for backpressure (planned for chat
+gateway when a depth threshold is exceeded). It is fully tested. Do NOT delete
+without first re-evaluating the backpressure design.
+
+### `server/.env.example` is authoritative
+All env vars referenced anywhere in `server/src/` are documented in
+`server/.env.example` with comments. If you add a new env var to `config.ts`,
+add it there too with a brief comment. Production guards in `config.ts`
+`process.exit(1)` on missing required secrets; do not bypass them.
 
 ---
 

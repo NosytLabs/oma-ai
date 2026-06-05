@@ -2,6 +2,7 @@ import { db } from "../db/client.js";
 import { budgetAlerts, budgetAlertHistory, creditBalances, usageRecords } from "../db/schema.js";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 export type BudgetThreshold = 50 | 75 | 90 | 100;
 
@@ -318,7 +319,7 @@ export async function recordAlertSent(
 }
 
 export async function sendEmailNotification(userId: string, alert: AlertTriggered): Promise<void> {
-  console.log(`[BUDGET-ALERT] Email notification for user ${userId}: ${alert.threshold}% threshold reached`);
+  logger.info(`[BUDGET-ALERT] Email notification for user ${userId}: ${alert.threshold}% threshold reached`);
 }
 
 export async function sendWebhookNotification(userId: string, alert: AlertTriggered, webhookUrl: string): Promise<void> {
@@ -326,10 +327,10 @@ export async function sendWebhookNotification(userId: string, alert: AlertTrigge
   const hostname = urlParsed.hostname;
   const PRIVATE_HOSTNAMES = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
   if (PRIVATE_HOSTNAMES.some(h => hostname === h || hostname.endsWith('.local'))) {
-    console.warn(`[BUDGET-ALERT] Blocked SSRF attempt to ${webhookUrl}`);
+    logger.warn(`[BUDGET-ALERT] Blocked SSRF attempt to ${webhookUrl}`);
     return;
   }
-  console.log(`[BUDGET-ALERT] Webhook notification for user ${userId}: ${alert.threshold}% threshold reached to ${webhookUrl}`);
+  logger.info(`[BUDGET-ALERT] Webhook notification for user ${userId}: ${alert.threshold}% threshold reached to ${webhookUrl}`);
 }
 
 export async function processBudgetAlert(userId: string, alert: AlertTriggered, config: BudgetAlertConfig): Promise<void> {

@@ -6,6 +6,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_DEPLOYMENT_ENVIRONMENT_NA
 import { trace, SpanStatusCode, SpanKind, context, propagation } from "@opentelemetry/api";
 import { RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { config } from "./config.js";
+import { logger } from "./lib/logger.js";
 
 // Correlation ID generator
 const idGenerator = new RandomIdGenerator();
@@ -265,9 +266,9 @@ if (config.NODE_ENV !== "test") {
 process.on("SIGTERM", async () => {
   try {
     await sdk.shutdown();
-    console.log("[otel] OpenTelemetry SDK shut down successfully");
+    logger.info("[otel] OpenTelemetry SDK shut down successfully");
   } catch (err) {
-    console.error("[otel] Error shutting down OpenTelemetry SDK:", err);
+    logger.error("[otel] Error shutting down OpenTelemetry SDK: %s", err);
   }
 });
 

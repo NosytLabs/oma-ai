@@ -158,7 +158,7 @@ function ApiKeyManagerComponent({
           aria-modal="true"
           aria-labelledby="revoke-dialog-title"
           aria-describedby="revoke-dialog-description"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]/80 backdrop-blur-sm"
         >
           <div className="mx-4 w-full max-w-md border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-2xl">
             <h3 id="revoke-dialog-title" className="mb-2 text-sm font-semibold uppercase tracking-widest text-[var(--color-pink)]">

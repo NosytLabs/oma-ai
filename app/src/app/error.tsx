@@ -32,7 +32,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[var(--color-error)]/30 bg-[var(--color-error)]/10">
               <AlertTriangle className="h-10 w-10 text-[var(--color-error)]" />
             </div>
-            <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-error)] text-xs font-bold text-white">
+            <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-error)] text-xs font-bold text-[var(--color-text-inverse)]">
               !
             </span>
           </div>

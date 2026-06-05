@@ -16,27 +16,11 @@ import {
   Loader2,
   Zap,
 } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-
-function maskKey(prefix: string): string {
-  return `${prefix}****`
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  if (diffMin < 1) return 'just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHr = Math.floor(diffMin / 60)
-  if (diffHr < 24) return `${diffHr}h ago`
-  const diffDay = Math.floor(diffHr / 24)
-  if (diffDay < 7) return `${diffDay}d ago`
-  return d.toLocaleDateString()
-}
+import { formatTime, maskKey } from '@/lib/utils'
 
 interface RateLimit {
   requestsPerMinute: number
@@ -46,11 +30,18 @@ interface RateLimit {
 export default function ApiKeysPage() {
   const { isConnected, connectEvm } = useWallet()
   const toast = useToast()
+  const queryClient = useQueryClient()
 
-  const [keys, setKeys] = useState<ApiKey[]>([])
-  const [loading, setLoading] = useState(true)
-  const [, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const keysQuery = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: () => api.oma.getApiKeys(),
+    enabled: isConnected,
+    staleTime: 60_000,
+  })
+
+  const keys: ApiKey[] = keysQuery.data ?? []
+  const loading = keysQuery.isLoading
+  const error = keysQuery.error instanceof Error ? keysQuery.error.message : keysQuery.error ? 'Failed to load API keys' : null
 
   const [creating, setCreating] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
@@ -62,32 +53,6 @@ export default function ApiKeysPage() {
 
   const [editingLimits, setEditingLimits] = useState<string | null>(null)
   const [rateLimits, setRateLimits] = useState<Record<string, RateLimit>>({})
-
-  const fetchKeys = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true)
-    else setRefreshing(true)
-    setError(null)
-    try {
-      const keyList = await api.oma.getApiKeys()
-      setKeys(keyList)
-      const limits: Record<string, RateLimit> = {}
-      keyList.forEach(k => {
-        limits[k.id] = { requestsPerMinute: 60, requestsPerDay: 10000 }
-      })
-      setRateLimits(limits)
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to load API keys'
-      setError(msg)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isConnected) return
-    fetchKeys(true)
-  }, [isConnected, fetchKeys])
 
   const handleCopy = useCallback((text: string, id: string) => {
     navigator.clipboard.writeText(text)
@@ -104,31 +69,34 @@ export default function ApiKeysPage() {
       setCreatedKey(key)
       setNewKeyName('')
       setShowCreateForm(false)
-      setKeys((prev) => [...prev, { 
-        id: key.id, 
-        name: key.name, 
-        prefix: key.prefix, 
-        createdAt: key.createdAt, 
-        lastUsedAt: key.lastUsedAt 
-      }])
+      queryClient.setQueryData<ApiKey[]>(['apiKeys'], (prev) => [
+        ...(prev ?? []),
+        {
+          id: key.id,
+          name: key.name,
+          prefix: key.prefix,
+          createdAt: key.createdAt,
+          lastUsedAt: key.lastUsedAt,
+        },
+      ])
       setRateLimits(prev => ({ ...prev, [key.id]: { requestsPerMinute: 60, requestsPerDay: 10000 } }))
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to create key'
-      setError(msg)
+      toast.error(msg)
     } finally {
       setCreating(false)
     }
-  }, [newKeyName])
+  }, [newKeyName, queryClient, toast])
 
   const handleRevokeKey = useCallback(async (keyId: string) => {
     setRevokingId(keyId)
     try {
       await api.oma.revokeApiKey(keyId)
-      setKeys((prev) => prev.filter((k) => k.id !== keyId))
+      queryClient.setQueryData<ApiKey[]>(['apiKeys'], (prev) => (prev ?? []).filter((k) => k.id !== keyId))
       toast.success('API key revoked')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to revoke key'
-      setError(msg)
+      toast.error(msg)
     } finally {
       setRevokingId(null)
     }
@@ -192,9 +160,9 @@ export default function ApiKeysPage() {
           <div className="flex items-center gap-3 mb-1">
             <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
             <span className="text-[var(--color-text-muted)]">/</span>
-            <span className="text-sm text-white">API Keys</span>
+            <span className="text-sm text-[var(--color-text-bright)]">API Keys</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">API Keys</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-bright)]">API Keys</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">Manage your API keys and rate limits</p>
         </div>
         <motion.button
@@ -237,7 +205,7 @@ export default function ApiKeysPage() {
                 onChange={(e) => setNewKeyName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateKey()}
                 placeholder="Key name (e.g. production, staging)"
-                className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-white placeholder:text-[var(--color-text-muted)]"
+                className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-[var(--color-text-bright)] placeholder:text-[var(--color-text-muted)]"
                 autoFocus
                 disabled={creating}
               />
@@ -273,7 +241,7 @@ export default function ApiKeysPage() {
         >
           <div className="text-center">
             <Key className="h-12 w-12 mx-auto mb-4 text-[var(--color-text-muted)]" />
-            <h3 className="text-lg font-semibold text-white mb-2">No API Keys Yet</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-bright)] mb-2">No API Keys Yet</h3>
             <p className="text-sm text-[var(--color-text-muted)] mb-6">Create your first API key to start making requests.</p>
             <motion.button
               onClick={() => setShowCreateForm(true)}
@@ -304,7 +272,7 @@ export default function ApiKeysPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-white">{key.name}</h3>
+                        <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">{key.name}</h3>
                         <span className="font-mono text-sm text-[var(--color-text-muted)]">{maskKey(key.prefix)}</span>
                       </div>
                       <div className="flex items-center gap-4 mt-1 text-xs text-[var(--color-text-muted)]">
@@ -436,7 +404,7 @@ export default function ApiKeysPage() {
       <AnimatePresence>
         {createdKey && (
           <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]/60 backdrop-blur-sm p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -453,7 +421,7 @@ export default function ApiKeysPage() {
                   <Key className="h-6 w-6 text-[var(--color-cyan)]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">API Key Created</h3>
+                  <h3 className="text-lg font-bold text-[var(--color-text-bright)]">API Key Created</h3>
                   <p className="text-xs text-[var(--color-text-muted)]">Copy this key now - it will not be shown again</p>
                 </div>
               </div>
@@ -476,17 +444,11 @@ export default function ApiKeysPage() {
               </div>
 
               <div className="mb-6 p-4 rounded-xl bg-[var(--color-surface-elevated)] border border-[var(--color-border)]">
-                <h4 className="text-sm font-semibold text-white mb-3">Quick Start</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-[var(--color-cyan)] font-mono">curl</span>
-                    <span className="text-[var(--color-text-muted)]">-X POST https://api.oma-ai.com/v1/chat/completions</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[var(--color-text-muted)]">-H {`"`}Authorization: Bearer{`"`} </span>
-                    <span className="text-[var(--color-warning)] font-mono">{createdKey.prefix}{'"'}...</span>
-                  </div>
-                </div>
+                <h4 className="text-sm font-semibold text-[var(--color-text-bright)] mb-3">Quick Start</h4>
+                <pre className="rounded-lg bg-[var(--color-void)] border border-[var(--color-border)] p-3 overflow-x-auto text-xs font-mono text-[var(--color-text-secondary)] whitespace-pre"><code>{`curl -X POST https://api.oma-ai.com/v1/chat/completions \\
+  -H "Authorization: Bearer ${createdKey.key}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"deepseek-v4-pro","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
               </div>
 
               <motion.button

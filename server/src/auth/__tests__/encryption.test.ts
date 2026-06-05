@@ -1,14 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { deriveEncryptionKey, encryptSecret, decryptSecret } from '../encryption.js'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const TEST_KEY = 'test-encryption-key-32chr-long-here!'
 
-beforeAll(() => {
-  process.env.ENCRYPTION_KEY = TEST_KEY
-})
+vi.mock('../../config.js', () => ({
+  config: {
+    get ENCRYPTION_KEY() { return process.env.ENCRYPTION_KEY || TEST_KEY },
+  },
+}))
 
-afterAll(() => {
-  delete process.env.ENCRYPTION_KEY
+import { deriveEncryptionKey, encryptSecret, decryptSecret } from '../encryption.js'
+
+beforeEach(() => {
+  process.env.ENCRYPTION_KEY = TEST_KEY
 })
 
 describe('deriveEncryptionKey', () => {

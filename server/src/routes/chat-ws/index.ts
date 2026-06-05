@@ -6,8 +6,7 @@ import { getBalance } from "../../credits/index.js";
 import { validationError } from "../../lib/validation.js";
 import { validateApiKey } from "../../auth/api-keys.js";
 import { trackSpend } from "../../middleware/spend-limit.js";
-import { USDC_BASE } from "../../constants.js";
-import { config } from "../../config.js";
+import { logger } from "../../lib/logger.js";
 import type { IncomingMessage } from "http";
 import type { Server as HTTPServer } from "http";
 
@@ -80,23 +79,6 @@ export const wsChatCompletionSchema = z.object({
   response_format: z.any().optional(),
 });
 
-function createInsufficientCreditsPayReq(returnToUrl: string, amountCents: number = 1) {
-  const now = Math.floor(Date.now() / 1000);
-  const paymentURL = `https://pay.oma-ai.com/x402/deposit?network=base&asset=USDC&return_to=${encodeURIComponent(returnToUrl)}`;
-  return {
-    x402Version: "1" as const,
-    scheme: "evm" as const,
-    networkId: "base",
-    asset: USDC_BASE,
-    amount: (amountCents / 100).toFixed(2),
-    payee: config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000",
-    maxAmountRequired: (amountCents / 100).toFixed(2),
-    validBefore: now + 3600,
-    validAfter: now,
-    "payment-URL": paymentURL,
-  };
-}
-
 function sendWsJson(ws: WebSocket, data: unknown) {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(data));
@@ -144,7 +126,7 @@ export function setupWebSocket(server: HTTPServer) {
     };
 
     connectionTimeout = setTimeout(() => {
-      console.error("[ws] Connection timeout - no auth received within 10 seconds");
+      logger.error("[ws] Connection timeout - no auth received within 10 seconds");
       sendErrorAndClose("Connection timeout", "timeout_error");
       ws.close();
     }, 10_000);
@@ -185,7 +167,7 @@ export function setupWebSocket(server: HTTPServer) {
 
     } catch (err) {
       clearConnectionTimeout();
-      console.error("[ws] Connection setup error:", err);
+      logger.error({ err }, "[ws] Connection setup error:");
       sendErrorAndClose("Authentication failed", "authentication_error");
       return;
     }
@@ -222,9 +204,13 @@ export function setupWebSocket(server: HTTPServer) {
 
         const bal = await getBalance(userId);
         if (Number(bal.balanceCents) <= 0) {
-          const payReq = createInsufficientCreditsPayReq(`ws://localhost/v1/chat/completions/ws`, 1);
-          sendWsJson(wsClient, { type: "pay_req", ...payReq });
-          sendWsError(wsClient, "Insufficient credits", "insufficient_quota");
+          sendWsJson(wsClient, {
+            error: {
+              message: `Insufficient credits. Required: 1, Balance: ${Number(bal.balanceCents)}`,
+              type: "insufficient_credits",
+              code: "insufficient_credits",
+            }
+          });
           wsClient.close();
           return;
         }
@@ -262,7 +248,7 @@ export function setupWebSocket(server: HTTPServer) {
 
                 if (totalCents > 0 && apiKeyHash) {
                   trackSpend(apiKeyHash, Math.ceil(totalCents)).catch((err) => {
-                    console.error(`[ws:spend-limit] Track failed for key ${apiKeyHash.slice(0, 8)}:`, err);
+                    logger.error({ err, keyPrefix: apiKeyHash.slice(0, 8) }, "[ws:spend-limit] Track failed:");
                   });
                 }
 
@@ -303,7 +289,7 @@ export function setupWebSocket(server: HTTPServer) {
     });
 
     ws.on("error", (err) => {
-      console.error("[ws] Socket error:", err);
+      logger.error({ err }, "[ws] Socket error:");
       session = null;
     });
 

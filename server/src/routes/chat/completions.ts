@@ -17,9 +17,10 @@ import type { OmaEnv } from "../../types.js";
 import {
   checkRequestBodySizeLimit,
   completionSchema,
-  createInsufficientCreditsPayReq,
 } from "./validation.js";
+import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
 import { getModel } from "../../inference/models.js";
+import { logger } from "../../lib/logger.js";
 
 type LegacyChoice = {
   index?: number;
@@ -170,7 +171,7 @@ completionsRouter.use("/v1/completions", modelRateLimit());
 completionsRouter.use("/v1/completions", spendLimit());
 
 completionsRouter.post("/v1/completions", async (c) => {
-  console.warn(
+  logger.warn(
     "[deprecation] /v1/completions is deprecated. Use /v1/chat/completions instead.",
   );
 
@@ -254,17 +255,7 @@ completionsRouter.post("/v1/completions", async (c) => {
       if (Number(bal.balanceCents) <= 0) {
         span?.setAttribute("error", true);
         span?.setAttribute("error.type", "insufficient_credits");
-        const payReq = createInsufficientCreditsPayReq(c.req.url, 1);
-        c.header("Pay-Req", JSON.stringify(payReq));
-        return c.json(
-          {
-            error: {
-              message: "Insufficient credits",
-              type: "insufficient_quota",
-            },
-          },
-          402,
-        );
+        return createInsufficientCreditsPayReq(c, 1, Number(bal.balanceCents));
       }
 
       const payload = { model, messages, stream: !!stream, ...rest };
@@ -301,9 +292,9 @@ completionsRouter.post("/v1/completions", async (c) => {
           Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
         if (totalCents > 0 && apiKey) {
           trackSpend(apiKey.keyHash, Math.ceil(totalCents)).catch((err) => {
-            console.error(
-              `[spend-limit] Track failed for key ${apiKey.keyHash.slice(0, 8)}:`,
-              err,
+            logger.error(
+              { err, keyPrefix: apiKey.keyHash.slice(0, 8) },
+              "[spend-limit] Track failed",
             );
           });
         }
@@ -327,7 +318,7 @@ completionsRouter.post("/v1/completions", async (c) => {
           (err as { type?: string }).type ?? "inference_error",
         );
         span?.setAttribute("http.status_code", status);
-        console.error(`[chat] /v1/completions error:`, err);
+        logger.error({ err }, "[chat] /v1/completions error:");
         return c.json(
           {
             error: {

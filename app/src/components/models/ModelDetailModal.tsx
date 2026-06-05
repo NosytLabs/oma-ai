@@ -74,7 +74,7 @@ export function ModelDetailModal({ model, onClose }: ModelDetailModalProps) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--color-overlay)]/85 backdrop-blur-sm"
         onClick={onClose}
         role="dialog"
         aria-modal="true"

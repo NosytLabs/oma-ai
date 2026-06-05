@@ -18,7 +18,7 @@ export function ConnectWalletView({ onConnect }: ConnectWalletViewProps) {
     >
       <Link
         href="/"
-        className="absolute top-6 left-6 flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
+        className="absolute top-6 left-6 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       >
         ← Home
       </Link>

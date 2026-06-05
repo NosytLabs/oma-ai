@@ -3,6 +3,7 @@ import { db } from "../../db/client.js";
 import { users, creditBalances, usageRecords, deposits, apiKeys } from "../../db/schema.js";
 import { eq, desc, sql, count } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 const pageSchema = (await import("zod")).z.coerce.number().int().positive().default(1);
 const limitSchema = (await import("zod")).z.coerce.number().int().positive().max(100).default(50);
@@ -63,7 +64,7 @@ usersRoutes.get("/admin/users", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Admin users error:', err);
+    logger.error({ err }, "Admin users error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -157,7 +158,7 @@ usersRoutes.get("/admin/users/:id", async (c) => {
       })),
     });
   } catch (err) {
-    console.error('Admin user detail error:', err);
+    logger.error({ err }, "Admin user detail error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

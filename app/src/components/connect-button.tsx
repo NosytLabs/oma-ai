@@ -52,15 +52,16 @@ export function ConnectButtonInner() {
         </button>
         {open && (
           <>
-            <button className="fixed inset-0 z-40 bg-black/40 cursor-default" onClick={() => setOpen(false)} aria-label="Close menu" />
-            <div className="absolute right-0 z-50 mt-2 w-56 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-black/50">
+            <button className="fixed inset-0 z-40 bg-[var(--color-overlay)]/40 cursor-default" onClick={() => setOpen(false)} aria-label="Close menu" />
+            <div role="menu" className="absolute right-0 z-50 mt-2 w-56 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
               <div className="border-b border-[var(--color-border)] px-4 py-3">
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-mono">Connected</p>
                 <p className="font-mono text-sm text-[var(--color-cyan)] break-all mt-1">{truncateAddress(address)}</p>
               </div>
               <button
+                role="menuitem"
                 onClick={() => { disconnect(); setOpen(false) }}
-                className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[var(--color-red)]/80 hover:text-[var(--color-red)] hover:bg-[var(--color-red)]/10 transition-colors cursor-pointer"
+                className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[var(--color-red)] opacity-80 hover:text-[var(--color-red)] hover:bg-[var(--color-red)]/10 transition-colors cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 Disconnect
@@ -85,7 +86,7 @@ export function ConnectButtonInner() {
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-black/50">
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-72 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
           <div className="border-b border-[var(--color-border)] px-4 py-3">
             <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-widest font-mono">
               Select Wallet
@@ -94,6 +95,7 @@ export function ConnectButtonInner() {
           {availableConnectors.map((connector) => (
             <button
               key={connector.id}
+              role="menuitem"
               onClick={() => { connectEvm(connector.id); setOpen(false) }}
               className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[var(--color-surface)] cursor-pointer"
             >
@@ -111,6 +113,7 @@ export function ConnectButtonInner() {
           ))}
           <div className="border-t border-[var(--color-border)] mt-1 pt-1">
             <button
+              role="menuitem"
               onClick={() => { setOpen(false); setShowAccountLogin(true) }}
               className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[var(--color-surface)] cursor-pointer"
             >

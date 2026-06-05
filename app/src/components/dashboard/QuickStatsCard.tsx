@@ -1,5 +1,3 @@
-'use client'
-
 interface QuickStatsCardProps {
   loading: boolean
   todayRequests: number

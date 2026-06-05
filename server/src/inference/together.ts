@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
-import { BaseInferenceProvider, createErrorMapper, healthCheck, withRetry } from "./base.js";
+import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
 
 const TOGETHER_TIMEOUT_MS = 30_000;
 const TOGETHER_STREAM_TIMEOUT_MS = 120_000;
@@ -79,17 +79,6 @@ export function streamChatCompletion(body: {
   [key: string]: unknown;
 }): Promise<Response> {
   return provider.streamChatCompletion(body);
-}
-
-export async function togetherHealthCheck(): Promise<{
-  isUp: boolean;
-  latencyMs: number;
-}> {
-  return healthCheck({
-    getUrl: () => togetherUrl("/models"),
-    getHeaders: togetherHeaders,
-    keyConfigured: !!config.TOGETHER_API_KEY,
-  });
 }
 
 export { chatCompletion as togetherChatCompletion };

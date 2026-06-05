@@ -14,11 +14,18 @@ export async function GET() {
 
     if (res.ok) {
       const data = await res.json()
-      return NextResponse.json({
-        status: data.status || 'online',
-        version: data.version,
-        service: data.service,
-      })
+      return NextResponse.json(
+        {
+          status: data.status || 'online',
+          version: data.version,
+          service: data.service,
+        },
+        {
+          headers: {
+            'Cache-Control': 's-maxage=25, stale-while-revalidate=30',
+          },
+        }
+      )
     }
 
     return NextResponse.json({ status: 'error', message: 'Backend returned error' }, { status: 503 })

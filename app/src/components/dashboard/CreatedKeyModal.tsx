@@ -14,7 +14,7 @@ interface CreatedKeyModalProps {
 
 export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: CreatedKeyModalProps) {
   const [revealed, setRevealed] = useState(false)
-  const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null)
+  const [autoHideTimer, setAutoHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (revealed) {
@@ -38,7 +38,7 @@ export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: Creat
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]/80 backdrop-blur-sm p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

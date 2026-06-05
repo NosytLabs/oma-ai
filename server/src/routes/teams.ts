@@ -13,12 +13,11 @@ export const teamsRouter = new Hono<OmaEnv>();
 teamsRouter.use("*", sessionAuth);
 
 teamsRouter.get("/", async (c) => {
-  return c.json({ success: true, teams: [] });
+  return c.json({ error: "Teams API not yet implemented" }, 501);
 });
 
 teamsRouter.post("/", async (c) => {
-  const body = await c.req.json();
-  return c.json({ success: true, team: { id: "team-1", name: body.name } }, 201);
+  return c.json({ error: "Teams API not yet implemented" }, 501);
 });
 
 teamsRouter.get("/:teamId", requireTeamRole("owner", "admin", "member"), async (c) => {
@@ -34,8 +33,7 @@ teamsRouter.get("/:teamId", requireTeamRole("owner", "admin", "member"), async (
 });
 
 teamsRouter.post("/:teamId/members", requireTeamRole("owner", "admin"), async (c) => {
-  const body = await c.req.json();
-  return c.json({ success: true, member: { address: body.address, role: body.role } }, 201);
+  return c.json({ error: "Teams API not yet implemented" }, 501);
 });
 
 teamsRouter.get("/:teamId/sso", requireTeamRole("owner", "admin", "member"), async (c) => {

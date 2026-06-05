@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Users, CreditCard, DollarSign, Key, TrendingUp, Activity, RefreshCw, Download, Eye, Zap, Clock, Gauge, Terminal } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
+import { formatUsd } from '@/lib/utils'
+import { api } from '@/lib/api'
 
 const AdminOverviewCharts = dynamic(() => import('@/components/admin/AdminOverviewCharts').then(m => ({ default: m.AdminOverviewCharts })), { ssr: false })
 const AdminRevenueChart = dynamic(() => import('@/components/admin/AdminRevenueCharts').then(m => ({ default: m.AdminRevenueCharts })), { ssr: false })
@@ -18,12 +21,10 @@ type User = {
   accountNumber: string | null
   createdAt: string
   lastActivityAt: string | null
-  balanceDollars: number
+  balanceCredits: number
   totalDeposited: number
   totalUsed: number
   totalRequests: number
-  totalInputTokens: number
-  totalOutputTokens: number
 }
 
 type UsageStats = {
@@ -69,103 +70,71 @@ type AdminStats = {
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
-  const [users, setUsers] = useState<User[]>([])
-  const [usersLoading, setUsersLoading] = useState(false)
   const [usersPage, setUsersPage] = useState(1)
-  const [usersTotal, setUsersTotal] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [adminStats, setAdminStats] = useState<AdminStats | null>(null)
-  const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
-  const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null)
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [usagePeriod, setUsagePeriod] = useState('30d')
   const [revenuePeriod, setRevenuePeriod] = useState('30d')
 
-  const fetchUsers = async (page: number) => {
-    setUsersLoading(true)
-    try {
-      const res = await fetch(`/api/admin/users?page=${page}&limit=50`)
-      const data = await res.json()
-      setUsers(data?.users || [])
-      setUsersPage(data?.pagination?.page || 1)
-      setUsersTotal(data?.pagination?.total || 0)
-    } catch (err) {
-      console.error('Failed to fetch users:', err)
-    }
-    setUsersLoading(false)
+  const queryClient = useQueryClient()
+
+  const refreshStats = () => {
+    queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+    queryClient.invalidateQueries({ queryKey: ['adminUsage'] })
+    queryClient.invalidateQueries({ queryKey: ['adminRevenue'] })
+    queryClient.invalidateQueries({ queryKey: ['adminKeys'] })
   }
 
-  const fetchStats = async () => {
-    try {
-      const [usersRes, keysRes, usageRes, revenueRes] = await Promise.all([
-        fetch('/api/admin/users?page=1&limit=1'),
-        fetch('/api/admin/keys?limit=1'),
-        fetch('/api/admin/usage?period=30d'),
-        fetch('/api/admin/revenue?period=30d'),
-      ])
-      
-      if (!usersRes.ok || !keysRes.ok || !usageRes.ok || !revenueRes.ok) {
-        throw new Error('Failed to fetch stats')
-      }
-      
-      const [usersData, keysData, usageData, revenueData] = await Promise.all([
-        usersRes.json(),
-        keysRes.json(),
-        usageRes.json(),
-        revenueRes.json(),
-      ])
-      
-      if (!usersData || !keysData || !usageData || !revenueData) {
-        throw new Error('Invalid response data')
-      }
-      
-      const now = new Date()
-      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-      const activeUsersLast24h = usersData.users?.filter((u: User) => 
-        u.lastActivityAt && new Date(u.lastActivityAt) > last24h
-      ).length || 0
+  const usersQuery = useQuery({
+    queryKey: ['adminUsers', usersPage],
+    queryFn: () => api.admin.getUsers(usersPage, 50),
+    staleTime: 30_000,
+  })
 
-      setAdminStats({
-        totalUsers: usersData?.pagination?.total || 0,
-        totalApiKeys: keysData?.pagination?.total || 0,
-        totalDollarsPurchased: revenueData?.summary?.totalDeposits || 0,
-        totalUsageThisMonth: usageData?.summary?.totalRevenue || 0,
-        revenue: (revenueData?.summary?.totalRevenue || 0) - (revenueData?.summary?.totalCost || 0),
-        activeUsersLast24h,
-        providerCosts: {
-          venice: usageData?.byProvider?.find((p: { provider: string }) => p.provider === 'venice')?.totalCost || 0,
-          openrouter: usageData?.byProvider?.find((p: { provider: string }) => p.provider === 'openrouter')?.totalCost || 0,
-        },
-      })
-      
-      setUsageStats(usageData || null)
-      setRevenueStats(revenueData || null)
-    } catch (err) {
-      console.error('Failed to fetch stats:', err)
-      setAdminStats(null)
-      setUsageStats(null)
-      setRevenueStats(null)
+  const usageQuery = useQuery({
+    queryKey: ['adminUsage', usagePeriod],
+    queryFn: () => api.admin.getUsage(usagePeriod),
+    staleTime: 30_000,
+  })
+
+  const revenueQuery = useQuery({
+    queryKey: ['adminRevenue', revenuePeriod],
+    queryFn: () => api.admin.getRevenue(revenuePeriod),
+    staleTime: 30_000,
+  })
+
+  const keysQuery = useQuery({
+    queryKey: ['adminKeys'],
+    queryFn: () => api.admin.getKeys(1, 100).then((data) => data?.keys ?? []),
+    staleTime: 30_000,
+  })
+
+  const users: User[] = usersQuery.data?.users ?? []
+  const usersLoading = usersQuery.isLoading
+  const usersTotal = usersQuery.data?.pagination?.total ?? 0
+  const usageStats: UsageStats | null = usageQuery.data ?? null
+  const revenueStats: RevenueStats | null = revenueQuery.data ?? null
+  const apiKeys: ApiKey[] = keysQuery.data ?? []
+
+  const adminStats: AdminStats | null = useMemo(() => {
+    if (!usageStats || !revenueStats || !usersQuery.data || !usersQuery.data.pagination) return null
+    const now = new Date()
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const activeUsersLast24h = users.filter((u) =>
+      u.lastActivityAt && new Date(u.lastActivityAt) > last24h
+    ).length
+    return {
+      totalUsers: usersQuery.data.pagination.total,
+      totalApiKeys: 0,
+      totalDollarsPurchased: revenueStats.summary.totalDeposits,
+      totalUsageThisMonth: usageStats.summary.totalRevenue,
+      revenue: revenueStats.summary.totalRevenue - revenueStats.summary.totalCost,
+      activeUsersLast24h,
+      providerCosts: {
+        venice: usageStats.byProvider.find((p) => p.provider === 'venice')?.totalCost ?? 0,
+        openrouter: usageStats.byProvider.find((p) => p.provider === 'openrouter')?.totalCost ?? 0,
+      },
     }
-  }
-
-  const fetchApiKeys = async () => {
-    try {
-      const res = await fetch('/api/admin/keys?limit=100')
-      const data = await res.json()
-      setApiKeys(data.keys)
-    } catch (err) {
-      console.error('Failed to fetch API keys:', err)
-    }
-  }
-
-  useEffect(() => {
-    fetchStats()
-    fetchUsers(1)
-  }, [])
-
-  useEffect(() => {
-    if (activeTab === 'keys') fetchApiKeys()
-  }, [activeTab])
+  }, [usageStats, revenueStats, usersQuery.data, users])
 
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users
@@ -177,8 +146,6 @@ export default function AdminPage() {
     )
   }, [users, searchQuery])
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`
-  
   const formatAddress = (addr: string) => {
     if (addr.length > 16) return `${addr.slice(0, 8)}...${addr.slice(-6)}`
     return addr
@@ -234,7 +201,7 @@ export default function AdminPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={fetchStats}
+                onClick={() => refreshStats()}
                 className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -284,18 +251,18 @@ export default function AdminPage() {
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={fetchStats}
+                onClick={() => refreshStats()}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 transition-colors text-sm font-mono"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Retry Fetch
               </button>
-              <a
+              <Link
                 href="/admin/fees"
                 className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] transition-colors text-sm font-mono"
               >
                 Configure Fees
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -322,21 +289,21 @@ export default function AdminPage() {
                   <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                   <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Credits Purchased</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(adminStats.totalDollarsPurchased)}</p>
+                <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(adminStats.totalDollarsPurchased)}</p>
               </div>
               <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4 group hover:border-[var(--color-accent)]/30 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                   <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Usage This Month</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatCurrency(adminStats.totalUsageThisMonth)}</p>
+                <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatUsd(adminStats.totalUsageThisMonth)}</p>
               </div>
               <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4 group hover:border-[var(--color-accent)]/30 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                   <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Revenue</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCurrency(adminStats.revenue)}</p>
+                <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(adminStats.revenue)}</p>
               </div>
               <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4 group hover:border-[var(--color-accent)]/30 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
@@ -363,7 +330,7 @@ export default function AdminPage() {
                       <p className="text-[10px] text-[var(--color-text-muted)]">Primary provider</p>
                     </div>
                   </div>
-                  <p className="text-lg font-bold font-mono text-[var(--color-amber)]">{formatCurrency(adminStats.providerCosts.venice)}</p>
+                  <p className="text-lg font-bold font-mono text-[var(--color-amber)]">{formatUsd(adminStats.providerCosts.venice)}</p>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded border border-[var(--color-border)] bg-[var(--color-panel)]">
                   <div className="flex items-center gap-3">
@@ -375,12 +342,12 @@ export default function AdminPage() {
                       <p className="text-[10px] text-[var(--color-text-muted)]">Backup provider</p>
                     </div>
                   </div>
-                  <p className="text-lg font-bold font-mono text-[var(--color-amber)]">{formatCurrency(adminStats.providerCosts.openrouter)}</p>
+                  <p className="text-lg font-bold font-mono text-[var(--color-amber)]">{formatUsd(adminStats.providerCosts.openrouter)}</p>
                 </div>
                 <div className="border-t border-[var(--color-border)] pt-3 flex items-center justify-between">
                   <p className="text-xs text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Provider Costs</p>
                   <p className="text-lg font-bold font-mono text-[var(--color-text-bright)]">
-                    {formatCurrency(adminStats.providerCosts.venice + adminStats.providerCosts.openrouter)}
+                    {formatUsd(adminStats.providerCosts.venice + adminStats.providerCosts.openrouter)}
                   </p>
                 </div>
               </div>
@@ -398,6 +365,7 @@ export default function AdminPage() {
                 <input
                   type="text"
                   placeholder="Search by address, solana address, or account number..."
+                  aria-label="Search users by address, solana address, or account number"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50"
@@ -430,9 +398,9 @@ export default function AdminPage() {
                           <div className="text-[11px] text-[var(--color-text-muted)] font-mono">{formatAddress(user.solanaAddress)}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatCurrency(user.balanceDollars)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatCurrency(user.totalDeposited)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-amber)]">{formatCurrency(user.totalUsed)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatUsd(user.balanceCredits)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatUsd(user.totalDeposited)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-amber)]">{formatUsd(user.totalUsed)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{user.totalRequests?.toLocaleString() || 0}</td>
                       <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{user.lastActivityAt ? formatDate(user.lastActivityAt) : 'Never'}</td>
                       <td className="px-4 py-3">
@@ -456,7 +424,7 @@ export default function AdminPage() {
 
             <div className="flex items-center justify-between">
               <button
-                onClick={() => fetchUsers(usersPage - 1)}
+                onClick={() => setUsersPage(usersPage - 1)}
                 disabled={usersPage <= 1}
                 className="px-4 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] disabled:opacity-30 disabled:cursor-not-allowed disabled:border-[var(--color-border)]/50 disabled:text-[var(--color-text-muted)] text-sm font-mono transition-colors"
               >
@@ -464,7 +432,7 @@ export default function AdminPage() {
               </button>
               <span className="text-xs text-[var(--color-text-muted)] font-mono">Page {usersPage} of {Math.ceil(usersTotal / 50) || 1}</span>
               <button
-                onClick={() => fetchUsers(usersPage + 1)}
+                onClick={() => setUsersPage(usersPage + 1)}
                 disabled={usersPage >= Math.ceil(usersTotal / 50)}
                 className="px-4 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:border-[var(--color-border-bright)] disabled:opacity-30 disabled:cursor-not-allowed disabled:border-[var(--color-border)]/50 disabled:text-[var(--color-text-muted)] text-sm font-mono transition-colors"
               >
@@ -482,7 +450,7 @@ export default function AdminPage() {
                 {['7d', '30d', '90d'].map((p) => (
                   <button
                     key={p}
-                    onClick={() => { setUsagePeriod(p); fetchStats() }}
+                    onClick={() => { setUsagePeriod(p) }}
                     className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
                       usagePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
                     }`}
@@ -510,15 +478,15 @@ export default function AdminPage() {
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Total Revenue</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(usageStats.summary.totalRevenue)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(usageStats.summary.totalRevenue)}</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Total Cost</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatCurrency(usageStats.summary.totalCost)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-amber)]">{formatUsd(usageStats.summary.totalCost)}</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Gross Profit</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCurrency(usageStats.summary.grossProfit)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(usageStats.summary.grossProfit)}</p>
                     <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {usageStats.summary.margin}</p>
                   </div>
                 </div>
@@ -542,9 +510,9 @@ export default function AdminPage() {
                         <tr key={p.provider} className="border-b border-[var(--color-border)]/50">
                           <td className="px-4 py-2 font-medium text-[var(--color-text-bright)] capitalize text-sm">{p.provider}</td>
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{p.totalRequests.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatCurrency(p.totalRevenue)}</td>
-                          <td className="px-4 py-2 text-right font-mono text-[var(--color-amber)]">{formatCurrency(p.totalCost)}</td>
-                          <td className="px-4 py-2 text-right font-mono text-[var(--color-cyan)]">{formatCurrency(p.profit)}</td>
+                          <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatUsd(p.totalRevenue)}</td>
+                          <td className="px-4 py-2 text-right font-mono text-[var(--color-amber)]">{formatUsd(p.totalCost)}</td>
+                          <td className="px-4 py-2 text-right font-mono text-[var(--color-cyan)]">{formatUsd(p.profit)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -575,7 +543,7 @@ export default function AdminPage() {
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{m.totalRequests.toLocaleString()}</td>
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{m.totalInputTokens.toLocaleString()}</td>
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{m.totalOutputTokens.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatCurrency(m.totalRevenue)}</td>
+                          <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatUsd(m.totalRevenue)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -593,7 +561,7 @@ export default function AdminPage() {
               {['7d', '30d', '90d', 'all'].map((p) => (
                 <button
                   key={p}
-                  onClick={() => { setRevenuePeriod(p); fetchStats() }}
+                    onClick={() => { setRevenuePeriod(p) }}
                   className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
                     revenuePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
                   }`}
@@ -608,16 +576,16 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Total Revenue</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatCurrency(revenueStats.summary.totalRevenue)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(revenueStats.summary.totalRevenue)}</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Total Deposits</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatCurrency(revenueStats.summary.totalDeposits)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatUsd(revenueStats.summary.totalDeposits)}</p>
                     <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">{revenueStats.summary.depositCount} transactions</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Gross Profit</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCurrency(revenueStats.summary.grossProfit)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(revenueStats.summary.grossProfit)}</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">New Users</p>
@@ -650,7 +618,7 @@ export default function AdminPage() {
                         {revenueStats.monthlyRevenue?.map((m) => (
                           <tr key={m.month} className="border-b border-[var(--color-border)]/50">
                             <td className="px-4 py-2 font-medium text-[var(--color-text-bright)] text-sm">{m.month}</td>
-                            <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatCurrency(m.totalRevenue)}</td>
+                            <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatUsd(m.totalRevenue)}</td>
                             <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{m.depositCount}</td>
                           </tr>
                         ))}
@@ -710,7 +678,7 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{key.totalRequests.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-amber)]">{formatCurrency(key.totalSpend)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-amber)]">{formatUsd(key.totalSpend)}</td>
                       <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{formatDate(key.createdAt)}</td>
                       <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{key.lastUsedAt ? formatDate(key.lastUsedAt) : 'Never'}</td>
                     </tr>
@@ -730,7 +698,7 @@ export default function AdminPage() {
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
             <DollarSign className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" />
             <p className="text-[var(--color-text-muted)] font-mono">Fee configuration</p>
-            <a href="/admin/fees" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Fee Configuration →</a>
+            <Link href="/admin/fees" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Fee Configuration →</Link>
           </div>
         )}
 
@@ -738,7 +706,7 @@ export default function AdminPage() {
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
             <Gauge className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" />
             <p className="text-[var(--color-text-muted)] font-mono">Rate limit configuration</p>
-            <a href="/admin/rate-limits" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Rate Limits →</a>
+            <Link href="/admin/rate-limits" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Rate Limits →</Link>
           </div>
         )}
       </div>

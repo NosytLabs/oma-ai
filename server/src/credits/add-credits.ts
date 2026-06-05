@@ -2,12 +2,7 @@ import { db } from '../db/client.js'
 import { creditBatches, creditBalances } from '../db/schema.js'
 import { sql } from 'drizzle-orm'
 import { invalidateBalanceCache } from './balance.js'
-
-export function getExpiryDate(): Date {
-  const d = new Date()
-  d.setDate(d.getDate() + 90)
-  return d
-}
+import { getExpiryDate } from './utils.js'
 
 export async function addCredits(userId: string, amountCents: number) {
   const expiresAt = getExpiryDate()

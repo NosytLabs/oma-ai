@@ -1,23 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+/* Hallmark · P4 H5 E5 S5 R4 V4
+ * nav: N6 inset-frame-with-title-bar · genre: atmospheric · theme: terminal
+ * states (per interactive element):
+ *   nav link    default · hover · focus-visible · active · current (aria-current)
+ *   icon link   default · hover · focus-visible · active
+ *   user button default · hover · focus-visible · active · expanded
+ *   menu link   default · hover · focus-visible · active
+ *   signout     default · hover · focus-visible · active
+ *   hamburger   default · hover · focus-visible · active · expanded
+ *   copy/version chips: default · hover (underline) · focus-visible
+ * contrast: all text ≥ 4.5:1 on var(--color-void)
+ */
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { useWallet } from '@/components/wallet-context'
 import { OmaLogo } from '@/components/ui/oma-logo'
-import { Menu, X, ChevronDown, Key, Zap } from 'lucide-react'
+import { Menu, X, ChevronDown, Key, Zap, Github } from 'lucide-react'
 import { ApiStatus } from './api-status'
-
-const ConnectButton = dynamic(() => import('@/components/connect-button').then(m => ({ default: m.ConnectButton })), { ssr: false })
+import { ConnectButton } from './connect-button'
 
 const navLinks = [
-  { href: '/models', label: 'Models' },
-  { href: '/playground', label: 'Playground' },
-  { href: '/docs', label: 'Docs' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/pricing', label: 'Pricing' },
+  { href: '/models', label: 'models' },
+  { href: '/playground', label: 'playground' },
+  { href: '/docs', label: 'docs' },
+  { href: '/dashboard', label: 'dashboard' },
+  { href: '/pricing', label: 'pricing' },
 ]
+
+function sectionLabelFor(pathname: string): string {
+  if (pathname === '/' || pathname === '') return 'home'
+  const match = navLinks.find(l => pathname === l.href || pathname.startsWith(l.href + '/'))
+  return match?.label ?? pathname.replace(/^\//, '').split('/')[0] ?? 'home'
+}
 
 export function Navbar() {
   const { evmAddress, isConnected, disconnect } = useWallet()
@@ -25,149 +42,259 @@ export function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const pathname = usePathname()
 
-  const shortAddress = evmAddress ? `${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}` : ''
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileOpen])
+
+  useEffect(() => {
+    setMobileOpen(false)
+    setShowUserMenu(false)
+  }, [pathname])
+
+  const shortAddress = evmAddress ? `${evmAddress.slice(0, 6)}…${evmAddress.slice(-4)}` : ''
+  const section = sectionLabelFor(pathname)
+  const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-50 bg-[var(--color-void)]/80 backdrop-blur-md border-b border-[var(--color-border)]/80 font-mono">
-      <nav aria-label="Main navigation" className="w-full px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm">
-              <OmaLogo size="sm" />
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold tracking-tight text-[var(--color-text-bright)] group-hover:text-[var(--color-accent)] transition-colors duration-150">OMA</span>
-                <span className="text-xs text-[var(--color-text-muted)]">SYS</span>
-              </div>
-            </Link>
+    <header
+      className="sticky top-0 left-0 right-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-void)]/95 backdrop-blur-md font-mono"
+    >
+      <nav aria-label="Main navigation" className="w-full">
+        <div className="mx-auto w-full max-w-6xl px-3 sm:px-5">
+          <div className="flex items-center justify-between gap-2 h-11 sm:h-12">
+            <div className="flex items-center min-w-0 gap-2 sm:gap-3">
+              <Link
+                href="/"
+                className="flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm shrink-0"
+                aria-label="OMA home"
+              >
+                <OmaLogo size="sm" />
+                <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)] font-semibold tracking-tight">
+                  oma
+                </span>
+                <span className="text-[var(--color-accent)]" aria-hidden="true">
+                  ›
+                </span>
+              </Link>
 
-            <div className="hidden lg:flex items-center gap-5 text-xs">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:text-[var(--color-accent)] active:translate-y-px transition-all duration-150 rounded-sm py-1 px-2 -mx-2 ${
-                      isActive
-                        ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)] border-b border-[var(--color-accent)]'
-                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-dim)]'
-                    }`}
+              <span
+                className="hidden sm:inline-block w-px h-3.5 bg-[var(--color-border-bright)]"
+                aria-hidden="true"
+              />
+
+              <span
+                className="hidden sm:inline-flex items-center gap-1 text-[11px] text-[var(--color-text-muted)] tabular-nums min-w-0"
+                aria-label={`Current section: ${section}`}
+              >
+                <span className="text-[var(--color-text-tertiary)]">~</span>
+                <span className="text-[var(--color-text-secondary)] truncate">
+                  {section}
+                </span>
+              </span>
+
+              <ul className="hidden lg:flex items-center gap-0.5 ml-2">
+                {navLinks.map(link => {
+                  const isActive =
+                    pathname === link.href || pathname.startsWith(link.href + '/')
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`group relative inline-flex items-center px-2 py-1 text-[12px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] transition-colors duration-150 ${
+                          isActive
+                            ? 'text-[var(--color-accent)]'
+                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)]'
+                        }`}
+                      >
+                        <span className="text-[var(--color-text-tertiary)] mr-1" aria-hidden="true">
+                          {isActive ? '●' : '○'}
+                        </span>
+                        {link.label}
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-[var(--color-accent)] transition-transform duration-200 ease-out ${
+                            isActive
+                              ? 'scale-x-100'
+                              : 'group-hover:scale-x-100 group-focus-visible:scale-x-100'
+                          }`}
+                        />
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <a
+                href="https://github.com/oma-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub repository (opens in new tab)"
+                className="hidden md:inline-flex items-center justify-center w-8 h-8 rounded-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 transition-all duration-150"
+              >
+                <Github className="h-4 w-4" />
+              </a>
+
+              <div className="hidden xl:flex items-center">
+                <ApiStatus />
+              </div>
+
+              {isConnected ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-1.5 px-2.5 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-sm text-xs hover:border-[var(--color-accent)]/60 hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98] transition-all"
+                    aria-label="Open user menu"
+                    aria-expanded={showUserMenu}
+                    aria-haspopup="true"
                   >
-                    [{link.label.toLowerCase()}]
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
+                    <span
+                      className="relative flex h-1.5 w-1.5"
+                      aria-hidden="true"
+                    >
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75 animate-ping" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--color-accent)]" />
+                    </span>
+                    <span className="text-[var(--color-text)] font-mono">{shortAddress}</span>
+                    <ChevronDown
+                      className={`w-3 h-3 text-[var(--color-text-muted)] transition-transform duration-150 ${
+                        showUserMenu ? 'rotate-180' : ''
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
 
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-            <a
-              href="https://github.com/oma-ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub repository"
-              className="hidden md:flex items-center justify-center w-8 h-8 rounded-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-border)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 transition-all duration-150"
-            >
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-              </svg>
-            </a>
-            
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-px h-4 bg-[var(--color-border)]" />
-              <ApiStatus />
-            </div>
-
-            {isConnected ? (
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-sm hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-surface-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:translate-y-px transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none"
-                  aria-label="User menu"
-                  aria-expanded={showUserMenu}
-                  aria-haspopup="true"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
-                  </span>
-                  <span className="text-xs text-[var(--color-text)]">{shortAddress}</span>
-                  <ChevronDown className={`w-3 h-3 text-[var(--color-text-muted)] transition-transform duration-150 ${showUserMenu ? 'rotate-180' : ''}`} />
-                </button>
-
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-xl shadow-black/60 animate-in fade-in slide-in-from-top-1 duration-150 z-[60]">
-                    <div className="px-3 py-2 border-b border-[var(--color-border)]/80 mb-1">
-                      <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">Active Session</p>
-                      <p className="text-xs text-[var(--color-accent)] mt-1">{shortAddress}</p>
+                  {showUserMenu && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 mt-1.5 w-60 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-2xl shadow-black/60 z-[60] font-mono"
+                    >
+                      <div className="px-3 py-2 border-b border-[var(--color-border)] mb-1">
+                        <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                          Active session
+                        </p>
+                        <p className="text-xs text-[var(--color-accent)] mt-0.5 truncate">
+                          {evmAddress}
+                        </p>
+                      </div>
+                      <Link
+                        href="/dashboard"
+                        role="menuitem"
+                        className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:bg-[var(--color-surface)] focus-visible:text-[var(--color-text-bright)] transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <Key className="w-3 h-3" aria-hidden="true" />
+                        <span>api keys</span>
+                      </Link>
+                      <Link
+                        href="/deposit"
+                        role="menuitem"
+                        className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:bg-[var(--color-surface)] focus-visible:text-[var(--color-text-bright)] transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <Zap className="w-3 h-3" aria-hidden="true" />
+                        <span>add credits</span>
+                      </Link>
+                      <div className="h-px bg-[var(--color-border)] my-1" aria-hidden="true" />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          disconnect()
+                          setShowUserMenu(false)
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-error)]/80 hover:text-[var(--color-error)] hover:bg-[var(--color-error-dim)] focus-visible:outline-none focus-visible:bg-[var(--color-error-dim)] focus-visible:text-[var(--color-error)] transition-colors text-left"
+                      >
+                        <span>terminate session</span>
+                      </button>
                     </div>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] focus-visible:bg-[var(--color-surface)] transition-colors"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Key className="w-3 h-3" />
-                      <span>API Keys</span>
-                    </Link>
-                    <Link
-                      href="/deposit"
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:bg-[var(--color-surface)] transition-colors"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Zap className="w-3 h-3" />
-                      <span>Add Credits</span>
-                    </Link>
-                    <div className="h-px bg-[var(--color-border)]/80 my-1" />
-                    <button
-                      onClick={() => { disconnect(); setShowUserMenu(false) }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-error)]/80 hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] focus-visible:bg-[var(--color-error)]/10 transition-colors text-left"
-                    >
-                      <span>Terminate Session</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="scale-90 origin-right">
-                <ConnectButton />
-              </div>
-            )}
+                  )}
+                </div>
+              ) : (
+                <div className="scale-90 origin-right">
+                  <ConnectButton />
+                </div>
+              )}
 
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 transition-colors"
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-menu"
-            >
-              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </button>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 transition-all"
+                aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-menu"
+              >
+                {mobileOpen ? (
+                  <X className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <Menu className="w-4 h-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {mobileOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-[var(--color-border)]/80 py-4 animate-in slide-in-from-top-1 duration-150 z-40">
-            <ul className="flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`block px-3 py-2 text-sm rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] transition-colors ${
-                        isActive
-                          ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)] border-l-2 border-[var(--color-accent)]'
-                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface)]'
-                      }`}
-                    >
-                      &gt; {link.label}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+          <div
+            id="mobile-menu"
+            className="lg:hidden border-t border-[var(--color-border)] bg-[var(--color-void)] font-mono"
+          >
+            <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 py-3">
+              <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] mb-2">
+                index
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {navLinks.map(link => {
+                  const isActive =
+                    pathname === link.href || pathname.startsWith(link.href + '/')
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex items-center justify-between px-3 py-2.5 text-sm rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] transition-colors ${
+                          isActive
+                            ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)]'
+                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span aria-hidden="true" className="text-[var(--color-text-tertiary)]">
+                            {isActive ? '●' : '○'}
+                          </span>
+                          {link.label}
+                        </span>
+                        <span className="text-[var(--color-text-tertiary)] text-xs" aria-hidden="true">
+                          →
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between text-[10px] text-[var(--color-text-tertiary)]">
+                <span>build {build}</span>
+                <a
+                  href="https://github.com/oma-ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[var(--color-text-bright)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm"
+                >
+                  github ↗
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </nav>

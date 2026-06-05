@@ -97,7 +97,7 @@ export default function CheapTokensAlternativePage() {
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-700 tracking-tight text-text-bright">Why OMA Beats CheapTokens</h2>
+              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Why OMA Beats CheapTokens</h2>
             </div>
           </div>
 
@@ -115,7 +115,7 @@ export default function CheapTokensAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-border bg-panel p-4 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-cyan)]/30"
               >
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
                   <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
@@ -142,13 +142,13 @@ export default function CheapTokensAlternativePage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-border bg-panel">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="p-4 text-left font-mono text-xs font-600 uppercase tracking-wider text-text-muted">Feature</th>
-                  <th className="p-4 text-center font-mono text-xs font-600 uppercase tracking-wider text-text-muted">CheapTokens</th>
-                  <th className="p-4 text-center font-mono text-xs font-600 uppercase tracking-wider text-[var(--color-cyan)]">OMA</th>
+                <tr className="border-b border-[var(--color-border)]">
+                  <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Feature</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">CheapTokens</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-cyan)]">OMA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -159,10 +159,10 @@ export default function CheapTokensAlternativePage() {
                   { feature: 'Credit System', cheap: 'No', oma: 'Yes', highlight: true },
                   { feature: 'Dashboard', cheap: 'Limited', oma: 'Full Analytics', highlight: false },
                 ].map((row, i) => (
-                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-cyan)]/5' : ''} transition-colors hover:bg-surface`}>
-                    <td className="p-4 font-mono text-sm text-text">{row.feature}</td>
-                    <td className="p-4 text-center font-mono text-sm text-text-muted">{row.cheap}</td>
-                    <td className="p-4 text-center font-mono text-sm font-600 text-[var(--color-cyan)]">{row.oma}</td>
+                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-cyan)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
+                    <td className="p-4 font-mono text-sm text-[var(--color-text)]">{row.feature}</td>
+                    <td className="p-4 text-center font-mono text-sm text-[var(--color-text-muted)]">{row.cheap}</td>
+                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-cyan)]">{row.oma}</td>
                   </tr>
                 ))}
               </tbody>
@@ -174,10 +174,10 @@ export default function CheapTokensAlternativePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
-          className="rounded-xl border border-border bg-panel p-8 text-center"
+          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center"
         >
           <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Start Saving on AI Inference</h2>
-          <p className="mb-6 text-sm text-text">
+          <p className="mb-6 text-sm text-[var(--color-text)]">
             Get competitive pricing with the convenience of crypto payments and no account required.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -191,7 +191,7 @@ export default function CheapTokensAlternativePage() {
           </div>
         </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-[var(--color-text-muted)]">
           <span className="text-[var(--color-border)]">{'//'}</span>
           <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
           <span className="text-[var(--color-border)]">{'//'}</span>

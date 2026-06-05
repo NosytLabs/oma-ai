@@ -1,6 +1,7 @@
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { lt, and, ne } from "drizzle-orm";
+import { logger } from "../lib/logger.js";
 
 const CLEANUP_INTERVAL_MS = 15 * 60 * 1000;
 
@@ -21,9 +22,9 @@ async function processExpiredNoncesInternal(): Promise<void> {
 export async function processExpiredNonces(): Promise<void> {
   try {
     await processExpiredNoncesInternal();
-    console.log(`[nonce-cleanup] Cleared expired nonces`);
+    logger.info(`[nonce-cleanup] Cleared expired nonces`);
   } catch (err: unknown) {
-    console.log(`[nonce-cleanup] Skipped: ${err instanceof Error ? err.message : String(err)}`);
+    logger.info(`[nonce-cleanup] Skipped: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
