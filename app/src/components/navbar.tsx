@@ -75,7 +75,7 @@ export function Navbar() {
     setShowMoreMenu(false)
   }, [pathname])
 
-  // Close "more" menu when clicking outside
+  // Close "more" menu when clicking outside or pressing Escape
   const moreMenuRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     if (!showMoreMenu) return
@@ -94,6 +94,26 @@ export function Navbar() {
       document.removeEventListener('keydown', onKey)
     }
   }, [showMoreMenu])
+
+  // Close user menu when clicking outside or pressing Escape
+  const userMenuRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!showUserMenu) return
+    function onDocClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowUserMenu(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showUserMenu])
 
   const shortAddress = evmAddress ? `${evmAddress.slice(0, 6)}…${evmAddress.slice(-4)}` : ''
   const section = sectionLabelFor(pathname)
@@ -243,14 +263,15 @@ export function Navbar() {
               </div>
 
               {isConnected ? (
-                <div className="relative">
+                <div className="relative" ref={userMenuRef}>
                   <button
                     type="button"
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-1.5 px-2.5 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-sm text-xs hover:border-[var(--color-accent)]/60 hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98] transition-all"
                     aria-label="Open user menu"
                     aria-expanded={showUserMenu}
-                    aria-haspopup="true"
+                    aria-haspopup="menu"
+                    aria-controls="user-menu"
                   >
                     <span
                       className="relative flex h-1.5 w-1.5"
@@ -270,6 +291,7 @@ export function Navbar() {
 
                   {showUserMenu && (
                     <div
+                      id="user-menu"
                       role="menu"
                       className="absolute right-0 mt-1.5 w-60 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-2xl shadow-[var(--color-overlay)] z-[60] font-mono"
                     >

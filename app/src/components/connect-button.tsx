@@ -28,10 +28,17 @@ export function ConnectButtonInner() {
         setOpen(false)
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
     if (open) {
       document.addEventListener('click', handleClickOutside)
+      document.addEventListener('keydown', handleEscape)
     }
-    return () => document.removeEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [open])
 
   if (isConnected && address) {
@@ -41,6 +48,8 @@ export function ConnectButtonInner() {
           onClick={() => setOpen(!open)}
           className="group flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full text-[var(--color-cyan)] border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/5 hover:border-[var(--color-cyan)]/50 hover:bg-[var(--color-cyan)]/10 transition-all duration-200 cursor-pointer"
           aria-expanded={open}
+          aria-controls="wallet-menu"
+          aria-haspopup="menu"
           aria-label="Wallet menu"
         >
           <span className="relative flex h-2 w-2">
@@ -53,7 +62,7 @@ export function ConnectButtonInner() {
         {open && (
           <>
             <button className="fixed inset-0 z-40 bg-[var(--color-overlay)]/40 cursor-default" onClick={() => setOpen(false)} aria-label="Close menu" />
-            <div role="menu" className="absolute right-0 z-50 mt-2 w-56 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
+            <div id="wallet-menu" role="menu" className="absolute right-0 z-50 mt-2 w-56 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
               <div className="border-b border-[var(--color-border)] px-4 py-3">
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-mono">Connected</p>
                 <p className="font-mono text-sm text-[var(--color-cyan)] break-all mt-1">{truncateAddress(address)}</p>
@@ -79,6 +88,8 @@ export function ConnectButtonInner() {
         onClick={() => setOpen(!open)}
         disabled={isConnecting}
         aria-expanded={open}
+        aria-controls="wallet-menu"
+        aria-haspopup="menu"
         aria-label="Connect wallet"
         className="group flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full text-[var(--color-cyan)] border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/5 hover:border-[var(--color-cyan)]/50 hover:bg-[var(--color-cyan)]/10 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -86,7 +97,7 @@ export function ConnectButtonInner() {
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-50 mt-2 w-72 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
+        <div id="wallet-menu" role="menu" className="absolute right-0 z-50 mt-2 w-72 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
           <div className="border-b border-[var(--color-border)] px-4 py-3">
             <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-widest font-mono">
               Select Wallet

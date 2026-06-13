@@ -214,10 +214,14 @@ export default function AdminPage() {
 
       <div className="border-b border-[var(--color-border)]">
         <div className="max-w-[95rem] mx-auto px-4">
-          <div className="flex gap-0.5 overflow-x-auto scrollbar-none">
+          <div role="tablist" aria-label="Admin sections" className="flex gap-0.5 overflow-x-auto scrollbar-none">
             {(['overview', 'users', 'usage', 'revenue', 'keys', 'fees', 'rate-limits'] as Tab[]).map((tab) => (
               <button
                 key={tab}
+                role="tab"
+                id={`admin-tab-${tab}`}
+                aria-selected={activeTab === tab}
+                aria-controls="admin-tabpanel"
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-3 text-xs font-medium font-mono uppercase tracking-wider transition-all border-b-2 whitespace-nowrap rounded-full ${
                   activeTab === tab
@@ -225,13 +229,13 @@ export default function AdminPage() {
                     : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
                 }`}
               >
-                {tab === 'overview' && <Activity className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'users' && <Users className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'usage' && <TrendingUp className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'revenue' && <DollarSign className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'keys' && <Key className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'fees' && <DollarSign className="w-3.5 h-3.5 inline mr-1.5" />}
-                {tab === 'rate-limits' && <Gauge className="w-3.5 h-3.5 inline mr-1.5" />}
+                {tab === 'overview' && <Activity className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'users' && <Users className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'usage' && <TrendingUp className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'revenue' && <DollarSign className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'keys' && <Key className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'fees' && <DollarSign className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
+                {tab === 'rate-limits' && <Gauge className="w-3.5 h-3.5 inline mr-1.5" aria-hidden="true" />}
                 {tab}
               </button>
             ))}
@@ -239,7 +243,13 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-[95rem] mx-auto px-4 py-6">
+      <div
+        id="admin-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`admin-tab-${activeTab}`}
+        tabIndex={0}
+        className="max-w-[95rem] mx-auto px-4 py-6 focus:outline-none"
+      >
         {activeTab === 'overview' && !adminStats && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center mb-6">
@@ -361,9 +371,9 @@ export default function AdminPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" aria-hidden="true" />
                 <input
-                  type="text"
+                  type="search"
                   placeholder="Search by address, solana address, or account number..."
                   aria-label="Search users by address, solana address, or account number"
                   value={searchQuery}
