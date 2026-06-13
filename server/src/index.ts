@@ -30,6 +30,12 @@ import { invoiceRoutes } from "./routes/invoices.js";
 import { withdrawalRoutes } from "./routes/withdraw.js";
 import { refundRoutes } from "./routes/refunds.js";
 import { exportRoutes } from "./routes/export.js";
+import { healthRoutes } from "./routes/health.js";
+import { pingRoutes } from "./routes/ping.js";
+import { metricsRoutes } from "./routes/metrics.js";
+import { openapiRoutes } from "./routes/openapi.js";
+import { usageRoutes } from "./routes/usage.js";
+import { adminObservabilityRoutes } from "./routes/admin-observability.js";
 import type { OmaEnv } from "./types.js";
 import { scheduleCreditExpiry } from "./jobs/credit-expiry.js";
 import { scheduleSubscriptionCheck } from "./jobs/subscription-cron.js";
@@ -114,10 +120,17 @@ const corsOptions = {
 
 app.use("*", cors(corsOptions));
 
-app.get("/health", async (c) => {
-  c.header("Cache-Control", "no-store");
-  return c.json({ status: "ok", version: "2.0.0", service: "oma-ai" }, 200);
-});
+// Public operational routes (no auth) — MUST be mounted before any auth-protected
+// sub-router that uses a `*` wildcard, so probes/ping/metrics/openapi are not
+// shadowed by 401s. The inline `app.get("/health")` previously in this file
+// was a stub that did not touch the DB; the full /health + /ready + /live +
+// /version set lives in routes/health.ts. See .opencode/audit-2026-06-13v2/backend.md
+// S-NEW-1 (23 orphan endpoints before this fix).
+app.route("/", healthRoutes);
+app.route("/", pingRoutes);
+app.route("/", metricsRoutes);
+app.route("/", openapiRoutes);
+app.route("/", usageRoutes);
 
 app.route("/", authRoutes);
 app.route("/", chatRoutes);
@@ -142,6 +155,12 @@ app.route("/", withdrawalRoutes);
 app.route("/", invoiceRoutes);
 app.route("/", refundRoutes);
 app.route("/", exportRoutes);
+
+// Admin observability — must be mounted under /v1/admin path so its internal
+// `.use("/admin/*", sessionAuth)` / `.use("/v1/admin/*", sessionAuth)` wildcards
+// only match admin paths and don't shadow other routes. Router defines its own
+// path prefixes internally.
+app.route("/", adminObservabilityRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));
 

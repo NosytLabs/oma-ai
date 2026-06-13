@@ -12,11 +12,12 @@ import { addToDlq } from "../lib/dlq.js";
 
 export const onrampRoutes = new Hono<OmaEnv>();
 
-const CREDITS_PER_USD = 100;
-const ONRAMP_MIN_USD = 10;
-const ONRAMP_MAX_USD = 1000;
-const PROCESSING_FEE_PERCENT = 2.9;
-const SESSION_TTL_MS = 86_400_000;
+// M5: hardcoded business constants moved to config.ts (env-tunable)
+const CREDITS_PER_USD = config.CREDITS_PER_USD;
+const ONRAMP_MIN_USD = config.ONRAMP_MIN_USD;
+const ONRAMP_MAX_USD = config.ONRAMP_MAX_USD;
+const PROCESSING_FEE_PERCENT = config.ONRAMP_PROCESSING_FEE_PERCENT;
+const SESSION_TTL_MS = config.ONRAMP_QUOTE_CACHE_TTL_MS;
 
 const quoteCache = new QuoteCache({
   ttlMs: SESSION_TTL_MS,

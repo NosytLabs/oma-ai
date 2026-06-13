@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { invoices, deposits, usageRecords, users } from "../db/schema.js";
 import { eq, sql, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 
 function escapeHtml(str: string): string {
@@ -91,7 +92,7 @@ invoiceRoutes.post("/v1/invoices/generate", sessionAuth, async (c) => {
     amount,
     status: "pending",
     lineItems: JSON.stringify(lineItems),
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    dueDate: new Date(Date.now() + config.INVOICE_DEFAULT_DUE_DAYS * 24 * 60 * 60 * 1000),
   }).returning();
 
   return c.json({

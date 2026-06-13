@@ -1,9 +1,25 @@
 import { Hono } from "hono";
-import { getSettlementDlqEntries, retrySettlementFromDlq, getSettlementDlqLength } from "../../lib/dlq.js";
-import { processSettlementDLQ, retrySettlementById, getSettlementDlqStatus } from "../../lib/settlement-retry.js";
+import { z } from "zod";
+import { getSettlementDlqEntries, getSettlementDlqLength } from "../../lib/dlq.js";
+import {
+  processSettlementDLQ,
+  retrySettlementById,
+  getSettlementDlqStatus,
+  discardSettlementFromDlq,
+} from "../../lib/settlement-retry.js";
 import type { OmaEnv } from "../../types.js";
 
 export const dlqRoutes = new Hono<OmaEnv>();
+
+// M5 zod schemas for POST endpoints (paths use :id in URL, not body)
+const idParamSchema = z.object({
+  id: z.string().uuid({ message: "id must be a valid UUID" }),
+});
+
+const processBodySchema = z.object({
+  id: z.string().uuid().optional(),
+  force: z.boolean().optional(),
+});
 
 dlqRoutes.get("/v1/admin/dlq/settlements", async (c) => {
   const page = Math.max(parseInt(c.req.query("page") || "1", 10), 1);
@@ -16,7 +32,7 @@ dlqRoutes.get("/v1/admin/dlq/settlements", async (c) => {
     const status = await getSettlementDlqStatus();
 
     return c.json({
-      entries: entries.map((e) => ({
+      entries: entries.map((e: { orderId: string; amount: string; chain: string; attempts: number; lastError: string; createdAt: string }) => ({
         orderId: e.orderId,
         amount: e.amount,
         chain: e.chain,
@@ -44,7 +60,17 @@ dlqRoutes.get("/v1/admin/dlq/settlements", async (c) => {
 });
 
 dlqRoutes.post("/v1/admin/dlq/settlements/:id/retry", async (c) => {
-  const id = c.req.param("id");
+  const parsed = idParamSchema.safeParse({ id: c.req.param("id") });
+  if (!parsed.success) {
+    return c.json({
+      error: {
+        message: "Invalid request",
+        type: "invalid_request_error",
+        issues: parsed.error.flatten(),
+      },
+    }, 400);
+  }
+  const { id } = parsed.data;
 
   try {
     const result = await retrySettlementById(id);
@@ -67,17 +93,24 @@ dlqRoutes.post("/v1/admin/dlq/settlements/:id/retry", async (c) => {
 });
 
 dlqRoutes.post("/v1/admin/dlq/settlements/:id/discard", async (c) => {
-  const id = c.req.param("id");
+  const parsed = idParamSchema.safeParse({ id: c.req.param("id") });
+  if (!parsed.success) {
+    return c.json({
+      error: {
+        message: "Invalid request",
+        type: "invalid_request_error",
+        issues: parsed.error.flatten(),
+      },
+    }, 400);
+  }
+  const { id } = parsed.data;
 
   try {
-    const entries = await getSettlementDlqEntries(0, await getSettlementDlqLength());
-    const entry = entries.find((e) => e.orderId === id);
+    const discarded = await discardSettlementFromDlq(id);
 
-    if (!entry) {
+    if (!discarded) {
       return c.json({ error: { message: "Settlement not found in DLQ", type: "not_found" } }, 404);
     }
-
-    await retrySettlementFromDlq();
 
     return c.json({
       orderId: id,
@@ -90,12 +123,34 @@ dlqRoutes.post("/v1/admin/dlq/settlements/:id/discard", async (c) => {
 });
 
 dlqRoutes.post("/v1/admin/dlq/settlements/process", async (c) => {
+  let body: unknown = {};
+  try {
+    const raw = await c.req.json();
+    if (raw !== null && typeof raw === "object") {
+      body = raw;
+    }
+  } catch {
+    // No body or invalid JSON — treat as empty object, which is allowed
+    body = {};
+  }
+
+  const parsed = processBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({
+      error: {
+        message: "Invalid request",
+        type: "invalid_request_error",
+        issues: parsed.error.flatten(),
+      },
+    }, 400);
+  }
+
   try {
     const results = await processSettlementDLQ();
 
     return c.json({
       processed: results.length,
-      results: results.map((r) => ({
+      results: results.map((r: { orderId: string; success: boolean; attempts: number; error?: string; permanentlyFailed: boolean }) => ({
         orderId: r.orderId,
         success: r.success,
         attempts: r.attempts,

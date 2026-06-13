@@ -13,6 +13,7 @@ import crypto from "crypto";
 import { addToDlq } from "../../lib/dlq.js";
 import type { Token } from "../../credits/houdini-client.js";
 import { validationError } from "../../lib/validation.js";
+import { logger } from "../../lib/logger.js";
 
 const houdiniDepositSchema = z.object({
   fromCoin: z.string().min(1),
@@ -107,12 +108,17 @@ houdiniRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
     const body = JSON.parse(rawBody);
     const isPaymentLink = body.type === "payment_link" || body.paymentLinkId;
     const depositId = body.depositId;
-    const toAmount = body.toAmount;
+    // H12: houdiniId (the upstream order id) is the trust anchor. The
+    // webhook body's `toAmount` is a hint and can be replayed. We must
+    // re-fetch the order from HoudiniSwap and use its `toAmount` as
+    // the source of truth, otherwise an attacker who somehow captures
+    // a webhook (HMAC secret leak) could redirect the credits elsewhere.
+    const houdiniOrderId = body.orderId || body.houdiniId;
     const txHash = body.txHash;
 
-    if (!depositId || !toAmount || !txHash) return c.json({ error: { message: "Missing required fields", type: "validation" } }, 400);
+    if (!depositId || !txHash) return c.json({ error: { message: "Missing required fields", type: "validation" } }, 400);
 
-    const [deposit] = await db.select({ userId: deposits.userId, type: deposits.type }).from(deposits).where(eq(deposits.id, depositId)).limit(1);
+    const [deposit] = await db.select({ userId: deposits.userId, type: deposits.type, houdiniId: deposits.houdiniId }).from(deposits).where(eq(deposits.id, depositId)).limit(1);
     if (!deposit) return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
 
     if (isPaymentLink || deposit.type === "payment_link") {
@@ -121,9 +127,44 @@ houdiniRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
         return c.json({ status: paymentStatus, message: "Payment not completed yet" });
       }
       const paymentLinkId = body.paymentLinkId || body.depositId;
-      const amountUsd = body.amountUsd ? Number(body.amountUsd) : Number(toAmount);
+      // H12: re-fetch the payment link from HoudiniSwap rather than
+      // trusting the webhook body's amount. Fall back to the body
+      // only if the upstream is unavailable.
+      let amountUsd = Number(body.amountUsd ?? body.toAmount);
+      if (body.paymentLinkId) {
+        try {
+          const live = await houdiniClient.getPaymentLink(body.paymentLinkId);
+          if (live && typeof live.amount === "string" && live.amount.length > 0) {
+            amountUsd = Number(live.amount);
+          }
+        } catch (fetchErr) {
+          logger.warn({ paymentLinkId: body.paymentLinkId, err: fetchErr }, "[houdini:webhook] payment-link re-fetch failed; falling back to webhook body");
+        }
+      }
       const result = await processPaymentLinkDeposit(depositId, paymentLinkId, amountUsd, txHash);
       return c.json({ credits: result.creditsCents, status: "completed" });
+    }
+
+    // H12: re-fetch the order from HoudiniSwap and use the live
+    // `toAmount` as the credited amount. The webhook body's `toAmount`
+    // is treated as a fallback for when the upstream is unreachable.
+    const orderId = houdiniOrderId ?? deposit.houdiniId;
+    let toAmount = body.toAmount;
+    if (orderId) {
+      try {
+        const order = await houdiniClient.getOrder(orderId);
+        if (order && order.toAmount) {
+          toAmount = order.toAmount;
+        }
+      } catch (fetchErr) {
+        logger.warn(
+          { orderId, err: fetchErr },
+          "[houdini:webhook] order re-fetch failed; falling back to webhook body toAmount",
+        );
+      }
+    }
+    if (!toAmount) {
+      return c.json({ error: { message: "Missing toAmount (no upstream order, no webhook body)", type: "validation" } }, 400);
     }
 
     const result = await db.transaction(async (tx) => {

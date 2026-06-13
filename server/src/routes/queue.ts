@@ -11,7 +11,9 @@ import type { OmaEnv } from "../types.js";
 
 export const queueRoutes = new Hono<OmaEnv>();
 
-queueRoutes.use("/v1/queue/status", bearerAuth);
+queueRoutes.use("/status", bearerAuth);
+queueRoutes.use("/stats", bearerAuth);
+queueRoutes.use("/depth", bearerAuth);
 
 queueRoutes.get("/status", async (c) => {
   const userId = c.get("userId");

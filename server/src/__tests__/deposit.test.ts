@@ -415,9 +415,7 @@ describe('Deposit Routes', () => {
         },
         body: rawBody,
       })
-      console.log('Response status:', res.status)
       const body = await res.json().catch(() => ({ error: 'Failed to parse JSON' }))
-      console.log('Response body:', JSON.stringify(body))
       expect(res.status).toBe(200)
       expect(body.credits).toBe(500)
       expect(body.status).toBe('completed')

@@ -10,6 +10,12 @@ vi.mock('../config.js', () => ({
     ONRAMP_WEBHOOK_SECRET: 'test-jwt-secret-that-is-at-least-32-chars-long-for-hmac',
     NODE_ENV: 'test',
     FACILITATOR_MODE: 'mock',
+    // M5: new onramp config fields
+    CREDITS_PER_USD: 100,
+    ONRAMP_MIN_USD: 10,
+    ONRAMP_MAX_USD: 1000,
+    ONRAMP_PROCESSING_FEE_PERCENT: 2.9,
+    ONRAMP_QUOTE_CACHE_TTL_MS: 86_400_000,
   },
 }))
 

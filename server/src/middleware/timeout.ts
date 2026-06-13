@@ -23,6 +23,11 @@ export function requestTimeout(timeoutMs: number = 120_000) {
 
     if (timedOut && !c.finalized) {
       logger.warn({ timeoutMs, url: c.req.url }, "Request exceeded timeout");
+      // Send 408 to the client. We RETURN the Response (not just call
+      // c.json and fall through) so Hono short-circuits the middleware
+      // chain: the downstream handler's pending promise is no longer
+      // awaited, and our 408 is what reaches the wire.
+      return c.json({ error: "Request timeout" }, 408);
     }
   };
 }

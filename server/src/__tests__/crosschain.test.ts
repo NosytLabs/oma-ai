@@ -268,6 +268,11 @@ vi.mock('../config.js', () => ({
     CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
     CROSSCHAIN_BLOCK_CONFIRMATIONS: 6,
+    // M5: new x402 config fields
+    X402_FACILITATOR_MARGIN_PERCENT: 1.5,
+    X402_QUOTE_TTL_SECONDS: 60,
+    X402_QUOTE_LOCK_TTL_SECONDS: 10,
+    X402_MAX_QUOTE_CACHE_SIZE: 1000,
   },
 }))
 

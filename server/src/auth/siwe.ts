@@ -113,7 +113,15 @@ export async function generateSessionToken(userId: string, authMethod: AuthMetho
 
 export async function verifySessionToken(token: string): Promise<SessionIdentity | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET, { issuer: ISSUER, audience: AUDIENCE });
+    // C10: pin the algorithm to HS256 to prevent "alg=none" / RS-vs-HS
+    // confusion attacks. Allow 5s clock skew between issuer and
+    // verifier to absorb minor clock drift across nodes.
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+      algorithms: ["HS256"],
+      clockTolerance: 5,
+    });
     if (!payload.sub) {
       return null;
     }

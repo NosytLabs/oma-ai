@@ -6,7 +6,7 @@ import * as venice from "../../inference/venice.js";
 import { getBalance, deductCredits } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
@@ -26,6 +26,10 @@ export const videoRouter = new Hono<OmaEnv>();
 videoRouter.use("/v1/videos/generations", bearerAuth);
 videoRouter.use("/v1/videos/generations", requestTimeout());
 videoRouter.use("/v1/videos/generations", tokenBucket({ refillRate: 2, bucketSize: 5, rpmLimit: 5 }));
+// H4: per-API-key daily spend cap. Video endpoints can drain a user's
+// allowance quickly (each generation is ~$0.90+), so apply the same
+// spendLimit() gate as chat/completions to cap daily spend.
+videoRouter.use("/v1/videos/generations", spendLimit());
 videoRouter.use("/v1/videos/retrieve", bearerAuth);
 videoRouter.use("/v1/videos/retrieve", requestTimeout());
 videoRouter.use("/v1/videos/retrieve", tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }));

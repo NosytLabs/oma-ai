@@ -202,7 +202,14 @@ export function createApiKeyCookieHeader(apiKey: string): string {
   const isDev = config.NODE_ENV === "development";
   const maxAge = 7 * 24 * 60 * 60;
   const name = isDev ? "oma_api_key" : "__Host-oma_api_key";
-  let cookie = `${name}=${apiKey}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  // H10: bump SameSite from Lax to Strict for browser requests carrying
+  // the API key cookie. Strict prevents the cookie from being sent on
+  // any cross-site request, including top-level navigations from
+  // external links. The trade-off (deep-link flows that need the
+  // cookie to "just work" after a redirect) is acceptable because
+  // browser API key auth is for first-party dashboard usage only;
+  // server-to-server clients should send Authorization: Bearer.
+  let cookie = `${name}=${apiKey}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
   if (!isDev) {
     cookie += "; Secure";
   }
@@ -212,7 +219,7 @@ export function createApiKeyCookieHeader(apiKey: string): string {
 export function createLogoutCookieHeader(): string {
   const isDev = config.NODE_ENV === "development";
   const name = isDev ? "oma_api_key" : "__Host-oma_api_key";
-  let cookie = `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  let cookie = `${name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
   if (!isDev) {
     cookie += "; Secure";
   }

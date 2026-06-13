@@ -355,8 +355,12 @@ export async function checkSessionRateLimit(
       sessionRemaining: sessionTpmResult.remaining,
     };
   } catch (err) {
-    logger.warn({ err }, "Session rate limit check failed");
-    return { allowed: true };
+    // Fail-CLOSED on session rate-limit check errors. Session limits
+    // protect billing, so allowing traffic when we cannot verify is
+    // unsafe. Surface this as a structured reason so the middleware
+    // can map it to a 429/503 response.
+    logger.warn({ err }, "Session rate limit check failed -- failing CLOSED");
+    return { allowed: false, reason: "session_rate_limit_error" };
   }
 }
 

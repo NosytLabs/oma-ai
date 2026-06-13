@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { deposits } from "../db/schema.js";
@@ -7,14 +8,27 @@ import type { OmaEnv } from "../types.js";
 
 export const refundRoutes = new Hono<OmaEnv>();
 
+// M5 zod schema for refund request (depositId + reason enum)
+const refundRequestSchema = z.object({
+  depositId: z.string().uuid({ message: "depositId must be a valid UUID" }),
+  reason: z.enum(["duplicate", "fraudulent", "requested_by_customer", "service_issue"]).optional(),
+});
+
 refundRoutes.post("/v1/refunds/request", sessionAuth, async (c) => {
   const userId = c.get("userId");
-  const body = await c.req.json();
-  const { depositId, reason } = body;
 
-  if (!depositId) {
-    return c.json({ error: { message: "depositId is required", type: "validation_error" } }, 400);
+  const parsed = refundRequestSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json({
+      error: {
+        message: "Invalid request",
+        type: "invalid_request_error",
+        issues: parsed.error.flatten(),
+      },
+    }, 400);
   }
+
+  const { depositId, reason } = parsed.data;
 
   const [deposit] = await db.select().from(deposits)
     .where(and(eq(deposits.id, depositId), eq(deposits.userId, userId)))

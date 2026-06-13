@@ -72,3 +72,27 @@ export async function storeIdempotencyResult(
   if (!redis) return;
   await redis.setEx(`idem:${key}`, ttlSeconds, JSON.stringify(response));
 }
+
+/**
+ * Release (delete) the processing lock for a given idempotency key.
+ * Called when a request fails or the client retries before the
+ * processing lock TTL expires -- the lock would otherwise hold the
+ * slot for up to PROCESSING_LOCK_TTL seconds.
+ *
+ * No-ops for invalid keys (not a UUID) or when Redis is unavailable,
+ * matching the defensive style of checkIdempotencyKey.
+ */
+export async function releaseIdempotencyLock(key: string): Promise<void> {
+  if (!UUID_REGEX.test(key)) {
+    return;
+  }
+
+  const redis = await getRedisClient();
+  if (!redis) return;
+
+  try {
+    await redis.del(`idem:${key}`);
+  } catch (err) {
+    console.error("[idempotency] Error releasing lock:", err);
+  }
+}

@@ -10,8 +10,9 @@ import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { USDC_BASE } from "../constants.js";
 
-const DAILY_WITHDRAWAL_LIMIT_CENTS = 5_000_000;
-const WEEKLY_WITHDRAWAL_LIMIT_CENTS = 20_000_000;
+// M5: hardcoded business constants moved to config.ts (env-tunable)
+const DAILY_WITHDRAWAL_LIMIT_CENTS = config.WITHDRAW_DAILY_LIMIT_CENTS;
+const WEEKLY_WITHDRAWAL_LIMIT_CENTS = config.WITHDRAW_WEEKLY_LIMIT_CENTS;
 
 async function getRecentWithdrawalSum(userId: string, since: Date): Promise<number> {
   const result = await db
@@ -129,9 +130,10 @@ withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, async (c) => {
     }, 400);
   }
 
-  const protocolFeePercent = 0.001;
+  // M5: hardcoded fees moved to config.ts (env-tunable)
+  const protocolFeePercent = config.WITHDRAW_PROTOCOL_FEE_PERCENT / 100; // 0.1% → 0.001
   const protocolFee = amount * protocolFeePercent;
-  const networkFeeEstimate = 0.01;
+  const networkFeeEstimate = config.WITHDRAW_NETWORK_FEE_ESTIMATE_USD;
   const netAmount = amount - protocolFee - networkFeeEstimate;
 
   return c.json({
@@ -183,9 +185,10 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
     }, 400);
   }
 
-  const protocolFeePercent = 0.001;
+  // M5: hardcoded fees moved to config.ts (env-tunable)
+  const protocolFeePercent = config.WITHDRAW_PROTOCOL_FEE_PERCENT / 100; // 0.1% → 0.001
   const protocolFee = amountCents * protocolFeePercent;
-  const networkFeeCents = 100;
+  const networkFeeCents = config.WITHDRAW_NETWORK_FEE_CENTS;
   const netAmountCents = amountCents - Math.round(protocolFee) - networkFeeCents;
 
   if (netAmountCents <= 0) {

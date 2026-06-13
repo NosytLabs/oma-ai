@@ -911,9 +911,13 @@ export function paymentMiddleware(
 
     const requestedAmount = parseFloat(paymentSig.payload?.amount ?? "0");
     const requiredAmount = parseFloat(price);
-    if (requestedAmount < requiredAmount) {
+    // Strict equality: accepting overpayment (old `<` check) let
+    // client-supplied amounts stamp the receipt without the server
+    // confirming the actual paid amount. Reject anything that doesn't
+    // match exactly.
+    if (requestedAmount !== requiredAmount) {
       return c.json(
-        { error: { message: `Insufficient payment: ${requestedAmount} < ${requiredAmount}`, type: "payment_error" } },
+        { error: { message: `Payment amount mismatch: requested ${requestedAmount} but ${requiredAmount} required`, type: "payment_error" } },
         402,
       );
     }

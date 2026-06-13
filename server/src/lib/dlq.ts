@@ -153,10 +153,22 @@ export async function removeSettlementDlqEntry(index: number): Promise<boolean> 
   if (!redis) return false;
 
   try {
-    const entries = await redis.lRange(DLQ_LISTS.settlement, index, index);
-    if (entries.length === 0) return false;
+    // Read ALL entries in the list (LRANGE 0 -1) so we can rebuild it
+    // without the target entry. lTrim cannot remove a single element
+    // by index — it only KEEPS a range. We must DEL + RPUSH.
+    const allEntries = await redis.lRange(DLQ_LISTS.settlement, 0, -1);
+    if (allEntries.length === 0) return false;
+    if (index < 0 || index >= allEntries.length) return false;
 
-    await redis.lTrim(DLQ_LISTS.settlement, index, index);
+    const remaining = allEntries.filter((_, i) => i !== index);
+
+    // Atomically replace the list: DEL + RPUSH preserves the original
+    // insertion order (lPush on the producer side, so consumers iterate
+    // oldest-first; rPush here restores the same order from oldest to newest).
+    await redis.del(DLQ_LISTS.settlement);
+    if (remaining.length > 0) {
+      await redis.rPush(DLQ_LISTS.settlement, remaining);
+    }
     return true;
   } catch (err) {
     console.error("[DLQ] Error removing settlement DLQ entry:", err);

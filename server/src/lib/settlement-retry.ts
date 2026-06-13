@@ -133,7 +133,12 @@ export async function processSettlementDLQ(): Promise<SettlementRetryResult[]> {
 
     results.push(result);
 
-    if (!result.success && !result.permanentlyFailed) {
+    // Pop the entry from the DLQ when we've reached a terminal state:
+    //   - result.success  → settlement went through, no need to keep it
+    //   - result.permanentlyFailed → give up, no more retries possible
+    // Retryable failures are kept in the queue (we re-add with attempts+1
+    // inside attemptSettlementRetry so the entry stays with updated count).
+    if (result.success || result.permanentlyFailed) {
       await retrySettlementFromDlq();
     }
   }

@@ -6,7 +6,7 @@ import * as venice from "../../inference/venice.js";
 import { getBalance, deductCredits } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
@@ -25,9 +25,13 @@ export const audioRouter = new Hono<OmaEnv>();
 audioRouter.use("/v1/audio/speech", bearerAuth);
 audioRouter.use("/v1/audio/speech", requestTimeout());
 audioRouter.use("/v1/audio/speech", tokenBucket({ refillRate: 10, bucketSize: 20, rpmLimit: 20 }));
+// H4: per-API-key daily spend cap. Audio transcription can be abused
+// by repeatedly submitting large files; gate the same way as chat.
+audioRouter.use("/v1/audio/speech", spendLimit());
 audioRouter.use("/v1/audio/transcriptions", bearerAuth);
 audioRouter.use("/v1/audio/transcriptions", requestTimeout());
 audioRouter.use("/v1/audio/transcriptions", tokenBucket({ refillRate: 10, bucketSize: 20, rpmLimit: 20 }));
+audioRouter.use("/v1/audio/transcriptions", spendLimit());
 
 audioRouter.post("/v1/audio/speech", async (c) => {
   const userId = c.get("userId");

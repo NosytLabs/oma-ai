@@ -18,6 +18,7 @@ vi.mock('../db/client.js', () => {
   const mockReturning = vi.fn().mockResolvedValue([{ id: 'dep-1' }])
   const mockUpdate = vi.fn().mockReturnThis()
   const mockSet = vi.fn().mockReturnThis()
+  const mockExecute = vi.fn().mockResolvedValue({ rows: [] })
 
   const chain = {
     select: mockSelect,
@@ -29,6 +30,7 @@ vi.mock('../db/client.js', () => {
     returning: mockReturning,
     update: mockUpdate,
     set: mockSet,
+    execute: mockExecute,
   }
 
   mockSelect.mockReturnValue(chain)

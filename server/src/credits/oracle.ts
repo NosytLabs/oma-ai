@@ -57,7 +57,15 @@ async function refreshPrice(): Promise<void> {
   cachedPrice = FALLBACK_PRICE_CENTS / 100;
   cachedPriceChange24h = 0;
   liveFeedWorking = false;
-  console.warn(`[oracle] CoinGecko unreachable and no OMA_PRICE_OVERRIDE set, using fallback price $${(FALLBACK_PRICE_CENTS / 100).toFixed(2)}`);
+  // SECURITY: If CoinGecko is down AND no OMA_PRICE_OVERRIDE is set, the
+  // oracle falls back to FALLBACK_PRICE_CENTS ($0.10). Consumers MUST call
+  // isOracleLive() / isOracleFresh() before charging — when both return
+  // false, the request should be rejected (or routed to a degraded /
+  // maintenance mode) rather than billed at the fallback rate. The
+  // isOracleLive() function already returns false in this state.
+  console.warn(
+    `[oracle] DEGRADED: CoinGecko unreachable and no OMA_PRICE_OVERRIDE set, using fallback $${(FALLBACK_PRICE_CENTS / 100).toFixed(2)}. Consumers must check isOracleLive() before billing.`,
+  );
   recordTwapSample(now, cachedPrice);
 }
 

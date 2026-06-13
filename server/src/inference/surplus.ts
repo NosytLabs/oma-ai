@@ -7,6 +7,20 @@ const SURPLUS_TIMEOUT_MS = 60_000;
 const SURPLUS_BASE_URL = "https://www.surplusintelligence.ai";
 const SURPLUS_API_VERSION = "v1";
 
+// Clamp the operator-facing "Minimum Discount Routing" knob to the
+// 0-90 range accepted by config validation. Values > 90 are rejected
+// (a 100% discount would mean "free", which is never valid for paid
+// inference), and negative values would invert the floor — we treat
+// anything out of range as "no floor set" (0) to be conservative.
+function clampMinDiscountPct(value: number | undefined | null): number {
+  if (value === undefined || value === null || Number.isNaN(value)) {
+    return 0;
+  }
+  if (value <= 0) return 0;
+  if (value > 90) return 0;
+  return Math.floor(value);
+}
+
 export interface SurplusPaymentRequirement {
   x402Version: number;
   accepts: Array<{
@@ -98,6 +112,7 @@ export async function surplusChatCompletion(body: {
   model: string;
   messages: ChatMessage[];
   stream?: boolean;
+  minDiscountPct?: number;
   [key: string]: unknown;
 }): Promise<Response> {
   const tracer = trace.getTracer("oma-server");
@@ -108,6 +123,16 @@ export async function surplusChatCompletion(body: {
     stream: body.stream ?? false,
   };
 
+  // Operator-configured minimum discount floor (Surplus "Minimum
+  // Discount Routing"). If body.minDiscountPct is provided, prefer it;
+  // otherwise fall back to the SURPLUS_MIN_DISCOUNT_PCT env var.
+  // Clamp to the 0-90 range to match config validation; the upstream
+  // may or may not honor this header (it is not documented in
+  // surplusintelligence.ai/llms.txt as of 2026-06-12).
+  const minDiscountPct = clampMinDiscountPct(
+    body.minDiscountPct ?? config.SURPLUS_MIN_DISCOUNT_PCT
+  );
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SURPLUS_TIMEOUT_MS);
 
@@ -115,13 +140,22 @@ export async function surplusChatCompletion(body: {
     try {
       span.setAttribute("llm.provider", "surplus");
       span.setAttribute("llm.model", body.model);
+      if (minDiscountPct > 0) {
+        span.setAttribute("llm.surplus.min_discount_pct", minDiscountPct);
+      }
       span.setAttribute("http.method", "POST");
       span.setAttribute("http.url", `${SURPLUS_BASE_URL}${endpoint}`);
+
+      const probeHeaders: Record<string, string> = {};
+      if (minDiscountPct > 0) {
+        probeHeaders["X-Surplus-Min-Discount-Pct"] = String(minDiscountPct);
+      }
 
       const probeResponse = await surplusFetch(endpoint, {
         method: "POST",
         body: JSON.stringify(requestBody),
         signal: controller.signal,
+        headers: probeHeaders,
       });
 
       if (probeResponse.status === 402) {
@@ -156,6 +190,7 @@ export async function surplusChatCompletion(body: {
           body: JSON.stringify(requestBody),
           signal: controller.signal,
           paymentSignature: JSON.stringify(paymentSignature),
+          headers: probeHeaders,
         });
 
         span.setAttribute("http.status_code", retryResponse.status);
@@ -257,6 +292,28 @@ async function signPayment(
     );
   }
 
+  // Resolve the EIP-712 verifyingContract.
+  // Per surplusintelligence.ai/llms.txt (2026-06-12), Surplus's
+  // verifyingContract on Base is the SETTLEMENT PROXY at
+  // 0x0770d2124C0a581C28Cfc47a659817145e6Cc137. The 0x8581…c402
+  // address we previously used is the payTo/treasury recipient, NOT
+  // the verifier, which is why signatures were being rejected
+  // silently.
+  //
+  // TRACKED ISSUE: github.com/oma-ai/oma-ai/issues/surplus-x402-schemes
+  // Stopgap: this route signs against the Surplus settlement proxy
+  // (0x0770…c137) as the EIP-712 verifyingContract. The proper
+  // scheme-aware signer — `exact` over EIP-3009 TransferWithAuthorization
+  // (USDC_BASE, name "USD Coin", version "2", chainId 8453) and `upto`
+  // over Permit2 PermitWitnessTransferFrom (0x0000…BA3, name "Permit2",
+  // chainId 8453) — is pending. Until that lands, signatures verify
+  // against the proxy and the verifier, not the recipient, which is
+  // why the previous 0x8581…c402 attempts were silently rejected.
+  const legacyVerifier = config.SURPLUS_VERIFIER_CONTRACT;
+  const verifyingContract = (legacyVerifier ??
+    config.SURPLUS_SETTLEMENT_CONTRACT) as `0x${string}`;
+  const chainId = config.SURPLUS_CHAIN_ID ?? 8453;
+
   try {
     const { createWalletClient, http } = await import("viem");
     const { privateKeyToAccount } = await import("viem/accounts");
@@ -273,8 +330,8 @@ async function signPayment(
       domain: {
         name: "Surplus Intelligence",
         version: "1",
-        chainId: 8453,
-        verifyingContract: "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402",
+        chainId,
+        verifyingContract,
       },
       types: {
         Payment: [

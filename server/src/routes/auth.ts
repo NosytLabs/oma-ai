@@ -54,8 +54,11 @@ function validateCsrfToken(token: string, secret?: string): boolean {
 }
 
 function createCsrfCookieHeader(token: string): string {
-  const expires = new Date(Date.now() + 3600000).toUTCString();
-  return `csrf_token=${token}; expires=${expires}; path=/; max-age=3600; HttpOnly; Secure; SameSite=Strict`;
+  // M5: hardcoded 1h cookie TTL moved to config.SESSION_COOKIE_TTL_MS
+  const ttlMs = config.SESSION_COOKIE_TTL_MS;
+  const expires = new Date(Date.now() + ttlMs).toUTCString();
+  const maxAge = Math.floor(ttlMs / 1000);
+  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
 }
 
 function generateAccountNumber(): string {

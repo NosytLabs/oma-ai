@@ -39,7 +39,10 @@ function getClientIp(c: Context<OmaEnv>): string {
   const xForwardedFor = c.req.header("x-forwarded-for");
   if (xForwardedFor) {
     const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
-    return ips.length > 0 ? ips[ips.length - 1] : "unknown";
+    // RFC 7239: the leftmost IP in X-Forwarded-For is the original
+    // client; subsequent entries are intermediate proxies. Take the
+    // leftmost to record the actual client, not the last hop.
+    return ips.length > 0 ? ips[0] : "unknown";
   }
   return c.req.header("x-real-ip") || "unknown";
 }

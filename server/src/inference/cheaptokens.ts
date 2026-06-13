@@ -49,6 +49,33 @@ interface BuyResponse {
   [k: string]: unknown;
 }
 
+// H6: per-day USDC spend counter. Resets at midnight UTC. This is
+// intentionally in-process (no Redis) because (a) CheapTokens auto-
+// buy is a single-process loop on a single server, and (b) the
+// fallback when the cap is hit is "no auto-buy" — never a wrong
+// purchase. Restarting the server resets the counter, which is
+// acceptable for an operator-facing internal cap.
+let dailyUsdcCentsSpent = 0;
+let dailyUsdcCentsSpentUtcDay = 0;
+
+function getUtcDay(now: number = Date.now()): number {
+  return Math.floor(now / 86_400_000);
+}
+
+function getDailyUsdcCentsSpent(): number {
+  const today = getUtcDay();
+  if (today !== dailyUsdcCentsSpentUtcDay) {
+    dailyUsdcCentsSpent = 0;
+    dailyUsdcCentsSpentUtcDay = today;
+  }
+  return dailyUsdcCentsSpent;
+}
+
+function recordDailyUsdcCents(additionalCents: number): void {
+  getDailyUsdcCentsSpent();
+  dailyUsdcCentsSpent += additionalCents;
+}
+
 let cachedKey: string | null = null;
 let cachedExpiry = 0;
 let isRefreshing = false;
@@ -157,12 +184,28 @@ export async function triggerRefresh(): Promise<void> {
     const discountPct = Number(pricing.discountPercent ?? 0);
     const available = Number(supply.availableKeys ?? supply.remaining ?? 0);
     if (Number.isFinite(discountPct) && discountPct >= 30 && available > 0) {
+      // H6: enforce the per-day USDC cap BEFORE signing the on-chain
+      // transfer. The buy is $1 (100 cents) so we check the running
+      // counter plus this buy. A single buy always fits in the cap
+      // unless we've already spent the daily limit.
+      const buyCents = 100;
+      const capCents = config.CT_DAILY_USDC_CENTS_MAX;
+      if (capCents > 0) {
+        const alreadySpent = getDailyUsdcCentsSpent();
+        if (alreadySpent + buyCents > capCents) {
+          logger.info(
+            `[CheapTokens] daily USDC cap reached (${alreadySpent}/${capCents} cents) — skipping buy`,
+          );
+          return;
+        }
+      }
       logger.info(`[CheapTokens] Profit optimization: discount ${discountPct}% active, ${available} keys available. Leasing reseller key...`);
       // Buy $1 of credits to seed the cached key.
-      const keyInfo = await client.buyKey(100);
+      const keyInfo = await client.buyKey(buyCents);
       if (keyInfo.veniceApiKey) {
         cachedKey = keyInfo.veniceApiKey;
         cachedExpiry = keyInfo.expiresAt ?? Date.now() + 24 * 60 * 60 * 1000;
+        recordDailyUsdcCents(buyCents);
         logger.info(`[CheapTokens] Successfully leased Venice key (expires: ${new Date(cachedExpiry).toISOString()})`);
       } else {
         logger.warn("[CheapTokens] Buy succeeded but no veniceApiKey in response.");
