@@ -87,6 +87,18 @@ const envSchema = z.object({
   // Used by server/src/inference/markup.ts via getMarkupMultiplier() / getMarkupPercent().
   OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
 
+  // Withdraw route fee configuration (moved from hardcoded literals in routes/withdraw.ts)
+  // 0.1% = 0.001 default for protocol fee percent; $0.01 default for network fee USD estimate.
+  WITHDRAW_PROTOCOL_FEE_PERCENT: z.coerce.number().min(0).max(50).default(0.1), // 0.1% — value is in PERCENT not fraction
+  WITHDRAW_NETWORK_FEE_ESTIMATE_USD: z.coerce.number().nonnegative().default(0.01),
+  WITHDRAW_DAILY_LIMIT_CENTS: z.coerce.number().int().positive().default(5_000_000), // $50,000
+  WITHDRAW_WEEKLY_LIMIT_CENTS: z.coerce.number().int().positive().default(20_000_000), // $200,000
+  WITHDRAW_NETWORK_FEE_CENTS: z.coerce.number().int().nonnegative().default(100), // $1.00
+
+  // Onramp configuration (moved from hardcoded literals in routes/onramp.ts)
+  ONRAMP_PROCESSING_FEE_PERCENT: z.coerce.number().min(0).max(50).default(2.9), // 2.9% — value is in PERCENT
+  ONRAMP_QUOTE_CACHE_TTL_MS: z.coerce.number().int().positive().default(10 * 60 * 1000), // 10 min
+
   LIFI_API_URL: z.string().min(1).default("https://li.quest/v1"),
   LIFI_INTEGRATOR: z.string().min(1).default("oma-ai"),
 
@@ -125,6 +137,49 @@ const envSchema = z.object({
   // Trusted proxy IPs for X-Forwarded-For validation (comma-separated)
   // Only trust X-Forwarded-For headers from these known proxy IPs
   TRUSTED_PROXY_IPS: z.string().optional().default(""),
+
+  // ===========================================================================
+  // M5: Hardcoded business constants moved from inline literals into the
+  // schema. Defaults preserve the previous hardcoded behavior so deployments
+  // without these env vars continue to work.
+  // ===========================================================================
+
+  // CCTP: per-chain RPC URL map (comma-separated `chain:url` pairs).
+  // Example: "ethereum:https://eth.example.com,base:https://base.example.com".
+  // When unset, cctp-client.ts falls back to viem's default RPC transport.
+  CHAIN_RPC_URL_PER_CHAIN: z.string().optional(),
+
+  // CheapTokens: per-day USDC spend cap in cents. 0 (default) = no cap.
+  // The runtime check is `if (capCents > 0)` so an unset env var maps to
+  // the same "no cap" behavior as the prior hardcoded `undefined` literal.
+  CT_DAILY_USDC_CENTS_MAX: z.coerce.number().int().nonnegative().default(0),
+
+  // Surplus provider: minimum acceptable discount percentage (0-100). The
+  // surplus chat-completion path will reject quotes with discount < this floor.
+  SURPLUS_MIN_DISCOUNT_PCT: z.coerce.number().min(0).max(100).default(0),
+
+  // Surplus provider: contract addresses. The verifier is the legacy EIP-712
+  // verifyingContract; the settlement contract is the new x402 settlement
+  // proxy on Base (0x0770…c137). permit2 + usdc are required for `upto` scheme.
+  SURPLUS_VERIFIER_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  SURPLUS_SETTLEMENT_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  SURPLUS_PERMIT2_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  SURPLUS_USDC_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  SURPLUS_CHAIN_ID: z.coerce.number().int().positive().default(8453), // Base mainnet
+  SURPLUS_DEFAULT_SCHEME: z.enum(["upto", "exact"]).default("upto"),
+
+  // Session / auth: cookie lifetime in milliseconds. Default 1h.
+  SESSION_COOKIE_TTL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
+
+  // Invoice: default due-date offset in days from creation. Default 30.
+  INVOICE_DEFAULT_DUE_DAYS: z.coerce.number().int().positive().default(30),
+
+  // Onramp: USD → credits conversion rate and per-quote USD bounds.
+  // CREDITS_PER_USD is multiplied against net USD to produce credits (cents).
+  // ONRAMP_MIN_USD / ONRAMP_MAX_USD bound a single quote's amountUsd.
+  CREDITS_PER_USD: z.coerce.number().int().positive().default(100),
+  ONRAMP_MIN_USD: z.coerce.number().positive().default(10),
+  ONRAMP_MAX_USD: z.coerce.number().positive().default(1000),
 });
 
 export type Config = z.infer<typeof envSchema>;
