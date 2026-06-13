@@ -42,6 +42,8 @@ screenshot_*.py
 app/audit_site.py
 app/audit_ux.py
 app/dev.err
+audit-screenshots/
+.opencode/audit-*/
 public/
 scripts/remove-duplicate-hooks.ts
 server/tsconfig.tsbuildinfo
@@ -51,3 +53,5 @@ app/data_fetching_audit.md
 app/security_audit.md
 webwright_audit/
 .vercel
+app/lighthouse.json
+app/.lighthouseci/
