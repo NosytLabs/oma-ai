@@ -8,6 +8,7 @@ import { withdrawals, creditBalances } from "../db/schema.js";
 import { eq, sql, and, gte } from "drizzle-orm";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { USDC_BASE } from "../constants.js";
 
 const DAILY_WITHDRAWAL_LIMIT_CENTS = 5_000_000;
 const WEEKLY_WITHDRAWAL_LIMIT_CENTS = 20_000_000;
@@ -86,7 +87,7 @@ const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const withdrawalRequestSchema = z.object({
   amount: z.number().positive().max(100000),
   toAddress: z.string().regex(EVM_ADDRESS_RE, "Invalid EVM address format"),
-  chainId: z.number().int().positive().optional().default(8453),
+  chainId: z.number().int().positive().optional().default(config.BASE_CHAIN_ID),
 });
 
 export const withdrawalRoutes = new Hono<OmaEnv>();
@@ -334,24 +335,66 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
     transport: http(config.CHAIN_RPC_URL),
   });
 
+  // C-4: on-chain receipt verification constants
+  const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+  const padTopic = (addr: string) =>
+    "0x" + addr.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+  const treasuryTopic = padTopic(config.TREASURY_BASE_ADDRESS);
+  const recipientTopic = padTopic(withdrawal.toAddress);
+  // USDC has 6 decimals, so 1 cent = 0.01 USDC = 10_000 raw units.
+  // The previous multiplier (1_000_000) required 100x the actual amount, so
+  // legitimate withdrawals could never be confirmed.
+  const requiredValue = BigInt(withdrawal.netAmountCents) * 10_000n;
+  // Allow a 1% tolerance to absorb rounding by the sender's client/wallet.
+  const tolerance = requiredValue / 100n;
+
+  let receipt;
   try {
-    const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
-
-    if (!receipt || receipt.status !== "success") {
-      return c.json({ error: { message: "Transaction failed on-chain", type: "tx_failed" } }, 400);
-    }
-
-    await db.update(withdrawals)
-      .set({
-        status: "completed",
-        txHash,
-        completedAt: new Date(),
-      })
-      .where(eq(withdrawals.id, withdrawalId));
-
-    return c.json({ status: "completed", txHash });
+    receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
   } catch (err) {
     logger.error({ err }, "[withdraw] Confirmation check failed:");
     return c.json({ error: { message: "Failed to verify transaction", type: "verification_error" } }, 500);
   }
+
+  if (!receipt || receipt.status !== "success") {
+    return c.json({ error: { message: "Transaction failed on-chain", type: "tx_failed" } }, 400);
+  }
+
+  // For ERC-20 transfers (the common USDC case), receipt.to is the USDC contract,
+  // not the recipient. The Transfer event log check below is the correct
+  // recipient + amount + sender verification, so we intentionally do NOT check
+  // receipt.to here. The Transfer event must originate from the OMA treasury
+  // and target the withdrawal's recipient with sufficient value.
+  const matchingTransfer = receipt.logs.find((log) => {
+    if (!log.topics || log.topics.length < 3) return false;
+    if (log.address.toLowerCase() !== USDC_BASE.toLowerCase()) return false;
+    if (log.topics[0] !== TRANSFER_TOPIC) return false;
+    if ((log.topics[1] ?? "").toLowerCase() !== treasuryTopic) return false;
+    if ((log.topics[2] ?? "").toLowerCase() !== recipientTopic) return false;
+    try {
+      const v = BigInt(log.data);
+      return v >= requiredValue && v <= requiredValue + tolerance;
+    } catch {
+      return false;
+    }
+  });
+
+  if (!matchingTransfer) {
+    return c.json({
+      error: {
+        message: "No matching USDC transfer from OMA treasury to recipient",
+        type: "usdc_transfer_mismatch",
+      },
+    }, 400);
+  }
+
+  await db.update(withdrawals)
+    .set({
+      status: "completed",
+      txHash,
+      completedAt: new Date(),
+    })
+    .where(eq(withdrawals.id, withdrawalId));
+
+  return c.json({ status: "completed", txHash });
 });

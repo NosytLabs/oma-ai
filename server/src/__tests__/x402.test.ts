@@ -133,6 +133,7 @@ vi.mock('../config.js', () => ({
     FACILITATOR_MODE: 'mock',
     CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-secret-at-least-32-chars!',
+    TREASURY_BASE_ADDRESS: '0xMerchantAddress',
   },
 }))
 
@@ -199,7 +200,7 @@ describe('x402 Facilitator', () => {
           txHash: '0x' + 'c'.repeat(64),
           amount: '1.00',
           networkId: 'base',
-          payee: '0xPayee',
+          payee: '0xMerchantAddress',
         }),
       })
       expect(res.status).toBe(200)

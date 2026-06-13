@@ -12,6 +12,7 @@ import { eq, and } from "drizzle-orm";
 import { addSettlementToDlq } from "../lib/dlq.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getRedisClient } from "../lib/redis-client.js";
+import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
 
 const LOCK_TTL_SECONDS = 30;
 
@@ -36,34 +37,9 @@ async function releaseSettlementLock(cacheKey: string): Promise<void> {
 
 export type X402Version = "1" | "2";
 
-interface SolanaInstruction {
-  parsed?: {
-    type: string;
-    info: {
-      destination?: string;
-      lamports?: string;
-      amount?: string;
-      mint?: string;
-      tokenAmount?: { amount?: string; decimals?: number };
-    };
-  };
-}
-
-interface SolanaRpcResponse {
-  result?: {
-    meta?: { err?: unknown };
-    transaction?: {
-      message?: {
-        instructions?: SolanaInstruction[];
-      };
-    };
-  };
-  error?: { message?: string; code?: number };
-}
-
 export interface PaymentPayload {
   x402Version: X402Version;
-  scheme: "evm" | "solana";
+  scheme: "evm";
   networkId: string;
   asset: string;
   amount: string;
@@ -84,7 +60,7 @@ export interface PaymentSignature {
 
 export interface PaymentRequired {
   x402Version: X402Version;
-  scheme: "evm" | "solana";
+  scheme: "evm";
   networkId: string;
   asset: string;
   amount: string;
@@ -124,7 +100,7 @@ export interface PaymentMiddlewareConfig {
   payeeAddress: string;
   asset?: string;
   networkId?: string;
-  scheme?: "evm" | "solana";
+  scheme?: "evm";
 }
 
 // ============================================================
@@ -227,31 +203,6 @@ function createReceiptPayload(
 // ============================================================
 // EVM Verification (Base)
 // ============================================================
-
-import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
-
-const SOLANA_PUBLIC_RPC_FALLBACK = "https://rpc.ankr.com/solana";
-
-async function fetchWithFallback(
-  url: string,
-  fallbackUrl: string | undefined,
-  fallbackDisplay: string,
-  request: RequestInit,
-): Promise<Response> {
-  try {
-    const response = await fetch(url, request);
-    return response;
-  } catch {
-    if (!fallbackUrl) {
-      console.warn(`[FACILITATOR] [WARN] Primary RPC failed (${url}), trying public fallback: ${fallbackDisplay}`);
-      const fallbackResponse = await fetch(fallbackDisplay, request);
-      return fallbackResponse;
-    }
-    console.warn(`[FACILITATOR] [WARN] Primary RPC failed (${url}), trying fallback: ${fallbackUrl}`);
-    const fallbackResponse = await fetch(fallbackUrl, request);
-    return fallbackResponse;
-  }
-}
 
 async function verifyEvmPayment(
   signature: string,
@@ -394,124 +345,6 @@ async function verifyEvmPayment(
 }
 
 // ============================================================
-// Solana Verification (Simplified)
-// ============================================================
-
-const SOLANA_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-
-async function verifySolanaPayment(
-  signature: string,
-  _authorization: string,
-  payload: PaymentPayload,
-): Promise<PaymentResponse> {
-  async function attemptVerification(rpcUrl: string): Promise<PaymentResponse> {
-    const response = await fetchWithFallback(
-      rpcUrl,
-      config.SOLANA_RPC_URL_FALLBACK,
-      SOLANA_PUBLIC_RPC_FALLBACK,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "getTransaction",
-          params: [
-            signature,
-            { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
-          ],
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      return { valid: false, error: "Solana RPC request failed" };
-    }
-
-    const json = (await response.json()) as SolanaRpcResponse;
-
-    if (json.error) {
-      console.error(`[facilitator] Solana RPC error:`, json.error);
-      return { valid: false, error: `Solana RPC error` };
-    }
-
-    const tx = json.result;
-    if (!tx || !tx.meta || tx.meta.err) {
-      return { valid: false, error: "Transaction not found or failed on Solana" };
-    }
-
-    const instructions = tx.transaction?.message?.instructions ?? [];
-    const allInstructions: SolanaInstruction[] = [...instructions];
-
-    const innerIxs = (tx.meta as { innerInstructions?: Array<{ instructions: SolanaInstruction[] }> } | undefined)?.innerInstructions ?? [];
-    for (const innerGroup of innerIxs) {
-      if (innerGroup.instructions) {
-        allInstructions.push(...innerGroup.instructions);
-      }
-    }
-
-    let foundTransfer = false;
-    let amount = "0";
-
-    const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
-
-    for (const ix of allInstructions) {
-      if (
-        ix.parsed?.type === "transfer" &&
-        ix.parsed?.info?.destination === payload.payee
-      ) {
-        const isUsdc = payload.asset === SOLANA_USDC || payload.asset.toLowerCase().includes("usdc");
-        const divisor = isUsdc ? 1e6 : 1e9;
-        const rawAmt = Number(ix.parsed.info.lamports || ix.parsed.info.amount || 0);
-        amount = (rawAmt / divisor).toString();
-        const actualAmount = parseFloat(amount);
-
-        if (actualAmount < requiredAmount) {
-          return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
-        }
-
-        foundTransfer = true;
-        break;
-      }
-      if (
-        ix.parsed?.type === "transferChecked" &&
-        ix.parsed?.info?.destination === payload.payee
-      ) {
-        const rawAmount = Number(ix.parsed.info.tokenAmount?.amount || ix.parsed.info.amount || 0);
-        const decimals = ix.parsed.info.tokenAmount?.decimals ?? 6;
-        amount = (rawAmount / Math.pow(10, decimals)).toString();
-        const actualAmount = parseFloat(amount);
-
-        if (actualAmount < requiredAmount) {
-          return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
-        }
-
-        foundTransfer = true;
-        break;
-      }
-    }
-
-    if (!foundTransfer) {
-      return { valid: false, error: "No matching USDC transfer to payee found" };
-    }
-
-    return {
-      valid: true,
-      txHash: signature,
-      amount,
-      networkId: payload.networkId,
-    };
-  }
-
-  try {
-    return await attemptVerification(config.SOLANA_RPC_URL);
-  } catch (err: unknown) {
-    console.error(`[facilitator] Solana verification failed:`, err);
-    return { valid: false, error: `Solana verification failed` };
-  }
-}
-
-// ============================================================
 // Mock Verification (DEVELOPMENT ONLY)
 // ============================================================
 // WARNING: Mock mode accepts ANY payment as valid without on-chain
@@ -530,7 +363,7 @@ function mockVerifyPayment(
   const mockTxHash =
     payload.scheme === "evm"
       ? `0x${randomBytes(32).toString("hex")}`
-      : signature || randomBytes(64).toString("base64url");
+      : `0x${randomBytes(32).toString("hex")}`;
 
   return {
     valid: true,
@@ -580,10 +413,6 @@ export async function verifyPayment(
 
   if (payload.scheme === "evm") {
     return verifyEvmPayment(signature, authorization, payload);
-  }
-
-  if (payload.scheme === "solana") {
-    return verifySolanaPayment(signature, authorization, payload);
   }
 
   return { valid: false, error: `Unsupported scheme: ${payload.scheme}` };
@@ -722,7 +551,7 @@ export async function settlePaymentAsync(
 
         if (!result) {
           while (cacheLock) {
-            new Promise((resolve) => setTimeout(resolve, 1));
+            await new Promise((resolve) => setTimeout(resolve, 1));
           }
           cacheLock = true;
           try {
@@ -893,21 +722,40 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
     return c.json({ error: { message: "Invalid txHash format", type: "validation_error" } }, 400);
   }
 
-  const result = settlePayment(body.txHash, body.amount, body.networkId, body.payee);
+  // Pin payee to the configured merchant address; never trust user-supplied
+  // recipients. The x402 spec requires the merchant to receive the payment.
+  const expectedPayee = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+  if (!expectedPayee) {
+    return c.json(
+      { error: { message: "Server merchant address not configured", type: "server_misconfigured" } },
+      500,
+    );
+  }
+  if (body.payee.toLowerCase() !== expectedPayee) {
+    return c.json(
+      { error: { message: "Payee does not match configured merchant address", type: "payment_error" } },
+      400,
+    );
+  }
+
+  const result = settlePayment(body.txHash, body.amount, body.networkId, expectedPayee);
   return c.json(result, result.settled ? 200 : 422);
 });
 
 x402Routes.post("/x402/pay-req-test", async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const paymentURL = `https://pay.om.ai/x402/deposit?network=base&asset=USDC&return_to=${encodeURIComponent(c.req.url)}`;
+  const payeeAddress = config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000";
+  const amount = "1.00";
+
   const paymentRequired: PaymentRequired = {
     x402Version: "1",
     scheme: "evm",
     networkId: "base",
     asset: USDC_BASE,
-    amount: "1.00",
-    payee: config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000",
-    maxAmountRequired: "1.00",
+    amount,
+    payee: payeeAddress,
+    maxAmountRequired: amount,
     validBefore: now + PAYMENT_WINDOW_SECONDS,
     validAfter: now,
     description: "Payment required for x402 test",
@@ -954,6 +802,36 @@ x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000,
   );
 });
 
+// =============================================================================
+// v2 SPEC NOTE: The canonical Coinbase x402 v2 spec lives at
+//   https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md
+//   (transport: https://github.com/coinbase/x402/blob/main/specs/transports-v2/http.md)
+// v2 uses EIP-3009 transferWithAuthorization (NOT on-chain receipt checks) and
+// is a future migration target. The v1 routes below are OMA's pre-spec
+// internal shape and remain the only payment-protocol endpoints today.
+//
+// Key v1 → v2 differences (audit 2026-06-12, kept on v1 by minimum-complexity):
+//   * x402Version: v1 uses string ("1"|"2"); v2 uses number (2).
+//   * Transport header: v1 uses "Pay-Req" / "PAYMENT-SIGNATURE"; v2 uses the
+//     canonical "PAYMENT-REQUIRED" header (base64-encoded JSON) and the
+//     "PAYMENT-SIGNATURE" header is unchanged.
+//   * PaymentRequired shape: v1 is flat (payee / amount / networkId at the
+//     root); v2 wraps accepted offers in an `accepts: [...]` array.
+//   * Field rename: v1 `payee` → v2 `payTo`; v1 `networkId` (free string
+//     like "base") → v2 `network` (CAIP-2, e.g. "eip155:8453").
+//   * Settlement: v1 verifies an on-chain tx receipt from USDC_BASE
+//     (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) and decodes `transfer` /
+//     `transferFrom` calldata; v2 settles off the EIP-3009
+//     transferWithAuthorization authorization tuple inside PAYMENT-SIGNATURE.
+//   * Canonical chain IDs: Base mainnet = eip155:8453, USDC = 0x833589…29913;
+//     Base Sepolia = eip155:84532, USDC = 0x036CbD…CF7e (matches the v2
+//     spec examples verbatim). We hard-code mainnet only and only the
+//     `transfer` / `transferFrom` paths in `verifyEvmPayment()`.
+//   * The Houdini crosschain flow in `crosschain.ts` is a NAMING COLLISION
+//     with x402 (URLs `/v1/x402/quote` etc. are NOT the x402 protocol).
+//     See the v2-comment in `crosschain.ts` for the rename plan.
+// =============================================================================
+
 // ============================================================
 // Payment Middleware
 // ============================================================
@@ -964,7 +842,7 @@ export function paymentMiddleware(
   const {
     pricing,
     payeeAddress,
-    asset = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    asset = USDC_BASE,
     networkId = "base",
     scheme = "evm",
   } = middlewareConfig;
@@ -983,6 +861,7 @@ export function paymentMiddleware(
     if (!paymentHeader) {
       const now = Math.floor(Date.now() / 1000);
       const paymentURL = `https://pay.om.ai/x402/deposit?network=${networkId}&asset=${encodeURIComponent(asset)}&return_to=${encodeURIComponent(c.req.url)}`;
+
       const paymentRequired: PaymentRequired = {
         x402Version: "1",
         scheme,

@@ -3,10 +3,9 @@ import { deposits, creditBatches, creditBalances } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 
 const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
-const SOLANA_TX_HASH_RE = /^[1-9A-HJ-NP-Za-km-z]{88}$/;
 
 function isValidTxHash(txHash: string): boolean {
-  return EVM_TX_HASH_RE.test(txHash) || SOLANA_TX_HASH_RE.test(txHash);
+  return EVM_TX_HASH_RE.test(txHash);
 }
 
 // Transaction type from Drizzle - complex generic makes 'any' pragmatic here
@@ -98,9 +97,16 @@ export async function processHoudiniDeposit(
   return { depositId: deposit.id, depositAddress: depositAddress || "" };
 }
 
-export async function completeHoudiniDeposit(depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
+export async function completeHoudiniDeposit(depositId: string, toAmount: number, txHash: string, userId: string) {
+  if (typeof toAmount !== "number" || !Number.isFinite(toAmount) || toAmount <= 0) {
+    throw new Error("Invalid toAmount");
+  }
+  if (!isValidTxHash(txHash)) {
+    throw new Error("Invalid txHash");
+  }
+
   const result = await db.transaction(async (tx) => {
-    return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId, amountUsd);
+    return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId);
   });
 
   return { creditsCents: result.creditsCents };
@@ -108,7 +114,7 @@ export async function completeHoudiniDeposit(depositId: string, toAmount: number
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function completeHoudiniDepositImpl(
-  tx: any, depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
+  tx: any, depositId: string, toAmount: number, txHash: string, userId: string) {
   const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
   if (!rows.length) throw new Error("Deposit not found");
 
@@ -116,7 +122,8 @@ async function completeHoudiniDepositImpl(
   if (deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
   if (deposit.status !== "pending") throw new Error("Deposit is not pending");
 
-  const netAmountUsd = amountUsd ?? toAmount;
+  // creditsCents is derived solely from the on-chain toAmount; no caller override.
+  const netAmountUsd = toAmount;
   const creditsCents = Math.round(netAmountUsd * 100);
 
   await tx.update(deposits)
@@ -134,13 +141,13 @@ async function completeHoudiniDepositImpl(
   return { creditsCents, userId: deposit.userId };
 }
 
-export async function completeHoudiniDepositWithTx(tx: Awaited<ReturnType<typeof db.transaction>>, depositId: string, toAmount: number, txHash: string, userId: string, amountUsd?: number) {
-  return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId, amountUsd);
+export async function completeHoudiniDepositWithTx(tx: Awaited<ReturnType<typeof db.transaction>>, depositId: string, toAmount: number, txHash: string, userId: string) {
+  return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId);
 }
 
 export async function processCctpDeposit(userId: string, amountUsd: number, txHash: string, _sourceChain: string, messageHash?: string, attestation?: string) {
   if (!isValidTxHash(txHash)) {
-    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM) or base58 (Solana)");
+    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM)");
   }
 
   if (messageHash && !/^0x[a-fA-F0-9]{64}$/.test(messageHash)) {
@@ -184,7 +191,7 @@ export async function processLifiDeposit(
   lifiStatus?: string,
 ) {
   if (!isValidTxHash(txHash)) {
-    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM) or base58 (Solana)");
+    throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM)");
   }
 
   if (lifiStatus && lifiStatus !== "completed") {

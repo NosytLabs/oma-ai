@@ -38,7 +38,7 @@ const houdiniExchangeSchema = z.object({
 const paymentLinkSchema = z.object({
   amount: z.number().positive(),
   token: z.string().min(1),
-  chain: z.enum(["base", "solana", "ethereum", "bitcoin"]),
+  chain: z.enum(["base", "ethereum", "bitcoin"]),
 });
 
 export const houdiniRoutes = new Hono<OmaEnv>();
@@ -131,7 +131,7 @@ houdiniRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
       if (!lockedDeposit) throw new Error("Deposit not found");
       if (lockedDeposit.status !== "pending") throw new Error("Deposit is not pending");
       if (lockedDeposit.userId !== deposit.userId) throw new Error("Deposit ownership mismatch");
-      return completeHoudiniDepositWithTx(tx, depositId, Number(toAmount), txHash, deposit.userId, body.amountUsd ? Number(body.amountUsd) : undefined);
+      return completeHoudiniDepositWithTx(tx, depositId, Number(toAmount), txHash, deposit.userId);
     });
     return c.json({ credits: result.creditsCents, status: "completed" });
   } catch (err: unknown) {

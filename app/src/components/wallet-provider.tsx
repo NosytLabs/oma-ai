@@ -1,38 +1,20 @@
 'use client'
 
-import React, { useCallback, useContext, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { base } from 'wagmi/chains'
-import { getWagmiConfigSingleton } from '@/lib/wagmi'
-import { api, type User } from '@/lib/api'
+import { SiweMessage } from 'siwe'
+import { getWagmiConfig } from '@/lib/wagmi'
+import { api, type User } from "@/lib/api/index"
 import { WalletContext, type AuthMethod, type WalletKind } from './wallet-context'
 
-export type { AuthMethod, WalletKind }
-
-const noopSolana = {
-  address: null as string | null,
-  connected: false,
-  connecting: false,
-  connect: () => {},
-  disconnect: async () => {},
-  signMessage: async (_message: string) => { throw new Error('Solana wallet not available'); },
-};
+export type { AuthMethod } from './wallet-context'
 
 function useIsMounted() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   return mounted
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      retry: 1,
-    },
-  },
-})
 
 function setCookie(name: string, value: string, maxAgeDays: number) {
   const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString()
@@ -43,6 +25,18 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict; Secure`
 }
 
+export const DEMO_COOKIE_NAME = 'oma-demo'
+
+export function setDemoCookie() {
+  if (typeof document === 'undefined') return
+  setCookie(DEMO_COOKIE_NAME, '1', 7)
+}
+
+export function clearDemoCookie() {
+  if (typeof document === 'undefined') return
+  deleteCookie(DEMO_COOKIE_NAME)
+}
+
 interface StoredSession {
   token: string;
   authMethod: AuthMethod;
@@ -51,28 +45,56 @@ interface StoredSession {
 function getStoredSession(): StoredSession | null {
   if (typeof window === 'undefined') return null;
   try {
-    const token = localStorage.getItem('oma_session');
-    if (!token) return null;
-    const meta = localStorage.getItem('oma_session_meta');
-    if (meta) {
-      return { token, authMethod: JSON.parse(meta).authMethod || 'siwe' };
-    }
-    return { token, authMethod: 'siwe' };
+    // Read the non-HttpOnly meta cookie; never read the session token from
+    // client-side storage. The HttpOnly session cookie is sent with every
+    // same-origin request and verified by the server.
+    const meta = getCookieValue('oma_session_meta');
+    if (!meta) return null;
+    const parsed = JSON.parse(meta) as { authMethod?: AuthMethod };
+    return { token: '', authMethod: parsed.authMethod || 'siwe' };
   } catch {
     return null;
   }
 }
 
+function getCookieValue(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.split('; ').find(c => c.startsWith(`${name}=`));
+  if (!match) return null;
+  return decodeURIComponent(match.slice(name.length + 1));
+}
+
 function storeSession(token: string, authMethod: AuthMethod) {
-  localStorage.setItem('oma_session', token);
-  localStorage.setItem('oma_session_meta', JSON.stringify({ authMethod }));
-  setCookie('oma_session', token, 7);
+  // The HttpOnly session cookie is set by the server in the auth response.
+  // The client must NOT write the JWT to localStorage (XSS-readable).
+  setCookie('oma_session_meta', JSON.stringify({ authMethod }), 7);
 }
 
 function clearSession() {
-  localStorage.removeItem('oma_session');
-  localStorage.removeItem('oma_session_meta');
-  deleteCookie('oma_session');
+  // Clear the non-sensitive meta cookie; the HttpOnly session cookie is
+  // cleared by the server on /auth/logout.
+  deleteCookie('oma_session_meta');
+}
+
+function buildSiweMessage(address: string, nonce: string): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  let url: URL
+  try {
+    url = new URL(appUrl)
+  } catch {
+    url = new URL('http://localhost:3000')
+  }
+  const siweMsg = new SiweMessage({
+    domain: url.hostname,
+    address,
+    uri: url.origin,
+    version: '1',
+    chainId: base.id,
+    nonce,
+    statement: 'I accept the OMA Terms of Service',
+    issuedAt: new Date().toISOString(),
+  })
+  return siweMsg.toMessage()
 }
 
 function InnerProvider({ children }: { children: ReactNode }) {
@@ -80,12 +102,16 @@ function InnerProvider({ children }: { children: ReactNode }) {
   const { connect, connectors } = useConnect()
   const { disconnect: evmDisconnect } = useDisconnect()
   const { signMessageAsync } = useSignMessage()
-  const solana = noopSolana
 
   const [session, setSession] = useState<StoredSession | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
+  // Demo mode is set by middleware when the user lands on /dashboard?demo=1.
+  // It is a preview-only path: the user is treated as "connected + authenticated"
+  // so the dashboard renders, but the page gates its queries on `!isDemo` so no
+  // real backend calls are made.
+  const [isDemo, setIsDemo] = useState(false)
   const siweDoneRef = useRef<`0x${string}` | undefined>(undefined)
 
   const availableConnectors = useMemo(
@@ -100,7 +126,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
 
   const evmChain = useMemo(() => {
     if (!chainId) return undefined
-    const config = getWagmiConfigSingleton()
+    const config = getWagmiConfig()
     const found = config.chains.find((c) => c.id === chainId)
     return found ? { id: found.id, name: found.name } : undefined
   }, [chainId])
@@ -115,6 +141,11 @@ function InnerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const hasDemoCookie =
+      typeof document !== 'undefined' &&
+      document.cookie.split('; ').some((c) => c.startsWith('oma-demo='))
+    if (hasDemoCookie) setIsDemo(true)
+
     const stored = getStoredSession();
     if (stored) {
       setSession(stored);
@@ -137,7 +168,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
         const nonceRes = await api.auth.getNonce(address!)
         const nonce = nonceRes.nonce
 
-        const message = `oma-ai.com wants you to sign in with your Ethereum account:\n${address}\n\nI accept the OMA Terms of Service\n\nURI: https://oma-ai.com\nVersion: 1\nChain ID: ${base.id}\nNonce: ${nonce}\nIssued At: ${new Date().toISOString()}`
+        const message = buildSiweMessage(address!, nonce)
 
         const signature = await signMessageAsync({ message })
 
@@ -172,41 +203,6 @@ function InnerProvider({ children }: { children: ReactNode }) {
     }
   }, [evmConnected, address, signMessageAsync, isAuthenticating, evmDisconnect])
 
-  useEffect(() => {
-    if (solana.connected && solana.address && !session) {
-      let cancelled = false;
-
-      async function solanaLogin() {
-        setIsAuthenticating(true);
-        try {
-          const challengeRes = await api.auth.solana.getChallenge(solana.address!);
-          if (cancelled) return;
-
-          const signature = await solana.signMessage(challengeRes.message);
-          if (cancelled) return;
-
-          const verifyRes = await api.auth.solana.verify(solana.address!, challengeRes.message, signature);
-          if (cancelled) return;
-
-          storeSession(verifyRes.token, 'solana');
-          setSession({ token: verifyRes.token, authMethod: 'solana' });
-          const userData = await api.auth.getUser();
-          setUser(userData);
-        } catch (err) {
-          console.error('Solana login failed:', err);
-        } finally {
-          if (!cancelled) setIsAuthenticating(false);
-        }
-      }
-
-      solanaLogin();
-
-      return () => {
-        cancelled = true;
-      };
-    }
-  }, [solana.connected, solana.address, session, solana]);
-
   const connectEvm = useCallback(
     (connectorId?: string) => {
       const connector = connectorId
@@ -220,80 +216,69 @@ function InnerProvider({ children }: { children: ReactNode }) {
   )
 
   const disconnect = useCallback(async () => {
+    if (isDemo) {
+      clearDemoCookie()
+      setIsDemo(false)
+    }
     if (evmConnected) {
       evmDisconnect()
       siweDoneRef.current = undefined
     }
-    if (solana.connected) {
-      await solana.disconnect()
-    }
     clearSession()
     setSession(null)
     setUser(null)
-  }, [evmConnected, evmDisconnect, solana])
+  }, [isDemo, evmConnected, evmDisconnect])
 
   const signMessage = useCallback(
     async (message: string): Promise<string> => {
-      if (evmConnected) {
-        try {
-          const sig = await signMessageAsync({ message })
-          return sig
-        } catch (err) {
-          console.error('SIWE sign failed:', err)
-          throw new Error('Failed to sign message. Please try again.')
-        }
+      if (!evmConnected) {
+        throw new Error('No wallet connected. Please connect a wallet first.')
       }
-      if (solana.connected) {
-        try {
-          return await solana.signMessage(message)
-        } catch (err) {
-          console.error('Solana sign failed:', err)
-          throw new Error('Failed to sign message. Please try again.')
-        }
+      try {
+        const sig = await signMessageAsync({ message })
+        return sig
+      } catch (err) {
+        console.error('SIWE sign failed:', err)
+        throw new Error('Failed to sign message. Please try again.')
       }
-      throw new Error('No wallet connected. Please connect a wallet first.')
     },
-    [evmConnected, signMessageAsync, solana],
+    [evmConnected, signMessageAsync],
   )
 
-  const isConnected = evmConnected || solana.connected;
-  const isConnecting = evmConnecting || solana.connecting || isAuthenticating;
+  const isConnected = evmConnected;
+  const isConnecting = evmConnecting || isAuthenticating;
   const authMethod = session?.authMethod ?? null;
   const accountNumber = user?.accountNumber ?? null;
-  const activeWallet: WalletKind | null = evmConnected ? 'evm' : solana.connected ? 'solana' : null;
+  const activeWallet: WalletKind | null = evmConnected ? 'evm' : null;
 
   const hasEvmWallet = !!evmConnected;
-  const hasSolanaWallet = solana.connected && !!solana.address;
   const canDepositBase = !!evmConnected || !!accountNumber;
-  const canDepositSolana = solana.connected || !!accountNumber;
   const canUseSwap = !!evmConnected;
 
   const value = useMemo(
     () => ({
       isReady,
-      isConnected,
-      isAuthenticated: !!session,
+      isConnected: isDemo || isConnected,
+      isAuthenticated: isDemo || !!session,
+      isDemo,
       authMethod,
       accountNumber,
       connectEvm,
       disconnect,
       evmAddress: address,
       evmChain,
-      solanaAddress: solana.address,
       signMessage,
       isConnecting,
       isAuthenticating,
       availableConnectors,
       activeWallet,
       hasEvmWallet,
-      hasSolanaWallet,
       canDepositBase,
-      canDepositSolana,
       canUseSwap,
       refreshUser,
     }),
     [
-      isReady, isConnected, session, authMethod, accountNumber, connectEvm, disconnect, address, evmChain, solana.address, signMessage, isConnecting, isAuthenticating, availableConnectors, activeWallet, hasEvmWallet, hasSolanaWallet, canDepositBase, canDepositSolana, canUseSwap, refreshUser,
+      isReady, isDemo, isConnected, session, authMethod, accountNumber, connectEvm, disconnect, address, evmChain, signMessage, isConnecting, isAuthenticating, availableConnectors, activeWallet, hasEvmWallet, canDepositBase, canUseSwap, refreshUser,
     ],
   )
 
@@ -302,17 +287,13 @@ function InnerProvider({ children }: { children: ReactNode }) {
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const isMounted = useIsMounted()
-  const config = getWagmiConfigSingleton()
+  const config = getWagmiConfig()
 
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        {isMounted ? <InnerProvider>{children}</InnerProvider> : null}
-      </QueryClientProvider>
+      {isMounted ? <InnerProvider>{children}</InnerProvider> : children}
     </WagmiProvider>
   )
 }
 
-export function useWallet() {
-  return useContext(WalletContext)
-}
+export { useWallet } from './wallet-context'

@@ -25,11 +25,12 @@ function getRedisCircuitKey(provider: string, model?: string): string {
   return `circuit:provider:${provider}:model:${model || "default"}`;
 }
 
-function calculateBackoffMs(lastFailure: number): number {
-  const elapsed = Date.now() - lastFailure;
-  const exponentialDelay = Math.min(RESET_TIMEOUT_MS * Math.pow(2, Math.floor(elapsed / RESET_TIMEOUT_MS)), MAX_RESET_TIMEOUT_MS);
-  const jitter = Math.random() * 0.1 * exponentialDelay;
-  return Math.min(exponentialDelay + jitter, MAX_RESET_TIMEOUT_MS);
+// Backoff is a fixed window after the last failure. Exponential growth would
+// create a paradox: the longer a provider is down, the longer the backoff —
+// the circuit would never close. We instead re-check on a flat interval so
+// half-open probes have a chance to recover.
+function calculateBackoffMs(_lastFailure: number): number {
+  return RESET_TIMEOUT_MS;
 }
 
 async function getRedisState(key: string): Promise<CircuitBreakerState | null> {

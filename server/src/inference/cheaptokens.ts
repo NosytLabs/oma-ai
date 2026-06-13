@@ -18,19 +18,35 @@ const USDC_ABI = [
   },
 ] as const;
 
+// Real CheapTokens.ai /api/pricing response shape (cheaptokens.ai/llms.txt).
+// Earlier code used a different (incorrect) shape: { active, discountPriceCents,
+// standardPriceCents } which did not match the live response. The refresh
+// loop silently fell through to "no discount" because the real keys are
+// `discountPercent` / `standardPrice` / `finalDiscount`.
 interface PricingResponse {
-  active: boolean;
-  discountPriceCents: number;
-  standardPriceCents: number;
+  discountPercent: number;
+  creditsPerDollar: number;
+  standardPrice?: number;
+  finalDiscount?: number;
+  tier?: string;
+  // Be permissive: live API has returned additional fields in the past.
+  [k: string]: unknown;
 }
 
 interface SupplyResponse {
-  availableKeys: number;
+  availableKeys?: number;
+  total?: number;
+  sold?: number;
+  remaining?: number;
+  percent?: number;
+  [k: string]: unknown;
 }
 
 interface BuyResponse {
-  apiKey: string;
-  expiresAt: number; // timestamp in ms
+  veniceApiKey: string;
+  expiresAt?: number; // optional in some response variants
+  // Be permissive.
+  [k: string]: unknown;
 }
 
 let cachedKey: string | null = null;
@@ -42,11 +58,7 @@ export class CheapTokensClient {
 
   async getPricing(): Promise<PricingResponse> {
     if (config.FACILITATOR_MODE === "mock") {
-      return {
-        active: true,
-        discountPriceCents: 25,
-        standardPriceCents: 100,
-      };
+      return { discountPercent: 60, creditsPerDollar: 2.5, tier: "mock" };
     }
 
     const res = await fetch(`${this.baseUrl}/pricing`);
@@ -56,7 +68,7 @@ export class CheapTokensClient {
 
   async getSupply(): Promise<SupplyResponse> {
     if (config.FACILITATOR_MODE === "mock") {
-      return { availableKeys: 100 };
+      return { availableKeys: 100, total: 100, sold: 0, remaining: 100, percent: 0 };
     }
 
     const res = await fetch(`${this.baseUrl}/supply`);
@@ -69,7 +81,7 @@ export class CheapTokensClient {
       // Return a simulated Venice API key for development/test purposes
       const mockKey = `ct_sk_venice_mock_${Math.random().toString(36).substring(2, 15)}`;
       return {
-        apiKey: mockKey,
+        veniceApiKey: mockKey,
         expiresAt: Date.now() + 24 * 60 * 60 * 1000, // Valid for 24 hours
       };
     }
@@ -104,7 +116,7 @@ export class CheapTokensClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        amount: (amountCents / 100).toString(),
+        usdPaid: (amountCents / 100).toString(),
         networkId: "base",
         payee: payeeAddress,
         txHash,
@@ -112,7 +124,14 @@ export class CheapTokensClient {
     });
 
     if (!res.ok) throw new Error(`CheapTokens buy request failed: ${res.statusText}`);
-    return (await res.json()) as BuyResponse;
+    const json = (await res.json()) as BuyResponse;
+    // CheapTokens returns the key as `veniceApiKey`; tolerate `apiKey` for older
+    // API versions.
+    const legacy = json as unknown as { apiKey?: string };
+    if (!json.veniceApiKey && typeof legacy.apiKey === "string") {
+      json.veniceApiKey = legacy.apiKey;
+    }
+    return json;
   }
 }
 
@@ -134,19 +153,22 @@ export async function triggerRefresh(): Promise<void> {
 
   try {
     const pricing = await client.getPricing();
-    if (pricing.active && pricing.discountPriceCents < pricing.standardPriceCents) {
-      logger.info(`[CheapTokens] Profit optimization: discount active (${pricing.discountPriceCents}c vs ${pricing.standardPriceCents}c). Fetching reseller key...`);
-      const supply = await client.getSupply();
-      if (supply.availableKeys > 0) {
-        const keyInfo = await client.buyKey(pricing.discountPriceCents);
-        cachedKey = keyInfo.apiKey;
-        cachedExpiry = keyInfo.expiresAt;
+    const supply = await client.getSupply();
+    const discountPct = Number(pricing.discountPercent ?? 0);
+    const available = Number(supply.availableKeys ?? supply.remaining ?? 0);
+    if (Number.isFinite(discountPct) && discountPct >= 30 && available > 0) {
+      logger.info(`[CheapTokens] Profit optimization: discount ${discountPct}% active, ${available} keys available. Leasing reseller key...`);
+      // Buy $1 of credits to seed the cached key.
+      const keyInfo = await client.buyKey(100);
+      if (keyInfo.veniceApiKey) {
+        cachedKey = keyInfo.veniceApiKey;
+        cachedExpiry = keyInfo.expiresAt ?? Date.now() + 24 * 60 * 60 * 1000;
         logger.info(`[CheapTokens] Successfully leased Venice key (expires: ${new Date(cachedExpiry).toISOString()})`);
       } else {
-        logger.warn("[CheapTokens] Discount active but supply is exhausted.");
+        logger.warn("[CheapTokens] Buy succeeded but no veniceApiKey in response.");
       }
     } else {
-      logger.info("[CheapTokens] No active discount or not profitable. Falling back to default Venice key.");
+      logger.info(`[CheapTokens] Discount ${discountPct}% below 30% threshold or supply ${available} exhausted. Falling back to default Venice key.`);
     }
   } catch (err) {
     logger.error("[CheapTokens] Failed to query or lease reseller key: %s", err);
