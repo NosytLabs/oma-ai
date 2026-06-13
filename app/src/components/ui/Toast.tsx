@@ -119,7 +119,7 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-white/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-[var(--color-text-bright)]/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
       >
         <X className="h-4 w-4 text-[var(--color-text-secondary)]" />
       </button>

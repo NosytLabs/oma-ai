@@ -108,7 +108,7 @@ export default function AdminPage() {
     staleTime: 30_000,
   })
 
-  const users: User[] = usersQuery.data?.users ?? []
+  const users: User[] = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data?.users])
   const usersLoading = usersQuery.isLoading
   const usersTotal = usersQuery.data?.pagination?.total ?? 0
   const usageStats: UsageStats | null = usageQuery.data ?? null
@@ -124,7 +124,7 @@ export default function AdminPage() {
     ).length
     return {
       totalUsers: usersQuery.data.pagination.total,
-      totalApiKeys: 0,
+      totalApiKeys: apiKeys.length,
       totalDollarsPurchased: revenueStats.summary.totalDeposits,
       totalUsageThisMonth: usageStats.summary.totalRevenue,
       revenue: revenueStats.summary.totalRevenue - revenueStats.summary.totalCost,
@@ -134,7 +134,7 @@ export default function AdminPage() {
         openrouter: usageStats.byProvider.find((p) => p.provider === 'openrouter')?.totalCost ?? 0,
       },
     }
-  }, [usageStats, revenueStats, usersQuery.data, users])
+  }, [usageStats, revenueStats, usersQuery.data, users, apiKeys.length])
 
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users

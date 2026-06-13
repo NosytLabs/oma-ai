@@ -1,7 +1,18 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import HomePage from './page'
 import { Footer } from '@/components/footer'
+
+// AuthNotice (mounted by HomePage via <Suspense>) calls useRouter and
+// useSearchParams. Those hooks throw "invariant expected app router to
+// be mounted" when rendered outside a Next.js router context, so the
+// test would fail. Mocking the module is the documented escape hatch
+// for unit-testing components that read query params in jsdom.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/',
+}))
 
 describe('HomePage', () => {
   it('renders routing cards with clarifying descriptions', () => {

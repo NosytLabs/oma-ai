@@ -212,7 +212,7 @@ export default function ImageGenerationPage() {
               {images.map((url, i) => (
                 <div key={i} className="group relative rounded-2xl overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm aspect-square">
                   <Image src={url} alt={`Generated image ${i + 1} of ${images.length}`} fill className="object-cover" unoptimized />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                  <div className="absolute inset-0 bg-transparent group-hover:bg-[var(--color-overlay)] transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                     <button
                       onClick={() => downloadImage(url, i)}
                       className="flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] shadow-lg hover:bg-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 transition-all"

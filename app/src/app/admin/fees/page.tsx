@@ -142,7 +142,7 @@ export default function AdminFeesPage() {
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 text-[var(--color-cyan)] hover:bg-[var(--color-cyan)]/20 disabled:opacity-50 transition-colors text-sm font-mono"
+            className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 disabled:opacity-50 transition-colors text-sm font-mono"
           >
             <Save className="w-3.5 h-3.5" />
             {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
@@ -192,7 +192,7 @@ export default function AdminFeesPage() {
                     max={200}
                     value={editValues[provider.id] || 10}
                     onChange={(e) => setEditValues({ ...editValues, [provider.id]: parseInt(e.target.value) || 10 })}
-                    className="w-24 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-right font-mono text-sm focus:outline-none focus:border-[var(--color-cyan)]/50 focus:ring-1 focus:ring-[var(--color-cyan)]/20"
+                    className="w-24 px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-right font-mono text-sm focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
                   />
                   <span className="text-[var(--color-text-muted)] font-mono w-6 text-right">%</span>
                 </div>
@@ -204,7 +204,7 @@ export default function AdminFeesPage() {
         <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
             <div className="flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-[var(--color-cyan)]" />
+              <Calculator className="w-4 h-4 text-[var(--color-accent)]" />
               <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Margin Calculator</h2>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function AdminFeesPage() {
                 min="0"
                 value={calculatorInput.baseCost}
                 onChange={(e) => setCalculatorInput({ ...calculatorInput, baseCost: parseFloat(e.target.value) || 0 })}
-                className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-cyan)]/50 focus:ring-1 focus:ring-[var(--color-cyan)]/20"
+                className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
               />
             </div>
             <div>
@@ -228,7 +228,7 @@ export default function AdminFeesPage() {
                 max={200}
                 value={calculatorInput.markup}
                 onChange={(e) => setCalculatorInput({ ...calculatorInput, markup: parseInt(e.target.value) || 10 })}
-                className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-cyan)]/50 focus:ring-1 focus:ring-[var(--color-cyan)]/20"
+                className="w-full max-w-[160px] px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] font-mono text-sm focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-1 focus:ring-[var(--color-accent)]/20"
               />
             </div>
             <div className="pt-4 border-t border-[var(--color-border)] space-y-3">
@@ -242,7 +242,7 @@ export default function AdminFeesPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Margin %</span>
-                <span className="font-mono text-[var(--color-cyan)]">{calculateMargin().marginPercent.toFixed(1)}%</span>
+                <span className="font-mono text-[var(--color-accent)]">{calculateMargin().marginPercent.toFixed(1)}%</span>
               </div>
             </div>
           </div>

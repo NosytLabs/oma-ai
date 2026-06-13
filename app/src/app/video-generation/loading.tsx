@@ -1,0 +1,21 @@
+import { Skeleton } from '@/components/ui/Skeleton'
+
+export default function Loading() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading video generation"
+      className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8 animate-pulse"
+    >
+      <Skeleton className="h-3 w-24 mb-3" />
+      <Skeleton className="h-10 w-72 mb-3" />
+      <Skeleton className="h-4 w-1/2 mb-8" />
+      <div className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6 space-y-3">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-3 w-3/4" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    </div>
+  )
+}

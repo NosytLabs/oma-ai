@@ -2,7 +2,7 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
-import { format, subDays } from 'date-fns'
+import { format } from 'date-fns'
 
 export interface DataPoint {
   date: string
@@ -96,13 +96,3 @@ export function AreaChartComponent({ data, showCostArea = true }: AreaChartCompo
   )
 }
 
-export function generateUsageData(days: number = 7): DataPoint[] {
-  return Array.from({ length: days }, (_, i) => {
-    const date = subDays(new Date(), days - 1 - i)
-    return {
-      date: format(date, 'yyyy-MM-dd'),
-      requests: Math.floor(Math.random() * 500) + 100,
-      cost: Math.random() * 10 + 1,
-    }
-  })
-}

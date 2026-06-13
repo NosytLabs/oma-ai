@@ -466,7 +466,7 @@ export default function SettingsPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => handleCopy(key.prefix + '...', key.id)}
+                  onClick={() => handleCopy(key.prefix, key.id)}
                   className="rounded-lg p-2.5 transition-colors hover:bg-[var(--color-surface)]"
                 >
                   {copied === key.id ? (

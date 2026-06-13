@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
-import { format, subDays } from 'date-fns'
+import { format } from 'date-fns'
 
 export interface CostData {
   date: string
@@ -73,12 +73,3 @@ export function BarChartComponent({ data, showCostLabels = true }: BarChartCompo
   )
 }
 
-export function generateCostData(days: number = 30): CostData[] {
-  return Array.from({ length: days }, (_, i) => {
-    const date = subDays(new Date(), days - 1 - i)
-    return {
-      date: format(date, 'yyyy-MM-dd'),
-      cost: Math.random() * 50 + 5,
-    }
-  })
-}

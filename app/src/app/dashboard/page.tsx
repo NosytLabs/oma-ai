@@ -7,7 +7,7 @@ import { api, type ApiKey, type ApiKeyWithSecret, type BalanceResponse, type Usa
 import { useToast } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useWallet } from '@/components/wallet-provider'
-import { generateUsageData, generateModelData } from '@/components/ui/charts'
+import { mapUsageToChartData, mapUsageToModelData } from '@/lib/api/usage-chart'
 
 const LazyUsageChart = dynamic(
   () => import('@/components/dashboard/UsageChart').then(mod => mod.UsageChart),
@@ -102,7 +102,7 @@ export default function DashboardPage() {
 
   const balance: BalanceResponse | null = balanceQuery.data ?? null
   const keys: ApiKey[] = keysQuery.data ?? []
-  const usage: UsageRecord[] = usageQuery.data?.usage ?? []
+  const usage: UsageRecord[] = useMemo(() => usageQuery.data?.usage ?? [], [usageQuery.data?.usage])
   const creditBatches: CreditBatch[] = batchesQuery.data?.activeBatches ?? []
   const loading = balanceQuery.isLoading || keysQuery.isLoading || usageQuery.isLoading || batchesQuery.isLoading
 
@@ -122,8 +122,8 @@ export default function DashboardPage() {
   const [revokingId, setRevokingId] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
-  const usageData = useMemo(() => generateUsageData(7), [])
-  const modelData = useMemo(() => generateModelData(), [])
+  const usageData = useMemo(() => mapUsageToChartData(usage), [usage])
+  const modelData = useMemo(() => mapUsageToModelData(usage), [usage])
 
   const refetchAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['balance'] })

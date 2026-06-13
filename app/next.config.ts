@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
     };
 
+    // Suppress "Critical dependency" warnings from third-party libs that
+    // use dynamic require() (mppx/ox/tempo via wagmi connectors). The lib
+    // works at runtime; webpack just can't statically analyze the require.
+    config.module.exprContextCritical = false;
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

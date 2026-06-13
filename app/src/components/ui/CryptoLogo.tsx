@@ -183,29 +183,4 @@ export function CryptoLogo({
   )
 }
 
-/**
- * CryptoLogoWithFallback - Wrapper with built-in fallback display
- */
-export function CryptoLogoWithFallback(props: CryptoLogoProps) {
-  return <CryptoLogo {...props} />
-}
-
-/**
- * CryptoLogoInline - Compact inline version for dropdowns and lists
- */
-export function CryptoLogoInline({
-  symbol,
-  size = 20,
-  className = '',
-}: Omit<CryptoLogoProps, 'loading' | 'fallback' | 'useSvg'>) {
-  return (
-    <CryptoLogo
-      symbol={symbol}
-      size={size}
-      className={className}
-      loading={false}
-    />
-  )
-}
-
 export default CryptoLogo

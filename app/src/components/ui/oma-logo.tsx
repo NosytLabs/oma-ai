@@ -111,39 +111,3 @@ export function OmaLogo({
     </svg>
   )
 }
-
-export function OmaLogoWithText({
-  size = 'md',
-  className = '',
-}: {
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
-}) {
-  const textMap = {
-    sm: { text: 13, sub: 9, gap: 6 },
-    md: { text: 17, sub: 10, gap: 8 },
-    lg: { text: 22, sub: 12, gap: 10 },
-  } as const
-  const t = textMap[size]
-
-  return (
-    <span
-      className={`inline-flex items-baseline font-mono leading-none ${className}`}
-      style={{ gap: t.gap }}
-    >
-      <OmaLogo size={size} />
-      <span
-        className="font-bold tracking-tight text-[var(--color-text-bright)]"
-        style={{ fontSize: t.text }}
-      >
-        oma
-      </span>
-      <span
-        className="text-[var(--color-text-tertiary)]"
-        style={{ fontSize: t.sub }}
-      >
-        ·gateway
-      </span>
-    </span>
-  )
-}

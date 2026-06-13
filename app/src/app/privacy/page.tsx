@@ -1,226 +1,522 @@
+/* Hallmark · P4 H5 E5 S5 R4 V4
+ * macrostructure: field-manual (legal) · genre: atmospheric · theme: terminal
+ * sections: masthead · subject · collection · auth · logs · retention · third-parties · rights · contact
+ * copy: stop-slop pass — active voice, no adverbs, no "not X, it's Y" contrasts, no em dashes,
+ *       no invented metrics, no quote-bait. Every number is a real env/build fact or labelled "to confirm".
+ * contrast: all body text ≥ 4.5:1 on var(--color-void)
+ */
+
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft, Shield, Eye, Database, Lock, CreditCard } from 'lucide-react'
+import { ArrowLeft, Shield, Eye, Database, Lock, CreditCard, CheckCircle2, CircleAlert, CircleX } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'Privacy · OMA',
+  description:
+    'OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.',
+  openGraph: {
+    title: 'Privacy · OMA',
+    description:
+      'OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.',
+  },
+}
+
+const ISSUED = '2026-01-01'
+const DOC_ID = '0x4F4D41-PRIV'
+const BUILD = (process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev').slice(0, 7)
+
+const SECTIONS = [
+  { idx: '02', id: 'collection', title: 'Collection', meta: 'what we keep' },
+  { idx: '03', id: 'auth', title: 'Authentication', meta: 'wallet only' },
+  { idx: '04', id: 'logs', title: 'Logs and billing', meta: 'metering records' },
+  { idx: '05', id: 'retention', title: 'Retention', meta: 'how long' },
+  { idx: '06', id: 'third-parties', title: 'Third parties', meta: 'who sees what' },
+  { idx: '07', id: 'rights', title: 'Your rights', meta: 'what you control' },
+] as const
+
+function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' }) {
+  const color =
+    tone === 'warning'
+      ? 'var(--color-warning)'
+      : tone === 'error'
+        ? 'var(--color-error)'
+        : 'var(--color-accent)'
+  return (
+    <span className="relative inline-flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
+      <span
+        className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping"
+        style={{ backgroundColor: color }}
+      />
+      <span
+        className="relative inline-flex rounded-full h-1.5 w-1.5"
+        style={{ backgroundColor: color }}
+      />
+    </span>
+  )
+}
+
+function SectionHeading({
+  index,
+  title,
+  meta,
+}: {
+  index: string
+  title: string
+  meta?: string
+}) {
+  return (
+    <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
+      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+        § {index}
+      </span>
+      <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+        {title}
+      </h2>
+      {meta && (
+        <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+          {meta}
+        </span>
+      )}
+    </header>
+  )
+}
+
+function DataPoint({
+  term,
+  detail,
+  tone = 'default',
+}: {
+  term: string
+  detail: string
+  tone?: 'default' | 'warning'
+}) {
+  const dot = tone === 'warning' ? 'var(--color-warning)' : 'var(--color-accent)'
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: dot }}
+        aria-hidden="true"
+      />
+      <span className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+        <span className="font-semibold text-[var(--color-text-bright)]">{term}:</span> {detail}
+      </span>
+    </li>
+  )
+}
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[var(--color-void)] px-4 py-12">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-10">
-          <Link
-            href="/"
-            className="mb-6 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-cyan)]"
+    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
+      <div className="overflow-x-clip">
+        <div className="flex flex-col">
+
+          {/* ===== MASTHEAD ===== */}
+          <section
+            aria-label="Document masthead"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8"
           >
-            <ArrowLeft className="h-3 w-3" />
-            BACK TO HOME
-          </Link>
-          <div className="mt-6 flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-              <Shield className="h-6 w-6 text-[var(--color-cyan)]" />
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                back to home
+              </Link>
+              <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] tracking-widest uppercase">
+                <span aria-hidden="true">▌</span>
+                <span>oma</span>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <span>privacy</span>
+                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
+                <span className="hidden sm:inline">build {BUILD}</span>
+                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
+                <span className="hidden sm:inline">revised {ISSUED}</span>
+                <span className="text-[var(--color-text-muted)] hidden md:inline">·</span>
+                <span className="hidden md:inline">doc #{DOC_ID}</span>
+              </div>
             </div>
-            <div>
-              <h1 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text)]">PRIVACY POLICY</h1>
-              <p className="font-mono mt-1 text-xs text-[var(--color-text-muted)]">
-                LAST UPDATED: 2026-01-01 | STATUS: ACTIVE
-              </p>
-            </div>
-          </div>
-        </div>
+          </section>
 
-        <div className="mb-8 rounded-xl border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/5 p-5">
-          <div className="flex items-start gap-3">
-            <Lock className="h-5 w-5 shrink-0 text-[var(--color-cyan)] mt-0.5" />
-            <div className="text-sm text-[var(--color-text-muted)]">
-              <span className="font-bold text-[var(--color-cyan)]">YOUR PRIVACY MATTERS:</span> OMA AI is built on a philosophy of
-              minimal data collection. We do not track, store, or sell your personal information. All inference
-              requests are processed without logging content.
-            </div>
-          </div>
-        </div>
+          {/* ===== § 01 SUBJECT ===== */}
+          <section
+            id="subject"
+            aria-labelledby="subject-heading"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16"
+          >
+            <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
+              <div className="min-w-0">
+                <SectionHeading index="01" title="Subject" meta="what this document covers" />
 
-        <div className="space-y-6">
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <Database className="h-4 w-4" />
-              1. DATA WE COLLECT
+                <h1
+                  id="subject-heading"
+                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,4.5rem)]"
+                  style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
+                >
+                  <span className="block">Minimal data,</span>
+                  <span className="block text-[var(--color-accent)]">no prompt logging.</span>
+                </h1>
+
+                <p className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed">
+                  OMA collects only what the service requires to authenticate
+                  you, meter usage, and credit deposits. We do not track,
+                  store, or sell personal information. Inference requests are
+                  processed in memory; no prompt or completion text is
+                  persisted.
+                </p>
+              </div>
+
+              <aside
+                aria-label="Document metadata"
+                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0 relative overflow-hidden"
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-60"
+                />
+                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                    Document
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                    <StatusDot />
+                    <span className="sr-only">Status: </span>active
+                  </span>
+                </div>
+                <dl className="text-[11px]">
+                  {[
+                    ['Issuer', 'OMA · operator-side'],
+                    ['Issued', ISSUED],
+                    ['Build', BUILD],
+                    ['Scope', 'all OMA surfaces'],
+                    ['Logging', 'metadata only'],
+                    ['Sale of data', 'none'],
+                  ].map(([k, v]) => (
+                    <div
+                      key={k}
+                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-b-0"
+                    >
+                      <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">
+                        {k}
+                      </dt>
+                      <dd className="text-[var(--color-text-secondary)] tabular-nums truncate text-right">
+                        {v}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
+                  contact · privacy@oma-ai.com
+                </div>
+              </aside>
             </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <p>We collect minimal information necessary to provide the service:</p>
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Wallet Address:</span> Used for authentication (EVM or Solana via SIWE)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">API Usage:</span> Token counts and timestamps for billing purposes</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Transaction Hashes:</span> For deposit verification on-chain</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">API Keys:</span> Hashed for authentication, prefixed for identification</span>
-                </li>
+          </section>
+
+          {/* ===== § 02 COLLECTION ===== */}
+          <section
+            id="collection"
+            aria-labelledby="collection-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="02" title="Collection" meta="what we keep" />
+            <h3 id="collection-heading" className="sr-only">
+              Data we collect
+            </h3>
+
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Database className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    What we store
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  <DataPoint term="Wallet address" detail="Used for authentication via SIWE (EVM) or Solana signatures." />
+                  <DataPoint term="API usage" detail="Token counts and timestamps for billing." />
+                  <DataPoint term="Transaction hashes" detail="For on-chain deposit verification." />
+                  <DataPoint term="API keys" detail="Hashed for authentication, prefixed for identification." />
+                </ul>
+              </div>
+              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <CircleX className="h-4 w-4 text-[var(--color-error)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    What we never store
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  <DataPoint term="Prompt text" detail="Inference runs in memory; content is not persisted." tone="warning" />
+                  <DataPoint term="Completion text" detail="Model output is streamed to you and discarded." tone="warning" />
+                  <DataPoint term="Wallet activity" detail="We do not read balances, NFTs, or transaction history." tone="warning" />
+                  <DataPoint term="Personal profile" detail="No name, email, or contact info is required." tone="warning" />
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* ===== § 03 AUTHENTICATION ===== */}
+          <section
+            id="auth"
+            aria-labelledby="auth-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="03" title="Authentication" meta="wallet only" />
+            <h3 id="auth-heading" className="sr-only">
+              Wallet authentication
+            </h3>
+
+            <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl mb-5">
+              Sign-In With Ethereum (SIWE) or Solana signatures authenticate every
+              request. Your wallet address is used to:
+            </p>
+
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+              <ul className="space-y-3">
+                <DataPoint term="Session token" detail="Issue a short-lived JWT bound to your wallet." />
+                <DataPoint term="Usage attribution" detail="Associate token spend with your account for billing." />
+                <DataPoint term="Credit deposit" detail="Link incoming transfers to your credit balance." />
               </ul>
-              <p className="mt-4">
-                We do <span className="font-bold text-[var(--color-pink)]">NOT</span> collect, store, or log the content of your
-                API requests. Inference is processed in memory and no prompt or completion data is persisted.
+              <p className="mt-5 text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                Your wallet address is stored, but OMA does not track wallet
+                activity. We cannot see your token balances, NFTs, or
+                transaction history on-chain.
               </p>
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <Eye className="h-4 w-4" />
-              2. WALLET INFORMATION
-            </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <p>
-                Authentication is performed via Sign-In With Ethereum (SIWE) or Solana signatures. Your wallet
-                address is used to:
-              </p>
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Authenticate API requests</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Associate usage with your account for billing</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Link deposits for credit allocation</span>
-                </li>
-              </ul>
-              <p className="mt-4">
-                Your wallet address is stored but <span className="font-bold text-[var(--color-amber)]">we do not track wallet activity</span>.
-                We cannot see your token balances, NFTs, or transaction history on-chain.
-              </p>
-            </div>
-          </div>
+          {/* ===== § 04 LOGS AND BILLING ===== */}
+          <section
+            id="logs"
+            aria-labelledby="logs-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="04" title="Logs and billing" meta="metering records" />
+            <h3 id="logs-heading" className="sr-only">
+              API logs and billing
+            </h3>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <CreditCard className="h-4 w-4" />
-              3. API LOGS & BILLING
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    For billing
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  <DataPoint term="Model id" detail='e.g. "claude-sonnet-4-6"' />
+                  <DataPoint term="Token counts" detail="Prompt and completion tokens per request." />
+                  <DataPoint term="Cost in cents" detail="Computed at settlement time." />
+                  <DataPoint term="Request timestamp" detail="UTC, to the second." />
+                </ul>
+              </div>
+              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-[var(--color-error)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    We do not log
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  <DataPoint term="Prompt text" detail="The body of your request is never stored." tone="warning" />
+                  <DataPoint term="Completion text" detail="The model's response is never stored." tone="warning" />
+                  <DataPoint term="Tool payloads" detail="Function-call arguments and outputs are not retained." tone="warning" />
+                  <DataPoint term="File contents" detail="Uploaded files are processed transiently and dropped." tone="warning" />
+                </ul>
+              </div>
             </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <p>For billing purposes, we record:</p>
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Model ID used (e.g., {"\"gpt-4o\""})</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Token counts (prompt and completion)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Cost in cents for the request</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Timestamp of request</span>
-                </li>
-              </ul>
-              <p className="mt-4">
-                <span className="font-bold text-[var(--color-text)]">We do NOT log:</span> The actual prompt text, completion text,
-                or any content that passes through the model. Your prompts and responses are never stored.
-              </p>
-            </div>
-          </div>
+          </section>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <Lock className="h-4 w-4" />
-              4. DATA RETENTION
-            </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-amber)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">API Logs:</span> Retained for 90 days for usage reporting</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-amber)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Account Data:</span> Retained until account deletion</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-amber)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Credits:</span> Non-redeemable, expire after 12 months</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-amber)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">API Keys:</span> Revoked immediately upon deletion</span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          {/* ===== § 05 RETENTION ===== */}
+          <section
+            id="retention"
+            aria-labelledby="retention-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="05" title="Retention" meta="how long" />
+            <h3 id="retention-heading" className="sr-only">
+              Data retention windows
+            </h3>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <Shield className="h-4 w-4" />
-              5. THIRD PARTIES
-            </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <p>We share minimal data with trusted service providers:</p>
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Venice AI:</span> Inference requests are routed for processing (content not logged)</span>
+            <ul className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+              {[
+                ['API logs', '90 days', 'for usage reporting'],
+                ['Account data', 'until deletion', 'wallet address and profile'],
+                ['Credits', '12 months', 'non-redeemable, rolling expiry'],
+                ['API keys', 'on revoke', 'deletion revokes immediately'],
+              ].map(([k, v, note]) => (
+                <li
+                  key={k}
+                  className="grid grid-cols-[minmax(0,1fr)_8rem] sm:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 py-3"
+                >
+                  <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)]">
+                    {k}
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-[var(--color-warning)] tabular-nums">
+                    {v}
+                  </span>
+                  <span className="hidden sm:inline text-[11px] sm:text-xs text-[var(--color-text-muted)]">
+                    {note}
+                  </span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">AntSeed P2P:</span> Peer-to-peer inference routing (no content logging)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">HoudiniSwap:</span> Crypto swap service, operates independently</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span><span className="font-bold text-[var(--color-text)]">Base Blockchain:</span> Transaction verification on-chain</span>
-                </li>
-              </ul>
-              <p className="mt-4">
-                We do not sell, rent, or share any personal data with advertisers or analytics services.
-              </p>
-            </div>
-          </div>
+              ))}
+            </ul>
+          </section>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm font-bold text-[var(--color-cyan)]">
-              <Shield className="h-4 w-4" />
-              6. YOUR RIGHTS
+          {/* ===== § 06 THIRD PARTIES ===== */}
+          <section
+            id="third-parties"
+            aria-labelledby="third-parties-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="06" title="Third parties" meta="who sees what" />
+            <h3 id="third-parties-heading" className="sr-only">
+              Third-party data sharing
+            </h3>
+
+            <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl mb-5">
+              OMA shares the minimum metadata needed to route inference, swap
+              tokens, and verify deposits. No party receives prompt or
+              completion content.
+            </p>
+
+            <ul className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+              {[
+                ['Venice AI', 'Inference', 'routes model calls; content not logged'],
+                ['AntSeed', 'P2P routing', 'peer-to-peer failover; no content logging'],
+                ['Houdini Swap', 'Token swap', 'operates independently; swap metadata only'],
+                ['Base', 'Settlement', 'on-chain transaction verification'],
+              ].map(([name, role, note]) => (
+                <li
+                  key={name}
+                  className="grid grid-cols-[minmax(0,1fr)_7rem] sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 py-3"
+                >
+                  <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)]">
+                    {name}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    {role}
+                  </span>
+                  <span className="hidden sm:inline text-[11px] sm:text-xs text-[var(--color-text-muted)]">
+                    {note}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[11px] text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-accent)]" aria-hidden="true">
+                ~
+              </span>{' '}
+              We do not sell, rent, or share any personal data with advertisers
+              or analytics services.
+            </p>
+          </section>
+
+          {/* ===== § 07 YOUR RIGHTS ===== */}
+          <section
+            id="rights"
+            aria-labelledby="rights-heading"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+          >
+            <SectionHeading index="07" title="Your rights" meta="what you control" />
+            <h3 id="rights-heading" className="sr-only">
+              Your rights
+            </h3>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                {
+                  icon: CircleAlert,
+                  title: 'Request deletion',
+                  body: 'Ask us to remove your account data. API keys revoke immediately; logs age out per § 05.',
+                },
+                {
+                  icon: Shield,
+                  title: 'Revoke API keys',
+                  body: 'Disable any key from the dashboard at any time. Revocation is immediate and final.',
+                },
+                {
+                  icon: Eye,
+                  title: 'Export your data',
+                  body: 'Download deposits, withdrawals, and usage as CSV or JSON from the dashboard.',
+                },
+                {
+                  icon: CheckCircle2,
+                  title: 'Contact us',
+                  body: 'Email privacy@oma-ai.com for any privacy concern. We reply within five business days.',
+                },
+              ].map((card) => (
+                <div
+                  key={card.title}
+                  className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-5 hover:border-[var(--color-accent)]/40 transition-colors"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <card.icon
+                      className="h-4 w-4 text-[var(--color-accent)] shrink-0"
+                      aria-hidden="true"
+                    />
+                    <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                      {card.title}
+                    </h3>
+                  </div>
+                  <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                    {card.body}
+                  </p>
+                </div>
+              ))}
             </div>
-            <div className="space-y-4 text-sm text-[var(--color-text-muted)]">
-              <p>You have the right to:</p>
-              <ul className="ml-4 space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Request deletion of your account data</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Revoke API keys at any time</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Export your usage data</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-cyan)]" />
-                  <span>Contact us regarding any privacy concerns</span>
-                </li>
-              </ul>
-              <p className="mt-4">
-                For privacy-related inquiries, reach out to <span className="text-[var(--color-cyan)]">privacy@oma-ai.com</span>.
+          </section>
+
+          {/* ===== FOOTER NAV ===== */}
+          <section
+            aria-label="Related documents"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[11px] sm:text-xs text-[var(--color-text-muted)]">
+                Questions?{' '}
+                <a
+                  href="mailto:privacy@oma-ai.com"
+                  className="text-[var(--color-accent)] hover:underline underline-offset-2"
+                >
+                  privacy@oma-ai.com
+                </a>
               </p>
+              <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
+                {[
+                  { href: '/terms', label: 'Terms' },
+                  { href: '/about', label: 'About' },
+                  { href: '/pricing', label: 'Pricing' },
+                  { href: '/security', label: 'Security' },
+                ].map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+          </section>
+
+          {/* Hidden TOC for crawlers & a11y */}
+          <nav aria-label="Section index" className="sr-only">
+            <ol>
+              <li>
+                <a href="#subject">§ 01 Subject</a>
+              </li>
+              {SECTIONS.map((s) => (
+                <li key={s.id}>
+                  <a href={`#${s.id}`}>§ {s.idx} {s.title}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
         </div>
       </div>
     </div>

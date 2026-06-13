@@ -15,6 +15,7 @@ import { balance, models, usage } from './resources.js';
 import { health, inference, x402 } from './inference.js';
 import { admin } from './admin.js';
 import { recoveries, webhooks } from './webhooks.js';
+import { creditHistory } from './credits.js';
 
 export { ApiError, BackendUnavailableError, DEFAULT_TTL, STALE_TTL } from './client.js';
 export {
@@ -24,6 +25,7 @@ export {
   setCache,
 } from './client.js';
 export * from './types.js';
+export type { CreditTransaction, CreditTransactionsResponse } from './credits.js';
 
 /**
  * Composite API object. Mirrors the old monolith shape so existing
@@ -94,4 +96,5 @@ export const api = {
   admin,
   webhooks,
   recoveries,
+  creditHistory,
 };

@@ -24,7 +24,11 @@ export async function middleware(request: NextRequest) {
 
   const session = request.cookies.get(SESSION_COOKIE_NAME)?.value
   if (!session) {
-    return NextResponse.redirect(new URL('/', request.url))
+    // Preserve the intended destination so the client can navigate back after sign-in.
+    const redirectUrl = new URL('/', request.url)
+    redirectUrl.searchParams.set('next', pathname)
+    redirectUrl.searchParams.set('auth', 'required')
+    return NextResponse.redirect(redirectUrl)
   }
 
   const secret = getSecret()
@@ -39,7 +43,10 @@ export async function middleware(request: NextRequest) {
     await jwtVerify(session, secret, { issuer: ISSUER, audience: AUDIENCE })
     return NextResponse.next()
   } catch {
-    return NextResponse.redirect(new URL('/', request.url))
+    const redirectUrl = new URL('/', request.url)
+    redirectUrl.searchParams.set('next', pathname)
+    redirectUrl.searchParams.set('auth', 'expired')
+    return NextResponse.redirect(redirectUrl)
   }
 }
 

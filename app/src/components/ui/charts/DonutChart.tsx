@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
     return (
       <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
         <p className="text-xs text-[var(--color-text-muted)]">{data.name}</p>
-        <p className="text-sm font-semibold text-white">{data.value.toLocaleString()}</p>
+        <p className="text-sm font-semibold text-[var(--color-text-bright)]">{data.value.toLocaleString()}</p>
       </div>
     )
   }
@@ -57,19 +57,10 @@ export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
         </PieChart>
       </ResponsiveContainer>
       <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-white">{total.toLocaleString()}</span>
+        <span className="text-3xl font-bold text-[var(--color-text-bright)]">{total.toLocaleString()}</span>
         <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">{label}</span>
       </div>
     </motion.div>
   )
 }
 
-export function generateModelData(): ModelData[] {
-  return [
-    { name: 'GPT-4o', value: 3420, color: '#00ffc8' },
-    { name: 'Claude Sonnet', value: 2180, color: '#ffb800' },
-    { name: 'Gemini 2.5 Flash', value: 1560, color: '#a78bfa' },
-    { name: 'DeepSeek V4', value: 890, color: '#f472b6' },
-    { name: 'Others', value: 450, color: '#64748b' },
-  ]
-}

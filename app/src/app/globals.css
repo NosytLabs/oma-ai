@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* ================================================
+   COLOR SCHEME
+   Hint the browser so native form controls, scrollbars,
+   and the address bar match the active theme.
+   ================================================ */
+
+:root {
+  color-scheme: dark;
+}
+
 @theme {
   /* ================================================
      OMA AI - Refined Color Palette
@@ -93,11 +103,9 @@
   /* Utility color aliases - Legacy support */
   --color-green: #00ffc8;
   --color-amber: #ffb800;
-  --color-pink: #ff3366;
   --color-violet: #a78bfa;
   --color-purple: #a78bfa;
   --color-emerald: #34d399;
-  --color-red: #ff3366;
   --color-blue: #60a5fa;
   
   /* Utility colors */
@@ -116,6 +124,7 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
   --color-void: #fafafa;
   --color-surface: #f4f4f5;
   --color-panel: #ffffff;
@@ -395,10 +404,10 @@ h1, h2, h3, h4, h5, h6, .font-syne {
 
 .oma-btn--primary[data-state="loading"] {
   background: var(--color-accent-muted);
-  color: var(--color-text-inverse);
+  /* Spinner overlays the label; the ::after pseudo-element sits on top, so the text color is set to transparent to keep only the spinner visible. */
+  color: transparent;
   cursor: progress;
   position: relative;
-  color: transparent;
 }
 
 .oma-btn--primary[data-state="loading"]::after {

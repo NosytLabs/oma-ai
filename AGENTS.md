@@ -2,9 +2,9 @@
 
 ## Commands
 
-### Server (oma/server)
+### Server (Hono.js)
 ```bash
-cd oma/server
+cd server
 npm run dev          # Start dev server (tsx watch)
 npm run build        # Build for production
 npm run start        # Start production server
@@ -13,19 +13,19 @@ npm run typecheck    # TypeScript validation
 npm run lint         # ESLint validation
 ```
 
-### App/Frontend (oma/app)
+### App/Frontend (Next.js)
 ```bash
-cd oma/app
+cd app
 npm run dev          # Start Next.js dev server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run typecheck    # TypeScript validation
 npm run lint         # ESLint validation
+npm run test         # Run frontend tests (vitest)
 ```
 
 ### Docker
 ```bash
-cd oma
 docker compose build --no-cache
 docker compose up -d
 docker compose down
@@ -33,11 +33,11 @@ docker compose down
 
 ### Development
 ```bash
-# From oma root
-./start-dev.sh       # Start both servers
+# From repo root
+./scripts/start-dev.sh   # Start both servers (if present)
 
-# Or manually:
-cd app && npm run dev &
+# Or manually (in separate terminals):
+cd app && npm run dev
 cd server && npm run dev
 ```
 
@@ -74,18 +74,21 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 Before any commit, ensure:
 
-- [ ] Server typecheck passes (`npm run typecheck` - 0 errors)
-- [ ] Server lint passes (`npm run lint` - 0 errors)
-- [ ] Server tests pass (`npm test`)
-- [ ] App typecheck passes (`npm run typecheck` - 0 errors)
-- [ ] App lint passes (`npm run lint` - 0 errors)
+- [ ] Server typecheck passes (`cd server && npm run typecheck` - 0 errors)
+- [ ] Server lint passes (`cd server && npm run lint` - 0 errors)
+- [ ] Server tests pass (`cd server && npm test`)
+- [ ] App typecheck passes (`cd app && npm run typecheck` - 0 errors)
+- [ ] App lint passes (`cd app && npm run lint` - 0 errors)
+- [ ] App tests pass (`cd app && npm run test`)
 
 ---
 
 ## Directory Structure
 
+This is a **flat monorepo** (no `oma/` wrapper, no workspaces). All top-level paths are real and live at the repo root.
+
 ```
-oma/
+.
 ├── server/src/                # Hono.js API server (Node 20, TypeScript ESM)
 │   ├── index.ts               # Entry point (port 3001, /health, WebSocket)
 │   ├── config.ts              # Environment validation
@@ -118,12 +121,12 @@ oma/
 │   │   ├── credit-expiry.ts, subscription-cron.ts
 │   │   ├── deposit-notifications.ts, deposit-recovery.ts
 │   │   ├── deposit-retry.ts, nonce-cleanup.ts
-│   ├── lib/                   # Shared server utilities (9)
+│   ├── lib/                   # Shared server utilities (10)
 │   │   ├── api-errors.ts, dlq.ts, logger.ts
 │   │   ├── quote-cache.ts, rate-limit-config.ts
 │   │   ├── redis-client.ts, request-queue.ts
 │   │   ├── router-utils.ts, settlement-retry.ts
-│   │   └── validation.ts
+│   │   ├── url-safety.ts, validation.ts
 │   ├── middleware/            # Request middleware (8)
 │   │   ├── audit.ts, cache.ts, idempotency.ts
 │   │   ├── rate-limit.ts, rbac.ts, security.ts
@@ -148,20 +151,27 @@ oma/
 ├── app/src/                   # Next.js 15 frontend (React 19, Tailwind 4)
 │   ├── app/                   # App Router pages
 │   │   ├── page.tsx           # Landing
-│   │   ├── dashboard/         # User dashboard
+│   │   ├── dashboard/         # User dashboard (keys, credits, etc.)
 │   │   ├── deposit/           # Deposit page
 │   │   ├── pricing/           # Pricing page
 │   │   ├── models/            # Model showcase
 │   │   ├── playground/        # API playground
-│   │   └── docs/              # Documentation
+│   │   ├── docs/              # Documentation
+│   │   ├── admin/             # Admin surface
+│   │   ├── about/, compare/, faq/, privacy/, terms/
+│   │   └── image-generation/  # Image gen route
 │   ├── components/            # UI components
 │   ├── hooks/                 # React hooks
-│   ├── lib/                   # Frontend utilities
+│   ├── lib/                   # Frontend utilities (api/, auth/, etc.)
 │   └── test/                  # Frontend tests
 ├── contracts/                 # Solidity (OMA.sol)
 ├── deploy/coolify/            # Self-hosted deploy configs
 ├── docs/                      # Audit reports, runbooks, architecture
-└── scripts/                   # start-dev.sh, deploy.sh
+├── scripts/                   # start-dev.sh, deploy.sh
+├── .opencode/                 # Commander orchestration state
+├── .vercel/                   # Root Vercel project (legacy, gitignored)
+├── app/.vercel/               # App Vercel project (current, gitignored)
+└── docker-compose.yml
 ```
 
 ---
@@ -184,42 +194,37 @@ oma/
 
 ### Run all server tests
 ```bash
-cd oma/server
+cd server
 npm test
 ```
 
 ### Test specific file
 ```bash
-cd oma/server
+cd server
 npx vitest run src/__tests__/api.test.ts
 ```
 
 ### Test with coverage
 ```bash
-cd oma/server
+cd server
 npx vitest run --coverage
+```
+
+### Frontend tests
+```bash
+cd app
+npm test
 ```
 
 ---
 
 ## Database
 
-### Generate migrations
 ```bash
-cd oma/server
-npm run db:generate
-```
-
-### Push schema to DB
-```bash
-cd oma/server
-npm run db:push
-```
-
-### Run migrations
-```bash
-cd oma/server
-npm run db:migrate
+cd server
+npm run db:generate   # Generate migrations
+npm run db:push        # Push schema to DB
+npm run db:migrate     # Run migrations
 ```
 
 ---
@@ -239,11 +244,11 @@ curl http://localhost:3001/health
 ## Common Issues
 
 ### Redis not connecting
-- Check `REDIS_URL` in `.env`
+- Check `REDIS_URL` in `server/.env`
 - Ensure Redis is running locally or Upstash credentials are correct
 
 ### TypeScript errors
-- Run `npm run typecheck` in both `server/` and `app/`
+- Run `cd server && npm run typecheck` and `cd app && npm run typecheck`
 - Fix any type errors before committing
 
 ### Auth not working
@@ -265,8 +270,8 @@ Both are gitignored (line in `.gitignore`). The Vercel CLI writes these on every
 ### Frontend `lib/api` is split
 The old 827-line `app/src/lib/api.ts` monolith is now split into per-resource modules
 under `app/src/lib/api/`. `app/src/lib/api.ts` is a thin re-export shim — all existing
-`import { api, type Foo } from '@/lib/api'` call sites work unchanged. When adding a
-new endpoint, add it to the relevant `api/*.ts` module and the barrel auto-exposes it.
+`import { api, type Foo } from '@/lib/api'` call sites work unchanged. When adding
+a new endpoint, add it to the relevant `api/*.ts` module and the barrel auto-exposes it.
 
 ### Server queue write-side is intentionally kept
 `server/src/lib/request-queue.ts` exposes a full read+write API (`enqueueRequest`,
@@ -283,6 +288,18 @@ All env vars referenced anywhere in `server/src/` are documented in
 add it there too with a brief comment. Production guards in `config.ts`
 `process.exit(1)` on missing required secrets; do not bypass them.
 
+### `siwe@3` CJS-requires `ethers` (DO NOT REMOVE)
+`app/package.json` must keep `ethers: ^6.13.4` even though every wallet code
+path uses `viem`. `siwe@3`'s dist bundles (`utils.js:6`, `ethersCompat.js:4`)
+both `require("ethers")` at module load, and webpack's barrel optimization
+pulls them in via the `SiweMessage` import in `app/src/components/wallet-provider.tsx`.
+Without `ethers` in `app/node_modules`, every page that touches wallet-provider
+(which is most of them) returns HTTP 500. If you ever decide to remove ethers,
+you must also downgrade siwe to `^2.3.x` (last v2 line, no ethers dep) — they
+are coupled. Symptom if you forget: webpack build error "Module not found: Can't
+resolve 'ethers'" → 500 on every public page → `/playground` (auth-walled) is
+the only one that may still respond.
+
 ---
 
-*Last updated: 2026-06-03*
+*Last updated: 2026-06-13*

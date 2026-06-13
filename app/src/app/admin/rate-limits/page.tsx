@@ -53,6 +53,7 @@ export default function AdminRateLimitsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'tiers' | 'overrides'>('tiers')
+  const [pendingDelete, setPendingDelete] = useState<RateLimitOverride | null>(null)
 
   const [editTiers, setEditTiers] = useState<Record<string, RateLimitTier>>({})
 
@@ -180,9 +181,14 @@ export default function AdminRateLimitsPage() {
     },
   })
 
-  const handleDeleteOverride = (id: string) => {
-    if (!confirm('Delete this rate limit override?')) return
-    deleteOverrideMutation.mutate(id)
+  const handleDeleteOverride = (override: RateLimitOverride) => {
+    setPendingDelete(override)
+  }
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return
+    deleteOverrideMutation.mutate(pendingDelete.id)
+    setPendingDelete(null)
   }
 
   const overrides = overridesQuery.data ?? []
@@ -385,7 +391,7 @@ export default function AdminRateLimitsPage() {
                   <input
                     type="text"
                     value={overrideForm.targetId}
-                    onChange={(e) => setOverrideForm({ ...overrideForm, targetId: e.target.id })}
+                    onChange={(e) => setOverrideForm({ ...overrideForm, targetId: e.target.value })}
                     placeholder="Enter user ID or API key ID"
                     className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50"
                   />
@@ -479,7 +485,7 @@ export default function AdminRateLimitsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => handleDeleteOverride(override.id)}
+                          onClick={() => handleDeleteOverride(override)}
                           aria-label={`Delete override for ${override.targetId}`}
                           className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"
                         >
@@ -495,6 +501,58 @@ export default function AdminRateLimitsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {pendingDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]/60 backdrop-blur-sm"
+          onClick={() => setPendingDelete(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] max-w-md w-full mx-4 p-6"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <AlertTriangle className="w-5 h-5 text-[var(--color-error)] flex-shrink-0 mt-0.5" />
+              <div>
+                <h2
+                  id="delete-confirm-title"
+                  className="text-sm font-mono uppercase tracking-widest text-[var(--color-text-bright)] mb-1"
+                >
+                  Delete rate limit override
+                </h2>
+                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  Remove the override for{' '}
+                  <span className="font-mono text-[var(--color-text-bright)]">
+                    {pendingDelete.targetType}:{pendingDelete.targetId}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="px-3 py-1.5 text-xs font-mono uppercase tracking-widest text-[var(--color-text-muted)] hover:text-[var(--color-text-bright)] border border-[var(--color-border)] hover:border-[var(--color-text-muted)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleteOverrideMutation.isPending}
+                className="px-3 py-1.5 text-xs font-mono uppercase tracking-widest bg-[var(--color-error)] text-[var(--color-text-bright)] hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {deleteOverrideMutation.isPending ? 'Deleting…' : 'Delete override'}
+              </button>
             </div>
           </div>
         </div>

@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
           <motion.div
             animate={shouldAnimate ? { rotate: 360 } : { rotate: 0 }}
             transition={shouldAnimate ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0 }}
-            className="w-5 h-5 border border-[var(--color-cyan)] border-t-transparent rounded-full"
+            className="w-5 h-5 border border-[var(--color-accent)] border-t-transparent rounded-full"
           />
           <span className="text-[var(--color-text-muted)] font-mono text-sm">Loading analytics...</span>
         </div>
@@ -124,8 +124,8 @@ export default function AnalyticsPage() {
         <div className="max-w-[95rem] mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 flex items-center justify-center">
-                <Terminal className="w-4 h-4 text-[var(--color-cyan)]" />
+              <div className="w-9 h-9 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center">
+                <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
               </div>
               <div>
                 <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">Usage Analytics</h1>
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
                     onClick={() => setPeriod(p)}
                     className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
                       period === p
-                        ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30'
+                        ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] border border-[var(--color-accent)]/30'
                         : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
                     }`}
                   >
@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
               <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Gross Profit</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(analytics.summary.grossProfit)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatUsd(analytics.summary.grossProfit)}</p>
             <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {analytics.summary.margin}</p>
           </div>
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">

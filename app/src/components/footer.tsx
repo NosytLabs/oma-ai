@@ -5,15 +5,58 @@ import { usePathname } from 'next/navigation'
 import { OmaLogo } from '@/components/ui/oma-logo'
 import { ApiStatus } from './api-status'
 
-const FOOTER_NAV = [
-  { label: 'models', href: '/models' },
-  { label: 'pricing', href: '/pricing' },
-  { label: 'docs', href: '/docs' },
-  { label: 'playground', href: '/playground' },
-  { label: 'dashboard', href: '/dashboard' },
-  { label: 'deposit', href: '/deposit' },
-  { label: 'terms', href: '/terms' },
-  { label: 'privacy', href: '/privacy' },
+type FooterLink = { label: string; href: string }
+
+type FooterSection = {
+  title: string
+  links: FooterLink[]
+}
+
+// Grouped site index. Section order = reading order on the page.
+const FOOTER_SECTIONS: FooterSection[] = [
+  {
+    title: 'Product',
+    links: [
+      { label: 'models', href: '/models' },
+      { label: 'playground', href: '/playground' },
+      { label: 'pricing', href: '/pricing' },
+      { label: 'docs', href: '/docs' },
+      { label: 'dashboard', href: '/dashboard' },
+    ],
+  },
+  {
+    title: 'Tools',
+    links: [
+      { label: 'image gen', href: '/image-generation' },
+      { label: 'video gen', href: '/video-generation' },
+      { label: 'swap', href: '/swap' },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'use cases', href: '/use-cases' },
+      { label: 'compare', href: '/compare' },
+      { label: 'faq', href: '/faq' },
+      { label: 'private ai api', href: '/private-ai-api' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'about', href: '/about' },
+      { label: 'deposit', href: '/deposit' },
+      { label: 'admin', href: '/admin' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'terms', href: '/terms' },
+      { label: 'privacy', href: '/privacy' },
+      { label: 'crypto payments', href: '/crypto-payments' },
+    ],
+  },
 ]
 
 export function Footer() {
@@ -62,23 +105,32 @@ export function Footer() {
 
           <nav aria-label="Footer navigation" className="text-[11px]">
             <p className="text-[var(--color-text-muted)] mb-3 uppercase tracking-widest text-[10px]">Index</p>
-            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1.5">
-              {FOOTER_NAV.map((link) => {
-                const isCurrent = pathname === link.href || pathname.startsWith(link.href + '/')
-                return (
-                <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    aria-current={isCurrent ? 'page' : undefined}
-                    className="inline-flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors py-1"
-                  >
-                    <span className="text-[var(--color-text-muted)]" aria-hidden="true">·</span>
-                    <span>{link.label}</span>
-                  </Link>
-                </li>
-                )
-              })}
-            </ul>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-6">
+              {FOOTER_SECTIONS.map((section) => (
+                <div key={section.title} className="min-w-0">
+                  <p className="text-[var(--color-accent)] mb-2 uppercase tracking-widest text-[9px] font-semibold">
+                    {section.title}
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {section.links.map((link) => {
+                      const isCurrent = pathname === link.href || pathname.startsWith(link.href + '/')
+                      return (
+                        <li key={link.label}>
+                          <Link
+                            href={link.href}
+                            aria-current={isCurrent ? 'page' : undefined}
+                            className="inline-flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors py-1"
+                          >
+                            <span className="text-[var(--color-text-muted)]" aria-hidden="true">·</span>
+                            <span>{link.label}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </nav>
         </div>
 

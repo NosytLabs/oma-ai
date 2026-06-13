@@ -21,6 +21,14 @@ export function CopyButton({ text }: { text: string }) {
   }, [text])
 
   const label = state === 'success' ? 'copied' : state === 'error' ? 'failed' : 'copy'
+  // WCAG 2.5.3: the accessible name (aria-label) must START with the visible label
+  // so voice-control users ("click copy") and screen-reader users agree on the name.
+  const ariaLabel =
+    state === 'success'
+      ? 'Copied to clipboard'
+      : state === 'error'
+        ? 'Failed to copy; try again'
+        : 'Copy snippet to clipboard'
   const colorClass =
     state === 'success'
       ? 'text-[var(--color-success)]'
@@ -31,7 +39,7 @@ export function CopyButton({ text }: { text: string }) {
   return (
     <button
       type="button"
-      aria-label={state === 'error' ? 'Copy failed; try again' : 'Copy snippet to clipboard'}
+      aria-label={ariaLabel}
       onClick={handleClick}
       className={`text-[10px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 rounded-sm px-1.5 py-0.5 transition-colors ${colorClass}`}
     >

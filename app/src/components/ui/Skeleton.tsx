@@ -165,27 +165,3 @@ export function SkeletonEmptyState({ message = 'No data yet' }: { message?: stri
   )
 }
 
-export function SkeletonGrid({ count = 6 }: { count?: number }) {
-  return (
-    <div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      role="presentation"
-      aria-label="Loading items"
-    >
-      {Array.from({ length: count }).map((_, i) => (
-        <SkeletonCard key={i} rows={3} />
-      ))}
-    </div>
-  )
-}
-
-export function SkeletonStatsRow() {
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-6">
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </div>
-  )
-}
-

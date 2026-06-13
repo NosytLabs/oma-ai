@@ -49,6 +49,7 @@ export default function ApiKeysPage() {
   const [createdKey, setCreatedKey] = useState<ApiKeyWithSecret | null>(null)
 
   const [revokingId, setRevokingId] = useState<string | null>(null)
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
   const [editingLimits, setEditingLimits] = useState<string | null>(null)
@@ -88,8 +89,17 @@ export default function ApiKeysPage() {
     }
   }, [newKeyName, queryClient, toast])
 
+  const requestRevoke = useCallback((keyId: string) => {
+    setConfirmRevokeId(keyId)
+  }, [])
+
+  const cancelRevoke = useCallback(() => {
+    setConfirmRevokeId(null)
+  }, [])
+
   const handleRevokeKey = useCallback(async (keyId: string) => {
     setRevokingId(keyId)
+    setConfirmRevokeId(null)
     try {
       await api.oma.revokeApiKey(keyId)
       queryClient.setQueryData<ApiKey[]>(['apiKeys'], (prev) => (prev ?? []).filter((k) => k.id !== keyId))
@@ -100,7 +110,7 @@ export default function ApiKeysPage() {
     } finally {
       setRevokingId(null)
     }
-  }, [toast])
+  }, [queryClient, toast])
 
   const handleSaveLimits = useCallback(async (keyId: string) => {
     if (!keyId || !rateLimits[keyId]) return;
@@ -322,8 +332,8 @@ export default function ApiKeysPage() {
                     </motion.button>
 
                     <motion.button
-                      onClick={() => handleRevokeKey(key.id)}
-                      disabled={revokingId === key.id}
+                      onClick={() => requestRevoke(key.id)}
+                      disabled={revokingId === key.id || confirmRevokeId !== null}
                       className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/10 hover:border-[var(--color-error)]/50 disabled:opacity-50"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
@@ -462,6 +472,69 @@ export default function ApiKeysPage() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {confirmRevokeId && (() => {
+          const keyToRevoke = keys.find((k) => k.id === confirmRevokeId)
+          if (!keyToRevoke) return null
+          return (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]/80 backdrop-blur-sm p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="apikeys-revoke-title"
+                aria-describedby="apikeys-revoke-desc"
+                className="w-full max-w-md rounded-2xl border border-[var(--color-error)]/30 bg-[var(--color-surface)] p-6 shadow-2xl"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25 }}
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/10">
+                    <AlertTriangle className="h-6 w-6 text-[var(--color-error)]" />
+                  </div>
+                  <div>
+                    <h3 id="apikeys-revoke-title" className="text-lg font-bold text-[var(--color-text-bright)]">Revoke API Key</h3>
+                    <p className="text-xs text-[var(--color-text-muted)]">This action is irreversible</p>
+                  </div>
+                </div>
+                <p id="apikeys-revoke-desc" className="mb-6 text-sm text-[var(--color-text-secondary)]">
+                  You are about to revoke <span className="font-mono text-[var(--color-text-bright)]">{keyToRevoke.name}</span>.
+                  Any applications using this key will immediately lose access.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={cancelRevoke}
+                    disabled={revokingId === confirmRevokeId}
+                    className="btn-secondary py-2 px-4 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={() => handleRevokeKey(confirmRevokeId)}
+                    disabled={revokingId === confirmRevokeId}
+                    className="flex items-center gap-2 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-4 py-2 text-sm text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20 disabled:opacity-50"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {revokingId === confirmRevokeId ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Revoke
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )
+        })()}
       </AnimatePresence>
     </motion.div>
   )

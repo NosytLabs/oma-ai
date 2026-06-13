@@ -1,6 +1,6 @@
 /* Hallmark · P4 H5 E5 S5 R4 V4
  * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
- * enrichment: none (typography + hand-built SVG wire diagram)
+ * enrichment: hand-built x402 wire SVG (Protocol §04)
  * sections: masthead · subject · inventory · routing · protocol · integration · procurement
  * states (CTA buttons): default · hover · focus-visible · active · disabled · aria-disabled · loading · success
  * copy: stop-slop pass — active voice, no adverbs, no "not X, it's Y" contrasts, no em dashes,
@@ -10,7 +10,9 @@
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { CopyButton } from '@/components/ui/CopyButton'
+import { AuthNotice } from '@/components/AuthNotice'
 
 export const metadata: Metadata = {
   title: 'OMA · Permissionless AI inference',
@@ -109,6 +111,9 @@ function SectionHeading({
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
+      <Suspense fallback={null}>
+        <AuthNotice />
+      </Suspense>
       <div className="overflow-x-clip">
         <div className="flex flex-col">
 
@@ -261,7 +266,7 @@ export default function HomePage() {
               Full list at{' '}
               <Link
                 href="/models"
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] underline underline-offset-2"
+                className="font-medium text-[var(--color-text-bright)] hover:text-[var(--color-accent)] underline decoration-2 underline-offset-2"
               >
                 /models
               </Link>{' '}
@@ -497,7 +502,7 @@ export default function HomePage() {
               Full protocol in the{' '}
               <Link
                 href="/docs"
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] underline underline-offset-2"
+                className="font-medium text-[var(--color-text-bright)] hover:text-[var(--color-accent)] underline decoration-2 underline-offset-2"
               >
                 docs
               </Link>

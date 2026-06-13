@@ -2,9 +2,9 @@
 
 import dynamic from 'next/dynamic'
 import { useWallet } from '@/components/wallet-provider'
-import { api, type BalanceResponse } from '@/lib/api'
+import { api, type BalanceResponse, type CreditTransaction } from '@/lib/api'
 import { useToast } from '@/components/ui/Toast'
-import { generateCostData, generateModelData } from '@/components/ui/charts'
+import { CHART_PALETTE } from '@/components/ui/charts/shared'
 
 const BarChartComponent = dynamic(
   () => import('@/components/ui/charts').then((m) => m.BarChartComponent),
@@ -45,6 +45,23 @@ interface CreditHistoryItem {
 
 const AMOUNT_PRESETS = [10, 25, 50, 100, 250]
 
+function mapCreditTransaction(tx: CreditTransaction): CreditHistoryItem {
+  const status: CreditHistoryItem['status'] =
+    tx.status === 'completed' || tx.status === 'settled'
+      ? 'completed'
+      : tx.status === 'pending' || tx.status === 'processing'
+        ? 'pending'
+        : 'failed'
+  return {
+    id: tx.id,
+    type: tx.type,
+    amount: tx.amountCents,
+    source: tx.txHash ?? tx.model ?? undefined,
+    status,
+    createdAt: tx.createdAt,
+  }
+}
+
 export default function CreditsPage() {
   const { isConnected, connectEvm } = useWallet()
   const toast = useToast()
@@ -53,6 +70,16 @@ export default function CreditsPage() {
   const balanceQuery = useQuery({
     queryKey: ['balance'],
     queryFn: () => api.oma.getBalance(),
+    enabled: isConnected,
+    staleTime: 60_000,
+  })
+
+  const historyQuery = useQuery({
+    queryKey: ['creditHistory'],
+    queryFn: async () => {
+      const res = await api.creditHistory.list(50)
+      return res.transactions.map(mapCreditTransaction)
+    },
     enabled: isConnected,
     staleTime: 60_000,
   })
@@ -67,15 +94,47 @@ export default function CreditsPage() {
   const [processing, setProcessing] = useState(false)
 
   const [autoReload, setAutoReload] = useState(false)
+  const [autoReloadThreshold, setAutoReloadThreshold] = useState('')
+  const [autoReloadAmount, setAutoReloadAmount] = useState('')
+  const [savingAutoReload, setSavingAutoReload] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
-  const [history] = useState<CreditHistoryItem[]>([])
+  const history: CreditHistoryItem[] = useMemo(
+    () => historyQuery.data ?? [],
+    [historyQuery.data],
+  )
+  const historyLoading = historyQuery.isLoading
+  const historyHasResolved = historyQuery.isFetched
 
-  const costData = useMemo(() => generateCostData(30), [])
-  const modelData = useMemo(() => generateModelData(), [])
+  const costData = useMemo(() => {
+    if (history.length === 0) return []
+    const byDay = new Map<string, number>()
+    for (const item of history) {
+      const day = new Date(item.createdAt).toISOString().slice(0, 10)
+      byDay.set(day, (byDay.get(day) ?? 0) + Math.abs(item.amount) / 100)
+    }
+    return Array.from(byDay.entries())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([date, cost]) => ({ date, cost }))
+  }, [history])
+
+  const modelData = useMemo(() => {
+    if (history.length === 0) return []
+    const byModel = new Map<string, number>()
+    for (const item of history) {
+      if (item.type !== 'usage') continue
+      const source = item.source ?? 'unknown'
+      byModel.set(source, (byModel.get(source) ?? 0) + Math.abs(item.amount) / 100)
+    }
+    return Array.from(byModel.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, value], i) => ({ name, value, color: CHART_PALETTE[i % CHART_PALETTE.length] }))
+  }, [history])
 
   const refetch = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['balance'] })
+    queryClient.invalidateQueries({ queryKey: ['creditHistory'] })
   }, [queryClient])
 
 const handleBuyCredits = async () => {
@@ -361,7 +420,10 @@ const handleBuyCredits = async () => {
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Threshold ($)</label>
                     <input
                       type="text"
+                      inputMode="decimal"
                       placeholder="10.00"
+                      value={autoReloadThreshold}
+                      onChange={(e) => setAutoReloadThreshold(e.target.value)}
                       className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                     />
                   </div>
@@ -369,10 +431,45 @@ const handleBuyCredits = async () => {
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Reload amount ($)</label>
                     <input
                       type="text"
+                      inputMode="decimal"
                       placeholder="50.00"
+                      value={autoReloadAmount}
+                      onChange={(e) => setAutoReloadAmount(e.target.value)}
                       className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
                     />
                   </div>
+                  <button
+                    type="button"
+                    disabled={savingAutoReload}
+                    onClick={async () => {
+                      const thresholdDollars = parseFloat(autoReloadThreshold)
+                      const amountDollars = parseFloat(autoReloadAmount)
+                      if (!Number.isFinite(thresholdDollars) || thresholdDollars <= 0) {
+                        toast.error('Enter a valid threshold amount')
+                        return
+                      }
+                      if (!Number.isFinite(amountDollars) || amountDollars <= 0) {
+                        toast.error('Enter a valid reload amount')
+                        return
+                      }
+                      try {
+                        setSavingAutoReload(true)
+                        await api.oma.updateAutoReload({
+                          enabled: autoReload,
+                          thresholdCents: Math.round(thresholdDollars * 100),
+                          reloadAmountCents: Math.round(amountDollars * 100),
+                        })
+                        toast.success('Auto-reload settings saved')
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Failed to save auto-reload settings')
+                      } finally {
+                        setSavingAutoReload(false)
+                      }
+                    }}
+                    className="w-full rounded-lg bg-[var(--color-cyan)] px-4 py-2 text-sm font-semibold text-[var(--color-void)] transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {savingAutoReload ? 'Saving…' : 'Save'}
+                  </button>
                 </div>
               )}
             </div>
@@ -391,7 +488,13 @@ const handleBuyCredits = async () => {
             <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">30-Day Costs</h3>
             <div className="text-sm text-[var(--color-text-muted)]">${costData.reduce((sum, d) => sum + d.cost, 0).toFixed(2)} total</div>
           </div>
-          <BarChartComponent data={costData} />
+          {costData.length > 0 ? (
+            <BarChartComponent data={costData} />
+          ) : (
+            <div className="h-64 flex items-center justify-center text-sm text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+              No usage yet
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -403,15 +506,23 @@ const handleBuyCredits = async () => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">Usage by Model</h3>
           </div>
-          <DonutChart data={modelData} />
-          <div className="mt-4 flex flex-wrap gap-3">
-            {modelData.map((model) => (
-              <div key={model.name} className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: model.color }} />
-                <span className="text-xs text-[var(--color-text-muted)]">{model.name}</span>
+          {modelData.length > 0 ? (
+            <>
+              <DonutChart data={modelData} />
+              <div className="mt-4 flex flex-wrap gap-3">
+                {modelData.map((model) => (
+                  <div key={model.name} className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: model.color }} />
+                    <span className="text-xs text-[var(--color-text-muted)]">{model.name}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-sm text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+              No model activity yet
+            </div>
+          )}
         </motion.div>
       </div>
 
@@ -437,7 +548,13 @@ const handleBuyCredits = async () => {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {historyLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-cyan)]" />
+                  </td>
+                </tr>
+              ) : !historyHasResolved ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-cyan)]" />
