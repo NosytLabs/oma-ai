@@ -22,14 +22,14 @@ import { format } from 'date-fns'
 // If a brand color changes there, update here too.
 
 export const CHART_COLORS = {
-  accent: '#00ffc8',
-  accentHover: '#00d4aa',
+  accent: '#fb923c',
+  accentHover: '#f97316',
   secondary: '#ffb800',
   tertiary: '#a78bfa',
   emerald: '#34d399',
   blue: '#60a5fa',
   pink: '#f472b6',
-  success: '#00ffc8',
+  success: '#fb923c',
   error: '#ff3366',
   warning: '#ffb800',
 

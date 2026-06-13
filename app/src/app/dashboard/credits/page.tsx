@@ -163,11 +163,11 @@ const handleBuyCredits = async () => {
       >
         <div className="text-center max-w-md px-4">
           <motion.div 
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-cyan)]/30 bg-gradient-to-br from-[var(--color-cyan)]/10 to-[var(--color-warning)]/10"
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-accent)]/30 bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-warning)]/10"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
           >
-            <Wallet className="h-10 w-10 text-[var(--color-cyan)]" />
+            <Wallet className="h-10 w-10 text-[var(--color-accent)]" />
           </motion.div>
           <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
           <p className="mb-6 text-[var(--color-text-muted)]">Connect your wallet to view your credit balance and history.</p>
@@ -198,7 +198,7 @@ const handleBuyCredits = async () => {
       >
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
+            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)]">Dashboard</Link>
             <span className="text-[var(--color-text-muted)]">/</span>
             <span className="text-sm text-[var(--color-text-bright)]">Credits</span>
           </div>
@@ -248,10 +248,10 @@ const handleBuyCredits = async () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
               <Coins className="h-6 w-6" />
             </div>
             <div>
@@ -274,10 +274,10 @@ const handleBuyCredits = async () => {
           </div>
 
           {balance && parseFloat(formatCents(balance.balanceCents)) > 0 && (
-            <div className="mt-4 p-4 rounded-xl bg-[var(--color-cyan)]/5 border border-[var(--color-cyan)]/20">
+            <div className="mt-4 p-4 rounded-xl bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/20">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[var(--color-text-muted)]">Last activity</span>
-                <span className="text-[var(--color-cyan)]">{balance.lastActivityAt ? new Date(balance.lastActivityAt).toLocaleString() : 'N/A'}</span>
+                <span className="text-[var(--color-accent)]">{balance.lastActivityAt ? new Date(balance.lastActivityAt).toLocaleString() : 'N/A'}</span>
               </div>
             </div>
           )}
@@ -310,7 +310,7 @@ const handleBuyCredits = async () => {
                   if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) setBuyAmount(e.target.value)
                 }}
                 placeholder="0.00"
-                className="w-full text-2xl font-bold bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-3 placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-cyan)]/50"
+                className="w-full text-2xl font-bold bg-[var(--color-void)] border border-[var(--color-border)] rounded-xl px-4 py-3 placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50"
               />
             </div>
 
@@ -335,20 +335,20 @@ const handleBuyCredits = async () => {
                   onClick={() => setSelectedPayment('usdc')}
                   className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
                     selectedPayment === 'usdc' 
-                      ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' 
                       : 'border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:brightness-125'
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--color-cyan)] to-[var(--color-blue)]" />
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-blue)]" />
                   USDC
                 </motion.button>
                 <motion.button
                   onClick={() => setSelectedPayment('sol')}
                   className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
                     selectedPayment === 'sol' 
-                      ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' 
                       : 'border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:brightness-125'
                   }`}
                   whileHover={{ scale: 1.02 }}
@@ -406,7 +406,7 @@ const handleBuyCredits = async () => {
                     }
                   }}
                   className={`relative h-6 w-11 rounded-full transition-colors ${
-                    autoReload ? 'bg-[var(--color-cyan)]' : 'bg-[var(--color-surface-elevated)]'
+                    autoReload ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-surface-elevated)]'
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -426,7 +426,7 @@ const handleBuyCredits = async () => {
                       placeholder="10.00"
                       value={autoReloadThreshold}
                       onChange={(e) => setAutoReloadThreshold(e.target.value)}
-                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
+                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-accent)]/50"
                     />
                   </div>
                   <div>
@@ -438,7 +438,7 @@ const handleBuyCredits = async () => {
                       placeholder="50.00"
                       value={autoReloadAmount}
                       onChange={(e) => setAutoReloadAmount(e.target.value)}
-                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
+                      className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-accent)]/50"
                     />
                   </div>
                   <button
@@ -469,7 +469,7 @@ const handleBuyCredits = async () => {
                         setSavingAutoReload(false)
                       }
                     }}
-                    className="w-full rounded-lg bg-[var(--color-cyan)] px-4 py-2 text-sm font-semibold text-[var(--color-void)] transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-void)] transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {savingAutoReload ? 'Saving…' : 'Save'}
                   </button>
@@ -536,7 +536,7 @@ const handleBuyCredits = async () => {
         transition={{ delay: 0.5 }}
       >
         <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--color-border)]/50">
-          <History className="h-5 w-5 text-[var(--color-cyan)]" />
+          <History className="h-5 w-5 text-[var(--color-accent)]" />
           <h3 className="text-lg font-semibold text-[var(--color-text-bright)]">Credit History</h3>
         </div>
         <div className="overflow-x-auto">
@@ -554,13 +554,13 @@ const handleBuyCredits = async () => {
               {historyLoading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-cyan)]" />
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-accent)]" />
                   </td>
                 </tr>
               ) : !historyHasResolved ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-cyan)]" />
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--color-accent)]" />
                   </td>
                 </tr>
               ) : history.length === 0 ? (
@@ -584,7 +584,7 @@ const handleBuyCredits = async () => {
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 text-sm ${
                         item.type === 'deposit' ? 'text-[var(--color-green)]' : 
-                        item.type === 'refund' ? 'text-[var(--color-cyan)]' : 'text-[var(--color-warning)]'
+                        item.type === 'refund' ? 'text-[var(--color-accent)]' : 'text-[var(--color-warning)]'
                       }`}>
                         {item.type === 'deposit' ? (
                           <ArrowUpRight className="h-4 w-4" />

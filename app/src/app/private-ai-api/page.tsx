@@ -185,7 +185,7 @@ export default function PrivateAIAPIPage() {
               </div>
               <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
                 <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
-                <span className="text-sm text-[var(--color-text)]">Audited on-chain settlement</span>
+                <span className="text-sm text-[var(--color-text)]">Verifiable on-chain settlement</span>
               </div>
             </div>
           </div>

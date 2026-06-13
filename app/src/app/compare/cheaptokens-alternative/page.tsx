@@ -115,10 +115,10 @@ export default function CheapTokensAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
               >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
                 </div>
                 <div>
                   <span className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{item.title}: </span>
@@ -148,7 +148,7 @@ export default function CheapTokensAlternativePage() {
                 <tr className="border-b border-[var(--color-border)]">
                   <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Feature</th>
                   <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">CheapTokens</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-cyan)]">OMA</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">OMA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -159,10 +159,10 @@ export default function CheapTokensAlternativePage() {
                   { feature: 'Credit System', cheap: 'No', oma: 'Yes', highlight: true },
                   { feature: 'Dashboard', cheap: 'Limited', oma: 'Full Analytics', highlight: false },
                 ].map((row, i) => (
-                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-cyan)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
+                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-accent)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
                     <td className="p-4 font-mono text-sm text-[var(--color-text)]">{row.feature}</td>
                     <td className="p-4 text-center font-mono text-sm text-[var(--color-text-muted)]">{row.cheap}</td>
-                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-cyan)]">{row.oma}</td>
+                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-accent)]">{row.oma}</td>
                   </tr>
                 ))}
               </tbody>

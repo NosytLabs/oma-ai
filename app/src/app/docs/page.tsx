@@ -273,7 +273,7 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
             key={t.label}
             onClick={() => setActive(i)}
             className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
-              i === active ? 'text-[var(--color-cyan)] border-[var(--color-cyan)]' : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
+              i === active ? 'text-[var(--color-accent)] border-[var(--color-accent)]' : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
             }`}
           >
             {t.label}
@@ -352,10 +352,10 @@ function QuickStartSection() {
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-[var(--color-cyan)]" />
+            <Terminal className="h-4 w-4 text-[var(--color-accent)]" />
             <span className="text-sm font-medium text-[var(--color-text)]">Your First Request</span>
           </div>
-          <span className="rounded-md bg-[var(--color-cyan)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-cyan)] border border-[var(--color-cyan)]/20">cURL</span>
+          <span className="rounded-md bg-[var(--color-accent)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-accent)] border border-[var(--color-accent)]/20">cURL</span>
         </div>
         <CopyButton text={curlCode} id="quickstart-code" />
         <pre id="quickstart-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"><code>{curlCode}</code></pre>
@@ -364,11 +364,11 @@ function QuickStartSection() {
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
           <div className="text-xs text-[var(--color-text-muted)] mb-1">Base URL</div>
-          <code className="text-sm text-[var(--color-cyan)]">https://api.oma-ai.com/v1</code>
+          <code className="text-sm text-[var(--color-accent)]">https://api.oma-ai.com/v1</code>
         </div>
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
           <div className="text-xs text-[var(--color-text-muted)] mb-1">SDK Install</div>
-          <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
+          <code className="text-sm text-[var(--color-accent)]">npm install openai</code>
         </div>
       </div>
     </AnimatedSection>
@@ -413,7 +413,7 @@ func main() {
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5 mb-6">
         <div className="mb-3 text-sm text-[var(--color-text-muted)]">Authorization Header</div>
         <div className="rounded-lg bg-[var(--color-surface)]/80 border border-[var(--color-border)]/50 p-3 font-mono text-sm">
-          <span className="text-[var(--color-warning)]">Authorization:</span> <span className="text-[var(--color-cyan)]">Bearer oma_sk_...</span>
+          <span className="text-[var(--color-warning)]">Authorization:</span> <span className="text-[var(--color-accent)]">Bearer oma_sk_...</span>
         </div>
       </div>
 
@@ -459,7 +459,7 @@ function EndpointsSection() {
             >
               <div className="flex items-center gap-3">
                 <span className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
-                  ep.method === 'GET' ? 'bg-[var(--color-green)]/10 text-[var(--color-green)]' : 'bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]'
+                  ep.method === 'GET' ? 'bg-[var(--color-green)]/10 text-[var(--color-green)]' : 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
                 }`}>
                   {ep.method}
                 </span>
@@ -485,7 +485,7 @@ function EndpointsSection() {
                     <div className="rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-panel)] p-4 space-y-2">
                       {Object.entries(ep.body).map(([key, val]) => (
                         <div key={key} className="flex gap-3 font-mono text-sm">
-                          <span className="text-[var(--color-cyan)] shrink-0">{key}</span>
+                          <span className="text-[var(--color-accent)] shrink-0">{key}</span>
                           <span className="text-[var(--color-text-muted)]">{val}</span>
                         </div>
                       ))}
@@ -549,9 +549,9 @@ function RateLimitsSection() {
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <h4 className="mb-2 font-semibold text-[var(--color-text)]">Rate Limit Headers</h4>
           <div className="space-y-1 font-mono text-xs text-[var(--color-text-muted)]">
-            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Limit</span> - Requests per minute</div>
-            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Remaining</span> - Requests left</div>
-            <div><span className="text-[var(--color-cyan)]">X-RateLimit-Reset</span> - Seconds until reset</div>
+            <div><span className="text-[var(--color-accent)]">X-RateLimit-Limit</span> - Requests per minute</div>
+            <div><span className="text-[var(--color-accent)]">X-RateLimit-Remaining</span> - Requests left</div>
+            <div><span className="text-[var(--color-accent)]">X-RateLimit-Reset</span> - Seconds until reset</div>
           </div>
         </div>
       </div>
@@ -579,7 +579,7 @@ function PricingSection() {
             {MODEL_PRICING.map((m, i) => (
               <tr key={m.id} className={`border-b border-[var(--color-border)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
                 <td className="px-4 py-3 font-medium text-[var(--color-text)]">{m.name}</td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{fmt(m.input)}</td>
+                <td className="px-4 py-3 text-right font-mono text-[var(--color-accent)]">{fmt(m.input)}</td>
                 <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{fmt(m.output)}</td>
                 <td className="px-4 py-3 text-right text-[var(--color-text-muted)]">{m.ctx}</td>
               </tr>
@@ -588,20 +588,20 @@ function PricingSection() {
         </table>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/5 p-4">
-        <h4 className="font-semibold text-[var(--color-cyan)]">Credit Deduction</h4>
+      <div className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 p-4">
+        <h4 className="font-semibold text-[var(--color-accent)]">Credit Deduction</h4>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
             <span className="text-sm text-[var(--color-text-muted)]">$1 = $1. Billed per token in real-time.</span>
           </div>
 
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
             <span className="text-sm text-[var(--color-text-muted)]">No minimums or subscriptions</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
             <span className="text-sm text-[var(--color-text-muted)]">12-month rolling expiry</span>
           </div>
         </div>
@@ -673,7 +673,7 @@ const response = await client.chat.completions.create({
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
         <h4 className="mb-3 font-semibold text-[var(--color-text)]">For AI Agents</h4>
         <p className="text-sm text-[var(--color-text-muted)] mb-4">
-          Enable <code className="text-[var(--color-cyan)] font-mono">x402: true</code> in the SDK to pay per request automatically.
+          Enable <code className="text-[var(--color-accent)] font-mono">x402: true</code> in the SDK to pay per request automatically.
           Ideal for agents that make sporadic API calls and do not want to manage credit balances.
         </p>
         <CodeBlock code={agentCode} />
@@ -683,9 +683,9 @@ const response = await client.chat.completions.create({
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <h4 className="mb-2 font-semibold text-[var(--color-text)]">Benefits</h4>
           <ul className="space-y-1.5 text-sm text-[var(--color-text-muted)]">
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> No credit pre-funding</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-cyan)] mt-0.5 shrink-0" /> Per-request billing</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> No credit pre-funding</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> Per-request billing</li>
           </ul>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
@@ -747,17 +747,17 @@ print(response.json())`
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
+            <HardDrive className="h-4 w-4 text-[var(--color-accent)]" />
             <span className="font-mono text-sm text-[var(--color-text)]">npm</span>
           </div>
-          <code className="text-sm text-[var(--color-cyan)]">npm install openai</code>
+          <code className="text-sm text-[var(--color-accent)]">npm install openai</code>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-[var(--color-cyan)]" />
+            <HardDrive className="h-4 w-4 text-[var(--color-accent)]" />
             <span className="font-mono text-sm text-[var(--color-text)]">pip</span>
           </div>
-          <code className="text-sm text-[var(--color-cyan)]">pip install openai</code>
+          <code className="text-sm text-[var(--color-accent)]">pip install openai</code>
         </div>
       </div>
 

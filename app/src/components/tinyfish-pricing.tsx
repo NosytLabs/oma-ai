@@ -19,7 +19,7 @@ export function TinyFishPricing() {
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)]">
             <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-[var(--color-cyan)]" />
+              <Search className="h-4 w-4 text-[var(--color-accent)]" />
               <span className="text-sm text-[var(--color-text-secondary)]">Web Search API</span>
             </div>
             <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ export function TinyFishPricing() {
 
           <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)]">
             <div className="flex items-center gap-2">
-              <Download className="h-4 w-4 text-[var(--color-cyan)]" />
+              <Download className="h-4 w-4 text-[var(--color-accent)]" />
               <span className="text-sm text-[var(--color-text-secondary)]">Content Fetch API</span>
             </div>
             <div className="flex items-center gap-2">

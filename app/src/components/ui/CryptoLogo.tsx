@@ -120,7 +120,7 @@ export function CryptoLogo({
     // Default text fallback showing symbol initials
     return (
       <div
-        className={`flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[var(--color-cyan)]/20 to-blue-500/20 border border-[var(--color-cyan)]/30 font-bold text-[var(--color-cyan)] ${className}`}
+        className={`flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[var(--color-accent)]/20 to-blue-500/20 border border-[var(--color-accent)]/30 font-bold text-[var(--color-accent)] ${className}`}
         style={{
           width: size,
           height: size,

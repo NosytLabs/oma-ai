@@ -117,7 +117,7 @@ export function ModelDetailModal({ model, onClose }: ModelDetailModalProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="model-stat-card">
                 <p className="text-xs mb-1 text-[var(--color-text-muted)]">Input Price</p>
-                <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatPrice(model.inputPricePer1M)}</p>
+                <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatPrice(model.inputPricePer1M)}</p>
                 <p className="text-xs mt-1 text-[var(--color-text-muted)]">per 1M tokens</p>
               </div>
               <div className="model-stat-card">
@@ -129,14 +129,14 @@ export function ModelDetailModal({ model, onClose }: ModelDetailModalProps) {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-3 bg-[var(--color-surface)] p-3 rounded-lg">
-                <Brain className="h-5 w-5 text-[var(--color-cyan)] opacity-60" />
+                <Brain className="h-5 w-5 text-[var(--color-accent)] opacity-60" />
                 <div>
                   <p className="text-xs text-[var(--color-text-muted)]">Context Window</p>
                   <p className="font-semibold text-[var(--color-text-bright)]">{model.contextLength}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-[var(--color-surface)] p-3 rounded-lg">
-                <DollarSign className="h-5 w-5 text-[var(--color-cyan)] opacity-60" />
+                <DollarSign className="h-5 w-5 text-[var(--color-accent)] opacity-60" />
                 <div>
                   <p className="text-xs text-[var(--color-text-muted)]">Per Token</p>
                   <p className="font-semibold text-[var(--color-text-bright)]">{formatPricePerToken(model.inputPricePer1M)}</p>

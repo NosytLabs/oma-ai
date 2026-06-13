@@ -1,96 +1,114 @@
-# OMA-AI v4 Mission Context — M2 Copy Polish Worker (Active)
+# OMA-AI Mission Context — Active (2026-06-13T21:05Z)
 
 ## Current Status
 
-**M2 Copy & Wording Polish worker `ses_copy_polish` in progress.**
+**Mission goal**: OMA-AI = "OpenRouter but for Venice API" — private, sovereign AI inference gateway with x402 + Houdini Swap. User credits: $50 Render, $200 Neon, $5k QuickNode.
 
-### Mission 2 (v4) Context
-- v3 mission: 131/131 todos [x], site 100% functional
-- v4 mission adds: orange theme, copy polish, aggressive cleanup
-- todo.md M2 status: pending (T2.1-T2.4 not started; this worker is assigned)
-- Other active workers (parallel): Morpheus integration, codebase cleanup, admin/login/wallet audit
+**Repo**: github.com/NosytLabs/oma-ai (NOT anomalyco/opencode). Branch: master.
 
-### M2 Worker Progress (ses_copy_polish)
-**T2.1: Audit landing/marketing pages** — COMPLETE (all files read, mostly clean)
-- `app/src/app/page.tsx` (591 lines) — **CLEAN** field-manual style, no edits needed
-- `app/src/app/about/page.tsx` (909 lines) — **CLEAN** field-manual style
-- `app/src/app/pricing/page.tsx` (374 lines) — **CLEAN** concrete numbers, action CTAs
-- `app/src/app/models/page.tsx` (529 lines) — **CLEAN**
+**Codebase state (excellent)**:
+- server typecheck: 0 errors ✓
+- app typecheck: 0 errors ✓
+- server lint: 0 errors ✓
+- app lint: 0 errors ✓
+- server tests: 685/685 PASS ✓
+- app tests: 28/28 PASS ✓
+- 51 models in catalog; Venice = PRIMARY provider; AntSeed = failover
+- 24 inference modules, 5 x402 modules, 18 credits modules
+- /v1/x402/proxy returns 501 (intentional stub per audit)
+- Houdini Swap client fully implemented (352 lines, WS + REST)
+- x402 facilitator is v1 with v2-spec comment block explaining migration
+- Settlement proxy at 0x0770d2124C0a581C28Cfc47a659817145e6Cc137 verified real on Base (522-byte bytecode, EIP-1967 proxy slot)
 
-**T2.2: Audit marketing pages** — COMPLETE
-- `app/src/app/compare/page.tsx` (244 lines) — **CLEAN**
-- `app/src/app/use-cases/page.tsx` (132 lines) — **1 ISSUE** (line 69)
-  - "From idea to working software — pick a category to see how OMA brings concepts to life." → "brings concepts to life" is fluffy marketing
-  - FIX: replace with concrete copy
-- `app/src/app/faq/page.tsx` (528 lines) — **CLEAN**
-- `app/src/app/private-ai-api/page.tsx` (212 lines) — **2 ISSUES**
-  - line 33-36: `title: 'Get Started Fast', desc: 'No paperwork. Just connect and start inferring.'` — vague CTA
-  - line 188: `'Enterprise-grade security'` — buzzword
-- `app/src/app/crypto-payments/page.tsx` (665 lines) — **CLEAN**
+**v5 mission state** (in progress):
+- M1 Orange Theme + M2 Copy Polish + M3 Hygiene + M5.1 Onchain: DONE
+- M6 Layout Audit: dispatch attempt 1 (task_5760ad24 152s) + attempt 2 (returned no output)
+- M7 Neon DB: dispatch attempt 1 (task_ffc6d340 174s) + attempt 2
+- M8 Render $50: dispatch attempt 1 (task_37716300 163s) + attempt 2
+- 20 background tasks total; many returned no output (M3 reliability bug)
+- .opencode/audit-2026-06-13v5/ now has layout-audit.md (10K) + neon-optimization.md (12K) + screenshots/
+- 26 PNG screenshots in .opencode/v5-screenshots/
 
-**T2.3: Audit dashboard + admin** — PARTIALLY COMPLETE
-- `app/src/app/dashboard/page.tsx` (327 lines) — **CLEAN** (mostly data, no user-facing copy)
-- `app/src/app/dashboard/credits/page.tsx` (623 lines) — **CLEAN**
-- `app/src/app/dashboard/api-keys/page.tsx` (544 lines) — **CLEAN**
-- `app/src/app/admin/page.tsx` (725 lines) — **CLEAN** (data tables only)
-- STILL TO READ: `admin/users/page.tsx`, `admin/users/[id]/page.tsx`, `admin/fees/page.tsx`, `admin/rate-limits/page.tsx`, `admin/analytics/page.tsx`
+**Sync issues**:
+- ✅ SYNC-20 RESOLVED (Audited → Verifiable on-chain settlement, verified via base-mcp eth_getCode)
+- ✅ SYNC-21 (M2 regression) RESOLVED via `git checkout HEAD --` on 2 files
+- ⏳ SYNC-22 (M4/M6/M7/M8 audit incompleteness) — pending re-dispatch
+- ⏳ SYNC-23 (M6 layout audit) — pending re-dispatch
+- ⏳ SYNC-24 (Venice routing audit) — pending re-dispatch
+- Unit tests written: 2026-06-13T20-57Z-sync21-m2-revert.md, 2026-06-13T20-59Z-sync20-audit-soften.md
 
-**T2.4 Apply fixes** — NOT STARTED
-- 3 surgical edits planned:
-  1. use-cases/page.tsx:69 — replace "brings concepts to life"
-  2. private-ai-api/page.tsx:33-36 — replace "Get Started Fast" with specific action
-  3. private-ai-api/page.tsx:188 — replace "Enterprise-grade security" with concrete
+**MiniMax UI/UX audits completed (5 pages, all brutally honest)**:
 
-**T2.5 Tone consistency** — DEFERRED (headings already field-manual consistent, CTAs mostly action-specific)
+CRITICAL findings to fix:
+1. **"Backend Unavailable" red dot** — `app/src/components/api-status.tsx:102` is the source. Component is in the navbar. This is a conversion killer. Need to change copy OR fix the health-check endpoint OR add a "mock dev" mode for landing page.
+2. **§04 Protocol text overlap** — orange text "x402 header attached" / "stream response" physically overlaps step numbers 02 and 05. CSS positioning bug in landing page §04.
+3. **Pricing page CTAs buried** — "Start AI Inference" / "Deposit Crypto" at bottom of 28-model table. Must move to hero.
+4. **Mobile table overflow** — 4-column tables in §02/§03 will break at 375px. Need card-list transformation.
+5. **Light theme ghost text** — secondary gray text (#999/#AAA) fails WCAG AA. Darken to #666.
+6. **Orange arrows too thin** in §04 protocol (light theme).
+7. **Provider labels confusing** — "Venice/AntSeed" don't mean anything to new users.
+8. **Missing logos** — no brand icons for models.
 
-**T2.6 Verification** — NOT STARTED
-- Required: `cd app && npm run typecheck` (0), `npm run lint` (0), `npm run build` (exit 0)
-- All 3 edits are surgical string changes — zero risk to types/components
+MAJOR findings:
+- Header says "32+ models" but list has 50+ (data mismatch erodes trust)
+- Table view toggle needed for power users
+- Footer "Backend Unavailable" scares users
+- Pricing page X402 box too tall, pushes table down
+- Cross-chain deposit (Houdini) not mentioned on landing
+- "Schematic" copy in System State box unclear
 
-### Work Log
-- `.opencode/work-log.md` updated: `ses_copy_polish (Worker): M2 copy polish - in_progress`
+**Cleanup opportunities**:
+- .opencode/ is 37M with 114 files — could trim v3 audit dirs (v2 = 4K, v3 missing, v4-screenshots = 11M)
+- No .bak/.tmp/.orig files
+- node_modules are normal
+- docs/archive/ is archived properly
+
+**MCP health** (from prior session):
+- ✅ 16/18 MCPs working (desktop-commander, memory, filesystem, chrome-devtools, taskmanager, base-mcp, brave-search, railway, neon, github, firecrawl, base-wallet-toolkit, sequential-thinking, mult-fetch, 21st-magic)
+- ❌ context7: needs opencode restart to pick up new key
+- ❌ quicknode: key rejected upstream (regenerate at dashboard.quicknode.com)
+- ⚠️ render: needs workspace selection (`opencode mcp auth render`)
+- ✅ MiniMax MCP working: `MiniMax_understand_image` + `MiniMax_web_search` confirmed functional
 
 ## Pending Tasks
 
-1. **Read remaining admin pages** (4 files): users/, users/[id], fees, rate-limits, analytics — likely CLEAN (data-heavy)
-2. **Apply 3 surgical fixes** (T2.4):
-   - use-cases/page.tsx:69 rewrite
-   - private-ai-api/page.tsx:33-36 rewrite
-   - private-ai-api/page.tsx:188 rewrite
-3. **Run verification** (T2.5):
-   - `cd app && npm run typecheck` → 0 errors
-   - `cd app && npm run lint` → 0 errors
-   - `cd app && npm run build` → exit 0
-4. **Update work-log.md** with files modified + verification results
-5. **Report back to Commander** with: per-file issue list, total files modified, verification output
-
-## Files Identified For Edits (Surgical)
-
-| File | Line | Current | Replacement |
-|------|------|---------|-------------|
-| use-cases/page.tsx | 69 | "pick a category to see how OMA brings concepts to life." | "pick a category to see the patterns and code." |
-| private-ai-api/page.tsx | 33-36 | {icon: Shield, title: 'Get Started Fast', desc: 'No paperwork. Just connect and start inferring.'} | {icon: Shield, title: 'Wallet to API', desc: 'Connect a wallet, get a key, hit the endpoint. No email, no KYC.'} |
-| private-ai-api/page.tsx | 188 | "Enterprise-grade security" | "Audited on-chain settlement" |
-
-## Recent Commits (unchanged from prior context)
-- `3bcd020` docs(todo): mark S3.4.5 [x]
-- `d4d9e0c` fix(a11y): resolve all 7 axe-core violations
-- (others as before)
+1. **CRITICAL FIX: "Backend Unavailable" red dot** — fix `app/src/components/api-status.tsx:102` and the underlying health-check OR add a marketing-mode override
+2. **CRITICAL FIX: §04 protocol text overlap** — fix CSS in `app/src/app/page.tsx` §04 (around line 380-430, the protocol diagram)
+3. **CRITICAL FIX: Pricing page CTA placement** — move CTAs to hero in `app/src/app/pricing/page.tsx`
+4. **CRITICAL FIX: Mobile table responsiveness** — add card-list transform for 375px in §02/§03
+5. **MAJOR: Apply MiniMax audit fixes** — increase orange arrow stroke, darken light theme grays, add brand logos to model rows
+6. **MAJOR: Mention Houdini on landing** — cross-chain deposit is a major USP
+7. **CLEANUP: Trim .opencode/v4-screenshots** (11M, mostly stale)
+8. **CLEANUP: Verify all SYNC issues resolved** in sync-issues.md
+9. **VERIFY: Re-run server typecheck + lint + tests** after all changes
+10. **COMMIT: Stage + commit all v5 changes** with comprehensive message
+11. **GitHub: Check NosytLabs/oma-ai repo state** via github MCP (queried wrong repo earlier - was anomalyco/opencode)
+12. **MCP: Tell user to restart opencode for context7** + regenerate QuickNode key
+13. **DEPLOY: User has $50 Render credit unused** — recommend deployment strategy per M8 audit
+14. **Final: Update todo.md M0-M9 tree** with all completed work
+15. **Final: Write AUDIT-REPORT-V5-2026-06-13.md** summarizing all v5 findings
 
 ## Key File Paths
-- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/page.tsx` (landing, clean)
-- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/use-cases/page.tsx` (1 fix needed)
-- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/private-ai-api/page.tsx` (2 fixes needed)
-- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/todo.md` (M2 status: pending → in_progress)
-- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/work-log.md` (this session)
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/todo.md` (v5 mission tree)
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/sync-issues.md` (SYNC-20/21 resolved, 22/23/24 pending)
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/work-log.md` (active sessions, ~20 entries)
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/audit-2026-06-13v5/{layout-audit,neon-optimization}.md` + screenshots/
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/v5-screenshots/` (26 PNGs)
+- `/Users/tyson/Desktop/Code/OMA-AI/.opencode/unit-tests/` (8 files now)
+- `/Users/tyson/Desktop/Code/OMA-AI/app/src/components/api-status.tsx:102` (CRITICAL: Backend Unavailable)
+- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/page.tsx` (landing, 591 lines, §04 protocol overlap bug)
+- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/pricing/page.tsx` (CTAs at bottom — need to move)
+- `/Users/tyson/Desktop/Code/OMA-AI/app/src/app/models/page.tsx` (no search/filter prominent)
+- `/Users/tyson/Desktop/Code/OMA-AI/server/src/inference/venice.ts` (full-featured, 454 lines)
+- `/Users/tyson/Desktop/Code/OMA-AI/server/src/x402/facilitator.ts` (947 lines, v1+v2 spec)
+- `/Users/tyson/Desktop/Code/OMA-AI/server/src/credits/houdini-client.ts` (352 lines)
+- `/Users/tyson/Desktop/Code/OMA-AI/server/src/config.ts` (302 lines, full zod validation)
+- `/Users/tyson/Desktop/Code/OMA-AI/docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md` (architecture)
+- `/Users/tyson/Desktop/Code/OMA-AI/docs/BRAND-MESSAGING.md` (positioning)
 
-## Validation Gates (must pass after edits)
-- `cd app && npm run typecheck` → 0 errors
-- `cd app && npm run lint` → 0 errors
-- `cd app && npm run build` → exit 0
-
-## Notes
-- Most pages already follow a "field manual" / "schematic" aesthetic (stop-slop pass complete)
-- Copy is mostly: specific, plain-spoken, with concrete numbers and named features
-- No buzzword sweeps needed; only 3 isolated edits required
-- 3 edits are pure text changes — no prop renames, no component restructuring
+## Active Session
+- Current Commander session, depth 0
+- 89% context → compaction triggered
+- 20+ background tasks dispatched, many returned empty (M3 reliability issue per AGENTS.md)
+- MiniMax MCP confirmed working for visual audit
+- Need to continue with fixes after compaction

@@ -411,7 +411,7 @@ Authorization: Bearer <api_key>
   "x402Version": "1",
   "scheme": "evm",
   "networkId": "base",
-  "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54cA3B8766",
+  "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   "amount": "0.01",
   "payee": "0x...",
   "maxAmountRequired": "0.01",

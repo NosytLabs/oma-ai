@@ -22,8 +22,8 @@ export function AdminOverviewRevenueChart({ chartData }: AdminOverviewRevenueCha
           <AreaChart data={chartData.slice(-30)}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-cyan)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--color-cyan)" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -57,7 +57,7 @@ export function AdminOverviewRevenueChart({ chartData }: AdminOverviewRevenueCha
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="var(--color-cyan)"
+              stroke="var(--color-accent)"
               fill="url(#revenueGradient)"
               strokeWidth={2}
             />

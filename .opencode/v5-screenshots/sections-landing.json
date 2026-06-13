@@ -1,0 +1,21 @@
+{
+  "page": "http://localhost:3000/",
+  "viewport": "1440x900",
+  "totals": {
+    "bodyHeight": 3631,
+    "htmlHeight": 3631,
+    "navHeight": 49,
+    "mainHeight": 3217,
+    "footerHeight": 366
+  },
+  "sections": [
+    {"tag":"DIV","cls":"min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono","h":3153,"w":1440,"padTop":"0px","padBot":"0px","text":"▌oma·field manual·build dev·revised 2026-06-02·doc #0x4F4D41"},
+    {"tag":"SECTION","cls":"mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8","h":47,"w":1152,"padTop":"32px","text":"▌oma·field manual·build dev·revised 2026-06-02·doc #0x4F4D41"},
+    {"tag":"SECTION","cls":"mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16","h":566,"w":1152,"padTop":"48px","padBot":"64px","text":"§ 01Subjectpurpose & scope"},
+    {"tag":"SECTION","cls":"border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16","h":489,"w":1152,"padTop":"64px","padBot":"64px","text":"§ 02Inventorysubset of available models"},
+    {"tag":"SECTION","cls":"border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16","h":435,"w":1152,"padTop":"64px","padBot":"64px","text":"§ 03Routinglive provider mesh"},
+    {"tag":"SECTION","cls":"border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16","h":747,"w":1152,"padTop":"64px","padBot":"64px","text":"§ 04Protocolx402 · per-request settlement"},
+    {"tag":"SECTION","cls":"border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16","h":479,"w":1152,"padTop":"64px","padBot":"64px","text":"§ 05Integrationdrop-in · 5 lines"},
+    {"tag":"SECTION","cls":"border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16","h":391,"w":1152,"padTop":"64px","padBot":"64px","text":"§ 06Procurementnext step"}
+  ]
+}

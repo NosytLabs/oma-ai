@@ -66,16 +66,16 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-accent)]/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-cyan)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-2">
                     <span className="font-mono text-xs text-[var(--color-text-muted)]">{card.label}</span>
                     <div className="h-px flex-1 bg-[var(--color-border)]" />
                   </div>
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <card.icon className="h-5 w-5 text-[var(--color-cyan)]" />
+                    <card.icon className="h-5 w-5 text-[var(--color-accent)]" />
                   </div>
                   <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
                   <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
@@ -112,10 +112,10 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
               >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
                 </div>
                 <div>
                   <span className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{item.title}: </span>
@@ -154,7 +154,7 @@ export default function VeniceAIAlternativePage() {
                 className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
               >
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-cyan)]" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
                   <h3 className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
                 </div>
                 <p className="text-sm text-[var(--color-text-muted)]">{card.desc}</p>

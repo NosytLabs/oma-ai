@@ -186,7 +186,7 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded border border-[var(--color-accent)] bg-[var(--color-accent-dim)] flex items-center justify-center">
-                <Terminal className="w-4 h-4 text-[var(--color-cyan)]" />
+                <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
               </div>
               <div>
                 <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">OMA Admin</h1>
@@ -225,7 +225,7 @@ export default function AdminPage() {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-3 text-xs font-medium font-mono uppercase tracking-wider transition-all border-b-2 whitespace-nowrap rounded-full ${
                   activeTab === tab
-                    ? 'text-[var(--color-cyan)] border-[var(--color-cyan)] bg-[var(--color-accent-dim)]/30'
+                    ? 'text-[var(--color-accent)] border-[var(--color-accent)] bg-[var(--color-accent-dim)]/30'
                     : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
                 }`}
               >
@@ -313,7 +313,7 @@ export default function AdminPage() {
                   <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                   <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Revenue</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(adminStats.revenue)}</p>
+                <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatUsd(adminStats.revenue)}</p>
               </div>
               <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4 group hover:border-[var(--color-accent)]/30 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
@@ -408,7 +408,7 @@ export default function AdminPage() {
                           <div className="text-[11px] text-[var(--color-text-muted)] font-mono">{formatAddress(user.solanaAddress)}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatUsd(user.balanceCredits)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-accent)]">{formatUsd(user.balanceCredits)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatUsd(user.totalDeposited)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-amber)]">{formatUsd(user.totalUsed)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{user.totalRequests?.toLocaleString() || 0}</td>
@@ -416,7 +416,7 @@ export default function AdminPage() {
                       <td className="px-4 py-3">
                         <Link
                           href={`/admin/users/${user.id}`}
-                          className="p-1.5 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-cyan)] transition-colors inline-flex"
+                          className="p-1.5 rounded hover:bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors inline-flex"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -462,7 +462,7 @@ export default function AdminPage() {
                     key={p}
                     onClick={() => { setUsagePeriod(p) }}
                     className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
-                      usagePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
+                      usagePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
                     }`}
                   >
                     {p}
@@ -496,7 +496,7 @@ export default function AdminPage() {
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Gross Profit</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(usageStats.summary.grossProfit)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatUsd(usageStats.summary.grossProfit)}</p>
                     <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {usageStats.summary.margin}</p>
                   </div>
                 </div>
@@ -522,7 +522,7 @@ export default function AdminPage() {
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-text-muted)]">{p.totalRequests.toLocaleString()}</td>
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-success)]">{formatUsd(p.totalRevenue)}</td>
                           <td className="px-4 py-2 text-right font-mono text-[var(--color-amber)]">{formatUsd(p.totalCost)}</td>
-                          <td className="px-4 py-2 text-right font-mono text-[var(--color-cyan)]">{formatUsd(p.profit)}</td>
+                          <td className="px-4 py-2 text-right font-mono text-[var(--color-accent)]">{formatUsd(p.profit)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -573,7 +573,7 @@ export default function AdminPage() {
                   key={p}
                     onClick={() => { setRevenuePeriod(p) }}
                   className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
-                    revenuePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-cyan)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
+                    revenuePeriod === p ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
                   }`}
                 >
                   {p}
@@ -595,7 +595,7 @@ export default function AdminPage() {
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Gross Profit</p>
-                    <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatUsd(revenueStats.summary.grossProfit)}</p>
+                    <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatUsd(revenueStats.summary.grossProfit)}</p>
                   </div>
                   <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <p className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">New Users</p>
@@ -674,7 +674,7 @@ export default function AdminPage() {
                   {apiKeys.map((key) => (
                     <tr key={key.id} className="border-b border-[var(--color-border)]/50 hover:bg-[var(--color-surface)]/50">
                       <td className="px-4 py-3">
-                        <span className="font-mono text-sm text-[var(--color-cyan)]">{key.keyPrefix}***</span>
+                        <span className="font-mono text-sm text-[var(--color-accent)]">{key.keyPrefix}***</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-sm text-[var(--color-text-secondary)]">{formatAddress(key.userAddress)}</span>
@@ -708,7 +708,7 @@ export default function AdminPage() {
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
             <DollarSign className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" />
             <p className="text-[var(--color-text-muted)] font-mono">Fee configuration</p>
-            <Link href="/admin/fees" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Fee Configuration →</Link>
+            <Link href="/admin/fees" className="text-[var(--color-accent)] hover:underline mt-2 inline-block font-mono text-sm">Open Fee Configuration →</Link>
           </div>
         )}
 
@@ -716,7 +716,7 @@ export default function AdminPage() {
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
             <Gauge className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" />
             <p className="text-[var(--color-text-muted)] font-mono">Rate limit configuration</p>
-            <Link href="/admin/rate-limits" className="text-[var(--color-cyan)] hover:underline mt-2 inline-block font-mono text-sm">Open Rate Limits →</Link>
+            <Link href="/admin/rate-limits" className="text-[var(--color-accent)] hover:underline mt-2 inline-block font-mono text-sm">Open Rate Limits →</Link>
           </div>
         )}
       </div>

@@ -330,8 +330,8 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                   onChange={(e) => handleAmountChange(e.target.value)}
                   className="w-full text-xl font-semibold bg-[var(--color-surface)] border border-[var(--color-border-bright)] rounded-lg px-4 py-4
                     placeholder:text-[var(--color-text-muted)]
-                    focus:outline-none focus:border-[var(--color-cyan)]/50 focus:ring-2 focus:ring-[var(--color-cyan)]/20
-                    hover:border-[var(--color-cyan)]/30"
+                    focus:outline-none focus:border-[var(--color-accent)]/50 focus:ring-2 focus:ring-[var(--color-accent)]/20
+                    hover:border-[var(--color-accent)]/30"
                 />
                 {selectedCoin && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -356,7 +356,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                     className="flex-1 rounded border border-[var(--color-border-bright)] py-2 text-sm font-medium
                       text-[var(--color-text-secondary)] bg-[var(--color-surface)]
                       hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-bright)]
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30
                       active:translate-y-0
                       transition-colors duration-150"
                     whileHover={{ scale: 1 }}
@@ -378,14 +378,14 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-[var(--color-text-secondary)] font-medium">Route</span>
                   {route.badge && (
-                    <span className="rounded px-2 py-0.5 text-xs font-mono font-semibold text-[var(--color-cyan)] border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/10">
+                    <span className="rounded px-2 py-0.5 text-xs font-mono font-semibold text-[var(--color-accent)] border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10">
                       {route.badge}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
-                    <ShieldCheck className="h-5 w-5 text-[var(--color-cyan)]" />
+                    <ShieldCheck className="h-5 w-5 text-[var(--color-accent)]" />
                   </div>
                   <div className="flex-1">
                     <div className="font-semibold text-[var(--color-text-bright)]">{route.label}</div>
@@ -403,9 +403,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
               onClick={handleStartDeposit}
               disabled={!selectedCoin || !amount || parseFloat(amount) <= 0 || !treasuryAddress}
               className="w-full py-4 text-sm font-semibold rounded-full
-                bg-[var(--color-cyan)] text-[var(--color-void)]
-                hover:bg-[var(--color-cyan-bright)]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                bg-[var(--color-accent)] text-[var(--color-void)]
+                hover:bg-[var(--color-accent-bright)]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
                 disabled:opacity-40 disabled:cursor-not-allowed
                 active:translate-y-0
                 transition-colors duration-150"
@@ -427,7 +427,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
-                  <ArrowRightLeft className="h-5 w-5 text-[var(--color-cyan)]" />
+                  <ArrowRightLeft className="h-5 w-5 text-[var(--color-accent)]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Swap Required</h3>
@@ -499,7 +499,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 className="flex-1 py-3 text-sm font-medium rounded-lg border border-[var(--color-border-bright)]
                   text-[var(--color-text-secondary)] bg-transparent
                   hover:bg-[var(--color-surface)] hover:text-[var(--color-text-bright)]
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30
                   active:translate-y-0
                   transition-colors duration-150"
                 whileHover={{ scale: 1 }}
@@ -511,9 +511,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 onClick={handleCreatePaymentLink}
                 disabled={creatingPaymentLink}
                 className="flex-1 py-3 text-sm font-semibold rounded-lg
-                  bg-[var(--color-cyan)] text-[var(--color-void)]
-                  hover:bg-[var(--color-cyan-bright)]
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                  bg-[var(--color-accent)] text-[var(--color-void)]
+                  hover:bg-[var(--color-accent-bright)]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
                   disabled:opacity-40 disabled:cursor-not-allowed
                   active:translate-y-0
                   transition-colors duration-150"
@@ -539,7 +539,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 href="https://app.houdiniswap.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)] underline"
+                className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-bright)] underline"
               >
                 Open HoudiniSwap →
               </a>
@@ -558,7 +558,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
               <>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
-                    <Link2 className="h-5 w-5 text-[var(--color-cyan)]" />
+                    <Link2 className="h-5 w-5 text-[var(--color-accent)]" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-[var(--color-text-bright)]">Payment Link Created</h3>
@@ -583,7 +583,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
 
                 <div className="rounded border border-[var(--color-border-bright)] bg-[var(--color-surface)] p-3 mb-4 break-all">
                   <div className="text-xs text-[var(--color-text-muted)] mb-1 font-mono">Payment Link</div>
-                  <div className="text-sm font-mono text-[var(--color-cyan)]">{paymentLinkInfo.url}</div>
+                  <div className="text-sm font-mono text-[var(--color-accent)]">{paymentLinkInfo.url}</div>
                 </div>
 
                 <div className="flex gap-3">
@@ -595,7 +595,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                     className="py-3 px-5 text-sm font-medium rounded-lg border border-[var(--color-border-bright)]
                       text-[var(--color-text-secondary)] bg-transparent
                       hover:bg-[var(--color-surface)] hover:text-[var(--color-text-bright)]
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30
                       active:translate-y-0
                       transition-colors duration-150"
                     whileHover={{ scale: 1 }}
@@ -609,9 +609,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                   <motion.button
                     onClick={handleReset}
                     className="py-3 px-5 text-sm font-semibold rounded-lg
-                      bg-[var(--color-cyan)] text-[var(--color-void)]
-                      hover:bg-[var(--color-cyan-bright)]
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                      bg-[var(--color-accent)] text-[var(--color-void)]
+                      hover:bg-[var(--color-accent-bright)]
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
                       active:translate-y-0
                       transition-colors duration-150"
                     whileHover={{ scale: 1 }}
@@ -634,7 +634,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Loader2 className="h-7 w-7 text-[var(--color-cyan)]" />
+                    <Loader2 className="h-7 w-7 text-[var(--color-accent)]" />
                   </motion.div>
                 </div>
                 <h3 className="text-lg font-bold text-[var(--color-text-bright)] text-center mb-2">Processing Deposit</h3>
@@ -642,8 +642,8 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 {txHash && (
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-xs text-[var(--color-text-muted)] font-mono">Tx:</span>
-                    <span className="text-xs font-mono text-[var(--color-cyan)]">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
-                    <a href={`https://basescan.io/tx/${txHash}`} target="_blank" rel="noopener" className="text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)]">
+                    <span className="text-xs font-mono text-[var(--color-accent)]">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
+                    <a href={`https://basescan.io/tx/${txHash}`} target="_blank" rel="noopener" className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)]">
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
@@ -672,9 +672,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             <motion.button
               onClick={handleReset}
               className="py-3 px-6 text-sm font-semibold rounded-lg
-                bg-[var(--color-cyan)] text-[var(--color-void)]
-                hover:bg-[var(--color-cyan-bright)]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                bg-[var(--color-accent)] text-[var(--color-void)]
+                hover:bg-[var(--color-accent-bright)]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
                 active:translate-y-0
                 transition-colors duration-150"
               whileHover={{ scale: 1 }}
@@ -704,9 +704,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             <motion.button
               onClick={handleReset}
               className="py-3 px-6 text-sm font-semibold rounded-lg
-                bg-[var(--color-cyan)] text-[var(--color-void)]
-                hover:bg-[var(--color-cyan-bright)]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+                bg-[var(--color-accent)] text-[var(--color-void)]
+                hover:bg-[var(--color-accent-bright)]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
                 active:translate-y-0
                 transition-colors duration-150"
               whileHover={{ scale: 1 }}

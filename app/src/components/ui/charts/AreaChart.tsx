@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean;
     return (
       <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
         <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
-        <p className="text-sm font-semibold text-[var(--color-cyan)]">{payload[0].value.toLocaleString()} requests</p>
+        <p className="text-sm font-semibold text-[var(--color-accent)]">{payload[0].value.toLocaleString()} requests</p>
         {showCost && payload[0].name === 'cost' && (
           <p className="text-sm font-semibold text-[var(--color-amber)]">${payload[0].value.toFixed(2)}</p>
         )}
@@ -45,8 +45,8 @@ export function AreaChartComponent({ data, showCostArea = true }: AreaChartCompo
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} role="img" aria-label={chartDescription}>
           <defs>
             <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00ffc8" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#00ffc8" stopOpacity={0} />
+              <stop offset="5%" stopColor="#fb923c" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
             </linearGradient>
             {showCostArea && (
               <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
@@ -75,7 +75,7 @@ export function AreaChartComponent({ data, showCostArea = true }: AreaChartCompo
           <Area 
             type="monotone" 
             dataKey="requests" 
-            stroke="#00ffc8" 
+            stroke="#fb923c" 
             strokeWidth={2}
             fill="url(#colorRequests)"
             animationDuration={1000}

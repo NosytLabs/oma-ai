@@ -91,7 +91,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-5 h-5 border border-[var(--color-cyan)] border-t-transparent rounded-full"
+            className="w-5 h-5 border border-[var(--color-accent)] border-t-transparent rounded-full"
           />
           <span className="text-[var(--color-text-muted)] font-mono text-sm">Loading user details...</span>
         </div>
@@ -112,7 +112,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <p className="text-[var(--color-text-muted)] font-mono mb-4">{error || 'The requested user does not exist.'}</p>
             <button
               onClick={() => router.push('/admin')}
-              className="px-4 py-2 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 text-[var(--color-cyan)] hover:bg-[var(--color-cyan)]/20 text-sm font-mono"
+              className="px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 text-sm font-mono"
             >
               Return to Admin
             </button>
@@ -167,7 +167,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Current Balance</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-cyan)]">{formatCredits(balance.balanceCredits)}</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatCredits(balance.balanceCredits)}</p>
           </div>
           <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -224,7 +224,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               {user.accountNumber && (
                 <div>
                   <label className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1 block">Account Number</label>
-                  <p className="font-mono text-sm text-[var(--color-cyan)]">{user.accountNumber}</p>
+                  <p className="font-mono text-sm text-[var(--color-accent)]">{user.accountNumber}</p>
                 </div>
               )}
             </div>
@@ -252,11 +252,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               {apiKeys.map((key) => (
                 <div key={key.id} className="px-5 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 flex items-center justify-center">
-                      <Key className="w-5 h-5 text-[var(--color-cyan)]" />
+                    <div className="w-10 h-10 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center">
+                      <Key className="w-5 h-5 text-[var(--color-accent)]" />
                     </div>
                     <div>
-                      <p className="font-mono text-sm text-[var(--color-cyan)]">{key.keyPrefix}***</p>
+                      <p className="font-mono text-sm text-[var(--color-accent)]">{key.keyPrefix}***</p>
                       <p className="text-[10px] text-[var(--color-text-muted)]">{key.name}</p>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.inputTokens.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-text-muted)]">{usage.outputTokens.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{formatUsd(usage.cost)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-accent)]">{formatUsd(usage.cost)}</td>
                       <td className="px-4 py-3 text-[var(--color-text-muted)] font-mono text-xs">{format(usage.createdAt, 'MMM d, h:mm a')}</td>
                     </tr>
                   ))}
@@ -351,7 +351,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                         <span className="text-sm text-[var(--color-text-bright)] capitalize">{deposit.type}</span>
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[var(--color-success)]">{formatUsd(deposit.amount)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--color-cyan)]">{deposit.credits.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-mono text-[var(--color-accent)]">{deposit.credits.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider ${
                           deposit.status === 'completed' ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' :

@@ -66,10 +66,10 @@ const CATEGORIES: { key: Category; label: string }[] = [
 ]
 
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> = {
-  all: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]' },
+  all: { active: 'bg-[var(--color-accent)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]' },
   frontier: { active: 'bg-[var(--color-accent)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
   premium: { active: 'bg-[var(--color-accent)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
-  mid: { active: 'bg-[var(--color-cyan)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-cyan)] border border-[var(--color-cyan)]/30' },
+  mid: { active: 'bg-[var(--color-accent)] text-[var(--color-void)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-accent)]/30' },
   budget: { active: 'bg-[var(--color-success)] text-[var(--color-text-inverse)]', inactive: 'bg-[var(--color-surface)] text-[var(--color-success)] border border-[var(--color-success)]/30' },
 }
 
@@ -191,7 +191,7 @@ export default function PricingPage() {
                   <div className="relative p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]/40 transition-colors">
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-                        <Icon className="h-5 w-5 text-[var(--color-cyan)]" />
+                        <Icon className="h-5 w-5 text-[var(--color-accent)]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-[var(--color-text-bright)] truncate">{method.title}</h3>
@@ -272,13 +272,13 @@ export default function PricingPage() {
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
                             m.provider === 'Venice' ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' :
-                            m.provider === 'AntSeed' ? 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' :
+                            m.provider === 'AntSeed' ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' :
                             'bg-[var(--color-secondary)]/20 text-[var(--color-secondary)]'
                           }`}>
                             {m.provider}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-cyan)]">{fmtPrice(m.inputPer1M)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-accent)]">{fmtPrice(m.inputPer1M)}</td>
                         <td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-text-secondary)]">{fmtPrice(m.outputPer1M)}</td>
                         <td className="px-4 py-3 text-right text-xs text-[var(--color-text-secondary)] font-mono">{m.ctx}</td>
                       </tr>

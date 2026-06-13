@@ -64,12 +64,12 @@ export default function OpenRouterAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-cyan)]/30"
+                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-accent)]/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-cyan)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative flex gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <card.icon className="h-5 w-5 text-[var(--color-cyan)]" />
+                    <card.icon className="h-5 w-5 text-[var(--color-accent)]" />
                   </div>
                   <div>
                     <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
@@ -108,10 +108,10 @@ export default function OpenRouterAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + i * 0.05, ease: 'easeOut' }}
-                className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-cyan)]/30"
+                className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
               >
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-cyan)]" />
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
                 </div>
                 <span className="font-mono text-sm text-[var(--color-text)]">{feature}</span>
               </motion.div>
@@ -138,7 +138,7 @@ export default function OpenRouterAlternativePage() {
                 <tr className="border-b border-[var(--color-border)]">
                   <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Feature</th>
                   <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">OpenRouter</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-cyan)]">OMA</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">OMA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -149,10 +149,10 @@ export default function OpenRouterAlternativePage() {
                   { feature: 'Data Retention', openrouter: 'Full Logging', oma: 'Minimal', highlight: true },
                   { feature: 'Dashboard', openrouter: 'Yes', oma: 'Yes', highlight: false },
                 ].map((row, i) => (
-                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-cyan)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
+                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-accent)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
                     <td className="p-4 font-mono text-sm text-[var(--color-text)]">{row.feature}</td>
                     <td className="p-4 text-center font-mono text-sm text-[var(--color-text-muted)]">{row.openrouter}</td>
-                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-cyan)]">{row.oma}</td>
+                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-accent)]">{row.oma}</td>
                   </tr>
                 ))}
               </tbody>

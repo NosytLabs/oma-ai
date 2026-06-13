@@ -44,8 +44,8 @@ export function CoinSelector({
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)] px-4 py-4 text-left
-          hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-cyan)]/40
-          focus-visible:border-[var(--color-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/30
+          hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40
+          focus-visible:border-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30
           transition-colors duration-150"
         whileHover={{ scale: 1 }}
         whileTap={{ scale: 0.99 }}
@@ -57,7 +57,7 @@ export function CoinSelector({
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-[var(--color-text-bright)]">{selected.symbol}</span>
                 {selected.isPopular && (
-                  <span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[var(--color-cyan)] bg-[var(--color-cyan)]/10 border border-[var(--color-cyan)]/20">
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[var(--color-accent)] bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20">
                     POPULAR
                   </span>
                 )}
@@ -93,7 +93,7 @@ export function CoinSelector({
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-sm
                     text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]
-                    focus:outline-none focus:border-[var(--color-cyan)]/50"
+                    focus:outline-none focus:border-[var(--color-accent)]/50"
                   autoFocus
                 />
               </div>
@@ -107,7 +107,7 @@ export function CoinSelector({
                     hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-bright)]
                     focus:bg-[var(--color-surface-elevated)] focus:text-[var(--color-text-bright)]
                     focus:outline-none
-                    ${selected?.id === coin.id ? 'bg-[var(--color-surface-elevated)] border-l-2 border-[var(--color-cyan)]' : 'border-l-2 border-transparent'}`}
+                    ${selected?.id === coin.id ? 'bg-[var(--color-surface-elevated)] border-l-2 border-[var(--color-accent)]' : 'border-l-2 border-transparent'}`}
                   whileHover={{ x: 2 }}
                 >
                   <CryptoLogo symbol={coin.symbol} size={28} />

@@ -44,7 +44,7 @@ export function AdminOverviewCharts({ chartData, dailyUsage }: AdminOverviewChar
                 <p className="text-sm text-[var(--color-text-bright)]">{format(new Date(day.date), 'MMM d, yyyy')}</p>
                 <p className="text-xs text-[var(--color-text-muted)]">{day.totalRequests.toLocaleString()} requests</p>
               </div>
-              <p className="text-sm font-mono text-[var(--color-cyan)]">${day.totalRevenue.toFixed(2)}</p>
+              <p className="text-sm font-mono text-[var(--color-accent)]">${day.totalRevenue.toFixed(2)}</p>
             </div>
           )) || (
             <div className="px-4 py-8 text-center text-[var(--color-text-muted)]">No transactions yet</div>

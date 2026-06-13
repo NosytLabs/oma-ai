@@ -107,10 +107,10 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
 
       <div className="mb-3 flex items-center gap-4 text-xs min-h-[44px]" style={{ color: 'var(--color-text-muted)' }}>
         <span className="flex items-center gap-1">
-          <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-cyan)', opacity: 0.6 }} />
+          <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-accent)', opacity: 0.6 }} />
           <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{model.contextLength}</span>
         </span>
-        <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--color-cyan)' }}>
+        <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--color-accent)' }}>
           {formatPrice(model.inputPricePer1M)}
           <span style={{ color: 'var(--color-text-muted)' }}>/1M in</span>
         </span>
@@ -172,8 +172,8 @@ const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: O
           {TIER_LABELS[model.tier]}
         </span>
         <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-          <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-cyan)', opacity: 0.6 }} />
-          <span className="font-medium" style={{ color: 'var(--color-cyan)' }}>{model.contextLength}</span>
+          <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-accent)', opacity: 0.6 }} />
+          <span className="font-medium" style={{ color: 'var(--color-accent)' }}>{model.contextLength}</span>
         </div>
       </div>
 
@@ -272,7 +272,7 @@ const FilterBar = memo(function FilterBar({
 
       <div className="flex items-center gap-3">
         <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-          <span className="font-semibold" style={{ color: 'var(--color-cyan)' }}>{filteredCount}</span> models
+          <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{filteredCount}</span> models
         </span>
         <div className="relative">
           <button
@@ -327,7 +327,7 @@ const FilterBar = memo(function FilterBar({
             {mobileFiltersOpen ? <XCircle className="h-4 w-4" /> : null}
           </button>
           <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            <span className="font-semibold" style={{ color: 'var(--color-cyan)' }}>{filteredCount}</span> models
+            <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{filteredCount}</span> models
           </span>
         </div>
         {mobileFiltersOpen && (
@@ -344,7 +344,7 @@ const NoResults = ({ onReset }: { onReset: () => void }) => (
   <div className="flex flex-col items-center justify-center py-20">
     <Search className="mb-4 h-12 w-12" style={{ color: 'var(--color-border-bright)' }} />
     <p className="text-lg font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>No models match your criteria</p>
-    <button onClick={onReset} aria-label="Reset filters" className="text-sm" style={{ color: 'var(--color-cyan)' }}>
+    <button onClick={onReset} aria-label="Reset filters" className="text-sm" style={{ color: 'var(--color-accent)' }}>
       Reset filters
     </button>
   </div>
@@ -431,8 +431,8 @@ export default function ModelsPage() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <motion.header className="mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ backgroundColor: 'var(--color-accent-dim)', border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)' }}>
-            <Sparkles className="w-4 h-4" style={{ color: 'var(--color-cyan)' }} />
-            <span className="text-sm font-medium" style={{ color: 'var(--color-cyan)' }}>{MODELS.length}+ models available</span>
+            <Sparkles className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>{MODELS.length}+ models available</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight lg:text-5xl font-syne" style={{ color: 'var(--color-text-bright)' }}>
             Every model. One API.

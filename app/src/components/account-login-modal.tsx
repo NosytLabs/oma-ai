@@ -163,7 +163,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
       <div role="presentation" className="fixed inset-0 z-[100] bg-[var(--color-overlay)]/60 backdrop-blur-sm cursor-default" onClick={onClose} />
       <div
         ref={modalRef}
-        className="fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-cyan)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl"
+        className="fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -171,8 +171,8 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-              <Key className="h-5 w-5 text-[var(--color-cyan)]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+              <Key className="h-5 w-5 text-[var(--color-accent)]" />
             </div>
             <div>
               <h3 id="modal-title" className="text-lg font-bold text-[var(--color-text)]">
@@ -214,7 +214,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
                 aria-label="Account number"
                 aria-invalid={!!error}
                 aria-describedby={error ? "account-error" : undefined}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 font-mono text-lg tracking-wider placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-cyan)] focus:outline-none focus:ring-1 focus:ring-[var(--color-cyan)]/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 font-mono text-lg tracking-wider placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/50 disabled:opacity-50"
                 autoFocus
                 disabled={loading}
               />
@@ -238,7 +238,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
                 No account number yet?{' '}
                 <button
                   onClick={() => { setMode('create'); setError(null) }}
-                  className="text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)] cursor-pointer"
+                  className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)] cursor-pointer"
                 >
                   Create one
                 </button>
@@ -249,7 +249,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
 
         {mode === 'create' && (
           <>
-            <div className="mb-4 rounded-lg border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10 px-4 py-3">
+            <div className="mb-4 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-4 py-3">
               <p className="text-sm text-[var(--color-text-secondary)]">
                 This will generate a unique account number linked to your connected wallet. You can use this number to sign in on any device without a wallet.
               </p>
@@ -272,7 +272,7 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
               Already have an account number?{' '}
               <button
                 onClick={() => { setMode('login'); setError(null) }}
-                className="text-[var(--color-cyan)] hover:text-[var(--color-cyan-bright)] cursor-pointer"
+                className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)] cursor-pointer"
               >
                 Sign in
               </button>
@@ -289,13 +289,13 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
               </p>
             </div>
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <code className="flex-1 break-all text-lg font-mono text-[var(--color-cyan)] tracking-wider">
+              <code className="flex-1 break-all text-lg font-mono text-[var(--color-accent)] tracking-wider">
                 {createdAccount}
               </code>
               <button
                 onClick={handleCopy}
                 aria-label={copied ? 'Copied' : 'Copy to clipboard'}
-                className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-cyan)]/10 hover:text-[var(--color-cyan)] cursor-pointer"
+                className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-accent)]/10 hover:text-[var(--color-accent)] cursor-pointer"
               >
                 {copied ? (
                   <Check className="h-5 w-5 text-[var(--color-success)]" />

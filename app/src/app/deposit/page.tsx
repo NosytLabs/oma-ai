@@ -21,7 +21,7 @@ export default function DepositPage() {
         <div className="text-left max-w-md px-4">
           <div className="flex items-center gap-4 mb-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)]">
-              <Wallet className="h-7 w-7 text-[var(--color-cyan)]" />
+              <Wallet className="h-7 w-7 text-[var(--color-accent)]" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[var(--color-text-bright)]">Connect Your Wallet</h1>
@@ -32,9 +32,9 @@ export default function DepositPage() {
           </div>
           <motion.button
             onClick={() => connectEvm()}
-            className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[var(--color-cyan)] text-[var(--color-void)] font-semibold text-sm
-              hover:bg-[var(--color-cyan-bright)]
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-cyan)]/50
+            className="inline-flex items-center gap-2 py-3 px-6 rounded-full bg-[var(--color-accent)] text-[var(--color-void)] font-semibold text-sm
+              hover:bg-[var(--color-accent-bright)]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50
               active:translate-y-0
               transition-colors duration-150"
             whileHover={{ scale: 1.01 }}

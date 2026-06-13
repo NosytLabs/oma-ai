@@ -14,7 +14,7 @@ const tierColors: Record<TierFilter, string> = {
   all: 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]',
   frontier: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]',
   premium: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]',
-  mid: 'bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]',
+  mid: 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]',
   budget: 'bg-[var(--color-green)]/20 text-[var(--color-green)]',
   reasoning: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]',
   coding: 'bg-[var(--color-pink)]/20 text-[var(--color-pink)]',

@@ -46,7 +46,7 @@ export function ConnectButtonInner() {
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
-          className="group flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full text-[var(--color-cyan)] border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/5 hover:border-[var(--color-cyan)]/50 hover:bg-[var(--color-cyan)]/10 transition-all duration-200 cursor-pointer"
+          className="group flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full text-[var(--color-accent)] border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-accent)]/10 transition-all duration-200 cursor-pointer"
           aria-expanded={open}
           aria-controls="wallet-menu"
           aria-haspopup="menu"
@@ -65,7 +65,7 @@ export function ConnectButtonInner() {
             <div id="wallet-menu" role="menu" className="absolute right-0 z-50 mt-2 w-56 border border-[var(--color-border)] bg-[var(--color-panel)] shadow-xl shadow-[var(--color-overlay)]">
               <div className="border-b border-[var(--color-border)] px-4 py-3">
                 <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-mono">Connected</p>
-                <p className="font-mono text-sm text-[var(--color-cyan)] break-all mt-1">{truncateAddress(address)}</p>
+                <p className="font-mono text-sm text-[var(--color-accent)] break-all mt-1">{truncateAddress(address)}</p>
               </div>
               <button
                 role="menuitem"
@@ -91,7 +91,7 @@ export function ConnectButtonInner() {
         aria-controls="wallet-menu"
         aria-haspopup="menu"
         aria-label="Connect wallet"
-        className="group flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full text-[var(--color-cyan)] border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/5 hover:border-[var(--color-cyan)]/50 hover:bg-[var(--color-cyan)]/10 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full text-[var(--color-accent)] border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-accent)]/10 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Wallet className="h-4 w-4" />
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
@@ -128,8 +128,8 @@ export function ConnectButtonInner() {
               onClick={() => { setOpen(false); setShowAccountLogin(true) }}
               className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[var(--color-surface)] cursor-pointer"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-                <Key className="h-4 w-4 text-[var(--color-cyan)]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+                <Key className="h-4 w-4 text-[var(--color-accent)]" />
               </div>
               <div className="text-left">
                 <div className="font-medium text-[var(--color-text)]">Account Number</div>

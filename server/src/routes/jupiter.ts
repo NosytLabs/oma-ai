@@ -16,7 +16,7 @@ import type { OmaEnv } from "../types.js";
 
 // Jupiter constants
 export const SOL_MINT = "So11111111111111111111111111111111111111112";
-export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8DM4GMX5HEsPsS1";
+export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // Circle canonical USDC mint on Solana mainnet
 export const REFERRAL_FEE = 0.001;
 
 interface JupiterQuote {

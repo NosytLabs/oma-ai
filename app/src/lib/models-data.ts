@@ -32,7 +32,7 @@ export const PROVIDER_COLORS: Record<Provider, { bg: string; text: string; borde
 
 export const TIER_COLORS: Record<Tier, { bg: string; text: string; border: string; badge: string }> = {
   budget: { bg: 'bg-[var(--color-warning)]/10', text: 'text-[var(--color-warning)]', border: 'border-[var(--color-warning)]/30', badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
-  mid: { bg: 'bg-[var(--color-cyan)]/10', text: 'text-[var(--color-cyan)]', border: 'border-[var(--color-cyan)]/30', badge: 'bg-[var(--color-cyan)]/20 text-[var(--color-cyan)]' },
+  mid: { bg: 'bg-[var(--color-accent)]/10', text: 'text-[var(--color-accent)]', border: 'border-[var(--color-accent)]/30', badge: 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' },
   premium: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
   frontier: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
 }

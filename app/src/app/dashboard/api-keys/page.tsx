@@ -133,11 +133,11 @@ export default function ApiKeysPage() {
       >
         <div className="text-center max-w-md px-4">
           <motion.div 
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-cyan)]/30 bg-gradient-to-br from-[var(--color-cyan)]/10 to-[var(--color-warning)]/10"
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--color-accent)]/30 bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-warning)]/10"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
           >
-            <Wallet className="h-10 w-10 text-[var(--color-cyan)]" />
+            <Wallet className="h-10 w-10 text-[var(--color-accent)]" />
           </motion.div>
           <h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
           <p className="mb-6 text-[var(--color-text-muted)]">Connect your wallet to manage API keys.</p>
@@ -168,7 +168,7 @@ export default function ApiKeysPage() {
       >
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-cyan)]">Dashboard</Link>
+            <Link href="/dashboard" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)]">Dashboard</Link>
             <span className="text-[var(--color-text-muted)]">/</span>
             <span className="text-sm text-[var(--color-text-bright)]">API Keys</span>
           </div>
@@ -203,7 +203,7 @@ export default function ApiKeysPage() {
       <AnimatePresence>
         {showCreateForm && (
           <motion.div 
-            className="mb-6 rounded-xl border border-[var(--color-cyan)]/30 bg-[var(--color-surface)] p-4"
+            className="mb-6 rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-surface)] p-4"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -280,8 +280,8 @@ export default function ApiKeysPage() {
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-cyan)]/20 bg-[var(--color-cyan)]/10">
-                      <Key className="h-6 w-6 text-[var(--color-cyan)]" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10">
+                      <Key className="h-6 w-6 text-[var(--color-accent)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function ApiKeysPage() {
                   <div className="flex items-center gap-3">
                     <motion.button
                       onClick={() => handleCopy(key.prefix, `prefix-${key.id}`)}
-                      className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]"
+                      className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-accent)]"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -324,8 +324,8 @@ export default function ApiKeysPage() {
                       onClick={() => setEditingLimits(editingLimits === key.id ? null : key.id)}
                       className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                         editingLimits === key.id 
-                          ? 'border-[var(--color-cyan)] bg-[var(--color-cyan)]/10 text-[var(--color-cyan)]' 
-                          : 'border-[var(--color-border)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]'
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' 
+                          : 'border-[var(--color-border)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-accent)]'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
@@ -369,7 +369,7 @@ export default function ApiKeysPage() {
                               ...prev,
                               [key.id]: { ...prev[key.id], requestsPerMinute: parseInt(e.target.value) || 0 }
                             }))}
-                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
+                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-accent)]/50"
                             min={1}
                             max={10000}
                           />
@@ -383,7 +383,7 @@ export default function ApiKeysPage() {
                               ...prev,
                               [key.id]: { ...prev[key.id], requestsPerDay: parseInt(e.target.value) || 0 }
                             }))}
-                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-cyan)]/50"
+                            className="w-full text-sm font-medium bg-[var(--color-void)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-accent)]/50"
                             min={1}
                             max={1000000}
                           />
@@ -423,15 +423,15 @@ export default function ApiKeysPage() {
             exit={{ opacity: 0 }}
           >
             <motion.div 
-              className="w-full max-w-lg rounded-2xl border border-[var(--color-cyan)]/30 bg-[var(--color-surface)] p-6"
+              className="w-full max-w-lg rounded-2xl border border-[var(--color-accent)]/30 bg-[var(--color-surface)] p-6"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25 }}
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-cyan)]/30 bg-[var(--color-cyan)]/10">
-                  <Key className="h-6 w-6 text-[var(--color-cyan)]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
+                  <Key className="h-6 w-6 text-[var(--color-accent)]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--color-text-bright)]">API Key Created</h3>
@@ -445,10 +445,10 @@ export default function ApiKeysPage() {
               </div>
 
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-void)] p-4">
-                <code className="flex-1 break-all text-sm text-[var(--color-cyan)] font-mono">{createdKey.key}</code>
+                <code className="flex-1 break-all text-sm text-[var(--color-accent)] font-mono">{createdKey.key}</code>
                 <motion.button
                   onClick={() => handleCopy(createdKey.key, `full-${createdKey.id}`)}
-                  className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-cyan)]"
+                  className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-accent)]"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >

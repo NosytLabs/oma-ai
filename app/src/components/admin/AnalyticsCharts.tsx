@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format } from 'date-fns'
 import { Activity, Cpu, BarChart3, Clock } from 'lucide-react'
 
-const CHART_COLORS = ['#00ffc8', '#ffb800', '#a78bfa', '#f472b6', '#34d399', '#60a5fa', '#f87171', '#c084fc']
+const CHART_COLORS = ['#fb923c', '#ffb800', '#a78bfa', '#f472b6', '#34d399', '#60a5fa', '#f87171', '#c084fc']
 
 interface ModelData {
   model: string
@@ -81,7 +81,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-3.5 h-3.5 text-[var(--color-cyan)]" />
+            <Activity className="w-3.5 h-3.5 text-[var(--color-accent)]" />
             <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Usage Over Time</h3>
           </div>
           <div className="h-[260px]">
@@ -89,8 +89,8 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
               <AreaChart data={analytics.dailyUsage}>
                 <defs>
                   <linearGradient id="usageGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00ffc8" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#00ffc8" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#fb923c" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -124,7 +124,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
                 <Area
                   type="monotone"
                   dataKey="totalRequests"
-                  stroke="#00ffc8"
+                  stroke="#fb923c"
                   fill="url(#usageGradient)"
                   strokeWidth={2}
                 />
@@ -276,7 +276,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
       {analytics.providerHealth && analytics.providerHealth.length > 0 && (
         <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-3.5 h-3.5 text-[var(--color-cyan)]" />
+            <Clock className="w-3.5 h-3.5 text-[var(--color-accent)]" />
             <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)]">Provider Health</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -308,7 +308,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AnalyticsOverview })
         <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]/50">
           <div className="px-4 py-4 text-center">
             <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1">Input Tokens</p>
-            <p className="text-xl font-bold font-mono text-[var(--color-cyan)]">{formatNumber(analytics.summary.totalInputTokens)}</p>
+            <p className="text-xl font-bold font-mono text-[var(--color-accent)]">{formatNumber(analytics.summary.totalInputTokens)}</p>
           </div>
           <div className="px-4 py-4 text-center">
             <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-1">Output Tokens</p>

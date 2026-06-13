@@ -268,7 +268,7 @@ export default function AdminRateLimitsPage() {
           onClick={() => setActiveTab('tiers')}
           className={`px-4 py-3 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'tiers'
-              ? 'text-[var(--color-cyan)] border-[var(--color-cyan)] bg-[var(--color-accent-dim)]/30'
+              ? 'text-[var(--color-accent)] border-[var(--color-accent)] bg-[var(--color-accent-dim)]/30'
               : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
           }`}
         >
@@ -281,7 +281,7 @@ export default function AdminRateLimitsPage() {
           onClick={() => setActiveTab('overrides')}
           className={`px-4 py-3 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'overrides'
-              ? 'text-[var(--color-cyan)] border-[var(--color-cyan)] bg-[var(--color-accent-dim)]/30'
+              ? 'text-[var(--color-accent)] border-[var(--color-accent)] bg-[var(--color-accent-dim)]/30'
               : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
           }`}
         >

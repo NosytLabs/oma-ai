@@ -229,7 +229,7 @@ export default function SettingsPage() {
                 </div>
                 {evmAddress ? (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-[var(--color-cyan)] break-all">{evmAddress}</span>
+                    <span className="font-mono text-xs text-[var(--color-accent)] break-all">{evmAddress}</span>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => connectEvm()}
-                className="inline-flex items-center gap-1.5 border border-[var(--color-cyan)] bg-[var(--color-void)] px-3 py-1.5 text-[10px] font-semibold text-[var(--color-cyan)]"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-accent)] bg-[var(--color-void)] px-3 py-1.5 text-[10px] font-semibold text-[var(--color-accent)]"
               >
                 <Link2 className="h-3 w-3" />
                 Connect
@@ -292,7 +292,7 @@ export default function SettingsPage() {
           {user?.accountNumber ? (
             <>
               <div className="flex-1 min-w-0">
-                <div className="text-lg font-mono font-bold tracking-wider text-[var(--color-cyan)]">
+                <div className="text-lg font-mono font-bold tracking-wider text-[var(--color-accent)]">
                   {user.accountNumber}
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGenerateAccountNumber}
                 disabled={generatingAccount}
-                className="inline-flex items-center gap-1.5 border border-[var(--color-cyan)] bg-[var(--color-void)] px-4 py-2 text-xs font-semibold text-[var(--color-cyan)] transition-all hover:bg-[var(--color-cyan)]/10 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-accent)] bg-[var(--color-void)] px-4 py-2 text-xs font-semibold text-[var(--color-accent)] transition-all hover:bg-[var(--color-accent)]/10 disabled:opacity-40"
               >
                 {generatingAccount ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
