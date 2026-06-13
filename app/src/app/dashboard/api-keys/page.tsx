@@ -215,6 +215,9 @@ export default function ApiKeysPage() {
                 onChange={(e) => setNewKeyName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateKey()}
                 placeholder="Key name (e.g. production, staging)"
+                autoComplete="off"
+                spellCheck={false}
+                aria-label="New API key name"
                 className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-[var(--color-text-bright)] placeholder:text-[var(--color-text-muted)]"
                 autoFocus
                 disabled={creating}

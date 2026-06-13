@@ -304,6 +304,7 @@ const handleBuyCredits = async () => {
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Amount (USD)</label>
               <input
                 type="text"
+                inputMode="decimal"
                 value={buyAmount}
                 onChange={(e) => {
                   if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) setBuyAmount(e.target.value)
@@ -421,6 +422,7 @@ const handleBuyCredits = async () => {
                     <input
                       type="text"
                       inputMode="decimal"
+                      autoComplete="off"
                       placeholder="10.00"
                       value={autoReloadThreshold}
                       onChange={(e) => setAutoReloadThreshold(e.target.value)}
@@ -432,6 +434,7 @@ const handleBuyCredits = async () => {
                     <input
                       type="text"
                       inputMode="decimal"
+                      autoComplete="off"
                       placeholder="50.00"
                       value={autoReloadAmount}
                       onChange={(e) => setAutoReloadAmount(e.target.value)}

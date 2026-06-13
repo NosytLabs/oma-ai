@@ -104,6 +104,7 @@ export default function AdminUsersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
           <input
             type="search"
+            autoComplete="off"
             placeholder="Search by address or account number..."
             aria-label="Search users by address or account number"
             value={searchQuery}

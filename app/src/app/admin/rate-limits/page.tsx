@@ -390,6 +390,7 @@ export default function AdminRateLimitsPage() {
                   <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Target ID</label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={overrideForm.targetId}
                     onChange={(e) => setOverrideForm({ ...overrideForm, targetId: e.target.value })}
                     placeholder="Enter user ID or API key ID"
@@ -422,6 +423,7 @@ export default function AdminRateLimitsPage() {
                   <label className="block text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-2">Expires At (optional)</label>
                   <input
                     type="datetime-local"
+                    autoComplete="off"
                     value={overrideForm.expiresAt}
                     onChange={(e) => setOverrideForm({ ...overrideForm, expiresAt: e.target.value })}
                     className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] text-sm font-mono focus:outline-none focus:border-[var(--color-accent)]/50"
