@@ -5,6 +5,7 @@ import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import { MotionProvider } from '@/components/motion-provider'
+import { ThemeProvider, THEME_HEAD_SCRIPT } from '@/components/ThemeProvider'
 import './globals.css'
 
 const syne = Syne({
@@ -104,6 +105,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
+        {/* Pre-hydration theme script — runs synchronously before first paint
+            to set <html data-theme="..."> from localStorage. Prevents FOUC
+            for light-theme users. See ThemeProvider.tsx. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: THEME_HEAD_SCRIPT }}
+        />
         <link rel="preconnect" href="https://eth.coinbase.com" />
         <link rel="preconnect" href="https://base-rpc.publicnode.com" />
         <link rel="preconnect" href="https://api.jup.ag" />
@@ -118,15 +125,17 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <ToastProvider>
-          <MotionProvider>
-            <Navbar />
-            <main id="main-content" className="pt-16" tabIndex={-1} role="main">
-              <ErrorBoundary>{children}</ErrorBoundary>
-            </main>
-            <Footer />
-          </MotionProvider>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <MotionProvider>
+              <Navbar />
+              <main id="main-content" className="pt-16" tabIndex={-1} role="main">
+                <ErrorBoundary>{children}</ErrorBoundary>
+              </main>
+              <Footer />
+            </MotionProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

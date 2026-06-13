@@ -13,7 +13,7 @@
  * contrast: all text ≥ 4.5:1 on var(--color-void)
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useWallet } from '@/components/wallet-context'
@@ -21,6 +21,7 @@ import { OmaLogo } from '@/components/ui/oma-logo'
 import { Menu, X, ChevronDown, Key, Zap, Github } from 'lucide-react'
 import { ApiStatus } from './api-status'
 import { ConnectButton } from './connect-button'
+import { ThemeToggle } from './ThemeToggle'
 
 const navLinks = [
   { href: '/models', label: 'models' },
@@ -30,9 +31,23 @@ const navLinks = [
   { href: '/pricing', label: 'pricing' },
 ]
 
+// Secondary destinations surfaced via the "more" dropdown to keep the bar
+// from overflowing on standard laptop widths (1280-1440px).
+const moreLinks = [
+  { href: '/image-generation', label: 'image' },
+  { href: '/video-generation', label: 'video' },
+  { href: '/compare', label: 'compare' },
+  { href: '/use-cases', label: 'use cases' },
+  { href: '/swap', label: 'swap' },
+  { href: '/about', label: 'about' },
+  { href: '/admin', label: 'admin' },
+]
+
 function sectionLabelFor(pathname: string): string {
   if (pathname === '/' || pathname === '') return 'home'
-  const match = navLinks.find(l => pathname === l.href || pathname.startsWith(l.href + '/'))
+  const match = [...navLinks, ...moreLinks].find(
+    l => pathname === l.href || pathname.startsWith(l.href + '/')
+  )
   return match?.label ?? pathname.replace(/^\//, '').split('/')[0] ?? 'home'
 }
 
@@ -40,6 +55,7 @@ export function Navbar() {
   const { evmAddress, isConnected, disconnect } = useWallet()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -56,7 +72,28 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false)
     setShowUserMenu(false)
+    setShowMoreMenu(false)
   }, [pathname])
+
+  // Close "more" menu when clicking outside
+  const moreMenuRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!showMoreMenu) return
+    function onDocClick(e: MouseEvent) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowMoreMenu(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showMoreMenu])
 
   const shortAddress = evmAddress ? `${evmAddress.slice(0, 6)}…${evmAddress.slice(-4)}` : ''
   const section = sectionLabelFor(pathname)
@@ -131,6 +168,61 @@ export function Navbar() {
                   )
                 })}
               </ul>
+
+              <div className="hidden lg:block relative ml-0.5" ref={moreMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  aria-label={showMoreMenu ? 'Close more menu' : 'Open more menu'}
+                  aria-expanded={showMoreMenu}
+                  aria-haspopup="true"
+                  className={`group relative inline-flex items-center gap-0.5 px-2 py-1 text-[12px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] transition-colors duration-150 ${
+                    moreLinks.some(l => pathname === l.href || pathname.startsWith(l.href + '/'))
+                      ? 'text-[var(--color-accent)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)]'
+                  }`}
+                >
+                  <span className="text-[var(--color-text-tertiary)] mr-1" aria-hidden="true">+</span>
+                  more
+                  <ChevronDown
+                    className={`w-3 h-3 ml-0.5 text-[var(--color-text-muted)] transition-transform duration-150 ${
+                      showMoreMenu ? 'rotate-180' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+                {showMoreMenu && (
+                  <div
+                    role="menu"
+                    aria-label="More destinations"
+                    className="absolute left-0 mt-1.5 w-52 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-2xl shadow-[var(--color-overlay)] z-[60] font-mono"
+                  >
+                    {moreLinks.map(link => {
+                      const isActive =
+                        pathname === link.href || pathname.startsWith(link.href + '/')
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          role="menuitem"
+                          aria-current={isActive ? 'page' : undefined}
+                          onClick={() => setShowMoreMenu(false)}
+                          className={`flex items-center gap-2 px-3 py-2 text-xs focus-visible:outline-none focus-visible:bg-[var(--color-surface)] transition-colors ${
+                            isActive
+                              ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)]'
+                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)]'
+                          }`}
+                        >
+                          <span aria-hidden="true" className="text-[var(--color-text-tertiary)]">
+                            {isActive ? '●' : '○'}
+                          </span>
+                          <span>{link.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -143,6 +235,8 @@ export function Navbar() {
               >
                 <Github className="h-4 w-4" />
               </a>
+
+              <ThemeToggle />
 
               <div className="hidden xl:flex items-center">
                 <ApiStatus />
@@ -177,7 +271,7 @@ export function Navbar() {
                   {showUserMenu && (
                     <div
                       role="menu"
-                      className="absolute right-0 mt-1.5 w-60 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-2xl shadow-black/60 z-[60] font-mono"
+                      className="absolute right-0 mt-1.5 w-60 py-1 bg-[var(--color-void)] border border-[var(--color-border)] rounded-sm shadow-2xl shadow-[var(--color-overlay)] z-[60] font-mono"
                     >
                       <div className="px-3 py-2 border-b border-[var(--color-border)] mb-1">
                         <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-tertiary)]">
@@ -255,6 +349,39 @@ export function Navbar() {
               </p>
               <ul className="flex flex-col gap-0.5">
                 {navLinks.map(link => {
+                  const isActive =
+                    pathname === link.href || pathname.startsWith(link.href + '/')
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex items-center justify-between px-3 py-2.5 text-sm rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] transition-colors ${
+                          isActive
+                            ? 'text-[var(--color-accent)] bg-[var(--color-accent-dim)]'
+                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span aria-hidden="true" className="text-[var(--color-text-tertiary)]">
+                            {isActive ? '●' : '○'}
+                          </span>
+                          {link.label}
+                        </span>
+                        <span className="text-[var(--color-text-tertiary)] text-xs" aria-hidden="true">
+                          →
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] mt-3 mb-2">
+                more
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {moreLinks.map(link => {
                   const isActive =
                     pathname === link.href || pathname.startsWith(link.href + '/')
                   return (
