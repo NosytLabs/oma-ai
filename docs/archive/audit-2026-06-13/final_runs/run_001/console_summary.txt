@@ -1,0 +1,56 @@
+# Console + Error Summary per Page
+
+
+## 01-landing
+  (clean)
+
+## 02-models
+  (clean)
+
+## 03-pricing
+  (clean)
+
+## 04-playground
+  (clean)
+
+## 05-dashboard
+  (clean)
+
+## 06-dashboard-keys
+  (clean)
+
+## 07-dashboard-credits
+  (clean)
+
+## 08-deposit
+  (clean)
+
+## 09-docs
+  (clean)
+
+## 10-settings
+  (clean)
+
+## 11-admin
+  (clean)
+
+## 12-compare
+  (clean)
+
+## 13-about
+  (clean)
+
+## 14-faq
+  (clean)
+
+## 15-privacy
+  (clean)
+
+## 16-terms
+  (clean)
+
+## 17-image-gen
+  (clean)
+
+## 18-video-gen
+  (clean)

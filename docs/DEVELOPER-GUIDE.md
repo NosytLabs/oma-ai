@@ -359,7 +359,14 @@ oma/
 │   └── package.json
 │
 └── docs/                  # Documentation
-    └── MVP-DOCUMENTATION.md
+    ├── API-DOCUMENTATION.md
+    ├── BRAND-MESSAGING.md
+    ├── CRITICAL-1-DEPLOYMENT-RUNBOOK.md
+    ├── DEVELOPER-GUIDE.md  (this file)
+    ├── INTERNAL-SOURCING.md
+    ├── MOTION-DESIGN-REF.md
+    ├── OMA-X402-CROSSCHAIN-ARCHITECTURE.md
+    └── archive/  # Superseded audit reports
 ```
 
 ---
@@ -475,4 +482,4 @@ Deposit USDC to add credits. Check balance at `/dashboard`.
 
 ---
 
-**Questions?** Check the docs at `/docs` in the running app, or read `docs/MVP-DOCUMENTATION.md`.
+**Questions?** Check the docs at `/docs` in the running app, or read `docs/INTERNAL-SOURCING.md` for the operator-side view of how OMA sources inference.
