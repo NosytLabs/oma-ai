@@ -428,14 +428,14 @@ export default function TermsPage() {
                 Questions about these Terms?{' '}
                 <a
                   href="mailto:legal@oma-ai.com"
-                  className="text-[var(--color-accent)] hover:underline underline-offset-2"
+                  className="font-medium text-[var(--color-accent)] underline decoration-2 underline-offset-2 hover:no-underline"
                 >
                   legal@oma-ai.com
                 </a>
                 , or reach us via{' '}
                 <Link
                   href="/about"
-                  className="text-[var(--color-accent)] hover:underline underline-offset-2"
+                  className="font-medium text-[var(--color-accent)] underline decoration-2 underline-offset-2 hover:no-underline"
                 >
                   our docs
                 </Link>

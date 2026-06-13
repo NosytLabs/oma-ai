@@ -358,7 +358,7 @@ function QuickStartSection() {
           <span className="rounded-md bg-[var(--color-cyan)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-cyan)] border border-[var(--color-cyan)]/20">cURL</span>
         </div>
         <CopyButton text={curlCode} id="quickstart-code" />
-        <pre className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)]"><code>{curlCode}</code></pre>
+        <pre id="quickstart-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"><code>{curlCode}</code></pre>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -821,7 +821,7 @@ for attempt in range(5):
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
         <h4 className="mb-3 font-semibold text-[var(--color-text)]">Handling Rate Limits</h4>
         <CopyButton text={retryCode} id="retry-code" />
-        <pre className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)]"><code>{retryCode}</code></pre>
+        <pre id="retry-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"><code>{retryCode}</code></pre>
       </div>
     </AnimatedSection>
   )

@@ -263,8 +263,9 @@ mode === 'image-to-video'
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
+                <label htmlFor="vid-model-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
                 <select
+                  id="vid-model-select"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   disabled={loading || polling}
@@ -279,8 +280,9 @@ mode === 'image-to-video'
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Aspect Ratio</label>
+                <label htmlFor="vid-aspect-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Aspect Ratio</label>
                 <select
+                  id="vid-aspect-select"
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value)}
                   disabled={loading || polling}
@@ -293,8 +295,9 @@ mode === 'image-to-video'
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Duration</label>
+                <label htmlFor="vid-duration-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Duration</label>
                 <select
+                  id="vid-duration-select"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   disabled={loading || polling}
@@ -307,8 +310,9 @@ mode === 'image-to-video'
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Resolution</label>
+                <label htmlFor="vid-resolution-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Resolution</label>
                 <select
+                  id="vid-resolution-select"
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value)}
                   disabled={loading || polling}

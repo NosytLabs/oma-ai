@@ -78,13 +78,6 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSelect(model)
-    }
-  }
-
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -95,12 +88,6 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
       onMouseLeave={() => setIsHovered(false)}
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
-      onClick={() => onSelect(model)}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`View ${model.name} details`}
-      aria-pressed={false}
       style={{ transform: `scale(${isPressed ? '0.98' : '1'})` }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -155,37 +142,30 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <Link href={`/playground?model=${encodeURIComponent(model.id)}`} className="model-card-cta" style={{ flex: 1 }}>
+        <Link
+          href={`/playground?model=${encodeURIComponent(model.id)}`}
+          className="model-card-cta"
+          style={{ flex: 1 }}
+          aria-label={`Use ${model.name} in Playground`}
+          onClick={() => onSelect(model)}
+        >
           Use in Playground
         </Link>
-        <button className="model-card-arrow" aria-label="View details">
+        <span className="model-card-arrow" aria-hidden="true">
           <ArrowRight className="h-4 w-4" />
-        </button>
+        </span>
       </div>
     </motion.article>
   )
 })
 
 const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: Omit<ModelCardProps, 'onSelect'> & { onSelect: (model: Model) => void }) {
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSelect(model)
-    }
-  }
-
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className="free-model-card"
-      onClick={() => onSelect(model)}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`Try ${model.name} free`}
-      aria-pressed={false}
     >
       <div className="mb-3 flex items-start justify-between">
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIER_COLORS[model.tier].badge}`}>
@@ -209,7 +189,12 @@ const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: O
         ))}
       </div>
 
-      <Link href="/playground" className="free-model-cta" onClick={(e) => e.stopPropagation()}>
+      <Link
+        href="/playground"
+        className="free-model-cta"
+        aria-label={`Try ${model.name} free`}
+        onClick={() => onSelect(model)}
+      >
         <Sparkles className="h-4 w-4" />
         Try Free
         <ArrowRight className="h-4 w-4" />

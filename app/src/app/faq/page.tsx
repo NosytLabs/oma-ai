@@ -484,21 +484,21 @@ export default function FaqPage() {
                 Billing questions go to{' '}
                 <a
                   href="mailto:billing@oma-ai.com"
-                  className="text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline underline-offset-2"
+                  className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline decoration-2 underline-offset-2"
                 >
                   billing@oma-ai.com
                 </a>
                 . Privacy questions go to{' '}
                 <a
                   href="mailto:privacy@oma-ai.com"
-                  className="text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline underline-offset-2"
+                  className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline decoration-2 underline-offset-2"
                 >
                   privacy@oma-ai.com
                 </a>
                 . Everything else goes to{' '}
                 <a
                   href="mailto:hello@oma-ai.com"
-                  className="text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline underline-offset-2"
+                  className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] underline decoration-2 underline-offset-2"
                 >
                   hello@oma-ai.com
                 </a>

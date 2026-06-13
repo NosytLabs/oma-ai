@@ -115,8 +115,9 @@ export default function ImageGenerationPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
+                <label htmlFor="img-model-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
                 <select
+                  id="img-model-select"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   disabled={loading}
@@ -129,8 +130,9 @@ export default function ImageGenerationPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Size</label>
+                <label htmlFor="img-size-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Size</label>
                 <select
+                  id="img-size-select"
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
                   disabled={loading}
