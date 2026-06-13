@@ -1,4 +1,0 @@
-{
-  "$schema": "https://opencode.ai/config.json",
-  "_comment": "Project-level config is intentionally empty. All settings come from ~/.config/opencode/opencode.json. Adding a `plugin` array here would REPLACE the global plugin list (per AGENTS.md). If you need project-specific overrides, add them without touching `plugin`."
-}
