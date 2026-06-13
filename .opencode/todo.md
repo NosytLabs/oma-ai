@@ -1,6 +1,6 @@
 # Mission: OMA-AI v5 Comprehensive Audit & Overhaul (2026-06-13)
 
-## Status: 26/36 [x] (72%) — 1 BLOCKER (app build dep-version drift)
+## Status: 27/36 [x] (75%) — T9.3 (app build) RESOLVED by Reviewer 2026-06-13T21:18Z; remaining 9 items are audits/non-build deliverables (M2 re-spec, M6 layout fix, M7.1 neon factual-error correction, M8 re-capture, v4 screenshot trim, etc.)
 
 ## Goal
 Continue from v4 (M1-M3, M5, M5.1 done) and add:
@@ -56,10 +56,10 @@ USDC mint + pay_req.asset EIP-55 fixed. 685 server tests pass.
 - [x] T8.4: research what fits the workload | verified | evidence: Report §2 (Hono WebSocket + 6 in-process cron jobs rule out Render free; static site only zero-cost fit), §4 (3-platform reality: Vercel + Coolify/Frankie + Neon — no architectural win from Render), §5 (free-tier limits).
 - [x] T8.5: write `.opencode/audit-2026-06-13v5/render-optimization.md` with concrete plan | verified | evidence: Deliverable at `.opencode/v5-screenshots/RENDER-V5-OPTIMIZATION.md` (14KB, 226 lines, 7 sections).
 
-## M9: Final Verification & Report | status: 8/9 [x] (89%) — 1 BLOCKER | depends:M4-M8 | agent:Reviewer
+## M9: Final Verification & Report | status: 9/9 [x] (100%) | depends:M4-M8 | agent:Reviewer
 - [x] T9.1: app typecheck 0 errors | evidence: `cd app && npm run typecheck` → "✓ Route types generated successfully"
 - [x] T9.2: app lint 0 errors | evidence: `cd app && npm run lint` → exit 0, no output
-- [ ] **T9.3: app build exit 0** ❌ BLOCKER | evidence: 2 webpack errors — (a) `Can't resolve 'porto/internal'` from wagmi/connectors 8.0.15, (b) jose Edge Runtime CompressionStream incompatibility. **Dep-version drift, not application bug. Fix: `npm install porto` + upgrade/pin jose to 5.x or 7.x.**
+- [x] T9.3: app build exit 0 | evidence: `cd app && NEXT_TELEMETRY_DISABLED=1 npm run build` → exit 0, all routes built, 617 kB shared First Load JS. **Fix landed in 807c7f1**: added missing wagmi peer deps (@base-org/account, @metamask/connect-evm, @safe-global/safe-apps-sdk) + dropped 8 wallet libs from `optimizePackageImports` (Node-only modules incompatible with Edge Runtime) + `serverExternalPackages` for porto/@metamask/connect-evm. SYNC-29 (build) RESOLVED.
 - [x] T9.4: server typecheck 0 errors | evidence: `cd server && npm run typecheck` exit 0
 - [x] T9.5: server tests pass | evidence: 685 tests passed (59 files, 11.23s)
 - [x] T9.6: chrome-devtools visual + a11y re-audit (M4 cross-check) | evidence: M4 report, A11y 93, axe 0 violations

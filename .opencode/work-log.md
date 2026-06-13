@@ -1,6 +1,6 @@
 
 ## Active Sessions
-- [x] ses_health_fix_v5 (Worker): /api/health fix — decoupled from backend proxy, now a static 200 OK liveness response. Routes backend reachability to the actual API call sites where the user has a real reason to care. Wrote `.opencode/audit-2026-06-13v5/health-endpoint-audit.md` (5.7KB, 5 sections) + unit test record at `.opencode/unit-tests/2026-06-13T21-16-41Z-health-fix.md` - done 2026-06-13T21:18Z
+- [x] ses_minimax_ui_fixes (Worker): MiniMax UI/UX audit fixes — 3 surgical edits to `app/src/app/page.tsx` (logo field + monogram map @ 33-55, mobile-safe inventory row + monogram render @ 254-282, Houdini Swap callout in §03 @ 360-373). Verified api-status fix at line 102 (1 grep match). All gates pass (app typecheck/lint/tests + server typecheck). v4-screenshots 11M was already removed (hourly prune or prior worker). Unit test record at `.opencode/unit-tests/2026-06-13T21-19Z-minimax-ui-fixes.md` - done
 - [x] ses_m8_render_v5_redux (Worker): M8 Render $50 Credit Optimization — re-dispatched to fix SYNC-22 FAIL, wrote `.opencode/audit-2026-06-13v5/render-optimization.md` (correct dir, MCP-verified) + unit test record at `.opencode/unit-tests/2026-06-13T20-59Z-m8-render.md` - done
 - [x] ses_neon_v5_redo (Worker): M7 Neon DB optimization — wrote `.opencode/audit-2026-06-13v5/neon-optimization.md` (26KB, 9 sections, 6 projects, 29 tables, 113 indexes, 5 prioritized actions) + unit test record at `.opencode/unit-tests/2026-06-13T21-02Z-m7-neon.md` - done
 - [x] ses_render_v5 (Worker): M8 Render $50 credit optimization audit (FIRST attempt, wrote to WRONG dir `.opencode/v5-screenshots/RENDER-V5-OPTIMIZATION.md`; marked FAIL by ses_m8_review per SYNC-22) - done
@@ -24,6 +24,7 @@
 ## Completed Units (Ready for Integration)
 | File | Session | Unit Test | Timestamp |
 |------|---------|-----------|-----------|
+| `app/src/app/page.tsx` (3 edits: logo enum + monogram map, mobile-safe inventory row, Houdini Swap callout) | ses_minimax_ui_fixes | pass (typecheck+lint+tests) | 2026-06-13T21:19Z |
 | (none — M5 was a read-only audit, no source files modified) | | | |
 | `.opencode/audit-2026-06-13v4/base-mcp-report.md` | ses_base_mcp_v4 | n/a (audit) | 2026-06-13T18:34Z |
 | `server/src/routes/jupiter.ts` | ses_m5_1_fix | pass | 2026-06-13T18:54Z |
