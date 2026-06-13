@@ -25,7 +25,7 @@ const envSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, 'JWT_SECRET must be at least 32 characters')
-    .default(''), // Defaulted so Edge-runtime parse never throws; middleware redirects to / on empty.
+    .default('dev-secret-change-me-in-prod-32ch'), // Dev fallback so Edge-runtime parse never throws; production must override.
 })
 
 /** Default backend API base URL. Strips trailing slashes. */
@@ -38,4 +38,4 @@ const rawApi = (envSchema.parse({
 export const DEFAULT_API_URL = (rawApi || 'http://localhost:3001').replace(/\/+$/, '')
 
 /** Secret used to verify the session JWT in middleware. */
-export const JWT_SECRET = process.env.JWT_SECRET ?? ''
+export const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me-in-prod-32ch'
