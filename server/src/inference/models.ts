@@ -12,8 +12,9 @@ export interface ModelDef {
   togetherId?: string;
   deepinfraId?: string;
   surplusId?: string;
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "both" | "all";
-  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus";
+  morpheusId?: string;
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "both" | "all";
+  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus";
   inputPricePer1M: number;
   outputPricePer1M: number;
   markupPercent: number;

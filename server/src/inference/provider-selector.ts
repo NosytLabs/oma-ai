@@ -5,9 +5,9 @@ import { parseProviderWeights, parseModelWeights } from "../lib/router-utils.js"
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus";
+export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus";
 
-export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus"];
+export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus"];
 
 const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
 
@@ -16,6 +16,7 @@ function inferProviderFromModel(model: string): Provider {
   if (model.startsWith("litellm/")) return "litellm";
   if (model.startsWith("together/")) return "together";
   if (model.startsWith("deepinfra/")) return "deepinfra";
+  if (model.startsWith("morpheus/") || model.startsWith("mor/")) return "morpheus";
   for (const prefix of OPENSOURCE_PREFIXES) {
     if (model.startsWith(prefix)) return "antseed";
   }
@@ -46,13 +47,14 @@ function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, mo
     return model;
   }
   const idMap: Record<string, string> = {
-    venice: modelDef.veniceId ?? modelDef.id, 
-    antseed: modelDef.antseedId ?? modelDef.id, 
+    venice: modelDef.veniceId ?? modelDef.id,
+    antseed: modelDef.antseedId ?? modelDef.id,
     litellm: modelDef.litellmId ?? modelDef.id,
-    openrouter: modelDef.openrouterId ?? modelDef.id, 
-    together: modelDef.togetherId ?? modelDef.id, 
+    openrouter: modelDef.openrouterId ?? modelDef.id,
+    together: modelDef.togetherId ?? modelDef.id,
     deepinfra: modelDef.deepinfraId ?? modelDef.id,
     surplus: modelDef.surplusId ?? modelDef.id,
+    morpheus: modelDef.morpheusId ?? modelDef.id,
   };
   return idMap[provider] ?? modelDef.id;
 }

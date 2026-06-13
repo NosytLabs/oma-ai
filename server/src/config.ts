@@ -28,6 +28,8 @@ const envSchema = z.object({
   DEEPINFRA_API_URL: z.string().min(1).default("https://api.deepinfra.com/v1/openai"),
   GROQ_API_KEY: z.string().min(1).optional(),
   CEREBRAS_API_KEY: z.string().min(1).optional(),
+  MORPHEUS_API_KEY: z.string().min(1).optional(),
+  MORPHEUS_BASE_URL: z.string().min(1).default("https://api.mor.org/api/v1"),
   BEDROCK_ACCESS_KEY_ID: z.string().min(1).optional(),
   BEDROCK_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   BEDROCK_REGION: z.string().min(1).default("us-east"),
@@ -268,7 +270,7 @@ function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean 
       return false;
     }
     const weightEntries = weightsStr.split(",");
-    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus"];
+    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus"];
     let totalWeight = 0;
     for (const we of weightEntries) {
       const [provider, weight] = we.split(":").map(s => s.trim());

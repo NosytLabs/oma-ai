@@ -124,7 +124,7 @@ app.use("*", cors(corsOptions));
 // sub-router that uses a `*` wildcard, so probes/ping/metrics/openapi are not
 // shadowed by 401s. The inline `app.get("/health")` previously in this file
 // was a stub that did not touch the DB; the full /health + /ready + /live +
-// /version set lives in routes/health.ts. See .opencode/audit-2026-06-13v2/backend.md
+// /version set lives in routes/health.ts. See docs/archive/audit-2026-06-13v2/backend.md
 // S-NEW-1 (23 orphan endpoints before this fix).
 app.route("/", healthRoutes);
 app.route("/", pingRoutes);

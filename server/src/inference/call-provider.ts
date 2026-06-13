@@ -5,6 +5,7 @@ import * as openrouter from "./openrouter.js";
 import * as together from "./together.js";
 import * as deepinfra from "./deepinfra.js";
 import * as surplus from "./surplus.js";
+import * as morpheus from "./morpheus.js";
 import { reportProviderResult } from "./provider-result.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
@@ -52,6 +53,8 @@ export async function callProvider(
       resp = await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0]);
     } else if (provider === "deepinfra") {
       resp = await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0]);
+    } else if (provider === "morpheus") {
+      resp = await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0]);
     } else if (provider === "surplus") {
       resp = await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
     } else {

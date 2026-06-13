@@ -66,7 +66,7 @@ export default function UseCasesPage() {
             marginBottom: '3.5rem',
           }}
         >
-          From idea to working software — pick a category to see how OMA brings concepts to life.
+          From idea to working software — pick a category to see the patterns, code, and pricing.
         </p>
 
         <div

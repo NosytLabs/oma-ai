@@ -13,9 +13,9 @@
 @theme {
   /* ================================================
      OMA AI - Refined Color Palette
-     Brand: Terminal-inspired with Cyan/Teal anchor
+     Brand: Terminal-inspired with Orange anchor
      ================================================ */
-  
+   
   /* Core palette - Terminal dark theme */
   --color-void: #0a0a0f;
   --color-surface: #121218;
@@ -23,13 +23,13 @@
   --color-surface-elevated: #1e1e26;
   --color-border: #2a2a35;
   --color-border-bright: #3d3d4d;
-  
-  /* PRIMARY ACCENT - Cyan/Teal (Brand Identity) */
-  --color-accent: #00ffc8;
-  --color-accent-dim: rgba(0, 255, 200, 0.18);
-  --color-accent-glow: rgba(0, 255, 200, 0.25);
-  --color-accent-hover: #00d4aa;
-  --color-accent-muted: #00aa8a;
+   
+  /* PRIMARY ACCENT - Orange (Brand Identity) */
+  --color-accent: #fb923c;
+  --color-accent-dim: rgba(251, 146, 60, 0.18);
+  --color-accent-glow: rgba(251, 146, 60, 0.25);
+  --color-accent-hover: #f97316;
+  --color-accent-muted: #ea580c;
   
   /* SECONDARY ACCENT - Amber/Gold */
   --color-secondary: #ffb800;
@@ -41,9 +41,9 @@
   --color-tertiary-dim: rgba(167, 139, 250, 0.12);
   
   /* Semantic colors - Brand-aligned */
-  --color-success: #00ffc8;
-  --color-success-dim: rgba(0, 255, 200, 0.12);
-  --color-success-soft: rgba(0, 255, 200, 0.08);
+  --color-success: #fb923c;
+  --color-success-dim: rgba(251, 146, 60, 0.12);
+  --color-success-soft: rgba(251, 146, 60, 0.08);
   --color-warning: #ffb800;
   --color-warning-dim: rgba(255, 184, 0, 0.12);
   --color-warning-soft: rgba(255, 184, 0, 0.08);
@@ -52,8 +52,8 @@
   --color-red: #ef4444;
   --color-error-dim: rgba(255, 51, 102, 0.12);
   --color-error-soft: rgba(255, 51, 102, 0.08);
-  --color-info: #00ffc8;
-  
+  --color-info: #fb923c;
+   
   /* Text hierarchy - WCAG 2.1 AA compliant (4.5:1 contrast ratio) */
   --color-text: #e4e4e7;
   --color-text-bright: #ffffff;
@@ -61,9 +61,9 @@
   --color-text-muted: #b3b3b8;
   --color-text-tertiary: #9898aa;
   --color-text-inverse: #0a0a0f;
-  
+   
   /* Message bubbles - Chat UI */
-  --color-msg-user: #00ffc8;
+  --color-msg-user: #fb923c;
   --color-msg-user-text: #0a0a0f;
   --color-msg-ai: #18181f;
   --color-msg-ai-text: #e4e4e7;
@@ -87,8 +87,8 @@
      ================================================ */
   --color-tier-frontier: #a78bfa;        /* Violet - highest tier */
   --color-tier-frontier-dim: rgba(167, 139, 250, 0.15);
-  --color-tier-premium: #00ffc8;          /* Cyan - premium models */
-  --color-tier-premium-dim: rgba(0, 255, 200, 0.15);
+  --color-tier-premium: #fb923c;          /* Orange - premium models */
+  --color-tier-premium-dim: rgba(251, 146, 60, 0.15);
   --color-tier-mid: #ffb800;              /* Amber - mid-range models */
   --color-tier-mid-dim: rgba(255, 184, 0, 0.15);
   --color-tier-budget: #34d399;           /* Emerald - budget options */
@@ -101,19 +101,19 @@
   --color-tier-uncensored-dim: rgba(255, 51, 102, 0.15);
   
   /* Utility color aliases - Legacy support */
-  --color-green: #00ffc8;
+  --color-green: #fb923c;
   --color-amber: #ffb800;
   --color-violet: #a78bfa;
   --color-purple: #a78bfa;
   --color-emerald: #34d399;
   --color-blue: #60a5fa;
-  
+   
   /* Utility colors */
   --color-cyan: var(--color-accent);
-  --color-cyan-bright: #00ffd4;
+  --color-cyan-bright: #fdba74;
   --color-bg-secondary: #121218;
   --color-error-bg: #1a0508;
-  --color-accent-soft: rgba(0, 255, 200, 0.08);
+  --color-accent-soft: rgba(251, 146, 60, 0.08);
   --color-overlay: rgba(0, 0, 0, 0.6);
   
   /* Typography */

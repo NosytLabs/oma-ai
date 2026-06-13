@@ -31,8 +31,8 @@ const PRIVACY_FEATURES = [
   },
   {
     icon: Shield,
-    title: 'Get Started Fast',
-    desc: 'No paperwork. Just connect and start inferring.',
+    title: 'Wallet to API',
+    desc: 'Connect a wallet, generate a key, hit the endpoint. No email, no phone, no KYC.',
   },
 ]
 
@@ -185,7 +185,7 @@ export default function PrivateAIAPIPage() {
               </div>
               <div className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: 'var(--color-surface)' }}>
                 <CheckCircle className="h-5 w-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
-                <span className="text-sm text-[var(--color-text)]">Enterprise-grade security</span>
+                <span className="text-sm text-[var(--color-text)]">Audited on-chain settlement</span>
               </div>
             </div>
           </div>
