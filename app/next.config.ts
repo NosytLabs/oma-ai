@@ -10,18 +10,21 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       'lucide-react', 
       'framer-motion', 
-      'wagmi', 
-      'viem', 
       'recharts',
       '@tanstack/react-query',
-      '@coinbase/wallet-sdk',
-      '@walletconnect/ethereum-provider',
-      '@metamask/sdk',
-      '@safe-global/safe-apps-provider',
-      'siwe',
       'react-markdown',
     ],
   },
+
+  // Keep these server-side — they pull in Node-only modules (porto, wallet SDKs)
+  // that the Edge Runtime / static-prerender step cannot bundle. Without this
+  // entry, `npm run build` fails on the `/private-ai-api` prerender with
+  // "Cannot read properties of undefined (reading 'call')" at webpack-runtime.
+  // (Next.js 15: moved from `experimental.serverComponentsExternalPackages`.)
+  serverExternalPackages: [
+    'porto',
+    '@metamask/connect-evm',
+  ],
   
   // Webpack optimizations for bundle size reduction
   webpack: (config, { isServer }) => {

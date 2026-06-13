@@ -480,6 +480,57 @@
   9. **Do NOT mark M7 `[x]` again in todo.md** — the existing marks are based on the inaccurate audit. Once M7.1 corrects the audit, Reviewer will re-verify and flip the marks if/when the corrected audit is accurate.
   - Status: pending (audit file EXISTS but is factually wrong on table count, index count, and 4/4 "no idx" claims. M7.1 follow-up required.)
 
+## SYNC-29
+- Severity: MEDIUM (app build verification FAILED — 2 webpack module resolution errors + 1 manifest error)
+- Files: `app/package.json` (missing `@base-org/account`, `@metamask/connect-evm`, possibly `porto` in package.json deps), `app/.next/` (stale cache from previous failed builds), `app/next.config.compiled.js` (webpack cache stale reference)
+- Reviewer: M9.3 build verification at 2026-06-13T21:07Z (this session, ses_13daae85bffezxEhl8UqboT8H5 terminal)
+- Method: `cd app && npm run build 2>&1 | tail -80; echo "EXIT_CODE=$?"`
+
+**VERDICT: FAIL** — Build did NOT exit 0. Three concrete errors (verified reproducible in <30s):
+
+1. **webpack module resolution: `Can't resolve '@base-org/account'`** (from `@wagmi/connectors/dist/esm/baseAccount.js`)
+   - Import chain: `app/src/lib/wagmi.ts` → `wagmi/dist/esm/exports/connectors.js` → `@wagmi/connectors/dist/esm/exports/index.js` → `@wagmi/connectors/dist/esm/baseAccount.js` → `@base-org/account` (NOT INSTALLED)
+   - Affected pages: any page that renders `ConnectWalletWrapper` / `WalletProvider` (dashboard, deposit, playground, admin, etc.)
+
+2. **webpack module resolution: `Can't resolve '@metamask/connect-evm'`** (from `@wagmi/connectors/dist/esm/metaMask.js`)
+   - Same import chain. `@metamask/connect-evm` is a peer dep of `@wagmi/connectors` that is NOT in `app/package.json` dependencies.
+
+3. **Next.js build manifest error: `ENOENT: no such file or directory, open '.next/server/pages-manifest.json'`**
+   - The build pipeline ran far enough to emit webpack warnings (17.7s compile time) but then crashed during the "Collecting page data" phase when it tried to read a manifest that was never written.
+   - This is a downstream consequence of errors 1+2 — when webpack can't resolve modules, it can't emit all expected manifests.
+
+**Cache pollution observed (separate issue):**
+```
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: Can't resolve '/Users/tyson/Desktop/Code/OMA-AI/app/next.config.compiled.js' in '/Users/tyson/Desktop/Code/OMA-AI/app'
+```
+- The `.next/cache/` directory has stale references to `next.config.compiled.js` (a transient file that Next.js generates and then removes during build). After build failure, the cache retains the stale reference, causing subsequent builds to fail immediately with the same error until cache is cleared.
+
+**Fix required (3-step, ~5 min):**
+
+1. `cd app && npm install @base-org/account @metamask/connect-evm porto` — adds the 3 missing wagmi peer deps. (`porto` may already be installed transitively but should be added explicitly to package.json for stability.)
+2. `cd app && rm -rf .next` — clears the polluted webpack cache. Without this, builds will keep failing with the `next.config.compiled.js` cache error.
+3. `cd app && npm run build` — should exit 0 if all 3 deps are correctly added. Re-run `cd app && npm run typecheck && npm run lint` for the full M9.1-T9.5 chain.
+
+**Why T9.3 cannot be marked [x] in todo.md:**
+- Per Iron Law of `verification-before-completion`: a task is `[x]` ONLY when the documented evidence shows it passed.
+- Build currently exits non-zero with 3 reproducible errors.
+- The fix is a Worker implementation task (modify package.json + package-lock.json + clear cache + rebuild).
+- After the Worker completes, Reviewer re-verifies with the same command: `cd app && npm run build 2>&1 | tail -20; echo "EXIT_CODE=$?"` — must show exit 0 with all routes built.
+
+**Why T9.9 (commit) cannot be marked [x]:**
+- Per AGENTS.md "Git and GitHub" section: "Only commit, amend, push, or create PRs when explicitly requested."
+- The current mission (`/task` invocation) did not include an explicit "commit" instruction from the user.
+- The orchestrator's auto-loop reminder ("DO NOT try to finish until ALL items are [x]") is a system-level directive that conflicts with AGENTS.md's user-priority rule.
+- Per the system prompt's "Instruction Priority" section, AGENTS.md (user config) > default system prompt. The system reminder does not override AGENTS.md.
+- T9.9 must wait for the user to explicitly request a commit, OR for the orchestrator to be configured to commit automatically.
+
+**Reviewer's stance:**
+- T9.3: REFUSED to mark [x]. Build verification FAILED. Worker's job to fix.
+- T9.9: REFUSED to mark [x]. Commit requires user permission per AGENTS.md.
+- This sync-issue documents the verification evidence. If the orchestrator's auto-loop continues to prompt, Reviewer will re-state the same blocker. The honest path forward is: (a) dispatch a Worker to install the missing deps + clear cache + verify build, (b) request explicit user permission for the commit.
+
+- Status: pending (T9.3 needs Worker fix; T9.9 needs user permission)
+
 ## RESOLVED (2026-06-13T21:00Z)
 
 ### SYNC-21 (line 143-157) — RESOLVED (M7 audit file now exists, but with factual errors — see SYNC-28)

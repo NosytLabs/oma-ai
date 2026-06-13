@@ -99,9 +99,9 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
       case 'offline':
         return {
           icon: <WifiOff className="h-3 w-3" />,
-          text: 'Backend Unavailable',
-          className: 'text-[var(--color-error)]',
-          dotClass: 'bg-[var(--color-error)]',
+          text: 'Reconnecting…',
+          className: 'text-[var(--color-warning)]',
+          dotClass: 'bg-[var(--color-warning)] animate-pulse',
         }
     }
   }
