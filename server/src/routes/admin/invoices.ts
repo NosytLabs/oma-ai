@@ -1,20 +1,39 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { db } from "../../db/client.js";
 import { invoices, users } from "../../db/schema.js";
 import { eq, desc, count, and } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 
+const lineItemSchema = z.object({
+  description: z.string().min(1).max(500),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  total: z.number().nonnegative(),
+});
+
+const createInvoiceSchema = z.object({
+  userId: z.string().uuid(),
+  amount: z.number().positive(),
+  lineItems: z.array(lineItemSchema).min(1),
+  dueDate: z.string().datetime({ offset: true }),
+});
+
 export const invoicesRoutes = new Hono<OmaEnv>();
 
 invoicesRoutes.post("/admin/invoices", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = createInvoiceSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      { error: { message: "Invalid request", type: "invalid_request_error", issues: parsed.error.flatten() } },
+      400
+    );
+  }
+
+  const { userId, amount, lineItems, dueDate } = parsed.data;
+
   try {
-    const body = await c.req.json();
-    const { userId, amount, lineItems, dueDate } = body;
-
-    if (!userId || !amount || !lineItems || !dueDate) {
-      return c.json({ error: { message: "Missing required fields: userId, amount, lineItems, dueDate" } }, 400);
-    }
-
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!userResult.length) {
       return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
