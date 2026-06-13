@@ -80,6 +80,13 @@ const envSchema = z.object({
   CCTP_SOURCE_CHAINS: z.string().min(1).default("solana,ethereum,arbitrum,optimism,polygon,avalanche"),
   CCTP_BASE_DOMAIN: z.coerce.number().default(6),
 
+  // Base mainnet chain ID (used by withdraw route as default chainId)
+  BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
+
+  // Markup percentage applied to inference billing (e.g. 25 = 25% markup on cost)
+  // Used by server/src/inference/markup.ts via getMarkupMultiplier() / getMarkupPercent().
+  OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
+
   LIFI_API_URL: z.string().min(1).default("https://li.quest/v1"),
   LIFI_INTEGRATOR: z.string().min(1).default("oma-ai"),
 
