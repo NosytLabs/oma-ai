@@ -30,14 +30,27 @@ const BUILD = (process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev').slice(0, 7)
 const ISSUED = '2026-06-02'
 const DOC_ID = '0x4F4D41-AI'
 
-const FEATURED_MODELS = [
-  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '128k' },
-  { id: 'qwen3-coder-480b', provider: 'AntSeed', ctx: '128k' },
-  { id: 'claude-sonnet-4-6', provider: 'Venice', ctx: '200k' },
-  { id: 'deepseek-v4-pro', provider: 'AntSeed', ctx: '128k' },
-  { id: 'gpt-4o', provider: 'Venice', ctx: '128k' },
-  { id: 'gemma-3-27b', provider: 'Venice', ctx: '128k' },
+type ModelLogo = 'llama' | 'claude' | 'gpt' | 'qwen' | 'deepseek' | 'gemma'
+
+const FEATURED_MODELS: { id: string; provider: string; ctx: string; logo: ModelLogo }[] = [
+  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '128k', logo: 'llama' },
+  { id: 'qwen3-coder-480b', provider: 'AntSeed', ctx: '128k', logo: 'qwen' },
+  { id: 'claude-sonnet-4-6', provider: 'Venice', ctx: '200k', logo: 'claude' },
+  { id: 'deepseek-v4-pro', provider: 'AntSeed', ctx: '128k', logo: 'deepseek' },
+  { id: 'gpt-4o', provider: 'Venice', ctx: '128k', logo: 'gpt' },
+  { id: 'gemma-3-27b', provider: 'Venice', ctx: '128k', logo: 'gemma' },
 ]
+
+// First-letter monograms (MVP placeholder until real brand SVGs land via 21st-magic / icon CDN).
+// 2 letters where the brand initial collides (DS vs G, GE vs G).
+const MONOGRAM: Record<ModelLogo, string> = {
+  llama: 'L',
+  claude: 'C',
+  gpt: 'G',
+  qwen: 'Q',
+  deepseek: 'DS',
+  gemma: 'GE',
+}
 
 const PROVIDERS = [
   { id: 'venice', name: 'Venice', role: 'PRIMARY', note: 'Chat, images, video, embeddings', state: 'online' },
@@ -238,22 +251,30 @@ export default function HomePage() {
               Featured model inventory
             </h3>
 
-            <ul className="border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+            <ul className="border border-[var(--color-border)] divide-y divide-[var(--color-border)] overflow-x-auto">
               {FEATURED_MODELS.map((m, i) => (
                 <li
                   key={m.id}
-                  className="grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem_4rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-[var(--color-surface)] transition-colors"
+                  className="grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem_4rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-[var(--color-surface)] transition-colors min-w-fit"
                 >
                   <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)] truncate">
-                    {m.id}
+                  <span className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-4 w-4 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[8px] sm:text-[9px] font-medium text-[var(--color-accent)] tabular-nums"
+                    >
+                      {MONOGRAM[m.logo]}
+                    </span>
+                    <span className="text-[10px] sm:text-sm text-[var(--color-text-bright)] truncate min-w-0">
+                      {m.id}
+                    </span>
                   </span>
-                  <span className="text-[11px] sm:text-xs text-[var(--color-text-secondary)] truncate">
+                  <span className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] truncate">
                     {m.provider}
                   </span>
-                  <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums text-right">
+                  <span className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] tabular-nums text-right">
                     {m.ctx}
                   </span>
                 </li>
@@ -337,6 +358,20 @@ export default function HomePage() {
                 <span>circuit breaker: closed</span>
               </div>
             </div>
+
+            <p className="mt-4 text-[11px] text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-accent)]" aria-hidden="true">
+                ~
+              </span>{' '}
+              Cross-chain deposits via{' '}
+              <Link
+                href="/deposit"
+                className="font-medium text-[var(--color-text-bright)] hover:text-[var(--color-accent)] underline decoration-2 underline-offset-2"
+              >
+                Houdini Swap
+              </Link>{' '}
+              (BTC, ETH, SOL, XMR, TRX, BNB, and 14+ more chains).
+            </p>
           </section>
 
           {/* ===== § 04 PROTOCOL ===== */}

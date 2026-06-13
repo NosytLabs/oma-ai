@@ -1,5 +1,6 @@
 
 ## Active Sessions
+- [x] ses_health_fix_v5 (Worker): /api/health fix — decoupled from backend proxy, now a static 200 OK liveness response. Routes backend reachability to the actual API call sites where the user has a real reason to care. Wrote `.opencode/audit-2026-06-13v5/health-endpoint-audit.md` (5.7KB, 5 sections) + unit test record at `.opencode/unit-tests/2026-06-13T21-16-41Z-health-fix.md` - done 2026-06-13T21:18Z
 - [x] ses_m8_render_v5_redux (Worker): M8 Render $50 Credit Optimization — re-dispatched to fix SYNC-22 FAIL, wrote `.opencode/audit-2026-06-13v5/render-optimization.md` (correct dir, MCP-verified) + unit test record at `.opencode/unit-tests/2026-06-13T20-59Z-m8-render.md` - done
 - [x] ses_neon_v5_redo (Worker): M7 Neon DB optimization — wrote `.opencode/audit-2026-06-13v5/neon-optimization.md` (26KB, 9 sections, 6 projects, 29 tables, 113 indexes, 5 prioritized actions) + unit test record at `.opencode/unit-tests/2026-06-13T21-02Z-m7-neon.md` - done
 - [x] ses_render_v5 (Worker): M8 Render $50 credit optimization audit (FIRST attempt, wrote to WRONG dir `.opencode/v5-screenshots/RENDER-V5-OPTIMIZATION.md`; marked FAIL by ses_m8_review per SYNC-22) - done
@@ -34,6 +35,9 @@
 | `.opencode/research/orange-palette.md` (NEW) | ses_m1_palette | n/a (doc) | 2026-06-13T19:01Z |
 | `.opencode/v5-screenshots/RENDER-V5-OPTIMIZATION.md` (NEW) | ses_render_v5 | n/a (audit, WRONG dir) | 2026-06-13T16:54Z |
 | `.opencode/audit-2026-06-13v5/render-optimization.md` (NEW, correct dir) | ses_m8_render_v5_redux | n/a (audit, MCP-verified) | 2026-06-13T20:59Z |
+| `app/src/app/api/health/route.ts` (MODIFY) | ses_health_fix_v5 | pass (gates: typecheck+lint+test) | 2026-06-13T21:18Z |
+| `.opencode/audit-2026-06-13v5/health-endpoint-audit.md` (NEW) | ses_health_fix_v5 | n/a (audit) | 2026-06-13T21:17Z |
+| `.opencode/unit-tests/2026-06-13T21-16-41Z-health-fix.md` (NEW) | ses_health_fix_v5 | n/a (test record) | 2026-06-13T21:17Z |
 | `.opencode/audit-2026-06-13v5/env-audit.md` (NEW) | ses_env_audit_v5 | n/a (read-only audit) | 2026-06-13T18:01Z |
 
 ## Pending Integration

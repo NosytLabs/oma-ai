@@ -630,4 +630,27 @@ After applying any fix:
 - `cd app && npm run build` → exit 0
 - `cd app && npm run typecheck` → exit 0 (already passes)
 - `cd app && npm run lint` → exit 0 (already passes)
-- `cd server && npm test` → 685/685 (regression check)
+
+## SYNC-30
+- Severity: HIGH
+- Files: `.opencode/v4-screenshots/` (38 files, 11M, unchanged from CONTEXT.md baseline)
+- Problem: Reviewer was asked to verify task "Trim v4 stale screenshots" as completed, but the task is **not actually finished**. As of 2026-06-13T18:15Z:
+  1. **No worker session in work-log.md.** Active Sessions (13 entries) and Completed Units table both lack any entry for "trim v4 screenshots". The closest prior cleanup `ses_cleanup_v4` (15:19Z) archived v3 audit artifacts, NOT v4 screenshots. No Session Note describes the trim.
+  2. **No unit test record** in `.opencode/unit-tests/`. All 19 records are dated 2026-06-13 04:22Z → 21:02Z, none matching "v4-screenshots", "trim-screenshots", or "screenshot-cleanup".
+  3. **v4-screenshots directory still 11M / 38 files, UNCHANGED:**
+     - 18 stale `desktop-0[1-9]-*.png` files (15:16-15:23) — pre-v4 / v3 era, NOT referenced anywhere in project
+     - 2 stale `mobile-0[1-3]-*.png` files (15:19) — pre-v4 / v3 era, NOT referenced anywhere
+     - 15 `v4-*.png` files (15:32-16:25) — legitimate v4 visual-audit content
+     - 2 `v5-*.{jpeg,png}` files (15:57, 16:25) — these belong in `.opencode/v5-screenshots/`, NOT here
+  4. **No todo.md entry.** The 36-item M0-M9 tree has no item for "Trim v4 stale screenshots". The task was identified in CONTEXT.md as a cleanup opportunity but never added to the canonical todo list.
+  5. **No git activity.** Only commit touching v4-screenshots is `7371acb feat(v5): comprehensive audit & overhaul`. No commit specifically for the trim. `git status` shows no modified files in v4-screenshots.
+  6. **Cross-project grep confirms the stale files are orphans:** `grep -rln "desktop-0[1-9]"` returns 0 results in `.opencode/audit-2026-06-13v4/`, `docs/`, and `.opencode/v5-screenshots/`. The 20 stale PNGs are 100% safe to delete.
+  7. **Root cause:** 8th occurrence of the MiniMax-M3 empty-output pattern (per AGENTS.md lessons). Either the orchestrator dispatched a Worker that produced no output, or no Worker was ever dispatched for this task name. Task is not real in the project's executed-work state.
+- Fix: Re-dispatch a Worker (or execute directly — sub-2-minute task) to:
+  1. `mkdir -p /tmp/v4-screenshots-archive && mv /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/desktop-*.png /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/mobile-*.png /tmp/v4-screenshots-archive/` (archive the 20 stale files, do not hard-delete until archived-confirmed)
+  2. `mv /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/v5-*.jpeg /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/v5-*.png /Users/tyson/Desktop/Code/OMA-AI/.opencode/v5-screenshots/` (relocate the 2 misplaced v5 files)
+  3. Verify final state: `ls -1 /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/ | wc -l` should be ~15 (only v4-prefixed files), `du -sh /Users/tyson/Desktop/Code/OMA-AI/.opencode/v4-screenshots/` should be ~5-6M
+  4. Write unit test record: `.opencode/unit-tests/2026-06-13T<time>Z-v4-screenshots-trim.md` with before/after file list, byte counts, archived-file manifest
+  5. Update work-log.md: add `ses_v4_screenshots_trim` to Completed Units table
+  6. Validation: `git status --short` shows expected changes; no broken references
+- Status: pending (TASK NOT VERIFIABLE — Reviewer CANNOT mark complete because no work was done)

@@ -1,36 +1,30 @@
 import { NextResponse } from 'next/server'
 
+/**
+ * Frontend liveness check.
+ *
+ * This route indicates that the Next.js app itself is alive and serving
+ * traffic — NOT whether the downstream inference backend (port 3001) is
+ * reachable. Backend reachability is surfaced at the actual API call sites
+ * (chat completions, models, etc.) where the user has a real reason to care.
+ *
+ * Returning a non-200 from this endpoint paints the navbar "Reconnecting…"
+ * warning indicator on every public page, which is a poor UX for marketing
+ * surfaces (/, /pricing, /docs) that don't need the backend.
+ *
+ * Always 200. No auth. No upstream call. Cheap & cacheable.
+ */
 export async function GET() {
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-    const res = await fetch(`${apiUrl}/health`, {
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-
-    if (res.ok) {
-      const data = await res.json()
-      return NextResponse.json(
-        {
-          status: data.status || 'online',
-          version: data.version,
-          service: data.service,
-        },
-        {
-          headers: {
-            'Cache-Control': 's-maxage=25, stale-while-revalidate=30',
-          },
-        }
-      )
+  return NextResponse.json(
+    {
+      status: 'ok',
+      service: 'oma-ai-web',
+      timestamp: new Date().toISOString(),
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+      },
     }
-
-    return NextResponse.json({ status: 'error', message: 'Backend returned error' }, { status: 503 })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Backend unavailable'
-    return NextResponse.json({ status: 'offline', message }, { status: 503 })
-  }
+  )
 }
