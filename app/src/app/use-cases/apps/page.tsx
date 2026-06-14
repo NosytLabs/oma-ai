@@ -12,7 +12,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="llama-3.3-70b",
     messages=[{"role": "user", "content": "Generate an app concept"}]
 )
 
@@ -26,7 +26,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
+  model: "llama-3.3-70b",
   messages: [{ role: "user", content: "Generate an app concept" }],
 });
 
@@ -36,7 +36,7 @@ const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "gpt-4o",
+    "model": "llama-3.3-70b",
     "messages": [{"role": "user", "content": "Generate an app concept"}]
   }'`
 

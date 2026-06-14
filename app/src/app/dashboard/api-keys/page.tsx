@@ -461,7 +461,7 @@ export default function ApiKeysPage() {
                 <pre className="rounded-lg bg-[var(--color-void)] border border-[var(--color-border)] p-3 overflow-x-auto text-xs font-mono text-[var(--color-text-secondary)] whitespace-pre"><code>{`curl -X POST https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer ${createdKey.key}" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"deepseek-v4-pro","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
+  -d '{"model":"llama-3.2-3b","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
               </div>
 
               <motion.button

@@ -79,7 +79,7 @@ const BATCH_INTERVAL_MS = 250
 
 function PlaygroundContent() {
   const searchParams = useSearchParams()
-  const defaultModel = searchParams.get('model') || 'deepseek-v4-pro'
+  const defaultModel = searchParams.get('model') || 'llama-3.2-3b'
   const [model, setModel] = useState(defaultModel)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')

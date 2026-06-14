@@ -43,16 +43,18 @@ describe('ModelsPage', () => {
 
   it('renders the stats bar showing model count', async () => {
     render(<ModelsPage />)
+    // The stats bar renders `${MODELS.length}+ models available` — match the
+    // whole string. Updated to reflect the reconciled real catalog count.
     await waitFor(() => {
-      const spans = screen.getAllByText('32')
-      expect(spans.length).toBeGreaterThan(0)
+      expect(screen.getByText(/17\+ models available/i)).toBeInTheDocument()
     })
   })
 
   it('renders model cards when models are present', async () => {
     render(<ModelsPage />)
     await waitFor(() => {
-      expect(screen.getByText('Claude Opus 4.7')).toBeInTheDocument()
+      // Claude Opus 4 (real model in server catalog) — was Claude Opus 4.7 (fictional, removed)
+      expect(screen.getByText('Claude Opus 4')).toBeInTheDocument()
     })
   })
 

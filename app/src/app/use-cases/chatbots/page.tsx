@@ -12,7 +12,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="llama-3.3-70b",
     messages=[
         {"role": "system", "content": "You are a helpful customer support chatbot."},
         {"role": "user", "content": "I need help with my order"}
@@ -30,7 +30,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
+  model: "llama-3.3-70b",
   messages: [
     { role: "system", content: "You are a helpful customer support chatbot." },
     { role: "user", content: "I need help with my order" },
@@ -43,7 +43,7 @@ const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "gpt-4o",
+    "model": "llama-3.3-70b",
     "messages": [
       {"role": "system", "content": "You are a helpful customer support chatbot."},
       {"role": "user", "content": "I need help with my order"}
@@ -64,7 +64,7 @@ const features = [
 ]
 
 const integrations = [
-  { name: 'Intercom', desc: 'Add AI-powered support to your Intercom inbox', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="gpt-4o")' },
+  { name: 'Intercom', desc: 'Add AI-powered support to your Intercom inbox', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="llama-3.3-70b")' },
   { name: 'Zendesk', desc: 'Automate ticket responses with AI', code: 'from openai import OpenAI\nclient = OpenAI(base_url="https://api.oma-ai.com/v1")' },
   { name: 'Discord', desc: 'Build AI Discord bots with slash commands', code: 'import discord\nfrom openai import OpenAI\nclient = OpenAI(base_url="https://api.oma-ai.com/v1")' },
   { name: 'WhatsApp', desc: 'AI-powered WhatsApp business messages', code: 'from twilio.rest import Client\nclient = Client("ACxxxxxx", "your_auth_token")' },

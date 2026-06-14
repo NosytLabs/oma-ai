@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     template: '%s | OMA AI',
   },
   description:
-    'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
+    'Permissionless AI inference gateway. Access 19+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
   keywords: ['AI', 'inference', 'LLM', 'OpenAI', 'Anthropic', 'crypto', 'payments', 'API', 'developers'],
   authors: [{ name: 'OMA AI' }],
   creator: 'OMA AI',
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'OMA AI - One Man Army // Open Model Access',
-    description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required.',
+    description: 'Permissionless AI inference gateway. Access 19+ models with crypto payments. No sign-up required.',
     site: '@oma_ai',
     creator: '@oma_ai',
     images: ['/og-image.png'],
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     url: 'https://oma-ai.com',
     siteName: 'OMA AI',
     title: 'OMA AI - One Man Army // Open Model Access',
-    description: 'Permissionless AI inference gateway. Access 50+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
+    description: 'Permissionless AI inference gateway. Access 19+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
     images: [
       {
         url: '/og-image.png',

@@ -29,7 +29,7 @@ function getModelPricing(modelId: string): { inputPer1M: number; outputPer1M: nu
   return { inputPer1M: 0.15, outputPer1M: 0.60 }
 }
 
-export function StatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBarProps) {
+export function StatsBar({ messages, model = 'llama-3.2-3b' }: StatsBarProps) {
   const { inputPer1M, outputPer1M } = getModelPricing(model)
   const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0)
   const totalCost = messages.reduce((acc, m) => {
@@ -56,7 +56,7 @@ export function StatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBarProps)
   )
 }
 
-export function MobileStatsBar({ messages, model = 'deepseek-v4-pro' }: StatsBarProps) {
+export function MobileStatsBar({ messages, model = 'llama-3.2-3b' }: StatsBarProps) {
   const { inputPer1M, outputPer1M } = getModelPricing(model)
   const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0)
   const totalCost = messages.reduce((acc, m) => {

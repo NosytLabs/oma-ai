@@ -134,7 +134,7 @@ export const ENDPOINTS: EndpointInfo[] = [
   "data": [
     { "id": "llama-3.2-3b",        "object": "model", "owned_by": "meta" },
     { "id": "deepseek-v3",         "object": "model", "owned_by": "deepseek" },
-    { "id": "qwen3-coder-30b",     "object": "model", "owned_by": "alibaba" },
+    { "id": "claude-sonnet-4",     "object": "model", "owned_by": "anthropic" },
     { "id": "venice/flux-schnell", "object": "model", "owned_by": "black-forest-labs" }
   ]
 }`,

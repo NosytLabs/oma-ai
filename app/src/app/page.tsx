@@ -26,15 +26,15 @@ export const metadata: Metadata = {
   },
 }
 
-type ModelLogo = 'llama' | 'claude' | 'gpt' | 'qwen' | 'deepseek' | 'gemma'
+type ModelLogo = 'llama' | 'claude' | 'gemini' | 'deepseek' | 'gpt' | 'venice'
 
 const FEATURED_MODELS: { id: string; provider: string; ctx: string; logo: ModelLogo }[] = [
-  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '128k', logo: 'llama' },
-  { id: 'qwen3-coder-480b', provider: 'AntSeed', ctx: '128k', logo: 'qwen' },
-  { id: 'claude-sonnet-4-6', provider: 'Venice', ctx: '200k', logo: 'claude' },
-  { id: 'deepseek-v4-pro', provider: 'AntSeed', ctx: '128k', logo: 'deepseek' },
-  { id: 'gpt-4o', provider: 'Venice', ctx: '128k', logo: 'gpt' },
-  { id: 'gemma-3-27b', provider: 'Venice', ctx: '128k', logo: 'gemma' },
+  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '8k', logo: 'llama' },
+  { id: 'claude-sonnet-4', provider: 'Anthropic', ctx: '200k', logo: 'claude' },
+  { id: 'gemini-2.5-pro', provider: 'Google', ctx: '1M', logo: 'gemini' },
+  { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128k', logo: 'gpt' },
+  { id: 'deepseek-v3', provider: 'Venice', ctx: '64k', logo: 'deepseek' },
+  { id: 'claude-3-5-haiku-latest', provider: 'Anthropic', ctx: '200k', logo: 'venice' },
 ]
 
 // First-letter monograms (MVP placeholder until real brand SVGs land via 21st-magic / icon CDN).
@@ -43,9 +43,9 @@ const MONOGRAM: Record<ModelLogo, string> = {
   llama: 'L',
   claude: 'C',
   gpt: 'G',
-  qwen: 'Q',
   deepseek: 'DS',
-  gemma: 'GE',
+  gemini: 'GE',
+  venice: 'V',
 }
 
 const PROVIDERS = [
@@ -58,7 +58,7 @@ const INTEGRATION_SNIPPET = `curl -X POST https://api.oma-ai.com/v1/chat/complet
   -H "Authorization: Bearer $OMA_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "claude-sonnet-4-6",
+    "model": "claude-sonnet-4",
     "messages": [{ "role": "user", "content": "hi" }]
   }'`
 
@@ -145,7 +145,7 @@ export default function HomePage() {
                     ['Facilitator', 'mock · dev'],
                     ['Settlement', 'Base · USDC'],
                     ['Providers', '3 / 3'],
-                    ['Models', `${FEATURED_MODELS.length} of 50+ shown`],
+                    ['Models', `${FEATURED_MODELS.length} of 19+ shown`],
                   ].map(([k, v]) => (
                     <div
                       key={k}

@@ -12,7 +12,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="llama-3.3-70b",
     messages=[{"role": "user", "content": "Research the latest AI trends"}]
 )
 
@@ -26,7 +26,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
+  model: "llama-3.3-70b",
   messages: [{ role: "system", content: "You are a research agent." }, { role: "user", content: "Research latest AI trends" }],
 });
 
@@ -36,7 +36,7 @@ const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "gpt-4o",
+    "model": "llama-3.3-70b",
     "messages": [{"role": "user", "content": "Research the latest AI trends"}]
   }'`
 
@@ -54,9 +54,9 @@ const features = [
 ]
 
 const integrations = [
-  { name: 'LangChain', desc: 'LangChain agent with OpenAI-compatible provider', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="gpt-4o")' },
-  { name: 'AutoGen', desc: 'Microsoft AutoGen multi-agent framework', code: 'from autogen import ConversableAgent\nagent = ConversableAgent("assistant", llm_config={"model": "gpt-4o", "base_url": "https://api.oma-ai.com/v1"})' },
-  { name: 'CrewAI', desc: 'CrewAI orchestrating multi-agent workflows', code: 'from crewai import Agent, Task\nagent = Agent(role="researcher", llm_base_url="https://api.oma-ai.com/v1", llm_model="gpt-4o")' },
+  { name: 'LangChain', desc: 'LangChain agent with OpenAI-compatible provider', code: 'from langchain_openai import ChatOpenAI\nllm = ChatOpenAI(base_url="https://api.oma-ai.com/v1", model="llama-3.3-70b")' },
+  { name: 'AutoGen', desc: 'Microsoft AutoGen multi-agent framework', code: 'from autogen import ConversableAgent\nagent = ConversableAgent("assistant", llm_config={"model": "llama-3.3-70b", "base_url": "https://api.oma-ai.com/v1"})' },
+  { name: 'CrewAI', desc: 'CrewAI orchestrating multi-agent workflows', code: 'from crewai import Agent, Task\nagent = Agent(role="researcher", llm_base_url="https://api.oma-ai.com/v1", llm_model="llama-3.3-70b")' },
   { name: 'Custom Agents', desc: 'Build your own agent loop with x402 payments', code: 'async def agent_task():\n    async with OpenAI(base_url="https://api.oma-ai.com/v1") as client:\n        # Agent logic here' },
 ]
 

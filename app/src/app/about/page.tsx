@@ -204,7 +204,7 @@ export default function AboutPage() {
                     ['Issuer', 'OMA · operator-side'],
                     ['Form', 'Inference gateway'],
                     ['Hosts', '0 (we forward)'],
-                    ['Models', '50+ across providers'],
+                    ['Models', '19+ across providers'],
                     ['Auth', 'Wallet · SIWE'],
                     ['Settlement', 'USDC · Base'],
                   ].map(([k, v]) => (

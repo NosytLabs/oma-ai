@@ -306,7 +306,7 @@ export default function PrivacyPage() {
                   </span>
                 </div>
                 <ul className="space-y-3">
-                  <DataPoint term="Model id" detail='e.g. "claude-sonnet-4-6"' />
+                  <DataPoint term="Model id" detail='e.g. "claude-sonnet-4"' />
                   <DataPoint term="Token counts" detail="Prompt and completion tokens per request." />
                   <DataPoint term="Cost in cents" detail="Computed at settlement time." />
                   <DataPoint term="Request timestamp" detail="UTC, to the second." />

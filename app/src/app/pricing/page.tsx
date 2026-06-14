@@ -27,24 +27,23 @@ interface PricedModel {
 }
 
 const MODELS: PricedModel[] = [
-  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', category: 'frontier', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
   { id: 'claude-opus-4', name: 'Claude Opus 4', category: 'frontier', provider: 'Anthropic', inputPer1M: 15.00, outputPer1M: 75.00, ctx: '200K' },
-  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', category: 'frontier', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, ctx: '128K' },
+  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', category: 'frontier', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
+  { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', category: 'frontier', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', category: 'frontier', provider: 'Google', inputPer1M: 1.25, outputPer1M: 10.00, ctx: '1M' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'premium', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
-  { id: 'mistral-small-3.2-24b-instruct', name: 'Mistral Small 3.2', category: 'mid', provider: 'Mistral', inputPer1M: 0.09, outputPer1M: 0.25, ctx: '64K' },
-  { id: 'claude-3-5-haiku-latest', name: 'Claude Haiku 3.5', category: 'premium', provider: 'Anthropic', inputPer1M: 0.80, outputPer1M: 4.00, ctx: '200K' },
-  { id: 'deepseek-r1', name: 'DeepSeek R1', category: 'premium', provider: 'AntSeed', inputPer1M: 0.55, outputPer1M: 2.19, ctx: '64K' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', category: 'mid', provider: 'Venice', inputPer1M: 0.50, outputPer1M: 1.50, ctx: '64K' },
-  { id: 'qwen3-coder-32b', name: 'Qwen3 Coder 32B', category: 'mid', provider: 'AntSeed', inputPer1M: 0.14, outputPer1M: 0.60, ctx: '128K' },
-  { id: 'venice-uncensored', name: 'Venice Uncensored', category: 'premium', provider: 'Venice', inputPer1M: 0.07, outputPer1M: 0.35, ctx: '32K' },
-  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'mid', provider: 'Both', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '128K' },
-  { id: 'qwen3-8b', name: 'Qwen3 8B', category: 'budget', provider: 'AntSeed', inputPer1M: 0.01, outputPer1M: 0.01, ctx: '32K' },
-  { id: 'meta-llama-3.1-8b-together', name: 'Llama 3.1 8B', category: 'budget', provider: 'Together', inputPer1M: 0.10, outputPer1M: 0.10, ctx: '128K' },
-  { id: 'google-gemma-3-27b-it', name: 'Gemma 3 27B', category: 'mid', provider: 'Google', inputPer1M: 0.09, outputPer1M: 0.18, ctx: '128K' },
-  { id: 'google-gemma-4-31b-it', name: 'Gemma 4 31B', category: 'budget', provider: 'Google', inputPer1M: 0.01, outputPer1M: 0.02, ctx: '128K' },
-  { id: 'zai-org-glm-5-1', name: 'GLM 5.1', category: 'mid', provider: 'AntSeed', inputPer1M: 0.25, outputPer1M: 0.60, ctx: '128K' },
-  { id: 'minimax-m27', name: 'MiniMax M2.7', category: 'budget', provider: 'AntSeed', inputPer1M: 0.01, outputPer1M: 0.02, ctx: '64K' },
+  { id: 'gemini-2.5-pro-thinking', name: 'Gemini 2.5 Pro (thinking)', category: 'frontier', provider: 'Google', inputPer1M: 1.25, outputPer1M: 10.00, ctx: '1M' },
+  { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', category: 'mid', provider: 'Anthropic', inputPer1M: 0.80, outputPer1M: 4.00, ctx: '200K' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'mid', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
+  { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', category: 'mid', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'mid', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, ctx: '128K' },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', category: 'premium', provider: 'Venice', inputPer1M: 0.50, outputPer1M: 1.50, ctx: '64K' },
+  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'mid', provider: 'Venice', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
+  { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', category: 'premium', provider: 'Together', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
+  { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', category: 'budget', provider: 'Venice', inputPer1M: 0.06, outputPer1M: 0.12, ctx: '8K' },
+  { id: 'free/gpt-3.5-turbo', name: 'GPT-3.5 Turbo (FREE)', category: 'budget', provider: 'OpenAI', inputPer1M: 0, outputPer1M: 0, ctx: '16K' },
+  { id: 'free/claude-3-haiku', name: 'Claude 3 Haiku (FREE)', category: 'budget', provider: 'Anthropic', inputPer1M: 0, outputPer1M: 0, ctx: '200K' },
+  { id: 'free/gemini-pro', name: 'Gemini Pro (FREE)', category: 'budget', provider: 'Google', inputPer1M: 0, outputPer1M: 0, ctx: '32K' },
+  { id: 'free/llama-3-8b', name: 'Llama 3 8B (FREE)', category: 'budget', provider: 'Meta', inputPer1M: 0, outputPer1M: 0, ctx: '8K' },
 ]
 
 const CATEGORIES: { key: Category; label: string }[] = [
@@ -161,7 +160,7 @@ export default function PricingPage() {
             AI API Pricing
           </h1>
           <p className="mt-4 text-base text-[var(--color-text-secondary)] max-w-2xl">
-            Credit-based billing. No subscriptions. No minimums. Pay per token across 28+ models via unified OpenAI-compatible API.
+            Credit-based billing. No subscriptions. No minimums. Pay per token across 19+ models via unified OpenAI-compatible API.
           </p>
         </div>
 

@@ -61,7 +61,7 @@ export default async function OpengraphImage() {
               maxWidth: 900,
             }}
           >
-            Pay per request in USDC. 50+ models. No account required.
+            Pay per request in USDC. 19+ models. No account required.
           </div>
         </div>
 

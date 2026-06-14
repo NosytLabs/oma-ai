@@ -56,34 +56,23 @@ const PLAN_LIMITS: PlanLimits[] = [
 ]
 
 const MODEL_PRICING: ModelPricing[] = [
-  { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', input: 15.00, output: 75.00, ctx: '200K' },
-  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', input: 3.00, output: 15.00, ctx: '200K' },
-  { id: 'gpt-5.5', name: 'GPT-5.5', input: 10.00, output: 30.00, ctx: '128K' },
-  { id: 'gpt-4o', name: 'GPT-4o', input: 2.50, output: 10.00, ctx: '128K' },
-  { id: 'o3', name: 'OpenAI o3', input: 10.00, output: 40.00, ctx: '200K' },
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', input: 1.50, output: 9.00, ctx: '1M' },
-  { id: 'mistral-large', name: 'Mistral Large', input: 2.00, output: 6.00, ctx: '128K' },
-  { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', input: 0.80, output: 4.00, ctx: '200K' },
+  { id: 'claude-opus-4', name: 'Claude Opus 4', input: 15.00, output: 75.00, ctx: '200K' },
+  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', input: 3.00, output: 15.00, ctx: '200K' },
+  { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', input: 3.00, output: 15.00, ctx: '200K' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', input: 1.25, output: 10.00, ctx: '1M' },
+  { id: 'gemini-2.5-pro-thinking', name: 'Gemini 2.5 Pro (thinking)', input: 1.25, output: 10.00, ctx: '1M' },
+  { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', input: 0.80, output: 4.00, ctx: '200K' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', input: 0.075, output: 0.30, ctx: '1M' },
+  { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', input: 0.075, output: 0.30, ctx: '1M' },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini', input: 0.15, output: 0.60, ctx: '128K' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', input: 0.15, output: 0.60, ctx: '1M' },
-  { id: 'grok-41-fast', name: 'Grok 4.1 Fast', input: 0.26, output: 0.66, ctx: '128K' },
-  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', input: 0.18, output: 1.00, ctx: '128K' },
-  { id: 'deepseek-r1', name: 'DeepSeek R1', input: 0.55, output: 2.19, ctx: '64K' },
-  { id: 'qwen3-coder-480b', name: 'Qwen3 Coder 480B', input: 0.14, output: 0.60, ctx: '128K' },
-  { id: 'venice-uncensored', name: 'Venice Uncensored', input: 0.07, output: 0.35, ctx: '32K' },
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', input: 0.05, output: 0.19, ctx: '128K' },
-  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', input: 0.30, output: 0.48, ctx: '128K' },
-  { id: 'qwen3-235b', name: 'Qwen3 235B', input: 0.09, output: 0.45, ctx: '128K' },
-  { id: 'glm-5.1', name: 'GLM-5.1', input: 0.25, output: 0.60, ctx: '128K' },
-  { id: 'kimi-k2-6', name: 'Kimi K2.6', input: 0.07, output: 0.42, ctx: '128K' },
-  { id: 'gemma-3-27b', name: 'Gemma 3 27B', input: 0.09, output: 0.18, ctx: '128K' },
-  { id: 'gpt-oss-120b', name: 'GPT-OSS 120B', input: 0.04, output: 0.14, ctx: '128K' },
-  { id: 'mistral-small-3.2', name: 'Mistral Small 3.2', input: 0.09, output: 0.25, ctx: '64K' },
-  { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', input: 0.01, output: 0.01, ctx: '128K' },
-  { id: 'qwen3-8b', name: 'Qwen3 8B', input: 0.01, output: 0.01, ctx: '32K' },
-  { id: 'qwen3-coder-30b', name: 'Qwen3 Coder 30B', input: 0.01, output: 0.02, ctx: '64K' },
-  { id: 'gemma4-31b', name: 'Gemma 4 31B', input: 0.01, output: 0.02, ctx: '128K' },
-  { id: 'minimax-m2.7', name: 'MiniMax M2.7', input: 0.01, output: 0.02, ctx: '64K' },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', input: 0.50, output: 1.50, ctx: '64K' },
+  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', input: 0.35, output: 0.90, ctx: '8K' },
+  { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', input: 0.35, output: 0.90, ctx: '8K' },
+  { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', input: 0.06, output: 0.12, ctx: '8K' },
+  { id: 'free/gpt-3.5-turbo', name: 'GPT-3.5 Turbo (FREE)', input: 0, output: 0, ctx: '16K' },
+  { id: 'free/claude-3-haiku', name: 'Claude 3 Haiku (FREE)', input: 0, output: 0, ctx: '200K' },
+  { id: 'free/gemini-pro', name: 'Gemini Pro (FREE)', input: 0, output: 0, ctx: '32K' },
+  { id: 'free/llama-3-8b', name: 'Llama 3 8B (FREE)', input: 0, output: 0, ctx: '8K' },
 ]
 
 const ENDPOINTS: EndpointInfo[] = [
@@ -950,7 +939,7 @@ function DocsContent() {
               OMA API Documentation
             </h2>
             <p className="text-lg text-[var(--color-text-muted)]">
-              OpenAI-compatible AI inference gateway with crypto payments. Access 30+ models with unified API.
+              OpenAI-compatible AI inference gateway with crypto payments. Access 19+ models with unified API.
             </p>
           </div>
 

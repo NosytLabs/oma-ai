@@ -15,10 +15,7 @@ interface VideoModel {
 
 const VIDEO_MODELS: VideoModel[] = [
   { id: 'seedance-2-0-text-to-video', name: 'Seedance 2.0', provider: 'Venice AI', mode: 'text-to-video', price: 0.90 },
-  { id: 'seedance-2-0-image-to-video', name: 'Seedance 2.0 Image', provider: 'Venice AI', mode: 'image-to-video', price: 1.20 },
   { id: 'kling-v3-pro-text-to-video', name: 'Kling V3 Pro', provider: 'Venice AI', mode: 'text-to-video', price: 0.92 },
-  { id: 'kling-v3-pro-image-to-video', name: 'Kling V3 Pro Image', provider: 'Venice AI', mode: 'image-to-video', price: 1.40 },
-  { id: 'grok-imagine-text-to-video', name: 'Grok Imagine', provider: 'Venice AI', mode: 'text-to-video', price: 0.85 },
 ]
 
 const ASPECT_OPTIONS = [
@@ -198,7 +195,7 @@ export default function VideoGenerationPage() {
             Video Generation
           </h1>
           <p className="mt-3 text-lg text-[var(--color-text)]">
-            Generate videos from text prompts or images. Powered by Seedance 2.0, Kling V3 Pro, and Grok Imagine.
+            Generate videos from text prompts. Powered by Seedance 2.0 and Kling V3 Pro.
           </p>
         </div>
 

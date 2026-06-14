@@ -4,13 +4,13 @@ export const dynamic = 'force-static'
 
 const BODY = `# OMA AI Gateway
 
-> Permissionless AI inference gateway. Pay with crypto, use 50+ models via OpenAI-compatible API. x402 protocol settlement in USDC on Base. No accounts required.
+> Permissionless AI inference gateway. Pay with crypto, use 19+ models via OpenAI-compatible API. x402 protocol settlement in USDC on Base. No accounts required.
 
 ## Getting Started
 - [API Documentation](https://oma-ai.com/docs) - Complete API reference
 - [Playground](https://oma-ai.com/playground) - Interactive API testing
 - [Pricing](https://oma-ai.com/pricing) - Model pricing and tiers
-- [Model Catalog](https://oma-ai.com/models) - 50+ AI models catalog
+- [Model Catalog](https://oma-ai.com/models) - 19+ AI models catalog
 - [Deposits](https://oma-ai.com/deposit) - Add credits via crypto (USDC, HoudiniSwap, CCTP, LiFi)
 - [Dashboard](https://oma-ai.com/dashboard) - Usage and API keys
 
