@@ -7,7 +7,14 @@ import { logger } from "../lib/logger.js";
 
 export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
 
-export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"];
+// ponytail: Surplus x402 signer is broken (EIP-712 scheme wrong; see surplus.ts:303-311).
+// Only allow routing to surplus when the wallet key is set AND we're in development.
+// Disable in all other environments until the EIP-3009 / Permit2 signer lands.
+const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV === "development";
+
+export const ALL_PROVIDERS: Provider[] = SURPLUS_ENABLED
+  ? ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"]
+  : ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "morpheus", "claude", "gemini"];
 
 const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
 
@@ -110,7 +117,7 @@ export async function selectProvider(model: string): Promise<{ provider: Provide
     if (result) return logAndReturn(model, result, "global_weights");
   }
 
-  if (await isProviderAvailable(preferred)) {
+  if ((preferred !== "surplus" || SURPLUS_ENABLED) && await isProviderAvailable(preferred)) {
     return logAndReturn(model, { provider: preferred, providerModelId }, "primary");
   }
 

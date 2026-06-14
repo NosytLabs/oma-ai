@@ -45,11 +45,9 @@ async function createDepositAndCreditBatch(
   return { creditsCents, depositId };
 }
 
-export async function processUsdcDeposit(userId: string, amountUsd: number, txHash: string, signature?: string) {
-  if (amountUsd > 0) {
-    if (!signature || signature.length < 64) {
-      throw new Error("Deposit requires valid cryptographic proof (signature)");
-    }
+export async function processUsdcDeposit(userId: string, amountUsd: number, txHash: string) {
+  if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
+    throw new Error("Invalid amountUsd: must be a positive finite number");
   }
 
   const creditsCents = Math.round(amountUsd * 100);
@@ -146,6 +144,10 @@ export async function completeHoudiniDepositWithTx(tx: Awaited<ReturnType<typeof
 }
 
 export async function processCctpDeposit(userId: string, amountUsd: number, txHash: string, _sourceChain: string, messageHash?: string, attestation?: string) {
+  if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
+    throw new Error("Invalid amountUsd: must be a positive finite number");
+  }
+
   if (!isValidTxHash(txHash)) {
     throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM)");
   }
@@ -190,6 +192,10 @@ export async function processLifiDeposit(
   toToken?: string,
   lifiStatus?: string,
 ) {
+  if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
+    throw new Error("Invalid amountUsd: must be a positive finite number");
+  }
+
   if (!isValidTxHash(txHash)) {
     throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM)");
   }
@@ -232,6 +238,10 @@ export async function processPaymentLinkDeposit(
   txHash: string,
   userId?: string,
 ) {
+  if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
+    throw new Error("Invalid amountUsd: must be a positive finite number");
+  }
+
   const result = await db.transaction(async (tx) => {
     const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
     if (!rows.length) throw new Error("Deposit not found");

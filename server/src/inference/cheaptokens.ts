@@ -121,7 +121,10 @@ export class CheapTokensClient {
 
     // Live mode x402 programmatic buy:
     // Requires on-chain Base USDC transfer to CheapTokens hot wallet.
-    const payeeAddress = (config.CHEAPTOKENS_ADDRESS || config.TREASURY_BASE_ADDRESS) as Address;
+    const payeeAddress = config.CHEAPTOKENS_ADDRESS as Address | undefined;
+    if (!payeeAddress) {
+      throw new Error("CHEAPTOKENS_ADDRESS must be set in live mode. Refusing to buy from TREASURY_BASE_ADDRESS (would send USDC to self).");
+    }
     const pk = config.FACILITATOR_PRIVATE_KEY;
     if (!pk) throw new Error("FACILITATOR_PRIVATE_KEY required for live-mode CheapTokens purchase");
     if (payeeAddress === "0x0000000000000000000000000000000000000000" || payeeAddress === "0x3333333333333333333333333333333333333333") {
@@ -171,10 +174,14 @@ export class CheapTokensClient {
 const client = new CheapTokensClient();
 
 export function getActiveVeniceKey(forceRefresh: boolean = false): string | null {
+  if (process.env.CHEAPTOKENS_FORCE_DISABLE === "true") {
+    return null;
+  }
   const now = Date.now();
   const isStale = now - cachedAt > CACHE_TTL_MS;
+  const isExpired = cachedKey !== null && now >= cachedExpiry;
 
-  if (!forceRefresh && cachedKey && now < cachedExpiry && !isStale) {
+  if (!forceRefresh && cachedKey && !isExpired && !isStale) {
     logger.debug(
       `[CheapTokens] Reusing cached Venice key (age=${Math.round((now - cachedAt) / 1000)}s, ttl=${CACHE_TTL_MS / 1000}s)`,
     );
@@ -183,6 +190,10 @@ export function getActiveVeniceKey(forceRefresh: boolean = false): string | null
 
   if (forceRefresh) {
     logger.info("[CheapTokens] Force refresh requested — bypassing cache");
+  } else if (isExpired) {
+    logger.info(
+      `[CheapTokens] Cached key expired ${Math.round((now - cachedExpiry) / 1000)}s ago — refreshing and falling back to VENICE_API_KEY env var until ready`,
+    );
   } else if (cachedKey) {
     logger.info(
       `[CheapTokens] Cache stale (age=${Math.round((now - cachedAt) / 1000)}s > ttl=${CACHE_TTL_MS / 1000}s) — refreshing`,
@@ -194,9 +205,7 @@ export function getActiveVeniceKey(forceRefresh: boolean = false): string | null
   triggerRefresh().catch((err) => {
     logger.error("[CheapTokens] Async refresh failed: %s", err);
   });
-  // While a refresh is pending, the existing cached key (if any) is still
-  // valid for the remainder of its expiry window — keep serving it instead
-  // of falling back to nothing and breaking in-flight requests.
+  if (isExpired) return null;
   return cachedKey;
 }
 
@@ -207,9 +216,11 @@ export async function triggerRefresh(): Promise<void> {
   try {
     // CheapTokens hits involve on-chain USDC transfers. The 30s backoff
     // prevents a tight loop from spamming RPC if upstream is having a bad
-    // day. Skip the backoff only when the cache is fully empty (cold start).
+    // day. Skip the backoff when the cached key is expired (we need to
+    // refresh right away, not wait 30s).
     const sinceLastAttempt = Date.now() - cachedAt;
-    if (cachedKey && sinceLastAttempt < CACHE_REFRESH_BACKOFF_MS) {
+    const isExpired = cachedKey !== null && Date.now() >= cachedExpiry;
+    if (cachedKey && !isExpired && sinceLastAttempt < CACHE_REFRESH_BACKOFF_MS) {
       logger.debug(
         `[CheapTokens] Refresh suppressed by backoff (${Math.round(sinceLastAttempt / 1000)}s < ${CACHE_REFRESH_BACKOFF_MS / 1000}s)`,
       );

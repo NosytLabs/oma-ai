@@ -15,6 +15,9 @@ import { getRedisClient } from "../lib/redis-client.js";
 import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
 
 const LOCK_TTL_SECONDS = 30;
+// ponytail: in tests HOUDINI_ADDRESS_TO may be unset and TREASURY_BASE_ADDRESS
+// may resolve to the placeholder; resolve defensively.
+const SERVER_TREASURY = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
 
 async function acquireSettlementLock(cacheKey: string): Promise<boolean> {
   const redis = await getRedisClient();
@@ -200,6 +203,12 @@ function createReceiptPayload(
   return `${RECEIPT_VERSION}:${txHash}:${amount}:${networkId}:${payee}:${settledAt}:${expiryTime}`;
 }
 
+function parseUsdcAtomic(s: string): bigint {
+  const [whole = "0", frac = ""] = s.split(".");
+  const padded = (frac + "0".repeat(USDC_DECIMALS)).slice(0, USDC_DECIMALS);
+  return BigInt(whole) * 1_000_000n + BigInt(padded || "0");
+}
+
 // ============================================================
 // EVM Verification (Base)
 // ============================================================
@@ -244,6 +253,10 @@ async function verifyEvmPayment(
     const payeeLower = payload.payee.toLowerCase();
     const payFromLower = payload.payFrom.toLowerCase();
 
+    if (payeeLower !== SERVER_TREASURY) {
+      return { valid: false, error: "Payee does not match configured treasury" };
+    }
+
     if (fromLower !== payFromLower) {
       return { valid: false, error: "Transaction sender does not match payFrom" };
     }
@@ -259,11 +272,11 @@ async function verifyEvmPayment(
         if (decoded.functionName === "transfer") {
           const [recipient, rawAmount] = decoded.args as [string, bigint];
           const amount = formatUnits(rawAmount, USDC_DECIMALS);
-          const actualAmount = parseFloat(amount);
-          const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
+          const actualAtomic = parseUsdcAtomic(amount);
+          const requiredAtomic = parseUsdcAtomic(payload.maxAmountRequired || payload.amount || "0");
 
-          if (actualAmount < requiredAmount) {
-            return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+          if (actualAtomic < requiredAtomic) {
+            return { valid: false, error: `Insufficient payment: ${actualAtomic} < ${requiredAtomic}` };
           }
 
           if (recipient.toLowerCase() !== payeeLower) {
@@ -281,11 +294,11 @@ async function verifyEvmPayment(
         if (decoded.functionName === "transferFrom") {
           const [, recipient, rawAmount] = decoded.args as [string, string, bigint];
           const amount = formatUnits(rawAmount, USDC_DECIMALS);
-          const actualAmount = parseFloat(amount);
-          const requiredAmount = parseFloat(payload.maxAmountRequired || payload.amount || "0");
+          const actualAtomic = parseUsdcAtomic(amount);
+          const requiredAtomic = parseUsdcAtomic(payload.maxAmountRequired || payload.amount || "0");
 
-          if (actualAmount < requiredAmount) {
-            return { valid: false, error: `Insufficient payment: ${actualAmount} < ${requiredAmount}` };
+          if (actualAtomic < requiredAtomic) {
+            return { valid: false, error: `Insufficient payment: ${actualAtomic} < ${requiredAtomic}` };
           }
 
           if (recipient.toLowerCase() !== payeeLower) {
@@ -512,8 +525,6 @@ export async function settlePaymentAsync(
           receipt,
         };
 
-        atomicCacheSet(cacheKey, record);
-
         let lastError: Error | null = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
@@ -564,6 +575,10 @@ export async function settlePaymentAsync(
           await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
           throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
         }
+
+        // Cache only after durable DB persistence — see AUDIT-X402-2026-06-14 CRITICAL-4.
+        // Use the actual receipt (may differ from `receipt` if a concurrent settle won the race).
+        atomicCacheSet(cacheKey, { ...record, receipt: result.receipt });
       } finally {
         settlementInProgress.delete(settleKey);
         if (idempotencyKey) {
@@ -926,15 +941,15 @@ export function paymentMiddleware(
       );
     }
 
-    const requestedAmount = parseFloat(paymentSig.payload?.amount ?? "0");
-    const requiredAmount = parseFloat(price);
+    const requestedAtomic = parseUsdcAtomic(paymentSig.payload?.amount ?? "0");
+    const requiredAtomic = parseUsdcAtomic(price);
     // Strict equality: accepting overpayment (old `<` check) let
     // client-supplied amounts stamp the receipt without the server
     // confirming the actual paid amount. Reject anything that doesn't
     // match exactly.
-    if (requestedAmount !== requiredAmount) {
+    if (requestedAtomic !== requiredAtomic) {
       return c.json(
-        { error: { message: `Payment amount mismatch: requested ${requestedAmount} but ${requiredAmount} required`, type: "payment_error" } },
+        { error: { message: `Payment amount mismatch: requested ${requestedAtomic} but ${requiredAtomic} required`, type: "payment_error" } },
         402,
       );
     }

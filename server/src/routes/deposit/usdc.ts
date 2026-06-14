@@ -181,7 +181,7 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
   if (existing.length > 0) return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
 
   try {
-    const result = await processUsdcDeposit(userId, amount, txHash, signature);
+    const result = await processUsdcDeposit(userId, amount, txHash);
 
     const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
     const userAgent = c.req.header("user-agent") || undefined;
