@@ -19,9 +19,9 @@ describe('models', () => {
 
     it('returns model def for known model from catalog', async () => {
       await ensureCatalogLoaded()
-      const result = await getModel('deepseek-v3')
+      const result = await getModel('deepseek-v3.2')
       expect(result).not.toBeNull()
-      expect(result!.id).toBe('deepseek-v3')
+      expect(result!.id).toBe('deepseek-v3.2')
     })
   })
 
