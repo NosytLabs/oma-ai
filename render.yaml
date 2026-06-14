@@ -1,0 +1,93 @@
+services:
+  # ============================================================================
+  # OMA-AI Render Blueprint (v5.3 G5)
+  # Cost: Option A (both free) = $0/mo, Option C (app free + server starter) = $7/mo
+  # With $50 Render credit: Option C = ~7 months of MVP runway
+  # Docs: https://render.com/docs/blueprint-spec
+  # ============================================================================
+
+  - type: web
+    name: oma-ai-app
+    runtime: node
+    plan: free  # Change to "starter" ($7/mo) for always-on
+    rootDir: app
+    buildCommand: npm install --no-audit --no-fund && npm run build
+    startCommand: npm run start
+    healthCheckPath: /        # App has no /health route; landing returns 200
+    autoDeploy: false  # Manual deploys to control costs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false  # Set to https://oma-ai-server.onrender.com
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false  # Set to https://oma-ai-app.onrender.com
+      - key: PORT
+        value: '3000'
+
+  - type: web
+    name: oma-ai-server
+    runtime: node
+    plan: starter  # Server needs always-on for WebSocket + cron jobs
+    rootDir: server
+    buildCommand: npm install --no-audit --no-fund && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FACILITATOR_MODE
+        value: live
+      - key: PORT
+        value: '3001'
+      - key: DATABASE_URL
+        sync: false  # From Neon dashboard
+      - key: REDIS_URL
+        sync: false  # From Upstash or similar
+      - key: JWT_SECRET
+        generateValue: true  # Render generates 32+ char secret
+      - key: ENCRYPTION_KEY
+        generateValue: true  # Render generates 32+ char secret
+      - key: CSRF_SECRET
+        generateValue: true
+      - key: VENICE_API_KEY
+        sync: false  # User must set
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: TOGETHER_API_KEY
+        sync: false
+      - key: DEEPINFRA_API_KEY
+        sync: false
+      - key: MORPHEUS_API_KEY
+        sync: false
+      - key: HELIUS_API_KEY
+        sync: false
+      - key: ANTSEED_PROXY_URL
+        sync: false  # Note: ANTSEED uses a proxy URL, not an API key (see config.ts:17)
+      - key: TINYFISH_API_KEY
+        sync: false
+      - key: FACILITATOR_URL
+        value: https://api.cdp.coinbase.com/platform/v2/x402
+      - key: X402_NETWORK
+        value: base-mainnet
+      - key: X402_ASSET_ADDRESS
+        value: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+      - key: X402_PRICE_USD
+        value: '0.01'
+      - key: CORS_ORIGIN
+        sync: false  # Set to https://oma-ai-app.onrender.com
+      - key: LOG_LEVEL
+        value: info
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=512
+
+# ============================================================================
+# Cost breakdown (verified via render.com/pricing 2026-06-13)
+# - Free tier: 0.1 CPU, 512MB RAM, spins down after 15min idle, slow cold starts
+# - Starter: 0.5 CPU, 512MB RAM, always-on, fast
+# - With $50 Render credit + Option C (free app + starter server) = ~7 months
+# - With Option B (both starter) = ~3.5 months, $14/mo
+# - With Option A (both free) = 0 months (free forever), but cold starts hurt UX
+# Recommendation: Option C for MVP. App is mostly static (SSG) so free tier works.
+# ============================================================================
