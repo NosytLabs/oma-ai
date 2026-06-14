@@ -789,6 +789,23 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 });
 
 x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
+  // BUG-1: pin payee to server-configured merchant address; reject mismatches with 400.
+  const expectedPayee = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+  const xPayment = c.req.header("X-PAYMENT");
+  if (expectedPayee && xPayment) {
+    try {
+      const parsed = JSON.parse(xPayment) as { payload?: { payee?: string; payTo?: string } };
+      const declared = (parsed?.payload?.payee ?? parsed?.payload?.payTo ?? "").toLowerCase();
+      if (declared && declared !== expectedPayee) {
+        return c.json(
+          { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
+          400,
+        );
+      }
+    } catch {
+      // malformed JSON → fall through to 501
+    }
+  }
   return c.json(
     {
       error: {
