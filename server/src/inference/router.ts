@@ -141,7 +141,7 @@ export async function handleChatCompletion(userId: string, apiKeyId: string, bod
         );
         const response = new Response(trackingStream as ReadableStream<Uint8Array>, {
           status: resp.status,
-          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider },
+          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
         });
         span.setAttribute("llm.response_start_time_ms", Date.now() - requestStartTime);
         span.setStatus({ code: SpanStatusCode.OK });

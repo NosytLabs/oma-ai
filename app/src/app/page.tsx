@@ -30,11 +30,11 @@ type ModelLogo = 'llama' | 'claude' | 'gemini' | 'deepseek' | 'gpt' | 'venice'
 
 const FEATURED_MODELS: { id: string; provider: string; ctx: string; logo: ModelLogo }[] = [
   { id: 'llama-3.3-70b', provider: 'Venice', ctx: '8k', logo: 'llama' },
-  { id: 'claude-sonnet-4', provider: 'Anthropic', ctx: '200k', logo: 'claude' },
-  { id: 'gemini-2.5-pro', provider: 'Google', ctx: '1M', logo: 'gemini' },
+  { id: 'claude-sonnet-4', provider: 'Claude', ctx: '200k', logo: 'claude' },
+  { id: 'gemini-2.5-pro', provider: 'Gemini', ctx: '1M', logo: 'gemini' },
   { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128k', logo: 'gpt' },
   { id: 'deepseek-v3.2', provider: 'Venice', ctx: '64k', logo: 'deepseek' },
-  { id: 'claude-3-5-haiku-latest', provider: 'Anthropic', ctx: '200k', logo: 'venice' },
+  { id: 'claude-3-5-haiku-latest', provider: 'Claude', ctx: '200k', logo: 'claude' },
 ]
 
 // First-letter monograms (MVP placeholder until real brand SVGs land via 21st-magic / icon CDN).

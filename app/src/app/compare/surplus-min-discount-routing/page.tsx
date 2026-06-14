@@ -137,6 +137,29 @@ export default function SurplusMinDiscountRoutingPage() {
       <div className="overflow-x-clip">
         <div className="flex flex-col">
 
+          {/* ===== System status banner ===== */}
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-b border-[var(--color-warning)]/30 bg-[var(--color-warning-dim)]"
+          >
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-2.5">
+              <AlertTriangle
+                className="h-4 w-4 mt-0.5 shrink-0 text-[var(--color-warning)]"
+                aria-hidden="true"
+              />
+              <p className="text-[11.5px] sm:text-[12.5px] text-[var(--color-text)] leading-relaxed">
+                <span className="font-semibold text-[var(--color-warning)] uppercase tracking-widest text-[10px] mr-2">
+                  temporarily disabled
+                </span>
+                Surplus Intelligence routing is offline while the EIP-712 payment
+                signer is being repaired. The floor, scope, and end-user API
+                surface described below remain spec-only until the signer is
+                fixed. Track status in the operator channel.
+              </p>
+            </div>
+          </div>
+
           {/* ===== Back nav ===== */}
           <section
             aria-label="Back to home"

@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     'porto',
     '@metamask/connect-evm',
+    // siwe@3's dist bundles CJS-require('ethers') at module load (utils.js,
+    // ethersCompat.js). webpack's barrel optimization pulls these in via the
+    // SiweMessage import in wallet-provider.tsx and fails to resolve 'ethers'
+    // from inside siwe's dist. Marking ethers as an external lets siwe@3's
+    // CJS require resolve it at Node runtime from node_modules. Removing this
+    // re-introduces HTTP 500 on /dashboard, /playground, /settings, /deposit,
+    // /admin. See AGENTS.md "siwe@3 CJS-requires ethers" note.
+    'ethers',
   ],
   
   // Webpack optimizations for bundle size reduction
