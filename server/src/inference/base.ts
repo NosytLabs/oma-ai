@@ -42,7 +42,8 @@ export abstract class BaseInferenceProvider {
       stream?: boolean;
       [key: string]: unknown;
     },
-    path?: string
+    path?: string,
+    requestSignal?: AbortSignal
   ): Promise<Response> {
     const tracer = trace.getTracer(this.tracerName);
     const endpoint = path ?? this.config.chatCompletionPath;
@@ -60,13 +61,21 @@ export abstract class BaseInferenceProvider {
         const timeout = requestTimeout ?? (body.stream ? this.streamTimeoutMs : this.timeoutMs);
         const start = Date.now();
 
+        // ponytail: thread inbound request.signal so client disconnect cancels
+        // the upstream call. Without this, every disconnect burns up to 120s
+        // of paid tokens (the stream timeout). Combine with the upstream
+        // timeout so either trigger fires.
+        const upstreamSignal = requestSignal
+          ? AbortSignal.any([requestSignal, AbortSignal.timeout(timeout)])
+          : AbortSignal.timeout(timeout);
+
         let resp: Response;
         try {
           resp = await fetch(this.config.getUrl(endpoint), {
             method: "POST",
             headers: this.config.getHeaders(),
             body: JSON.stringify(body),
-            signal: AbortSignal.timeout(timeout),
+            signal: upstreamSignal,
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
