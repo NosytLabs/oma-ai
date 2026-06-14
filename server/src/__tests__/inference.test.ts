@@ -186,7 +186,7 @@ import { handleChatCompletion } from '../inference/router.js'
 import { getBalance, deductCredits } from '../credits/index.js'
 
 const validKey = {
-  id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
+  id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, ipAllowlist: null, createdAt: new Date(),
 }
 
 function authHeaders() {

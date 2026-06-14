@@ -1,5 +1,5 @@
 import type { Context, Next } from "hono";
-import { validateApiKey, shouldRecommendRotation } from "./api-keys.js";
+import { validateApiKey, shouldRecommendRotation, isIpAllowedByList } from "./api-keys.js";
 import { verifySessionToken } from "./siwe.js";
 import { decryptSecret } from "./encryption.js";
 import { db } from "../db/client.js";
@@ -9,6 +9,7 @@ import type { OmaEnv } from "../types.js";
 import { authenticator } from "@otplib/preset-default";
 import { getRedisClient } from "../lib/redis-client.js";
 import { config, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
+import { extractClientIp } from "../middleware/rate-limit/utils.js";
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -57,6 +58,13 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   }
   if (apiKey.expired) {
     return c.json({ error: { message: "API key expired", type: "authentication_error", code: "expired_api_key" } }, 401);
+  }
+  // G3: IP allowlist enforcement — null/empty list means no restriction.
+  if (apiKey.ipAllowlist && apiKey.ipAllowlist.length > 0) {
+    const clientIp = extractClientIp(c);
+    if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
+      return c.json({ error: { message: "IP not allowed for this API key", type: "forbidden", code: "ip_not_allowed" } }, 403);
+    }
   }
   c.set("apiKey", apiKey);
   c.set("userId", apiKey.userId);

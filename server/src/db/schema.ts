@@ -33,7 +33,7 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "wrong_network_recovery",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock", "surplus", "morpheus"]);
+export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock", "surplus", "morpheus", "claude", "gemini"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -64,12 +64,13 @@ export const apiKeys = pgTable(
     active: boolean("active").default(true).notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
+    ipAllowlist: text("ip_allowlist").array(), // G3: null/empty = no restriction
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId), index("idx_api_keys_user_active").on(t.userId, t.active)]
 );
 
-export type ApiKey = typeof apiKeys.$inferSelect & { expired?: boolean };
+export type ApiKey = typeof apiKeys.$inferSelect & { expired?: boolean; ipAllowlist?: string[] | null };
 
 export const deposits = pgTable(
   "deposits",
@@ -260,6 +261,33 @@ export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
   user: one(users, { fields: [apiKeys.userId], references: [users.id] }),
   usageRecords: many(usageRecords),
 }));
+
+// Operator refund queue. Admin grants/denies pending requests and writes
+// REFUND_GRANTED / REFUND_DENIED audit-log rows. Source: `credits/refunds.ts`.
+export const refundStatusEnum = pgEnum("refund_status", ["pending", "granted", "denied"]);
+
+export const refundRequests = pgTable(
+  "refund_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    depositId: uuid("deposit_id")
+      .references(() => deposits.id, { onDelete: "set null" }),
+    amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
+    reason: text("reason").notNull(),
+    status: refundStatusEnum("status").notNull().default("pending"),
+    notes: text("notes"),
+    decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_refund_requests_status_created").on(t.status, t.createdAt),
+    index("idx_refund_requests_user").on(t.userId),
+  ]
+);
 
 export const depositsRelations = relations(deposits, ({ one, many }) => ({
   user: one(users, { fields: [deposits.userId], references: [users.id] }),
@@ -543,6 +571,10 @@ export const auditActionEnum = pgEnum("audit_action", [
   "SPEND_LIMIT_CHANGED",
   "BUDGET_ALERT_CHANGED",
   "ACCOUNT_LOGIN_RATE_LIMITED",
+  "PROVIDER_TEST_FAILED",
+  "PROVIDER_TEST_SUCCESS",
+  "REFUND_GRANTED",
+  "REFUND_DENIED",
 ]);
 
 export const auditLogs = pgTable(

@@ -243,7 +243,7 @@ describe('API Endpoints', () => {
   describe('POST /v1/chat/completions', () => {
     it('returns 200 with valid request (bearerAuth mocked)', async () => {
       vi.mocked(validateApiKey).mockResolvedValueOnce({
-        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
+        id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, ipAllowlist: null, createdAt: new Date(),
       })
       const res = await app.request('/v1/chat/completions', {
         method: 'POST',

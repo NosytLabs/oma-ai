@@ -78,7 +78,13 @@ function recordDailyUsdcCents(additionalCents: number): void {
 
 let cachedKey: string | null = null;
 let cachedExpiry = 0;
+let cachedAt = 0;
 let isRefreshing = false;
+
+/** Maximum age of a cached key before we re-validate with CheapTokens. */
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+/** Floor under which we never re-fetch (avoids thrashing if upstream is slow). */
+const CACHE_REFRESH_BACKOFF_MS = 30 * 1000; // 30 seconds
 
 export class CheapTokensClient {
   private baseUrl = "https://cheaptokens.ai/api";
@@ -164,14 +170,34 @@ export class CheapTokensClient {
 
 const client = new CheapTokensClient();
 
-export function getActiveVeniceKey(): string | null {
-  if (cachedKey && Date.now() < cachedExpiry) {
+export function getActiveVeniceKey(forceRefresh: boolean = false): string | null {
+  const now = Date.now();
+  const isStale = now - cachedAt > CACHE_TTL_MS;
+
+  if (!forceRefresh && cachedKey && now < cachedExpiry && !isStale) {
+    logger.debug(
+      `[CheapTokens] Reusing cached Venice key (age=${Math.round((now - cachedAt) / 1000)}s, ttl=${CACHE_TTL_MS / 1000}s)`,
+    );
     return cachedKey;
   }
+
+  if (forceRefresh) {
+    logger.info("[CheapTokens] Force refresh requested — bypassing cache");
+  } else if (cachedKey) {
+    logger.info(
+      `[CheapTokens] Cache stale (age=${Math.round((now - cachedAt) / 1000)}s > ttl=${CACHE_TTL_MS / 1000}s) — refreshing`,
+    );
+  } else {
+    logger.info("[CheapTokens] No cached key — triggering initial refresh");
+  }
+
   triggerRefresh().catch((err) => {
     logger.error("[CheapTokens] Async refresh failed: %s", err);
   });
-  return null;
+  // While a refresh is pending, the existing cached key (if any) is still
+  // valid for the remainder of its expiry window — keep serving it instead
+  // of falling back to nothing and breaking in-flight requests.
+  return cachedKey;
 }
 
 export async function triggerRefresh(): Promise<void> {
@@ -179,6 +205,17 @@ export async function triggerRefresh(): Promise<void> {
   isRefreshing = true;
 
   try {
+    // CheapTokens hits involve on-chain USDC transfers. The 30s backoff
+    // prevents a tight loop from spamming RPC if upstream is having a bad
+    // day. Skip the backoff only when the cache is fully empty (cold start).
+    const sinceLastAttempt = Date.now() - cachedAt;
+    if (cachedKey && sinceLastAttempt < CACHE_REFRESH_BACKOFF_MS) {
+      logger.debug(
+        `[CheapTokens] Refresh suppressed by backoff (${Math.round(sinceLastAttempt / 1000)}s < ${CACHE_REFRESH_BACKOFF_MS / 1000}s)`,
+      );
+      return;
+    }
+
     const pricing = await client.getPricing();
     const supply = await client.getSupply();
     const discountPct = Number(pricing.discountPercent ?? 0);
@@ -203,10 +240,14 @@ export async function triggerRefresh(): Promise<void> {
       // Buy $1 of credits to seed the cached key.
       const keyInfo = await client.buyKey(buyCents);
       if (keyInfo.veniceApiKey) {
+        const now = Date.now();
         cachedKey = keyInfo.veniceApiKey;
-        cachedExpiry = keyInfo.expiresAt ?? Date.now() + 24 * 60 * 60 * 1000;
+        cachedAt = now;
+        cachedExpiry = keyInfo.expiresAt ?? now + 24 * 60 * 60 * 1000;
         recordDailyUsdcCents(buyCents);
-        logger.info(`[CheapTokens] Successfully leased Venice key (expires: ${new Date(cachedExpiry).toISOString()})`);
+        logger.info(
+          `[CheapTokens] Successfully leased Venice key (cached at ${new Date(cachedAt).toISOString()}, expires: ${new Date(cachedExpiry).toISOString()}, ttl=${CACHE_TTL_MS / 1000}s)`,
+        );
       } else {
         logger.warn("[CheapTokens] Buy succeeded but no veniceApiKey in response.");
       }

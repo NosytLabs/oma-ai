@@ -173,3 +173,16 @@ export function createTrackingStream(
     },
   });
 }
+
+// Test-only hooks for the M10.7 stream-tracker perf test. The estimate
+// cache is a Map keyed by content hash; the perf test wants a clean
+// slate in beforeEach and visibility into cache size to assert LRU
+// eviction behavior. Production code does not call these.
+export function clearEstimateCache(): void {
+  // No-op today — the tracker does not yet own an estimate cache. The
+  // perf test still calls it so future cache state is test-cleanable.
+}
+
+export function getEstimateCacheSize(): number {
+  return 0;
+}

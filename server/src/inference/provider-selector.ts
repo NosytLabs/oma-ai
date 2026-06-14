@@ -5,9 +5,9 @@ import { parseProviderWeights, parseModelWeights } from "../lib/router-utils.js"
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus";
+export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
 
-export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus"];
+export const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"];
 
 const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
 
@@ -17,6 +17,8 @@ function inferProviderFromModel(model: string): Provider {
   if (model.startsWith("together/")) return "together";
   if (model.startsWith("deepinfra/")) return "deepinfra";
   if (model.startsWith("morpheus/") || model.startsWith("mor/")) return "morpheus";
+  if (model.startsWith("claude-")) return "claude";
+  if (model.startsWith("gemini-")) return "gemini";
   for (const prefix of OPENSOURCE_PREFIXES) {
     if (model.startsWith(prefix)) return "antseed";
   }
@@ -55,6 +57,8 @@ function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, mo
     deepinfra: modelDef.deepinfraId ?? modelDef.id,
     surplus: modelDef.surplusId ?? modelDef.id,
     morpheus: modelDef.morpheusId ?? modelDef.id,
+    claude: modelDef.claudeId ?? modelDef.id,
+    gemini: modelDef.geminiId ?? modelDef.id,
   };
   return idMap[provider] ?? modelDef.id;
 }

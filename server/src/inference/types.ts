@@ -8,6 +8,6 @@ export interface ChatMessage {
 export interface ModelPricing {
   inputPer1k: number
   outputPer1k: number
-  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra' | 'surplus' | 'morpheus'
+  provider: 'venice' | 'antseed' | 'litellm' | 'openrouter' | 'together' | 'deepinfra' | 'surplus' | 'morpheus' | 'claude' | 'gemini'
   markup: number
 }

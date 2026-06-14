@@ -2,12 +2,13 @@ import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { getActiveVeniceKey } from "./cheaptokens.js";
-import { BaseInferenceProvider, createErrorMapper, type ProviderConfig } from "./base.js";
+import { BaseInferenceProvider, type ProviderConfig } from "./base.js";
 import { createProvider } from "./provider-factory.js";
 import { reportProviderResult } from "./provider-result.js";
 
 const VENICE_TIMEOUT_MS = 30_000;
 const VENICE_STREAM_TIMEOUT_MS = 120_000;
+const VENICE_HEALTH_TIMEOUT_MS = 5_000;
 
 export interface VeniceParameters {
   enable_web_search?: "off" | "on" | "auto";
@@ -62,11 +63,80 @@ function veniceHeaders(): Record<string, string> {
   };
 }
 
-const mapVeniceError = createErrorMapper("Venice");
+const mapVeniceError = createVeniceErrorMapper();
+
+/**
+ * Type-safe Venice error mapper. Throws an Error decorated with `status`,
+ * `code` (machine-readable identifier), `retryable` (boolean for circuit
+ * breaker / retry policy), and `type` (legacy field for backward compat).
+ *
+ * Coverage:
+ *  - 401  → venice_unauthorized         (not retryable)
+ *  - 402  → venice_credits_exhausted    (not retryable)
+ *  - 422  → venice_content_policy       (not retryable)
+ *  - 429  → venice_rate_limited         (retryable, has retryAfter)
+ *  - 500+ → venice_server_error         (retryable for 500/502/503/504; 501 not retryable)
+ *  - 524  → venice_upstream_timeout     (retryable, Cloudflare-specific)
+ *  - other → venice_api_error           (retryable for 5xx, not retryable for 4xx)
+ */
+function createVeniceErrorMapper(): (status: number, body: string) => never {
+  return (status: number, body: string): never => {
+    let message = `Venice error ${status}`;
+    let type = "venice_api_error";
+    let code = "venice_api_error";
+    let retryable = status >= 500;
+
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed.error?.message) message = parsed.error.message;
+      if (parsed.error?.type) type = parsed.error.type;
+    } catch {
+      message = body.slice(0, 500) || message;
+    }
+
+    if (status === 401) {
+      code = "venice_unauthorized";
+      type = "venice_unauthorized";
+      retryable = false;
+    } else if (status === 402) {
+      code = "venice_credits_exhausted";
+      type = "venice_credits_exhausted";
+      message = message || "Venice API credits exhausted";
+      retryable = false;
+    } else if (status === 422) {
+      code = "venice_content_policy";
+      type = "venice_content_policy";
+      message = message || "Venice content policy violation";
+      retryable = false;
+    } else if (status === 429) {
+      code = "venice_rate_limited";
+      type = "venice_rate_limited";
+      retryable = true;
+    } else if (status === 524) {
+      code = "venice_upstream_timeout";
+      type = "venice_upstream_timeout";
+      message = message || "Venice upstream timeout (Cloudflare 524)";
+      retryable = true;
+    } else if (status >= 500) {
+      code = "venice_server_error";
+      type = "venice_server_error";
+      // 501 Not Implemented is a permanent failure; everything else 5xx is retryable
+      retryable = status !== 501;
+    } else if (status >= 400) {
+      code = `venice_client_error_${status}`;
+      retryable = false;
+    }
+
+    throw Object.assign(new Error(message), { status, code, retryable, type });
+  };
+}
 
 function checkVeniceConfig(): void {
   if (!config.VENICE_API_KEY) {
-    throw Object.assign(new Error("Venice API key not configured"), { status: 503 });
+    throw Object.assign(
+      new Error("Venice API key not configured"),
+      { status: 503, code: "venice_config_missing", retryable: false, type: "venice_config_missing" }
+    );
   }
 }
 
@@ -274,6 +344,7 @@ const provider = createProvider(
     defaultTimeoutMs: VENICE_TIMEOUT_MS,
     streamTimeoutMs: VENICE_STREAM_TIMEOUT_MS,
     getHeaders: veniceHeaders,
+    errorMapper: mapVeniceError,
   },
   VeniceProvider
 );
@@ -348,7 +419,10 @@ export function streamChatCompletion(body: {
 
 export async function veniceModels(): Promise<unknown[]> {
   if (!config.VENICE_API_KEY) {
-    throw Object.assign(new Error("Venice API key not configured"), { status: 503 });
+    throw Object.assign(
+      new Error("Venice API key not configured"),
+      { status: 503, code: "venice_config_missing", retryable: false, type: "venice_config_missing" }
+    );
   }
 
   const resp = await fetch(veniceUrl("/api/v1/models"), {
@@ -358,10 +432,7 @@ export async function veniceModels(): Promise<unknown[]> {
 
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
-    throw Object.assign(
-      new Error(`Venice models error ${resp.status}: ${text.slice(0, 500)}`),
-      { status: resp.status }
-    );
+    mapVeniceError(resp.status, text);
   }
 
   const data = await resp.json();
@@ -420,10 +491,7 @@ export async function videoGeneration(body: {
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw Object.assign(
-      new Error(`Video generation failed: ${response.status} - ${text.slice(0, 500)}`),
-      { status: response.status, type: "venice_api_error" }
-    );
+    mapVeniceError(response.status, text);
   }
 
   const data = await response.json();
@@ -442,13 +510,46 @@ export async function retrieveVideo(queueId: string): Promise<{
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw Object.assign(
-      new Error(`Video retrieval failed: ${response.status} - ${text.slice(0, 500)}`),
-      { status: response.status, type: "venice_api_error" }
-    );
+    mapVeniceError(response.status, text);
   }
 
   return response.json();
+}
+
+export interface VeniceHealthResult {
+  ok: boolean;
+  latencyMs?: number;
+  error?: string;
+}
+
+/**
+ * Public health check for the Venice API. Pings the public models endpoint
+ * (no auth required) with a tight 5s timeout so the operator dashboard
+ * (/v1/providers/meta) can surface liveness without a slow request hanging
+ * the whole response.
+ *
+ * Shape intentionally matches the surplus/morpheus convention so the meta
+ * route can be agnostic about which provider produced the result.
+ */
+export async function healthCheckVenice(): Promise<VeniceHealthResult> {
+  const start = Date.now();
+  try {
+    const resp = await fetch("https://api.venice.ai/api/v1/models", {
+      method: "GET",
+      signal: AbortSignal.timeout(VENICE_HEALTH_TIMEOUT_MS),
+    });
+    const latencyMs = Date.now() - start;
+    if (!resp.ok) {
+      return { ok: false, latencyMs, error: `Venice health ${resp.status}` };
+    }
+    return { ok: true, latencyMs };
+  } catch (err) {
+    return {
+      ok: false,
+      latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export { chatCompletion as veniceChatCompletion };

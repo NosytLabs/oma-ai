@@ -14,7 +14,7 @@ enum CircuitState {
   HALF_OPEN = "HALF_OPEN",
 }
 
-type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus";
+type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
 
 interface HealthRecord {
   state: CircuitState;
@@ -79,7 +79,7 @@ const lastTrafficAt = new Map<Provider, number>();
 const PROBE_INTERVAL_MS = 45_000;
 const IDLE_THRESHOLD_MS = 60_000;
 
-const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus"];
+const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"];
 
 async function createInitialRecord(provider: Provider): Promise<HealthRecord> {
   const record: HealthRecord = {
@@ -371,6 +371,8 @@ function getProviderBaseUrl(provider: Provider): string {
     deepinfra: "https://api.deepinfra.com",
     surplus: "https://api.surplusintelligence.ai",
     morpheus: "https://api.mor.org",
+    claude: "https://api.anthropic.com",
+    gemini: "https://generativelanguage.googleapis.com",
   };
   return baseUrls[provider];
 }

@@ -13,8 +13,10 @@ export interface ModelDef {
   deepinfraId?: string;
   surplusId?: string;
   morpheusId?: string;
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "both" | "all";
-  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus";
+  claudeId?: string;
+  geminiId?: string;
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini" | "both" | "all";
+  primaryProvider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
   inputPricePer1M: number;
   outputPricePer1M: number;
   markupPercent: number;
@@ -218,6 +220,142 @@ const FALLBACK_MODELS: Record<string, ModelDef> = {
     creditsPerMillionInput: 0,
     creditsPerMillionOutput: 0,
   },
+  "claude-3-5-sonnet-latest": {
+    id: "claude-3-5-sonnet-latest",
+    claudeId: "claude-3-5-sonnet-latest",
+    provider: "claude",
+    primaryProvider: "claude",
+    inputPricePer1M: 3.00,
+    outputPricePer1M: 15.00,
+    markupPercent: 10,
+    category: "frontier",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude 3.5 Sonnet",
+    capabilities: ["chat", "code", "reasoning", "tools"],
+    description: "Anthropic Claude 3.5 Sonnet — best-in-class reasoning and code",
+    creditsPerMillionInput: 3000,
+    creditsPerMillionOutput: 15000,
+  },
+  "claude-3-5-haiku-latest": {
+    id: "claude-3-5-haiku-latest",
+    claudeId: "claude-3-5-haiku-latest",
+    provider: "claude",
+    primaryProvider: "claude",
+    inputPricePer1M: 0.80,
+    outputPricePer1M: 4.00,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude 3.5 Haiku",
+    capabilities: ["chat", "code", "fast"],
+    description: "Anthropic Claude 3.5 Haiku — fast, cost-efficient",
+    creditsPerMillionInput: 800,
+    creditsPerMillionOutput: 4000,
+  },
+  "claude-sonnet-4": {
+    id: "claude-sonnet-4",
+    claudeId: "claude-sonnet-4",
+    provider: "claude",
+    primaryProvider: "claude",
+    inputPricePer1M: 3.00,
+    outputPricePer1M: 15.00,
+    markupPercent: 10,
+    category: "frontier",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude Sonnet 4",
+    capabilities: ["chat", "code", "reasoning", "tools", "vision"],
+    description: "Anthropic Claude Sonnet 4 — frontier reasoning",
+    creditsPerMillionInput: 3000,
+    creditsPerMillionOutput: 15000,
+  },
+  "claude-opus-4": {
+    id: "claude-opus-4",
+    claudeId: "claude-opus-4",
+    provider: "claude",
+    primaryProvider: "claude",
+    inputPricePer1M: 15.00,
+    outputPricePer1M: 75.00,
+    markupPercent: 10,
+    category: "frontier",
+    maxTokens: 200000,
+    supportsStreaming: true,
+    displayName: "Claude Opus 4",
+    capabilities: ["chat", "code", "reasoning", "tools", "vision"],
+    description: "Anthropic Claude Opus 4 — most capable model",
+    creditsPerMillionInput: 15000,
+    creditsPerMillionOutput: 75000,
+  },
+  "gemini-2.5-pro": {
+    id: "gemini-2.5-pro",
+    geminiId: "gemini-2.5-pro",
+    provider: "gemini",
+    primaryProvider: "gemini",
+    inputPricePer1M: 1.25,
+    outputPricePer1M: 10.00,
+    markupPercent: 10,
+    category: "frontier",
+    maxTokens: 1048576,
+    supportsStreaming: true,
+    displayName: "Gemini 2.5 Pro",
+    capabilities: ["chat", "code", "reasoning", "tools", "vision", "long-context"],
+    description: "Google Gemini 2.5 Pro — frontier reasoning, 1M context",
+    creditsPerMillionInput: 1250,
+    creditsPerMillionOutput: 10000,
+  },
+  "gemini-2.5-flash": {
+    id: "gemini-2.5-flash",
+    geminiId: "gemini-2.5-flash",
+    provider: "gemini",
+    primaryProvider: "gemini",
+    inputPricePer1M: 0.075,
+    outputPricePer1M: 0.30,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 1048576,
+    supportsStreaming: true,
+    displayName: "Gemini 2.5 Flash",
+    capabilities: ["chat", "code", "fast", "vision"],
+    description: "Google Gemini 2.5 Flash — fast, cost-efficient",
+    creditsPerMillionInput: 75,
+    creditsPerMillionOutput: 300,
+  },
+  "gemini-2.5-flash-thinking": {
+    id: "gemini-2.5-flash-thinking",
+    geminiId: "gemini-2.5-pro",
+    provider: "gemini",
+    primaryProvider: "gemini",
+    inputPricePer1M: 0.075,
+    outputPricePer1M: 0.30,
+    markupPercent: 10,
+    category: "mid",
+    maxTokens: 1048576,
+    supportsStreaming: true,
+    displayName: "Gemini 2.5 Flash (thinking)",
+    capabilities: ["chat", "code", "reasoning", "fast"],
+    description: "Google Gemini 2.5 Flash with thinking enabled",
+    creditsPerMillionInput: 75,
+    creditsPerMillionOutput: 300,
+  },
+  "gemini-2.5-pro-thinking": {
+    id: "gemini-2.5-pro-thinking",
+    geminiId: "gemini-2.5-pro",
+    provider: "gemini",
+    primaryProvider: "gemini",
+    inputPricePer1M: 1.25,
+    outputPricePer1M: 10.00,
+    markupPercent: 10,
+    category: "frontier",
+    maxTokens: 1048576,
+    supportsStreaming: true,
+    displayName: "Gemini 2.5 Pro (thinking)",
+    capabilities: ["chat", "code", "reasoning", "tools", "long-context"],
+    description: "Google Gemini 2.5 Pro with thinking enabled",
+    creditsPerMillionInput: 1250,
+    creditsPerMillionOutput: 10000,
+  },
 };
 
 const FALLBACK_VIDEO_MODELS: Record<string, VideoModelDef> = {
@@ -392,4 +530,15 @@ export async function listVideoModels(): Promise<Array<{
     capabilities: m.capabilities,
     description: m.description,
   }));
+}
+
+// Test-only hook. Lets ratio-sync isolated tests install a fixture catalog
+// without going through the disk-read path. Prefix `__` is a convention
+// for "do not call from production code". No-op in production (the live
+// MODEL_CATALOG is what callers should use).
+export function __setModelCatalog(catalog: Record<string, ModelDef>): void {
+  // Replace the in-memory catalog so the next getModelCatalog() returns it.
+  // Reload-on-next-access semantics match the disk-backed path.
+  for (const k of Object.keys(MODEL_CATALOG)) delete MODEL_CATALOG[k];
+  Object.assign(MODEL_CATALOG, catalog);
 }

@@ -102,7 +102,7 @@ describe('Search API', () => {
 
   it('deducts credits and tracks spend on successful search', async () => {
     vi.mocked(validateApiKey).mockResolvedValueOnce({
-      id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
+      id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, ipAllowlist: null, createdAt: new Date(),
     });
 
     const res = await app.request('/v1/search?query=test', {
@@ -122,7 +122,7 @@ describe('Search API', () => {
 
   it('rejects if insufficient credits', async () => {
     vi.mocked(validateApiKey).mockResolvedValueOnce({
-      id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, createdAt: new Date(),
+      id: 'key-1', userId: 'user-1', keyPrefix: 'oma_sk_abc', keyHash: 'hash', name: 'test', active: true, lastUsedAt: null, expiresAt: null, ipAllowlist: null, createdAt: new Date(),
     });
     vi.mocked(getBalance).mockResolvedValueOnce({ balanceCents: '0', totalDepositedCents: '0', totalUsedCents: '0', lastActivityAt: null });
 

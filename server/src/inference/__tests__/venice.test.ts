@@ -79,11 +79,20 @@ describe("videoGeneration", () => {
   it("throws error on video generation failure", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
+      status: 500,
       text: vi.fn().mockResolvedValue("Video generation failed"),
     });
 
-    await expect(videoGeneration({ model: "seedance-2-0-text-to-video", prompt: "test" }))
-      .rejects.toThrow("Video generation failed");
+    try {
+      await videoGeneration({ model: "seedance-2-0-text-to-video", prompt: "test" });
+      throw new Error("expected throw");
+    } catch (err: unknown) {
+      const e = err as Error & { status: number; code: string; retryable: boolean };
+      expect(e.status).toBe(500);
+      expect(e.code).toBe("venice_server_error");
+      expect(e.retryable).toBe(true);
+      expect(e.message).toContain("Video generation failed");
+    }
   });
 });
 
@@ -112,9 +121,19 @@ describe("retrieveVideo", () => {
   it("throws error on video retrieval failure", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
+      status: 500,
       text: vi.fn().mockResolvedValue("Retrieval failed"),
     });
 
-    await expect(retrieveVideo("video-123")).rejects.toThrow("Video retrieval failed");
+    try {
+      await retrieveVideo("video-123");
+      throw new Error("expected throw");
+    } catch (err: unknown) {
+      const e = err as Error & { status: number; code: string; retryable: boolean };
+      expect(e.status).toBe(500);
+      expect(e.code).toBe("venice_server_error");
+      expect(e.retryable).toBe(true);
+      expect(e.message).toContain("Retrieval failed");
+    }
   });
 });

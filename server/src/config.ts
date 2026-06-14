@@ -14,9 +14,25 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
+  // Operator treasury: cold-side signer for sweeping USDC profits out of the
+  // hot facilitator wallet. The sweep endpoint returns 501 if unset (read-only
+  // mode). Production should source this from a multisig or HSM-backed key.
+  TREASURY_PRIVATE_KEY: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/)
+    .optional(),
+  // Destination address for the operator's profit sweep. Must be set if
+  // TREASURY_PRIVATE_KEY is set; sweep returns 403 if this is missing.
+  ADMIN_SWEEP_ADDRESS: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  // Google Gemini API
+  GEMINI_API_KEY: z.string().optional(),
   ANTSEED_PROXY_URL: z.string().min(1).optional(),
   LITELLM_PROXY_URL: z.string().min(1).optional(),
   LITELLM_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(), // Claude Messages API
   OPENROUTER_API_KEY: z.string().min(1).optional(),
   OPENROUTER_API_URL: z.string().min(1).default("https://openrouter.ai/api/v1"),
   OPENROUTER_REFERRER: z.string().min(1).optional(),
@@ -96,6 +112,7 @@ const envSchema = z.object({
   WITHDRAW_DAILY_LIMIT_CENTS: z.coerce.number().int().positive().default(5_000_000), // $50,000
   WITHDRAW_WEEKLY_LIMIT_CENTS: z.coerce.number().int().positive().default(20_000_000), // $200,000
   WITHDRAW_NETWORK_FEE_CENTS: z.coerce.number().int().nonnegative().default(100), // $1.00
+  AFFINITY_TTL_MS: z.coerce.number().int().positive().default(300_000),
 
   // Onramp configuration (moved from hardcoded literals in routes/onramp.ts)
   ONRAMP_PROCESSING_FEE_PERCENT: z.coerce.number().min(0).max(50).default(2.9), // 2.9% — value is in PERCENT

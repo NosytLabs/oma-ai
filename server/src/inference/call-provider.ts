@@ -6,6 +6,8 @@ import * as together from "./together.js";
 import * as deepinfra from "./deepinfra.js";
 import * as surplus from "./surplus.js";
 import * as morpheus from "./morpheus.js";
+import * as claude from "./claude.js";
+import * as gemini from "./gemini.js";
 import { reportProviderResult } from "./provider-result.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
@@ -57,6 +59,10 @@ export async function callProvider(
       resp = await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0]);
     } else if (provider === "surplus") {
       resp = await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
+    } else if (provider === "claude") {
+      resp = await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0]);
+    } else if (provider === "gemini") {
+      resp = await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0]);
     } else {
       resp = await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0]);
     }
