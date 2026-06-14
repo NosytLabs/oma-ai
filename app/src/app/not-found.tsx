@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { ArrowLeft, Home, Search } from 'lucide-react'
+import { NotFoundLottie } from './_components/NotFoundLottie'
 
 export default function NotFound() {
   useEffect(() => {
@@ -15,13 +16,9 @@ export default function NotFound() {
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <div className="mb-8">
-          <span className="text-[var(--color-error)] font-mono text-6xl font-bold">
-            404
-          </span>
-        </div>
-        
-        <div className="mb-6">
+        <NotFoundLottie />
+
+        <div className="mb-6 animate-fade-in">
           <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-2 font-mono">
             {'>'} system_fault
           </p>

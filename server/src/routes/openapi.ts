@@ -2,6 +2,7 @@
 // Served at GET /v1/openapi.json and rendered at GET /v1/docs via Swagger UI.
 
 import { Hono } from "hono";
+import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 
 export const openapiSpec = {
@@ -15,7 +16,7 @@ export const openapiSpec = {
     license: { name: "Proprietary" },
   },
   servers: [
-    { url: "https://api.oma-ai.com", description: "Production" },
+    { url: config.PUBLIC_API_URL, description: "Production" },
     { url: "http://localhost:3001", description: "Local dev" },
   ],
   tags: [

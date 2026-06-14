@@ -1,3 +1,4 @@
+// ponytail: production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 /* Hallmark · P4 H5 E5 S5 R4 V4
  * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
  * enrichment: 11 grouped FAQ blocks, hand-built funding-flow SVG

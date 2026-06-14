@@ -1,3 +1,4 @@
+// ponytail: production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 import { MODELS as CATALOG_MODELS } from '@/lib/models-data'
 import {
   Play, Key, Terminal, Gauge, Zap, AlertCircle, Package, Boxes,

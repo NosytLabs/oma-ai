@@ -1,3 +1,4 @@
+// ponytail: production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 /* LARP cleanup (ses_larp_surgical_v1) — Hallmark ornament removed, copy
  * tightened, body wrapper switched from mono → sans, decorative StatusDot
  * renamed to LiveIndicator, §-prefixed SectionHeading replaced with inline
@@ -105,18 +106,24 @@ export default function HomePage() {
 
                 <h1
                   id="subject-heading"
-                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5.5rem)]"
-                  style={{ overflowWrap: 'anywhere', minWidth: 0 }}
+                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5.5rem)] animate-fade-in"
+                  style={{ overflowWrap: 'anywhere', minWidth: 0, animationDelay: '60ms' }}
                 >
                   <span className="block">One key.</span>
                   <span className="block text-[var(--color-accent)]">Every model.</span>
                 </h1>
 
-                <p className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed">
+                <p
+                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed animate-fade-in"
+                  style={{ animationDelay: '140ms' }}
+                >
                   Pay per request in USDC. Wallet auth, no account.
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
+                <div
+                  className="mt-8 flex flex-wrap items-center gap-3 animate-fade-in"
+                  style={{ animationDelay: '220ms' }}
+                >
                   <Link href="/docs" className="btn-primary">
                     open the docs
                   </Link>
@@ -128,7 +135,8 @@ export default function HomePage() {
 
               <aside
                 aria-label="System state"
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0"
+                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0 animate-fade-in"
+                style={{ animationDelay: '180ms' }}
               >
                 <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
                   <span className="text-[10px] uppercase text-[var(--color-text-muted)]">
@@ -180,7 +188,7 @@ export default function HomePage() {
               {FEATURED_MODELS.map((m, i) => (
                 <li
                   key={m.id}
-                  className="grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem_4rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-[var(--color-surface)] transition-colors min-w-fit"
+                  className="relative grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem_4rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-[var(--color-surface)] transition-colors min-w-fit before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-[var(--color-accent)] before:scale-y-0 hover:before:scale-y-100 before:origin-center before:transition-transform before:duration-200 before:ease-out"
                 >
                   <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
                     {String(i + 1).padStart(2, '0')}

@@ -71,6 +71,11 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   ENCRYPTION_KEY: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  // Public-facing API URL. Used by OpenAPI spec, SSO SAML entity/ACS URLs, and any
+  // server-rendered surface that surfaces the public endpoint to clients.
+  // Falls back to the production domain; production deployments can override
+  // (e.g. staging environments).
+  PUBLIC_API_URL: z.string().url().default("https://api.oma-ai.com"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),

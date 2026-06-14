@@ -1,3 +1,4 @@
+// ponytail: production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-static'

@@ -309,8 +309,8 @@ ssoRouter.get("/saml/metadata/:connectionId", async (c) => {
 
   const conn = connection[0];
   const spMetadata = {
-entityId: `${config.CORS_ORIGIN || "https://api.oma-ai.com"}/sso/saml/acs`,
-  acsUrl: `${config.CORS_ORIGIN || "https://api.oma-ai.com"}/sso/saml/acs`,
+    entityId: `${config.PUBLIC_API_URL}/sso/saml/acs`,
+    acsUrl: `${config.PUBLIC_API_URL}/sso/saml/acs`,
     provider: conn.provider,
     domain: conn.domain,
   };
