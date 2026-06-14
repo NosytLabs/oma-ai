@@ -12,7 +12,6 @@ import {
   Trash2,
   Settings2,
   Search,
-  Share2,
   Download,
   TerminalSquare,
   AlertCircle,
@@ -99,7 +98,6 @@ function PlaygroundContent() {
   const [searching, setSearching] = useState(false)
   
   // Status states for buttons
-  const [shareStatus, setShareStatus] = useState<'default'|'loading'|'success'|'error'>('default')
   const [exportStatus, setExportStatus] = useState<'default'|'loading'|'success'|'error'>('default')
 
   const toast = useToast()
@@ -398,23 +396,6 @@ function PlaygroundContent() {
     }
   }, [messages])
 
-  const shareConversation = useCallback(() => {
-    setShareStatus('loading')
-    try {
-      const id = crypto.randomUUID()
-      const data = { id, messages }
-      localStorage.setItem(`oma_share_${id}`, JSON.stringify(data))
-      setShareStatus('success')
-      // Note: shared links are local-only (no shared-param hydration yet).
-      // A real share requires the server endpoint to be added.
-      toast.success(`Conversation saved locally (id: ${id.slice(0, 8)})`)
-      setTimeout(() => setShareStatus('default'), 2000)
-    } catch {
-      setShareStatus('error')
-      setTimeout(() => setShareStatus('default'), 2000)
-    }
-  }, [messages, toast])
-
   return (
     <div className="min-h-dvh h-dvh w-full flex flex-col bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono overflow-hidden">
       <h1 className="sr-only">API Playground</h1>
@@ -468,19 +449,8 @@ function PlaygroundContent() {
 
           {messages.length > 0 && (
             <div className="flex items-center gap-1">
-              <button 
-                onClick={shareConversation} 
-                disabled={shareStatus === 'loading'}
-                data-state={shareStatus}
-                className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] data-[state=loading]:bg-[var(--color-accent)]/20 data-[state=loading]:text-[var(--color-accent)]`} 
-                title="Share"
-              >
-                {shareStatus === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
-                 shareStatus === 'error' ? <AlertCircle className="w-3.5 h-3.5" /> :
-                 <Share2 className="w-3.5 h-3.5" />}
-              </button>
-              <button 
-                onClick={exportConversation} 
+              <button
+                onClick={exportConversation}
                 disabled={exportStatus === 'loading'}
                 data-state={exportStatus}
                 className={`${btnBase} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)] data-[state=loading]:bg-[var(--color-accent)]/20 data-[state=loading]:text-[var(--color-accent)]`} 
