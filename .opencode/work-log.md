@@ -1,5 +1,6 @@
 
 ## Active Sessions
+- [x] ses_venice_improvements (Worker): Three Venice API improvements — better error mapping (402/422/524 → typed codes with retryable flag), `healthCheckVenice()` function wired into `vendor-meta.ts`, and cheaptokens 5-minute cache TTL with `forceRefresh` param - done
 - [x] ses_minimax_ui_fixes (Worker): MiniMax UI/UX audit fixes — 3 surgical edits to `app/src/app/page.tsx` (logo field + monogram map @ 33-55, mobile-safe inventory row + monogram render @ 254-282, Houdini Swap callout in §03 @ 360-373). Verified api-status fix at line 102 (1 grep match). All gates pass (app typecheck/lint/tests + server typecheck). v4-screenshots 11M was already removed (hourly prune or prior worker). Unit test record at `.opencode/unit-tests/2026-06-13T21-19Z-minimax-ui-fixes.md` - done
 - [x] ses_m8_render_v5_redux (Worker): M8 Render $50 Credit Optimization — re-dispatched to fix SYNC-22 FAIL, wrote `.opencode/audit-2026-06-13v5/render-optimization.md` (correct dir, MCP-verified) + unit test record at `.opencode/unit-tests/2026-06-13T20-59Z-m8-render.md` - done
 - [x] ses_neon_v5_redo (Worker): M7 Neon DB optimization — wrote `.opencode/audit-2026-06-13v5/neon-optimization.md` (26KB, 9 sections, 6 projects, 29 tables, 113 indexes, 5 prioritized actions) + unit test record at `.opencode/unit-tests/2026-06-13T21-02Z-m7-neon.md` - done
@@ -20,10 +21,19 @@
 - [x] ses_m1_palette (Worker): M1 T1.1 + T1.1.6 — orange palette doc + WCAG AA verification - done
 - [x] ses_m2_respec (Worker): M2 re-tighten to spec exact wording (REVERSES ses_copy_polish deviations) - done
 - [x] ses_cyan_to_accent (Worker): M1.1 — color-cyan → color-accent rename across 26 files in app/src - done
+- [x] ses_lint_fix (Worker ses_...3ffevnJm): 2 server lint errors → 0. ES-import for `net`, drop unused `isOk` in venice-errors.test.ts. Commit 00c9bba. tsc+eslint clean - done
+- [x] ses_x402_bug1 (Worker ses_...3ffee00): x402 BUG-1 payee-bypass. `/v1/x402/proxy/chat/completions` was hard-501; added 17-line payee-pin pre-check. 4/4 facilitator tests pass; full suite 848/11 → 850/9. Commit 3d45732 - done
+- [x] ses_sync1 (Worker ses_...3ffeHi1): SYNC-1 bearerAuth. Root cause: `extractClientIp` ignored x-forwarded-for when no trusted proxies configured. Fix: utils.ts falls back to first XFF when `TRUSTED_PROXIES.size === 0`. api-keys-extras 27/30 → 30/30; full suite 850/9 → 853/6. Commit f521bce - done
 
 ## Completed Units (Ready for Integration)
 | File | Session | Unit Test | Timestamp |
 |------|---------|-----------|-----------|
+| `server/src/inference/venice.ts` (typed error mapper 402/422/524, healthCheckVenice export) | ses_venice_improvements | pass (12/12 in venice-errors.test.ts) | 2026-06-14T09:42Z |
+| `server/src/inference/cheaptokens.ts` (5-min TTL, forceRefresh param, reuse/refresh logging, 30s backoff) | ses_venice_improvements | pass (5/5 in cheaptokens.test.ts) | 2026-06-14T09:42Z |
+| `server/src/inference/vendor-meta.ts` (async getVendorMeta + live Venice health probe) | ses_venice_improvements | pass (11/11 in vendor-meta.isolated.test.ts) | 2026-06-14T09:42Z |
+| `server/src/routes/providers-meta.ts` (await getVendorMeta) | ses_venice_improvements | pass | 2026-06-14T09:42Z |
+| `server/src/inference/__tests__/venice-errors.test.ts` (NEW — 12 cases covering 401/402/422/429/500/524 + healthCheckVenice) | ses_venice_improvements | pass (12/12) | 2026-06-14T09:42Z |
+| `server/src/inference/__tests__/cheaptokens.test.ts` (NEW — 5 cases covering cold start, TTL reuse, TTL expiry, forceRefresh) | ses_venice_improvements | pass (5/5) | 2026-06-14T09:42Z |
 | `app/src/app/page.tsx` (3 edits: logo enum + monogram map, mobile-safe inventory row, Houdini Swap callout) | ses_minimax_ui_fixes | pass (typecheck+lint+tests) | 2026-06-13T21:19Z |
 | (none — M5 was a read-only audit, no source files modified) | | | |
 | `.opencode/audit-2026-06-13v4/base-mcp-report.md` | ses_base_mcp_v4 | n/a (audit) | 2026-06-13T18:34Z |
@@ -232,3 +242,5 @@
   - **No source files modified** — read-only audit. Follow-up Worker session should fix the 5 gaps.
   - Report: `.opencode/audit-2026-06-13v5/env-audit.md` (~10.5K, 7 sections, full inventory + drift tables + per-gap fix snippets).
   - **Out-of-scope of canonical M1-M9:** This audit was not a defined milestone. The previous similar attempt (`ses_config_env_secrets_review`, 20:58Z) was marked FAIL per SYNC-26 because no such task exists in todo.md. The parent Commander should decide whether to formalize this as a follow-up milestone (e.g. "M5.2 env hygiene") and dispatch a Worker to fix the 5 gaps.
+
+- [ ] ses_wire_g3_claude_gemini (Worker, current): Fix 4 broken integrations — G3 (ipAllowlist in schema + middleware), wire Claude adapter into provider-factory/router/models, wire Gemini adapter same, restart dev servers - in_progress
