@@ -1,130 +1,148 @@
-# Context — OMA-AI Commander session 2026-06-14 ~11:18Z
+# OMA-AI — Session Context (2026-06-14, 13:54 ADT)
 
-## Current Status (verified just now)
+## Current Status
 
-### Gates (all green except 6 pre-existing test failures)
-- Server typecheck: **0 errors**
-- Server lint: **0 errors, 0 warnings**
-- Server tests: **853 pass / 6 fail** (was 848/11 at start of this session)
-- App typecheck: **0 errors**
-- App build: **success** (53+ pages, 620 kB shared)
-- App lint: **0 errors**
-- App tests: **73 pass** (1 suite `page.test.tsx` errors on lottie-web in jsdom — pre-existing, unrelated)
+**Session goal:** Fix everything — LLM provider debugging, streaming, playground, UI/UX, auth, admin, console errors, animations, lottie, 21st MCP logos, profitability, site functionality.
 
-### 3 commits landed in this session (11:00-11:18Z)
-1. `00c9bba` — fix(server): 2 lint errors (api-keys.ts require import, venice-errors.test.ts unused isOk)
-2. `3d45732` — fix(x402): implement payee-bypass validation (BUG-1)
-3. `c2d4563` — feat(v5): Claude+Gemini adapters wired, G3 IP allowlist schema, inference cleanup (the long-deferred T9.9 commit, unblocked by build passing)
-4. `aa7dd48` — feat(v5): orange theme polish, copy edits, admin API client, 80→158 route docs
-5. `f521bce` — fix(auth): bearerAuth returns 403 when IP not in allowlist (SYNC-1)
+**Git state:** 2 commits this session (40ff150, 3f19003). Working tree dirty from catalog fix subagent.
 
-### Sync issues closed this session (8 of 10)
-SYNC-1, SYNC-3, SYNC-25, SYNC-26, SYNC-27, SYNC-28, SYNC-29, SYNC-30, SYNC-31 — all resolved by the 5 commits above. See `.opencode/sync-issues.md` for evidence per item.
+### Live Research Completed (firecrawl + context7)
+**CheapTokens:** x402 USDC on Base, keys expire midnight UTC daily, OpenAI-compatible via `api.venice.ai/api/v1`.
+**Venice:** 91 text models, 99 video models, OpenAI-compatible, supports streaming, multimodal, x402 wallet auth.
+**Surplus Intelligence:** x402 v2 with Permit2 (`upto`) and EIP-3009 (`exact`), `PAYMENT-SIGNATURE` header is **base64-encoded JSON**.
 
-### Sync issues remaining (1)
-- **SYNC-2** — `ipAllowlist` mock field is now consistent in test files (validKey mocks have `ipAllowlist: null`). The deeper schema choice (required vs optional in Drizzle inferred type) is a design call, not a bug.
+### CRITICAL Production Bug Found
+**The live Venice API has 91 text models. OMA catalog has 11+ broken IDs.** Comparison:
+- OMA has `claude-sonnet-4` → Venice has `claude-sonnet-4-5`/`4-6`
+- OMA has `claude-opus-4` → Venice has `claude-opus-4-5/6/7/8`
+- OMA has `gemini-2.5-pro` → Venice has `gemini-3-1-pro-preview`
+- OMA has `gpt-4o-mini` → Venice has `openai-gpt-4o-mini-2024-07-18`
+- OMA has `deepseek-v3` → Venice has `deepseek-v3.2`
+- **Every chat call to Venice currently fails with model-not-found.**
 
-### 6 pre-existing test failures (out of scope for this session)
-1. `refunds-flow.test.ts` — static check on admin route mounting order in `routes/admin/index.ts`
-2-3. `router.test.ts` — 2 tests in `handleChatCompletion` (credit refund on error JSON, streaming response)
-4-6. `stream-tracker-perf.isolated.test.ts` — 3 M10.7 perf regression tests (LRU short-circuit, usage record, cancel finalizes)
+### Subagent Fixes Applied (task ses_139048892ffe6XQ7q0Yv47pmV3)
+Subagent fixed FALLBACK_MODELS + UI catalog + rate-limit MODEL_LIMITS:
+- Renamed `deepseek-v3` → `deepseek-v3.2` everywhere
+- Removed 28 fictional model IDs from `server/src/middleware/rate-limit/utils.ts`
+- Replaced "17+ / 19+ / 50+ / 30+ / 28+ / 32+" with "91+" across 22+ files (page.tsx, about, faq, compare, docs, layout, pricing, models, opengraph-image, llms.txt, __tests__, openapi.ts, morpheus.ts, .env.example, docs/*.md)
+- All typecheck + 81/81 app tests PASS
 
-All 6 are pre-existing (predate the v5 mission per `.opencode/context.md` line 50). Deferred to a future bounded session.
+### CRITICAL Out-of-Scope Finding (subagent flagged)
+**`server/models.json` (34KB on disk) overrides FALLBACK_MODELS at runtime!**
+- `models.ts:402` — `MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS`
+- models.json has 51 entries, many with WRONG Venice IDs (`deepseek-v3`, `deepseek-r1`, `qwen3.5-8b`, `llama-3.2-1b`, `anthropic/claude-3-5-sonnet`, `openai/gpt-4o-mini`, `meta-llama/*:free/budget` suffixes — those are OpenRouter IDs not Venice)
+- **This is the ACTUAL cause of the production outage.** The subagent only fixed FALLBACK_MODELS, not the on-disk JSON.
+- Verified: 51 entries in models.json; many veniceId fields like `deepseek-v3`, `llama-3.2-1b`, `qwen/qwen3-coder-32b:budget` don't exist in Venice's live catalog
 
-## Mission state
+## Current Working Tree State
 
-The 5 v5 features are now actually verified wired and committed:
-- G1 Claude adapter — wired in `call-provider.ts:62-65`, committed in c2d4563
-- G2 Gemini adapter — wired in `call-provider.ts:64-65`, committed in c2d4563
-- G3 IP allowlist + token expiry — schema + middleware + enforcement, working (SYNC-1 fix), committed in c2d4563
-- G4 UI/UX slop audit — 0 slop phrases (prior session)
-- G5 Venice optimization — error mapper, health check, cheaptokens TTL, committed in c2d4563
+Untracked: `server/models.json` was never committed. It lives in the repo but is gitignored? Need to check.
 
-T9.9 (commit all v5 changes) **RESOLVED** by c2d4563 + aa7dd48.
+Subagent changes (uncommitted):
+- `server/src/inference/models.ts` — deepseek-v3 → deepseek-v3.2
+- `server/src/middleware/rate-limit/utils.ts` — removed 28 fictional IDs
+- `app/src/lib/models-data.ts` — deepseek-v3 → deepseek-v3.2
+- 22+ files: marketing copy "91+ models"
 
-## Next bounded work (out of scope, user decision needed)
+## Pending Tasks
 
-The user has sent 9 identical mega-cascades this session ("do everything / spawn 20 agents / load all 27 skills"). The hard-won lesson from the prior 5h session (per the previous context.md): the "20 subagents" pattern crashes; bounded focused work + verify is the right play.
+### CRITICAL (just discovered — production outage cause)
+1. **Fix `server/models.json`** — 51 entries with wrong Venice IDs. This is what the server actually loads. The on-disk file is the real source of truth that overrides FALLBACK_MODELS. Need to rebuild from live Venice catalog.
 
-Real remaining work, in priority order:
-1. **6 pre-existing test failures** — refunds-flow static check, 2 router tests, 3 M10.7 stream-tracker perf tests. Estimated 1-2 focused Workers (1-2 hours).
-2. **Production deploy (CRITICAL-1)** — `oma-ai.com` serves MCP Marketplace, not OMA-AI Gateway. Requires Vercel + DNS, not a code task. Runbook: `docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md`
-3. **.opencode/docs/ untracked** — 30+ cached research files (LiteLLM, Portkey, vLLM, x402, etc.) downloaded by a prior session. Untracked, not committed. Could `.gitignore` to keep clean.
-4. **Untracked lottie files** — 3 Lottie animations + 3 control JSONs + 1 preview PNG in `.opencode/`. Art assets, not committed.
+### HIGH (user explicitly asked)
+2. **Debug streaming**: verify `POST /v1/chat/completions` with `stream: true` works with Venice. Check `server/src/inference/venice.ts` stream handling, SSE parsing, abort signals.
+3. **Playground/chat fix**: `app/src/app/playground/page.tsx` + `app/src/components/playground/*` — check params, model selection, message rendering, no UI confusion.
+4. **Auth flow**: account number login → dashboard tabs. `app/src/app/login/page.tsx`, `account-login-modal.tsx`, `dashboard/*`.
+5. **Admin login + tabs**: same for `/admin/*`.
+6. **Console error sweep**: all 21 pages.
+7. **Next.js middleware 500s**: clear `app/.next/` and restart, or fix module resolution.
+8. **21st MCP UI/UX**: pull design inspiration, audit layouts, animations, lottie polish.
+9. **Lottie/animation audit**: check 2 dead lotties (lottie-404.json, lottie-playground-loader.json), fix FeaturedX402Lottie.
+10. **Profitability**: verify `OMA_MARKUP_PCT=25` is correct vs real Venice costs.
 
----
+### MEDIUM
+11. **Surplus x402 signer**: implement EIP-3009 TransferWithAuthorization (exact) and Permit2 PermitWitnessTransferFrom (upto), base64-encode header.
+12. **Add per-token model allowlist** (new-api pattern, 4-6h)
+13. **Add redemption codes** (new-api pattern, ~1d)
+14. **Add wallet-replenishment job for SURPLUS_WALLET_PRIVATE_KEY**
+15. **Add cron for CheapTokens auto-refresh**
 
-## Current Task (in progress): READ-ONLY site health audit
+### LOW
+16. **Drop OMA token references** from /terms, /crypto-payments, price-guard.ts
+17. **Footer "last deploy" hardcoded** — wire to actual deploy SHA
 
-User requested a visual + functional site health audit of `app/` frontend. Subagent dispatched with READ-ONLY mode. No files modified. Findings-only output expected in markdown.
+## Key File References (use to resume)
 
-### Scope
-- 11 numbered audit areas: pages inventory, components, API client, FE→BE endpoint gaps, wallet, theme, lottie, visual issues, a11y, ponytail pass, test coverage.
+- `server/src/inference/models.ts:402` — `MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS` (models.json override)
+- `server/models.json` (34KB) — 51 entries, MANY wrong Venice IDs, overrides FALLBACK_MODELS at runtime
+- `server/src/inference/venice.ts` — Venice provider, check stream handling
+- `server/src/inference/cheaptokens.ts` — auto-buy, recently fixed
+- `server/src/inference/surplus.ts:303-311` — TRACKED ISSUE, provider disabled
+- `app/src/app/playground/page.tsx` + `app/src/components/playground/*` — chat UI
+- `app/src/app/login/page.tsx` + `app/src/components/account-login-modal.tsx` — auth
+- `app/src/app/dashboard/*` — user dashboard tabs
+- `app/src/app/admin/*` — admin tabs
+- `app/src/middleware.ts` — broken, 500s on protected pages
+- `app/src/lib/models-data.ts` — 17 real models (renamed deepseek)
+- `server/src/x402/facilitator.ts` — x402, 4 of 6 CRITICAL fixes applied
+- `server/src/credits/deposit.ts` — security fixed
+- `server/src/middleware/rate-limit/utils.ts:13-50` — 28 fictional IDs removed by subagent
+- `app/src/app/models/page.test.tsx:55` — test expects "Claude Opus 4"
 
-### Data gathered (sufficient for output, context hit 96% before write)
-**Pages (43 page.tsx files identified):**
-- Root: `/`, `/login`, `/pricing`, `/models`, `/playground`, `/docs`, `/about`, `/settings`, `/swap`, `/deposit`, `/image-generation`, `/video-generation`, `/crypto-payments`, `/private-ai-api`, `/faq`, `/privacy`, `/terms`
-- Dashboard: `/dashboard`, `/dashboard/credits`, `/dashboard/api-keys`
-- Admin: `/admin`, `/admin/analytics`, `/admin/fees`, `/admin/ledger`, `/admin/rate-limits`, `/admin/refunds`, `/admin/users`, `/admin/users/[id]`
-- Use-cases: `/use-cases`, `/use-cases/chatbots`, `/use-cases/apps`, `/use-cases/ai-agents`
-- Compare: `/compare`, `/compare/cheaptokens-alternative`, `/compare/openrouter-alternative`, `/compare/surplus-min-discount-routing`, `/compare/venice-ai-alternative`
+## Live Venice Ground Truth (91 text models)
+Confirmed live at `https://api.venice.ai/api/v1/models?type=text`:
+- aion-labs-aion-2-0, arcee-trinity-large-thinking
+- claude-opus-4-5/6/7/8 (with -fast variants), claude-sonnet-4-5/4-6
+- deepseek-v3.2, deepseek-v4-flash, deepseek-v4-pro
+- gemini-3-1-pro-preview, gemini-3-5-flash, gemini-3-flash-preview
+- google-gemma-3-27b-it, google-gemma-4-26b-a4b-it, google-gemma-4-31b-it, gemma-4-uncensored
+- grok-4-20, grok-4-20-multi-agent, grok-4-3, grok-build-0-1
+- kimi-k2-5, kimi-k2-6
+- llama-3.2-3b, llama-3.3-70b
+- minimax-m25, minimax-m27, minimax-m3, minimax-m3-preview
+- openai-gpt-4o-2024-11-20, openai-gpt-4o-mini-2024-07-18
+- openai-gpt-52, gpt-52-codex, gpt-53-codex, gpt-54, gpt-54-mini, gpt-54-pro, gpt-55, gpt-55-pro
+- qwen3-235b-a22b-instruct-2507, qwen3-235b-a22b-thinking-2507
+- qwen3-5-35b-a3b, qwen3-5-397b-a17b, qwen3-5-9b
+- qwen3-6-27b, qwen3-coder-480b-a35b-instruct-turbo, qwen3-next-80b, qwen3-vl-235b-a22b
+- venice-uncensored-1-2, venice-uncensored-role-play
+- zai-org-glm-4.6, zai-org-glm-4.7, zai-org-glm-4.7-flash, zai-org-glm-5, zai-org-glm-5-1
+- nvidia-nemotron-3-nano-30b-a3b, nvidia-nemotron-3-ultra-550b-a55b, nvidia-nemotron-cascade-2-30b-a3b
+- mistral-small-2603, mistral-small-3-2-24b-instruct
+- 91 total text models + 99 video models
 
-**Auth gating (middleware.ts:5):** `PROTECTED_PATHS = ['/dashboard', '/admin', '/settings', '/deposit', '/playground']` — these redirect to `/?auth=required` if no JWT.
+### Video models (99 total, examples)
+- grok-imagine-text-to-video (IS REAL — audit was wrong)
+- kling-v3-pro-text-to-video, kling-v3-standard-text-to-video
+- kling-o3-pro-text-to-video, kling-o3-standard-text-to-video
+- seedance-2-0-text-to-video, seedance-1-5-pro-text-to-video
+- sora-2-text-to-video, sora-2-pro-text-to-video
+- veo3.1-full-text-to-video, veo3.1-fast-text-to-video
+- vidu-q3-text-to-video, vidu-q3-image-to-video
+- wan-2-7-text-to-video, wan-2-6-text-to-video
+- runway-gen4-turbo, runway-gen4-aleph
+- pixverse-v5.6-text-to-video, ltx-2-full-text-to-video
 
-**Components (15 top-level .tsx in app/src/components/):** wallet-provider, ConnectWalletWrapper, api-status, motion-provider, ThemeProvider, ThemeToggle, footer, AuthNotice, LottiePlayer, wallet-context, tinyfish-pricing, account-login-modal, error-boundary, connect-button, navbar.
+## Recent Commit Log
+- `3f19003` — fix(content): reconcile UI model catalog with server — remove 28 fakes, fix model counts
+- `40ff150` — fix(security): x402 CRITICALs + deposit validation + CheapTokens fixes
+- `497b209` — test(app): mock lottie-react + update pricing filter test for new model names
+- `d5fc207` — chore: delete dead code
 
-**API client (13 modules under app/src/lib/api/):** auth, oma, usage-chart, deposit, index, client, types, admin, resources, inference, admin-config, webhooks, credits. `admin-config.ts` is 1-line stub.
+## Audit Reports (all in docs/)
+- `AUDIT-X402-2026-06-14.md` — 6 CRITICAL, 7 HIGH, 9 MEDIUM, 8 LOW
+- `AUDIT-OPERATIONAL-MODEL-2026-06-14.md` — 3 wallets needed, not 1
+- `AUDIT-SITE-PAGES-2026-06-14.md` — 5 pages 500, 28 fictional models (FIXED in 3f19003)
+- `AUDIT-SURPLUS-2026-06-14.md` — NOT viable, 3 P0 breaks (provider disabled in 40ff150)
+- `AUDIT-NEW-API-REFERENCES-2026-06-14.md` — backend patterns adopted, frontend gap remains
+- `AUDIT-PONYTAIL-CLEANUP-2026-06-14.md` — ~340 LOC removable, 5 HIGH security fixes
 
-**Endpoints called by frontend (from grep):**
-- `api.auth.*` (getNonce/verify/wallet/logout/getUser/deleteAccount/unlinkWallet/csrfToken/createAccountNumber/loginWithAccountNumber/listKeys/listSessions) — all present on server
-- `api.deposit.*` (usdc/oma/houdini/status/pending/houdiniTokens/houdiniChains/houdiniQuote/houdiniExchange/getStatus/getById/retry/getNotifications)
-- `api.oma.*` legacy alias (health/getBalance/getApiKeys/createApiKey/revokeApiKey/updateApiKeyRateLimits/getUsage/purchaseCredits/updateAutoReload)
-- `api.admin.*` (getStats/getUsers/getUserDetail/getUsage/getRevenue/getKeys + ledger.info/hotVsCold/sweep + refunds.list/grant/deny)
-- `api.creditHistory.list`, `api.webhooks.*`, `api.recoveries.*`, `api.health.get`
-- Direct fetch calls (NOT via api client): `playground/page.tsx:77 API_URL='/api/v1/chat/completions'` (uses Next.js proxy), `admin/fees/page.tsx:42 fetch('/api/admin/config/fees')`, `admin/analytics/page.tsx:64 fetch('/api/admin/analytics/overview')`, `admin/rate-limits/page.tsx:38 fetch('/api/admin/config/rate-limits')`, `account-login-modal.tsx:105 fetch('/api/auth/account/login')` — manual fetch when `api.()` would do
+## Dev Server State
+- Server dev fails without Postgres (sandbox limitation)
+- App dev starts but middleware 500s (need to clear .next/)
 
-**Lottie:** `app/public/lottie-x402-flow.json` + `lottie-404.json` + `lottie-playground-loader.json` (in public/, used by LottiePlayer). `app/src/components/LottiePlayer.tsx` wraps `lottie-react`. `app/src/app/_components/FeaturedX402Lottie.tsx` uses it on home page. `lottie-404.json` and `lottie-playground-loader.json` appear to be in /public but not used by any code in app/src (dead assets).
-
-**Theme (globals.css):** Tailwind v4 `@theme` directive (no tailwind.config.*). Orange palette defined `--color-accent: #fb923c` (dark) / `#c2410c` (light). Dark mode via `[data-theme="light"]` override. No `--color-cyan` or v3 teal leftovers. `--color-green: #fb923c` (orange alias) at line 105. Hardcoded hex only inside `:root` / `[data-theme="light"]` (not a problem).
-
-**Wallet (wallet-provider.tsx):** wagmi v3.5, only `base` chain imported (line 5). `getWagmiConfig()` from `@/lib/wagmi`. SIWE flow lines 165-199: getNonce → SiweMessage → signMessage → verify → store session. Functional (not stubbed). Errors: `console.error('SIWE login failed:', err)` (line 189) and `console.error('SIWE sign failed:', err)` (line 241) — errors ARE logged, not silently swallowed. ethers imported transitively via siwe@3 (per AGENTS.md).
-
-**Test coverage (frontend):** 7 test files: `app/src/app/__tests__/page.larp-isolated.test.ts`, `app/src/app/__tests__/seo-infrastructure.test.ts`, `app/src/app/faq/__tests__/page.larp-isolated.test.ts`, `app/src/app/page.test.tsx`, `app/src/app/pricing/page.test.tsx`, `app/src/app/models/page.test.tsx`, `app/src/app/api/admin/proxy-auth.test.ts`.
-
-**Key files read in full:** layout.tsx, middleware.ts, error.tsx, not-found.tsx, global-error.tsx, globals.css, wallet-provider.tsx, LottiePlayer.tsx, navbar.tsx (partial), footer.tsx (partial), error-boundary.tsx, ThemeProvider.tsx, ThemeToggle.tsx, wallet-context.tsx, api-status.tsx, connect-button.tsx, ConnectWalletWrapper.tsx, AuthNotice.tsx, motion-provider.tsx, account-login-modal.tsx, tinyfish-pricing.tsx, dashboard/page.tsx, dashboard/credits/page.tsx, settings/page.tsx, admin/page.tsx (partial), admin/users/page.tsx, admin/analytics/page.tsx, admin/refunds/page.tsx (partial), admin/ledger/page.tsx (partial), admin/fees/page.tsx (partial), admin/rate-limits/page.tsx (partial), admin/layout.tsx, login/page.tsx, pricing/page.tsx, deposit/page.tsx, swap/page.tsx, about/page.tsx (partial), playground/page.tsx (partial), models/page.tsx (partial), _components/FeaturedX402Lottie.tsx, all 13 lib/api/*.ts.
-
-**Server routes (for FE→BE gap analysis):** Full endpoint listing extracted from `server/src/routes/` (see rg output: ~30 route files, ~100+ endpoints). Key paths used by FE all exist on BE.
-
-### Pending
-- WRITE the audit report to the user in the exact markdown format requested (11 sections).
-- Then mark task complete.
-
-### Files NOT yet read
-- `app/src/app/dashboard/api-keys/page.tsx` (544 lines)
-- `app/src/app/admin/users/[id]/page.tsx` (382 lines)
-- `app/src/app/use-cases/*.tsx` (4 files, ~800 lines total)
-- `app/src/app/compare/*` (5 files, ~1500 lines)
-- `app/src/app/privacy/page.tsx`, `terms/page.tsx` (524, 481 lines)
-- `app/src/app/image-generation/page.tsx`, `video-generation/page.tsx`, `crypto-payments/page.tsx`, `private-ai-api/page.tsx`, `docs/page.tsx`, `faq/page.tsx` (most are large)
-- `app/src/app/admin/refunds/page.tsx` (lines 101-407), `admin/ledger/page.tsx` (101-329), `admin/fees/page.tsx` (101-274), `admin/rate-limits/page.tsx` (101-564) — tails only
-- `app/src/app/playground/page.tsx` (101-677), `models/page.tsx` (101-528), `swap/page.tsx` was fully read, `about/page.tsx` (101-909)
-- Test file contents — file list known but content not read
-
-### Continuation prompt
-When resuming, the task is READ-ONLY site health audit. The user wants the markdown output structured exactly as:
-```
-## Site Health Audit
-### Pages (count: N)
-- [route] [auth] [purpose] [stub?] [bugs?]
-### Components (count: N)
-- [name] [purpose] [used?] [dead?] [theme-ok?]
-### Frontend→Backend endpoint gaps
-### Wallet
-### Theme
-### Lottie usage
-### Visual issues (likely, by code review)
-### A11y quick
-### Ponytail candidates
-### Frontend test coverage
-```
-All required data is gathered above. Write the report directly. No need to re-read files. Cite paths. No prose.
+## Not Asked / Out of Scope
+- Production deploy (CRITICAL-1 from prior session, still out of code scope)
+- Real Postgres setup (sandbox limitation)
+- Real Venice/Surplus API keys (would need operator's credentials)
+- Browser MCP for actual user flows (chrome-devtools not available in env)

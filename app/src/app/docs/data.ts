@@ -133,7 +133,7 @@ export const ENDPOINTS: EndpointInfo[] = [
   "object": "list",
   "data": [
     { "id": "llama-3.2-3b",        "object": "model", "owned_by": "meta" },
-    { "id": "deepseek-v3",         "object": "model", "owned_by": "deepseek" },
+    { "id": "deepseek-v3.2",         "object": "model", "owned_by": "deepseek" },
     { "id": "claude-sonnet-4",     "object": "model", "owned_by": "anthropic" },
     { "id": "venice/flux-schnell", "object": "model", "owned_by": "black-forest-labs" }
   ]

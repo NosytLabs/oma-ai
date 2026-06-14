@@ -36,7 +36,7 @@ const MODELS: PricedModel[] = [
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'mid', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
   { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', category: 'mid', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'mid', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, ctx: '128K' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', category: 'premium', provider: 'Venice', inputPer1M: 0.50, outputPer1M: 1.50, ctx: '64K' },
+  { id: 'deepseek-v3.2', name: 'DeepSeek V3.2', category: 'premium', provider: 'Venice', inputPer1M: 0.50, outputPer1M: 1.50, ctx: '64K' },
   { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'mid', provider: 'Venice', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
   { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', category: 'premium', provider: 'Together', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
   { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', category: 'budget', provider: 'Venice', inputPer1M: 0.06, outputPer1M: 0.12, ctx: '8K' },
@@ -160,7 +160,7 @@ export default function PricingPage() {
             AI API Pricing
           </h1>
           <p className="mt-4 text-base text-[var(--color-text-secondary)] max-w-2xl">
-            Credit-based billing. No subscriptions. No minimums. Pay per token across 19+ models via unified OpenAI-compatible API.
+            Credit-based billing. No subscriptions. No minimums. Pay per token across 91+ models via unified OpenAI-compatible API.
           </p>
         </div>
 

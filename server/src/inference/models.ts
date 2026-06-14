@@ -67,9 +67,9 @@ export let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
-  "deepseek-v3": {
-    id: "deepseek-v3",
-    veniceId: "deepseek-v3",
+  "deepseek-v3.2": {
+    id: "deepseek-v3.2",
+    veniceId: "deepseek-v3.2",
     provider: "venice",
     primaryProvider: "venice",
     inputPricePer1M: 0.50,
@@ -78,7 +78,7 @@ const FALLBACK_MODELS: Record<string, ModelDef> = {
     category: "premium",
     maxTokens: 65536,
     supportsStreaming: true,
-    displayName: "DeepSeek V3",
+    displayName: "DeepSeek V3.2",
     capabilities: ["chat", "code", "reasoning"],
     description: "DeepSeek's latest flagship model",
     creditsPerMillionInput: 500,

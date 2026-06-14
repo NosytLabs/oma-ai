@@ -33,7 +33,7 @@ const FEATURED_MODELS: { id: string; provider: string; ctx: string; logo: ModelL
   { id: 'claude-sonnet-4', provider: 'Anthropic', ctx: '200k', logo: 'claude' },
   { id: 'gemini-2.5-pro', provider: 'Google', ctx: '1M', logo: 'gemini' },
   { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128k', logo: 'gpt' },
-  { id: 'deepseek-v3', provider: 'Venice', ctx: '64k', logo: 'deepseek' },
+  { id: 'deepseek-v3.2', provider: 'Venice', ctx: '64k', logo: 'deepseek' },
   { id: 'claude-3-5-haiku-latest', provider: 'Anthropic', ctx: '200k', logo: 'venice' },
 ]
 
@@ -145,7 +145,7 @@ export default function HomePage() {
                     ['Facilitator', 'mock · dev'],
                     ['Settlement', 'Base · USDC'],
                     ['Providers', '3 / 3'],
-                    ['Models', `${FEATURED_MODELS.length} of 19+ shown`],
+                    ['Models', `${FEATURED_MODELS.length} of 91+ shown`],
                   ].map(([k, v]) => (
                     <div
                       key={k}

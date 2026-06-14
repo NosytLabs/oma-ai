@@ -65,7 +65,7 @@ const MODEL_PRICING: ModelPricing[] = [
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', input: 0.075, output: 0.30, ctx: '1M' },
   { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', input: 0.075, output: 0.30, ctx: '1M' },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini', input: 0.15, output: 0.60, ctx: '128K' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', input: 0.50, output: 1.50, ctx: '64K' },
+  { id: 'deepseek-v3.2', name: 'DeepSeek V3.2', input: 0.50, output: 1.50, ctx: '64K' },
   { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', input: 0.35, output: 0.90, ctx: '8K' },
   { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', input: 0.35, output: 0.90, ctx: '8K' },
   { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', input: 0.06, output: 0.12, ctx: '8K' },
@@ -141,7 +141,7 @@ const ENDPOINTS: EndpointInfo[] = [
   "object": "list",
   "data": [
     {"id": "oma/llama-3.2-3b", "object": "model", "owned_by": "meta"},
-    {"id": "oma/deepseek-v3", "object": "model", "owned_by": "deepseek"}
+    {"id": "oma/deepseek-v3.2", "object": "model", "owned_by": "deepseek"}
   ]
 }`,
   },
@@ -939,7 +939,7 @@ function DocsContent() {
               OMA API Documentation
             </h2>
             <p className="text-lg text-[var(--color-text-muted)]">
-              OpenAI-compatible AI inference gateway with crypto payments. Access 19+ models with unified API.
+              OpenAI-compatible AI inference gateway with crypto payments. Access 91+ models with unified API.
             </p>
           </div>
 

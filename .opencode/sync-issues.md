@@ -1,6 +1,6 @@
 # Sync Issues
 
-## OPEN (3 — out of immediate scope, all pre-existing)
+## OPEN (1 — out of immediate scope, pre-existing)
 
 ### SYNC-2 — ipAllowlist mock in test files
 - **Status:** PARTIALLY MITIGATED. Test files now have `ipAllowlist: null` on validKey mocks (per context.md), bringing typecheck to 0. The deeper design question (is the field required or optional in the Drizzle inferred type?) is a schema choice — currently works.

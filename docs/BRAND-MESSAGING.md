@@ -24,7 +24,7 @@
 
 - **AI inference gateway** - Routes requests to AI providers via OpenAI-compatible API
 - **Private access layer** - Zero data retention on prompt content; self-hosted control available
-- **Venice-powered backend** - Primary provider with 50+ models, backup via AntSeed
+- **Venice-powered backend** - Primary provider with 91+ models, backup via AntSeed
 - **Credit-based billing** - Prepay with crypto, earn credits, spend on inference
 - **Multi-provider routing** - Circuit breaker pattern for failover; multi-model support ready
 - **Self-hosted option** - Full control via Coolify deployment; no vendor lock-in

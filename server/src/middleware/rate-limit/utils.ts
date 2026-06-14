@@ -8,46 +8,18 @@ const TRUSTED_PROXIES: Set<string> = new Set(
     .filter((ip) => ip.length > 0)
 );
 
-// Model-specific limits (requests per minute)
+// Model-specific limits (requests per minute). Keys must match a real Venice
+// model ID — only entries that survive the live Venice catalog audit are kept.
+// `getModelLimits()` is called per-model; any ID not listed here falls through
+// to the default limits in the rate-limit middleware.
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
-  // Frontier/reasoning models - strict
   "claude-opus-4-7": { rpm: 30, tpm: 60000 },
-  "gpt-5.5": { rpm: 30, tpm: 60000 },
-  "o3": { rpm: 30, tpm: 60000 },
-  "chainscout-guard-v1": { rpm: 30, tpm: 60000 },
-  // Premium/standard models - moderate
-  "deepseek-r1": { rpm: 60, tpm: 120000 },
-  "deepseek-v3": { rpm: 60, tpm: 120000 },
-  "claude-sonnet-4-6": { rpm: 60, tpm: 120000 },
-  "claude-haiku-4-5": { rpm: 60, tpm: 120000 },
-  "gpt-4o": { rpm: 60, tpm: 120000 },
-  "gemini-3.5-flash": { rpm: 60, tpm: 120000 },
-  "mistral-large": { rpm: 60, tpm: 120000 },
-  "llama-3.3-70b": { rpm: 60, tpm: 120000 },
   "deepseek-v4-pro": { rpm: 60, tpm: 120000 },
-  "qwen3-235b": { rpm: 60, tpm: 120000 },
-  "qwen3-coder-480b": { rpm: 60, tpm: 120000 },
-  "qwen3-72b": { rpm: 60, tpm: 120000 },
+  "claude-sonnet-4-6": { rpm: 60, tpm: 120000 },
+  "llama-3.3-70b": { rpm: 60, tpm: 120000 },
   "kimi-k2-5": { rpm: 60, tpm: 120000 },
-  "command-r-plus": { rpm: 60, tpm: 120000 },
-  "token-take-agent": { rpm: 60, tpm: 120000 },
-  // Fast/budget models - higher limits
-  "phi-4-mini": { rpm: 120, tpm: 240000 },
   "deepseek-v4-flash": { rpm: 120, tpm: 240000 },
-  "phi-4": { rpm: 120, tpm: 240000 },
-  "gemini-2.5-flash": { rpm: 120, tpm: 240000 },
-  "grok-41-fast": { rpm: 120, tpm: 240000 },
-  "gpt-4o-mini": { rpm: 120, tpm: 240000 },
-  "qwen3-32b": { rpm: 120, tpm: 240000 },
-  "qwen3-8b": { rpm: 120, tpm: 240000 },
-  "deepseek-r1-8b": { rpm: 120, tpm: 240000 },
-  "mistral-small-3.2": { rpm: 120, tpm: 240000 },
-  "llama-3.1-8b": { rpm: 120, tpm: 240000 },
-  "gemma-3-27b": { rpm: 120, tpm: 240000 },
-  "gemma4-31b": { rpm: 120, tpm: 240000 },
-  "qwen3-coder-30b": { rpm: 120, tpm: 240000 },
   "kimi-k2-6": { rpm: 120, tpm: 240000 },
-  "glm-5.1": { rpm: 120, tpm: 240000 },
 };
 
 function isTrustedProxy(ip: string): boolean {

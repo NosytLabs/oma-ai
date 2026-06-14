@@ -97,7 +97,7 @@ export default function OpenRouterAlternativePage() {
           <div className="space-y-3">
             {[
               'OpenAI-compatible API for easy migration',
-              '19+ AI models including GPT-4, Claude, and Gemini',
+              '91+ AI models including Claude, GPT, Gemini, and Llama',
               'Real-time credit system with full transparency',
               'No account required - wallet-only authentication',
               'Built on Base for fast, reliable transactions',

@@ -48,8 +48,8 @@ export const TIER_ORDER: Tier[] = ['budget', 'mid', 'premium', 'frontier']
 // app/src/app/video-generation/page.tsx (only place they are shown in UI).
 export const MODELS: Model[] = [
   {
-    id: 'deepseek-v3',
-    name: 'DeepSeek V3',
+    id: 'deepseek-v3.2',
+    name: 'DeepSeek V3.2',
     provider: 'Venice',
     tier: 'premium',
     description: "DeepSeek's latest flagship model",
@@ -57,7 +57,7 @@ export const MODELS: Model[] = [
     inputPricePer1M: 0.50,
     outputPricePer1M: 1.50,
     capabilities: ['chat', 'coding', 'reasoning'],
-    modelId: 'deepseek-v3',
+    modelId: 'deepseek-v3.2',
   },
   {
     id: 'llama-3.3-70b',

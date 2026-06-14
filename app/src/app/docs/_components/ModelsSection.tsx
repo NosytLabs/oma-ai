@@ -25,7 +25,7 @@ export function ModelsSection() {
         id="models"
         icon={<Boxes className="h-5 w-5" />}
         title="Models"
-        subtitle="19+ models from Venice, AntSeed, OpenRouter, and Together. We route to whichever is healthiest for your prompt."
+        subtitle="91+ models from Venice, AntSeed, OpenRouter, and Together. We route to whichever is healthiest for your prompt."
         badge={`${MODEL_ROWS.length} models`}
       />
 

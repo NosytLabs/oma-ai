@@ -22,7 +22,7 @@
 
 ## 1. Overview
 
-OMA is an AI inference gateway with OpenAI-compatible API. Pay with crypto, use 50+ models.
+OMA is an AI inference gateway with OpenAI-compatible API. Pay with crypto, use 91+ models.
 
 ```
 User ──► OMA API ──► Venice AI / AntSeed / LiteLLM
@@ -38,7 +38,7 @@ User ──► OMA API ──► Venice AI / AntSeed / LiteLLM
 ### Key Features
 
 - OpenAI-compatible endpoints
-- 50+ AI models
+- 91+ AI models
 - Multi-provider failover (Venice → AntSeed → LiteLLM)
 - Rate limiting per API key (60 RPM, 120K TPM default)
 - Streaming support
@@ -3466,7 +3466,7 @@ OMA routes to multiple AI providers with automatic failover. The system uses cir
 
 | Provider | Features | Models |
 |----------|----------|--------|
-| **Venice AI** | Primary provider, most models | 50+ models |
+| **Venice AI** | Primary provider, most models | 91+ models |
 | **AntSeed** | Budget models, fast | DeepSeek, Qwen, Llama |
 | **LiteLLM** | Unified API, 100+ models | OpenAI-compatible |
 | **Together AI** | Open source models | Llama, Mistral, Qwen |

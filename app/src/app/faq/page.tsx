@@ -46,7 +46,7 @@ const GROUPS: FAQGroup[] = [
       {
         iconName: 'Cpu',
         q: 'Which models can I call?',
-        a: '19+ models across Venice and AntSeed. The live catalog is at GET /v1/models. The price list is at /pricing. All models are served OpenAI-compatible.',
+        a: '91+ models across Venice, AntSeed, OpenRouter, Together, Anthropic, and Google. The live catalog is at GET /v1/models. The price list is at /pricing. All models are served OpenAI-compatible.',
       },
       {
         iconName: 'KeyRound',

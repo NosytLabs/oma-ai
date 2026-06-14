@@ -10,7 +10,7 @@ export const openapiSpec = {
     title: "OMA AI API",
     version: "2.0.0",
     description:
-      "Permissionless AI inference gateway. Access 50+ models across multiple providers with automatic failover. Pay with crypto (USDC on Base, SOL, or any chain via LiFi/Houdini/CCTP).",
+      "Permissionless AI inference gateway. Access 91+ models across multiple providers with automatic failover. Pay with crypto (USDC on Base, SOL, or any chain via LiFi/Houdini/CCTP).",
     contact: { name: "OMA AI", url: "https://oma-ai.com" },
     license: { name: "Proprietary" },
   },

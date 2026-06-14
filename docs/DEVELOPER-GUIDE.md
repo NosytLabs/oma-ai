@@ -8,7 +8,7 @@ Pay for AI API calls with crypto. Skip account setup with OpenAI, Anthropic, and
 
 1. Deposit USDC into OMA
 2. Receive credits
-3. Call 50+ AI models via OMA's OpenAI-compatible API
+3. Call 91+ AI models via OMA's OpenAI-compatible API
 4. OMA routes requests to the optimal provider
 
 **Website:** https://oma-ai.com (currently running locally on your machine)

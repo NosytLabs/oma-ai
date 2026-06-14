@@ -3,7 +3,7 @@
  *
  * Morpheus is a decentralized, TEE-backed (Trusted Execution Environment)
  * inference network. It exposes an OpenAI-compatible API at
- * `https://api.mor.org/api/v1` with 30+ models including GLM 5, Kimi K2.5,
+ * `https://api.mor.org/api/v1` with dozens of models including GLM 5, Kimi K2.5,
  * Qwen3 Coder, Gemma 4, Arcee Trinity, and llama-3-70b. Hardware attestation
  * is performed on the provider side; no prompt/response logging occurs.
  *

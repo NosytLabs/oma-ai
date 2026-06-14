@@ -190,9 +190,9 @@ describe('app/src/app/page.tsx — LARP cleanup', () => {
     expect(src).toMatch(/One key for every model\. Pay per request in USDC/)
   })
 
-  it('retains FEATURED_MODELS for `Models ${...} of 19+ shown`', () => {
+  it('retains FEATURED_MODELS for `Models ${...} of 91+ shown`', () => {
     // The Models row should still show count
-    expect(src).toMatch(/19\+ shown/)
+    expect(src).toMatch(/91\+ shown/)
   })
 
   it('keeps the curl integration snippet', () => {
