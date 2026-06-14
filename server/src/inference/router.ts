@@ -39,9 +39,11 @@ function validateRequest(body: { model?: string; messages?: import("./types.js")
   }
 }
 
-async function callProviderWithRefund(provider: Provider, providerModelId: string, body: Record<string, unknown>, userId: string, estimatedCostCents: string): Promise<Response> {
+async function callProviderWithRefund(provider: Provider, providerModelId: string, body: Record<string, unknown>, userId: string, estimatedCostCents: string, signal?: AbortSignal): Promise<Response> {
   try {
-    return await callProvider(provider, providerModelId, body);
+    return signal !== undefined
+      ? await callProvider(provider, providerModelId, body, undefined, signal)
+      : await callProvider(provider, providerModelId, body);
   } catch (err) {
     await refundCreditsWithRetry(userId, estimatedCostCents);
     const errorType = (err as { status?: number }).status
@@ -79,7 +81,7 @@ async function handleNonStreamingResponse(
   return { response, provider, inputTokens: actualInput, outputTokens: actualOutput };
 }
 
-export async function handleChatCompletion(userId: string, apiKeyId: string, body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown }): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
+export async function handleChatCompletion(userId: string, apiKeyId: string, body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown }, signal?: AbortSignal): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
   const requestId = crypto.randomUUID();
   const requestStartTime = Date.now();
   validateRequest(body);
@@ -117,7 +119,9 @@ export async function handleChatCompletion(userId: string, apiKeyId: string, bod
       span.setAttribute(LLM_ATTRS.PROVIDER, provider);
       span.setAttribute("llm.provider_model_id", providerModelId);
 
-      const resp = await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents);
+      const resp = signal !== undefined
+        ? await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal)
+        : await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents);
 
       if (body.stream) {
         if (!resp.body) {

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
-import { MODELS } from './ChatMessage'
+import { useLiveModels } from './ChatMessage'
 
 interface SettingsPanelProps {
   temperature: number
@@ -135,6 +135,7 @@ export function SettingsPanel({
   showAdvanced, setShowAdvanced,
   model,
 }: SettingsPanelProps) {
+  const MODELS = useLiveModels()
   const selectedModel = MODELS.find(m => m.id === model)
 
   return (

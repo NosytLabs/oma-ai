@@ -221,7 +221,13 @@ export function setupWebSocket(server: HTTPServer) {
 
         sendWsJson(wsClient, { type: "processing", id: requestId });
 
-        const { response, provider, inputTokens } = await handleChatCompletion(userId, apiKeyId, payload);
+        // ponytail: thread ws close → AbortSignal so client disconnect
+        // cancels the upstream inference call.
+        const ac = new AbortController();
+        const onWsClose = () => ac.abort();
+        ws.once("close", onWsClose);
+        const { response, provider, inputTokens } = await handleChatCompletion(userId, apiKeyId, payload, ac.signal);
+        ws.off("close", onWsClose);
 
         sendWsJson(wsClient, { type: "provider", provider });
 

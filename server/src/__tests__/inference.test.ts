@@ -407,6 +407,7 @@ describe('Inference Routes', () => {
           top_p: 0.8,
           messages: [{ role: 'user', content: 'Once upon a time' }],
         }),
+        expect.any(AbortSignal),
       )
 
       const body = await res.json()

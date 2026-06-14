@@ -195,8 +195,8 @@ export abstract class BaseInferenceProvider {
     messages: ChatMessage[];
     stream?: boolean;
     [key: string]: unknown;
-  }): Promise<Response> {
-    return this.chatCompletionInternal(body);
+  }, requestSignal?: AbortSignal): Promise<Response> {
+    return this.chatCompletionInternal(body, undefined, requestSignal);
   }
 
   public async completion(body: {

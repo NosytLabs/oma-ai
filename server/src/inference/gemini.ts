@@ -199,7 +199,7 @@ class GeminiProvider extends BaseInferenceProvider {
     messages: ChatMessage[];
     stream?: boolean;
     [key: string]: unknown;
-  }): Promise<Response> {
+  }, requestSignal?: AbortSignal): Promise<Response> {
     const tracer = trace.getTracer(this.tracerName);
     return tracer.startActiveSpan(this.spanName, { kind: SpanKind.CLIENT }, async (span) => {
       try {
@@ -210,12 +210,15 @@ class GeminiProvider extends BaseInferenceProvider {
         const geminiReq = toGeminiRequest(body as GeminiRequestBody);
         const modelId = getModelId(body.model);
         const url = `${GEMINI_BASE}/${modelId}:generateContent?key=${config.GEMINI_API_KEY}`;
+        const upstreamSignal = requestSignal
+          ? AbortSignal.any([requestSignal, AbortSignal.timeout(GEMINI_TIMEOUT_MS)])
+          : AbortSignal.timeout(GEMINI_TIMEOUT_MS);
 
         const resp = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(geminiReq),
-          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+          signal: upstreamSignal,
         });
         span.setAttribute("http.status_code", resp.status);
 
@@ -339,8 +342,8 @@ export async function chatCompletion(body: {
   messages: ChatMessage[];
   stream?: boolean;
   [key: string]: unknown;
-}): Promise<Response> {
-  return provider.chatCompletion(body);
+}, signal?: AbortSignal): Promise<Response> {
+  return provider.chatCompletion(body, signal);
 }
 
 export function streamChatCompletion(body: {

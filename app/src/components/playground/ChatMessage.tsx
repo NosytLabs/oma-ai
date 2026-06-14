@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, memo } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -45,7 +45,7 @@ export interface ModelOption {
 
 export type TierFilter = 'all' | 'frontier' | 'premium' | 'mid' | 'budget' | 'reasoning' | 'coding' | 'uncensored'
 
-export const MODELS: ModelOption[] = [
+export const FALLBACK_MODELS: ModelOption[] = [
   { id: 'claude-opus-4', name: 'Claude Opus 4', category: 'frontier', provider: 'Venice', inputPer1M: 15.00, outputPer1M: 75.00, ctx: '200K' },
   { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', category: 'frontier', provider: 'Venice', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
   { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', category: 'frontier', provider: 'Venice', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
@@ -64,6 +64,66 @@ export const MODELS: ModelOption[] = [
   { id: 'free/gemini-pro', name: 'Gemini Pro (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '32K' },
   { id: 'free/llama-3-8b', name: 'Llama 3 8B (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '8K' },
 ]
+
+const LIVE_MODELS_TTL_MS = 5 * 60 * 1000
+let liveModelsCache: { data: ModelOption[]; ts: number } | null = null
+
+interface LiveModelRaw {
+  id: string
+  category?: string
+  context_length?: number
+  provider?: string
+  pricing?: { prompt?: string; completion?: string }
+}
+
+function formatCtx(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`
+  if (n >= 1000) return `${Math.round(n / 1000)}K`
+  return `${n}`
+}
+
+function mapLiveModel(m: LiveModelRaw): ModelOption {
+  const validCats: ModelOption['category'][] = ['frontier', 'premium', 'mid', 'budget', 'reasoning', 'coding', 'uncensored']
+  const cat = validCats.includes(m.category as ModelOption['category']) ? (m.category as ModelOption['category']) : 'mid'
+  const provider: ModelOption['provider'] = m.provider === 'AntSeed' ? 'AntSeed' : 'Venice'
+  return {
+    id: m.id,
+    name: m.id,
+    category: cat,
+    provider,
+    inputPer1M: m.pricing?.prompt ? parseFloat(m.pricing.prompt) * 1_000_000 : 0,
+    outputPer1M: m.pricing?.completion ? parseFloat(m.pricing.completion) * 1_000_000 : 0,
+    ctx: m.context_length ? formatCtx(m.context_length) : '128K',
+  }
+}
+
+export function useLiveModels(): ModelOption[] {
+  const [models, setModels] = useState<ModelOption[]>(() =>
+    liveModelsCache && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS
+      ? liveModelsCache.data
+      : FALLBACK_MODELS,
+  )
+
+  useEffect(() => {
+    if (liveModelsCache && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS) return
+    let cancelled = false
+    fetch('/v1/models', { credentials: 'include' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: { data?: LiveModelRaw[] } | null) => {
+        if (cancelled || !data?.data?.length) return
+        const mapped = data.data
+          .filter(m => m.category !== 'video')
+          .map(mapLiveModel)
+        if (mapped.length === 0) return
+        liveModelsCache = { data: mapped, ts: Date.now() }
+        setModels(mapped)
+      })
+      .catch(() => { /* keep fallback on error */ })
+    return () => { cancelled = true }
+  }, [])
+
+  return models
+}
 
 function formatTime(ms: number): string {
   if (ms < 1000) return `${ms}ms`

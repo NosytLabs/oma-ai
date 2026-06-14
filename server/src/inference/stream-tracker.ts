@@ -63,6 +63,29 @@ function logParseError(requestId: string, data: string, error: unknown) {
   });
 }
 
+// ponytail: SSE events end with \n\n. A single event can have multiple
+// `data:` lines that must be concatenated. Per the SSE spec, ignore lines
+// starting with `:` (comment). A bare `data:` line is treated as the string
+// "data: ". The event ends at the first blank line.
+function parseSSEBlock(block: string): { event?: string; data: string[]; id?: string } | null {
+  if (!block || block.trim() === "") return null;
+  const lines = block.split("\n");
+  const data: string[] = [];
+  let event: string | undefined;
+  let id: string | undefined;
+  for (const line of lines) {
+    if (!line || line.startsWith(":")) continue;
+    const colon = line.indexOf(":");
+    const field = colon === -1 ? line : line.slice(0, colon);
+    const value = colon === -1 ? "" : line.slice(colon + 1).replace(/^ /, "");
+    if (field === "data") data.push(value);
+    else if (field === "event") event = value;
+    else if (field === "id") id = value;
+  }
+  if (data.length === 0 && !event && !id) return null;
+  return { event, data, id };
+}
+
 interface StreamState {
   refundExecuted: boolean;
 }
@@ -121,44 +144,67 @@ export function createTrackingStream(
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
+      const processData = async (raw: string) => {
+        const data = raw.trim();
+        if (!data) return;
+        if (data === "[DONE]" && !streamCompleted) {
+          streamCompleted = true;
+          await handleStreamEnd(
+            streamState,
+            streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+            _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
+          );
+          return;
+        }
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
+          if (delta && !firstTokenReceived) {
+            firstTokenReceived = true;
+            firstTokenTime = Date.now() - streamStartTime;
+          }
+          if (delta) accumulatedContent += delta;
+          if (parsed.usage?.completion_tokens) {
+            outputTokens = parsed.usage.completion_tokens;
+            usageDataReceived = true;
+          }
+        } catch (err) {
+          logParseError(requestId, data, err);
+        }
+      };
+      const handleBlock = async (block: string) => {
+        const parsed = parseSSEBlock(block);
+        if (!parsed) return;
+        for (const d of parsed.data) {
+          await processData(d);
+        }
+        controller.enqueue(encoder.encode(block + "\n\n"));
+      };
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
 
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6).trim();
-              if (data === "[DONE]" && !streamCompleted) {
-                streamCompleted = true;
-                await handleStreamEnd(
-                  streamState,
-                  streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
-                  _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
-                );
-              } else {
-                try {
-                  const parsed = JSON.parse(data);
-                  const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
-                  if (delta && !firstTokenReceived) {
-                    firstTokenReceived = true;
-                    firstTokenTime = Date.now() - streamStartTime;
-                  }
-                  if (delta) accumulatedContent += delta;
-                  if (parsed.usage?.completion_tokens) {
-                    outputTokens = parsed.usage.completion_tokens;
-                    usageDataReceived = true;
-                  }
-                } catch (err) {
-                  logParseError(requestId, data, err);
-                }
-              }
-            }
-            controller.enqueue(encoder.encode(line + "\n"));
+          // ponytail: SSE event boundary is \n\n. Some providers (Venice) emit
+          // \n only — in that case treat each \n-terminated line as its own
+          // event. The trailing partial is held in `buffer` for the next read.
+          let blocks: string[];
+          if (buffer.includes("\n\n")) {
+            const parts = buffer.split("\n\n");
+            buffer = parts.pop() ?? "";
+            blocks = parts;
+          } else if (buffer.includes("\n")) {
+            const parts = buffer.split("\n");
+            buffer = parts.pop() ?? "";
+            blocks = parts;
+          } else {
+            continue;
+          }
+
+          for (const block of blocks) {
+            await handleBlock(block);
           }
 
           if (controller.desiredSize !== null && controller.desiredSize <= 0) {
@@ -176,6 +222,11 @@ export function createTrackingStream(
               checkSize();
             });
           }
+        }
+        // ponytail: flush any trailing partial event left in the buffer at EOF
+        if (buffer.trim()) {
+          await handleBlock(buffer);
+          buffer = "";
         }
       } catch (err) {
         try { await reader.cancel(); } catch { /* empty */ }

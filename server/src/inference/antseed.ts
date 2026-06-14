@@ -44,8 +44,8 @@ export async function chatCompletion(body: {
   messages: ChatMessage[];
   stream?: boolean;
   [key: string]: unknown;
-}): Promise<Response> {
-  return withRetry(() => provider.chatCompletion(body), {
+}, signal?: AbortSignal): Promise<Response> {
+  return withRetry(() => provider.chatCompletion(body, signal), {
     onRetry: (attempt, delay, err) => {
       console.warn(`AntSeed request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
     },

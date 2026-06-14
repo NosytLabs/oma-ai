@@ -262,7 +262,7 @@ completionsRouter.post("/v1/completions", async (c) => {
       const apiKeyId = apiKey?.id ?? "unknown";
 
       try {
-        const { response, provider } = await handleChatCompletion(userId, apiKeyId, payload);
+        const { response, provider } = await handleChatCompletion(userId, apiKeyId, payload, c.req.raw.signal);
         span?.setAttribute("llm.provider", provider);
 
         if (stream) {

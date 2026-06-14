@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Search } from 'lucide-react'
-import { TierFilter, MODELS } from './ChatMessage'
+import { TierFilter, useLiveModels } from './ChatMessage'
 
 interface ModelSelectorProps {
   model: string
@@ -26,6 +26,7 @@ export function ModelSelector({ model, setModel }: ModelSelectorProps) {
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const MODELS = useLiveModels()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -43,7 +44,7 @@ export function ModelSelector({ model, setModel }: ModelSelectorProps) {
       const matchesTier = tierFilter === 'all' || m.category === tierFilter
       return matchesSearch && matchesTier
     })
-  }, [search, tierFilter])
+  }, [search, tierFilter, MODELS])
 
   const selectedModel = MODELS.find(m => m.id === model)
 

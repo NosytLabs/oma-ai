@@ -27,6 +27,7 @@ export async function callProvider(
   providerModelId: string,
   body: Record<string, unknown>,
   correlationId?: string,
+  signal?: AbortSignal,
 ): Promise<Response> {
   const requestCorrelationId = correlationId ?? getCorrelationIdFromContext();
   const start = Date.now();
@@ -46,25 +47,45 @@ export async function callProvider(
     const reqBody = { ...body, model: providerModelId };
     let resp: Response;
     if (provider === "venice") {
-      resp = await venice.chatCompletion(reqBody as Parameters<typeof venice.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await venice.chatCompletion(reqBody as Parameters<typeof venice.chatCompletion>[0], signal)
+        : await venice.chatCompletion(reqBody as Parameters<typeof venice.chatCompletion>[0]);
     } else if (provider === "antseed") {
-      resp = await antseed.chatCompletion(reqBody as Parameters<typeof antseed.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await antseed.chatCompletion(reqBody as Parameters<typeof antseed.chatCompletion>[0], signal)
+        : await antseed.chatCompletion(reqBody as Parameters<typeof antseed.chatCompletion>[0]);
     } else if (provider === "openrouter") {
-      resp = await openrouter.chatCompletion(reqBody as Parameters<typeof openrouter.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await openrouter.chatCompletion(reqBody as Parameters<typeof openrouter.chatCompletion>[0], signal)
+        : await openrouter.chatCompletion(reqBody as Parameters<typeof openrouter.chatCompletion>[0]);
     } else if (provider === "together") {
-      resp = await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0], signal)
+        : await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0]);
     } else if (provider === "deepinfra") {
-      resp = await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0], signal)
+        : await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0]);
     } else if (provider === "morpheus") {
-      resp = await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0], signal)
+        : await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0]);
     } else if (provider === "surplus") {
-      resp = await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
+      resp = signal !== undefined
+        ? await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0], signal)
+        : await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
     } else if (provider === "claude") {
-      resp = await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0], signal)
+        : await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0]);
     } else if (provider === "gemini") {
-      resp = await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0], signal)
+        : await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0]);
     } else {
-      resp = await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0]);
+      resp = signal !== undefined
+        ? await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0], signal)
+        : await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0]);
     }
     return resp;
   })();

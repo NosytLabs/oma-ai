@@ -360,8 +360,8 @@ export async function chatCompletion(body: {
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
   [key: string]: unknown;
-}): Promise<Response> {
-  return provider.chatCompletion(buildVeniceChatCompletion(body));
+}, signal?: AbortSignal): Promise<Response> {
+  return provider.chatCompletion(buildVeniceChatCompletion(body), signal);
 }
 
 export async function completion(body: {

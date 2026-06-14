@@ -226,7 +226,7 @@ export async function chatCompletion(body: {
   messages: ChatMessage[];
   stream?: boolean;
   [key: string]: unknown;
-}): Promise<Response> {
+}, requestSignal?: AbortSignal): Promise<Response> {
   const tracer = trace.getTracer("oma-server");
   return tracer.startActiveSpan("llm.provider.claude", { kind: SpanKind.CLIENT }, async (span) => {
     try {
@@ -238,6 +238,9 @@ export async function chatCompletion(body: {
 
       const timeout = body.stream ? CLAUDE_STREAM_TIMEOUT_MS : CLAUDE_TIMEOUT_MS;
       const anthropicBody = translateRequest(body as Parameters<typeof translateRequest>[0]);
+      const upstreamSignal = requestSignal
+        ? AbortSignal.any([requestSignal, AbortSignal.timeout(timeout)])
+        : AbortSignal.timeout(timeout);
 
       let resp: Response;
       try {
@@ -245,7 +248,7 @@ export async function chatCompletion(body: {
           method: "POST",
           headers: claudeHeaders(),
           body: JSON.stringify(anthropicBody),
-          signal: AbortSignal.timeout(timeout),
+          signal: upstreamSignal,
         });
       } catch (err) {
         span.setAttribute("error", true);

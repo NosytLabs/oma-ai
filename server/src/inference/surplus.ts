@@ -114,7 +114,7 @@ export async function surplusChatCompletion(body: {
   stream?: boolean;
   minDiscountPct?: number;
   [key: string]: unknown;
-}): Promise<Response> {
+}, requestSignal?: AbortSignal): Promise<Response> {
   const tracer = trace.getTracer("oma-server");
   const endpoint = `/x402/api/inference/${SURPLUS_API_VERSION}/chat/completions`;
   const requestBody = {
@@ -135,6 +135,12 @@ export async function surplusChatCompletion(body: {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SURPLUS_TIMEOUT_MS);
+  // ponytail: thread inbound request.signal so client disconnect cancels
+  // the upstream call. Combine with the timeout controller so either
+  // trigger fires.
+  const upstreamSignal = requestSignal
+    ? AbortSignal.any([requestSignal, controller.signal])
+    : controller.signal;
 
   return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
     try {
@@ -154,7 +160,7 @@ export async function surplusChatCompletion(body: {
       const probeResponse = await surplusFetch(endpoint, {
         method: "POST",
         body: JSON.stringify(requestBody),
-        signal: controller.signal,
+        signal: upstreamSignal,
         headers: probeHeaders,
       });
 
@@ -188,7 +194,7 @@ export async function surplusChatCompletion(body: {
         const retryResponse = await surplusFetch(endpoint, {
           method: "POST",
           body: JSON.stringify(requestBody),
-          signal: controller.signal,
+          signal: upstreamSignal,
           paymentSignature: JSON.stringify(paymentSignature),
           headers: probeHeaders,
         });

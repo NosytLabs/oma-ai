@@ -1,7 +1,7 @@
 'use client'
 
 import { Send, X, MessageSquare, Coins } from 'lucide-react'
-import { MODELS } from './ChatMessage'
+import { useLiveModels } from './ChatMessage'
 
 interface MessageInputProps {
   input: string
@@ -72,6 +72,7 @@ interface CostEstimateProps {
 }
 
 export function CostEstimate({ inputText, model }: CostEstimateProps) {
+  const MODELS = useLiveModels()
   const selectedModel = MODELS.find(m => m.id === model)
   if (!selectedModel) return null
 

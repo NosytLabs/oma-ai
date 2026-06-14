@@ -109,7 +109,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           provider,
           inputTokens,
           outputTokens,
-        } = await handleChatCompletion(userId, apiKeyId, payload);
+        } = await handleChatCompletion(userId, apiKeyId, payload, c.req.raw.signal);
         span?.setAttribute("llm.provider", provider);
         if (inputTokens) span?.setAttribute("llm.tokens.input", inputTokens);
         if (outputTokens)
