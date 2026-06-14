@@ -347,7 +347,7 @@ export default function CryptoPaymentsPage() {
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-start">
               <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl">
-                OMA supports the x402 payment protocol for seamless, gasless
+                OMA supports the x402 payment protocol for gasless
                 AI inference payments on Solana and Base chains. No pre-funded
                 account, no per-key provisioning.
               </p>

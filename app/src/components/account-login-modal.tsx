@@ -12,11 +12,18 @@ import { api } from '@/lib/api'
 
 interface AccountLoginModalProps {
   onClose: () => void
+  /**
+   * Inline mode renders the modal contents without a fixed backdrop or
+   * position:fixed wrapper so the host page (e.g. /login tab panel) can
+   * embed it. `onClose` becomes a no-op since the user switches context
+   * via the host's own controls.
+   */
+  inline?: boolean
 }
 
 type Mode = 'login' | 'create' | 'success'
 
-export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
+export function AccountLoginModal({ onClose, inline = false }: AccountLoginModalProps) {
   const [mode, setMode] = useState<Mode>('login')
   const [accountNumber, setAccountNumber] = useState('')
   const [createdAccount, setCreatedAccount] = useState<string | null>(null)
@@ -160,13 +167,23 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
 
   return (
     <>
-      <div role="presentation" className="fixed inset-0 z-[100] bg-[var(--color-overlay)]/60 backdrop-blur-sm cursor-default" onClick={onClose} />
+      {!inline && (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-[100] bg-[var(--color-overlay)]/60 backdrop-blur-sm cursor-default"
+          onClick={onClose}
+        />
+      )}
       <div
         ref={modalRef}
-        className="fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl"
+        className={
+          inline
+            ? 'w-full border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl p-6'
+            : 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl'
+        }
         onClick={e => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
+        role={inline ? undefined : 'dialog'}
+        aria-modal={inline ? undefined : 'true'}
         aria-labelledby="modal-title"
       >
         <div className="flex items-center justify-between mb-4">
@@ -183,13 +200,15 @@ export function AccountLoginModal({ onClose }: AccountLoginModalProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close modal"
-            className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {!inline && (
+            <button
+              onClick={onClose}
+              aria-label="Close modal"
+              className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {error && (

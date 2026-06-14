@@ -55,7 +55,7 @@ export default function OpenRouterAlternativePage() {
           <div className="grid gap-4 md:grid-cols-2">
             {[
               { icon: Shield, title: 'Privacy-First by Design', desc: 'Unlike OpenRouter, OMA operates with minimal data retention. Your API calls don\'t require an account, and we log only what\'s essential for service delivery.' },
-              { icon: Zap, title: 'Venice-Powered Backend', desc: 'OMA routes requests through Venice, leveraging their robust infrastructure while adding intelligent routing, failover, and a credit system on top.' },
+              { icon: Zap, title: 'Venice-Powered Backend', desc: 'OMA routes requests through Venice, routing through Venice infrastructure and adding intelligent routing, failover, and a credit system on top.' },
               { icon: CreditCard, title: 'Crypto-Native Payments', desc: 'Pay with 100+ cryptocurrencies directly. No credit cards, no bank accounts, no financial surveillance. Just wallet-to-wallet simplicity.' },
               { icon: Users, title: 'Low-Friction Access', desc: 'Connect your wallet and start inferring in seconds. No KYC, no email verification, no waiting period. Permissionless by default.' },
             ].map((card, i) => (

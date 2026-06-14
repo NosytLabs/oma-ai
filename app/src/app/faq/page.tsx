@@ -8,6 +8,11 @@
  * contrast: all body text ≥ 4.5:1 on var(--color-void)
  */
 
+/* LARP cleanup (ses_larp_surgical_v1) — removed Hallmark ornament, removed
+ * decorative StatusDot uses, removed the §-prefixed SectionHeading component
+ * in favor of inline <h2>, kept FAQ content + funding-flow SVG + masthead
+ * + "answered plain." hero + btn-primary/btn-secondary classes. */
+
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -148,53 +153,6 @@ const GROUPS: FAQGroup[] = [
 
 const TOTAL = GROUPS.reduce((acc, g) => acc + g.items.length, 0)
 
-function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' }) {
-  const color =
-    tone === 'warning'
-      ? 'var(--color-warning)'
-      : tone === 'error'
-        ? 'var(--color-error)'
-        : 'var(--color-accent)'
-  return (
-    <span className="relative inline-flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
-      <span
-        className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping"
-        style={{ backgroundColor: color }}
-      />
-      <span
-        className="relative inline-flex rounded-full h-1.5 w-1.5"
-        style={{ backgroundColor: color }}
-      />
-    </span>
-  )
-}
-
-function SectionHeading({
-  index,
-  title,
-  meta,
-}: {
-  index: string
-  title: string
-  meta?: string
-}) {
-  return (
-    <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
-      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-        § {index}
-      </span>
-      <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
-        {title}
-      </h2>
-      {meta && (
-        <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-          {meta}
-        </span>
-      )}
-    </header>
-  )
-}
-
 export default function FaqPage() {
   return (
     <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
@@ -237,7 +195,14 @@ export default function FaqPage() {
           >
             <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
               <div className="min-w-0">
-                <SectionHeading index="01" title="Subject" meta={`${TOTAL} short answers`} />
+                <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
+                  <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+                    Subject
+                  </h2>
+                  <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                    {TOTAL} short answers
+                  </span>
+                </header>
 
                 <h1
                   id="subject-heading"
@@ -283,7 +248,6 @@ export default function FaqPage() {
                     Index
                   </span>
                   <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
-                    <StatusDot />
                     <span className="sr-only">Status: </span>{TOTAL} answers
                   </span>
                 </div>
@@ -334,7 +298,14 @@ export default function FaqPage() {
             aria-labelledby="funding-heading"
             className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="06" title="Funding" meta="the credit ledger in 4 steps" />
+            <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
+              <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+                Funding
+              </h2>
+              <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                the credit ledger in 4 steps
+              </span>
+            </header>
             <h3 id="funding-heading" className="sr-only">
               Funding flow
             </h3>
@@ -467,7 +438,14 @@ export default function FaqPage() {
             aria-labelledby="cta-heading"
             className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="07" title="Ask" meta="the next step" />
+            <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
+              <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+                Ask
+              </h2>
+              <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                the next step
+              </span>
+            </header>
             <h3 id="cta-heading" className="sr-only">
               Ask the team
             </h3>
@@ -478,7 +456,7 @@ export default function FaqPage() {
                 className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-accent)]"
               />
               <p className="text-[15px] sm:text-base text-[var(--color-text-bright)] max-w-2xl leading-relaxed">
-                Question not answered here. Email the team.
+                Still have questions? Email the team.
               </p>
               <p className="mt-3 text-[12px] sm:text-sm text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
                 Billing questions go to{' '}

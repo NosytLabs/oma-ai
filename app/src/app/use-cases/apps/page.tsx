@@ -86,7 +86,7 @@ export default function AppsPage() {
             Build AI-Powered Applications with One API Call
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-[var(--color-text-muted)]">
-            Integrate cutting-edge AI into your web, mobile, and desktop applications. No KYC, pay with crypto, ship faster.
+            Integrate production-ready AI into your web, mobile, and desktop applications. No KYC, pay with crypto, ship faster.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-8 py-4 text-sm font-semibold text-[var(--color-text-inverse)] shadow-lg shadow-[var(--color-accent)]/20 transition-all hover:bg-[var(--color-accent-hover)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2">

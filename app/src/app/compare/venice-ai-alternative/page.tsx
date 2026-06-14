@@ -104,7 +104,7 @@ export default function VeniceAIAlternativePage() {
               { title: 'Unified Dashboard', desc: 'Monitor usage, costs, and model performance in one place' },
               { title: 'Smart Routing', desc: 'Automatic failover and load balancing across Venice infrastructure' },
               { title: 'OMA Token Staking', desc: 'Stake OMA tokens for up to 20% discount on inference costs' },
-              { title: 'Developer Tools', desc: 'OpenAI-compatible API, making migration from other providers seamless' },
+              { title: 'Developer Tools', desc: 'OpenAI-compatible API, making migration from other providers straightforward' },
               { title: '100+ Crypto Tokens', desc: 'Pay with any of 100+ supported cryptocurrencies via Houdini Swap' },
             ].map((item, index) => (
               <motion.div

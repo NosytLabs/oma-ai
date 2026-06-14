@@ -244,6 +244,58 @@ GET /v1/models
 }
 ```
 
+#### Get Model Details
+
+```http
+GET /v1/models/:model
+```
+
+Returns detailed metadata for a single model: pricing, context length, supported features, and assigned provider.
+
+**Response:**
+
+```json
+{
+  "id": "deepseek-v4-flash",
+  "object": "model",
+  "created": 1700000000,
+  "owned_by": "oma",
+  "pricing": {
+    "prompt": "0.05",
+    "completion": "0.19"
+  },
+  "category": "budget",
+  "context_length": 128000,
+  "supports_streaming": true,
+  "provider": "antseed"
+}
+```
+
+#### Get Provider Metadata
+
+```http
+GET /v1/providers/meta
+```
+
+Returns per-provider metadata: supported model count, health, regional availability. Used to render the model picker UI on the dashboard.
+
+#### Get Circuit Breaker Status
+
+```http
+GET /v1/circuit-breaker
+Authorization: Bearer <api_key>
+```
+
+Returns the live state of every inference provider's circuit breaker (closed/open/half-open) plus the rolling error rate used to flip it. Useful for diagnosing provider outages.
+
+#### Ping
+
+```http
+GET /v1/ping
+```
+
+Lightweight liveness check. Returns `200 OK` with no body. Cheaper than `/health`.
+
 #### Embeddings
 
 ```http
@@ -645,6 +697,117 @@ Authorization: Bearer <session_token>
 }
 ```
 
+#### Delete Account
+
+```http
+DELETE /account
+Authorization: Bearer <session_token>
+```
+
+Permanently deletes the authenticated user and all associated API keys. Subscriptions are marked as canceled. This action is irreversible.
+
+#### CSRF Token
+
+```http
+GET /auth/csrf-token
+```
+
+Issues a CSRF token via `Set-Cookie` header and returns it in the response body. Required for state-changing operations initiated from the browser (e.g., account-number login).
+
+**Response:**
+
+```json
+{
+  "token": "abc123...:signature..."
+}
+```
+
+#### Set API Key Cookie
+
+```http
+POST /auth/api-key/cookie
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "apiKey": "oma_sk_xxxxx"
+}
+```
+
+Sets the API key as an HttpOnly cookie for browser-based inference. Cookie is automatically cleared on logout.
+
+#### Clear API Key Cookie
+
+```http
+DELETE /auth/api-key/cookie
+Authorization: Bearer <session_token>
+```
+
+Clears the API key cookie set via `POST /auth/api-key/cookie`.
+
+#### Two-Factor Authentication (2FA)
+
+##### Setup 2FA
+
+```http
+POST /auth/2fa/setup
+Authorization: Bearer <session_token>
+```
+
+Generates a TOTP secret. Returns the secret and an `otpauth://` URI suitable for authenticator apps (Google Authenticator, 1Password, etc.).
+
+**Response:**
+
+```json
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "otpauth": "otpauth://totp/OMA:0x...?secret=JBSWY3DPEHPK3PXP&issuer=OMA"
+}
+```
+
+##### Verify and Enable 2FA
+
+```http
+POST /auth/2fa/verify
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+```
+
+Verifies a 6-digit TOTP code from the user's authenticator app and enables 2FA for the account.
+
+##### Disable 2FA
+
+```http
+POST /auth/2fa/disable
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+```
+
+Disables 2FA after verifying a valid TOTP code.
+
+##### Get 2FA Status
+
+```http
+GET /auth/2fa/status
+Authorization: Bearer <session_token>
+```
+
+**Response:**
+
+```json
+{
+  "enabled": true
+}
+```
+
 ---
 
 ### API Keys
@@ -698,6 +861,22 @@ Content-Type: application/json
 ```
 
 > **Important:** The full API key is only shown once at creation. Store it securely.
+
+#### Update Key (Rate Limit Override)
+
+```http
+PATCH /keys/:id
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "rpm": 120,
+  "tpm": 240000,
+  "expiresAt": "2026-12-31T23:59:59Z"
+}
+```
+
+Applies a per-key rate limit override. All fields are optional; only provided fields are updated. `expiresAt` controls when the override stops applying.
 
 #### Delete Key
 
@@ -1159,25 +1338,31 @@ Content-Type: application/json
 }
 ```
 
-#### Get Deposit Status
+#### List Deposits
 
 ```http
-GET /v1/deposit/status/:id
+GET /v1/deposit/status
 Authorization: Bearer <api_key>
 ```
+
+Returns the authenticated user's deposit history (most recent first). Use `GET /v1/deposit/:depositId` to fetch a single deposit by ID.
 
 **Response:**
 
 ```json
 {
-  "id": "dep_xxx",
-  "type": "usdc",
-  "status": "completed",
-  "amountUsd": "10.00",
-  "creditsIssued": "1000",
-  "txHash": "0x...",
-  "createdAt": "2026-05-22T...",
-  "settledAt": "2026-05-22T..."
+  "deposits": [
+    {
+      "id": "dep_xxx",
+      "type": "usdc",
+      "status": "completed",
+      "amountUsd": "10.00",
+      "creditsIssued": "1000",
+      "txHash": "0x...",
+      "createdAt": "2026-05-22T...",
+      "settledAt": "2026-05-22T..."
+    }
+  ]
 }
 ```
 
@@ -1210,6 +1395,178 @@ Authorization: Bearer <api_key>
 GET /v1/notifications
 Authorization: Bearer <api_key>
 ```
+
+#### Get Single Deposit
+
+```http
+GET /v1/deposit/:depositId
+Authorization: Bearer <session_token>
+```
+
+Returns a single deposit record by ID (owned by the authenticated user).
+
+```http
+GET /v1/deposit/status/:id
+Authorization: Bearer <api_key>
+```
+
+Legacy alias for `GET /v1/deposit/:depositId`. Both return the same payload; prefer the new path.
+
+#### Get Supported Deposit Coins
+
+```http
+GET /v1/deposit/coins
+```
+
+Returns the list of supported deposit coins/tokens across all chains.
+
+#### USDC Deposit (Detailed Flow)
+
+The USDC deposit flow is split into two calls:
+
+```http
+POST /v1/deposit/usdc/nonce
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": "1000000",
+  "toAddress": "0x..."
+}
+```
+
+**Response:**
+
+```json
+{
+  "nonce": "0x...",
+  "depositId": "dep_xxx"
+}
+```
+
+```http
+POST /v1/deposit/usdc/signature
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "depositId": "dep_xxx",
+  "signature": "0x..."
+}
+```
+
+Submits the signed deposit receipt; credits are issued once the on-chain transaction confirms.
+
+#### CCTP (Cross-Chain Transfer Protocol)
+
+```http
+POST /v1/deposit/cctp
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": "1000000",
+  "sourceChain": "ethereum",
+  "destinationChain": "base"
+}
+```
+
+Initiates a USDC cross-chain transfer via Circle's CCTP.
+
+```http
+POST /v1/deposit/cctp/status
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "burnTxHash": "0x..."
+}
+```
+
+Checks the status of a CCTP transfer.
+
+```http
+GET /v1/deposit/cctp/chains
+```
+
+Returns the list of chains supported by CCTP.
+
+#### LiFi (Cross-Chain Bridge Aggregator)
+
+```http
+POST /v1/deposit/lifi
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "fromChain": "ethereum",
+  "fromToken": "USDC",
+  "toChain": "base",
+  "toToken": "USDC",
+  "amount": "1000000"
+}
+```
+
+Executes a LiFi-aggregated bridge transfer and credits the destination.
+
+```http
+POST /v1/deposit/lifi/quote
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "fromChain": "ethereum",
+  "fromToken": "USDC",
+  "toChain": "base",
+  "toToken": "USDC",
+  "amount": "1000000"
+}
+```
+
+Returns a LiFi bridge quote (routes, fees, ETA) without executing.
+
+```http
+POST /v1/deposit/lifi/check-routes
+```
+
+Validates whether a LiFi route exists between the given chains/tokens.
+
+```http
+GET /v1/deposit/lifi/chains
+```
+
+Returns the list of chains supported by LiFi.
+
+#### HoudiniSwap Additions
+
+```http
+POST /v1/deposit/houdini/payment-link
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "fromCoin": "ETH",
+  "amount": "1000000000000000000",
+  "toAddress": "0x..."
+}
+```
+
+Returns a hosted payment link for HoudiniSwap (useful for fiat on-ramp handoff).
+
+```http
+POST /v1/deposit/houdini/webhook
+```
+
+HoudiniSwap webhook callback (HMAC-signed by Houdini). Internal endpoint — do not call directly.
+
+#### Retry Specific Deposit
+
+```http
+POST /v1/deposit/:depositId/retry
+Authorization: Bearer <session_token>
+```
+
+Re-attempts settlement for a stuck deposit. Returns the updated deposit record.
 
 ---
 
@@ -1309,11 +1666,11 @@ Authorization: Bearer <api_key>
 }
 ```
 
-#### Get Usage History
+#### Get Usage History (Period)
 
 ```http
 GET /v1/usage
-Authorization: Bearer <api_key>
+Authorization: Bearer <session_token>
 ```
 
 **Response:**
@@ -1332,6 +1689,54 @@ Authorization: Bearer <api_key>
   ]
 }
 ```
+
+#### Get Recent Usage Records
+
+```http
+GET /v1/usage/recent?limit=20
+Authorization: Bearer <session_token>
+```
+
+Returns the most recent raw usage records (no aggregation). `limit` defaults to 20, max 100.
+
+**Response:**
+
+```json
+{
+  "records": [
+    {
+      "id": "use_xxx",
+      "model": "deepseek-v4-flash",
+      "provider": "antseed",
+      "inputTokens": 1500,
+      "outputTokens": 250,
+      "totalCents": "45",
+      "latencyMs": 1240,
+      "status": "completed",
+      "createdAt": "2026-05-22T..."
+    }
+  ],
+  "count": 20
+}
+```
+
+#### Get Usage Analytics (Period + By Model)
+
+```http
+GET /v1/analytics/usage?period=30d
+Authorization: Bearer <api_key>
+```
+
+Returns aggregate usage statistics over a period. `period` is one of `7d`, `30d` (default), `90d`. Includes summary totals, breakdown by model, daily usage, and top 10 models by request count.
+
+#### Get Popular Models
+
+```http
+GET /v1/analytics/models?period=30d
+Authorization: Bearer <api_key>
+```
+
+Returns the top 10 models the authenticated user has called, sorted by request count, over the given period.
 
 ---
 
@@ -1663,14 +2068,216 @@ Content-Type: application/json
 }
 ```
 
----
-
-### Queue
-
-#### Get Queue Status
+#### Get Onramp Session
 
 ```http
-GET /v1/queue/:jobId
+GET /v1/onramp/session/:id
+Authorization: Bearer <api_key>
+```
+
+Returns the current state of an onramp session (pending / completed / expired) and the credited amount.
+
+#### Onramp Webhook
+
+```http
+POST /v1/onramp/webhook
+X-Onramp-Signature: <hmac_sha256_hex>
+Content-Type: application/json
+```
+
+Internal webhook called by the onramp provider when a fiat deposit settles. The request body must be HMAC-SHA256 signed with `ONRAMP_WEBHOOK_SECRET`. Credits are issued to the session's user on successful processing.
+
+---
+
+### Refunds
+
+#### Request Refund
+
+```http
+POST /v1/refunds/request
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "depositId": "dep_xxx",
+  "reason": "service_issue"
+}
+```
+
+Initiates a refund for a completed deposit. `reason` is one of `duplicate`, `fraudulent`, `requested_by_customer`, `service_issue` (optional). Refund window: 30 days from deposit. Credits are returned within 3–5 business days.
+
+**Response:**
+
+```json
+{
+  "refundId": "refund_xxx",
+  "depositId": "dep_xxx",
+  "amount": 1000,
+  "status": "pending"
+}
+```
+
+#### Get Refund History
+
+```http
+GET /v1/refunds/history?limit=20
+Authorization: Bearer <session_token>
+```
+
+Lists all refunds (pending + completed) for the authenticated user.
+
+#### Get Refund Details
+
+```http
+GET /v1/refunds/:id
+Authorization: Bearer <session_token>
+```
+
+Returns a single refund by ID.
+
+---
+
+### Invoices
+
+#### Generate Invoice
+
+```http
+POST /v1/invoices/generate
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "periodStart": "2026-05-01T00:00:00Z",
+  "periodEnd": "2026-05-31T23:59:59Z"
+}
+```
+
+Aggregates usage and deposit data over the requested period into a new invoice. Returns the line items (per-model usage, deposit count) and the issued invoice number.
+
+#### List Invoices
+
+```http
+GET /v1/invoices?limit=20&offset=0
+Authorization: Bearer <session_token>
+```
+
+#### Get Invoice
+
+```http
+GET /v1/invoices/:id
+Authorization: Bearer <session_token>
+```
+
+#### Download Invoice (PDF/HTML)
+
+```http
+GET /v1/invoices/:id/pdf
+Authorization: Bearer <session_token>
+```
+
+Returns the invoice rendered as printable HTML (Content-Type: `text/html`). Browser-print to PDF for a download.
+
+---
+
+### Withdrawals
+
+#### Get Withdrawal Quote
+
+```http
+POST /v1/withdraw/usdc/quote
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "toAddress": "0x...",
+  "chainId": 8453
+}
+```
+
+Pre-flight check: verifies the user has enough balance and is within daily/weekly withdrawal limits. Returns the expected net amount after protocol + network fees. `chainId` defaults to Base (8453).
+
+**Response:**
+
+```json
+{
+  "amount": 100,
+  "netAmount": 99.5,
+  "protocolFee": 0.1,
+  "networkFee": 0.4,
+  "toAddress": "0x...",
+  "chainId": 8453,
+  "estimatedArrival": "5-30 minutes",
+  "validFor": 300
+}
+```
+
+#### Initiate USDC Withdrawal
+
+```http
+POST /v1/withdraw/usdc
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "toAddress": "0x...",
+  "chainId": 8453
+}
+```
+
+Debits the user's credit balance and creates a pending withdrawal record. Funds are sent to `toAddress` from the OMA treasury. The withdrawal is `pending` until confirmed on-chain.
+
+**Response:**
+
+```json
+{
+  "withdrawalId": "wdl_xxx",
+  "amount": 100,
+  "netAmount": 99.5,
+  "status": "pending",
+  "estimatedArrival": "5-30 minutes"
+}
+```
+
+#### Get Withdrawal
+
+```http
+GET /v1/withdraw/:id
+Authorization: Bearer <session_token>
+```
+
+#### Confirm Withdrawal On-Chain
+
+```http
+POST /v1/withdraw/:id/confirm
+Authorization: Bearer <session_token>
+Content-Type: application/json
+
+{
+  "txHash": "0x..."
+}
+```
+
+Submits the on-chain transaction hash for a pending withdrawal. OMA verifies the transaction on-chain (Transfer event from OMA treasury to `toAddress` with sufficient value) and marks the withdrawal `completed`.
+
+#### Withdrawal History
+
+```http
+GET /v1/withdraw/history?limit=20&offset=0
+Authorization: Bearer <session_token>
+```
+
+---
+
+### Search (TinyFish)
+
+Web search powered by TinyFish. Each query costs 1 credit. Requires a non-zero balance.
+
+#### Web Search
+
+```http
+GET /v1/search?query=latest+ai+news
 Authorization: Bearer <api_key>
 ```
 
@@ -1678,18 +2285,135 @@ Authorization: Bearer <api_key>
 
 ```json
 {
-  "jobId": "job_xxx",
-  "status": "processing",
-  "progress": 50,
-  "estimatedCompletion": "2026-05-22T..."
+  "query": "latest ai news",
+  "total_results": 10,
+  "results": [
+    {
+      "position": 1,
+      "title": "...",
+      "snippet": "...",
+      "url": "https://..."
+    }
+  ]
 }
 ```
 
-#### List Pending Jobs
+#### Streaming Web Search
 
 ```http
-GET /v1/queue
+GET /v1/search/stream?query=latest+ai+news
 Authorization: Bearer <api_key>
+```
+
+Server-Sent Events (`text/event-stream`). Each result is emitted as a `data: {...}\n\n` event, followed by `data: [DONE]`.
+
+---
+
+### Data Export
+
+Download account data as CSV or JSON. All export endpoints set a `Content-Disposition: attachment` header.
+
+#### Export Deposits
+
+```http
+GET /v1/export/deposits?format=csv&limit=100&offset=0
+Authorization: Bearer <session_token>
+```
+
+#### Export Withdrawals
+
+```http
+GET /v1/export/withdrawals?format=csv
+Authorization: Bearer <session_token>
+```
+
+#### Export Usage Records
+
+```http
+GET /v1/export/usage?format=csv&start_date=2026-01-01&end_date=2026-05-01
+Authorization: Bearer <session_token>
+```
+
+`format` is `csv` (default) or `json`. Optional `start_date` / `end_date` (ISO 8601) filter to a date range.
+
+#### Export Account Summary
+
+```http
+GET /v1/export/summary?format=json
+Authorization: Bearer <session_token>
+```
+
+Returns a single-row snapshot of the account: current balance, lifetime deposits, lifetime usage, total request count.
+
+---
+
+### Queue
+
+> **Note:** The queue subsystem manages backpressure on the inference gateway. Endpoints are only meaningful when requests are being throttled.
+
+#### Get Queue Status
+
+```http
+GET /v1/queue/status
+Authorization: Bearer <api_key>
+```
+
+Returns whether the current user has any requests in the queue, their position, and the total queue depth.
+
+**Response:**
+
+```json
+{
+  "inQueue": true,
+  "position": 3,
+  "queueDepth": 12,
+  "estimatedWaitSeconds": 6,
+  "maxDepth": 100
+}
+```
+
+#### Get Queue Position for Request
+
+```http
+GET /v1/queue/position/:requestId
+Authorization: Bearer <api_key>
+```
+
+Returns the position of a specific in-flight request within the user's queue.
+
+**Response:**
+
+```json
+{
+  "requestId": "req_xxx",
+  "position": 2,
+  "estimatedWaitSeconds": 4
+}
+```
+
+#### Get Queue Stats
+
+```http
+GET /v1/queue/stats
+Authorization: Bearer <api_key>
+```
+
+Aggregate queue statistics: total enqueued, total processed, average wait time, peak depth.
+
+#### Get Queue Depth
+
+```http
+GET /v1/queue/depth
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+
+```json
+{
+  "depth": 12,
+  "maxDepth": 100
+}
 ```
 
 ---
@@ -1742,7 +2466,7 @@ Authorization: Bearer <api_key>
 
 ### Admin API
 
-> **Note:** Admin endpoints require admin privileges.
+> **Note:** Admin endpoints require admin role. All requests need a session token (Bearer) with `role: "admin"`.
 
 #### Get Stats
 
@@ -1802,6 +2526,296 @@ Authorization: Bearer <admin_token>
 GET /admin/keys?page=1&limit=100
 Authorization: Bearer <admin_token>
 ```
+
+#### BYOK (Bring Your Own Key)
+
+BYOK lets the platform use customer-supplied provider API keys in addition to platform keys. Admins register and order them here.
+
+##### List BYOK Keys
+
+```http
+GET /admin/byok
+Authorization: Bearer <admin_token>
+```
+
+##### Add BYOK Key
+
+```http
+POST /admin/byok
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "provider": "openrouter",
+  "key": "sk-or-..."
+}
+```
+
+##### Delete BYOK Key
+
+```http
+DELETE /admin/byok/:id
+Authorization: Bearer <admin_token>
+```
+
+##### Add Venice as BYOK
+
+```http
+POST /admin/byok/venice
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "key": "sk-venice-..."
+}
+```
+
+##### Configure BYOK Ordering
+
+```http
+POST /admin/byok/ordering
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "order": ["byok:openrouter:abc", "platform:venice"]
+}
+```
+
+Sets the priority order for BYOK keys vs. platform keys. Used by the router to pick which credentials to try first.
+
+#### Admin Refunds
+
+```http
+GET /admin/refunds
+Authorization: Bearer <admin_token>
+```
+
+Lists all pending refund requests.
+
+```http
+POST /admin/refunds/:id/grant
+Authorization: Bearer <admin_token>
+```
+
+Approves a pending refund and credits the user's account.
+
+```http
+POST /admin/refunds/:id/deny
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "reason": "Outside refund window"
+}
+```
+
+Denies a pending refund.
+
+#### Admin Invoices
+
+```http
+GET /admin/invoices?limit=20
+Authorization: Bearer <admin_token>
+```
+
+```http
+GET /admin/invoices/:id
+Authorization: Bearer <admin_token>
+```
+
+```http
+POST /admin/invoices
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "userId": "user_xxx",
+  "amount": 100,
+  "lineItems": []
+}
+```
+
+#### Surplus Management
+
+Surplus lets the platform resell unused provider quota at a discount.
+
+```http
+GET /admin/surplus/config
+Authorization: Bearer <admin_token>
+```
+
+Returns the current surplus configuration (markup, model whitelist, min margin).
+
+```http
+GET /admin/surplus/health
+Authorization: Bearer <admin_token>
+```
+
+Returns the live state of the surplus pool per provider.
+
+```http
+GET /admin/surplus/models
+Authorization: Bearer <admin_token>
+```
+
+Returns the list of models currently eligible for surplus pricing.
+
+#### Admin Analytics
+
+```http
+GET /v1/admin/analytics/overview
+Authorization: Bearer <admin_token>
+```
+
+Platform-wide analytics overview: total requests, GMV, active users, top models, growth deltas.
+
+#### Audit Logs
+
+```http
+GET /v1/admin/audit-logs
+Authorization: Bearer <admin_token>
+```
+
+Returns recent audit log entries (admin actions, security events, etc.).
+
+#### Platform Config
+
+```http
+GET /v1/admin/config/fees
+Authorization: Bearer <admin_token>
+```
+
+```http
+PUT /v1/admin/config/fees
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "protocolFeePercent": 0.1,
+  "withdrawalFeePercent": 0.1
+}
+```
+
+```http
+GET /v1/admin/config/rate-limits
+Authorization: Bearer <admin_token>
+```
+
+```http
+PUT /v1/admin/config/rate-limits
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "defaultRpm": 60,
+  "defaultTpm": 120000
+}
+```
+
+#### Rate Limit Overrides
+
+Per-account/per-key rate limit overrides that take precedence over platform defaults.
+
+```http
+GET /v1/admin/rate-limit-overrides
+Authorization: Bearer <admin_token>
+```
+
+```http
+POST /v1/admin/rate-limit-overrides
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "targetType": "user",
+  "targetId": "user_xxx",
+  "rpm": 240,
+  "tpm": 500000,
+  "expiresAt": "2026-12-31T23:59:59Z"
+}
+```
+
+`targetType` is `user` or `api_key`.
+
+```http
+DELETE /v1/admin/rate-limit-overrides/:id
+Authorization: Bearer <admin_token>
+```
+
+#### Dead-Letter Queue (Settlements)
+
+```http
+GET /v1/admin/dlq/settlements
+Authorization: Bearer <admin_token>
+```
+
+Lists settlements in the dead-letter queue (deposits or withdrawals that failed finality and need manual handling).
+
+```http
+POST /v1/admin/dlq/settlements/process
+Authorization: Bearer <admin_token>
+```
+
+Re-processes the entire DLQ batch. Idempotent.
+
+```http
+POST /v1/admin/dlq/settlements/:id/retry
+Authorization: Bearer <admin_token>
+```
+
+Re-attempts a single DLQ settlement.
+
+```http
+POST /v1/admin/dlq/settlements/:id/discard
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "reason": "Unrecoverable"
+}
+```
+
+Discards a single DLQ settlement (writes it off).
+
+#### Ledger (Hot/Cold Treasury)
+
+```http
+GET /v1/admin/ledger/info
+Authorization: Bearer <admin_token>
+```
+
+Returns treasury ledger state: hot/cold balance, pending sweeps, recent transactions.
+
+```http
+GET /v1/admin/ledger/hot-vs-cold-report
+Authorization: Bearer <admin_token>
+```
+
+Returns a breakdown of assets by storage tier (hot wallet vs. cold storage).
+
+```http
+POST /v1/admin/ledger/sweep
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "amount": "1000000000",
+  "fromTier": "hot",
+  "toTier": "cold"
+}
+```
+
+Triggers a manual sweep between treasury tiers.
+
+#### Provider Usage
+
+```http
+GET /v1/admin/providers/:provider/usage
+Authorization: Bearer <admin_token>
+```
+
+Returns usage statistics (requests, tokens, cost) for a specific inference provider.
 
 ---
 

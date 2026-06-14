@@ -134,4 +134,59 @@ export const admin = {
       }>;
       pagination: { page: number; limit: number; total: number; pages: number };
     }>(`/admin/keys?page=${page}&limit=${limit}`),
+
+  // M6.1/M6.2 — operator ledger console. Server endpoints are gated by
+  // TREASURY_PRIVATE_KEY (sweep) and ADMIN_SWEEP_ADDRESS (destination).
+  ledger: {
+    info: () =>
+      request<{
+        address?: string;
+        balanceUsdc?: string;
+        lastSweptAt?: string | null;
+        recentTransfers?: Array<{
+          txHash: string;
+          direction: 'in' | 'out';
+          amountUsdc: string;
+          counterparty: string;
+          source: 'x402' | 'inference' | 'manual';
+          blockNumber: number;
+          timestamp: string;
+        }>;
+      }>('/admin/ledger/info'),
+    hotVsCold: () =>
+      request<{
+        hot: { role: string; address: string; balanceUsdc: string };
+        cold: { role: string; address: string; balanceUsdc: string };
+        lastSweep?: { amountUsdc: string; txHash: string; at: string } | null;
+      }>('/admin/ledger/hot-vs-cold-report'),
+    sweep: () => request<{ ok: boolean; txHash?: string }>('/admin/ledger/sweep', { method: 'POST' }),
+  },
+
+  // M6.4 — operator refund queue. Grant/Deny mutations write audit log rows.
+  refunds: {
+    list: () =>
+      request<{
+        refunds: Array<{
+          id: string;
+          userId: string;
+          userAddress?: string;
+          accountNumber?: string | null;
+          depositId: string;
+          amountCents: number;
+          reason: string;
+          status: 'pending' | 'granted' | 'denied';
+          createdAt: string;
+          decidedAt?: string | null;
+          decidedBy?: string | null;
+          notes?: string | null;
+        }>;
+      }>('/admin/refunds'),
+    grant: (id: string) =>
+      request<{ ok: boolean }>(`/admin/refunds/${id}/grant`, { method: 'POST' }),
+    deny: (id: string, notes: string) =>
+      request<{ ok: boolean }>(`/admin/refunds/${id}/deny`, {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      }),
+  },
 };
