@@ -108,7 +108,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
     setError('')
 
     if (!treasuryAddress) {
-      const errMsg = 'Treasury address not configured. Please set NEXT_PUBLIC_BASE_TREASURY in your environment variables. Deposits are disabled until treasury is configured.'
+      const errMsg = 'Treasury address not configured. Please set NEXT_PUBLIC_TREASURY_BASE_ADDRESS in your environment variables. Deposits are disabled until treasury is configured.'
       setError(errMsg)
       toast.error('Treasury misconfiguration detected')
       setStep('error')

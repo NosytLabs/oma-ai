@@ -29,7 +29,7 @@ export const ERC20_ABI = [
 ] as const
 
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-export const treasuryAddress = process.env.NEXT_PUBLIC_BASE_TREASURY
+export const treasuryAddress = process.env.NEXT_PUBLIC_TREASURY_BASE_ADDRESS
 
 export const POPULAR_COINS: CoinOption[] = [
   { id: 'usdc-base', symbol: 'USDC', name: 'USD Coin', network: 'Base', isNative: true, decimals: 6, isPopular: true, chain: 'base' },
