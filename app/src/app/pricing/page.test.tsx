@@ -44,7 +44,12 @@ describe('PricingPage', () => {
     await waitFor(() => {
       const frontierButton = screen.getByRole('button', { name: /frontier/i })
       fireEvent.click(frontierButton)
-      expect(screen.getByText('Claude Sonnet 4.6')).toBeInTheDocument()
+      // Frontier category includes both Claude Sonnet 4 and Claude Opus 4
+      // (per pricing/page.tsx MODELS table, lines 30-31). Use getAllByText
+      // since the click filters the table to frontier models only.
+      expect(
+        screen.getAllByText(/Claude (Sonnet|Opus) 4/).length
+      ).toBeGreaterThan(0)
     })
   })
 
