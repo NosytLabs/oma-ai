@@ -11,6 +11,7 @@ import { dlqRoutes } from "./dlq.js";
 import { auditLogsRoutes } from "./audit-logs.js";
 import { byokRoutes } from "./byok.js";
 import { surplusRoutes } from "./surplus.js";
+import { adminRefundRoutes } from "./refunds.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
@@ -18,6 +19,7 @@ adminRoutes.use("*", sessionAuth);
 adminRoutes.use("*", requireAdmin());
 adminRoutes.use("*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
 
+adminRoutes.route("/", adminRefundRoutes);
 adminRoutes.route("/", usersRoutes);
 adminRoutes.route("/", usageRoutes);
 adminRoutes.route("/", revenueRoutes);

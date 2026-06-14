@@ -86,7 +86,7 @@ describe('refundCreditsWithRetry', () => {
     vi.mocked(refundCredits).mockResolvedValue(undefined)
 
     await refundCreditsWithRetry('user-1', '100')
-    expect(refundCredits).toHaveBeenCalledWith('user-1', '100')
+    expect(refundCredits).toHaveBeenCalledWith('user-1', '100', undefined)
     expect(refundCredits).toHaveBeenCalledTimes(1)
   })
 
@@ -96,7 +96,7 @@ describe('refundCreditsWithRetry', () => {
       .mockRejectedValueOnce(new Error('DB error'))
       .mockResolvedValueOnce(undefined)
 
-    await refundCreditsWithRetry('user-1', '100', 3)
+    await refundCreditsWithRetry('user-1', '100', undefined, 3)
     expect(refundCredits).toHaveBeenCalledTimes(2)
   })
 
@@ -105,7 +105,7 @@ describe('refundCreditsWithRetry', () => {
     vi.mocked(refundCredits).mockRejectedValue(new Error('Persistent error'))
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    await refundCreditsWithRetry('user-1', '100', 2)
+    await refundCreditsWithRetry('user-1', '100', undefined, 2)
 
     expect(refundCredits).toHaveBeenCalledTimes(2)
     expect(consoleSpy).toHaveBeenCalledWith(

@@ -81,12 +81,12 @@ vi.mock('../../middleware/rate-limit.js', () => ({
 // ── Config mock (TREASURY pinned to a real-looking address) ──
 // vi.hoisted factories run BEFORE module imports, so all constants
 // used inside them must be defined inside the factory itself.
-const TREASURY = '0x0AcdFE0779f527e9BF75F52458301432EdD7633f'  // canonical server-pinned treasury
+const TREASURY = '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402'  // canonical server-pinned treasury (matches server/.env TREASURY_BASE_ADDRESS)
 const ATTACKER = '0xAtT4ckeR0000000000000000000000000000000'
 const { mockConfig } = vi.hoisted(() => ({
   mockConfig: {
-    TREASURY_BASE_ADDRESS: '0x0AcdFE0779f527e9BF75F52458301432EdD7633f',
-    HOUDINI_ADDRESS_TO: '0x0AcdFE0779f527e9BF75F52458301432EdD7633f',
+    TREASURY_BASE_ADDRESS: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
+    HOUDINI_ADDRESS_TO: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
     X402_VERSION: 'v2',
     FACILITATOR_MODE: 'mock',
   },
@@ -260,5 +260,114 @@ describe('x402 /v1/x402/proxy/chat/completions — BUG-1 payee-bypass fix', () =
       const body = await res.json() as { error: { type: string } }
       expect(body.error.type).not.toBe('invalid_payee')
     }
+  })
+})
+
+// ── Proxy implementation tests (TDD: write failing test, then implement) ──
+import { callProvider as callProviderMock } from '../../inference/call-provider.js'
+
+describe('x402 /v1/x402/proxy/chat/completions — proxy implementation (was 501)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetChain()
+  })
+
+  it('DISPATCHES to provider for valid v1 payment → 200 with X-Payment-Receipt header (no longer 501)', async () => {
+    // Mock the inference chain to return a successful Response
+    const mockResponse = new Response(
+      JSON.stringify({
+        id: 'chatcmpl-mock',
+        choices: [{ message: { role: 'assistant', content: 'hi' }, finish_reason: 'stop', index: 0 }],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )
+    vi.mocked(callProviderMock).mockResolvedValueOnce(mockResponse)
+
+    const res = await app.request('/v1/x402/proxy/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PAYMENT': JSON.stringify(makeV1PaymentSig(TREASURY)),
+      },
+      body: JSON.stringify({
+        model: 'mock-model',
+        messages: [{ role: 'user', content: 'hi' }],
+        stream: false,
+      }),
+    })
+
+    // Was 501 not_implemented before this PR. After: actual inference.
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Payment-Receipt')).toBeTruthy()
+    const json = await res.json() as { choices: Array<{ message: { content: string } }> }
+    expect(json.choices[0].message.content).toBe('hi')
+    // Confirm the inference chain was actually invoked
+    expect(vi.mocked(callProviderMock)).toHaveBeenCalledOnce()
+  })
+
+  it('STREAMS via SSE when stream=true, preserves X-Payment-Receipt header', async () => {
+    const streamBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"hi"}}]}\n\n'))
+        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+        controller.close()
+      },
+    })
+    const mockStreamResponse = new Response(streamBody, {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    })
+    vi.mocked(callProviderMock).mockResolvedValueOnce(mockStreamResponse)
+
+    const res = await app.request('/v1/x402/proxy/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PAYMENT': JSON.stringify(makeV1PaymentSig(TREASURY)),
+      },
+      body: JSON.stringify({
+        model: 'mock-model',
+        messages: [{ role: 'user', content: 'hi' }],
+        stream: true,
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/event-stream')
+    expect(res.headers.get('X-Payment-Receipt')).toBeTruthy()
+  })
+
+  it('REJECTS request with no payment header → 402', async () => {
+    const res = await app.request('/v1/x402/proxy/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock-model',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    })
+
+    expect(res.status).toBe(402)
+    const body = await res.json() as { error: { type: string } }
+    expect(body.error.type).toBe('payment_required')
+  })
+
+  it('REJECTS request with malformed JSON header → 400', async () => {
+    const res = await app.request('/v1/x402/proxy/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PAYMENT': '{not-valid-json',
+      },
+      body: JSON.stringify({
+        model: 'mock-model',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    })
+
+    expect(res.status).toBe(400)
+    const body = await res.json() as { error: { type: string } }
+    expect(body.error.type).toBe('payment_error')
   })
 })

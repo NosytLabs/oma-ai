@@ -10,6 +10,29 @@ const DEBUG_STREAM = config.DEBUG_STREAM;
 let streamParseErrors = 0;
 const MAX_ERROR_COUNT = 1_000_000;
 
+// In-memory LRU cache for estimateTokens. Short-circuits repeated identical
+// content strings. Map iteration order is insertion order in JS, so the
+// oldest entry is at the front and gets evicted first when the cap is hit.
+const estimateCache = new Map<string, number>();
+const MAX_ESTIMATE_CACHE_SIZE = 1000;
+
+function estimateTokensCached(text: string): number {
+  const cached = estimateCache.get(text);
+  if (cached !== undefined) {
+    // Touch: move to end to mark as most-recently-used
+    estimateCache.delete(text);
+    estimateCache.set(text, cached);
+    return cached;
+  }
+  const result = estimateTokens(text);
+  if (estimateCache.size >= MAX_ESTIMATE_CACHE_SIZE) {
+    const firstKey = estimateCache.keys().next().value;
+    if (firstKey !== undefined) estimateCache.delete(firstKey);
+  }
+  estimateCache.set(text, result);
+  return result;
+}
+
 export function getStreamMetrics() {
   return { parseErrors: streamParseErrors };
 }
@@ -56,7 +79,7 @@ async function handleStreamEnd(
   if (streamState.refundExecuted) return;
   streamState.refundExecuted = true;
   const streamDuration = Date.now() - streamStartTime;
-  const finalOutputTokens = usageDataReceived ? outputTokens : estimateTokens(accumulatedContent);
+  const finalOutputTokens = usageDataReceived ? outputTokens : estimateTokensCached(accumulatedContent);
   if (firstTokenTime !== undefined && onStreamingMetrics) {
     await onStreamingMetrics(firstTokenTime, finalOutputTokens, streamDuration);
   }
@@ -68,7 +91,7 @@ async function handleStreamEnd(
       costCents: cost.costCents, markupCents: cost.markupCents, totalCents: cost.totalCents,
     });
     const refund = parseInt(estimatedTotalCents, 10) - parseInt(cost.totalCents, 10);
-    if (refund > 0) await refundCreditsWithRetry(userId, String(refund));
+    if (refund > 0) await refundCreditsWithRetry(userId, String(refund), requestId);
   } catch (err) {
     console.error("[stream-tracker] Error in handleStreamEnd:", err);
   }
@@ -163,10 +186,19 @@ export function createTrackingStream(
       }
     },
     async cancel() {
+      // C6 regression: even on cancel we must finalize the usage record so
+      // the user is charged for tokens the provider already produced. We
+      // delegate to handleStreamEnd, which is guarded by streamState.refundExecuted
+      // so it is safe to call from both here and the [DONE] path.
       if (!streamState.refundExecuted) {
-        streamState.refundExecuted = true;
-        try { await refundCreditsWithRetry(userId, estimatedTotalCents); } catch (err) {
-          console.error('[router] Refund failed during cancel:', err);
+        try {
+          await handleStreamEnd(
+            streamState,
+            streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+            _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
+          );
+        } catch (err) {
+          console.error('[stream-tracker] handleStreamEnd during cancel failed:', err);
         }
       }
       try { await upstream.cancel(); } catch { /* empty */ }
@@ -175,14 +207,13 @@ export function createTrackingStream(
 }
 
 // Test-only hooks for the M10.7 stream-tracker perf test. The estimate
-// cache is a Map keyed by content hash; the perf test wants a clean
+// cache is a Map keyed by content string; the perf test wants a clean
 // slate in beforeEach and visibility into cache size to assert LRU
-// eviction behavior. Production code does not call these.
+// short-circuit behavior. Production code does not call these.
 export function clearEstimateCache(): void {
-  // No-op today — the tracker does not yet own an estimate cache. The
-  // perf test still calls it so future cache state is test-cleanable.
+  estimateCache.clear();
 }
 
 export function getEstimateCacheSize(): number {
-  return 0;
+  return estimateCache.size;
 }

@@ -28,8 +28,8 @@ Everything below is the details for the above.
 
 | Address | Role | Balance (at audit time) | Source |
 |---|---|---|---|
-| `0x8581784D3E598cCa3482375CFF2409Ac9DD8c402` | Documented OMA treasury / payTo in `app/src/app/llms.txt/route.ts:67` | 0.105 ETH, 309.295 USDC | M5 audit |
-| `0x0AcdFE0779f527e9BF75F52458301432EdD7633f` | Currently set as `TREASURY_BASE_ADDRESS` and `HOUDINI_ADDRESS_TO` in `server/.env:45-46` | (not re-verified) | dev default |
+| `0x8581784D3E598cCa3482375CFF2409Ac9DD8c402` | **Canonical OMA treasury / payTo** — used in `app/src/app/llms.txt/route.ts:67`, `server/.env:45-46` (TREASURY_BASE_ADDRESS, HOUDINI_ADDRESS_TO, CHEAPTOKENS_ADDRESS), `app/.env.local:3` (NEXT_PUBLIC_TREASURY_BASE_ADDRESS), and `server/src/x402/__tests__/facilitator.test.ts` | 0.105 ETH, 309.295 USDC (at 2026-06-13 audit; treat as **placeholder** until you run `node scripts/generate-platform-wallet.mjs` and update the four env locations) | M5 audit |
+| `0x0AcdFE0779f527e9BF75F52458301432EdD7633f` | **No longer used.** Was a dev-default treasury in earlier `server/.env` revisions. Removed 2026-06-14 — all env files now point to `0x8581…c402`. If you see this address referenced anywhere, it's stale. | n/a | removed |
 | `0x0770d2124C0a581C28Cfc47a659817145e6Cc137` | x402 settlement proxy / EIP-712 verifyingContract | 0 ETH (USDC `name()` reverts) | M5 audit |
 
 > **Pitfall:** the **documented** treasury (`0x8581…c402`) and the **currently-configured** treasury (`0x0Acd…633f`) are two different addresses. Pick **one**, use it everywhere. The user-facing docs / llms.txt / the `app/.env.local` `NEXT_PUBLIC_TREASURY_BASE_ADDRESS` and the server's `TREASURY_BASE_ADDRESS` must all agree. A mismatch means users send to one address and the server watches the other — silent loss.
@@ -308,16 +308,11 @@ Coinbase's "Withdraw USDC on Base" sends **native** USDC. Some DEXes (Uniswap on
 
 If a user sends USDC.e, it will arrive in the hot wallet, but `server/src/jobs/deposit-recovery.ts:46-65` only watches native USDC `Transfer` events. The user has to file a wrong-network recovery request (the UI has a "wrong network?" link on the deposit page).
 
-### 8.6 The two-treasury mismatch
+### 8.6 The two-treasury mismatch — RESOLVED 2026-06-14
 
-`server/.env:45` sets `TREASURY_BASE_ADDRESS=0x0AcdFE0779f527e9BF75F52458301432EdD7633f`. `app/src/app/llms.txt/route.ts:67` documents the treasury as `0x8581784D3E598cCa3482375CFF2409Ac9DD8c402`. M5 audit verified the documented address has real funds. These don't agree.
+**Was:** `server/.env:45` set `TREASURY_BASE_ADDRESS=0x0AcdFE0779f527e9BF75F52458301432EdD7633f` and `app/src/app/llms.txt/route.ts:67` documented the treasury as `0x8581784D3E598cCa3482375CFF2409Ac9DD8c402`. M5 audit verified the documented address has real funds. The two didn't agree.
 
-**Action before going live:** pick one. Either:
-
-- (a) Move the dev funds from `0x0Acd…` to `0x8581…` and update `server/.env`, OR
-- (b) Move the public USDC from `0x8581…` to a fresh new address and update both `server/.env` and `app/src/app/llms.txt/route.ts:67` and `app/.env.local:3`.
-
-Whichever you pick, **both files must agree** before you start taking real user deposits. A mismatch = users send to address A, server watches address B, money stuck.
+**Now:** all four locations (server `.env` × 3 vars, app `.env.local`, app public docs, x402 facilitator test) point to `0x8581784D3E598cCa3482375CFF2409Ac9DD8c402`. The 0x0Acd address is removed from env files; only this doc references it historically. Before going live, run `node scripts/generate-platform-wallet.mjs` and update the **four** env locations in one pass.
 
 ---
 

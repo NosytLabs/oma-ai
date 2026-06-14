@@ -16,10 +16,10 @@ export function countMessageTokens(messages: ChatMessage[]): number {
   return total;
 }
 
-export async function refundCreditsWithRetry(userId: string, amount: string, retries = 3): Promise<void> {
+export async function refundCreditsWithRetry(userId: string, amount: string, requestId?: string, retries = 3): Promise<void> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      await refundCredits(userId, amount);
+      await refundCredits(userId, amount, requestId);
       return;
     } catch (err) {
       if (attempt === retries) {

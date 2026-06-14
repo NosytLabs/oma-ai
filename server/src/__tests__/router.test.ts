@@ -98,7 +98,7 @@ describe('Router', () => {
 
   describe('handleChatCompletion', () => {
     const mockBody = {
-      model: 'claude-3',
+      model: 'llama-3.3-70b',
       messages: [{ role: 'user', content: 'hello' }],
       stream: false as const,
     }

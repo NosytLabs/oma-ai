@@ -136,7 +136,7 @@ describe('createTrackingStream', () => {
     await reader.cancel()
 
     const { refundCreditsWithRetry } = await import('../credit-preflight.js')
-    expect(refundCreditsWithRetry).toHaveBeenCalledWith('user-1', '10')
+    expect(refundCreditsWithRetry).toHaveBeenCalledWith('user-1', '6', 'req-1')
   })
 
   it('handles parse errors gracefully', async () => {

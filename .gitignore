@@ -55,3 +55,15 @@ webwright_audit/
 .vercel
 app/lighthouse.json
 app/.lighthouseci/
+
+# opencode research cache
+.opencode/docs/
+.opencode/lottie-*.png
+.opencode/assets/
+.opencode/plugins/
+.opencode/research/
+.opencode/v5-screenshots/
+
+# vibedoctor output
+.vibedoctor/
+app/.vibedoctor/
