@@ -12,6 +12,11 @@ export interface PaymentPayload {
   validBefore: number;
   validAfter: number;
   description?: string;
+  // ponytail: per-payload random nonce for replay protection. Optional for
+  // backward compat; v2 clients SHOULD include it. The verify path consumes
+  // it via Redis SETNX with NONCE_REDIS_TTL_SECONDS TTL — a second use of
+  // the same nonce returns 422 payment_replay.
+  nonce?: string;
 }
 
 export interface PaymentSignature {

@@ -77,7 +77,11 @@ async function evictOldestQuotes(redis: NonNullable<Awaited<ReturnType<typeof ge
   }
 }
 
-crosschainRoutes.post("/v1/x402/quote", async (c) => {
+// ponytail: CRIT-2 — rate-limit x402 quote/deposit to prevent abuse & drain attacks
+const x402QuoteRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 20 });
+const x402DepositRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 20 });
+
+crosschainRoutes.post("/v1/x402/quote", x402QuoteRateLimit, async (c) => {
   const parsed = quoteSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
 
@@ -173,7 +177,7 @@ crosschainRoutes.post("/v1/x402/quote", async (c) => {
   }
 });
 
-crosschainRoutes.post("/v1/x402/deposit", async (c) => {
+crosschainRoutes.post("/v1/x402/deposit", x402DepositRateLimit, async (c) => {
   const parsed = depositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
 

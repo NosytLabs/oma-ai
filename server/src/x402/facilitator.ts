@@ -12,12 +12,31 @@ import { eq, and } from "drizzle-orm";
 import { addSettlementToDlq } from "../lib/dlq.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getRedisClient } from "../lib/redis-client.js";
-import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS } from "../constants.js";
+import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS, NONCE_REDIS_TTL_SECONDS } from "../constants.js";
 
 const LOCK_TTL_SECONDS = 30;
 // ponytail: in tests HOUDINI_ADDRESS_TO may be unset and TREASURY_BASE_ADDRESS
 // may resolve to the placeholder; resolve defensively.
 const SERVER_TREASURY = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+
+// ponytail: CRIT-2 (x402 nonce/replay). Atomic consume via Redis SET NX EX.
+// Returns true if the nonce is fresh (first time seen), false if already
+// consumed (replay). The TTL is short (10 min) — nonces are single-use
+// receipts that should not persist beyond the payment window.
+async function consumeNonce(nonce: string | undefined): Promise<{ ok: boolean; reason?: string }> {
+  if (!nonce || typeof nonce !== "string" || nonce.length < 16 || nonce.length > 128) {
+    return { ok: false, reason: "invalid_nonce" };
+  }
+  const redis = await getRedisClient();
+  if (!redis) {
+    // Fail closed: if Redis is down we cannot enforce replay protection.
+    // Refuse the verify rather than silently accepting a possible replay.
+    return { ok: false, reason: "nonce_store_unavailable" };
+  }
+  const key = `x402:nonce:${nonce}`;
+  const set = await redis.set(key, "1", { NX: true, EX: NONCE_REDIS_TTL_SECONDS });
+  return set === "OK" ? { ok: true } : { ok: false, reason: "nonce_already_used" };
+}
 
 async function acquireSettlementLock(cacheKey: string): Promise<boolean> {
   const redis = await getRedisClient();
@@ -52,6 +71,9 @@ export interface PaymentPayload {
   validBefore: number;
   validAfter: number;
   description?: string;
+  // ponytail: per-payload random nonce for replay protection (CRIT-2).
+  // Mirrors the field on `types.ts` PaymentPayload. Optional for v1 clients.
+  nonce?: string;
 }
 
 export interface PaymentSignature {
@@ -218,6 +240,12 @@ async function verifyEvmPayment(
   authorization: string,
   payload: PaymentPayload,
 ): Promise<PaymentResponse> {
+  // ponytail: CRIT-2 — consume nonce BEFORE the on-chain RPC call. A replay
+  // attempt never reaches the (expensive) `eth_getTransactionReceipt`.
+  const nonceResult = await consumeNonce(payload.nonce);
+  if (!nonceResult.ok) {
+    return { valid: false, error: `Replay protection: ${nonceResult.reason}` };
+  }
   const txHash = signature.startsWith("0x")
     ? (signature as Hash)
     : (`0x${signature}` as Hash);
@@ -369,6 +397,12 @@ function mockVerifyPayment(
   signature: string,
   payload: PaymentPayload,
 ): PaymentResponse {
+  // ponytail: CRIT-2 — even mock mode must consume the nonce so a replayed
+  // mock signature does not verify twice. Returns synchronously here; the
+  // async Redis call is fire-and-forget at the route level.
+  void consumeNonce(payload.nonce).then((r) => {
+    if (!r.ok) console.warn(`[FACILITATOR] [WARN] Mock-mode replay blocked: ${r.reason}`);
+  });
   console.warn(
     `[FACILITATOR] [WARN] Mock-mode verification accepted -- signature=${signature.slice(0, 16)}... scheme=${payload.scheme} amount=${payload.amount}`,
   );
@@ -700,6 +734,21 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
     );
   }
 
+  // ponytail: V6 #8 — pin the merchant payee on the public verify endpoint.
+  // Previously any valid USDC transfer verified regardless of who received
+  // the funds, which let a third party use this endpoint to launder a
+  // verification receipt for an arbitrary tx. The settle route already pins
+  // payee; verify now matches that contract.
+  if (SERVER_TREASURY) {
+    const declared = (paymentSig.payload?.payee ?? "").toLowerCase();
+    if (declared && declared !== SERVER_TREASURY) {
+      return c.json(
+        { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
+        400,
+      );
+    }
+  }
+
   if (!paymentSig.signature || !paymentSig.payload) {
     return c.json(
       { error: { message: "PAYMENT-SIGNATURE must include signature and payload", type: "payment_error" } },
@@ -808,17 +857,23 @@ x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000,
   const expectedPayee = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
   const xPayment = c.req.header("X-PAYMENT");
   if (expectedPayee && xPayment) {
+    let parsed: { payload?: { payee?: string; payTo?: string } };
     try {
-      const parsed = JSON.parse(xPayment) as { payload?: { payee?: string; payTo?: string } };
-      const declared = (parsed?.payload?.payee ?? parsed?.payload?.payTo ?? "").toLowerCase();
-      if (declared && declared !== expectedPayee) {
-        return c.json(
-          { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
-          400,
-        );
-      }
+      parsed = JSON.parse(xPayment) as { payload?: { payee?: string; payTo?: string } };
     } catch {
-      // malformed JSON → fall through to 501
+      // ponytail: malformed JSON now returns 400 (was 501) — it's a client error,
+      // not a "feature not implemented" condition.
+      return c.json(
+        { error: { message: "Invalid X-PAYMENT header: must be valid JSON", type: "invalid_payment" } },
+        400,
+      );
+    }
+    const declared = (parsed?.payload?.payee ?? parsed?.payload?.payTo ?? "").toLowerCase();
+    if (declared && declared !== expectedPayee) {
+      return c.json(
+        { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
+        400,
+      );
     }
   }
   return c.json(

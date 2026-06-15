@@ -359,7 +359,9 @@ describe('x402 /v1/x402/proxy/chat/completions — proxy currently 501 not_imple
     expect(body.error.type).toBe('not_implemented')
   })
 
-  it('REMAINS 501 with malformed JSON header (proxy not yet enabled)', async () => {
+  it('returns 400 with malformed JSON header (V6 #11 fix)', async () => {
+    // ponytail: was 501 ("feature not implemented"), now 400 ("client error").
+    // Malformed X-PAYMENT is a malformed request, not a proxy-pending condition.
     const res = await app.request('/v1/x402/proxy/chat/completions', {
       method: 'POST',
       headers: {
@@ -372,8 +374,8 @@ describe('x402 /v1/x402/proxy/chat/completions — proxy currently 501 not_imple
       }),
     })
 
-    expect(res.status).toBe(501)
+    expect(res.status).toBe(400)
     const body = await res.json() as { error: { type: string } }
-    expect(body.error.type).toBe('not_implemented')
+    expect(body.error.type).toBe('invalid_payment')
   })
 })
