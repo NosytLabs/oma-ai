@@ -25,6 +25,17 @@ const DLQ_LISTS: Record<string, string> = {
   settlement: "settlement:dlq",
 };
 
+// ponytail: redact common PII patterns; upgrade to structured logging if audit demands it
+function redactPii(body: string): string {
+  const redacted = body
+    .replace(/(sk-[a-zA-Z0-9]{20,})/g, "[REDACTED_API_KEY]")
+    .replace(/(Bearer\s+)[a-zA-Z0-9._-]+/g, "$1[REDACTED_TOKEN]")
+    .replace(/(Authorization:\s*)[a-zA-Z0-9._-]+/g, "$1[REDACTED_TOKEN]")
+    .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, "[REDACTED_EMAIL]")
+    .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, "[REDACTED_IP]");
+  return redacted.length > 500 ? redacted.slice(0, 500) : redacted;
+}
+
 export async function addToDlq(provider: string, rawBody: string, errorMessage: string, listName: keyof typeof DLQ_LISTS = "webhook"): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) {
@@ -34,7 +45,7 @@ export async function addToDlq(provider: string, rawBody: string, errorMessage: 
 
   const entry: DlqEntry = {
     provider,
-    body: rawBody,
+    body: redactPii(rawBody),
     error: errorMessage,
     timestamp: new Date().toISOString(),
   };
