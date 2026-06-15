@@ -489,7 +489,6 @@ export default function PrivacyPage() {
                   { href: '/terms', label: 'Terms' },
                   { href: '/about', label: 'About' },
                   { href: '/pricing', label: 'Pricing' },
-                  { href: '/security', label: 'Security' },
                 ].map((l) => (
                   <li key={l.href}>
                     <Link
