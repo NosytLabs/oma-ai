@@ -5,6 +5,7 @@ import { db } from "../../db/client.js";
 import { deposits, depositNotifications } from "../../db/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { validationError } from "../../lib/validation.js";
+import { isWebhookUrlSafe } from "../../lib/url-safety.js";
 import type { OmaEnv } from "../../types.js";
 import {
   registerWebhookSubscription,
@@ -158,6 +159,17 @@ depositStatusRoutes.post("/v1/webhooks", sessionAuth, async (c) => {
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
 
   const { url, events, secret } = parsed.data;
+
+  // ponytail: v7 C3 — SSRF guard before accepting the webhook URL.
+  // Without this, an attacker can register http://169.254.169.254/latest
+  // (AWS metadata) or http://localhost:5432 (Postgres) and have the
+  // deposit-notifications worker fetch the response body. The lib
+  // `isWebhookUrlSafe` does the protocol + DNS + private-range checks
+  // and is already used by the search/fetch routes — apply it here too.
+  const safety = await isWebhookUrlSafe(url);
+  if (!safety.safe) {
+    return c.json({ error: { message: `Webhook URL rejected: ${safety.reason}`, type: "invalid_webhook_url" } }, 400);
+  }
 
   try {
     const result = await registerWebhookSubscription(userId, url, events || ["all"], secret);

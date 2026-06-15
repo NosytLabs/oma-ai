@@ -3,6 +3,7 @@ import { z } from "zod";
 import { processUsdcDeposit } from "../../credits/deposit.js";
 import { sessionAuth } from "../../auth/middleware.js";
 import { auditLog } from "../../middleware/audit.js";
+import { rateLimit } from "../../middleware/rate-limit.js";
 import { db } from "../../db/client.js";
 import { deposits } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -13,6 +14,12 @@ import { logger } from "../../lib/logger.js";
 
 const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+// ponytail: v7 C2 — rate-limit each deposit route to 10 req/min/IP.
+// Matches the x402 facilitator pattern. Prevents authenticated users from
+// spamming the DB + upstream verifyMessage CPU, and anonymous users from
+// hammering discovery endpoints (those use 30/min in their own files).
+const depositRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 10 });
 
 function generateDepositNonce(): string {
   return crypto.randomBytes(16).toString("hex");
@@ -66,7 +73,7 @@ setInterval(cleanupExpiredNonces, NONCE_CLEANUP_INTERVAL_MS).unref();
 
 export const usdcRoutes = new Hono<OmaEnv>();
 
-usdcRoutes.post("/v1/deposit/usdc/nonce", sessionAuth, async (c) => {
+usdcRoutes.post("/v1/deposit/usdc/nonce", sessionAuth, depositRateLimit, async (c) => {
   const userId = c.get("userId");
   const parsed = depositNonceSchema.safeParse(await c.req.json());
   if (!parsed.success) {
@@ -82,7 +89,7 @@ usdcRoutes.post("/v1/deposit/usdc/nonce", sessionAuth, async (c) => {
   return c.json({ nonce, expiresAt: new Date(expiresAt).toISOString() });
 });
 
-usdcRoutes.post("/v1/deposit/usdc/signature", sessionAuth, async (c) => {
+usdcRoutes.post("/v1/deposit/usdc/signature", sessionAuth, depositRateLimit, async (c) => {
   const userId = c.get("userId");
   const parsed = verifyDepositSignatureSchema.safeParse(await c.req.json());
   if (!parsed.success) {
@@ -108,9 +115,15 @@ usdcRoutes.post("/v1/deposit/usdc/signature", sessionAuth, async (c) => {
   const walletToVerify = providedWallet || nonceData.walletAddress;
   const chainIdToUse = chainId || 8453;
 
-  if (walletToVerify) {
+  // ponytail: v7 C1 — close the signature-bypass. Previously the entire
+  // verifyMessage block was gated on `if (walletToVerify)`, so a 130-char
+  // garbage signature with no wallet field would skip verification entirely.
+  if (!walletToVerify) {
+    return c.json({ error: { message: "Wallet address required for signature verification", type: "validation_error" } }, 400);
+  }
+  {
     const messageToSign = `Deposit ${amount} USDC to OMA\nTx: ${txHash}\nChain: ${chainIdToUse}\nNonce: ${nonce}\nWallet: ${walletToVerify}\n\nSigning this message confirms the deposit.`;
-    
+
     try {
       const isValid = verifyMessage({
         address: walletToVerify as `0x${string}`,
@@ -132,7 +145,7 @@ usdcRoutes.post("/v1/deposit/usdc/signature", sessionAuth, async (c) => {
   return c.json({ verified: true });
 });
 
-usdcRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
+usdcRoutes.post("/v1/deposit/usdc", sessionAuth, depositRateLimit, async (c) => {
   const userId = c.get("userId");
   const parsed = usdcDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: { message: "Invalid request", type: "validation_error", details: parsed.error.flatten() } }, 400);
@@ -156,9 +169,13 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, async (c) => {
   const walletToVerify = providedWallet || nonceData.walletAddress;
   const chainIdToUse = chainId || 8453;
 
-  if (walletToVerify) {
+  // ponytail: v7 C1 — same gate as /signature. Wallet address required.
+  if (!walletToVerify) {
+    return c.json({ error: { message: "Wallet address required for signature verification", type: "validation_error" } }, 400);
+  }
+  {
     const messageToSign = `Deposit ${amount} USDC to OMA\nTx: ${txHash}\nChain: ${chainIdToUse}\nNonce: ${nonce}\nWallet: ${walletToVerify}\n\nSigning this message confirms the deposit.`;
-    
+
     try {
       const isValid = verifyMessage({
         address: walletToVerify as `0x${string}`,
