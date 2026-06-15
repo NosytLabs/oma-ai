@@ -68,9 +68,11 @@ import { getVendorMeta, VENDOR_META, type VendorMeta } from "../inference/vendor
 // Test 1: shape — 8 providers, all 9 required fields populated.
 // ============================================================================
 describe("M10.4 vendor-meta — shape contract", () => {
-  it("returns the configured providers (8 named + duplicate litellm + gemini = 10)", async () => {
+  // ponytail: was "8 named + duplicate litellm + gemini = 10" — claude
+  // removed and duplicate litellm dropped; now 9 unique providers.
+  it("returns the configured providers (9 unique providers)", async () => {
     const providers = await getVendorMeta();
-    expect(providers).toHaveLength(10);
+    expect(providers).toHaveLength(9);
   });
 
   it("each provider has all 9 required fields (name, displayName, baseUrl, iconUrl, docsUrl, supportsStreaming, supportsTools, supportsVision, hasApiKey)", async () => {
@@ -144,9 +146,9 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("VENDOR_META constant is exported and has the same 10 entries", () => {
+  it("VENDOR_META constant is exported and has the same 9 entries", () => {
     expect(Array.isArray(VENDOR_META)).toBe(true);
-    expect(VENDOR_META).toHaveLength(10);
+    expect(VENDOR_META).toHaveLength(9);
     // The const is `as const` (readonly tuple-like); we still expect each
     // entry to satisfy the same field contract.
     for (const p of VENDOR_META) {

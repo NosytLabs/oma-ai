@@ -135,9 +135,3 @@ export async function selectProvider(model: string): Promise<{ provider: Provide
   logger.error({ model, type: 'no_provider_available' }, "[router] No available provider for model");
   throw Object.assign(new Error("All inference providers are currently unavailable. Please try again later."), { status: 503 });
 }
-
-export { callProvider } from "./call-provider.js";
-
-export async function routeInference(modelId: string): Promise<{ provider: Provider; providerModelId: string }> {
-  return selectProvider(modelId);
-}

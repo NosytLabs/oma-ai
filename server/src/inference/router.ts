@@ -18,7 +18,6 @@ import {
 export { getModelPricing } from "./billing-service.js";
 export { getStreamMetrics };
 export { selectProvider };
-export { routeInference } from "./provider-selector.js";
 export type { Provider } from "./provider-selector.js";
 
 const MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024;
