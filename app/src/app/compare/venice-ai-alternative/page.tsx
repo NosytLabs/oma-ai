@@ -103,7 +103,7 @@ export default function VeniceAIAlternativePage() {
               { title: 'Credit System', desc: 'Pre-purchase tokens and pay as you go without per-request blockchain overhead' },
               { title: 'Unified Dashboard', desc: 'Monitor usage, costs, and model performance in one place' },
               { title: 'Smart Routing', desc: 'Automatic failover and load balancing across Venice infrastructure' },
-              { title: 'OMA Token Staking', desc: 'Stake OMA tokens for up to 20% discount on inference costs' },
+              { title: 'Competitive Pricing', desc: 'Transparent per-token pricing with no hidden fees or surprise charges' },
               { title: 'Developer Tools', desc: 'OpenAI-compatible API, making migration from other providers straightforward' },
               { title: '100+ Crypto Tokens', desc: 'Pay with any of 100+ supported cryptocurrencies via Houdini Swap' },
             ].map((item, index) => (

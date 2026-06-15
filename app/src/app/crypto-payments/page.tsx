@@ -1,6 +1,6 @@
 /* Hallmark · P4 H5 E5 S5 R4 V4
  * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
- * sections: masthead · subject · payment-features · x402 · tokens · wallets · flow · payment-links · oma-token · procurement
+ * sections: masthead · subject · payment-features · x402 · tokens · wallets · flow · payment-links · procurement
  * states (CTA buttons): default · hover · focus-visible · active · disabled · aria-disabled · loading · success
  * copy: stop-slop pass — active voice, no adverbs, no "not X, it's Y" contrasts, no em dashes,
  *       no invented metrics, no quote-bait.
@@ -44,7 +44,6 @@ const SUPPORTED_TOKENS = [
   { name: 'USDT', symbol: 'USDT' },
   { name: 'DAI', symbol: 'DAI' },
   { name: 'WBTC', symbol: 'WBTC' },
-  { name: 'OMA', symbol: 'OMA' },
   { name: 'SOL', symbol: 'SOL' },
   { name: 'MATIC', symbol: 'MATIC' },
 ] as const
@@ -53,7 +52,7 @@ const PAYMENT_FEATURES = [
   {
     icon: Coins,
     title: '100+ supported tokens',
-    body: 'Pay with ETH, USDC, USDT, DAI, WBTC, SOL, MATIC, OMA, and 100+ other tokens directly from your wallet.',
+    body: 'Pay with ETH, USDC, USDT, DAI, WBTC, SOL, MATIC, and 100+ other tokens directly from your wallet.',
   },
   {
     icon: Zap,
@@ -109,13 +108,6 @@ const HOW_IT_STEPS = [
   { idx: '04', title: 'Start inferring', body: 'Use credits immediately for any supported model. No waiting, no approval needed.' },
 ] as const
 
-const OMA_BENEFITS = [
-  '5% bonus credits on OMA deposits (subject to circuit-breaker conditions)',
-  'Up to 20% discount on inference costs when staking OMA',
-  'Governance participation in future protocol decisions',
-  'Priority access to new model releases',
-] as const
-
 const SECTIONS = [
   { idx: '02', id: 'features', title: 'Payment features', meta: 'core surface' },
   { idx: '03', id: 'x402', title: 'x402 protocol', meta: 'per-request' },
@@ -123,8 +115,7 @@ const SECTIONS = [
   { idx: '05', id: 'wallets', title: 'Supported wallets', meta: 'self-custody' },
   { idx: '06', id: 'flow', title: 'How it works', meta: 'four steps' },
   { idx: '07', id: 'payment-links', title: 'Payment links', meta: 'no wallet required' },
-  { idx: '08', id: 'oma-token', title: 'OMA token', meta: 'bonus · discount' },
-  { idx: '09', id: 'procurement', title: 'Procurement', meta: 'next step' },
+  { idx: '08', id: 'procurement', title: 'Procurement', meta: 'next step' },
 ] as const
 
 function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' }) {
@@ -541,54 +532,13 @@ export default function CryptoPaymentsPage() {
             </div>
           </section>
 
-          {/* ===== § 08 OMA TOKEN ===== */}
-          <section
-            id="oma-token"
-            aria-labelledby="oma-token-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
-          >
-            <SectionHeading index="08" title="OMA token" meta="bonus · discount" />
-            <h3 id="oma-token-heading" className="sr-only">
-              OMA token benefits
-            </h3>
-
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start">
-              <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl">
-                Paying with OMA tokens unlocks additional benefits for power
-                users. Discounts and bonuses stack where the protocol allows;
-                circuit-breaker conditions may apply.
-              </p>
-              <ul className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
-                {OMA_BENEFITS.map((item, i) => (
-                  <li
-                    key={item}
-                    className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 px-3 sm:px-4 py-3"
-                  >
-                    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="flex items-start gap-3">
-                      <CheckCircle2
-                        className="h-4 w-4 shrink-0 text-[var(--color-accent)] mt-0.5"
-                        aria-hidden="true"
-                      />
-                      <span className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
-                        {item}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* ===== § 09 PROCUREMENT ===== */}
+          {/* ===== § 08 PROCUREMENT ===== */}
           <section
             id="procurement"
             aria-labelledby="procurement-heading"
             className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="09" title="Procurement" meta="next step" />
+            <SectionHeading index="08" title="Procurement" meta="next step" />
             <h3 id="procurement-heading" className="sr-only">
               Ready to deposit
             </h3>

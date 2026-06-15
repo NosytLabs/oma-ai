@@ -3,7 +3,7 @@ import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
 
 export const metadata: Metadata = {
   title: 'Deposit Credits',
-  description: 'Deposit funds to your OMA AI account. Supports USDC on Base and Solana, OMA token staking with 5% bonus, and 100+ cryptocurrencies via HoudiniSwap.',
+  description: 'Deposit funds to your OMA AI account. Supports USDC on Base and Solana, and 100+ cryptocurrencies via HoudiniSwap.',
   robots: {
     index: true,
     follow: true,

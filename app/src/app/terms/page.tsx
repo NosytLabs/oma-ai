@@ -350,8 +350,8 @@ export default function TermsPage() {
               {[
                 ['Non-redeemable', 'Credits are not redeemable for cash and are non-transferable; they expire after 12 months.'],
                 ['Per-token deduction', 'Credits are consumed per token processed and are deducted in real time at settlement.'],
-                ['OMA token bonus', 'OMA token deposits include a 5% bonus subject to circuit-breaker conditions.'],
-                ['Staking discounts', 'Staking discounts apply to inference costs only and cannot exceed 20% combined.'],
+                ['Deposit bonus', 'Selected deposit methods may include a bonus subject to circuit-breaker conditions.'],
+                ['Volume discounts', 'Volume discounts apply to inference costs for high-usage accounts.'],
               ].map(([title, body], i) => (
                 <li
                   key={title}
@@ -399,7 +399,7 @@ export default function TermsPage() {
                 <ul className="space-y-3">
                   <RulePoint detail="All remaining credits are forfeited." tone="error" />
                   <RulePoint detail="API keys are revoked immediately." tone="error" />
-                  <RulePoint detail="Staked OMA is returned after the standard cooldown period." tone="error" />
+                  <RulePoint detail="Unused credits are forfeited upon termination." tone="error" />
                 </ul>
               </div>
               <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">

@@ -69,14 +69,6 @@ export const ROUTES: Record<string, RouteInfo> = {
     feePercent: 0,
     creditMultiplier: 1.0,
   },
-  'oma-stake': {
-    type: 'houdini-swap',
-    label: 'Swap + Deposit',
-    description: 'Convert OMA to USDC via Houdini and deposit',
-    estimatedTime: '5-15 min',
-    feePercent: 0.5,
-    creditMultiplier: 1.0,
-  },
   'houdini-swap': {
     type: 'houdini-swap',
     label: 'Swap + Deposit',

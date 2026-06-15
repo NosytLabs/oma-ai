@@ -62,7 +62,7 @@ export default function CheapTokensAlternativePage() {
             {[
               { icon: TrendingDown, label: '01', title: 'Competitive Rates', desc: 'OMA passes through Venice\'s competitive model pricing with a transparent credit system. No hidden fees or surprise charges.' },
               { icon: Wallet, label: '02', title: 'Crypto-Native Payments', desc: 'Pay with 100+ cryptocurrencies. No credit cards needed. Wallet-to-wallet simplicity with no financial surveillance.' },
-              { icon: Coins, label: '03', title: 'Stake for Discounts', desc: 'Stake OMA tokens to receive up to 20% discount on inference costs. The more you stake, the more you save.' },
+              { icon: Coins, label: '03', title: 'Credit System', desc: 'Pre-purchase credits with crypto and pay as you go. No per-request blockchain overhead and full transparency on usage.' },
             ].map((card, i) => (
               <motion.div
                 key={i}
@@ -106,7 +106,7 @@ export default function CheapTokensAlternativePage() {
               { title: 'No Account Required', desc: 'Connect your wallet and start inferring in seconds. No email, no waiting period. Low-friction access for builders.' },
               { title: '100+ Crypto Tokens', desc: 'Pay with any supported cryptocurrency via Houdini Swap integration.' },
               { title: 'Credit System', desc: 'Pre-purchase credits and pay as you go without per-request blockchain overhead.' },
-              { title: 'Staking Discounts', desc: 'Up to 20% discount when you stake OMA tokens for inference credits.' },
+              { title: 'Multi-Provider Routing', desc: 'Access models across Venice, OpenRouter, Together, and more through a single API.' },
               { title: 'OpenAI-Compatible API', desc: 'Easy migration from CheapTokens or other providers with our OpenAI-compatible endpoint.' },
               { title: 'Dashboard Analytics', desc: 'Track usage, monitor costs, and analyze model performance in real-time.' },
             ].map((item, index) => (
@@ -155,7 +155,7 @@ export default function CheapTokensAlternativePage() {
                 {[
                   { feature: 'Account Required', cheap: 'Yes', oma: 'No', highlight: true },
                   { feature: 'Crypto Payments', cheap: 'Limited', oma: '100+ Tokens', highlight: true },
-                  { feature: 'Staking Discounts', cheap: 'No', oma: 'Up to 20%', highlight: true },
+                  { feature: 'Multi-Provider', cheap: 'No', oma: 'Yes', highlight: true },
                   { feature: 'Credit System', cheap: 'No', oma: 'Yes', highlight: true },
                   { feature: 'Dashboard', cheap: 'Limited', oma: 'Full Analytics', highlight: false },
                 ].map((row, i) => (
