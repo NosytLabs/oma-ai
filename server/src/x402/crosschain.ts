@@ -77,7 +77,7 @@ async function evictOldestQuotes(redis: NonNullable<Awaited<ReturnType<typeof ge
   }
 }
 
-// ponytail: CRIT-2 — rate-limit x402 quote/deposit to prevent abuse & drain attacks
+// ponytail: CRIT-2 — rate-limit Houdini crosschain quote/deposit (not x402 protocol) to prevent abuse & drain attacks
 const x402QuoteRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 20 });
 const x402DepositRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 20 });
 
