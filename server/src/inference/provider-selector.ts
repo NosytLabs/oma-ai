@@ -16,8 +16,9 @@ export const ALL_PROVIDERS: Provider[] = SURPLUS_ENABLED
   ? ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"]
   : ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "morpheus", "claude", "gemini"];
 
-const OPENSOURCE_PREFIXES = ["llama-", "mixtral-", "qwen-", "deepseek-", "mistral/", "gemma-", "phi-", "solar-", "command-r", "yi-", "starcoder", "codestral", "wizardlm", "dbrx", "nous-", "dolphin-", "toppy-", "mythomax", "openchat", "zephyr", "minimax", "antseed/"];
-
+// ponytail: OPENSOURCE_PREFIXES was a dead loop — every miss fell through to
+// `return "antseed"` below. Removed. If a future provider wants to claim
+// open-source-prefix routing, add a guarded branch above the default.
 function inferProviderFromModel(model: string): Provider {
   if (model.startsWith("openrouter/") || model.startsWith("openai/")) return "openrouter";
   if (model.startsWith("litellm/")) return "litellm";
@@ -26,9 +27,6 @@ function inferProviderFromModel(model: string): Provider {
   if (model.startsWith("morpheus/") || model.startsWith("mor/")) return "morpheus";
   if (model.startsWith("claude-")) return "claude";
   if (model.startsWith("gemini-")) return "gemini";
-  for (const prefix of OPENSOURCE_PREFIXES) {
-    if (model.startsWith(prefix)) return "antseed";
-  }
   return "antseed";
 }
 

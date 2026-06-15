@@ -1,4 +1,7 @@
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
 import { logger } from "../lib/logger.js";
@@ -321,10 +324,9 @@ async function signPayment(
   const chainId = config.SURPLUS_CHAIN_ID ?? 8453;
 
   try {
-    const { createWalletClient, http } = await import("viem");
-    const { privateKeyToAccount } = await import("viem/accounts");
-    const { base } = await import("viem/chains");
-
+    // ponytail: dynamic viem imports removed (V6 #7). The static imports above
+    // amortize the cost across calls. Previous dynamic-import approach added
+    // 100-300ms latency on first call.
     const account = privateKeyToAccount(`0x${walletPrivateKey.replace("0x", "")}`);
     const walletClient = createWalletClient({
       account,

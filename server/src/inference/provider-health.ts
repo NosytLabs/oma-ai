@@ -72,9 +72,6 @@ export function stopCacheCleanup(): void {
   }
 }
 
-const pendingRequests = new Map<Provider, Set<string>>();
-const MAX_PENDING_PER_PROVIDER = 3;
-
 const lastTrafficAt = new Map<Provider, number>();
 const PROBE_INTERVAL_MS = 45_000;
 const IDLE_THRESHOLD_MS = 60_000;
@@ -315,26 +312,7 @@ export async function isProviderAvailable(provider: Provider): Promise<boolean> 
   }
 
   if (!h.isUp) return false;
-  const pending = pendingRequests.get(provider);
-  if (pending && pending.size >= MAX_PENDING_PER_PROVIDER) return false;
   return true;
-}
-
-export function reserveProvider(provider: Provider, requestId: string): boolean {
-  const pending = pendingRequests.get(provider) ?? new Set();
-  if (pending.size >= MAX_PENDING_PER_PROVIDER) return false;
-  pending.add(requestId);
-  pendingRequests.set(provider, pending);
-  return true;
-}
-
-export function releaseProvider(provider: Provider, requestId: string): void {
-  const pending = pendingRequests.get(provider);
-  if (pending) {
-    pending.delete(requestId);
-    if (pending.size === 0) pendingRequests.delete(provider);
-    else pendingRequests.set(provider, pending);
-  }
 }
 
 export function recordTraffic(provider: Provider): void {

@@ -3,6 +3,7 @@ import { calculateActualCost } from "./billing-service.js";
 import { recordUsage } from "./usage-service.js";
 import { refundCreditsWithRetry } from "./credit-preflight.js";
 import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 import type { ModelDef } from "./models.js";
 import type { ModelPricing } from "./types.js";
 
@@ -116,7 +117,7 @@ async function handleStreamEnd(
     const refund = parseInt(estimatedTotalCents, 10) - parseInt(cost.totalCents, 10);
     if (refund > 0) await refundCreditsWithRetry(userId, String(refund), requestId);
   } catch (err) {
-    console.error("[stream-tracker] Error in handleStreamEnd:", err);
+    logger.error({ err, requestId }, "[stream-tracker] Error in handleStreamEnd");
   }
 }
 
@@ -233,6 +234,21 @@ export function createTrackingStream(
         controller.error(err);
       } finally {
         reader.releaseLock();
+        // ponytail: streaming audit #2 — on EOF without [DONE] (proxy kill,
+        // socket reset) we still owe the user a charge. handleStreamEnd is
+        // idempotent (guarded by streamState.refundExecuted), safe from both
+        // [DONE] and this path.
+        if (!streamState.refundExecuted) {
+          try {
+            await handleStreamEnd(
+              streamState,
+              streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+              _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
+            );
+          } catch (err) {
+            logger.error({ err, requestId }, "[stream-tracker] handleStreamEnd at EOF failed");
+          }
+        }
         controller.close();
       }
     },
@@ -249,7 +265,7 @@ export function createTrackingStream(
             _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
           );
         } catch (err) {
-          console.error('[stream-tracker] handleStreamEnd during cancel failed:', err);
+          logger.error({ err, requestId }, "[stream-tracker] handleStreamEnd during cancel failed");
         }
       }
       try { await upstream.cancel(); } catch { /* empty */ }

@@ -71,13 +71,13 @@ describe('callProvider', () => {
     expect(chatCompletion).toHaveBeenCalled()
   })
 
-  it('routes to litellm provider', async () => {
-    const mockResp = new Response('ok', { status: 200 })
-    const { chatCompletion } = await import('../litellm.js')
-    vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-
-    await callProvider('litellm', 'test-model', mockBody)
-    expect(chatCompletion).toHaveBeenCalled()
+  it('throws on unknown provider (no silent litellm fallthrough)', async () => {
+    // ponytail: the previous `else` branch silently routed typos to litellm.
+    // The dispatch is now strict; unknown provider names must surface as 500
+    // so monitoring catches them. The type system prevents most of these at
+    // compile time, but `as Provider` casts in tests / scripts can still drift.
+    const unknown = 'not-a-real-provider' as unknown as Parameters<typeof callProvider>[0]
+    await expect(callProvider(unknown, 'test-model', mockBody)).rejects.toThrow(/Unknown inference provider/)
   })
 
   it('reports provider success on successful call', async () => {

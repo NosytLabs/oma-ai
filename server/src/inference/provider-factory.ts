@@ -11,8 +11,11 @@ export interface ProviderEndpoints {
   health?: string;
 }
 
+// ponytail: "tinyfish" removed from the type union — not wired in provider-selector.
+// If you wire it (Web-search MCP path), add it back here AND to provider-selector's
+// `Provider` union AND to ALL_PROVIDERS, plus a dispatch branch in call-provider.
 export interface ProviderFactoryConfig {
-  name: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "surplus" | "morpheus" | "claude" | "gemini";
+  name: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
   apiKeyConfigPath?: string;
   baseUrl: string;
   endpoints: ProviderEndpoints;
@@ -74,7 +77,7 @@ export function createProvider<T extends BaseInferenceProvider>(
 }
 
 export async function healthCheck(
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish" | "surplus" | "morpheus" | "claude" | "gemini",
+  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini",
   baseUrl: string,
   healthPath: string,
   timeoutMs: number = DEFAULT_HEALTH_CHECK_TIMEOUT_MS

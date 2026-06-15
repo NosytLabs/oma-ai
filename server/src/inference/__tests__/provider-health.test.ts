@@ -48,8 +48,6 @@ import {
   checkProviderHealth,
   reportProviderResult,
   isProviderAvailable,
-  reserveProvider,
-  releaseProvider,
   recordTraffic,
   startBackgroundProbing,
   stopBackgroundProbing,
@@ -246,44 +244,6 @@ describe('isProviderAvailable', () => {
 
     const h = await checkProviderHealth('test-avail-redis' as any)
     expect(h.state).toBe(CircuitState.HALF_OPEN)
-  })
-
-  it('returns false when pending request limit is reached', async () => {
-    await checkProviderHealth('test-avail-pending' as any)
-    reserveProvider('test-avail-pending' as any, 'req-1')
-    reserveProvider('test-avail-pending' as any, 'req-2')
-    reserveProvider('test-avail-pending' as any, 'req-3')
-
-    expect(await isProviderAvailable('test-avail-pending' as any)).toBe(false)
-  })
-})
-
-describe('reserveProvider / releaseProvider', () => {
-  it('reserves a slot when under the limit', () => {
-    expect(reserveProvider('test-reserve' as any, 'req-1')).toBe(true)
-  })
-
-  it('returns false when MAX_PENDING_PER_PROVIDER (3) is reached', () => {
-    expect(reserveProvider('test-reserve' as any, 'req-1')).toBe(true)
-    expect(reserveProvider('test-reserve' as any, 'req-2')).toBe(true)
-    expect(reserveProvider('test-reserve' as any, 'req-3')).toBe(true)
-    expect(reserveProvider('test-reserve' as any, 'req-4')).toBe(false)
-  })
-
-  it('releases a reservation and allows new reserves', () => {
-    releaseProvider('test-reserve' as any, 'req-2')
-    expect(reserveProvider('test-reserve' as any, 'req-4')).toBe(true)
-  })
-
-  it('does not throw when releasing for an unknown provider', () => {
-    expect(() => releaseProvider('test-unknown' as any, 'req-1')).not.toThrow()
-  })
-
-  it('cleans up empty pending set after releasing last reservation', () => {
-    releaseProvider('test-reserve' as any, 'req-1')
-    releaseProvider('test-reserve' as any, 'req-3')
-    releaseProvider('test-reserve' as any, 'req-4')
-    expect(reserveProvider('test-reserve' as any, 'req-5')).toBe(true)
   })
 })
 

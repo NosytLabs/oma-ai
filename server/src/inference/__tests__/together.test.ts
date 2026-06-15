@@ -32,8 +32,6 @@ vi.mock("../provider-health.js", () => ({
   reportProviderResult: vi.fn().mockResolvedValue(undefined),
   checkProviderHealth: vi.fn().mockResolvedValue({ isUp: true, latencyMs: 10, errorRate: 0 }),
   isProviderAvailable: vi.fn().mockResolvedValue(true),
-  reserveProvider: vi.fn().mockReturnValue(true),
-  releaseProvider: vi.fn(),
 }));
 
 vi.mock("../base.js", async (importOriginal) => {

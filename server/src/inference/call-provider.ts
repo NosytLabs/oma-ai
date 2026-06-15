@@ -1,6 +1,9 @@
 import * as venice from "./venice.js";
 import * as antseed from "./antseed.js";
-import * as litellm from "./litellm.js";
+// ponytail: litellm removed from dispatch — the previous `else` fallthrough is
+// gone (now throws on unknown provider). litellm.ts itself is still useful as
+// a directly-instantiable provider if someone wires it through the explicit
+// if/else chain.
 import * as openrouter from "./openrouter.js";
 import * as together from "./together.js";
 import * as deepinfra from "./deepinfra.js";
@@ -15,6 +18,7 @@ import type { Provider } from "./provider-selector.js";
 import { config } from "../config.js";
 import { trace } from "@opentelemetry/api";
 import { logger } from "../lib/logger.js";
+import { redactPii } from "../lib/privacy.js";
 
 function getCorrelationIdFromContext(): string | undefined {
   const span = trace.getActiveSpan();
@@ -83,9 +87,13 @@ export async function callProvider(
         ? await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0], signal)
         : await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0]);
     } else {
-      resp = signal !== undefined
-        ? await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0], signal)
-        : await litellm.chatCompletion(reqBody as Parameters<typeof litellm.chatCompletion>[0]);
+      // ponytail: previously fell through to litellm, which silently masked
+      // typos in provider names. Surface the unknown provider so the upstream
+      // error is visible in monitoring.
+      throw Object.assign(
+        new Error(`Unknown inference provider: ${String(provider)}`),
+        { status: 500, provider, type: PROVIDER_ERROR_TYPES.UNKNOWN_ERROR }
+      );
     }
     return resp;
   })();
@@ -108,12 +116,17 @@ export async function callProvider(
     await reportProviderResult(provider, false, Date.now() - start);
     await recordProviderError(provider, providerModelId);
 
-    const requestBody = body;
+    // ponytail: V6 #10 — redact PII/sensitive fields from the request body
+    // before attaching to the error / structured log. Stops user prompts,
+    // API keys, and private-key-shaped strings from landing in error
+    // monitoring. Recursive, key- and value-aware. Addresses (0x + 40 hex)
+    // are kept on purpose.
+    const redactedBody = redactPii(body);
     const errorWithContext = Object.assign(err instanceof Error ? err : new Error(String(err)), {
       provider,
       modelId: providerModelId,
       correlationId: requestCorrelationId,
-      requestBody,
+      requestBody: redactedBody,
       type: PROVIDER_ERROR_TYPES.UNKNOWN_ERROR,
     });
 
@@ -121,7 +134,7 @@ export async function callProvider(
       provider,
       modelId: providerModelId,
       correlationId: requestCorrelationId,
-      requestBody,
+      requestBody: redactedBody,
       error: err instanceof Error ? err.message : String(err),
       type: 'provider_error'
     });
