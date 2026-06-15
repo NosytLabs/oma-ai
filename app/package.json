@@ -24,6 +24,7 @@
     "ethers": "^6.13.4",
     "framer-motion": "^12.40.0",
     "jose": "^5.10.0",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.469.0",
     "next": "^15.5.16",
     "porto": "^0.2.37",
