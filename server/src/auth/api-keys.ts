@@ -358,6 +358,10 @@ export async function refreshApiKey(userId: string, keyId: string) {
   const [created] = await db.insert(apiKeys).values({
     userId,
     name: existing.name,
+    // ponytail: v7 H2 — preserve IP allowlist on key rotation. Previously the
+    // refreshed key dropped ipAllowlist silently, regressing the security
+    // posture for users who had set an allowlist.
+    ipAllowlist: existing.ipAllowlist,
     keyHash,
     keyPrefix,
     active: true,

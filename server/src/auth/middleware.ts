@@ -141,6 +141,18 @@ export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
   if (rawKey) {
     const apiKey = await validateApiKey(rawKey);
     if (apiKey) {
+      // ponytail: v7 H1 — enforce IP allowlist on optionalAuth too. Previously
+      // a key with ipAllowlist set would be accepted from any IP if the route
+      // used optionalAuth instead of bearerAuth.
+      if (apiKey.ipAllowlist && Array.isArray(apiKey.ipAllowlist) && apiKey.ipAllowlist.length > 0) {
+        const clientIp = extractClientIp(c);
+        if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
+          // optionalAuth doesn't return errors — it just doesn't set the context.
+          // Drop the key silently so the route treats the request as anonymous.
+          await next();
+          return;
+        }
+      }
       c.set("apiKey", apiKey);
       c.set("userId", apiKey.userId);
     }

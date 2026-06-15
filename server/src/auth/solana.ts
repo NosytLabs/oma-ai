@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import nacl from "tweetnacl";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
+import { config } from "../config.js";
 
 const NONCE_TTL_MS = 10 * 60 * 1000;
 
@@ -16,11 +17,27 @@ function assertValidSolanaAddress(address: string): string {
   }
 }
 
+// ponytail: network derived from RPC URL — default mainnet, devnet when
+// SOLANA_RPC_URL points to a devnet endpoint. Cheap string match avoids
+// a new config var. If a multi-network future lands, swap for SOLANA_NETWORK.
+function resolveSolanaNetwork(): string {
+  const url = config.SOLANA_RPC_URL ?? "";
+  return url.includes("devnet") ? "devnet" : "mainnet";
+}
+
 function buildSolanaSignInMessage(address: string, nonce: string): string {
+  const network = resolveSolanaNetwork();
+  const now = new Date();
+  const expiry = new Date(now.getTime() + NONCE_TTL_MS);
   return [
     "OMA wants you to sign in with your Solana account:",
     address,
     "",
+    "URI: https://oma.ai",
+    "Version: 1",
+    `Chain ID: solana:${network}`,
+    `Issued At: ${now.toISOString()}`,
+    `Expiration Time: ${expiry.toISOString()}`,
     `Nonce: ${nonce}`,
   ].join("\n");
 }
