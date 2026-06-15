@@ -117,6 +117,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://verify.walletconnect.com" />
         <link rel="dns-prefetch" href="https://*.walletconnect.com" />
         <link rel="dns-prefetch" href="https://*.coinbase.com" />
+        <link rel="canonical" href={BASE_URL} />
       </head>
       <body className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] font-sans antialiased">
         <a

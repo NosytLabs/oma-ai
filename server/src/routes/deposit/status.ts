@@ -143,7 +143,8 @@ depositStatusRoutes.get("/v1/webhooks", sessionAuth, async (c) => {
       id: s.id,
       url: s.url,
       event: s.event,
-      events: s.events?.split(",") || [],
+      // ponytail: SYNC-39 — column is now text[], already an array
+      events: s.events ?? [],
       active: s.active,
       lastNotificationAt: s.lastNotificationAt,
       lastNotificationStatus: s.lastNotificationStatus,

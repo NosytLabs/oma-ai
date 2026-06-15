@@ -91,7 +91,7 @@ invoiceRoutes.post("/v1/invoices/generate", sessionAuth, async (c) => {
     userId,
     amount,
     status: "pending",
-    lineItems: JSON.stringify(lineItems),
+    lineItems: lineItems as unknown,
     dueDate: new Date(Date.now() + config.INVOICE_DEFAULT_DUE_DAYS * 24 * 60 * 60 * 1000),
   }).returning();
 
@@ -126,7 +126,7 @@ invoiceRoutes.get("/v1/invoices", sessionAuth, async (c) => {
       invoiceNumber: inv.invoiceNumber,
       amount: parseFloat(inv.amount),
       status: inv.status,
-      lineItems: JSON.parse(inv.lineItems),
+      lineItems: inv.lineItems as Record<string, unknown>[],
       dueDate: inv.dueDate,
       createdAt: inv.createdAt,
     })),
@@ -156,7 +156,7 @@ invoiceRoutes.get("/v1/invoices/:id", sessionAuth, async (c) => {
     invoiceNumber: invoice.invoiceNumber,
     amount: parseFloat(invoice.amount),
     status: invoice.status,
-    lineItems: JSON.parse(invoice.lineItems),
+    lineItems: invoice.lineItems as Record<string, unknown>[],
     dueDate: invoice.dueDate,
     createdAt: invoice.createdAt,
   });
@@ -179,7 +179,7 @@ invoiceRoutes.get("/v1/invoices/:id/pdf", sessionAuth, async (c) => {
     return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
   }
 
-  const lineItems = JSON.parse(invoice.lineItems);
+  const lineItems = invoice.lineItems as Array<{ description: string; quantity: number; unitPrice: string; total: string }>;
 
   const html = `
 <!DOCTYPE html>

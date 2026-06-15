@@ -249,7 +249,7 @@ export async function registerWebhookSubscription(
       id: crypto.randomUUID(),
       userId,
       url,
-      events: events.join(","),
+      events: events,
       event: events[0] || "all",
       secret,
       active: true,

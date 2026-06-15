@@ -101,7 +101,7 @@ invoicesRoutes.get("/admin/invoices/:id", async (c) => {
       invoice: {
         ...invoice,
         amount: Number(invoice.amount),
-        lineItems: JSON.parse(invoice.lineItems),
+        lineItems: invoice.lineItems as Record<string, unknown>[],
         user: userResult[0] || null,
       },
     });
