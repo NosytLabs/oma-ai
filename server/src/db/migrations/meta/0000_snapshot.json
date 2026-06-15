@@ -677,10 +677,10 @@
         },
         "alert_thresholds": {
           "name": "alert_thresholds",
-          "type": "text",
+          "type": "integer[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "'[50, 75, 90, 100]'"
+          "default": "'{50,75,90,100}'"
         },
         "email_enabled": {
           "name": "email_enabled",
@@ -1819,7 +1819,7 @@
         },
         "line_items": {
           "name": "line_items",
-          "type": "text",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -3338,7 +3338,7 @@
         },
         "events": {
           "name": "events",
-          "type": "text",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },

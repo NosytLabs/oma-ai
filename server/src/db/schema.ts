@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   boolean,
+  jsonb,
   index,
   pgEnum,
   uniqueIndex,
@@ -427,7 +428,7 @@ export const budgetAlerts = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     budgetLimitCents: numeric("budget_limit_cents", { precision: 18, scale: 2 }).notNull(),
-    alertThresholds: text("alert_thresholds").default("[50, 75, 90, 100]").notNull(),
+    alertThresholds: integer("alert_thresholds").array().default([50, 75, 90, 100]).notNull(), // SYNC-39: migrated from text to integer[]
     emailEnabled: boolean("email_enabled").default(true).notNull(),
     webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
     webhookUrl: text("webhook_url"),
@@ -532,7 +533,7 @@ export const invoices = pgTable(
       .notNull(),
     amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
     status: invoiceStatusEnum("status").default("draft").notNull(),
-    lineItems: text("line_items").notNull(), // JSON array of {description, quantity, unitPrice, total}
+    lineItems: jsonb("line_items").notNull(), // SYNC-39: migrated from text to jsonb
     dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -706,7 +707,7 @@ export const webhookSubscriptions = pgTable(
       .notNull(),
     url: text("url").notNull(),
     event: text("event").notNull(),
-    events: text("events"),
+    events: text("events").array(), // SYNC-39: migrated from text to text[]
     secret: text("secret"),
     active: boolean("active").default(true).notNull(),
     lastNotificationAt: timestamp("last_notification_at", { withTimezone: true }),
