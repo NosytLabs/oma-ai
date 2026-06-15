@@ -11,5 +11,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <ConnectWalletWrapper>{children}</ConnectWalletWrapper>
+  return (
+    <ConnectWalletWrapper>
+      <div className="min-h-[calc(100dvh-2.75rem)] bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono">
+        {children}
+      </div>
+    </ConnectWalletWrapper>
+  )
 }

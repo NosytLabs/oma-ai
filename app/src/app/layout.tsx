@@ -129,7 +129,7 @@ export default function RootLayout({
           <ToastProvider>
             <MotionProvider>
               <Navbar />
-              <main id="main-content" className="pt-16" tabIndex={-1} role="main">
+              <main id="main-content" className="pt-14" tabIndex={-1} role="main">
                 <ErrorBoundary>{children}</ErrorBoundary>
               </main>
               <Footer />

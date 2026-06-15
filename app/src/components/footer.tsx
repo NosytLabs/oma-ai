@@ -136,7 +136,7 @@ export function Footer() {
 
         <div className="mt-10 pt-5 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] leading-relaxed">
           <p>
-            © {year} OMA AI · base chain // one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev'} · last deploy {new Date().toISOString().slice(0, 10)}
+            © {year} OMA AI · base chain // one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'} · last deploy {process.env.NEXT_PUBLIC_BUILD_DATE ?? 'dev'}
           </p>
           <p className="mt-1">
             Inference routes to upstream providers. Uptime is best-effort, not guaranteed. Verify before you bet on it.

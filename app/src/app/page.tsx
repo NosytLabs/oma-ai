@@ -96,17 +96,17 @@ export default function HomePage() {
           <section
             id="subject"
             aria-labelledby="subject-heading"
-            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 pb-10 sm:pt-10 sm:pb-12"
           >
-            <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-8">
               <div className="min-w-0">
-                <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold mb-5 sm:mb-7 tracking-tight">
+                <h2 className="mb-4 font-syne text-lg font-bold tracking-tight text-[var(--color-text-bright)] sm:text-xl sm:mb-5">
                   Subject
                 </h2>
 
                 <h1
                   id="subject-heading"
-                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5.5rem)] animate-fade-in"
+                  className="animate-fade-in font-syne font-bold tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,8vw,4.75rem)] text-[var(--color-text-bright)]"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, animationDelay: '60ms' }}
                 >
                   <span className="block">One key.</span>
@@ -114,14 +114,14 @@ export default function HomePage() {
                 </h1>
 
                 <p
-                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed animate-fade-in"
+                  className="mt-5 max-w-2xl animate-fade-in text-[15px] leading-relaxed text-[var(--color-text)] sm:text-base"
                   style={{ animationDelay: '140ms' }}
                 >
                   Pay per request in USDC. Wallet auth, no account.
                 </p>
 
                 <div
-                  className="mt-8 flex flex-wrap items-center gap-3 animate-fade-in"
+                  className="mt-6 flex flex-wrap items-center gap-3 animate-fade-in"
                   style={{ animationDelay: '220ms' }}
                 >
                   <Link href="/docs" className="btn-primary">
@@ -175,7 +175,7 @@ export default function HomePage() {
           <section
             id="inventory"
             aria-labelledby="inventory-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8"
           >
             <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold mb-5 sm:mb-7 tracking-tight">
               Inventory
@@ -229,7 +229,7 @@ export default function HomePage() {
           <section
             id="routing"
             aria-labelledby="routing-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8"
           >
             <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold mb-5 sm:mb-7 tracking-tight">
               Routing
@@ -301,7 +301,7 @@ export default function HomePage() {
           <section
             id="protocol"
             aria-labelledby="protocol-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8"
           >
             <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold mb-5 sm:mb-7 tracking-tight">
               Protocol
@@ -335,7 +335,7 @@ export default function HomePage() {
           <section
             id="integration"
             aria-labelledby="integration-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8"
           >
             <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold mb-5 sm:mb-7 tracking-tight">
               Integration
@@ -376,8 +376,8 @@ export default function HomePage() {
               Procurement and next step
             </h3>
 
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] px-5 sm:px-8 py-8 sm:py-10">
-              <p className="text-[15px] sm:text-base text-[var(--color-text-bright)] max-w-2xl leading-relaxed">
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-6 sm:px-6 sm:py-8">
+              <p className="max-w-2xl text-[15px] leading-relaxed text-[var(--color-text-bright)] sm:text-base">
                 The price list is the same
                 <br />
                 for everyone.

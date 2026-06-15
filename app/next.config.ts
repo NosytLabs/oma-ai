@@ -5,6 +5,22 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: process.cwd(),
   
+  // Build-time env injection so footer.tsx can show the real deploy SHA + date.
+  // Vercel auto-sets VERCEL_GIT_COMMIT_SHA on every production deploy; we map
+  // it (truncated to 7 chars) to NEXT_PUBLIC_BUILD_SHA which the footer
+  // already references. Local dev without Vercel falls through to
+  // NEXT_PUBLIC_BUILD_SHA if explicitly set, otherwise undefined — footer.tsx:139
+  // then falls back to 'dev' via the `??` operator. BUILD_DATE defaults to
+  // today's ISO date at build time.
+  env: {
+    NEXT_PUBLIC_BUILD_SHA:
+      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+      process.env.NEXT_PUBLIC_BUILD_SHA,
+    NEXT_PUBLIC_BUILD_DATE:
+      process.env.NEXT_PUBLIC_BUILD_DATE ??
+      new Date().toISOString().slice(0, 10),
+  },
+
   // React 19 and Next.js 15 optimizations
   experimental: {
     optimizePackageImports: [
