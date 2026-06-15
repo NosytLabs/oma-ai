@@ -237,54 +237,64 @@ export function setupWebSocket(server: HTTPServer) {
         const finalInputTokens = inputTokens || 0;
         let finalOutputTokens = 0;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const dataStr = line.slice(6).trim();
-              if (dataStr === "[DONE]") {
-                const costDetail = await calculateCost(model, finalInputTokens, finalOutputTokens);
-                const totalCents = Number(costDetail.totalCents);
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === "[DONE]") {
+                  const costDetail = await calculateCost(model, finalInputTokens, finalOutputTokens);
+                  const totalCents = Number(costDetail.totalCents);
 
-                if (totalCents > 0 && apiKeyHash) {
-                  trackSpend(apiKeyHash, Math.ceil(totalCents)).catch((err) => {
-                    logger.error({ err, keyPrefix: apiKeyHash.slice(0, 8) }, "[ws:spend-limit] Track failed:");
-                  });
-                }
-
-                sendWsDone(wsClient, requestId, model, streamCreated);
-              } else {
-                try {
-                  const parsed = JSON.parse(dataStr);
-                  const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
-                  const finishReason = parsed.choices?.[0]?.finish_reason;
-
-                  sendWsJson(wsClient, {
-                    type: "chunk",
-                    id: requestId,
-                    delta,
-                    index: 0,
-                    finish_reason: finishReason || null,
-                  });
-
-                  if (parsed.usage?.completion_tokens) {
-                    finalOutputTokens = parsed.usage.completion_tokens;
+                  if (totalCents > 0 && apiKeyHash) {
+                    trackSpend(apiKeyHash, Math.ceil(totalCents)).catch((err) => {
+                      logger.error({ err, keyPrefix: apiKeyHash.slice(0, 8) }, "[ws:spend-limit] Track failed:");
+                    });
                   }
-                } catch {
-                  // Skip malformed JSON lines
+
+                  sendWsDone(wsClient, requestId, model, streamCreated);
+                } else {
+                  try {
+                    const parsed = JSON.parse(dataStr);
+                    const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
+                    const finishReason = parsed.choices?.[0]?.finish_reason;
+
+                    sendWsJson(wsClient, {
+                      type: "chunk",
+                      id: requestId,
+                      delta,
+                      index: 0,
+                      finish_reason: finishReason || null,
+                    });
+
+                    if (parsed.usage?.completion_tokens) {
+                      finalOutputTokens = parsed.usage.completion_tokens;
+                    }
+                  } catch {
+                    // Skip malformed JSON lines
+                  }
                 }
               }
             }
           }
-        }
 
-        sendWsJson(wsClient, { type: "done", id: requestId });
+          sendWsJson(wsClient, { type: "done", id: requestId });
+        } finally {
+          // ponytail: streaming audit #1 — keep the abort listener until the
+          // read loop finishes, not removed the moment handleChatCompletion
+          // returns. Otherwise a client disconnect mid-stream leaves the
+          // upstream fetch running to its full timeout (up to 120s of paid
+          // tokens). ws.off is idempotent if the listener was already removed
+          // by a real close event.
+          ws.off("close", onWsClose);
+        }
 
       } catch (err) {
         const errType = (err as { type?: string }).type ?? "inference_error";

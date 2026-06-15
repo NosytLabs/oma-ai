@@ -42,13 +42,12 @@ const envSchema = z.object({
   TOGETHER_API_URL: z.string().min(1).default("https://api.together.xyz/v1"),
   DEEPINFRA_API_KEY: z.string().min(1).optional(),
   DEEPINFRA_API_URL: z.string().min(1).default("https://api.deepinfra.com/v1/openai"),
-  GROQ_API_KEY: z.string().min(1).optional(),
-  CEREBRAS_API_KEY: z.string().min(1).optional(),
+  // ponytail: GROQ / CEREBRAS / BEDROCK removed — never wired into provider-selector
+  // or call-provider. Code that referenced them was dead. If a future build
+  // wants to re-add any of these, add the provider to provider-selector AND
+  // call-provider in the same commit.
   MORPHEUS_API_KEY: z.string().min(1).optional(),
   MORPHEUS_BASE_URL: z.string().min(1).default("https://api.mor.org/api/v1"),
-  BEDROCK_ACCESS_KEY_ID: z.string().min(1).optional(),
-  BEDROCK_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-  BEDROCK_REGION: z.string().min(1).default("us-east"),
   SURPLUS_WALLET_PRIVATE_KEY: z.string().min(1).optional(),
   HOUDINI_API_KEY: z.string().min(1).optional(),
   HOUDINI_API_SECRET: z.string().min(1).optional(),
