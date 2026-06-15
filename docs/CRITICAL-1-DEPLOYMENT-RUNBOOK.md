@@ -1,6 +1,6 @@
 # CRITICAL-1 Deployment Runbook — `www.oma-ai.com` / `api.oma-ai.com`
 
-> **Status (as of 2026-06-03)**: BLOCKER. `https://www.oma-ai.com/` serves *NosytLabs MCP Marketplace* (a different product). `https://api.oma-ai.com/` returns `404 DEPLOYMENT_NOT_FOUND`. The OMA AI Gateway in this repo (`oma/`) is not deployed to its documented domain. See screenshot `docs/screenshots/audit-2026-06-02/00-production-url-mismatch.png`.
+> **Status (as of 2026-06-03)**: BLOCKER. `https://www.oma-ai.com/` serves *NosytLabs MCP Marketplace* (a different product). `https://api.oma-ai.com/` returns `404 DEPLOYMENT_NOT_FOUND`. The OMA AI Gateway in this repo (`app/`) is not deployed to its documented domain. See screenshot `docs/screenshots/audit-2026-06-02/00-production-url-mismatch.png`.
 >
 > **Verified 2026-06-03 via Vercel MCP**: None of the 5 Vercel projects in the Nosyt team owns `oma-ai.com`. The `oma` Vercel project (see inventory below) is deployed and running at `oma-5lzp2ffak-nosyt.vercel.app` but has no custom domain attached. The MCP Marketplace content is being served from outside the Nosyt Vercel team — possibly a different Vercel account/team or an unrelated hosting provider.
 
@@ -16,7 +16,7 @@
 
 **Conclusion:** The `oma` Vercel project is the natural target for `oma-ai.com` (and `api.oma-ai.com`). It is the only OMA-related project with a successful READY-state production deployment.
 >
-> **Goal**: `www.oma-ai.com` returns the Next.js app (`oma/app/`), `api.oma-ai.com` returns the Hono gateway (`oma/server/`), and the two talk to each other with CORS and auth wired correctly.
+> **Goal**: `www.oma-ai.com` returns the Next.js app (`app/app/`), `api.oma-ai.com` returns the Hono gateway (`app/server/`), and the two talk to each other with CORS and auth wired correctly.
 
 ---
 
@@ -57,10 +57,10 @@ vercel login
 vercel whoami
 ```
 
-### 2a. `oma-app` (Next.js, root: `oma/app/`)
+### 2a. `oma-app` (Next.js, root: `app/app/`)
 
 ```bash
-cd oma/app
+cd app/app
 vercel link --project=oma-app --yes    # or create: vercel project add oma-app
 vercel env pull .env.production        # non-destructive; just downloads to a temp file for review
 ```
@@ -81,14 +81,14 @@ vercel env pull .env.production        # non-destructive; just downloads to a te
 **Build command**: `npm run build` (no override needed; Vercel auto-detects Next.js).
 **Output directory**: leave default (`.next`).
 
-### 2b. `oma-api` (Hono, root: `oma/server/`)
+### 2b. `oma-api` (Hono, root: `app/server/`)
 
 ```bash
-cd oma/server
+cd app/server
 vercel link --project=oma-api --yes
 ```
 
-`oma/server/vercel.json` (or equivalent) must declare Hono as a Node serverless function. Verify it exists; if not, create:
+`app/server/vercel.json` (or equivalent) must declare Hono as a Node serverless function. Verify it exists; if not, create:
 
 ```json
 {
@@ -114,7 +114,7 @@ vercel link --project=oma-api --yes
 | `FACILITATOR_MODE` | yes | per treasury policy |
 | treasury addresses, `LOG_LEVEL` | yes | per `server/.env.example` |
 
-> **NOTE on the 2026-06-02 patches**: The server is now configured to **refuse to start** (`process.exit(1)`) in production if any of the above is missing, placeholder, or — for `CORS_ORIGIN` — set to `*`. This is intentional and good. The CI validation gates in `oma/AGENTS.md` will catch a missing var before deploy.
+> **NOTE on the 2026-06-02 patches**: The server is now configured to **refuse to start** (`process.exit(1)`) in production if any of the above is missing, placeholder, or — for `CORS_ORIGIN` — set to `*`. This is intentional and good. The CI validation gates in `app/AGENTS.md` will catch a missing var before deploy.
 
 **Domain to attach**: `api.oma-ai.com`.
 

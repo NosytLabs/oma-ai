@@ -216,7 +216,7 @@ Full pricing at: https://oma-ai.com/pricing or see [API-DOCUMENTATION.md](API-DO
 ### 1. Clone and Install
 
 ```bash
-cd oma
+cd app
 npm install
 ```
 
@@ -320,7 +320,7 @@ open http://localhost:3000
 ## Directory Structure
 
 ```
-oma/
+app/
 ├── app/                    # Next.js Frontend (port 3000)
 │   ├── src/
 │   │   ├── app/           # Pages (App Router)

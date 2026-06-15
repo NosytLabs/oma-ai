@@ -96,7 +96,7 @@ npm run db:push    # Creates tables
 
 ```bash
 # Both servers
-cd oma && ./start-dev.sh
+cd app && ./scripts/start-dev.sh
 
 # Or individually
 cd server && npm run dev   # :3001
