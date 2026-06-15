@@ -15,6 +15,13 @@
       "when": 1781424000000,
       "tag": "0027_sync_39_structured_types",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1781470800000,
+      "tag": "0028_api_key_model_allowlist",
+      "breakpoints": true
     }
   ]
 }

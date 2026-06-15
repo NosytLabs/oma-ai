@@ -183,6 +183,7 @@ export function validateIpAllowlist(
 export interface CreateApiKeyOptions {
   expiresAt?: Date | null;
   ipAllowlist?: string[] | null;
+  allowedModels?: string[] | null;
 }
 
 export async function createApiKey(
@@ -200,6 +201,12 @@ export async function createApiKey(
         ? addDays(config.DEFAULT_KEY_EXPIRY_DAYS)
         : null;
   const ipAllowlist = validateIpAllowlist(options.ipAllowlist ?? null);
+  const allowedModels =
+    options.allowedModels !== undefined && options.allowedModels !== null
+      ? (Array.isArray(options.allowedModels)
+          ? options.allowedModels.filter((m) => typeof m === "string" && m.length > 0)
+          : null)
+      : null;
   const [created] = await db
     .insert(apiKeys)
     .values({
@@ -210,6 +217,7 @@ export async function createApiKey(
       active: true,
       expiresAt,
       ipAllowlist: ipAllowlist ?? null,
+      allowedModels: allowedModels && allowedModels.length > 0 ? allowedModels : null,
     })
     .returning();
   return {
@@ -220,6 +228,7 @@ export async function createApiKey(
     createdAt: created.createdAt,
     expiresAt: created.expiresAt,
     ipAllowlist: created.ipAllowlist ?? null,
+    allowedModels: created.allowedModels ?? null,
   };
 }
 
@@ -295,6 +304,7 @@ export async function listApiKeys(userId: string) {
     lastUsedAt: apiKeys.lastUsedAt,
     expiresAt: apiKeys.expiresAt,
     createdAt: apiKeys.createdAt,
+    allowedModels: apiKeys.allowedModels,
   }).from(apiKeys).where(eq(apiKeys.userId, userId));
   return results;
 }
@@ -308,6 +318,7 @@ export async function getApiKey(userId: string, keyId: string) {
     lastUsedAt: apiKeys.lastUsedAt,
     expiresAt: apiKeys.expiresAt,
     createdAt: apiKeys.createdAt,
+    allowedModels: apiKeys.allowedModels,
   }).from(apiKeys).where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId))).limit(1);
   return result || null;
 }
@@ -358,10 +369,9 @@ export async function refreshApiKey(userId: string, keyId: string) {
   const [created] = await db.insert(apiKeys).values({
     userId,
     name: existing.name,
-    // ponytail: v7 H2 — preserve IP allowlist on key rotation. Previously the
-    // refreshed key dropped ipAllowlist silently, regressing the security
-    // posture for users who had set an allowlist.
+    // ponytail: v7 H2 — preserve IP allowlist on key rotation.
     ipAllowlist: existing.ipAllowlist,
+    allowedModels: existing.allowedModels,
     keyHash,
     keyPrefix,
     active: true,
@@ -375,6 +385,7 @@ export async function refreshApiKey(userId: string, keyId: string) {
     name: created.name,
     createdAt: created.createdAt,
     expiresAt: created.expiresAt,
+    allowedModels: created.allowedModels ?? null,
   };
 }
 
@@ -394,6 +405,20 @@ export function createApiKeyCookieHeader(apiKey: string): string {
     cookie += "; Secure";
   }
   return cookie;
+}
+
+export async function updateModelAllowlist(
+  keyId: string,
+  userId: string,
+  models: string[],
+): Promise<{ id: string; allowedModels: string[] | null } | null> {
+  const normalized = models.length > 0 ? models.filter((m) => typeof m === "string" && m.length > 0) : [];
+  const [result] = await db
+    .update(apiKeys)
+    .set({ allowedModels: normalized.length > 0 ? normalized : null })
+    .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+    .returning({ id: apiKeys.id, allowedModels: apiKeys.allowedModels });
+  return result ?? null;
 }
 
 export function createLogoutCookieHeader(): string {

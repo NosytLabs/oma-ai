@@ -13,6 +13,7 @@ export type OmaEnv = {
       name: string;
       active: boolean;
       createdAt: Date;
+      allowedModels?: string[] | null;
     } | null;
     correlationId?: string;
     payment?: { txHash?: string; amount: string; networkId: string };

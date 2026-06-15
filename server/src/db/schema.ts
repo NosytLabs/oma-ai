@@ -66,12 +66,13 @@ export const apiKeys = pgTable(
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     ipAllowlist: text("ip_allowlist").array(), // G3: null/empty = no restriction
+    allowedModels: text("allowed_models").array(), // null/empty = no restriction
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId), index("idx_api_keys_user_active").on(t.userId, t.active)]
 );
 
-export type ApiKey = typeof apiKeys.$inferSelect & { expired?: boolean; ipAllowlist?: string[] | null };
+export type ApiKey = Omit<typeof apiKeys.$inferSelect, "allowedModels"> & { expired?: boolean; ipAllowlist?: string[] | null; allowedModels?: string[] | null };
 
 export const deposits = pgTable(
   "deposits",

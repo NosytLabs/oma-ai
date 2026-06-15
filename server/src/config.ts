@@ -106,7 +106,7 @@ const envSchema = z.object({
   BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
 
   // Markup percentage applied to inference billing (e.g. 25 = 25% markup on cost)
-  // Used by server/src/inference/markup.ts via getMarkupMultiplier() / getMarkupPercent().
+  // Applied per-model via ModelPricing.markup in billing-service.ts.
   OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
 
   // Withdraw route fee configuration (moved from hardcoded literals in routes/withdraw.ts)

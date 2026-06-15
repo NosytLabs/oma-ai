@@ -3,7 +3,7 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { getOrCreateUser, verifySiweMessage, getNonce, generateSessionToken, verifySessionToken } from "../auth/siwe.js";
 import { createSolanaChallenge, getOrCreateSolanaUser, verifySolanaChallenge } from "../auth/solana.js";
-import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader } from "../auth/api-keys.js";
+import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader, updateModelAllowlist, getApiKey } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
@@ -574,6 +574,24 @@ authRoutes.post("/auth/api-key/cookie", sessionAuth, async (c) => {
   c.header("Set-Cookie", cookieHeader);
 
   return c.json({ success: true });
+});
+
+authRoutes.get("/keys/:id/allowlist", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const keyId = c.req.param("id") ?? "";
+  const entry = await getApiKey(userId, keyId);
+  if (!entry) return c.json({ error: { message: "API key not found", type: "not_found" } }, 404);
+  return c.json({ models: entry.allowedModels ?? [] });
+});
+
+authRoutes.patch("/keys/:id/allowlist", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const keyId = c.req.param("id") ?? "";
+  const parsed = z.object({ models: z.array(z.string()).default([]) }).safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const result = await updateModelAllowlist(keyId, userId, parsed.data.models);
+  if (!result) return c.json({ error: { message: "API key not found", type: "not_found" } }, 404);
+  return c.json({ models: result.allowedModels ?? [] });
 });
 
 authRoutes.delete("/auth/api-key/cookie", sessionAuth, async (_c) => {

@@ -50,7 +50,8 @@ export async function getBudgetAlertConfig(userId: string): Promise<BudgetAlertC
   if (!result.length) return null;
 
   const alert = result[0];
-  const thresholds = JSON.parse(alert.alertThresholds) as BudgetThreshold[];
+  // ponytail: SYNC-39 — column is now integer[] natively; narrow from number[]
+  const thresholds = alert.alertThresholds as unknown as BudgetThreshold[];
 
   return {
     budgetLimitCents: Number(alert.budgetLimitCents),
@@ -223,7 +224,7 @@ export async function setBudgetAlertConfig(
     .values({
       userId,
       budgetLimitCents: String(config.budgetLimitCents),
-      alertThresholds: JSON.stringify(thresholds),
+      alertThresholds: thresholds as number[],
       emailEnabled: config.emailEnabled ?? true,
       webhookEnabled: config.webhookEnabled ?? false,
       webhookUrl: config.webhookUrl ?? undefined,
@@ -235,7 +236,7 @@ export async function setBudgetAlertConfig(
       target: budgetAlerts.userId,
       set: {
         budgetLimitCents: String(config.budgetLimitCents),
-        alertThresholds: JSON.stringify(thresholds),
+        alertThresholds: thresholds as number[],
         emailEnabled: config.emailEnabled ?? true,
         webhookEnabled: config.webhookEnabled ?? false,
         webhookUrl: config.webhookUrl ?? undefined,

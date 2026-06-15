@@ -93,6 +93,24 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
         );
       }
 
+      // ponytail: model allowlist — null/empty = no restriction.
+      if (apiKey?.allowedModels && apiKey.allowedModels.length > 0) {
+        if (!apiKey.allowedModels.includes(model)) {
+          span?.setAttribute("error", true);
+          span?.setAttribute("error.type", "model_not_allowed");
+          return c.json(
+            {
+              error: {
+                message: `Model '${model}' is not allowed for this API key`,
+                type: "forbidden",
+                code: "model_not_allowed",
+              },
+            },
+            403,
+          );
+        }
+      }
+
       const bal = await getBalance(userId);
       if (Number(bal.balanceCents) <= 0) {
         span?.setAttribute("error", true);
