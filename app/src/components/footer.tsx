@@ -46,7 +46,6 @@ const FOOTER_SECTIONS: FooterSection[] = [
     links: [
       { label: 'about', href: '/about' },
       { label: 'deposit', href: '/deposit' },
-      { label: 'admin', href: '/admin' },
     ],
   },
   {

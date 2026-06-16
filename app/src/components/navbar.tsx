@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useWallet } from '@/components/wallet-context'
 import dynamic from 'next/dynamic'
 import { OmaLogo } from '@/components/ui/oma-logo'
-import { Menu, X, Key, Zap, Settings, Github, Activity, LogOut } from 'lucide-react'
+import { Menu, X, Key, Zap, Settings, Github, LogOut } from 'lucide-react'
 import { ApiStatus } from './api-status'
 
 const ImprovedConnectButton = dynamic(
@@ -32,17 +32,13 @@ const secondaryLinks = [
   { href: '/about', label: 'about' },
 ]
 
-const opsLinks = [
-  { href: '/admin', label: 'admin' },
-]
-
 function isCurrentPath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 function sectionLabelFor(pathname: string) {
   if (pathname === '/' || pathname === '') return 'home'
-  return [...primaryLinks, ...secondaryLinks, ...opsLinks]
+  return [...primaryLinks, ...secondaryLinks]
     .find(link => isCurrentPath(pathname, link.href))
     ?.label
     .replace(/^\//, '')
@@ -190,16 +186,6 @@ export function Navbar() {
               className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <Github className="h-4 w-4" />
-            </a>
-
-            <a
-              href="/api/health"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Status page (opens in new tab)"
-              className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Activity className="h-4 w-4" />
             </a>
 
             <ThemeToggle />
@@ -359,32 +345,6 @@ export function Navbar() {
                   <p className="mb-1 text-[10px] sm:text-xs uppercase tracking-widest text-text-tertiary">tools</p>
                   <ul className="space-y-0.5">
                     {secondaryLinks.map(link => {
-                      const isActive = isCurrentPath(pathname, link.href)
-                      return (
-                        <li key={link.href}>
-                          <Link
-                            href={link.href}
-                            onClick={() => setMobileOpen(false)}
-                            aria-current={isActive ? 'page' : undefined}
-                            className={`flex items-center justify-between rounded-sm px-3 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                              isActive
-                                ? 'bg-accent-dim text-accent'
-                                : 'text-text-secondary hover:bg-surface hover:text-text-bright'
-                            }`}
-                          >
-                            {link.label}
-                            <span className="text-xs text-text-tertiary" aria-hidden="true">→</span>
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="mb-1 text-[10px] sm:text-xs uppercase tracking-widest text-text-tertiary">ops</p>
-                  <ul className="space-y-0.5">
-                    {opsLinks.map(link => {
                       const isActive = isCurrentPath(pathname, link.href)
                       return (
                         <li key={link.href}>
