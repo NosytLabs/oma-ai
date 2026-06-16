@@ -94,7 +94,7 @@ export function CryptoLogo({
   if (loading || !loaded) {
     return (
       <div
-        className={`flex-shrink-0 animate-pulse bg-[var(--color-surface)] ${className}`}
+        className={`flex-shrink-0 animate-pulse bg-surface ${className}`}
         style={{
           width: size,
           height: size,
@@ -120,7 +120,7 @@ export function CryptoLogo({
     // Default text fallback showing symbol initials
     return (
       <div
-        className={`flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[var(--color-accent)]/20 to-blue-500/20 border border-[var(--color-accent)]/30 font-bold text-[var(--color-accent)] ${className}`}
+        className={`flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-accent/20 to-blue-500/20 border border-accent/30 font-bold text-accent ${className}`}
         style={{
           width: size,
           height: size,

@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic'
 
 const WalletSkeleton = () => (
   <div className="animate-pulse flex items-center gap-2 px-4 py-2.5">
-    <div className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]/30" />
-    <div className="h-4 w-20 rounded bg-[var(--color-text-muted)]/30" />
+    <div className="h-2 w-2 rounded-full bg-text-muted/30" />
+    <div className="h-4 w-20 rounded bg-text-muted/30" />
   </div>
 )
 

@@ -36,17 +36,20 @@ describe('ModelsPage', () => {
     expect(buttonTexts.some(t => t === 'Mid-Range')).toBe(true)
     expect(buttonTexts.some(t => t === 'Premium')).toBe(true)
     expect(buttonTexts.some(t => t === 'Frontier')).toBe(true)
-    // Provider filter buttons: All, Venice, AntSeed
+    // Provider filter buttons: All + each Provider that has at least one model in MODELS.
+    // The list is dynamic — see PROVIDERS filter in page.tsx.
+    expect(buttonTexts.some(t => t === 'All')).toBe(true)
     expect(buttonTexts.some(t => t === 'Venice')).toBe(true)
-    expect(buttonTexts.some(t => t === 'AntSeed')).toBe(true)
+    expect(buttonTexts.some(t => t === 'Claude')).toBe(true)
+    expect(buttonTexts.some(t => t === 'OpenRouter')).toBe(true)
   })
 
   it('renders the stats bar showing model count', async () => {
     render(<ModelsPage />)
     // The stats bar renders `${MODELS.length}+ models available` — match the
-    // whole string. Updated to reflect the reconciled real catalog count.
+    // whole string. Updated to reflect the current catalog count.
     await waitFor(() => {
-      expect(screen.getByText(/17\+ models available/i)).toBeInTheDocument()
+      expect(screen.getByText(/13\+ models available/i)).toBeInTheDocument()
     })
   })
 

@@ -5,7 +5,7 @@ import { X, Key, Loader2, AlertTriangle, Copy, Check } from 'lucide-react'
 import {
   getSessionToken,
   setSessionCookie,
-  hasStoredSession,
+  setSessionMetaCookie,
   setCsrfTokenCookie,
 } from '@/lib/cookies'
 import { api } from '@/lib/api'
@@ -19,40 +19,51 @@ interface AccountLoginModalProps {
    * via the host's own controls.
    */
   inline?: boolean
+  /**
+   * CSRF token pre-fetched by the host page on mount. Required for `login`
+   * mode so the user can press Enter before any in-component async fetch
+   * completes (A-C1 race). When omitted, the modal falls back to fetching
+   * its own token on mount — the original (racey) behavior.
+   */
+  initialCsrfToken?: string | null
 }
 
 type Mode = 'login' | 'create' | 'success'
 
-export function AccountLoginModal({ onClose, inline = false }: AccountLoginModalProps) {
+export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = null }: AccountLoginModalProps) {
   const [mode, setMode] = useState<Mode>('login')
   const [accountNumber, setAccountNumber] = useState('')
   const [createdAccount, setCreatedAccount] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [hasSession, setHasSession] = useState(false)
-  const [csrfToken, setCsrfToken] = useState<string | null>(null)
+  const [csrfToken, setCsrfToken] = useState<string | null>(initialCsrfToken)
   const modalRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     triggerRef.current = document.activeElement as HTMLElement
-    setHasSession(hasStoredSession())
-    
-    async function fetchCsrfToken() {
-      try {
-        const response = await api.auth.getCsrfToken()
-        if (response.token) {
-          setCsrfTokenCookie(response.token)
-          setCsrfToken(response.token)
+
+    // If the host page did not pre-fetch the CSRF token, fall back to
+    // fetching it here. The race is still possible in this branch but the
+    // /login page now always provides `initialCsrfToken` so the common
+    // path is race-free (A-C1).
+    if (!initialCsrfToken) {
+      async function fetchCsrfToken() {
+        try {
+          const response = await api.auth.getCsrfToken()
+          if (response.token) {
+            setCsrfTokenCookie(response.token)
+            setCsrfToken(response.token)
+          }
+        } catch (err) {
+          console.error('Failed to fetch CSRF token:', err)
         }
-      } catch (err) {
-        console.error('Failed to fetch CSRF token:', err)
       }
+
+      fetchCsrfToken()
     }
-    
-    fetchCsrfToken()
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose()
@@ -90,7 +101,7 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
       document.removeEventListener('keydown', handleKeyDown)
       triggerRef.current?.focus()
     }
-  }, [onClose])
+  }, [onClose, initialCsrfToken])
 
   const handleLogin = useCallback(async () => {
     if (!accountNumber.trim()) return
@@ -114,6 +125,11 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
       }
       const data = await res.json() as { token: string }
       setSessionCookie(data.token, 7)
+      // Populate the client-readable meta cookie so wallet-provider's
+      // getStoredSession() sees authMethod='account-number' and flips
+      // isAuthenticated to true. Without this, the dashboard renders the
+      // "Connect Wallet" empty state even though the JWT is set.
+      setSessionMetaCookie({ authMethod: 'account-number' })
       window.location.reload()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -123,28 +139,38 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
   }, [accountNumber, csrfToken])
 
   const handleCreate = useCallback(async () => {
-    const token = getSessionToken()
-    if (!token) {
-      setError('Please connect your wallet first, then try again.')
-      return
-    }
     setLoading(true)
     setError(null)
     try {
+      // /auth/account/create supports both modes: with a session it links
+      // the new number to the current user; without a session it creates a
+      // fresh "standalone" user row keyed by the number's SHA-256 hash and
+      // returns a JWT. Either way the user ends up logged in.
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      const token = getSessionToken()
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/account/create`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         const msg = (body as { error?: { message?: string } })?.error?.message || 'Failed to create account'
         throw new Error(msg)
       }
-      const data = await res.json() as { accountNumber: string }
+      const data = await res.json() as { accountNumber: string; token?: string }
       setCreatedAccount(data.accountNumber)
+      if (data.token) {
+        setSessionCookie(data.token, 7)
+        // Populate the client-readable meta cookie so wallet-provider's
+        // getStoredSession() sees authMethod='account-number' and flips
+        // isAuthenticated to true. Without this, the dashboard renders the
+        // "Connect Wallet" empty state even though the JWT is set.
+        setSessionMetaCookie({ authMethod: 'account-number' })
+      }
       setMode('success')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create account number')
@@ -162,15 +188,22 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
   }, [createdAccount])
 
   const handleDone = useCallback(() => {
+    // After a successful account-number creation, we just stored a new
+    // session token. Reload so the wallet-provider picks it up and the
+    // route guards (which read oma_session) recognize the user.
+    if (createdAccount) {
+      window.location.reload()
+      return
+    }
     onClose()
-  }, [onClose])
+  }, [createdAccount, onClose])
 
   return (
     <>
       {!inline && (
         <div
           role="presentation"
-          className="fixed inset-0 z-[100] bg-[var(--color-overlay)]/60 backdrop-blur-sm cursor-default"
+          className="fixed inset-0 z-[100] bg-overlay/60 backdrop-blur-sm cursor-default"
           onClick={onClose}
         />
       )}
@@ -178,8 +211,8 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
         ref={modalRef}
         className={
           inline
-            ? 'w-full border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl p-6'
-            : 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-[var(--color-accent)]/30 bg-[var(--color-panel)] border rounded-xl shadow-2xl'
+            ? 'w-full border-accent/30 bg-panel border rounded-xl p-6'
+            : 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-accent/30 bg-panel border rounded-xl shadow-2xl'
         }
         onClick={e => e.stopPropagation()}
         role={inline ? undefined : 'dialog'}
@@ -188,14 +221,14 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
-              <Key className="h-5 w-5 text-[var(--color-accent)]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
+              <Key className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h3 id="modal-title" className="text-lg font-bold text-[var(--color-text)]">
+              <h3 id="modal-title" className="text-lg font-bold text-text">
                 {mode === 'login' ? 'Account Login' : mode === 'create' ? 'Create Account Number' : 'Account Created'}
               </h3>
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-xs text-text-muted">
                 {mode === 'login' ? 'Sign in with your account number' : mode === 'create' ? 'Generate a Mullvad-style account number' : 'Save your account number below'}
               </p>
             </div>
@@ -204,7 +237,7 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+              className="rounded-lg p-2 text-text-muted hover:bg-surface hover:text-text transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -212,16 +245,16 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
         </div>
 
         {error && (
-          <div id="account-error" role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--color-red)]/30 bg-[var(--color-red)]/10 px-4 py-3">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-red)]" />
-            <span className="text-sm text-[var(--color-red)]">{error}</span>
+          <div id="account-error" role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-red/30 bg-red/10 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red" />
+            <span className="text-sm text-red">{error}</span>
           </div>
         )}
 
         {mode === 'login' && (
           <>
             <div className="mb-4">
-              <label className="mb-2 block text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
+              <label className="mb-2 block text-xs font-medium uppercase tracking-widest text-text-muted">
                 Account Number
               </label>
               <input
@@ -233,7 +266,7 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
                 aria-label="Account number"
                 aria-invalid={!!error}
                 aria-describedby={error ? "account-error" : undefined}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 font-mono text-lg tracking-wider placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
                 autoFocus
                 disabled={loading}
               />
@@ -252,24 +285,25 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
                 'Sign In'
               )}
             </button>
-            {hasSession && (
-              <p className="mt-4 text-center text-xs text-[var(--color-text-muted)]">
-                No account number yet?{' '}
-                <button
-                  onClick={() => { setMode('create'); setError(null) }}
-                  className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)] cursor-pointer"
-                >
-                  Create one
-                </button>
-              </p>
-            )}
+            <p className="mt-4 text-center text-xs text-text-muted">
+              No account number yet?{' '}
+              <button
+                onClick={() => { setMode('create'); setError(null) }}
+                className="text-accent hover:text-accent-bright cursor-pointer"
+              >
+                Create one
+              </button>
+            </p>
+            <p className="mt-2 text-center text-[11px] text-text-muted/80">
+              Mullvad-style: no email, no PII, just a number to write down.
+            </p>
           </>
         )}
 
         {mode === 'create' && (
           <>
-            <div className="mb-4 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-4 py-3">
-              <p className="text-sm text-[var(--color-text-secondary)]">
+            <div className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
+              <p className="text-sm text-text-secondary">
                 This will generate a unique account number linked to your connected wallet. You can use this number to sign in on any device without a wallet.
               </p>
             </div>
@@ -287,11 +321,11 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
                 'Generate Account Number'
               )}
             </button>
-            <p className="mt-4 text-center text-xs text-[var(--color-text-muted)]">
+            <p className="mt-4 text-center text-xs text-text-muted">
               Already have an account number?{' '}
               <button
                 onClick={() => { setMode('login'); setError(null) }}
-                className="text-[var(--color-accent)] hover:text-[var(--color-accent-bright)] cursor-pointer"
+                className="text-accent hover:text-accent-bright cursor-pointer"
               >
                 Sign in
               </button>
@@ -301,23 +335,23 @@ export function AccountLoginModal({ onClose, inline = false }: AccountLoginModal
 
         {mode === 'success' && createdAccount && (
           <>
-            <div className="mb-4 rounded-lg border border-[var(--color-success)]/30 bg-[var(--color-success)]/10 px-4 py-3">
-              <p className="text-sm text-[var(--color-success)] font-medium mb-1">Write this down!</p>
-              <p className="text-xs text-[var(--color-text-muted)]">
+            <div className="mb-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+              <p className="text-sm text-success font-medium mb-1">Write this down!</p>
+              <p className="text-xs text-text-muted">
                 This number will only be shown once. If you lose it, you&apos;ll need to create a new account.
               </p>
             </div>
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <code className="flex-1 break-all text-lg font-mono text-[var(--color-accent)] tracking-wider">
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-surface p-4">
+              <code className="flex-1 break-all text-lg font-mono text-accent tracking-wider">
                 {createdAccount}
               </code>
               <button
                 onClick={handleCopy}
                 aria-label={copied ? 'Copied' : 'Copy to clipboard'}
-                className="shrink-0 rounded-lg p-2 transition-colors hover:bg-[var(--color-accent)]/10 hover:text-[var(--color-accent)] cursor-pointer"
+                className="shrink-0 rounded-lg p-2 transition-colors hover:bg-accent/10 hover:text-accent cursor-pointer"
               >
                 {copied ? (
-                  <Check className="h-5 w-5 text-[var(--color-success)]" />
+                  <Check className="h-5 w-5 text-success" />
                 ) : (
                   <Copy className="h-5 w-5" />
                 )}

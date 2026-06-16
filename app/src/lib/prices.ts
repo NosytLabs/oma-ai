@@ -369,7 +369,7 @@ export function formatPriceChange(change: number): string {
  * Get price badge color based on change
  */
 export function getPriceChangeColor(change: number): string {
-  if (change > 0) return 'text-green'
+  if (change > 0) return 'text-orange'
   if (change < 0) return 'text-red'
   return 'text-text-dim'
 }

@@ -1,0 +1,233 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('../provider-health.js', () => ({
+  isProviderAvailable: vi.fn().mockResolvedValue(true),
+  reportProviderResult: vi.fn(),
+}))
+
+vi.mock('../../credits/index.js', () => ({
+  getStakingDiscount: vi.fn().mockResolvedValue(0),
+  preflightDeduction: vi.fn().mockResolvedValue(true),
+  refundCredits: vi.fn(),
+  refundCreditsWithRetry: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../models.js', () => ({
+  getModel: vi.fn(),
+  getModelCatalog: vi.fn(),
+  resolveModelAlias: vi.fn((m: string) => Promise.resolve(m)),
+  estimateTokens: vi.fn((text: string) => Math.ceil(text.length / 4)),
+}))
+
+vi.mock('../billing-service.js', () => ({
+  getModelPricing: vi.fn().mockReturnValue({
+    inputPer1k: 0.1,
+    outputPer1k: 0.3,
+    markup: 10,
+  }),
+  calculateActualCost: vi.fn().mockReturnValue({
+    costCents: '5',
+    markupCents: '1',
+    totalCents: '6',
+  }),
+  getEstimatedOutputTokens: vi.fn().mockReturnValue(100),
+}))
+
+vi.mock('../usage-service.js', () => ({
+  recordUsage: vi.fn(),
+}))
+
+vi.mock('../venice.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../antseed.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../openrouter.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../together.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../deepinfra.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../claude.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../gemini.js', () => ({ chatCompletion: vi.fn() }))
+
+vi.mock('../circuit-breaker.js', () => ({
+  isCircuitOpen: vi.fn().mockResolvedValue(false),
+  recordProviderSuccess: vi.fn(),
+  recordProviderError: vi.fn(),
+}))
+
+vi.mock('../provider-result.js', () => ({
+  reportProviderResult: vi.fn(),
+}))
+
+vi.mock('../cross-provider-router.js', () => ({
+  findProvidersForModel: vi.fn(),
+  getCandidateProviders: vi.fn(),
+  resolveModelAlias: vi.fn((m: string) => Promise.resolve(m)),
+  recordFailover: vi.fn(),
+  getRouterStats: vi.fn(() => ({ totalRequests: 0, failoverCount: 0, byProvider: {} })),
+  __resetRouterStatsForTests: vi.fn(),
+}))
+
+vi.mock('../../config.js', () => ({
+  config: {
+    PROVIDER_WEIGHTS: undefined,
+    RECEIPT_HMAC_SECRET: 'test-secret-at-least-32-chars!',
+  },
+}))
+
+import * as router from '../router.js'
+import { findProvidersForModel, getCandidateProviders } from '../cross-provider-router.js'
+
+const mockBody = {
+  model: 'llama-3.3-70b',
+  messages: [{ role: 'user', content: 'hello' }],
+  stream: false as const,
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('Router cross-provider failover', () => {
+  it('tries the next provider when primary call fails', async () => {
+    const { getModel } = await import('../models.js')
+    const modelDef = {
+      id: 'llama-3.3-70b',
+      veniceId: 'llama-3.3-70b',
+      openrouterId: 'meta-llama/llama-3.3-70b-instruct',
+      provider: 'both' as const,
+      primaryProvider: 'venice' as const,
+      inputPricePer1M: 0.35,
+      outputPricePer1M: 0.90,
+      markupPercent: 10,
+      category: 'mid' as const,
+      maxTokens: 8192,
+      supportsStreaming: true,
+      displayName: 'Llama 3.3 70B',
+      capabilities: ['chat'],
+      description: 'test',
+      creditsPerMillionInput: 350,
+      creditsPerMillionOutput: 900,
+    }
+    vi.mocked(getModel).mockResolvedValue(modelDef as any)
+    vi.mocked(findProvidersForModel).mockResolvedValue(['venice', 'openrouter'])
+    vi.mocked(getCandidateProviders).mockResolvedValue({
+      primary: 'venice',
+      alternates: ['openrouter'],
+    })
+
+    // venice fails with 502
+    const { chatCompletion: veniceChat } = await import('../venice.js')
+    vi.mocked(veniceChat).mockRejectedValue(
+      Object.assign(new Error('upstream error'), { status: 502 })
+    )
+
+    // openrouter succeeds
+    const successResp = new Response(
+      JSON.stringify({
+        id: 'cmpl-1',
+        model: 'llama-3.3-70b',
+        choices: [{ message: { role: 'assistant', content: 'hi from openrouter' } }],
+        usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+    const { chatCompletion: orChat } = await import('../openrouter.js')
+    vi.mocked(orChat).mockResolvedValue(successResp)
+
+    const result = await router.handleChatCompletion('user-1', 'key-1', mockBody)
+
+    expect(result.response).toBeInstanceOf(Response)
+    expect(result.provider).toBe('openrouter')
+    expect(result.response.status).toBe(200)
+    // openrouter must have been called exactly once as the failover
+    expect(orChat).toHaveBeenCalledTimes(1)
+  })
+
+  it('succeeds on primary without trying alternates', async () => {
+    const { getModel } = await import('../models.js')
+    const modelDef = {
+      id: 'llama-3.3-70b',
+      veniceId: 'llama-3.3-70b',
+      openrouterId: 'meta-llama/llama-3.3-70b-instruct',
+      provider: 'both' as const,
+      primaryProvider: 'venice' as const,
+      inputPricePer1M: 0.35,
+      outputPricePer1M: 0.90,
+      markupPercent: 10,
+      category: 'mid' as const,
+      maxTokens: 8192,
+      supportsStreaming: true,
+      displayName: 'Llama 3.3 70B',
+      capabilities: ['chat'],
+      description: 'test',
+      creditsPerMillionInput: 350,
+      creditsPerMillionOutput: 900,
+    }
+    vi.mocked(getModel).mockResolvedValue(modelDef as any)
+    vi.mocked(findProvidersForModel).mockResolvedValue(['venice', 'openrouter'])
+    vi.mocked(getCandidateProviders).mockResolvedValue({
+      primary: 'venice',
+      alternates: ['openrouter'],
+    })
+
+    const successResp = new Response(
+      JSON.stringify({
+        id: 'cmpl-1',
+        model: 'llama-3.3-70b',
+        choices: [{ message: { role: 'assistant', content: 'hi from venice' } }],
+        usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+    const { chatCompletion: veniceChat } = await import('../venice.js')
+    vi.mocked(veniceChat).mockResolvedValue(successResp)
+
+    const { chatCompletion: orChat } = await import('../openrouter.js')
+    vi.mocked(orChat).mockResolvedValue(successResp)
+
+    const result = await router.handleChatCompletion('user-1', 'key-1', mockBody)
+
+    expect(result.provider).toBe('venice')
+    expect(orChat).not.toHaveBeenCalled()
+  })
+
+  it('throws 502 when all providers fail', async () => {
+    const { getModel } = await import('../models.js')
+    const modelDef = {
+      id: 'llama-3.3-70b',
+      veniceId: 'llama-3.3-70b',
+      openrouterId: 'meta-llama/llama-3.3-70b-instruct',
+      provider: 'both' as const,
+      primaryProvider: 'venice' as const,
+      inputPricePer1M: 0.35,
+      outputPricePer1M: 0.90,
+      markupPercent: 10,
+      category: 'mid' as const,
+      maxTokens: 8192,
+      supportsStreaming: true,
+      displayName: 'Llama 3.3 70B',
+      capabilities: ['chat'],
+      description: 'test',
+      creditsPerMillionInput: 350,
+      creditsPerMillionOutput: 900,
+    }
+    vi.mocked(getModel).mockResolvedValue(modelDef as any)
+    vi.mocked(findProvidersForModel).mockResolvedValue(['venice', 'openrouter'])
+    vi.mocked(getCandidateProviders).mockResolvedValue({
+      primary: 'venice',
+      alternates: ['openrouter'],
+    })
+
+    const { chatCompletion: veniceChat } = await import('../venice.js')
+    vi.mocked(veniceChat).mockRejectedValue(
+      Object.assign(new Error('venice down'), { status: 502 })
+    )
+    const { chatCompletion: orChat } = await import('../openrouter.js')
+    vi.mocked(orChat).mockRejectedValue(
+      Object.assign(new Error('openrouter down'), { status: 502 })
+    )
+
+    await expect(router.handleChatCompletion('user-1', 'key-1', mockBody)).rejects.toMatchObject({
+      status: 502,
+    })
+    expect(veniceChat).toHaveBeenCalledTimes(1)
+    expect(orChat).toHaveBeenCalledTimes(1)
+  })
+})

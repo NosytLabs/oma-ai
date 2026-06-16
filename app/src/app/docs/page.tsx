@@ -8,6 +8,7 @@ import {
   Lock, AlertCircle, DollarSign, Menu, X, ChevronRight, Play,
   Package, HardDrive, CheckCircle2
 } from 'lucide-react'
+import { MODELS as SOURCE_MODELS, MODEL_COUNT } from '@/lib/models-data'
 
 /* ==================== TYPES ==================== */
 
@@ -50,31 +51,19 @@ type ErrorInfo = {
 /* ==================== DATA ==================== */
 
 const PLAN_LIMITS: PlanLimits[] = [
-  { name: 'Free', rpm: 60, tpm: 60000, concurrent: 5, color: 'text-[var(--color-text-secondary)]', badge: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)]' },
-  { name: 'Starter', rpm: 120, tpm: 120000, concurrent: 10, color: 'text-[var(--color-accent)]', badge: 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' },
-  { name: 'Pro', rpm: 300, tpm: 300000, concurrent: 25, color: 'text-[var(--color-tertiary)]', badge: 'bg-[var(--color-tertiary)]/20 text-[var(--color-tertiary)]' },
-  { name: 'Business', rpm: 1000, tpm: 1000000, concurrent: 100, color: 'text-[var(--color-warning)]', badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
+  { name: 'Free', rpm: 60, tpm: 60000, concurrent: 5, color: 'text-text-secondary', badge: 'bg-surface text-text-secondary' },
+  { name: 'Starter', rpm: 120, tpm: 120000, concurrent: 10, color: 'text-accent', badge: 'bg-accent/20 text-accent' },
+  { name: 'Pro', rpm: 300, tpm: 300000, concurrent: 25, color: 'text-tertiary', badge: 'bg-tertiary/20 text-tertiary' },
+  { name: 'Business', rpm: 1000, tpm: 1000000, concurrent: 100, color: 'text-warning', badge: 'bg-warning/20 text-warning' },
 ]
 
-const MODEL_PRICING: ModelPricing[] = [
-  { id: 'claude-opus-4', name: 'Claude Opus 4', input: 15.00, output: 75.00, ctx: '200K' },
-  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', input: 3.00, output: 15.00, ctx: '200K' },
-  { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', input: 3.00, output: 15.00, ctx: '200K' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', input: 1.25, output: 10.00, ctx: '1M' },
-  { id: 'gemini-2.5-pro-thinking', name: 'Gemini 2.5 Pro (thinking)', input: 1.25, output: 10.00, ctx: '1M' },
-  { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', input: 0.80, output: 4.00, ctx: '200K' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', input: 0.075, output: 0.30, ctx: '1M' },
-  { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', input: 0.075, output: 0.30, ctx: '1M' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', input: 0.15, output: 0.60, ctx: '128K' },
-  { id: 'deepseek-v3.2', name: 'DeepSeek V3.2', input: 0.50, output: 1.50, ctx: '64K' },
-  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', input: 0.35, output: 0.90, ctx: '8K' },
-  { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', input: 0.35, output: 0.90, ctx: '8K' },
-  { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', input: 0.06, output: 0.12, ctx: '8K' },
-  { id: 'free/gpt-3.5-turbo', name: 'GPT-3.5 Turbo (FREE)', input: 0, output: 0, ctx: '16K' },
-  { id: 'free/claude-3-haiku', name: 'Claude 3 Haiku (FREE)', input: 0, output: 0, ctx: '200K' },
-  { id: 'free/gemini-pro', name: 'Gemini Pro (FREE)', input: 0, output: 0, ctx: '32K' },
-  { id: 'free/llama-3-8b', name: 'Llama 3 8B (FREE)', input: 0, output: 0, ctx: '8K' },
-]
+const MODEL_PRICING: ModelPricing[] = SOURCE_MODELS.map((m) => ({
+  id: m.id,
+  name: m.name,
+  input: m.inputPricePer1M,
+  output: m.outputPricePer1M,
+  ctx: m.contextLength,
+}))
 
 const ENDPOINTS: EndpointInfo[] = [
   {
@@ -228,11 +217,11 @@ function CopyButton({ text, id }: { text: string; id: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="absolute right-3 top-3 rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-surface)]/80 p-1.5 text-[var(--color-text-muted)] backdrop-blur-sm transition-all hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)] active:scale-95"
+      className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
       aria-label={copied ? 'Copied' : 'Copy code'}
       aria-controls={id}
     >
-      {copied ? <Check className="h-4 w-4 text-[var(--color-green)]" /> : <Copy className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4 text-orange" /> : <Copy className="h-4 w-4" />}
     </button>
   )
 }
@@ -240,14 +229,14 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 function CodeBlock({ code, title }: { code: string; title?: string }) {
   const id = useId()
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-panel">
       {title && (
-        <div className="flex items-center justify-between border-b border-[var(--color-border)]/50 px-4 py-2">
-          <span className="text-xs font-medium text-[var(--color-text-muted)] font-mono">{title}</span>
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
+          <span className="text-xs font-medium text-text-muted font-mono">{title}</span>
         </div>
       )}
       <CopyButton text={code} id={id} />
-      <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-[var(--color-text-secondary)]">{code}</code></pre>
+      <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-text-secondary">{code}</code></pre>
     </div>
   )
 }
@@ -256,14 +245,14 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
   const [active, setActive] = useState(0)
   const id = useId()
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
-      <div className="flex border-b border-[var(--color-border)]/50">
+    <div className="overflow-hidden rounded-xl border border-border bg-panel">
+      <div className="flex border-b border-border/50">
         {tabs.map((t, i) => (
           <button
             key={t.label}
             onClick={() => setActive(i)}
             className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
-              i === active ? 'text-[var(--color-accent)] border-[var(--color-accent)]' : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)]'
+              i === active ? 'text-accent border-accent' : 'text-text-muted border-transparent hover:text-text-secondary'
             }`}
           >
             {t.label}
@@ -272,7 +261,7 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
       </div>
       <div className="relative">
         <CopyButton text={tabs[active].code} id={id} />
-        <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-[var(--color-text-secondary)]">{tabs[active].code}</code></pre>
+        <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-text-secondary">{tabs[active].code}</code></pre>
       </div>
     </div>
   )
@@ -281,12 +270,12 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
 function SectionHeading({ id, icon, title, subtitle }: { id: string; icon: ReactNode; title: string; subtitle: string }) {
   return (
     <div id={id} className="mb-6 flex items-start gap-4 scroll-mt-24">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
         {icon}
       </div>
       <div>
-        <h2 className="text-xl font-bold text-[var(--color-text)] font-syne">{title}</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{subtitle}</p>
+        <h2 className="text-xl font-bold text-text font-display">{title}</h2>
+        <p className="mt-1 text-sm text-text-muted">{subtitle}</p>
       </div>
     </div>
   )
@@ -329,36 +318,36 @@ function QuickStartSection() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {QUICK_START_STEPS.map((step) => (
-          <div key={step.n} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-bold font-mono">
+          <div key={step.n} className="rounded-xl border border-border bg-surface/50 p-5">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent text-sm font-bold font-mono">
               {step.n}
             </div>
-            <h3 className="mb-1 font-semibold text-[var(--color-text)]">{step.title}</h3>
-            <p className="text-sm text-[var(--color-text-muted)]">{step.desc}</p>
+            <h3 className="mb-1 font-semibold text-text">{step.title}</h3>
+            <p className="text-sm text-text-muted">{step.desc}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
+      <div className="rounded-xl border border-border bg-panel p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-[var(--color-accent)]" />
-            <span className="text-sm font-medium text-[var(--color-text)]">Your First Request</span>
+            <Terminal className="h-4 w-4 text-accent" />
+            <span className="text-sm font-medium text-text">Your First Request</span>
           </div>
-          <span className="rounded-md bg-[var(--color-accent)]/10 px-2 py-0.5 text-xs font-mono text-[var(--color-accent)] border border-[var(--color-accent)]/20">cURL</span>
+          <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">cURL</span>
         </div>
         <CopyButton text={curlCode} id="quickstart-code" />
-        <pre id="quickstart-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"><code>{curlCode}</code></pre>
+        <pre id="quickstart-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{curlCode}</code></pre>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
-          <div className="text-xs text-[var(--color-text-muted)] mb-1">Base URL</div>
-          <code className="text-sm text-[var(--color-accent)]">https://api.oma-ai.com/v1</code>
+        <div className="rounded-lg border border-border bg-surface/50 p-3">
+          <div className="text-xs text-text-muted mb-1">Base URL</div>
+          <code className="text-sm text-accent">https://api.oma-ai.com/v1</code>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-3">
-          <div className="text-xs text-[var(--color-text-muted)] mb-1">SDK Install</div>
-          <code className="text-sm text-[var(--color-accent)]">npm install openai</code>
+        <div className="rounded-lg border border-border bg-surface/50 p-3">
+          <div className="text-xs text-text-muted mb-1">SDK Install</div>
+          <code className="text-sm text-accent">npm install openai</code>
         </div>
       </div>
     </AnimatedSection>
@@ -400,10 +389,10 @@ func main() {
       <SectionHeading id="authentication" icon={<Key className="h-5 w-5" />} title="Authentication"
         subtitle="All inference endpoints require a Bearer token API key in the Authorization header." />
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5 mb-6">
-        <div className="mb-3 text-sm text-[var(--color-text-muted)]">Authorization Header</div>
-        <div className="rounded-lg bg-[var(--color-surface)]/80 border border-[var(--color-border)]/50 p-3 font-mono text-sm">
-          <span className="text-[var(--color-warning)]">Authorization:</span> <span className="text-[var(--color-accent)]">Bearer oma_sk_...</span>
+      <div className="rounded-xl border border-border bg-panel p-5 mb-6">
+        <div className="mb-3 text-sm text-text-muted">Authorization Header</div>
+        <div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
+          <span className="text-warning">Authorization:</span> <span className="text-accent">Bearer oma_sk_...</span>
         </div>
       </div>
 
@@ -417,13 +406,13 @@ func main() {
         { label: 'Go', lang: 'go', code: goCode },
       ]} />
 
-      <div className="mt-6 rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 p-4">
+      <div className="mt-6 rounded-xl border border-warning/20 bg-warning/5 p-4">
         <div className="flex items-start gap-3">
-          <Shield className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
+          <Shield className="h-5 w-5 text-warning mt-0.5" />
           <div>
-            <h4 className="font-semibold text-[var(--color-warning)]">API Key Security</h4>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Keys use the <code className="text-[var(--color-warning)] font-mono">oma_sk_</code> prefix. Only the SHA-256 hash is stored. Keep your key secret and never commit it to version control.
+            <h4 className="font-semibold text-warning">API Key Security</h4>
+            <p className="mt-1 text-sm text-text-muted">
+              Keys use the <code className="text-warning font-mono">oma_sk_</code> prefix. Only the SHA-256 hash is stored. Keep your key secret and never commit it to version control.
             </p>
           </div>
         </div>
@@ -442,41 +431,41 @@ function EndpointsSection() {
 
       <div className="space-y-4">
         {ENDPOINTS.map(ep => (
-          <div key={ep.path} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 overflow-hidden">
+          <div key={ep.path} className="rounded-xl border border-border bg-surface/50 overflow-hidden">
             <button
               onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
-              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[var(--color-surface)]/80"
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface/80"
             >
               <div className="flex items-center gap-3">
                 <span className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
-                  ep.method === 'GET' ? 'bg-[var(--color-green)]/10 text-[var(--color-green)]' : 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+                  ep.method === 'GET' ? 'bg-orange/10 text-orange' : 'bg-accent/10 text-accent'
                 }`}>
                   {ep.method}
                 </span>
-                <code className="font-mono text-sm text-[var(--color-text)]">{ep.path}</code>
+                <code className="font-mono text-sm text-text">{ep.path}</code>
               </div>
               <div className="flex items-center gap-2">
                 {ep.method === 'POST' && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-2.5 py-0.5 text-xs text-[var(--color-text-muted)] border border-[var(--color-border)]">
+                  <span className="flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-0.5 text-xs text-text-muted border border-border">
                     <Lock className="h-3 w-3" /> Auth
                   </span>
                 )}
-                <ChevronRight className={`h-4 w-4 text-[var(--color-text-muted)] transition-transform ${expanded === ep.path ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`h-4 w-4 text-text-muted transition-transform ${expanded === ep.path ? 'rotate-90' : ''}`} />
               </div>
             </button>
 
             {expanded === ep.path && (
-              <div className="border-t border-[var(--color-border)] p-4 space-y-4">
-                <p className="text-sm text-[var(--color-text-muted)]">{ep.desc}</p>
+              <div className="border-t border-border p-4 space-y-4">
+                <p className="text-sm text-text-muted">{ep.desc}</p>
 
                 {ep.body && (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Request Body</h4>
-                    <div className="rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-panel)] p-4 space-y-2">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Request Body</h4>
+                    <div className="rounded-lg border border-border/50 bg-panel p-4 space-y-2">
                       {Object.entries(ep.body).map(([key, val]) => (
                         <div key={key} className="flex gap-3 font-mono text-sm">
-                          <span className="text-[var(--color-accent)] shrink-0">{key}</span>
-                          <span className="text-[var(--color-text-muted)]">{val}</span>
+                          <span className="text-accent shrink-0">{key}</span>
+                          <span className="text-text-muted">{val}</span>
                         </div>
                       ))}
                     </div>
@@ -484,7 +473,7 @@ function EndpointsSection() {
                 )}
 
                 <div>
-                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Response</h4>
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Response</h4>
                   <CodeBlock code={ep.response} />
                 </div>
               </div>
@@ -502,27 +491,27 @@ function RateLimitsSection() {
       <SectionHeading id="rate-limits" icon={<Gauge className="h-5 w-5" />} title="Rate Limits"
         subtitle="Per-plan request and token limits with burst handling." />
 
-      <div className="mb-6 overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="mb-6 overflow-hidden rounded-xl border border-border">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Plan</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">RPM</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">TPM</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)] text-right">Concurrent</th>
+            <tr className="border-b border-border bg-surface/50">
+              <th className="px-4 py-3 font-medium text-text-muted">Plan</th>
+              <th className="px-4 py-3 font-medium text-text-muted text-right">RPM</th>
+              <th className="px-4 py-3 font-medium text-text-muted text-right">TPM</th>
+              <th className="px-4 py-3 font-medium text-text-muted text-right">Concurrent</th>
             </tr>
           </thead>
           <tbody>
             {PLAN_LIMITS.map((p, i) => (
-              <tr key={p.name} className={`border-b border-[var(--color-border)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
+              <tr key={p.name} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${p.badge}`}>
                     {p.name}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.rpm.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.tpm.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{p.concurrent}</td>
+                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.rpm.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.tpm.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right font-mono text-text-secondary">{p.concurrent}</td>
               </tr>
             ))}
           </tbody>
@@ -530,18 +519,18 @@ function RateLimitsSection() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
-          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Burst Handling</h4>
-          <p className="text-sm text-[var(--color-text-muted)]">
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h4 className="mb-2 font-semibold text-text">Burst Handling</h4>
+          <p className="text-sm text-text-muted">
             Token bucket algorithm allows short bursts above the sustained rate. Excess tokens are spilled into the next window.
           </p>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
-          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Rate Limit Headers</h4>
-          <div className="space-y-1 font-mono text-xs text-[var(--color-text-muted)]">
-            <div><span className="text-[var(--color-accent)]">X-RateLimit-Limit</span> - Requests per minute</div>
-            <div><span className="text-[var(--color-accent)]">X-RateLimit-Remaining</span> - Requests left</div>
-            <div><span className="text-[var(--color-accent)]">X-RateLimit-Reset</span> - Seconds until reset</div>
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h4 className="mb-2 font-semibold text-text">Rate Limit Headers</h4>
+          <div className="space-y-1 font-mono text-xs text-text-muted">
+            <div><span className="text-accent">X-RateLimit-Limit</span> - Requests per minute</div>
+            <div><span className="text-accent">X-RateLimit-Remaining</span> - Requests left</div>
+            <div><span className="text-accent">X-RateLimit-Reset</span> - Seconds until reset</div>
           </div>
         </div>
       </div>
@@ -555,44 +544,44 @@ function PricingSection() {
       <SectionHeading id="pricing" icon={<DollarSign className="h-5 w-5" />} title="Pricing"
         subtitle="Per-model pricing. Input and output priced per million tokens." />
 
-      <div className="mb-6 rounded-xl border border-[var(--color-border)] overflow-hidden">
+      <div className="mb-6 rounded-xl border border-border overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Model</th>
-              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Input / 1M</th>
-              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Output / 1M</th>
-              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-muted)]">Context</th>
+            <tr className="border-b border-border bg-surface/50">
+              <th className="px-4 py-3 font-medium text-text-muted">Model</th>
+              <th className="px-4 py-3 text-right font-medium text-text-muted">Input / 1M</th>
+              <th className="px-4 py-3 text-right font-medium text-text-muted">Output / 1M</th>
+              <th className="px-4 py-3 text-right font-medium text-text-muted">Context</th>
             </tr>
           </thead>
           <tbody>
             {MODEL_PRICING.map((m, i) => (
-              <tr key={m.id} className={`border-b border-[var(--color-border)]/50 ${i % 2 === 1 ? 'bg-[var(--color-surface)]/30' : ''}`}>
-                <td className="px-4 py-3 font-medium text-[var(--color-text)]">{m.name}</td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-accent)]">{fmt(m.input)}</td>
-                <td className="px-4 py-3 text-right font-mono text-[var(--color-text-secondary)]">{fmt(m.output)}</td>
-                <td className="px-4 py-3 text-right text-[var(--color-text-muted)]">{m.ctx}</td>
+              <tr key={m.id} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
+                <td className="px-4 py-3 font-medium text-text">{m.name}</td>
+                <td className="px-4 py-3 text-right font-mono text-accent">{fmt(m.input)}</td>
+                <td className="px-4 py-3 text-right font-mono text-text-secondary">{fmt(m.output)}</td>
+                <td className="px-4 py-3 text-right text-text-muted">{m.ctx}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 p-4">
-        <h4 className="font-semibold text-[var(--color-accent)]">Credit Deduction</h4>
+      <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+        <h4 className="font-semibold text-accent">Credit Deduction</h4>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
-            <span className="text-sm text-[var(--color-text-muted)]">$1 = $1. Billed per token in real-time.</span>
+            <CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
+            <span className="text-sm text-text-muted">$1 = $1. Billed per token in real-time.</span>
           </div>
 
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
-            <span className="text-sm text-[var(--color-text-muted)]">No minimums or subscriptions</span>
+            <CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
+            <span className="text-sm text-text-muted">No minimums or subscriptions</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5" />
-            <span className="text-sm text-[var(--color-text-muted)]">12-month rolling expiry</span>
+            <CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
+            <span className="text-sm text-text-muted">12-month rolling expiry</span>
           </div>
         </div>
       </div>
@@ -642,12 +631,12 @@ const response = await client.chat.completions.create({
       <SectionHeading id="x402" icon={<Zap className="h-5 w-5" />} title="x402 Payments"
         subtitle="Native HTTP 402 payments for AI agents. Pay per request, no credit pre-funding." />
 
-      <div className="rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 p-4 mb-6">
+      <div className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6">
         <div className="flex items-start gap-3">
-          <Zap className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
+          <Zap className="h-5 w-5 text-warning mt-0.5" />
           <div>
-            <h4 className="font-semibold text-[var(--color-warning)]">Venice x402 Protocol</h4>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            <h4 className="font-semibold text-warning">Venice x402 Protocol</h4>
+            <p className="mt-1 text-sm text-text-muted">
               x402 enables gasless AI inference payments on Solana and Base. When credits are exhausted,
               the API returns HTTP 402 with payment details. Agents can pay directly without pre-funding.
             </p>
@@ -656,33 +645,33 @@ const response = await client.chat.completions.create({
       </div>
 
       <div className="mb-6">
-        <h4 className="mb-3 text-sm font-semibold text-[var(--color-text)]">402 Payment Flow</h4>
+        <h4 className="mb-3 text-sm font-semibold text-text">402 Payment Flow</h4>
         <CodeBlock code={flowCode} />
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
-        <h4 className="mb-3 font-semibold text-[var(--color-text)]">For AI Agents</h4>
-        <p className="text-sm text-[var(--color-text-muted)] mb-4">
-          Enable <code className="text-[var(--color-accent)] font-mono">x402: true</code> in the SDK to pay per request automatically.
+      <div className="rounded-xl border border-border bg-surface/50 p-5">
+        <h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
+        <p className="text-sm text-text-muted mb-4">
+          Enable <code className="text-accent font-mono">x402: true</code> in the SDK to pay per request automatically.
           Ideal for agents that make sporadic API calls and do not want to manage credit balances.
         </p>
         <CodeBlock code={agentCode} />
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
-          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Benefits</h4>
-          <ul className="space-y-1.5 text-sm text-[var(--color-text-muted)]">
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> No credit pre-funding</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-accent)] mt-0.5 shrink-0" /> Per-request billing</li>
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h4 className="mb-2 font-semibold text-text">Benefits</h4>
+          <ul className="space-y-1.5 text-sm text-text-muted">
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" /> No credit pre-funding</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" /> Gasless on Solana/Base</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" /> Per-request billing</li>
           </ul>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
-          <h4 className="mb-2 font-semibold text-[var(--color-text)]">Supported Chains</h4>
-          <ul className="space-y-1.5 text-sm text-[var(--color-text-muted)]">
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Base (USDC)</li>
-            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--color-green)] mt-0.5 shrink-0" /> Solana (USDC)</li>
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h4 className="mb-2 font-semibold text-text">Supported Chains</h4>
+          <ul className="space-y-1.5 text-sm text-text-muted">
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" /> Base (USDC)</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" /> Solana (USDC)</li>
           </ul>
         </div>
       </div>
@@ -735,19 +724,19 @@ print(response.json())`
         subtitle="Use the OpenAI SDK with OMA as the base URL." />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-[var(--color-accent)]" />
-            <span className="font-mono text-sm text-[var(--color-text)]">npm</span>
+            <HardDrive className="h-4 w-4 text-accent" />
+            <span className="font-mono text-sm text-text">npm</span>
           </div>
-          <code className="text-sm text-[var(--color-accent)]">npm install openai</code>
+          <code className="text-sm text-accent">npm install openai</code>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-[var(--color-accent)]" />
-            <span className="font-mono text-sm text-[var(--color-text)]">pip</span>
+            <HardDrive className="h-4 w-4 text-accent" />
+            <span className="font-mono text-sm text-text">pip</span>
           </div>
-          <code className="text-sm text-[var(--color-accent)]">pip install openai</code>
+          <code className="text-sm text-accent">pip install openai</code>
         </div>
       </div>
 
@@ -757,8 +746,8 @@ print(response.json())`
         { label: 'cURL', lang: 'bash', code: curlCode },
       ]} />
 
-      <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-4">
-        <h4 className="mb-3 font-semibold text-[var(--color-text)]">Vercel AI SDK</h4>
+      <div className="mt-6 rounded-xl border border-border bg-surface/50 p-4">
+        <h4 className="mb-3 font-semibold text-text">Vercel AI SDK</h4>
         <CodeBlock code={`import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'oma_sk_...' });
@@ -787,31 +776,31 @@ for attempt in range(5):
       <SectionHeading id="errors" icon={<AlertCircle className="h-5 w-5" />} title="Error Codes"
         subtitle="Standard HTTP status codes returned by the API." />
 
-      <div className="mb-6 overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="mb-6 overflow-hidden rounded-xl border border-border">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/50">
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Code</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Type</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-muted)]">Description</th>
+            <tr className="border-b border-border bg-surface/50">
+              <th className="px-4 py-3 font-medium text-text-muted">Code</th>
+              <th className="px-4 py-3 font-medium text-text-muted">Type</th>
+              <th className="px-4 py-3 font-medium text-text-muted">Description</th>
             </tr>
           </thead>
           <tbody>
             {ERROR_CODES.map(e => (
-              <tr key={e.code} className="border-b border-[var(--color-border)]/50">
-                <td className="px-4 py-3 font-mono font-bold text-[var(--color-error)]">{e.code}</td>
-                <td className="px-4 py-3 font-mono text-[var(--color-warning)]">{e.type}</td>
-                <td className="px-4 py-3 text-[var(--color-text-muted)]">{e.desc}</td>
+              <tr key={e.code} className="border-b border-border/50">
+                <td className="px-4 py-3 font-mono font-bold text-error">{e.code}</td>
+                <td className="px-4 py-3 font-mono text-warning">{e.type}</td>
+                <td className="px-4 py-3 text-text-muted">{e.desc}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
-        <h4 className="mb-3 font-semibold text-[var(--color-text)]">Handling Rate Limits</h4>
+      <div className="rounded-xl border border-border bg-panel p-5">
+        <h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
         <CopyButton text={retryCode} id="retry-code" />
-        <pre id="retry-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-[var(--color-text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"><code>{retryCode}</code></pre>
+        <pre id="retry-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{retryCode}</code></pre>
       </div>
     </AnimatedSection>
   )
@@ -827,7 +816,7 @@ function Sidebar({ activeId }: { activeId: string }) {
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-void)] shadow-lg lg:hidden"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
         aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
         aria-expanded={mobileOpen}
         aria-controls={mobileNavId}
@@ -836,19 +825,19 @@ function Sidebar({ activeId }: { activeId: string }) {
       </button>
 
       {mobileOpen && (
-        <button className="fixed inset-0 z-40 bg-[var(--color-void)]/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
+        <button className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
       )}
 
-      <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-void)] transition-transform lg:translate-x-0 ${
+      <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-4">
-          <div className="mb-4 rounded-xl bg-[var(--color-accent)]/10 p-3 border border-[var(--color-accent)]/20">
+          <div className="mb-4 rounded-xl bg-accent/10 p-3 border border-accent/20">
             <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-[var(--color-accent)]" />
-              <span className="text-sm font-semibold text-[var(--color-accent)]">OMA API</span>
+              <Terminal className="h-4 w-4 text-accent" />
+              <span className="text-sm font-semibold text-accent">OMA API</span>
             </div>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">v1.0.0</p>
+            <p className="mt-1 text-xs text-text-muted">v1.0.0</p>
           </div>
 
           <nav className="space-y-1" aria-label="Documentation navigation">
@@ -862,8 +851,8 @@ function Sidebar({ activeId }: { activeId: string }) {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
                     isActive
-                      ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/30'
-                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]'
+                      ? 'bg-accent/10 text-accent border border-accent/30'
+                      : 'text-text-muted hover:bg-surface hover:text-text'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -905,27 +894,27 @@ function DocsContent() {
       <Sidebar activeId={activeId} />
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-void)]/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-border bg-void/80 backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
                 <BookOpen className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-0.5">
-                  <Link href="/" className="hover:text-[var(--color-text)] transition-colors">Home</Link>
+                <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5">
+                  <Link href="/" className="hover:text-text transition-colors">Home</Link>
                   <span className="opacity-50">›</span>
-                  <span className="text-[var(--color-text-secondary)]">Developer Portal</span>
+                  <span className="text-text-secondary">Developer Portal</span>
                   <span className="opacity-50">›</span>
-                  <span className="text-[var(--color-text)]">API Docs</span>
+                  <span className="text-text">API Docs</span>
                 </nav>
-                <h1 className="font-semibold text-[var(--color-text)] text-sm">OMA AI Gateway Documentation</h1>
+                <h1 className="font-semibold text-text text-sm">OMA AI Gateway Documentation</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Link
                 href="/playground"
-                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-void)] transition-colors hover:bg-[var(--color-accent-hover)]"
+                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-void transition-colors hover:bg-accent-hover"
               >
                 <Play className="h-4 w-4" />
                 Playground
@@ -936,11 +925,11 @@ function DocsContent() {
 
         <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <h2 className="text-4xl font-bold tracking-tight text-[var(--color-text)] font-syne mb-3">
+            <h2 className="text-4xl font-bold tracking-tight text-text font-display mb-3">
               OMA API Documentation
             </h2>
-            <p className="text-lg text-[var(--color-text-muted)]">
-              OpenAI-compatible AI inference gateway with crypto payments. Access 91+ models with unified API.
+            <p className="text-lg text-text-muted">
+              OpenAI-compatible AI inference gateway with crypto payments. Access {MODEL_COUNT} models with unified API.
             </p>
           </div>
 

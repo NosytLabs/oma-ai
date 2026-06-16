@@ -6,7 +6,7 @@ import { Search, Brain, ArrowRight, Sparkles, ChevronDown, Code, Eye, Zap as Zap
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/prices'
+import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/prices-utils'
 
 const LazyModelDetailModal = dynamic(
   () => import('@/components/models/ModelDetailModal').then(mod => mod.ModelDetailModal),
@@ -32,7 +32,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ]
 
 const TIERS: (Tier | 'All')[] = ['All', 'budget', 'mid', 'premium', 'frontier']
-const PROVIDERS: (Provider | 'All')[] = ['All', 'Venice', 'AntSeed']
+const PROVIDERS: (Provider | 'All')[] = ['All', ...Array.from(new Set(MODELS.map(m => m.provider)))]
 
 const TIER_LABELS: Record<Tier, string> = {
   budget: 'Budget',
@@ -40,6 +40,19 @@ const TIER_LABELS: Record<Tier, string> = {
   premium: 'Premium',
   frontier: 'Frontier',
 }
+
+const TIER_LEFT_BORDER: Record<Tier, string> = {
+  frontier: 'border-l-4 border-l-violet-500',
+  premium: 'border-l-4 border-l-orange-500',
+  mid: 'border-l-4 border-l-amber-500',
+  budget: 'border-l-4 border-l-emerald-500',
+}
+
+const CAPABILITY_CHIPS: { value: Capability; label: string }[] = [
+  { value: 'vision', label: 'Vision' },
+  { value: 'fast', label: 'Fast' },
+  { value: 'coding', label: 'Coding' },
+]
 
 const ICON_PROPS = { strokeWidth: 1.5 } as const
 
@@ -83,7 +96,7 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="model-card"
+      className={`model-card hover:translate-y-[-3px] hover:shadow-xl transition-all duration-300 ${TIER_LEFT_BORDER[model.tier]}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseDown={() => setIsPressed(true)}
@@ -92,7 +105,7 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-medium truncate font-mono" style={{ color: 'var(--color-text-muted)' }}>{model.id}</p>
+          <p className="text-xs font-medium truncate font-mono" style={{ color: 'var(--color-text-tertiary)' }}>{model.id}</p>
           <p className="mt-0.5 text-base font-semibold" style={{ color: 'var(--color-text-bright)' }}>{model.name}</p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -105,18 +118,18 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-4 text-xs min-h-[44px]" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="mb-3 flex items-center gap-4 text-xs min-h-[44px]" style={{ color: 'var(--color-text-tertiary)' }}>
         <span className="flex items-center gap-1">
           <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-accent)', opacity: 0.6 }} />
           <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{model.contextLength}</span>
         </span>
         <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--color-accent)' }}>
           {formatPrice(model.inputPricePer1M)}
-          <span style={{ color: 'var(--color-text-muted)' }}>/1M in</span>
+          <span style={{ color: 'var(--color-text-tertiary)' }}>/1M in</span>
         </span>
-        <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--color-text-tertiary)' }}>
           {formatPrice(model.outputPricePer1M)}
-          <span style={{ color: 'var(--color-text-muted)' }}>/1M out</span>
+          <span style={{ color: 'var(--color-text-tertiary)' }}>/1M out</span>
         </span>
       </div>
 
@@ -127,7 +140,7 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
             className="capability-chip"
             style={{
               backgroundColor: isHovered ? 'var(--color-accent-dim)' : 'var(--color-surface)',
-              color: isHovered ? 'var(--color-accent)' : 'var(--color-text-muted)',
+              color: isHovered ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
             }}
           >
             {CAPABILITY_ICONS[cap]}
@@ -135,7 +148,7 @@ const ModelCard = memo(function ModelCard({ model, onSelect }: ModelCardProps) {
           </span>
         ))}
         {model.capabilities.length > 4 && (
-          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)', borderRadius: '6px' }}>
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-tertiary)', borderRadius: '6px' }}>
             +{model.capabilities.length - 4}
           </span>
         )}
@@ -171,14 +184,14 @@ const FreeModelHeroCard = memo(function FreeModelHeroCard({ model, onSelect }: O
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TIER_COLORS[model.tier].badge}`}>
           {TIER_LABELS[model.tier]}
         </span>
-        <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
           <Brain className="h-3.5 w-3.5" style={{ color: 'var(--color-accent)', opacity: 0.6 }} />
           <span className="font-medium" style={{ color: 'var(--color-accent)' }}>{model.contextLength}</span>
         </div>
       </div>
 
       <h3 className="text-lg font-bold mb-1 font-syne" style={{ color: 'var(--color-text-bright)' }}>{model.name}</h3>
-      <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--color-text-muted)' }}>{model.description}</p>
+      <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--color-text-tertiary)' }}>{model.description}</p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {model.capabilities.map((cap) => (
@@ -210,6 +223,8 @@ interface FilterBarProps {
   setTierFilter: (v: Tier | 'All') => void
   providerFilter: Provider | 'All'
   setProviderFilter: (v: Provider | 'All') => void
+  capabilityFilter: Capability | 'All'
+  setCapabilityFilter: (v: Capability | 'All') => void
   filteredCount: number
   sortBy: SortOption
   setSortBy: (v: SortOption) => void
@@ -224,6 +239,8 @@ const FilterBar = memo(function FilterBar({
   setTierFilter,
   providerFilter,
   setProviderFilter,
+  capabilityFilter,
+  setCapabilityFilter,
   filteredCount,
   sortBy,
   setSortBy,
@@ -236,7 +253,7 @@ const FilterBar = memo(function FilterBar({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-xl" style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)', padding: '16px' }}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: 'var(--color-text-tertiary)' }} />
           <input
             type="text"
             placeholder="Search models..."
@@ -248,7 +265,7 @@ const FilterBar = memo(function FilterBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Tier:</span>
+          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Tier:</span>
           <div className="flex flex-wrap gap-1.5">
             {TIERS.map((tier) => (
               <button key={tier} onClick={() => setTierFilter(tier)} className="filter-pill" aria-pressed={tierFilter === tier}>
@@ -259,7 +276,7 @@ const FilterBar = memo(function FilterBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Provider:</span>
+          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Provider:</span>
           <div className="flex flex-wrap gap-1.5">
             {PROVIDERS.map((provider) => (
               <button key={provider} onClick={() => setProviderFilter(provider)} className="filter-pill" aria-pressed={providerFilter === provider}>
@@ -268,10 +285,33 @@ const FilterBar = memo(function FilterBar({
             ))}
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Tag:</span>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setCapabilityFilter('All')}
+              className="filter-pill"
+              aria-pressed={capabilityFilter === 'All'}
+            >
+              All
+            </button>
+            {CAPABILITY_CHIPS.map((chip) => (
+              <button
+                key={chip.value}
+                onClick={() => setCapabilityFilter(chip.value)}
+                className="filter-pill"
+                aria-pressed={capabilityFilter === chip.value}
+              >
+                {CAPABILITY_LABELS[chip.value]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
           <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{filteredCount}</span> models
         </span>
         <div className="relative">
@@ -326,7 +366,7 @@ const FilterBar = memo(function FilterBar({
             Filters
             {mobileFiltersOpen ? <XCircle className="h-4 w-4" /> : null}
           </button>
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
             <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{filteredCount}</span> models
           </span>
         </div>
@@ -354,6 +394,7 @@ export default function ModelsPage() {
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState<Tier | 'All'>('All')
   const [providerFilter, setProviderFilter] = useState<Provider | 'All'>('All')
+  const [capabilityFilter, setCapabilityFilter] = useState<Capability | 'All'>('All')
   const [sortBy, setSortBy] = useState<SortOption>('price')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
@@ -392,6 +433,10 @@ export default function ModelsPage() {
       result = result.filter((m) => m.provider === providerFilter)
     }
 
+    if (capabilityFilter !== 'All') {
+      result = result.filter((m) => m.capabilities.includes(capabilityFilter))
+    }
+
     result.sort((a, b) => {
       switch (sortBy) {
         case 'price':
@@ -406,7 +451,7 @@ export default function ModelsPage() {
     })
 
     return result
-  }, [search, tierFilter, providerFilter, sortBy])
+  }, [search, tierFilter, providerFilter, capabilityFilter, sortBy])
 
   const modelsByTier = useMemo(() => getModelsByTier(filtered), [filtered])
   const budgetModels = useMemo(() => MODELS.filter((m) => m.tier === 'budget' && m.inputPricePer1M <= 0.02), [])
@@ -423,6 +468,7 @@ export default function ModelsPage() {
     setSearch('')
     setTierFilter('All')
     setProviderFilter('All')
+    setCapabilityFilter('All')
   }
 
   return (
@@ -442,7 +488,7 @@ export default function ModelsPage() {
           </p>
         </motion.header>
 
-        {budgetModels.length > 0 && tierFilter === 'All' && providerFilter === 'All' && !search && (
+        {budgetModels.length > 0 && tierFilter === 'All' && providerFilter === 'All' && capabilityFilter === 'All' && !search && (
           <motion.section className="mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}>
             <div className="flex items-center gap-2 mb-4">
               <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium" style={{ backgroundColor: 'var(--color-secondary-dim)', color: 'var(--color-secondary)', border: '1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)' }}>
@@ -465,6 +511,8 @@ export default function ModelsPage() {
           setTierFilter={setTierFilter}
           providerFilter={providerFilter}
           setProviderFilter={setProviderFilter}
+          capabilityFilter={capabilityFilter}
+          setCapabilityFilter={setCapabilityFilter}
           filteredCount={filtered.length}
           sortBy={sortBy}
           setSortBy={setSortBy}
@@ -487,7 +535,7 @@ export default function ModelsPage() {
                   </span>
                   <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, var(--color-border) 0%, transparent 100%)' }} />
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {group.models.map((model) => (
                     <ModelCard key={model.id} model={model} onSelect={setSelectedModel} />
                   ))}
@@ -497,7 +545,7 @@ export default function ModelsPage() {
           </div>
         )}
 
-        <motion.section className="mt-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
+        <motion.section className="mt-16 pb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
           <h3 className="mb-6 text-lg font-semibold font-syne" style={{ color: 'var(--color-text-bright)' }}>Provider Legend</h3>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {([
@@ -509,7 +557,7 @@ export default function ModelsPage() {
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: provider.accent }} />
                   <span className="font-semibold" style={{ color: 'var(--color-text-bright)' }}>{provider.name}</span>
                 </div>
-                <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{provider.desc}</p>
+                <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{provider.desc}</p>
               </div>
             ))}
           </div>

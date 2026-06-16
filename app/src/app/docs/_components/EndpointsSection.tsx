@@ -23,17 +23,17 @@ export function EndpointsSection() {
             header={
               <div className="flex min-w-0 items-center gap-3">
                 <MethodBadge method={ep.method} />
-                <code className="truncate font-mono text-sm text-[var(--color-text)]">
+                <code className="truncate font-mono text-sm text-text">
                   {ep.path}
                 </code>
-                <span className="hidden text-xs text-[var(--color-text-muted)] sm:inline">
+                <span className="hidden text-xs text-text-muted sm:inline">
                   — {ep.title}
                 </span>
                 <span
                   className={`ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
                     ep.auth.includes('None')
-                      ? 'border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text-muted)]'
-                      : 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+                      ? 'border-border bg-panel text-text-muted'
+                      : 'border-accent/30 bg-accent/10 text-accent'
                   }`}
                 >
                   {ep.auth.includes('None') ? (
@@ -46,32 +46,32 @@ export function EndpointsSection() {
               </div>
             }
           >
-            <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">{ep.desc}</p>
+            <p className="text-[13px] leading-relaxed text-text-muted">{ep.desc}</p>
 
             <div>
-              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
                 Auth
               </p>
-              <p className="font-mono text-[13px] text-[var(--color-text-secondary)]">{ep.auth}</p>
+              <p className="font-mono text-[13px] text-text-secondary">{ep.auth}</p>
             </div>
 
             {ep.body && (
               <div>
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
                   Request body
                 </p>
-                <div className="overflow-hidden rounded-md border border-[var(--color-border)]/60 bg-[var(--color-panel)]">
+                <div className="overflow-hidden rounded-md border border-border/60 bg-panel">
                   <table className="w-full text-sm">
                     <tbody>
                       {Object.entries(ep.body).map(([key, val], i) => (
                         <tr
                           key={key}
-                          className={i > 0 ? 'border-t border-[var(--color-border)]/50' : ''}
+                          className={i > 0 ? 'border-t border-border/50' : ''}
                         >
-                          <td className="w-1/3 whitespace-nowrap px-4 py-2.5 align-top font-mono text-[13px] text-[var(--color-accent)]">
+                          <td className="w-1/3 whitespace-nowrap px-4 py-2.5 align-top font-mono text-[13px] text-accent">
                             {key}
                           </td>
-                          <td className="px-4 py-2.5 align-top font-mono text-xs leading-relaxed text-[var(--color-text-muted)]">
+                          <td className="px-4 py-2.5 align-top font-mono text-xs leading-relaxed text-text-muted">
                             {val}
                           </td>
                         </tr>
@@ -83,7 +83,7 @@ export function EndpointsSection() {
             )}
 
             <div>
-              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
                 Response · 200 OK
               </p>
               <CodeBlock code={ep.response} lang="json" />
@@ -91,17 +91,17 @@ export function EndpointsSection() {
 
             {ep.errors?.length > 0 && (
               <div>
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
                   Errors
                 </p>
                 <ul className="space-y-1.5 text-[13px]">
                   {ep.errors.map((e) => (
                     <li key={`${e.code}-${e.type}`} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 inline-flex shrink-0 items-center rounded-md border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--color-error)]">
+                      <span className="mt-0.5 inline-flex shrink-0 items-center rounded-md border border-error/30 bg-error/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-error">
                         {e.code}
                       </span>
-                      <span className="text-[var(--color-text-muted)]">
-                        <code className="font-mono text-[var(--color-text-secondary)]">
+                      <span className="text-text-muted">
+                        <code className="font-mono text-text-secondary">
                           {e.type}
                         </code>{' '}
                         — {e.when}

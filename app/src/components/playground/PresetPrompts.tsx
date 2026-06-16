@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { Code2, FileText, Lightbulb, Bug } from 'lucide-react'
 
 interface Preset {
@@ -44,32 +44,32 @@ interface EmptyStateProps {
 export function EmptyState({ onPreset }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-4 py-16">
-      <motion.div
+      <m.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-16 h-16 flex items-center justify-center mb-8 border border-[var(--color-border)]"
+        className="w-16 h-16 flex items-center justify-center mb-8 border border-border"
       >
-        <span className="text-2xl text-[var(--color-success)] font-mono">{'>'}_</span>
-      </motion.div>
-      <motion.h1
+        <span className="text-2xl text-success font-mono">{'>'}_</span>
+      </m.div>
+      <m.h1
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
-        className="text-2xl font-mono font-bold text-[var(--color-text)] mb-4 tracking-tight"
+        className="text-2xl font-mono font-bold text-text mb-4 tracking-tight"
       >
         OMA PLAYGROUND
-      </motion.h1>
-      <motion.p
+      </m.h1>
+      <m.p
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-[var(--color-text-muted)] text-sm font-mono max-w-md mb-8"
+        className="text-text-muted text-sm font-mono max-w-md mb-8"
       >
         {'// QUERY THE GATEWAY'}
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -81,14 +81,14 @@ export function EmptyState({ onPreset }: EmptyStateProps) {
             <button
               key={preset.id}
               onClick={() => onPreset(preset.prompt)}
-              className="flex items-center gap-2 px-4 py-3 bg-[var(--color-void)] border border-[var(--color-border)] rounded-full text-sm font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border)] hover:brightness-150 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
+              className="flex items-center gap-2 px-4 py-3 bg-void border border-border rounded-full text-sm font-mono text-text-muted hover:text-text hover:border-border hover:brightness-150 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
             >
-            <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            <Icon className="w-3.5 h-3.5 text-text-muted" />
             {preset.label}
           </button>
           )
         })}
-      </motion.div>
+      </m.div>
     </div>
   )
 }

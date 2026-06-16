@@ -1,0 +1,37 @@
+name: Nonce Cleanup
+
+on:
+  schedule:
+    # Every 15 minutes. Was 15m setInterval in server/src/jobs/nonce-cleanup.ts.
+    # Nonces expire after 10 minutes of inactivity, so 15m is the natural cadence.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-nonce-cleanup
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Clear expired SIWE nonces
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run nonce cleanup
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npx tsx src/jobs/cli-runner.ts nonce-cleanup

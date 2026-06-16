@@ -1,10 +1,10 @@
 /**
  * Shared utilities for the OMA-AI chart components.
  *
- * - **Color tokens**: recharts requires concrete hex values (it cannot read
- *   `var(--color-*)` strings at draw time on SVG `<stop>`/`<stroke>` attrs),
- *   so we resolve the design tokens to hex here and import them in every
- *   chart. The single source of truth remains `app/src/app/globals.css`.
+ * - **Color tokens**: chart colors are referenced via `var(--color-*)` so
+ *   they follow theme changes from `app/src/app/globals.css`. recharts
+ *   forwards these strings straight into the rendered SVG and the browser
+ *   resolves them at draw time.
  * - **Formatters**: currency, compact number, and adaptive date formatters
  *   used by every chart axis and tooltip.
  * - **Empty/Loading states**: small composable pieces that any chart can
@@ -16,36 +16,36 @@ import type { ReactNode } from 'react'
 import { Inbox } from 'lucide-react'
 import { format } from 'date-fns'
 
-// ─── Color tokens (mirror of globals.css) ─────────────────────────────────────
-// recharts renders to SVG and does NOT resolve CSS custom properties, so we
-// mirror the values here. The single source of truth is `app/src/app/globals.css`.
-// If a brand color changes there, update here too.
+// ─── Color tokens ────────────────────────────────────────────────────────────
+// All chart colors are CSS custom properties from `app/src/app/globals.css`.
+// recharts writes these strings into the rendered SVG and the browser
+// resolves them at paint time, so theme changes propagate without rebuilds.
 
 export const CHART_COLORS = {
-  accent: '#fb923c',
-  accentHover: '#f97316',
-  secondary: '#ffb800',
-  tertiary: '#a78bfa',
-  emerald: '#34d399',
-  blue: '#60a5fa',
-  pink: '#f472b6',
-  success: '#fb923c',
-  error: '#ff3366',
-  warning: '#ffb800',
+  accent: 'var(--color-accent)',
+  accentHover: 'var(--color-accent-hover)',
+  secondary: 'var(--color-secondary)',
+  tertiary: 'var(--color-tertiary)',
+  emerald: 'var(--color-provider-antseed)',
+  blue: 'var(--color-provider-openrouter)',
+  pink: 'var(--color-provider-together)',
+  success: 'var(--color-success)',
+  error: 'var(--color-error)',
+  warning: 'var(--color-warning)',
 
   // Provider colors (used by SpendByProvider / ProviderHealth)
-  providerVenice: '#a78bfa',
-  providerAntseed: '#34d399',
-  providerOpenrouter: '#60a5fa',
-  providerTogether: '#f472b6',
+  providerVenice: 'var(--color-provider-venice)',
+  providerAntseed: 'var(--color-provider-antseed)',
+  providerOpenrouter: 'var(--color-provider-openrouter)',
+  providerTogether: 'var(--color-provider-together)',
 
   // Axis / grid neutrals
-  axis: '#71717a',
-  grid: '#27272a',
-  border: '#2a2a35',
+  axis: 'var(--color-text-tertiary)',
+  grid: 'var(--color-border)',
+  border: 'var(--color-border)',
 } as const
 
-// Ordered categorical palette (8 stops). Used for arbitrary data.
+// Ordered categorical palette. Used for arbitrary data.
 export const CHART_PALETTE: readonly string[] = [
   CHART_COLORS.accent,
   CHART_COLORS.secondary,
@@ -53,8 +53,8 @@ export const CHART_PALETTE: readonly string[] = [
   CHART_COLORS.pink,
   CHART_COLORS.emerald,
   CHART_COLORS.blue,
-  '#f87171',
-  '#c084fc',
+  'var(--color-error)',
+  'var(--color-tertiary)',
 ]
 
 /**
@@ -84,27 +84,10 @@ export function providerColor(provider: string): string {
 }
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
-
-/**
- * Adaptive currency formatter used for axis ticks and tooltip values.
- * - < $1k: "$12.34"
- * - < $1M: "$12.3k"
- * - >= $1M: "$1.2M"
- */
-export function formatCurrency(value: number, opts: { compact?: boolean; decimals?: number } = {}): string {
-  const { compact = false, decimals = 2 } = opts
-  if (!Number.isFinite(value)) return '$0'
-  if (!compact) {
-    return `$${value.toLocaleString('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    })}`
-  }
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}k`
-  return `$${value.toFixed(decimals)}`
-}
+//
+// `formatCurrency` and `formatAddress` are consolidated in `src/lib/utils.tsx`.
+// Recharts axes / tooltips should import from there so every chart in the app
+// produces the same shape. The helpers below stay chart-specific (date, etc.).
 
 /**
  * Compact number formatter: "1.2k", "3.4M".
@@ -176,17 +159,17 @@ export function ChartEmptyState({
 }: ChartEmptyStateProps) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center">
-      <Inbox className="h-7 w-7 text-[var(--color-text-muted)]" aria-hidden="true" />
-      <p className="font-mono text-xs uppercase tracking-widest text-[var(--color-text-muted)]">{title}</p>
+      <Inbox className="h-7 w-7 text-text-muted" aria-hidden="true" />
+      <p className="font-mono text-xs uppercase tracking-widest text-text-muted">{title}</p>
       {description && (
-        <p className="max-w-[28ch] text-[10px] font-mono leading-relaxed text-[var(--color-text-tertiary)]">
+        <p className="max-w-[28ch] text-[10px] font-mono leading-relaxed text-text-tertiary">
           {description}
         </p>
       )}
       {action ?? (ctaLabel && ctaHref ? (
         <a
           href={ctaHref}
-          className="mt-2 inline-flex items-center gap-1.5 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
+          className="mt-2 inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-accent transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
         >
           {ctaLabel}
         </a>
@@ -202,7 +185,7 @@ export function ChartEmptyState({
 export function ChartSkeleton({ height = 280 }: { height?: number }) {
   return (
     <div
-      className="w-full animate-pulse rounded-sm border border-[var(--color-border)]/50 bg-[var(--color-surface)]/40"
+      className="w-full animate-pulse rounded-sm border border-border/50 bg-surface/40"
       style={{ height }}
       aria-hidden="true"
     >
@@ -210,7 +193,7 @@ export function ChartSkeleton({ height = 280 }: { height?: number }) {
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
-            className="flex-1 rounded-sm bg-[var(--color-border)]/60"
+            className="flex-1 rounded-sm bg-border/60"
             style={{ height: `${30 + ((i * 17) % 60)}%` }}
           />
         ))}

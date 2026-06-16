@@ -207,16 +207,15 @@ export type OrderStatus =
 // ─── Inference / Chat ─────────────────────────────────────────────────────────
 
 export interface HealthResponse {
-  status: string;
+  status: 'ok' | 'degraded' | string;
   version: string;
   service: string;
   uptime: number;
   correlationId: string;
-  checks: {
-    redis?: { status: string; latency?: number };
-    database?: { status: string; latency?: number };
-    venice?: { status: string; latency?: number };
-  };
+  checks: Record<
+    string,
+    { status: 'ok' | 'degraded' | 'rate_limited' | 'circuit_open' | string; latency?: number; cooldownMs?: number }
+  >;
 }
 
 export interface ChatCompletionsResponse {

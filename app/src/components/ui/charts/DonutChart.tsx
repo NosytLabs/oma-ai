@@ -1,7 +1,7 @@
 'use client'
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 export interface ModelData {
   name: string
@@ -18,9 +18,9 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
   if (active && payload && payload.length) {
     const data = payload[0].payload
     return (
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
-        <p className="text-xs text-[var(--color-text-muted)]">{data.name}</p>
-        <p className="text-sm font-semibold text-[var(--color-text-bright)]">{data.value.toLocaleString()}</p>
+      <div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">
+        <p className="text-xs text-text-muted">{data.name}</p>
+        <p className="text-sm font-semibold text-text-bright">{data.value.toLocaleString()}</p>
       </div>
     )
   }
@@ -32,7 +32,7 @@ export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
   const chartDescription = `Donut chart showing ${data.map(d => `${d.name}: ${d.value.toLocaleString()}`).join(', ')}. Total: ${total.toLocaleString()}`
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className="relative h-[280px] w-full"
@@ -57,10 +57,10 @@ export function DonutChart({ data, label = 'Total' }: DonutChartProps) {
         </PieChart>
       </ResponsiveContainer>
       <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-[var(--color-text-bright)]">{total.toLocaleString()}</span>
-        <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">{label}</span>
+        <span className="text-3xl font-bold text-text-bright">{total.toLocaleString()}</span>
+        <span className="text-xs text-text-muted uppercase tracking-wider">{label}</span>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 

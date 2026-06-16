@@ -1,16 +1,33 @@
-/* Hallmark · P4 H5 E5 S5 R4 V4
- * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
- * enrichment: hand-built stack SVG diagram + numbered § sections
- * sections: masthead · subject · what · how · team · links
- * states (CTA buttons): default · hover · focus-visible · active · disabled · aria-disabled · loading · success
- * copy: stop-slop pass — active voice, no adverbs, no "not X, it's Y" contrasts, no em dashes,
- *       no invented metrics, no quote-bait.
- * contrast: all body text ≥ 4.5:1 on var(--color-void)
+/* OMA · About page
+ * conversational marketing layout · sections: hero · what · built with · how · team · reach
+ * copy: active voice, no adverbs, no invented metrics
  */
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, Github, Twitter, Mail, BookOpen, ArrowRight } from 'lucide-react'
+import { MODEL_COUNT } from '@/lib/models-data'
+
+const STACK_LINKS = [
+  { name: 'Next.js 15', note: 'App router · React server components' },
+  { name: 'Tailwind 4', note: 'Utility-first CSS · design system' },
+  { name: 'Hono', note: 'Edge API gateway · OpenAI-compatible' },
+  { name: 'Drizzle + Neon', note: 'Postgres · credits ledger' },
+  { name: 'wagmi + viem', note: 'EVM wallet stack · SIWE auth' },
+  { name: 'x402 protocol', note: 'Per-request USDC settlement' },
+  { name: 'Base', note: 'USDC receipt · EIP-3009 transferWithAuthorization' },
+  { name: 'Houdini Swap', note: 'Cross-chain deposit routing' },
+  { name: 'Venice', note: 'Upstream inference provider' },
+] as const
+
+const ENDPOINT_FLOW = [
+  { idx: '01', client: 'curl / OpenAI SDK', server: 'POST /v1/chat/completions', note: 'Authenticated request, OpenAI-compatible body' },
+  { idx: '02', client: 'wallet · SIWE', server: 'POST /v1/auth/verify', note: 'Bearer token attached via oma_session cookie' },
+  { idx: '03', client: 'credit preflight', server: 'internal · credit-preflight.ts', note: 'Estimates cost · rejects if balance too low' },
+  { idx: '04', client: 'provider routing', server: 'internal · router.ts', note: 'Failover circuit breaker across Venice / AntSeed' },
+  { idx: '05', client: 'usage deduction', server: 'POST /v1/usage', note: 'Deducts credits · records prompt / completion tokens' },
+  { idx: '06', client: 'x402 verify', server: 'POST /x402/verify', note: 'EIP-3009 signature check · 402 if no payment header' },
+] as const
 
 export const metadata: Metadata = {
   title: 'About · OMA',
@@ -24,8 +41,6 @@ export const metadata: Metadata = {
 }
 
 const ISSUED = '2026-06-12'
-const DOC_ID = '0x4F4D41-ABOUT'
-const BUILD = (process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev').slice(0, 7)
 
 const STACK = [
   { idx: '01', actor: 'USER',     role: 'Caller',   note: 'OpenAI-compatible HTTP client' },
@@ -80,180 +95,147 @@ function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' 
   )
 }
 
-function SectionHeading({
-  index,
-  title,
-  meta,
-}: {
-  index: string
-  title: string
-  meta?: string
-}) {
-  return (
-    <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
-      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-        § {index}
-      </span>
-      <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
-        {title}
-      </h2>
-      {meta && (
-        <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-          {meta}
-        </span>
-      )}
-    </header>
-  )
-}
-
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
+    <div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
       <div className="overflow-x-clip">
         <div className="flex flex-col">
 
-          {/* ===== MASTHEAD ===== */}
+          {/* ===== HERO ===== */}
           <section
-            aria-label="Document masthead"
-            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-12 sm:pb-16"
           >
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                back to home
-              </Link>
-              <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] tracking-widest uppercase">
-                <span aria-hidden="true">▌</span>
-                <span>oma</span>
-                <span className="text-[var(--color-text-muted)]">·</span>
-                <span>about</span>
-                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline">build {BUILD}</span>
-                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline">revised {ISSUED}</span>
-                <span className="text-[var(--color-text-muted)] hidden md:inline">·</span>
-                <span className="hidden md:inline">doc #{DOC_ID}</span>
-              </div>
-            </div>
-          </section>
+            <Link
+              href="/"
+              className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              Back to home
+            </Link>
 
-          {/* ===== § 01 SUBJECT ===== */}
-          <section
-            id="subject"
-            aria-labelledby="subject-heading"
-            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16"
-          >
             <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
               <div className="min-w-0">
-                <SectionHeading index="01" title="Subject" meta="who we are" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                  About OMA
+                </span>
 
                 <h1
-                  id="subject-heading"
-                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5rem)]"
+                  className="h1-hero text-text-bright mt-6"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
-                  <span className="block">A gateway,</span>
-                  <span className="block text-[var(--color-accent)]">not a host.</span>
+                  <span className="block">We built OMA because</span>
+                  <span className="block text-accent">AI shouldn&apos;t require an account.</span>
                 </h1>
 
                 <p
-                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed"
+                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed"
                   style={{ textWrap: 'pretty' }}
                 >
-                  OMA sits between your code and an upstream model provider. We
-                  authenticate with a wallet, meter tokens, settle on Base, and
-                  forward the call. The model itself runs on infrastructure we
-                  do not own and we never see the response body after streaming.
+                  OMA is a thin gateway between your code and an upstream model
+                  provider. You sign in with a wallet, pay per request in
+                  USDC, and get an OpenAI-compatible endpoint in return. We
+                  never see your prompts and we don&apos;t ask for an email.
+                </p>
+
+                <p className="mt-4 max-w-2xl text-[14px] sm:text-[15px] text-text-secondary leading-relaxed">
+                  The model still runs on infrastructure we don&apos;t own. We
+                  authenticate with your wallet, meter tokens, settle on Base,
+                  and forward the call. That&apos;s the whole product.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Link href="/docs" className="oma-btn oma-btn--primary">
-                    <span aria-hidden="true" className="text-[var(--color-text-inverse)]">
+                  <Link href="/docs" className="bg-accent text-void hover:bg-accent-hover px-5 py-2.5 rounded-2xl font-medium transition-colors">
+                    <span aria-hidden="true" className="text-text-inverse">
                       ›
                     </span>
-                    read the docs
+                    Read the docs
                   </Link>
-                  <Link href="/pricing" className="oma-btn oma-btn--secondary">
-                    see pricing
+                  <Link href="/pricing" className="bg-surface text-text border border-border hover:bg-surface-elevated px-5 py-2.5 rounded-2xl font-medium transition-colors">
+                    See pricing
                   </Link>
                 </div>
               </div>
 
               <aside
-                aria-label="About this document"
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0 relative overflow-hidden"
+                aria-label="At a glance"
+                className="border border-border bg-surface min-w-0 relative overflow-hidden rounded-xl"
               >
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-60"
+                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
                 />
-                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
-                    Colophon
+                <div className="px-4 py-2.5 border-b border-border bg-panel flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-text-bright">
+                    At a glance
                   </span>
-                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                  <span className="flex items-center gap-1.5 text-[11px] text-accent">
                     <StatusDot />
                     <span className="sr-only">Status: </span>current
                   </span>
                 </div>
-                <dl className="text-[11px]">
+                <dl className="text-[12px]">
                   {[
-                    ['Issuer', 'OMA · operator-side'],
                     ['Form', 'Inference gateway'],
                     ['Hosts', '0 (we forward)'],
-                    ['Models', '91+ across providers'],
+                    ['Models', `${MODEL_COUNT} across providers`],
                     ['Auth', 'Wallet · SIWE'],
                     ['Settlement', 'USDC · Base'],
                   ].map(([k, v]) => (
                     <div
                       key={k}
-                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-b-0"
+                      className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border last:border-b-0"
                     >
-                      <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">
+                      <dt className="text-text-muted text-[11.5px]">
                         {k}
                       </dt>
-                      <dd className="text-[var(--color-text-secondary)] tabular-nums truncate text-right">
+                      <dd className="text-text-secondary tabular-nums truncate text-right">
                         {v}
                       </dd>
                     </div>
                   ))}
                 </dl>
-                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
-                  last revised · {ISSUED}
+                <div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
+                  Last updated · {ISSUED}
                 </div>
               </aside>
             </div>
           </section>
 
-          {/* ===== § 02 WHAT ===== */}
+          {/* ===== WHAT ===== */}
           <section
             id="what"
             aria-labelledby="what-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
           >
-            <SectionHeading index="02" title="What" meta="four short answers" />
-            <h3 id="what-heading" className="sr-only">
-              What OMA is
-            </h3>
+            <header className="mb-8 sm:mb-10 max-w-2xl">
+              <h2
+                id="what-heading"
+                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
+              >
+                The short version
+              </h2>
+              <p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
+                Four things you need to know to understand what OMA is and why
+                it exists.
+              </p>
+            </header>
 
-            <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 list-none p-0">
               {PILLARS.map((p) => (
                 <li
                   key={p.idx}
-                  className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-5 hover:border-[var(--color-accent)]/40 transition-colors"
+                  className="group border border-border bg-surface p-5 sm:p-6 rounded-xl hover:border-accent/40 transition-colors"
                 >
                   <div className="mb-3 flex items-center gap-3">
-                    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-                      §{p.idx}
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-accent/20 bg-accent/5 text-[11px] font-semibold text-accent">
+                      {p.idx}
                     </span>
-                    <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                    <h3 className="font-display text-[15px] sm:text-base font-semibold text-text-bright">
                       {p.title}
                     </h3>
                   </div>
-                  <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[13px] sm:text-[14px] text-text-secondary leading-relaxed">
                     {p.body}
                   </p>
                 </li>
@@ -261,24 +243,57 @@ export default function AboutPage() {
             </ul>
           </section>
 
-          {/* ===== § 03 HOW (stack diagram) ===== */}
+          {/* ===== BUILT WITH ===== */}
+          <section
+            id="built-with"
+            aria-labelledby="built-with-heading"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+          >
+            <header className="mb-8 sm:mb-10 max-w-2xl">
+              <h2
+                id="built-with-heading"
+                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
+              >
+                Built with
+              </h2>
+              <p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
+                The actual stack. No marketing whitepaper, just the libraries
+                and services in production today.
+              </p>
+            </header>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 list-none p-0">
+              {STACK_LINKS.map((s) => (
+                <li key={s.name} className="border border-border bg-surface px-3 py-2.5 rounded-lg">
+                  <p className="text-[13px] font-semibold text-text-bright truncate">{s.name}</p>
+                  <p className="text-[11px] text-text-muted truncate">{s.note}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[12.5px] sm:text-[13px] text-text-muted">
+              The server source lives in <code className="text-text-bright">server/src/</code>; the gateway, the credit engine, and the x402 facilitator are all in the same monorepo.
+            </p>
+          </section>
+
+          {/* ===== HOW (endpoint flow) ===== */}
           <section
             id="how"
             aria-labelledby="how-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
           >
-            <SectionHeading index="03" title="How" meta="the request path" />
-            <h3 id="how-heading" className="sr-only">
-              Request path
-            </h3>
-
-            <div className="grid gap-6 lg:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-start">
-              <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl">
-                One call crosses six actors. The user only sees OMA. The model
-                only sees OMA. Settlement is the only public surface.
+            <header className="mb-8 sm:mb-10 max-w-2xl">
+              <h2
+                id="how-heading"
+                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
+              >
+                How a request works
+              </h2>
+              <p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
+                One call crosses six actors. You only see OMA. The model only
+                sees OMA. Settlement is the only public surface.
               </p>
+            </header>
 
-              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6 min-w-0">
+              <div className="border border-border bg-surface p-4 sm:p-6 min-w-0">
                 <svg
                   viewBox="0 0 600 360"
                   role="img"
@@ -715,65 +730,94 @@ export default function AboutPage() {
                   </text>
                 </svg>
               </div>
-            </div>
 
-            <ol className="mt-6 border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+            <ol className="mt-6 border border-border bg-surface divide-y divide-border rounded-xl overflow-hidden">
               {STACK.map((s) => (
                 <li
                   key={s.idx}
                   className="grid grid-cols-[2.5rem_4.5rem_minmax(0,1fr)] sm:grid-cols-[2.75rem_6rem_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 py-2.5"
                 >
-                  <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
-                    §{s.idx}
+                  <span className="text-[11px] text-text-muted tabular-nums">
+                    {s.idx}
                   </span>
                   <span
-                    className={`text-[10px] uppercase tracking-widest ${
+                    className={`text-[11px] font-semibold ${
                       s.actor === 'CHEAP'
-                        ? 'text-[var(--color-secondary)]'
+                        ? 'text-secondary'
                         : s.actor === 'VENICE'
-                          ? 'text-[var(--color-violet)]'
+                          ? 'text-violet'
                           : s.actor === 'BASE'
-                            ? 'text-[var(--color-accent)]'
+                            ? 'text-accent'
                             : s.actor === 'USER'
-                              ? 'text-[var(--color-text-bright)]'
-                              : 'text-[var(--color-text-tertiary)]'
+                              ? 'text-text-bright'
+                              : 'text-text-tertiary'
                     }`}
                   >
                     {s.actor}
                   </span>
-                  <span className="text-[12.5px] sm:text-[13px] text-[var(--color-text-bright)] truncate">
-                    <span className="text-[var(--color-text-tertiary)] mr-2">{s.role}</span>
+                  <span className="text-[13px] text-text-bright truncate">
+                    <span className="text-text-muted mr-2">{s.role}</span>
                     {s.note}
                   </span>
                 </li>
               ))}
             </ol>
+
+            <div className="mt-8 border border-border bg-surface p-4 sm:p-5 rounded-xl">
+              <p className="text-[12px] font-semibold text-text-bright mb-3">
+                Endpoint flow
+              </p>
+              <p className="text-[12px] text-text-muted mb-4">
+                What each leg of the request path actually calls.
+              </p>
+              <ol className="divide-y divide-border">
+                {ENDPOINT_FLOW.map((e) => (
+                  <li
+                    key={e.idx}
+                    className="grid grid-cols-[2.25rem_minmax(0,1fr)] sm:grid-cols-[2.5rem_minmax(0,11rem)_minmax(0,18rem)_minmax(0,1fr)] items-start gap-2 sm:gap-3 py-2.5"
+                  >
+                    <span className="text-[11px] text-text-muted tabular-nums">{e.idx}</span>
+                    <span className="text-[12.5px] text-text-secondary truncate">{e.client}</span>
+                    <code className="text-[12px] text-accent font-mono truncate">{e.server}</code>
+                    <span className="hidden sm:inline text-[11.5px] text-text-muted">{e.note}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </section>
 
-          {/* ===== § 04 TEAM ===== */}
+          {/* ===== TEAM ===== */}
           <section
             id="team"
             aria-labelledby="team-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
           >
-            <SectionHeading index="04" title="Operator" meta="who runs the relay" />
-            <h3 id="team-heading" className="sr-only">
-              Operator
-            </h3>
+            <header className="mb-8 sm:mb-10 max-w-2xl">
+              <h2
+                id="team-heading"
+                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
+              >
+                Who runs OMA
+              </h2>
+              <p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
+                A small operator team. The procurement loop, the x402
+                facilitator, and the rate-limit policy are all in the source.
+              </p>
+            </header>
 
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-7 relative overflow-hidden">
+            <div className="border border-border bg-surface p-5 sm:p-7 relative overflow-hidden rounded-xl">
               <span
                 aria-hidden="true"
-                className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-accent)]"
+                className="absolute left-0 top-0 bottom-0 w-1 bg-accent"
               />
-              <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl leading-relaxed">
+              <p className="text-[14px] sm:text-base text-text-secondary max-w-2xl leading-relaxed">
                 OMA is run by a small operator team. The procurement loop, the
                 x402 facilitator, and the rate-limit policy are documented in
                 the source. There is no corporation, no board, and no
                 marketing department. The build artifacts and the docs are the
                 product.
               </p>
-              <dl className="mt-6 grid gap-3 sm:grid-cols-3 text-[11px]">
+              <dl className="mt-6 grid gap-3 sm:grid-cols-3 text-[12px]">
                 {[
                   ['Role', 'Operator · engineer'],
                   ['Reach', 'github · x · email'],
@@ -781,12 +825,12 @@ export default function AboutPage() {
                 ].map(([k, v]) => (
                   <div
                     key={k}
-                    className="grid grid-cols-2 gap-2 border border-[var(--color-border)] bg-[var(--color-panel)] px-3 py-2"
+                    className="grid grid-cols-2 gap-2 border border-border bg-panel px-3 py-2 rounded-lg"
                   >
-                    <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">
+                    <dt className="text-text-muted text-[11.5px]">
                       {k}
                     </dt>
-                    <dd className="text-[var(--color-text-secondary)] truncate text-right">
+                    <dd className="text-text-secondary truncate text-right">
                       {v}
                     </dd>
                   </div>
@@ -795,109 +839,116 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* ===== § 05 LINKS ===== */}
+          {/* ===== REACH ===== */}
           <section
             id="links"
             aria-labelledby="links-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
           >
-            <SectionHeading index="05" title="Reach" meta="where to find us" />
-            <h3 id="links-heading" className="sr-only">
-              Contact links
-            </h3>
+            <header className="mb-8 sm:mb-10 max-w-2xl">
+              <h2
+                id="links-heading"
+                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
+              >
+                Find us
+              </h2>
+              <p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
+                GitHub for code, X for updates, email for everything else.
+              </p>
+            </header>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <a
                 href="https://github.com/oma-ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between gap-3 border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]/40"
+                className="group flex items-center justify-between gap-3 border border-border bg-surface p-4 transition-colors hover:border-accent/40"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Github className="h-5 w-5 text-[var(--color-accent)] shrink-0" aria-hidden="true" />
+                  <Github className="h-5 w-5 text-accent shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       GitHub
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] font-mono truncate">
+                    <p className="text-[11px] text-text-muted font-mono truncate">
                       @oma-ai
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 text-text-muted group-hover:text-accent transition-colors" aria-hidden="true" />
               </a>
               <a
                 href="https://twitter.com/oma_ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between gap-3 border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]/40"
+                className="group flex items-center justify-between gap-3 border border-border bg-surface p-4 transition-colors hover:border-accent/40"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Twitter className="h-5 w-5 text-[var(--color-accent)] shrink-0" aria-hidden="true" />
+                  <Twitter className="h-5 w-5 text-accent shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       X / Twitter
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] font-mono truncate">
+                    <p className="text-[11px] text-text-muted font-mono truncate">
                       @oma_ai
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 text-text-muted group-hover:text-accent transition-colors" aria-hidden="true" />
               </a>
               <a
                 href="mailto:hello@oma-ai.com"
-                className="group flex items-center justify-between gap-3 border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-accent)]/40"
+                className="group flex items-center justify-between gap-3 border border-border bg-surface p-4 transition-colors hover:border-accent/40"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Mail className="h-5 w-5 text-[var(--color-accent)] shrink-0" aria-hidden="true" />
+                  <Mail className="h-5 w-5 text-accent shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       Email
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] font-mono truncate">
+                    <p className="text-[11px] text-text-muted font-mono truncate">
                       hello@oma-ai.com
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 text-text-muted group-hover:text-accent transition-colors" aria-hidden="true" />
               </a>
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Link
                 href="/docs"
-                className="group flex items-center justify-between gap-3 border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] p-5 transition-colors hover:border-[var(--color-accent)]/60"
+                className="group flex items-center justify-between gap-3 border border-accent/30 bg-accent-dim p-5 transition-colors hover:border-accent/60"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <BookOpen className="h-5 w-5 text-[var(--color-accent)] shrink-0" aria-hidden="true" />
+                  <BookOpen className="h-5 w-5 text-accent shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       Read the docs
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+                    <p className="text-[11px] text-text-muted truncate">
                       API reference, examples, integrations.
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
               <Link
                 href="/pricing"
-                className="group flex items-center justify-between gap-3 border border-[var(--color-accent)]/30 bg-[var(--color-accent-soft)] p-5 transition-colors hover:border-[var(--color-accent)]/60"
+                className="group flex items-center justify-between gap-3 border border-accent/30 bg-accent-soft p-5 transition-colors hover:border-accent/60"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <ArrowRight className="h-5 w-5 text-[var(--color-accent)] shrink-0" aria-hidden="true" />
+                  <ArrowRight className="h-5 w-5 text-accent shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       See pricing
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">
+                    <p className="text-[11px] text-text-muted truncate">
                       Per-model rates, payment methods.
                     </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </div>
           </section>

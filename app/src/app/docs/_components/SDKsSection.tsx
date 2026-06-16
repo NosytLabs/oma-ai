@@ -105,13 +105,13 @@ export function SDKsSection() {
         {INSTALL.map((i) => (
           <div
             key={i.manager}
-            className="group rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]/40 px-3 py-2.5 transition-colors hover:border-[var(--color-border-bright)]/60"
+            className="group rounded-md border border-border bg-surface/40 px-3 py-2.5 transition-colors hover:border-border-bright/60"
           >
-            <div className="mb-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            <div className="mb-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
               <Terminal className="h-3 w-3" />
               {i.manager}
             </div>
-            <code className="block truncate font-mono text-[13px] text-[var(--color-accent)]">
+            <code className="block truncate font-mono text-[13px] text-accent">
               {i.command}
             </code>
           </div>
@@ -162,9 +162,9 @@ print(chain.invoke({"input": "Hello!"}).content)`}
       />
 
       <SubHeading id="sdk-direct">Direct HTTP</SubHeading>
-      <p className="mb-3 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+      <p className="mb-3 text-[13px] leading-relaxed text-text-muted">
         No SDK? No problem. Plain HTTP works just as well — just POST JSON to{' '}
-        <code className="rounded border border-[var(--color-border)]/60 bg-[var(--color-panel)] px-1 font-mono text-[0.85em] text-[var(--color-accent)]">
+        <code className="rounded border border-border/60 bg-panel px-1 font-mono text-[0.85em] text-accent">
           /v1/chat/completions
         </code>
         .

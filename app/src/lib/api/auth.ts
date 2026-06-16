@@ -86,4 +86,17 @@ export const auth = {
   listSessions() {
     return request<{ sessions: Session[] }>('/auth/sessions').then((res) => res.sessions);
   },
+
+  /**
+   * C-C1: start a 24h demo session. Sets the `oma-demo=1` cookie server-side
+   * (so it survives the same protected-route middleware that reads it) and
+   * returns once the cookie is in the response. After this call resolves,
+   * `wallet-provider.tsx`'s `isDemo` becomes true and the dashboard renders
+   * with mock data.
+   */
+  startDemo() {
+    return request<{ success: boolean; expiresIn: number }>('/auth/demo', {
+      method: 'POST',
+    });
+  },
 };

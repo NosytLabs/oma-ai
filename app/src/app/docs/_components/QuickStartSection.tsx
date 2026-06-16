@@ -41,18 +41,18 @@ export function QuickStartSection() {
       <ol className="mb-10 grid gap-4 sm:grid-cols-3">
         <li
           id="qs-step-key"
-          className="scroll-mt-24 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-5 transition-colors hover:border-[var(--color-border-bright)]/60"
+          className="scroll-mt-24 rounded-lg border border-border bg-surface/40 p-5 transition-colors hover:border-border-bright/60"
         >
           <div className="mb-4 flex items-center justify-between">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 font-mono text-xs font-bold text-[var(--color-accent)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-accent/30 bg-accent/15 font-mono text-xs font-bold text-accent">
               1
             </span>
-            <Key className="h-4 w-4 text-[var(--color-text-muted)]" />
+            <Key className="h-4 w-4 text-text-muted" />
           </div>
-          <h3 className="mb-1 text-sm font-semibold text-[var(--color-text)]">Get a key</h3>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-            Sign in with a wallet, click <span className="text-[var(--color-text-secondary)]">Create key</span>, copy the{' '}
-            <code className="rounded border border-[var(--color-border)]/60 bg-[var(--color-panel)] px-1 py-0.5 font-mono text-[0.8em] text-[var(--color-accent)]">
+          <h3 className="mb-1 text-sm font-semibold text-text">Get a key</h3>
+          <p className="text-[13px] leading-relaxed text-text-muted">
+            Sign in with a wallet, click <span className="text-text-secondary">Create key</span>, copy the{' '}
+            <code className="rounded border border-border/60 bg-panel px-1 py-0.5 font-mono text-[0.8em] text-accent">
               oma_sk_…
             </code>{' '}
             string. We only store the SHA-256 hash, so we can&apos;t show it twice.
@@ -60,22 +60,22 @@ export function QuickStartSection() {
         </li>
         <li
           id="qs-step-request"
-          className="scroll-mt-24 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-5 transition-colors hover:border-[var(--color-border-bright)]/60"
+          className="scroll-mt-24 rounded-lg border border-border bg-surface/40 p-5 transition-colors hover:border-border-bright/60"
         >
           <div className="mb-4 flex items-center justify-between">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 font-mono text-xs font-bold text-[var(--color-accent)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-accent/30 bg-accent/15 font-mono text-xs font-bold text-accent">
               2
             </span>
-            <Send className="h-4 w-4 text-[var(--color-text-muted)]" />
+            <Send className="h-4 w-4 text-text-muted" />
           </div>
-          <h3 className="mb-1 text-sm font-semibold text-[var(--color-text)]">Make a request</h3>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+          <h3 className="mb-1 text-sm font-semibold text-text">Make a request</h3>
+          <p className="text-[13px] leading-relaxed text-text-muted">
             Hit the chat endpoint with your key in the{' '}
-            <code className="rounded border border-[var(--color-border)]/60 bg-[var(--color-panel)] px-1 py-0.5 font-mono text-[0.8em] text-[var(--color-accent)]">
+            <code className="rounded border border-border/60 bg-panel px-1 py-0.5 font-mono text-[0.8em] text-accent">
               Authorization
             </code>{' '}
             header. Same shape as OpenAI&apos;s{' '}
-            <code className="font-mono text-[0.8em] text-[var(--color-text-secondary)]">
+            <code className="font-mono text-[0.8em] text-text-secondary">
               /v1/chat/completions
             </code>
             .
@@ -83,22 +83,22 @@ export function QuickStartSection() {
         </li>
         <li
           id="qs-step-response"
-          className="scroll-mt-24 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-5 transition-colors hover:border-[var(--color-border-bright)]/60"
+          className="scroll-mt-24 rounded-lg border border-border bg-surface/40 p-5 transition-colors hover:border-border-bright/60"
         >
           <div className="mb-4 flex items-center justify-between">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 font-mono text-xs font-bold text-[var(--color-accent)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-accent/30 bg-accent/15 font-mono text-xs font-bold text-accent">
               3
             </span>
-            <MessageSquare className="h-4 w-4 text-[var(--color-text-muted)]" />
+            <MessageSquare className="h-4 w-4 text-text-muted" />
           </div>
-          <h3 className="mb-1 text-sm font-semibold text-[var(--color-text)]">Read the response</h3>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+          <h3 className="mb-1 text-sm font-semibold text-text">Read the response</h3>
+          <p className="text-[13px] leading-relaxed text-text-muted">
             JSON in, JSON out. The{' '}
-            <code className="font-mono text-[0.8em] text-[var(--color-text-secondary)]">
+            <code className="font-mono text-[0.8em] text-text-secondary">
               choices[0].message.content
             </code>{' '}
             field is your completion. Token usage and cost are in{' '}
-            <code className="font-mono text-[0.8em] text-[var(--color-text-secondary)]">usage</code>.
+            <code className="font-mono text-[0.8em] text-text-secondary">usage</code>.
           </p>
         </li>
       </ol>
@@ -109,16 +109,16 @@ export function QuickStartSection() {
       <SubHeading id="qs-step-response">What you get back</SubHeading>
       <CodeBlock code={responseJson} title="200 OK · application/json" lang="json" />
 
-      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[var(--color-text-muted)]">
+      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-muted">
         <a
           href="#sdks"
-          className="inline-flex items-center gap-1.5 font-medium text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)]"
+          className="inline-flex items-center gap-1.5 font-medium text-accent transition-colors hover:text-accent-hover"
         >
           See SDK examples <ArrowRight className="h-3.5 w-3.5" />
         </a>
         <a
           href="#x402"
-          className="inline-flex items-center gap-1.5 font-medium text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)]"
+          className="inline-flex items-center gap-1.5 font-medium text-accent transition-colors hover:text-accent-hover"
         >
           Pay per request with x402 <ArrowRight className="h-3.5 w-3.5" />
         </a>

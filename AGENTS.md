@@ -88,90 +88,43 @@ Before any commit, ensure:
 This is a **flat monorepo** (no `oma/` wrapper, no workspaces). All top-level paths are real and live at the repo root.
 
 ```
-.
-├── server/src/                # Hono.js API server (Node 20, TypeScript ESM)
-│   ├── index.ts               # Entry point (port 3001, /health, WebSocket)
-│   ├── config.ts              # Environment validation
-│   ├── constants.ts, tracing.ts, types.ts
-│   ├── auth/                  # SIWE + Solana + API key auth
-│   │   ├── api-keys.ts, encryption.ts, middleware.ts
-│   │   └── siwe.ts, solana.ts
-│   ├── credits/               # Credit engine (15 modules)
-│   │   ├── add-credits.ts, balance.ts, budget-alerts.ts
-│   │   ├── cctp-client.ts, deduction.ts, deposit.ts
-│   │   ├── deposit-router.ts, houdini-client.ts
-│   │   ├── index.ts, lifi-client.ts, oracle.ts
-│   │   ├── preflight.ts, price-guard.ts, refunds.ts
-│   │   └── staking.ts
-│   ├── db/                    # Drizzle ORM + Postgres
-│   │   ├── client.ts, schema.ts
-│   ├── inference/             # Multi-provider AI routing (24 modules)
-│   │   ├── router.ts          # Circuit breaker + failover
-│   │   ├── venice.ts, antseed.ts, litellm.ts
-│   │   ├── openrouter.ts, together.ts, deepinfra.ts
-│   │   ├── tinyfish.ts, tinyfish-fetch.ts
-│   │   ├── models.ts          # Model catalog
-│   │   ├── provider-factory.ts, provider-selector.ts
-│   │   ├── provider-health.ts, provider-result.ts
-│   │   ├── call-provider.ts, stream-tracker.ts
-│   │   ├── credit-preflight.ts, billing-service.ts
-│   │   ├── usage-service.ts, cheaptokens.ts, surplus.ts
-│   │   ├── base.ts, circuit-breaker.ts, types.ts
-│   ├── jobs/                  # Background cron jobs (6)
-│   │   ├── credit-expiry.ts, subscription-cron.ts
-│   │   ├── deposit-notifications.ts, deposit-recovery.ts
-│   │   ├── deposit-retry.ts, nonce-cleanup.ts
-│   ├── lib/                   # Shared server utilities (10)
-│   │   ├── api-errors.ts, dlq.ts, logger.ts
-│   │   ├── quote-cache.ts, rate-limit-config.ts
-│   │   ├── redis-client.ts, request-queue.ts
-│   │   ├── router-utils.ts, settlement-retry.ts
-│   │   ├── url-safety.ts, validation.ts
-│   ├── middleware/            # Request middleware (8)
-│   │   ├── audit.ts, cache.ts, idempotency.ts
-│   │   ├── rate-limit.ts, rbac.ts, security.ts
-│   │   └── spend-limit.ts, timeout.ts
-│   ├── routes/                # API endpoints
-│   │   ├── auth.ts, config.ts, credits.ts
-│   │   ├── models.ts, onramp.ts, refunds.ts, search.ts
-│   │   ├── analytics.ts, analytics-admin.ts
-│   │   ├── export.ts, fetch.ts, invoices.ts
-│   │   ├── jupiter.ts, queue.ts, sso.ts
-│   │   ├── subscriptions.ts, teams.ts, withdraw.ts
-│   │   ├── admin/             # Admin endpoints (subdir)
-│   │   ├── chat/              # OpenAI-compatible chat (modality-split)
-│   │   ├── chat-ws/           # WebSocket streaming
-│   │   └── deposit/           # Multi-protocol deposit (usdc, status, lifi, houdini, cctp, balance, router)
-│   ├── x402/                  # x402 payment facilitator (3)
-│   │   ├── facilitator.ts     # EVM settlement, 501 stub for /v1/x402/proxy
-│   │   ├── crosschain.ts      # /v1/x402/quote + /v1/x402/deposit
-│   │   └── types.ts           # PaymentPayload, PaymentSignature
-│   ├── types/bs58.d.ts        # Type augmentations
-│   └── __tests__/             # 22 vitest test files
-├── app/src/                   # Next.js 15 frontend (React 19, Tailwind 4)
-│   ├── app/                   # App Router pages
-│   │   ├── page.tsx           # Landing
-│   │   ├── dashboard/         # User dashboard (keys, credits, etc.)
-│   │   ├── deposit/           # Deposit page
-│   │   ├── pricing/           # Pricing page
-│   │   ├── models/            # Model showcase
-│   │   ├── playground/        # API playground
-│   │   ├── docs/              # Documentation
-│   │   ├── admin/             # Admin surface
-│   │   ├── about/, compare/, faq/, privacy/, terms/
-│   │   └── image-generation/  # Image gen route
-│   ├── components/            # UI components
-│   ├── hooks/                 # React hooks
-│   ├── lib/                   # Frontend utilities (api/, auth/, etc.)
-│   └── test/                  # Frontend tests
-├── contracts/                 # Solidity (OMA.sol)
-├── deploy/coolify/            # Self-hosted deploy configs
-├── docs/                      # Audit reports, runbooks, architecture
-├── scripts/                   # start-dev.sh, deploy.sh
-├── .opencode/                 # Commander orchestration state
-├── .vercel/                   # Root Vercel project (legacy, gitignored)
-├── app/.vercel/               # App Vercel project (current, gitignored)
-└── docker-compose.yml
+/Users/tyson/Desktop/Code/OMA-AI/
+├── app/                  # Next.js 15 frontend (React 19, Tailwind 4)
+│   ├── package.json
+│   ├── src/              # App Router pages, components, hooks, lib, test
+│   ├── public/           # Static assets (favicon.svg, logos/)
+│   ├── docs/             # Audit reports, runbooks, architecture
+│   ├── scripts/          # Frontend scripts
+│   ├── AGENTS.md         # This file
+│   ├── opencode.jsonc
+│   └── README.md
+├── server/               # Hono.js API server (Node 20, TypeScript ESM)
+│   ├── package.json
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── auth/         # SIWE + Solana + API key auth
+│   │   ├── credits/      # Credit engine
+│   │   ├── db/           # Drizzle ORM + Postgres
+│   │   ├── inference/    # Multi-provider AI routing
+│   │   ├── jobs/         # Background cron jobs
+│   │   ├── lib/          # Shared server utilities
+│   │   ├── middleware/   # Request middleware
+│   │   ├── routes/       # API endpoints
+│   │   ├── x402/         # x402 payment facilitator
+│   │   └── __tests__/    # vitest tests
+│   └── drizzle.config.ts
+├── contracts/            # Solidity (orphan per audit, but listed)
+├── deploy/coolify/       # Self-hosted deploy configs
+├── docs/                 # Project-level docs (archive/ for old audit reports)
+├── hooks/                # Project-level git hooks
+├── scripts/              # start-dev.sh, deploy.sh
+├── skills/               # Custom agent skills
+├── docker-compose.yml    # Project-level orchestration
+├── .gitignore
+├── DEPLOY.md
+├── opencode.jsonc
+├── package.json          # Project-level workspace
+└── README.md
 ```
 
 ---

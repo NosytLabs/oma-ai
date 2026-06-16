@@ -31,6 +31,35 @@ interface HealthRecord {
 
 const healthCache = new Map<string, HealthRecord>();
 
+// SEC-9: per-provider async mutex. Concurrent reportProviderResult() calls
+// for the same provider would otherwise race on the read-modify-write of
+// `consecutiveFailures`, `totalRequests`, `errorCount`, and the OPEN
+// transition, losing updates under load. Each provider has its own promise
+// chain so they don't block each other.
+const providerLocks = new Map<string, Promise<unknown>>();
+
+async function withProviderLock<T>(provider: Provider, fn: () => Promise<T> | T): Promise<T> {
+  const prev = providerLocks.get(provider) ?? Promise.resolve();
+  let release: () => void = () => {};
+  const next = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const chained = prev.then(() => next);
+  providerLocks.set(provider, chained);
+  try {
+    await prev;
+    return await fn();
+  } finally {
+    release();
+    // Best-effort cleanup so the map doesn't grow unbounded for short-lived
+    // provider strings. The next call for the same provider rebuilds the
+    // chain.
+    if (providerLocks.get(provider) === chained) {
+      providerLocks.delete(provider);
+    }
+  }
+}
+
 const CACHE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const STALE_CACHE_THRESHOLD_MS = 30 * 60 * 1000;
 const MAX_CACHE_SIZE = 100;
@@ -183,6 +212,8 @@ export async function checkProviderHealth(provider: Provider): Promise<{
   errorRate: number;
   state: CircuitState;
   consecutiveFailures: number;
+  totalRequests: number;
+  errorCount: number;
   cooldownUntil?: number;
 }> {
   await ensureProviderRecord(provider);
@@ -193,63 +224,83 @@ export async function checkProviderHealth(provider: Provider): Promise<{
     errorRate: h.errorRate,
     state: h.state,
     consecutiveFailures: h.consecutiveFailures,
+    totalRequests: h.totalRequests,
+    errorCount: h.errorCount,
     ...(h.cooldownUntil ? { cooldownUntil: h.cooldownUntil } : {}),
   };
 }
 
 export async function reportProviderResult(provider: Provider, success: boolean, latencyMs: number): Promise<void> {
-  await ensureProviderRecord(provider);
-  const h = healthCache.get(provider)!;
+  return withProviderLock(provider, async () => {
+    await ensureProviderRecord(provider);
+    const h = healthCache.get(provider)!;
 
-  h.totalRequests += 1;
-  if (!success) h.errorCount += 1;
-  h.errorRate = h.totalRequests > 0 ? h.errorCount / h.totalRequests : 0;
-  h.latencyMs = h.totalRequests === 1 ? latencyMs : Math.round((h.latencyMs * (h.totalRequests - 1) + latencyMs) / h.totalRequests);
+    h.totalRequests += 1;
+    if (!success) h.errorCount += 1;
+    h.errorRate = h.totalRequests > 0 ? h.errorCount / h.totalRequests : 0;
+    h.latencyMs = h.totalRequests === 1 ? latencyMs : Math.round((h.latencyMs * (h.totalRequests - 1) + latencyMs) / h.totalRequests);
 
-  if (h.state === CircuitState.HALF_OPEN) {
-    if (success) {
-      h.state = CircuitState.CLOSED;
-      h.consecutiveFailures = 0;
-      h.lastFailureAt = null;
-      h.isUp = true;
-    } else {
-      h.state = CircuitState.OPEN;
-      h.cooldownUntil = Date.now() + RECOVERY_TIMEOUT_MS;
-    }
-  } else if (h.state === CircuitState.CLOSED) {
-    if (success) {
-      h.consecutiveFailures = 0;
-      h.isUp = true;
-    } else {
-      h.consecutiveFailures += 1;
-      h.lastFailureAt = Date.now();
-      if (h.consecutiveFailures >= FAILURE_THRESHOLD) {
+    if (h.state === CircuitState.HALF_OPEN) {
+      if (success) {
+        h.state = CircuitState.CLOSED;
+        h.consecutiveFailures = 0;
+        h.lastFailureAt = null;
+        h.isUp = true;
+      } else {
         h.state = CircuitState.OPEN;
         h.cooldownUntil = Date.now() + RECOVERY_TIMEOUT_MS;
+        // Keep counting the failure streak so a long-running outage
+        // produces accurate `consecutiveFailures` for monitoring.
+        h.consecutiveFailures += 1;
+        h.lastFailureAt = Date.now();
+      }
+    } else if (h.state === CircuitState.CLOSED) {
+      if (success) {
+        h.consecutiveFailures = 0;
+        h.isUp = true;
+      } else {
+        h.consecutiveFailures += 1;
+        h.lastFailureAt = Date.now();
+        if (h.consecutiveFailures >= FAILURE_THRESHOLD) {
+          h.state = CircuitState.OPEN;
+          h.cooldownUntil = Date.now() + RECOVERY_TIMEOUT_MS;
+          h.isUp = false;
+        }
+      }
+    } else if (h.state === CircuitState.OPEN) {
+      // SEC-9: keep counting the failure streak even after the circuit
+      // trips OPEN so a long-running outage produces a faithful
+      // `consecutiveFailures` counter for monitoring. The OPEN → HALF_OPEN
+      // transition is driven by `cooldownUntil` in isProviderAvailable.
+      if (!success) {
+        h.consecutiveFailures += 1;
+        h.lastFailureAt = Date.now();
         h.isUp = false;
+      } else {
+        h.consecutiveFailures = 0;
       }
     }
-  }
 
-  h.lastUpdated = Date.now();
+    h.lastUpdated = Date.now();
 
-  const redis = await getRedisClient();
-  if (redis && isRedisReady()) {
-    await redis.hSet(`provider:health:${provider}`, {
-      state: h.state,
-      consecutiveFailures: String(h.consecutiveFailures),
-      lastFailureAt: h.lastFailureAt ? String(h.lastFailureAt) : "",
-      isUp: String(h.isUp),
-      latencyMs: String(h.latencyMs),
-      errorRate: String(h.errorRate),
-      totalRequests: String(h.totalRequests),
-      errorCount: String(h.errorCount),
-      cooldownUntil: h.cooldownUntil ? String(h.cooldownUntil) : "",
-      lastDbSyncAt: String(Date.now()),
-    });
+    const redis = await getRedisClient();
+    if (redis && isRedisReady()) {
+      await redis.hSet(`provider:health:${provider}`, {
+        state: h.state,
+        consecutiveFailures: String(h.consecutiveFailures),
+        lastFailureAt: h.lastFailureAt ? String(h.lastFailureAt) : "",
+        isUp: String(h.isUp),
+        latencyMs: String(h.latencyMs),
+        errorRate: String(h.errorRate),
+        totalRequests: String(h.totalRequests),
+        errorCount: String(h.errorCount),
+        cooldownUntil: h.cooldownUntil ? String(h.cooldownUntil) : "",
+        lastDbSyncAt: String(Date.now()),
+      });
 
-    await redis.setEx(`provider:health:pending_sync:${provider}`, 60, String(Date.now()));
-  }
+      await redis.setEx(`provider:health:pending_sync:${provider}`, 60, String(Date.now()));
+    }
+  });
 }
 
 const DB_SYNC_INTERVAL_MS = 30_000;

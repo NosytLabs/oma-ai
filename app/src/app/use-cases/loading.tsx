@@ -14,7 +14,7 @@ export default function Loading() {
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-7 space-y-3"
+            className="rounded-lg border border-border bg-surface p-7 space-y-3"
           >
             <Skeleton className="h-5 w-1/2" />
             <Skeleton className="h-3 w-full" />

@@ -31,6 +31,15 @@ function setupDbChain() {
     if (_dbCallIdx < _dbResponseQueue.length) _dbCallIdx++;
     resolve(val);
   };
+  // Drizzle raw-SQL path. credit-expiry uses CTE UPDATE/SELECT chains that
+  // can't be expressed as ORM chain calls, so it goes through `db.execute`
+  // (which returns `{ rows: T[] }`). Tests that need to drive this path must
+  // override `mockDb.execute` to consume from a queue of `{ rows: [...] }`.
+  self.execute = vi.fn().mockImplementation(() => {
+    const val = _dbResponseQueue[_dbCallIdx] ?? _defaultDbResult;
+    if (_dbCallIdx < _dbResponseQueue.length) _dbCallIdx++;
+    return Promise.resolve({ rows: val });
+  });
 }
 
 function dbReturns(val: any) {
@@ -135,20 +144,17 @@ describe("credit-expiry", () => {
 
   it("processExpiredCredits zeros expired batches and recalculates balances", async () => {
     let callCount = 0;
+    // processExpiredCredits issues exactly two `db.execute` calls:
+    //   1) the combined expired+batch_update CTE — returns the aggregate row
+    //   2) the extension CTE — returns the count of extended batches
     const responses = [
-      // expired batches query
-      [
-        { id: "batch-1", remainingCents: "5000", userId: "user-1" },
-        { id: "batch-2", remainingCents: "3000", userId: "user-1" },
-      ],
-      [],                        // update zero
-      [{ total: "0" }],          // re-sum
-      [],                        // update balance
-      [{ userId: "user-1" }],    // active users
-      [{ id: "batch-3" }],       // expiring soon
-      [],                        // update expiry
+      [{ expired_count: "2", expired_amount: "8000" }],
+      [{ extended: "1" }],
     ];
-    mockDb.then = (resolve: any) => resolve(responses[callCount++] ?? []);
+    mockDb.execute = vi.fn().mockImplementation(() => {
+      const val = responses[callCount++] ?? [];
+      return Promise.resolve({ rows: val });
+    });
 
     const { processExpiredCredits } = await import("../jobs/credit-expiry.js");
     const result = await processExpiredCredits();
@@ -160,8 +166,14 @@ describe("credit-expiry", () => {
 
   it("returns zero counts when nothing is expired", async () => {
     let callCount = 0;
-    const responses = [[], [], []];
-    mockDb.then = (resolve: any) => resolve(responses[callCount++] ?? []);
+    const responses = [
+      [{ expired_count: "0", expired_amount: "0" }],
+      [{ extended: "0" }],
+    ];
+    mockDb.execute = vi.fn().mockImplementation(() => {
+      const val = responses[callCount++] ?? [];
+      return Promise.resolve({ rows: val });
+    });
 
     const { processExpiredCredits } = await import("../jobs/credit-expiry.js");
     const result = await processExpiredCredits();
@@ -174,12 +186,13 @@ describe("credit-expiry", () => {
   it("extends batches for active users only", async () => {
     let callCount = 0;
     const responses = [
-      [],                       // expired batches = none
-      [{ userId: "user-1" }],   // active users
-      [{ id: "batch-x" }],      // expiring soon
-      [],                       // update expiry
+      [{ expired_count: "0", expired_amount: "0" }],
+      [{ extended: "1" }],
     ];
-    mockDb.then = (resolve: any) => resolve(responses[callCount++] ?? []);
+    mockDb.execute = vi.fn().mockImplementation(() => {
+      const val = responses[callCount++] ?? [];
+      return Promise.resolve({ rows: val });
+    });
 
     const { processExpiredCredits } = await import("../jobs/credit-expiry.js");
     const result = await processExpiredCredits();

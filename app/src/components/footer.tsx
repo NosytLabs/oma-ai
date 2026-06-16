@@ -63,31 +63,31 @@ export function Footer() {
   const year = new Date().getFullYear()
   const pathname = usePathname() ?? ''
   return (
-    <footer aria-label="Site footer" className="border-t border-[var(--color-border)] bg-[var(--color-void)] font-mono">
+    <footer aria-label="Site footer" className="border-t border-border bg-void font-mono">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid gap-10 lg:grid-cols-[2fr_3fr]">
           <div className="flex flex-col gap-4">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm w-fit"
+              className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm w-fit"
             >
               <OmaLogo size="sm" />
-              <span className="text-sm text-[var(--color-text-bright)] font-semibold">oma</span>
-              <span className="text-[var(--color-text-muted)] text-xs">·sys</span>
+              <span className="text-sm text-text-bright font-semibold">oma</span>
+              <span className="text-text-muted text-xs">·sys</span>
             </Link>
-            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed max-w-md">
+            <p className="text-xs text-text-secondary leading-relaxed max-w-md">
               Permissionless AI inference. One key, every model, pay in crypto. No account required.
               <br />
               Base chain · mainnet. Built and operated by the OMA collective.
             </p>
-            <div className="flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
+            <div className="flex items-center gap-3 text-[11px] text-text-muted">
               <ApiStatus showRetryButton={false} />
               <span className="hidden sm:inline">·</span>
               <a
                 href="https://github.com/oma-ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors"
+                className="hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm transition-colors"
               >
                 github.com/oma-ai
               </a>
@@ -96,7 +96,7 @@ export function Footer() {
                 href="https://twitter.com/oma_ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors"
+                className="hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm transition-colors"
               >
                 @oma_ai
               </a>
@@ -104,11 +104,11 @@ export function Footer() {
           </div>
 
           <nav aria-label="Footer navigation" className="text-[11px]">
-            <p className="text-[var(--color-text-muted)] mb-3 uppercase tracking-widest text-[10px]">Index</p>
+            <p className="text-text-muted mb-3 uppercase tracking-widest text-[10px]">Index</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-6">
               {FOOTER_SECTIONS.map((section) => (
                 <div key={section.title} className="min-w-0">
-                  <p className="text-[var(--color-accent)] mb-2 uppercase tracking-widest text-[9px] font-semibold">
+                  <p className="text-accent mb-2 uppercase tracking-widest text-[9px] font-semibold">
                     {section.title}
                   </p>
                   <ul className="flex flex-col gap-1">
@@ -119,9 +119,9 @@ export function Footer() {
                           <Link
                             href={link.href}
                             aria-current={isCurrent ? 'page' : undefined}
-                            className="inline-flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-sm transition-colors py-1"
+                            className="inline-flex items-center gap-1.5 text-text-secondary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm transition-colors py-1"
                           >
-                            <span className="text-[var(--color-text-muted)]" aria-hidden="true">·</span>
+                            <span className="text-text-muted" aria-hidden="true">·</span>
                             <span>{link.label}</span>
                           </Link>
                         </li>
@@ -134,7 +134,7 @@ export function Footer() {
           </nav>
         </div>
 
-        <div className="mt-10 pt-5 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] leading-relaxed">
+        <div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
           <p>
             © {year} OMA AI · base chain // one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'} · last deploy {process.env.NEXT_PUBLIC_BUILD_DATE ?? 'dev'}
           </p>

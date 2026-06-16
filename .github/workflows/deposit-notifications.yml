@@ -1,0 +1,41 @@
+name: Deposit Notifications
+
+on:
+  schedule:
+    # Every 5 minutes. Was 60s setInterval in
+    # server/src/jobs/deposit-notifications.ts. GitHub Actions has a
+    # 5-minute minimum cadence. The job (a) sends a "deposit is taking
+    # longer than expected" notification for any deposit pending > 15min
+    # and (b) retries failed webhook deliveries. Both are best-effort.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-deposit-notifications
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Process pending deposits and retry failed webhooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run deposit notifications
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npx tsx src/jobs/cli-runner.ts deposit-notifications

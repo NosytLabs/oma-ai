@@ -1,6 +1,5 @@
 import { db } from "../db/client.js";
-import { creditBatches, creditBalances } from "../db/schema.js";
-import { eq, lt, gt, and, sql, inArray } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 const EXPIRY_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -14,94 +13,75 @@ export async function processExpiredCredits(): Promise<{
   extendedBatchCount: number;
 }> {
   const now = new Date();
-
-  const expiredBatches = await db.select({
-    id: creditBatches.id,
-    remainingCents: creditBatches.remainingCents,
-    userId: creditBatches.userId,
-  })
-    .from(creditBatches)
-    .where(and(
-      lt(creditBatches.expiresAt, now),
-      gt(creditBatches.remainingCents, '0'),
-    ));
-
-  let expiredAmount = 0;
-  const affectedUserIds = new Set<string>();
-
-  for (const batch of expiredBatches) {
-    expiredAmount += Number(batch.remainingCents);
-    affectedUserIds.add(batch.userId);
-  }
-
-  if (expiredBatches.length > 0) {
-    const expiredIds = expiredBatches.map(b => b.id);
-    await db.update(creditBatches)
-      .set({ remainingCents: '0' })
-      .where(inArray(creditBatches.id, expiredIds));
-  }
-
-  for (const userId of affectedUserIds) {
-    const [newSum] = await db.select({ total: sql`COALESCE(SUM(${creditBatches.remainingCents}), 0)` })
-      .from(creditBatches)
-      .where(and(
-        eq(creditBatches.userId, userId),
-        gt(creditBatches.expiresAt, now),
-      ));
-
-    await db.update(creditBalances)
-      .set({
-        balanceCents: String(newSum?.total ?? 0),
-        updatedAt: now,
-      })
-      .where(eq(creditBalances.userId, userId));
-  }
-
-  if (expiredBatches.length > 0) {
-    logger.info(`[credit-expiry] Expired ${expiredBatches.length} batches worth ${(expiredAmount / 100).toFixed(2)} credits (breakage), ${affectedUserIds.size} users affected`);
-  }
-
-  const extensionCutoff = new Date();
-  extensionCutoff.setDate(extensionCutoff.getDate() - ACTIVE_EXTENSION_DAYS);
-
-  const expiryThreshold = new Date();
+  const newExpiry = new Date(now);
+  newExpiry.setDate(newExpiry.getDate() + ACTIVE_EXTENSION_DAYS);
+  const activeCutoff = new Date(now);
+  activeCutoff.setDate(activeCutoff.getDate() - ACTIVE_EXTENSION_DAYS);
+  const expiryThreshold = new Date(now);
   expiryThreshold.setDate(expiryThreshold.getDate() + ACTIVE_EXTENSION_DAYS);
 
-  const activeUsers = await db.select({ userId: creditBalances.userId })
-    .from(creditBalances)
-    .where(gt(creditBalances.lastActivityAt, extensionCutoff));
+  // Step 1: Zero out expired batches (positive remaining) and recalculate
+  // each affected user's balance from non-expired batches, all in a single
+  // CTE round-trip. Returns the aggregate of zeroed rows so we can log it.
+  const expireResult = await db.execute(sql<
+    { expired_count: string; expired_amount: string }
+  >`
+    WITH expired AS (
+      UPDATE credit_batches
+      SET remaining_cents = 0
+      WHERE expires_at < ${now}
+        AND remaining_cents > 0
+      RETURNING user_id, remaining_cents AS old_remaining
+    ),
+    balance_update AS (
+      UPDATE credit_balances cb
+      SET balance_cents = COALESCE((
+            SELECT SUM(remaining_cents)
+            FROM credit_batches
+            WHERE user_id = cb.user_id AND expires_at > ${now}
+          ), 0),
+          updated_at = ${now}
+      WHERE cb.user_id IN (SELECT user_id FROM expired)
+      RETURNING 1
+    )
+    SELECT
+      COUNT(*)::text AS expired_count,
+      COALESCE(SUM(old_remaining), 0)::text AS expired_amount
+    FROM expired
+  `);
+  const expireRow = (expireResult as unknown as {
+    rows: Array<{ expired_count: string; expired_amount: string }>;
+  }).rows[0] ?? { expired_count: "0", expired_amount: "0" };
+  const expiredCount = Number(expireRow.expired_count);
+  const expiredAmount = Number(expireRow.expired_amount);
 
-  let extendedBatchCount = 0;
-  const newExpiry = new Date();
-  newExpiry.setDate(newExpiry.getDate() + ACTIVE_EXTENSION_DAYS);
+  // Step 2: Extend batches for active users (active in the last
+  // ACTIVE_EXTENSION_DAYS days) whose remaining balance is positive and that
+  // expire within the next ACTIVE_EXTENSION_DAYS days. Returns the count of
+  // batches extended.
+  const extendResult = await db.execute(sql<{ extended: string }>`
+    WITH extended AS (
+      UPDATE credit_batches cb
+      SET expires_at = ${newExpiry}
+      WHERE cb.remaining_cents > 0
+        AND cb.expires_at < ${expiryThreshold}
+        AND cb.user_id IN (
+          SELECT user_id FROM credit_balances
+          WHERE last_activity_at > ${activeCutoff}
+        )
+      RETURNING 1
+    )
+    SELECT COUNT(*)::text AS extended FROM extended
+  `);
+  const extendedBatchCount = Number(
+    (extendResult as unknown as { rows: Array<{ extended: string }> }).rows[0]?.extended ?? 0
+  );
 
-  for (const { userId } of activeUsers) {
-    const expiringBatches = await db.select({ id: creditBatches.id })
-      .from(creditBatches)
-      .where(and(
-        eq(creditBatches.userId, userId),
-        gt(creditBatches.remainingCents, '0'),
-        lt(creditBatches.expiresAt, expiryThreshold),
-      ));
-
-    if (expiringBatches.length === 0) continue;
-
-    const batchIds = expiringBatches.map(b => b.id);
-    await db.update(creditBatches)
-      .set({ expiresAt: newExpiry })
-      .where(and(
-        inArray(creditBatches.id, batchIds),
-        gt(creditBatches.remainingCents, '0'),
-      ));
-
-    extendedBatchCount += expiringBatches.length;
+  if (expiredCount > 0) {
+    logger.info(`[credit-expiry] Expired ${expiredCount} batches worth ${(expiredAmount / 100).toFixed(2)} credits`);
   }
 
-  if (extendedBatchCount > 0) {
-    logger.info(`[credit-expiry] Extended ${extendedBatchCount} batches for ${activeUsers.length} active users`);
-  }
-
-  return { expiredCount: expiredBatches.length, expiredAmount, extendedBatchCount };
+  return { expiredCount, expiredAmount, extendedBatchCount };
 }
 
 export function scheduleCreditExpiry(): ReturnType<typeof setInterval> {

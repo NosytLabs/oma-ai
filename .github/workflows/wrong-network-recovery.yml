@@ -1,0 +1,40 @@
+name: Wrong Network Recovery
+
+on:
+  schedule:
+    # Every 5 minutes. Was 5m setInterval in server/src/jobs/deposit-recovery.ts.
+    # Auto-expires pending wrong-network recoveries that admins didn't
+    # action within 1 hour of creation.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-wrong-network-recovery
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Expire stale wrong-network recovery requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run wrong-network recovery
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CHAIN_RPC_URL: ${{ secrets.CHAIN_RPC_URL }}
+        run: npx tsx src/jobs/cli-runner.ts wrong-network-recovery

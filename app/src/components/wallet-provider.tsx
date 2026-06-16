@@ -224,6 +224,16 @@ function InnerProvider({ children }: { children: ReactNode }) {
       evmDisconnect()
       siweDoneRef.current = undefined
     }
+    // D-C1 fix: invalidate the server-side JWT (and HttpOnly session
+    // cookie) BEFORE clearing the client meta cookie. Without this the
+    // server still has a valid session for up to 7 days and the user is
+    // "logged out" client-side only. For demo users the request may 401
+    // because there's no real session — that's expected and ignored.
+    try {
+      await api.auth.logout()
+    } catch {
+      // no-op: demo sessions have no JWT to invalidate
+    }
     clearSession()
     setSession(null)
     setUser(null)

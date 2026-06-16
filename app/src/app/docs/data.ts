@@ -65,10 +65,10 @@ export type NavItem = {
 }
 
 export const PLAN_LIMITS: PlanLimits[] = [
-  { name: 'Free',       rpm: 60,    tpm: 60_000,    rpd: 5_000,    concurrent: 5,   color: 'text-[var(--color-text-secondary)]', badge: 'bg-[var(--color-surface)] text-[var(--color-text-secondary)]' },
-  { name: 'Starter',    rpm: 120,   tpm: 120_000,   rpd: 25_000,   concurrent: 10,  color: 'text-[var(--color-accent)]',          badge: 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' },
-  { name: 'Pro',        rpm: 300,   tpm: 300_000,   rpd: 100_000,  concurrent: 25,  color: 'text-[var(--color-tertiary)]',        badge: 'bg-[var(--color-tertiary)]/20 text-[var(--color-tertiary)]' },
-  { name: 'Business',   rpm: 1000,  tpm: 1_000_000, rpd: 500_000,  concurrent: 100, color: 'text-[var(--color-warning)]',         badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
+  { name: 'Free',       rpm: 60,    tpm: 60_000,    rpd: 5_000,    concurrent: 5,   color: 'text-text-secondary', badge: 'bg-surface text-text-secondary' },
+  { name: 'Starter',    rpm: 120,   tpm: 120_000,   rpd: 25_000,   concurrent: 10,  color: 'text-accent',          badge: 'bg-accent/20 text-accent' },
+  { name: 'Pro',        rpm: 300,   tpm: 300_000,   rpd: 100_000,  concurrent: 25,  color: 'text-tertiary',        badge: 'bg-tertiary/20 text-tertiary' },
+  { name: 'Business',   rpm: 1000,  tpm: 1_000_000, rpd: 500_000,  concurrent: 100, color: 'text-warning',         badge: 'bg-warning/20 text-warning' },
 ]
 
 export const MODEL_ROWS: ModelRow[] = CATALOG_MODELS.map((m) => ({

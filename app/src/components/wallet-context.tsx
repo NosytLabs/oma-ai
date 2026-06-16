@@ -9,6 +9,14 @@ interface WalletContextValue {
   isReady: boolean;
   isConnected: boolean;
   isAuthenticated: boolean;
+  /**
+   * C-C1: true when the user is browsing the dashboard under the 24h
+   * `oma-demo=1` cookie. The UI uses this to gate mutations, render mock
+   * data, and show a "Demo mode" banner. Demo mode is read-only — the
+   * server-side sessionAuth middleware never accepts the demo cookie as
+   * authentication, so any mutation call would 401.
+   */
+  isDemo: boolean;
   authMethod: AuthMethod;
   accountNumber: string | null;
   connectEvm: (connectorId?: string) => void;
@@ -33,6 +41,7 @@ export const WalletContext = createContext<WalletContextValue>({
   isReady: false,
   isConnected: false,
   isAuthenticated: false,
+  isDemo: false,
   authMethod: null,
   accountNumber: null,
   connectEvm: () => {},

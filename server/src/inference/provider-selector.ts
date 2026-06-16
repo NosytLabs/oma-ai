@@ -48,7 +48,7 @@ function selectProviderWeighted(weights: Map<Provider, number>, available: Provi
   return activeProviders[activeProviders.length - 1];
 }
 
-function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string {
+export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string {
   if (!modelDef) {
     if (model.startsWith("litellm/")) return model.replace("litellm/", "");
     return model;

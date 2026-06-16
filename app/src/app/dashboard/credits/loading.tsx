@@ -11,14 +11,14 @@ export default function Loading() {
       <Skeleton className="h-10 w-64 mb-6" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6">
+          <div key={i} className="rounded-2xl border border-border/50 bg-surface p-6">
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-10 w-32 mb-2" />
             <Skeleton className="h-3 w-1/2" />
           </div>
         ))}
       </div>
-      <div className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6 space-y-3">
+      <div className="rounded-2xl border border-border/50 bg-surface p-6 space-y-3">
         <Skeleton className="h-4 w-32" />
         {[...Array(4)].map((_, i) => (
           <div key={i} className="flex gap-4 py-2">

@@ -56,7 +56,7 @@ export function RecentRequestsTable({ usage, loading, page, limit, onPageChange 
                   <td className="px-6 py-4 text-sm font-medium text-[var(--color-success)]">{row.model}</td>
                   <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)]">{row.promptTokens.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)]">{row.completionTokens.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-[var(--color-secondary)]">${(parseFloat(String(row.costCents)) / 100).toFixed(4)}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">${(parseFloat(String(row.costCents)) / 100).toFixed(4)}</td>
                   <td className="px-6 py-4 text-sm text-[var(--color-text-muted)]">{formatTime(row.createdAt)}</td>
                 </motion.tr>
               ))

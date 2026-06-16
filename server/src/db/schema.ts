@@ -50,6 +50,7 @@ export const users = pgTable("users", {
 }, (t) => [
   index("idx_users_address").on(t.address),
   index("idx_users_account_number_hash").on(t.accountNumberHash),
+  index("idx_users_nonce_not_null").on(t.updatedAt).where(sql`${t.nonce} != ''`),
 ]);
 
 export const apiKeys = pgTable(
@@ -146,6 +147,7 @@ export const usageRecords = pgTable(
     uniqueIndex("uq_usage_request_id").on(t.requestId),
     index("idx_usage_user_created").on(t.userId, t.createdAt),
     index("idx_usage_records_provider").on(t.provider),
+    index("idx_usage_records_analytics").on(t.createdAt, t.model, t.provider, t.costCents),
     index("idx_usage_user_created_model").on(t.userId, t.createdAt, t.model),
   ]
 );
@@ -181,6 +183,7 @@ amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
     index("idx_credit_batches_user_remaining").on(t.userId, t.remainingCents),
     index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
     index("idx_credit_batches_remaining_positive").on(t.userId).where(sql`${t.remainingCents} > 0`),
+    index("idx_credit_batches_expiring").on(t.userId, t.remainingCents, t.expiresAt).where(sql`${t.remainingCents} > 0`),
   ]
 );
 

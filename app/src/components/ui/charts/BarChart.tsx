@@ -1,7 +1,7 @@
 'use client'
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import { format } from 'date-fns'
 
 export interface CostData {
@@ -17,9 +17,9 @@ interface BarChartComponentProps {
 const CustomTooltip = ({ active, payload, label, showCost }: { active?: boolean; payload?: Array<{value: number}>; label?: string; showCost?: boolean }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
-        <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
-        <p className="text-sm font-semibold text-[var(--color-amber)]">{showCost ? `$${payload[0].value.toFixed(2)}` : payload[0].value.toLocaleString()}</p>
+      <div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">
+        <p className="text-xs text-text-muted">{label}</p>
+        <p className="text-sm font-semibold text-amber">{showCost ? `$${payload[0].value.toFixed(2)}` : payload[0].value.toLocaleString()}</p>
       </div>
     )
   }
@@ -31,7 +31,7 @@ export function BarChartComponent({ data, showCostLabels = true }: BarChartCompo
   const chartDescription = `Bar chart showing ${data.length} days of cost data. Total cost: $${totalCost.toFixed(2)}`
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="h-[280px] w-full"
@@ -40,36 +40,36 @@ export function BarChartComponent({ data, showCostLabels = true }: BarChartCompo
         <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} role="img" aria-label={chartDescription}>
           <defs>
             <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ffb800" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#ffb800" stopOpacity={0.2} />
+              <stop offset="5%" stopColor="var(--color-secondary)" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="var(--color-secondary)" stopOpacity={0.2} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-          <XAxis 
-            dataKey="date" 
-            stroke="#71717a" 
-            fontSize={11} 
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+          <XAxis
+            dataKey="date"
+            stroke="var(--color-text-tertiary)"
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => format(new Date(value), 'MMM d')}
           />
-          <YAxis 
-            stroke="#71717a" 
-            fontSize={11} 
+          <YAxis
+            stroke="var(--color-text-tertiary)"
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => showCostLabels ? `$${value}` : value.toLocaleString()}
           />
-          <Tooltip content={<CustomTooltip showCost={showCostLabels} />} cursor={{ fill: '#27272a' }} />
-          <Bar 
-            dataKey="cost" 
-            fill="url(#costGradient)" 
+          <Tooltip content={<CustomTooltip showCost={showCostLabels} />} cursor={{ fill: 'var(--color-surface-elevated)' }} />
+          <Bar
+            dataKey="cost"
+            fill="url(#costGradient)"
             radius={[4, 4, 0, 0]}
             animationDuration={1000}
           />
         </BarChart>
       </ResponsiveContainer>
-    </motion.div>
+    </m.div>
   )
 }
 

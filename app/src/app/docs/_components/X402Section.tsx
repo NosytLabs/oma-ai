@@ -53,16 +53,16 @@ const response = await client.chat.completions.create({
         badge="Gasless"
       />
 
-      <div className="mb-8 rounded-lg border border-[var(--color-warning)]/20 bg-gradient-to-br from-[var(--color-warning)]/8 to-transparent p-4">
+      <div className="mb-8 rounded-lg border border-warning/20 bg-gradient-to-br from-warning/8 to-transparent p-4">
         <div className="flex items-start gap-3">
-          <Zap className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]" />
+          <Zap className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
           <div>
-            <h4 className="font-syne text-sm font-semibold text-[var(--color-warning)]">
+            <h4 className="font-display text-sm font-semibold text-warning">
               x402 protocol
             </h4>
-            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+            <p className="mt-1 text-[13px] leading-relaxed text-text-muted">
               x402 is an open payment standard built on the HTTP 402 status code. Clients sign
-              EIP-3009 <code className="font-mono text-[var(--color-text-secondary)]">transferWithAuthorization</code> payloads off-chain and a facilitator settles USDC on Base. No accounts, no prepaid balances, no protocol fees.
+              EIP-3009 <code className="font-mono text-text-secondary">transferWithAuthorization</code> payloads off-chain and a facilitator settles USDC on Base. No accounts, no prepaid balances, no protocol fees.
             </p>
           </div>
         </div>
@@ -70,24 +70,24 @@ const response = await client.chat.completions.create({
 
       <SubHeading id="x402-what">What is x402?</SubHeading>
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <Coins className="mb-2 h-4 w-4 text-[var(--color-accent)]" />
-          <h4 className="mb-1 font-syne text-sm font-semibold text-[var(--color-text)]">Per request</h4>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <Coins className="mb-2 h-4 w-4 text-accent" />
+          <h4 className="mb-1 font-display text-sm font-semibold text-text">Per request</h4>
+          <p className="text-[13px] leading-relaxed text-text-muted">
             Pay only for what you use, request by request. No top-ups.
           </p>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <Network className="mb-2 h-4 w-4 text-[var(--color-accent)]" />
-          <h4 className="mb-1 font-syne text-sm font-semibold text-[var(--color-text)]">Multi-chain</h4>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <Network className="mb-2 h-4 w-4 text-accent" />
+          <h4 className="mb-1 font-display text-sm font-semibold text-text">Multi-chain</h4>
+          <p className="text-[13px] leading-relaxed text-text-muted">
             Settle on Base, denominated in USDC.
           </p>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <FileCode2 className="mb-2 h-4 w-4 text-[var(--color-accent)]" />
-          <h4 className="mb-1 font-syne text-sm font-semibold text-[var(--color-text)]">No gas</h4>
-          <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <FileCode2 className="mb-2 h-4 w-4 text-accent" />
+          <h4 className="mb-1 font-display text-sm font-semibold text-text">No gas</h4>
+          <p className="text-[13px] leading-relaxed text-text-muted">
             EIP-3009 off-chain signing means no native token balance needed.
           </p>
         </div>
@@ -103,40 +103,40 @@ const response = await client.chat.completions.create({
 
       <SubHeading id="x402-where">Where it runs</SubHeading>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <h4 className="mb-2 font-syne text-sm font-semibold text-[var(--color-text)]">Benefits</h4>
-          <ul className="space-y-1.5 text-[13px] text-[var(--color-text-muted)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <h4 className="mb-2 font-display text-sm font-semibold text-text">Benefits</h4>
+          <ul className="space-y-1.5 text-[13px] text-text-muted">
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]" />
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
               No credit pre-funding
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]" />
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
               Gasless (EIP-3009 off-chain signing)
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]" />
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
               Per-request billing
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]" />
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
               No protocol fees
             </li>
           </ul>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <h4 className="mb-2 font-syne text-sm font-semibold text-[var(--color-text)]">Supported chains</h4>
-          <ul className="space-y-1.5 text-[13px] text-[var(--color-text-muted)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <h4 className="mb-2 font-display text-sm font-semibold text-text">Supported chains</h4>
+          <ul className="space-y-1.5 text-[13px] text-text-muted">
             <li className="flex items-start gap-2">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" aria-hidden="true" />
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
               <span>
-                <span className="font-mono text-[var(--color-text-secondary)]">Base</span> — USDC, EIP-3009
+                <span className="font-mono text-text-secondary">Base</span> — USDC, EIP-3009
               </span>
             </li>
           </ul>
           <a
             href="#authentication"
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)]"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent transition-colors hover:text-accent-hover"
           >
             See the wallet example <ArrowRight className="h-3 w-3" />
           </a>

@@ -86,22 +86,22 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
         return {
           icon: <RefreshCw className="h-3 w-3 animate-spin" />,
           text: 'Connecting...',
-          className: 'text-[var(--color-text-muted)]',
-          dotClass: 'bg-[var(--color-warning)] animate-pulse',
+          className: 'text-text-muted',
+          dotClass: 'bg-warning animate-pulse',
         }
       case 'online':
         return {
           icon: <Wifi className="h-3 w-3" />,
           text: 'API Online',
-          className: 'text-[var(--color-success)]',
-          dotClass: 'bg-[var(--color-success)]',
+          className: 'text-success',
+          dotClass: 'bg-success',
         }
       case 'offline':
         return {
           icon: <WifiOff className="h-3 w-3" />,
           text: 'Reconnecting…',
-          className: 'text-[var(--color-warning)]',
-          dotClass: 'bg-[var(--color-warning)] animate-pulse',
+          className: 'text-warning',
+          dotClass: 'bg-warning animate-pulse',
         }
     }
   }
@@ -124,7 +124,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
       {status === 'offline' && showRetryButton && (
         <button
           onClick={handleRetry}
-          className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          className="flex items-center gap-1 text-[10px] text-text-muted hover:text-text transition-colors"
           aria-label="Retry connection"
         >
           <RefreshCw className="h-3 w-3" />

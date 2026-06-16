@@ -15,9 +15,12 @@ import { adminRefundRoutes } from "./refunds.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
-adminRoutes.use("*", sessionAuth);
-adminRoutes.use("*", requireAdmin());
-adminRoutes.use("*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
+adminRoutes.use("/admin/*", sessionAuth);
+adminRoutes.use("/v1/admin/*", sessionAuth);
+adminRoutes.use("/admin/*", requireAdmin());
+adminRoutes.use("/v1/admin/*", requireAdmin());
+adminRoutes.use("/admin/*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
+adminRoutes.use("/v1/admin/*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
 
 adminRoutes.route("/", adminRefundRoutes);
 adminRoutes.route("/", usersRoutes);

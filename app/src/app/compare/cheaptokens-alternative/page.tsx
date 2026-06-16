@@ -12,7 +12,7 @@ export default function CheapTokensAlternativePage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]">
+          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-accent">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Home
           </Link>
@@ -30,13 +30,13 @@ export default function CheapTokensAlternativePage() {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="mb-6"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-3 py-1.5">
-              <Coins className="h-3.5 w-3.5 text-[var(--color-accent)]" />
-              <span className="text-xs font-mono font-semibold text-[var(--color-accent)]">Cost-Effective AI</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5">
+              <Coins className="h-3.5 w-3.5 text-accent" />
+              <span className="text-xs font-mono font-semibold text-accent">Cost-Effective AI</span>
             </div>
           </motion.div>
 
-          <h1 className="mb-6 font-syne text-4xl font-bold tracking-tight md:text-5xl" style={{ color: 'var(--color-text-bright)' }}>
+          <h1 className="h1-page mb-6" style={{ color: 'var(--color-text-bright)' }}>
             CheapTokens Alternative for
             <span className="gradient-text">Affordable AI Inference</span>
           </h1>
@@ -53,9 +53,9 @@ export default function CheapTokensAlternativePage() {
           className="mb-16"
         >
           <div className="mb-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">{'//'} advantages</span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+            <span className="font-mono text-xs text-text-muted">{'//'} advantages</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -69,19 +69,19 @@ export default function CheapTokensAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-accent)]/30"
+                className="group relative overflow-hidden rounded-xl border border-border bg-panel p-6 transition-all hover:border-accent/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-2">
-                    <span className="font-mono text-xs text-[var(--color-text-muted)]">{card.label}</span>
-                    <div className="h-px flex-1 bg-[var(--color-border)]" />
+                    <span className="font-mono text-xs text-text-muted">{card.label}</span>
+                    <div className="h-px flex-1 bg-border" />
                   </div>
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <card.icon className="h-5 w-5 text-[var(--color-accent)]" />
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface">
+                    <card.icon className="h-5 w-5 text-accent" />
                   </div>
-                  <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
+                  <h3 className="mb-2 font-display text-base font-semibold text-text-bright">{card.title}</h3>
+                  <p className="text-sm leading-relaxed text-text-muted">{card.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -96,8 +96,8 @@ export default function CheapTokensAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Why OMA Beats CheapTokens</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">Why OMA Beats CheapTokens</h2>
             </div>
           </div>
 
@@ -115,14 +115,14 @@ export default function CheapTokensAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-border bg-panel p-4 transition-all hover:border-accent/30"
               >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-accent/30 bg-accent/10">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                 </div>
                 <div>
-                  <span className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{item.title}: </span>
-                  <span className="text-sm text-[var(--color-text)]">{item.desc}</span>
+                  <span className="font-display text-sm font-semibold text-text-bright">{item.title}: </span>
+                  <span className="text-sm text-text">{item.desc}</span>
                 </div>
               </motion.div>
             ))}
@@ -137,21 +137,21 @@ export default function CheapTokensAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Compare: OMA vs CheapTokens</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">Compare: OMA vs CheapTokens</h2>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
+          <div className="overflow-hidden rounded-xl border border-border bg-panel">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[var(--color-border)]">
-                  <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Feature</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">CheapTokens</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">OMA</th>
+                <tr className="border-b border-border">
+                  <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-text-muted">Feature</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-text-muted">CheapTokens</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-accent">OMA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className="divide-y divide-border">
                 {[
                   { feature: 'Account Required', cheap: 'Yes', oma: 'No', highlight: true },
                   { feature: 'Crypto Payments', cheap: 'Limited', oma: '100+ Tokens', highlight: true },
@@ -159,10 +159,10 @@ export default function CheapTokensAlternativePage() {
                   { feature: 'Credit System', cheap: 'No', oma: 'Yes', highlight: true },
                   { feature: 'Dashboard', cheap: 'Limited', oma: 'Full Analytics', highlight: false },
                 ].map((row, i) => (
-                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-accent)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
-                    <td className="p-4 font-mono text-sm text-[var(--color-text)]">{row.feature}</td>
-                    <td className="p-4 text-center font-mono text-sm text-[var(--color-text-muted)]">{row.cheap}</td>
-                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-accent)]">{row.oma}</td>
+                  <tr key={i} className={`${row.highlight ? 'bg-accent/5' : ''} transition-colors hover:bg-surface`}>
+                    <td className="p-4 font-mono text-sm text-text">{row.feature}</td>
+                    <td className="p-4 text-center font-mono text-sm text-text-muted">{row.cheap}</td>
+                    <td className="p-4 text-center font-mono text-sm font-semibold text-accent">{row.oma}</td>
                   </tr>
                 ))}
               </tbody>
@@ -174,10 +174,10 @@ export default function CheapTokensAlternativePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
-          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center"
+          className="rounded-xl border border-border bg-panel p-8 text-center"
         >
-          <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Start Saving on AI Inference</h2>
-          <p className="mb-6 text-sm text-[var(--color-text)]">
+          <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-text-bright">Start Saving on AI Inference</h2>
+          <p className="mb-6 text-sm text-text">
             Get competitive pricing with the convenience of crypto payments and no account required.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -191,11 +191,11 @@ export default function CheapTokensAlternativePage() {
           </div>
         </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/private-ai-api" className="hover:text-[var(--color-accent)] transition-colors">Private AI API</Link>
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+          <span className="text-border">{'//'}</span>
+          <Link href="/pricing" className="hover:text-accent transition-colors">Pricing</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/private-ai-api" className="hover:text-accent transition-colors">Private AI API</Link>
         </div>
       </div>
     </div>

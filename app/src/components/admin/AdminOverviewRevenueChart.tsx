@@ -15,8 +15,8 @@ interface AdminOverviewRevenueChartProps {
 
 export function AdminOverviewRevenueChart({ chartData }: AdminOverviewRevenueChartProps) {
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5">
-      <h3 className="text-sm font-medium text-[var(--color-text-bright)] mb-4">Revenue Overview</h3>
+    <div className="rounded-xl border border-border bg-surface/50 p-5">
+      <h3 className="text-sm font-medium text-text-bright mb-4">Revenue Overview</h3>
       <div className="h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData.slice(-30)}>

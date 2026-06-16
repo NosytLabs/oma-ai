@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { MODEL_COUNT } from '@/lib/models-data'
 
 export const runtime = 'edge'
 export const alt = 'OMA AI - Permissionless AI inference gateway. Pay per request in USDC.'
@@ -61,7 +62,7 @@ export default async function OpengraphImage() {
               maxWidth: 900,
             }}
           >
-            Pay per request in USDC. 91+ models. No account required.
+            Pay per request in USDC. ${MODEL_COUNT} models. No account required.
           </div>
         </div>
 

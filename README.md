@@ -1,10 +1,12 @@
 # OMA AI Gateway
 
 **Website:** https://oma-ai.com  
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Status:** Production Ready
 
 Self-hosted AI inference gateway with wallet-based auth (zero KYC), multi-provider routing, cross-chain deposits, and native crypto payments.
+
+> **Audit status (2026-06-16):** See [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) — all validation gates green (0 typecheck/lint errors, 917 server tests + 73 app tests passing, 0 skipped). The 10 prior 2026-06-14 audit reports (comprehensive + X402, Operational Model, Site Pages, Surplus, New-API References, Ponytail Cleanup, V6 Inference, Streaming Playground Auth) are archived in [`docs/archive/`](docs/archive/). Older point-in-time audit fix reports and pre-implementation research live in [`docs/archive/research/`](docs/archive/research/).
 
 ---
 
@@ -202,9 +204,15 @@ cd server && npm run dev # Backend :3001
 
 | Document | Description |
 |----------|-------------|
-| [DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Full technical guide |
+| [AGENTS.md](AGENTS.md) | Dev operations, commands, validation gates, gotchas |
+| [DEPLOY.md](DEPLOY.md) | Deployment guide (Docker, Coolify, env vars, TLS) |
+| [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Full technical guide |
+| [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) | REST + x402 API reference |
+| [docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md](docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md) | Production deploy runbook |
+| [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) | **Authoritative audit (all gates green, 2026-06-16)** |
 | [docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md](docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md) | x402 payment flow |
-| [AGENTS.md](AGENTS.md) | Dev operations & commands |
+| [app/docs/AGENT-PROTOCOLS.md](app/docs/AGENT-PROTOCOLS.md) | A2A / MCP / x402 / A2UI protocols |
+| [`../../docs/archive/`](../../docs/archive/) | Older audit fix reports + research artifacts (Neon, DB pruning, competitor UX) |
 
 ---
 

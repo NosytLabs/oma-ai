@@ -1,0 +1,46 @@
+name: Deposit Retry
+
+on:
+  schedule:
+    # Every 5 minutes. Was 60s setInterval in server/src/jobs/deposit-retry.ts.
+    # GitHub Actions scheduled events have a 5-minute minimum cadence. The
+    # retry job is best-effort: pending deposits that don't get confirmed
+    # by 30 minutes are expired by the same job. Worst case users see a
+    # 5-minute confirmation delay instead of 60s.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-deposit-retry
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Retry pending deposits and expire stale ones
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run deposit retry
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          # Houdini client (houdini_swap retries)
+          HOUDINI_API_KEY: ${{ secrets.HOUDINI_API_KEY }}
+          HOUDINI_API_SECRET: ${{ secrets.HOUDINI_API_SECRET }}
+          HOUDINI_PARTNER_ID: ${{ secrets.HOUDINI_PARTNER_ID }}
+          HOUDINI_API_URL: ${{ secrets.HOUDINI_API_URL }}
+        run: npx tsx src/jobs/cli-runner.ts deposit-retry

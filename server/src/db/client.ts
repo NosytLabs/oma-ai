@@ -27,7 +27,10 @@ export function getDb() {
       process.exit(1);
     }
     try {
-      const sql = neon(dbUrl);
+      const poolUrl = dbUrl.includes('neon.tech')
+        ? `${dbUrl}${dbUrl.includes('?') ? '&' : '?'}pgbouncer=true&pool_timeout=30&connection_limit=${config.CONNECTION_POOL_SIZE}`
+        : dbUrl;
+      const sql = neon(poolUrl);
       _db = drizzle(sql, { schema });
     } catch (err) {
       _dbInitFailed = true;

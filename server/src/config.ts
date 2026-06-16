@@ -14,6 +14,14 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
+  // 0G.ai decentralized inference provider (zerog.ts). Optional — provider
+  // returns 503 if requests target it and this key is unset.
+  ZERO_G_API_KEY: z.string().min(1).optional(),
+  // Allow Venice non-private mode. By default all Venice requests set
+  // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
+  // let callers opt out per-request (private:false) for non-sensitive traffic.
+  // Production should leave this unset (defaults to false).
+  OMMA_ALLOW_NON_PRIVATE_VENICE: z.coerce.boolean().default(false),
   // Operator treasury: cold-side signer for sweeping USDC profits out of the
   // hot facilitator wallet. The sweep endpoint returns 501 if unset (read-only
   // mode). Production should source this from a multisig or HSM-backed key.
@@ -137,6 +145,11 @@ const envSchema = z.object({
   // CSRF protection secret (required for session-based auth flows)
   CSRF_SECRET: z.string().min(32).default("dev-csrf-secret-change-me-in-prod-32ch"),
 
+  // Server-to-server auth: Next.js app → API (bypasses user OAuth)
+  OMA_API_KEY: z.string().min(1).optional(),
+  // Server-to-server auth: autonomous agent / cron callbacks
+  OMA_AGENT_KEY: z.string().min(1).optional(),
+
   // Weighted load balancing for provider failover (format: "venice:70,antseed:30,litellm:0,openrouter:0,together:0,deepinfra:0")
   // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
   // If not set, defaults to sequential fallback (primary provider first, then others in order).
@@ -203,6 +216,9 @@ const envSchema = z.object({
   CREDITS_PER_USD: z.coerce.number().int().positive().default(100),
   ONRAMP_MIN_USD: z.coerce.number().positive().default(10),
   ONRAMP_MAX_USD: z.coerce.number().positive().default(1000),
+
+  // Connection pool size for Neon Postgres (used with PgBouncer)
+  CONNECTION_POOL_SIZE: z.coerce.number().int().positive().default(10),
 });
 
 export type Config = z.infer<typeof envSchema>;

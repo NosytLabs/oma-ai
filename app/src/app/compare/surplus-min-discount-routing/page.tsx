@@ -21,14 +21,9 @@ import {
 import { motion } from 'framer-motion'
 
 /**
- * Hallmark · P4 H5 E5 S5 R4 V4
- * macrostructure: field-manual (catalog) · genre: atmospheric · theme: terminal
- * enrichment: hand-built routing-flow SVG diagram + copy-paste agent snippet
- * sections: subject · value · flow diagram · operator policy · agent example · end-user request · CTA
- * states: 8-state button system (see globals.css .oma-btn) · 4.5:1 contrast on void
- * copy: stop-slop pass — every fact is sourced from the cited upstream
- *       (Surplus, AskSurplus announcement) or docs/INTERNAL-SOURCING.md;
- *       no invented metrics.
+ * OMA · Surplus Min Discount Routing
+ * sections: status banner · hero · value · flow diagram · operator policy · agent example · end-user request · CTA
+ * conversational marketing copy
  */
 
 const DEFAULT_FLOOR_PCT = 50
@@ -120,21 +115,25 @@ function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' }) {
   )
 }
 
-const SectionHeading = ({ index, title, meta }: { index: string; title: string; meta?: string }) => (
-  <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
-    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">§ {index}</span>
-    <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+const SectionHeading = ({ index, title, meta }: { index?: string; title: string; meta?: string }) => (
+  <header className="mb-5 sm:mb-7">
+    <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-text-bright">
+      {index && (
+        <span className="text-accent mr-2 tabular-nums">{index}</span>
+      )}
       {title}
     </h2>
     {meta && (
-      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">{meta}</span>
+      <p className="mt-1.5 text-[13px] sm:text-[14px] text-text-muted">
+        {meta}
+      </p>
     )}
   </header>
 )
 
 export default function SurplusMinDiscountRoutingPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
+    <div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
       <div className="overflow-x-clip">
         <div className="flex flex-col">
 
@@ -142,15 +141,15 @@ export default function SurplusMinDiscountRoutingPage() {
           <div
             role="status"
             aria-live="polite"
-            className="border-b border-[var(--color-warning)]/30 bg-[var(--color-warning-dim)]"
+            className="border-b border-warning/30 bg-warning-dim"
           >
             <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-2.5">
               <AlertTriangle
-                className="h-4 w-4 mt-0.5 shrink-0 text-[var(--color-warning)]"
+                className="h-4 w-4 mt-0.5 shrink-0 text-warning"
                 aria-hidden="true"
               />
-              <p className="text-[11.5px] sm:text-[12.5px] text-[var(--color-text)] leading-relaxed">
-                <span className="font-semibold text-[var(--color-warning)] uppercase tracking-widest text-[10px] mr-2">
+              <p className="text-[11.5px] sm:text-[12.5px] text-text leading-relaxed">
+                <span className="font-semibold text-warning text-[11px] mr-2">
                   temporarily disabled
                 </span>
                 Surplus Intelligence routing is offline while the EIP-712 payment
@@ -168,62 +167,66 @@ export default function SurplusMinDiscountRoutingPage() {
           >
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+              className="inline-flex items-center gap-2 text-[11px] text-text-tertiary hover:text-accent transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               back to home
             </Link>
           </section>
 
-          {/* ===== § 01 SUBJECT ===== */}
+          {/* ===== HERO ===== */}
+          {/* ===== HERO ===== */}
           <section
             aria-labelledby="subject-heading"
             className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16"
           >
             <div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
               <div className="min-w-0">
-                <SectionHeading index="01" title="Subject" meta="surplus · min discount routing" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                  Surplus Min Discount Routing
+                </span>
 
                 <h1
                   id="subject-heading"
-                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5rem)]"
+                  className="h1-hero text-text-bright mt-6"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
                   <span className="block">Set a discount</span>
-                  <span className="block text-[var(--color-accent)]">floor. Pay less.</span>
+                  <span className="block text-accent">floor. Pay less.</span>
                 </h1>
 
                 <p
-                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed"
+                  className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed"
                   style={{ textWrap: 'pretty' }}
                 >
-                  Minimum Discount Routing is now a first-class guardrail on OMA.
-                  OMA will not buy Surplus Intelligence capacity below the
-                  configured floor, and end-user agents can request the same
+                  Minimum Discount Routing is a first-class guardrail on OMA.
+                  We won&apos;t buy Surplus Intelligence capacity below the
+                  floor you set, and end-user agents can request the same
                   floor for their own spend. Stop overpaying for inference.
                 </p>
 
-                <div className="mt-6 flex flex-wrap items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] tracking-widest uppercase">
-                  <span className="inline-flex items-center gap-1.5 border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] px-2 py-1 text-[var(--color-accent)]">
+                <div className="mt-6 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-[12px] font-medium text-accent">
                     <Layers className="h-3 w-3" />
-                    guardrail
+                    Guardrail
                   </span>
-                  <span className="inline-flex items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-[12px] font-medium text-text-muted">
                     <Lock className="h-3 w-3" />
-                    private
+                    Private
                   </span>
-                  <span className="inline-flex items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-[12px] font-medium text-text-muted">
                     <Coins className="h-3 w-3" />
-                    x402 · base
+                    x402 on Base
                   </span>
                 </div>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Link href="/dashboard" className="oma-btn oma-btn--primary">
-                    <span aria-hidden="true" className="text-[var(--color-text-inverse)]">›</span>
+                  <Link href="/dashboard" className="bg-accent text-void hover:bg-accent-hover px-5 py-2.5 rounded-2xl font-medium transition-colors">
+                    <span aria-hidden="true" className="text-text-inverse">›</span>
                     open the dashboard
                   </Link>
-                  <Link href="/admin/fees" className="oma-btn oma-btn--secondary">
+                  <Link href="/admin/fees" className="bg-surface text-text border border-border hover:bg-surface-elevated px-5 py-2.5 rounded-2xl font-medium transition-colors">
                     set operator floor
                   </Link>
                 </div>
@@ -231,52 +234,52 @@ export default function SurplusMinDiscountRoutingPage() {
 
               <aside
                 aria-label="Floor policy"
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0 relative overflow-hidden"
+                className="border border-border bg-surface min-w-0 relative overflow-hidden"
               >
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-60"
+                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
                 />
-                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                <div className="px-4 py-2.5 border-b border-border bg-panel flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-text-bright">
                     Floor policy
                   </span>
-                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                  <span className="flex items-center gap-1.5 text-[11px] text-accent">
                     <StatusDot />
                     <span className="sr-only">Status: </span>live
                   </span>
                 </div>
-                <dl className="text-[11px]">
+                <dl className="text-[12px]">
                   {[
                     ['Operator default', `≥ ${DEFAULT_FLOOR_PCT}% off retail`],
                     ['Operator range', `${FLOOR_RANGE.min}–${FLOOR_RANGE.max}%`],
                     ['User override', 'per-api-key, ≥ operator default'],
                     ['Empty-result code', '422 · discount_floor_violation'],
                     ['Scope', 'Surplus Intelligence only'],
-                    ['Settlement', 'Base · USDC'],
+                    ['Settlement', 'USDC on Base'],
                   ].map(([k, v]) => (
                     <div
                       key={k}
-                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-b-0"
+                      className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border last:border-b-0"
                     >
-                      <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">{k}</dt>
-                      <dd className="text-[var(--color-text-secondary)] tabular-nums truncate text-right">{v}</dd>
+                      <dt className="text-text-muted text-[11.5px]">{k}</dt>
+                      <dd className="text-text-secondary tabular-nums truncate text-right">{v}</dd>
                     </div>
                   ))}
                 </dl>
-                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
-                  source · ask surplus announcement + docs/INTERNAL-SOURCING.md
+                <div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
+                  Source: AskSurplus announcement and docs/INTERNAL-SOURCING.md
                 </div>
               </aside>
             </div>
           </section>
 
-          {/* ===== § 02 VALUE ===== */}
+          {/* ===== VALUE ===== */}
           <section
             aria-labelledby="value-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="02" title="Value" meta="what the floor actually buys" />
+            <SectionHeading title="Why a discount floor matters" meta="What it actually buys you" />
             <h2 id="value-heading" className="sr-only">Value pillars</h2>
 
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
@@ -287,17 +290,17 @@ export default function SurplusMinDiscountRoutingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.4 }}
                   transition={{ duration: 0.4, delay: i * 0.05, ease: 'easeOut' }}
-                  className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-5 hover:border-[var(--color-accent)]/40 transition-colors"
+                  className="group border border-border bg-surface p-5 hover:border-accent/40 transition-colors"
                 >
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)]">
-                      <p.icon className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+                    <div className="flex h-9 w-9 items-center justify-center border border-accent/30 bg-accent-dim">
+                      <p.icon className="h-4 w-4 text-accent" aria-hidden="true" />
                     </div>
-                    <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                    <h3 className="font-display text-[15px] font-semibold text-text-bright">
                       {p.title}
                     </h3>
                   </div>
-                  <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                     {p.desc}
                   </p>
                 </motion.article>
@@ -305,23 +308,23 @@ export default function SurplusMinDiscountRoutingPage() {
             </div>
           </section>
 
-          {/* ===== § 03 FLOW DIAGRAM ===== */}
+          {/* ===== FLOW DIAGRAM ===== */}
           <section
             aria-labelledby="flow-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="03" title="Flow" meta="the 8-step routing loop" />
+            <SectionHeading title="How the routing flow works" meta="An 8-step loop between you, OMA, and Surplus" />
             <h2 id="flow-heading" className="sr-only">Minimum discount routing flow</h2>
 
             <div className="grid gap-6 lg:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-start">
-              <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl">
+              <p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl">
                 An agent posts a request with a min_discount_pct. OMA pulls the
                 current Surplus offer list, drops any offer below the floor,
                 and either routes the call or returns a structured 422. The
                 client never sees an offer it would have rejected.
               </p>
 
-              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6 min-w-0">
+              <div className="border border-border bg-surface p-4 sm:p-6 min-w-0">
                 <svg
                   viewBox="0 0 600 360"
                   role="img"
@@ -536,28 +539,28 @@ export default function SurplusMinDiscountRoutingPage() {
             </div>
           </section>
 
-          {/* ===== § 04 OPERATOR POLICY ===== */}
+          {/* ===== OPERATOR POLICY ===== */}
           <section
             aria-labelledby="operator-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="04" title="Operator" meta="how OMA uses it internally" />
+            <SectionHeading title="How OMA uses the floor" meta="Operator-side policy" />
             <h2 id="operator-heading" className="sr-only">Operator policy</h2>
 
             <div className="grid gap-6 lg:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <ServerCog className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-                  <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                  <ServerCog className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <h3 className="font-display text-[15px] font-semibold text-text-bright">
                     OMA refuses to buy below the floor
                   </h3>
                 </div>
-                <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                   When the CheapTokens pool sells out, the OMA operator falls
                   back to Surplus Intelligence on x402. With Minimum Discount
                   Routing enabled, that fallback honours{' '}
-                  <code className="font-mono text-[var(--color-text-bright)]">minDiscountPct</code>{' '}
-                  from <code className="font-mono text-[var(--color-text-bright)]">/admin/fees</code>.
+                  <code className="font-mono text-text-bright">minDiscountPct</code>{' '}
+                  from <code className="font-mono text-text-bright">/admin/fees</code>.
                   The x402 payment is never signed for an offer whose discount
                   is below the configured floor, regardless of which operator
                   script is running. Default {DEFAULT_FLOOR_PCT}%, range{' '}
@@ -567,10 +570,10 @@ export default function SurplusMinDiscountRoutingPage() {
                   {OPERATOR_NOTES.map((note) => (
                     <li
                       key={note}
-                      className="flex items-start gap-2.5 text-[12.5px] sm:text-[13px] text-[var(--color-text)]"
+                      className="flex items-start gap-2.5 text-[12.5px] sm:text-[13px] text-text"
                     >
                       <CheckCircle
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent"
                         aria-hidden="true"
                       />
                       <span>{note}</span>
@@ -581,19 +584,19 @@ export default function SurplusMinDiscountRoutingPage() {
 
               <aside
                 aria-label="Operator config keys"
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0"
+                className="border border-border bg-surface min-w-0 rounded-xl overflow-hidden"
               >
-                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                <div className="px-4 py-2.5 border-b border-border bg-panel flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-text-bright">
                     fee_config · minDiscountPct
                   </span>
-                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                  <span className="flex items-center gap-1.5 text-[11px] text-accent">
                     <StatusDot />
                     live
                   </span>
                 </div>
                 <pre
-                  className="px-3 py-3 text-[11.5px] sm:text-[12px] leading-[1.7] text-[var(--color-text)] overflow-x-auto whitespace-pre"
+                  className="px-3 py-3 text-[11.5px] sm:text-[12px] leading-[1.7] text-text overflow-x-auto whitespace-pre"
                   style={{ overflowWrap: 'normal' }}
                 >
 {`PUT /api/admin/config/fees
@@ -607,22 +610,22 @@ export default function SurplusMinDiscountRoutingPage() {
   }
 }`}
                 </pre>
-                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
-                  same endpoint as the venice markup
+                <div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
+                  Same endpoint as the Venice markup.
                 </div>
               </aside>
             </div>
           </section>
 
-          {/* ===== § 05 AGENT EXAMPLE ===== */}
+          {/* ===== AGENT EXAMPLE ===== */}
           <section
             aria-labelledby="agent-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="05" title="Agent" meta="the 8-line call" />
+            <SectionHeading title="For agents and integrators" meta="The 22-line example" />
             <h2 id="agent-heading" className="sr-only">Agent example</h2>
 
-            <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl mb-6">
+            <p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-6">
               Any agent that hits OMA can set its own min_discount_pct per
               request. OMA will reject the call with HTTP 422 if the best
               available Surplus offer is below the threshold. The agent
@@ -630,18 +633,18 @@ export default function SurplusMinDiscountRoutingPage() {
               direct call.
             </p>
 
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0">
-              <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] flex items-center gap-2">
+            <div className="border border-border bg-surface min-w-0 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-panel">
+                <span className="text-[12px] font-semibold text-text-bright flex items-center gap-2">
                   <FileCode className="h-3 w-3" aria-hidden="true" />
-                  python · 22 lines
+                  Python · 22 lines
                 </span>
-                <span className="text-[10px] text-[var(--color-text-tertiary)]">
+                <span className="text-[11px] text-text-tertiary">
                   min_discount_pct = 50
                 </span>
               </div>
               <pre
-                className="px-3 sm:px-4 py-4 text-[12px] sm:text-[12.5px] leading-[1.7] text-[var(--color-text)] overflow-x-auto whitespace-pre"
+                className="px-3 sm:px-4 py-4 text-[12px] sm:text-[12.5px] leading-[1.7] text-text overflow-x-auto whitespace-pre"
                 style={{ overflowWrap: 'normal' }}
               >
                 <code>{AGENT_SNIPPET}</code>
@@ -649,30 +652,30 @@ export default function SurplusMinDiscountRoutingPage() {
             </div>
           </section>
 
-          {/* ===== § 06 END-USER REQUEST ===== */}
+          {/* ===== END-USER REQUEST ===== */}
           <section
             aria-labelledby="enduser-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="06" title="End user" meta="how to request it" />
+            <SectionHeading title="For end users" meta="How to request a floor on your behalf" />
             <h2 id="enduser-heading" className="sr-only">End-user request</h2>
 
             <div className="grid gap-6 lg:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Wallet className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-                  <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                  <Wallet className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <h3 className="font-display text-[15px] font-semibold text-text-bright">
                     Ask OMA to honour a floor on your behalf
                   </h3>
                 </div>
-                <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                   End users do not need to call Surplus directly. Every request
-                  through OMA can carry a <code className="font-mono text-[var(--color-text-bright)]">procurement.min_discount_pct</code>{' '}
+                  through OMA can carry a <code className="font-mono text-text-bright">procurement.min_discount_pct</code>{' '}
                   guardrail. To make it sticky across calls, set the per-key
                   default in the dashboard, or email{' '}
                   <a
                     href="mailto:hello@oma-ai.com"
-                    className="text-[var(--color-accent)] hover:underline underline-offset-2"
+                    className="text-accent hover:underline underline-offset-2"
                   >
                     hello@oma-ai.com
                   </a>{' '}
@@ -682,10 +685,10 @@ export default function SurplusMinDiscountRoutingPage() {
                   {END_USER_NOTES.map((note) => (
                     <li
                       key={note}
-                      className="flex items-start gap-2.5 text-[12.5px] sm:text-[13px] text-[var(--color-text)]"
+                      className="flex items-start gap-2.5 text-[12.5px] sm:text-[13px] text-text"
                     >
                       <CheckCircle
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent"
                         aria-hidden="true"
                       />
                       <span>{note}</span>
@@ -696,24 +699,24 @@ export default function SurplusMinDiscountRoutingPage() {
 
               <aside
                 aria-label="What to expect when the floor blocks the call"
-                className="border border-[var(--color-warning)]/30 bg-[var(--color-warning-dim)] p-5 min-w-0"
+                className="border border-warning/30 bg-warning-dim p-5 min-w-0"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle
-                    className="h-4 w-4 text-[var(--color-warning)]"
+                    className="h-4 w-4 text-warning"
                     aria-hidden="true"
                   />
-                  <h3 className="font-syne text-[14px] font-semibold text-[var(--color-text-bright)]">
+                  <h3 className="font-display text-[14px] font-semibold text-text-bright">
                     When the floor blocks the call
                   </h3>
                 </div>
-                <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                   If no Surplus offer clears the configured floor, OMA returns
                   HTTP 422 with the following shape. The agent decides what
                   to do next.
                 </p>
                 <pre
-                  className="mt-3 px-3 py-3 text-[11.5px] sm:text-[12px] leading-[1.7] text-[var(--color-text)] bg-[var(--color-panel)] border border-[var(--color-border)] overflow-x-auto whitespace-pre"
+                  className="mt-3 px-3 py-3 text-[11.5px] sm:text-[12px] leading-[1.7] text-text bg-panel border border-border overflow-x-auto whitespace-pre"
                   style={{ overflowWrap: 'normal' }}
                 >
 {`HTTP/1.1 422 Unprocessable Entity
@@ -734,37 +737,37 @@ export default function SurplusMinDiscountRoutingPage() {
             </div>
           </section>
 
-          {/* ===== § 07 CTA ===== */}
+          {/* ===== CTA ===== */}
           <section
             aria-labelledby="cta-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
-            <SectionHeading index="07" title="Set" meta="the next step" />
+            <SectionHeading title="Set the floor" meta="The next step" />
             <h2 id="cta-heading" className="sr-only">Set the floor</h2>
 
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] px-5 sm:px-8 py-8 sm:py-10 relative overflow-hidden">
+            <div className="border border-border bg-surface px-5 sm:px-8 py-8 sm:py-10 relative overflow-hidden">
               <span
                 aria-hidden="true"
-                className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-accent)]"
+                className="absolute left-0 top-0 bottom-0 w-1 bg-accent"
               />
-              <p className="text-[15px] sm:text-base text-[var(--color-text-bright)] max-w-2xl leading-relaxed">
-                Operators set the floor at <Link href="/admin/fees" className="text-[var(--color-accent)] underline underline-offset-2 hover:text-[var(--color-accent-hover)]">/admin/fees</Link>. End users set it in the dashboard, per API key.
+              <p className="text-[15px] sm:text-base text-text-bright max-w-2xl leading-relaxed">
+                Operators set the floor at <Link href="/admin/fees" className="text-accent underline underline-offset-2 hover:text-accent-hover">/admin/fees</Link>. End users set it in the dashboard, per API key.
               </p>
-              <p className="mt-3 text-[12px] sm:text-sm text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
+              <p className="mt-3 text-[12px] sm:text-sm text-text-secondary max-w-xl leading-relaxed">
                 Default 50%. Range 0–95%. Effective within 30 seconds. The
                 floor applies to the Surplus fallback only — Venice and the
                 CheapTokens pool are not affected.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/admin/fees" className="oma-btn oma-btn--primary">
+                <Link href="/admin/fees" className="bg-accent text-void hover:bg-accent-hover px-5 py-2.5 rounded-2xl font-medium transition-colors">
                   set operator floor
                 </Link>
-                <Link href="/dashboard" className="oma-btn oma-btn--secondary">
+                <Link href="/dashboard" className="bg-surface text-text border border-border hover:bg-surface-elevated px-5 py-2.5 rounded-2xl font-medium transition-colors">
                   open the dashboard
                 </Link>
                 <Link
                   href="/compare/venice-ai-alternative"
-                  className="text-[11px] sm:text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-bright)] underline underline-offset-4 transition-colors"
+                  className="text-[11px] sm:text-xs text-text-muted hover:text-text-bright underline underline-offset-4 transition-colors"
                 >
                   vs venice alternative <ArrowRight className="inline h-3 w-3 ml-1" aria-hidden="true" />
                 </Link>

@@ -1,8 +1,7 @@
 node_modules/
 .next/
-.env
-.env.local
-.env.production.local
+.env*
+!.env.example
 *.log
 .DS_Store
 tsconfig.tsbuildinfo

@@ -145,7 +145,7 @@ export async function GET() {
   } catch (error) {
     console.error('Crypto price fetch error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch crypto prices' },
+      { error: { message: 'Failed to fetch crypto prices', type: 'upstream_error' } },
       { status: 500 }
     )
   }
@@ -161,7 +161,7 @@ export async function POST(request: Request) {
         const { amount, chain, token = 'USDC' } = body as PaymentLinkRequest & { action: string }
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        const sessionToken = request.headers.get('x-oma-session') || request.headers.get('Authorization') || ''
+        const sessionToken = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || ''
         const response = await fetch(`${apiUrl}/v1/deposit/houdini/payment-link`, {
           method: 'POST',
           headers: {
@@ -172,21 +172,24 @@ export async function POST(request: Request) {
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          return NextResponse.json({ success: false, error: error.error?.message || 'Payment link creation failed' }, { status: response.status })
+          const error = await response.json().catch(() => ({}))
+          return NextResponse.json(
+            { error: { message: error?.error?.message || 'Payment link creation failed', type: 'upstream_error' } },
+            { status: response.status }
+          )
         }
 
-        const data = await response.json()
+        const data = await response.json().catch(() => ({}))
         return NextResponse.json({
           success: true,
           paymentLink: {
-            id: data.paymentLink.id,
-            url: data.paymentLink.url,
-            amount: data.paymentLink.amount,
-            chain: data.paymentLink.chain,
-            token: data.paymentLink.token,
-            expiresAt: data.paymentLink.expiresAt,
-            status: data.paymentLink.status,
+            id: data.paymentLink?.id,
+            url: data.paymentLink?.url,
+            amount: data.paymentLink?.amount,
+            chain: data.paymentLink?.chain,
+            token: data.paymentLink?.token,
+            expiresAt: data.paymentLink?.expiresAt,
+            status: data.paymentLink?.status,
             depositId: data.depositId,
           },
         })
@@ -230,14 +233,14 @@ export async function POST(request: Request) {
 
       default:
         return NextResponse.json(
-          { success: false, error: 'Unknown action' },
+          { error: { message: 'Unknown action', type: 'validation_error' } },
           { status: 400 }
         )
     }
   } catch (error) {
     console.error('x402 API error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to process x402 request' },
+      { error: { message: 'Failed to process x402 request', type: 'internal_server_error' } },
       { status: 500 }
     )
   }

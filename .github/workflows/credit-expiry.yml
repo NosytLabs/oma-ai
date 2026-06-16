@@ -1,0 +1,38 @@
+name: Credit Expiry
+
+on:
+  schedule:
+    # Daily at 02:00 UTC (was 24h setInterval in server/src/jobs/credit-expiry.ts).
+    # M10.3 schedule alignment — runs before retention (03:00 UTC) so any
+    # just-expired batches get zeroed out before audit logs are pruned.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-credit-expiry
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Process expired credits
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run credit expiry
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npx tsx src/jobs/cli-runner.ts credit-expiry

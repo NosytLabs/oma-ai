@@ -9,14 +9,14 @@ export default function Loading() {
     >
       <Skeleton className="h-3 w-20 mb-3" />
       <Skeleton className="h-10 w-64 mb-6" />
-      <div className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-6 space-y-3 mb-6">
+      <div className="rounded-2xl border border-border/50 bg-surface p-6 space-y-3 mb-6">
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-3 w-2/3" />
         <Skeleton className="h-10 w-full" />
       </div>
       <div className="space-y-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="rounded-2xl border border-[var(--color-border)]/50 bg-[var(--color-surface)] p-5 flex items-center justify-between">
+          <div key={i} className="rounded-2xl border border-border/50 bg-surface p-5 flex items-center justify-between">
             <div className="space-y-2 flex-1">
               <Skeleton className="h-4 w-1/3" />
               <Skeleton className="h-3 w-1/4" />

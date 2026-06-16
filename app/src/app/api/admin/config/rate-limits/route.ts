@@ -1,44 +1,53 @@
 import { NextResponse } from 'next/server'
 
 import { getAdminAuthorization, unauthorizedAdminResponse } from '../../auth'
-import { rateLimitMiddleware } from '../../rate-limit'
+import { checkRateLimit } from '../../rate-limit'
 import { API_URL } from '@/lib/api/admin-config'
 
 export async function GET(request: Request) {
-  const rateLimitResponse = rateLimitMiddleware(request)
-  if (rateLimitResponse) return rateLimitResponse
+  const authorization = getAdminAuthorization(request)
+  if (!authorization) return unauthorizedAdminResponse()
+
+  const rateLimit = checkRateLimit(request, authorization)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: { message: 'Rate limit exceeded', type: 'rate_limit_exceeded' } },
+      { status: 429, headers: rateLimit.headers }
+    )
+  }
 
   try {
-    const authorization = getAdminAuthorization(request)
-    if (!authorization) {
-      return unauthorizedAdminResponse()
-    }
-
     const res = await fetch(`${API_URL}/v1/admin/config/rate-limits`, {
       headers: { Authorization: authorization },
       cache: 'no-store',
     })
 
     if (!res.ok) {
-      const error = await res.json()
-      return NextResponse.json(error, { status: res.status })
+      const error = await res.json().catch(() => ({}))
+      return NextResponse.json(error, { status: res.status, headers: rateLimit.headers })
     }
 
-    const data = await res.json()
-    return NextResponse.json(data)
+    const data = await res.json().catch(() => ({}))
+    return NextResponse.json(data, { headers: rateLimit.headers })
   } catch (err) {
     console.error('Get rate limits config error:', err)
-    return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 })
+    return NextResponse.json({ error: { message: 'Internal server error', type: 'internal_server_error' } }, { status: 500, headers: rateLimit.headers })
   }
 }
 
 export async function PUT(request: Request) {
-  try {
-    const authorization = getAdminAuthorization(request)
-    if (!authorization) {
-      return unauthorizedAdminResponse()
-    }
+  const authorization = getAdminAuthorization(request)
+  if (!authorization) return unauthorizedAdminResponse()
 
+  const rateLimit = checkRateLimit(request, authorization)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: { message: 'Rate limit exceeded', type: 'rate_limit_exceeded' } },
+      { status: 429, headers: rateLimit.headers }
+    )
+  }
+
+  try {
     const body = await request.json()
     const res = await fetch(`${API_URL}/v1/admin/config/rate-limits`, {
       method: 'PUT',
@@ -50,14 +59,14 @@ export async function PUT(request: Request) {
     })
 
     if (!res.ok) {
-      const error = await res.json()
-      return NextResponse.json(error, { status: res.status })
+      const error = await res.json().catch(() => ({}))
+      return NextResponse.json(error, { status: res.status, headers: rateLimit.headers })
     }
 
-    const data = await res.json()
-    return NextResponse.json(data)
+    const data = await res.json().catch(() => ({}))
+    return NextResponse.json(data, { headers: rateLimit.headers })
   } catch (err) {
     console.error('Update rate limits config error:', err)
-    return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 })
+    return NextResponse.json({ error: { message: 'Internal server error', type: 'internal_server_error' } }, { status: 500, headers: rateLimit.headers })
   }
 }

@@ -2,9 +2,30 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "OMA vs OpenRouter | AI Gateway Comparison",
+  title: "OMA vs OpenRouter — AI Gateway Comparison",
   description:
-    "Compare OMA and OpenRouter side-by-side. See pricing, model coverage, latency, and features for AI routing gateways.",
+    "Side-by-side comparison of OMA and OpenRouter. Pricing, model coverage, latency, wallet-only auth, and zero prompt logging for AI routing gateways.",
+  alternates: { canonical: "/compare/openrouter-alternative" },
+  keywords: [
+    "openrouter alternative",
+    "oma vs openrouter",
+    "ai routing gateway",
+    "wallet auth ai",
+    "private ai api",
+  ],
+  openGraph: {
+    title: "OMA vs OpenRouter | AI Gateway Comparison",
+    description:
+      "Side-by-side comparison of OMA and OpenRouter. Pricing, model coverage, latency, wallet-only auth, and zero prompt logging for AI routing gateways.",
+    url: "https://oma-ai.com/compare/openrouter-alternative",
+    type: "article",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OMA vs OpenRouter | AI Gateway Comparison",
+    description:
+      "Side-by-side comparison of OMA and OpenRouter. Pricing, model coverage, latency, wallet-only auth, and zero prompt logging for AI routing gateways.",
+  },
 };
 
 export default function OpenRouterAlternativeLayout({

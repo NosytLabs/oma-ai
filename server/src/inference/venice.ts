@@ -17,6 +17,7 @@ export interface VeniceParameters {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  private?: boolean;
 }
 
 export function buildVeniceChatCompletion(body: {
@@ -29,8 +30,21 @@ export function buildVeniceChatCompletion(body: {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  private?: boolean;
   [key: string]: unknown;
 }): { model: string; messages: ChatMessage[]; stream?: boolean; [key: string]: unknown } {
+  // Privacy gate: by default venice_parameters.private = true so user data is
+  // never used for training. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true in config
+  // to let callers opt out (private:false) for non-sensitive traffic.
+  const allowNonPrivate = !!config.OMMA_ALLOW_NON_PRIVATE_VENICE;
+  const callerPrivate = body.private;
+  const effectivePrivate: boolean =
+    callerPrivate === undefined
+      ? true
+      : allowNonPrivate
+        ? callerPrivate
+        : true;
+
   const veniceParams: VeniceParameters = {
     enable_web_search: body.enable_web_search as VeniceParameters["enable_web_search"],
     enable_web_scraping: body.enable_web_scraping as boolean,
@@ -38,9 +52,22 @@ export function buildVeniceChatCompletion(body: {
     enable_web_citations: body.enable_web_citations as boolean,
     strip_thinking_response: body.strip_thinking_response as boolean,
     disable_thinking: body.disable_thinking as boolean,
+    private: effectivePrivate,
   };
 
-  const { enable_web_search: _enable_web_search, enable_web_scraping: _enable_web_scraping, enable_x_search: _enable_x_search, enable_web_citations: _enable_web_citations, strip_thinking_response: _strip_thinking_response, disable_thinking: _disable_thinking, model, messages, stream, ...rest } = body;
+  const {
+    enable_web_search: _enable_web_search,
+    enable_web_scraping: _enable_web_scraping,
+    enable_x_search: _enable_x_search,
+    enable_web_citations: _enable_web_citations,
+    strip_thinking_response: _strip_thinking_response,
+    disable_thinking: _disable_thinking,
+    private: _private,
+    model,
+    messages,
+    stream,
+    ...rest
+  } = body;
 
   const veniceParamsFiltered = Object.fromEntries(
     Object.entries(veniceParams).filter(([, v]) => v !== undefined)
@@ -51,7 +78,9 @@ export function buildVeniceChatCompletion(body: {
     model,
     messages,
     stream,
-    ...(Object.keys(veniceParamsFiltered).length > 0 ? { venice_parameters: veniceParamsFiltered } : {}),
+    ...(Object.keys(veniceParamsFiltered).length > 0
+      ? { venice_parameters: veniceParamsFiltered }
+      : {}),
   };
 }
 

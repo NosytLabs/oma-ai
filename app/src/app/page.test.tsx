@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import HomePage from './page'
 import { Footer } from '@/components/footer'
 
@@ -14,24 +15,47 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }))
 
-describe('HomePage', () => {
-  it('renders routing cards with clarifying descriptions', () => {
-    render(<HomePage />)
+const renderWithQueryClient = (ui: React.ReactElement) => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}
 
-    expect(screen.getByText('Chat, images, video, embeddings')).toBeInTheDocument()
-    expect(screen.getByText('Warm standby, automatic handoff')).toBeInTheDocument()
-    expect(screen.getByText('Web search for real-time answers')).toBeInTheDocument()
+describe('HomePage', () => {
+  it('renders the hero headline', () => {
+    renderWithQueryClient(<HomePage />)
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
   })
 
-  it('renders primary CTA links', () => {
-    render(<HomePage />)
+  it('renders the three value props', () => {
+    renderWithQueryClient(<HomePage />)
+    expect(screen.getAllByText(/one key, every model/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/pay per request/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/no account needed/i).length).toBeGreaterThan(0)
+  })
 
-    const docsLinks = screen.getAllByRole('link', { name: /open the docs/i })
+  it('renders the how it works steps', () => {
+    renderWithQueryClient(<HomePage />)
+    expect(screen.getAllByText(/connect wallet/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/add credits/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/start building/i).length).toBeGreaterThan(0)
+  })
+
+  it('renders primary CTAs', () => {
+    renderWithQueryClient(<HomePage />)
     const playgroundLinks = screen.getAllByRole('link', { name: /try the playground/i })
-    expect(docsLinks.length).toBeGreaterThan(0)
     expect(playgroundLinks.length).toBeGreaterThan(0)
-    expect(docsLinks[0]).toHaveAttribute('href', '/docs')
     expect(playgroundLinks[0]).toHaveAttribute('href', '/playground')
+  })
+
+  it('renders pricing and models links', () => {
+    renderWithQueryClient(<HomePage />)
+    const pricingLinks = screen.getAllByRole('link', { name: /see pricing/i })
+    expect(pricingLinks.length).toBeGreaterThan(0)
+    expect(pricingLinks[0]).toHaveAttribute('href', '/pricing')
+
+    const modelsLinks = screen.getAllByRole('link', { name: /see all models|browse all models/i })
+    expect(modelsLinks.length).toBeGreaterThan(0)
+    expect(modelsLinks[0]).toHaveAttribute('href', '/models')
   })
 })
 

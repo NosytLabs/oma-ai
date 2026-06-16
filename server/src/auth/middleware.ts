@@ -6,10 +6,12 @@ import { db } from "../db/client.js";
 import { users, teamMembers } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
+import type { ApiKey } from "../db/schema.js";
 import { authenticator } from "@otplib/preset-default";
 import { getRedisClient } from "../lib/redis-client.js";
 import { config, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
+import { logger } from "../lib/logger.js";
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -36,6 +38,30 @@ if (isProductionEnv) {
   validateAdminAddresses();
 }
 
+// SEC-7: singleflight dedup. Concurrent requests for the same key share
+// one in-flight validateApiKey() promise so the underlying DB transaction
+// (with its SELECT ... FOR UPDATE + lastUsedAt write) runs at most once
+// per key. The lock is cleared on both success and failure so a later
+// request can retry a transient failure.
+type SingleflightRecord = { promise: Promise<unknown> };
+const singleflightInflight = new Map<string, SingleflightRecord>();
+
+export async function singleflight<T>(key: string, fn: () => Promise<T> | T): Promise<T> {
+  const existing = singleflightInflight.get(key);
+  if (existing) {
+    return existing.promise as Promise<T>;
+  }
+  const promise = (async () => {
+    try {
+      return await fn();
+    } finally {
+      singleflightInflight.delete(key);
+    }
+  })();
+  singleflightInflight.set(key, { promise });
+  return promise;
+}
+
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   // Accept the API key from either the Authorization header (server-to-server,
   // CLI tools, custom integrations) OR the `oma_api_key` / `__Host-oma_api_key`
@@ -52,7 +78,16 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   if (!rawKey) {
     return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
   }
-  const apiKey = await validateApiKey(rawKey);
+
+  let apiKey: ApiKey | null;
+  try {
+    // SEC-7: dedup concurrent validateApiKey calls per raw key.
+    apiKey = (await singleflight(`apikey:${rawKey}`, () => validateApiKey(rawKey!))) as ApiKey | null;
+  } catch (err) {
+    logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[bearerAuth] validateApiKey threw");
+    return c.json({ error: { message: "Invalid API key", type: "authentication_error" } }, 401);
+  }
+
   if (!apiKey) {
     return c.json({ error: { message: "Invalid API key", type: "authentication_error" } }, 401);
   }
@@ -80,12 +115,19 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
     return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
   }
   const token = authHeader.slice(7);
-  const session = await verifySessionToken(token);
+
+  let session: { userId: string; authMethod: string } | null;
+  try {
+    session = (await verifySessionToken(token)) as { userId: string; authMethod: string } | null;
+  } catch (err) {
+    logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[sessionAuth] verifySessionToken threw");
+    return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
+  }
   if (!session) {
     return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
   }
   c.set("userId", session.userId);
-  c.set("authMethod", session.authMethod);
+  c.set("authMethod", session.authMethod as "siwe" | "solana" | "account-number" | "sso");
 
   const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
   if (user?.twoFactorEnabled) {
@@ -95,10 +137,17 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
     }
     const failKey = `2fa_fail:${session.userId}`;
 
-    const failCountStr = await redis.get(failKey);
-    const failCount = failCountStr ? parseInt(String(failCountStr), 10) : 0;
-
-    if (failCount >= 5) {
+    // SEC-7: atomic INCR-then-check. The pre-fix code did `GET failKey`
+    // then `INCR` after the verify, which let N concurrent requests all
+    // see `fails < 5` and bypass the brute-force cap. INCR is atomic in
+    // Redis; the post-increment value is unique per request.
+    const newCount = await redis.incr(failKey);
+    if (newCount === 1) {
+      // First failure in this window — set the TTL exactly once so the
+      // 5-min cap doesn't slide forward on every retry.
+      await redis.expire(failKey, 300);
+    }
+    if (newCount >= 5) {
       return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
     }
 
@@ -117,8 +166,6 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
       }
       const isValid = authenticator.verify({ token: twoFactorCode, secret });
       if (!isValid) {
-        await redis.incr(failKey);
-        await redis.expire(failKey, 300);
         return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
       }
       await redis.del(failKey);
@@ -139,7 +186,14 @@ export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
     if (match) rawKey = decodeURIComponent(match[1]);
   }
   if (rawKey) {
-    const apiKey = await validateApiKey(rawKey);
+    let apiKey: ApiKey | null;
+    try {
+      apiKey = (await validateApiKey(rawKey)) as ApiKey | null;
+    } catch (err) {
+      logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[optionalAuth] validateApiKey threw");
+      await next();
+      return;
+    }
     if (apiKey) {
       // ponytail: v7 H1 — enforce IP allowlist on optionalAuth too. Previously
       // a key with ipAllowlist set would be accepted from any IP if the route

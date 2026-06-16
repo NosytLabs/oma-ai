@@ -7,7 +7,7 @@ const AdminOverviewRevenueChart = dynamic(
   () => import('./AdminOverviewRevenueChart').then((m) => m.AdminOverviewRevenueChart),
   {
     ssr: false,
-    loading: () => <div className="h-[280px] animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50" />,
+    loading: () => <div className="h-[280px] animate-pulse rounded-xl border border-border bg-surface/50" />,
   }
 )
 
@@ -33,21 +33,21 @@ export function AdminOverviewCharts({ chartData, dailyUsage }: AdminOverviewChar
     <>
       <AdminOverviewRevenueChart chartData={chartData} />
 
-      <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]/50 flex items-center justify-between">
-          <h3 className="font-medium text-[var(--color-text-bright)]">Recent Transactions</h3>
+      <div className="rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border bg-surface/50 flex items-center justify-between">
+          <h3 className="font-medium text-text-bright">Recent Transactions</h3>
         </div>
-        <div className="divide-y divide-[var(--color-border)]/50">
+        <div className="divide-y divide-border/50">
           {dailyUsage?.slice(-10).reverse().map((day, i) => (
             <div key={i} className="px-4 py-3 flex items-center justify-between">
               <div>
-                <p className="text-sm text-[var(--color-text-bright)]">{format(new Date(day.date), 'MMM d, yyyy')}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">{day.totalRequests.toLocaleString()} requests</p>
+                <p className="text-sm text-text-bright">{format(new Date(day.date), 'MMM d, yyyy')}</p>
+                <p className="text-xs text-text-muted">{day.totalRequests.toLocaleString()} requests</p>
               </div>
-              <p className="text-sm font-mono text-[var(--color-accent)]">${day.totalRevenue.toFixed(2)}</p>
+              <p className="text-sm font-mono text-accent">${day.totalRevenue.toFixed(2)}</p>
             </div>
           )) || (
-            <div className="px-4 py-8 text-center text-[var(--color-text-muted)]">No transactions yet</div>
+            <div className="px-4 py-8 text-center text-text-muted">No transactions yet</div>
           )}
         </div>
       </div>

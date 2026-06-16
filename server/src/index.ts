@@ -34,15 +34,10 @@ import { healthRoutes } from "./routes/health.js";
 import { pingRoutes } from "./routes/ping.js";
 import { metricsRoutes } from "./routes/metrics.js";
 import { openapiRoutes } from "./routes/openapi.js";
+import { providersMetaRoutes } from "./routes/providers-meta.js";
 import { usageRoutes } from "./routes/usage.js";
 import { adminObservabilityRoutes } from "./routes/admin-observability.js";
 import type { OmaEnv } from "./types.js";
-import { scheduleCreditExpiry } from "./jobs/credit-expiry.js";
-import { scheduleSubscriptionCheck } from "./jobs/subscription-cron.js";
-import { scheduleNonceCleanup } from "./jobs/nonce-cleanup.js";
-import { scheduleDepositRetry } from "./jobs/deposit-retry.js";
-import { scheduleWrongNetworkRecovery } from "./jobs/deposit-recovery.js";
-import { scheduleDepositNotifications } from "./jobs/deposit-notifications.js";
 import { generateCorrelationId } from "./tracing.js";
 import { reloadModelCatalog } from "./inference/models.js";
 import {
@@ -59,6 +54,30 @@ import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheapto
 
 reloadModelCatalog();
 
+// External cron jobs (moved to .github/workflows/* to allow NEON scale-to-zero).
+// The work functions are still exported from each module so the CLI runner
+// (src/jobs/cli-runner.ts) and existing unit tests can call them directly.
+//   credit-expiry          → .github/workflows/credit-expiry.yml          (daily)
+//   subscription-check     → .github/workflows/subscription-check.yml     (hourly)
+//   nonce-cleanup          → .github/workflows/nonce-cleanup.yml          (every 15m)
+//   deposit-retry          → .github/workflows/deposit-retry.yml          (every 5m)
+//   deposit-recovery       → .github/workflows/wrong-network-recovery.yml (every 5m)
+//   deposit-notifications  → .github/workflows/deposit-notifications.yml   (every 5m)
+//   retention              → .github/workflows/retention.yml              (daily 03:00 UTC)
+//
+// In-process tasks that MUST stay here (real-time, no external trigger is
+// fast enough to drive them):
+//   - startBackgroundDbSync       : syncs circuit-breaker state Redis → DB every 30s
+//   - startBackgroundProbing       : probes idle providers in real time
+//   - startCacheCleanup            : clears stale circuit-breaker in-memory cache
+//   - triggerCheapTokensRefresh    : one-shot initial refresh on cold start
+//   - reloadModelCatalog           : one-shot model catalog load on cold start
+//   - initProviderResultReporter   : one-shot result-reporter init
+// Moving these to GH Actions would break the circuit breaker (the breaker
+// is in-process and must be driven in the same process that holds it).
+// The schedule*() helpers in each job module are kept (not called) so
+// existing tests can still instantiate intervals in isolation.
+
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
   logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
   process.exit(1);
@@ -69,12 +88,6 @@ if (config.NODE_ENV !== "test") {
   startBackgroundDbSync();
   startBackgroundProbing();
   startCacheCleanup();
-  scheduleCreditExpiry();
-  scheduleSubscriptionCheck();
-  scheduleNonceCleanup();
-  scheduleDepositRetry();
-  scheduleWrongNetworkRecovery();
-  scheduleDepositNotifications();
   triggerCheapTokensRefresh().catch((err) => {
     logger.warn({ error: (err as Error).message }, "[cheaptokens] initial refresh failed");
   });
@@ -130,6 +143,7 @@ app.route("/", healthRoutes);
 app.route("/", pingRoutes);
 app.route("/", metricsRoutes);
 app.route("/", openapiRoutes);
+app.route("/", providersMetaRoutes);
 app.route("/", usageRoutes);
 
 app.route("/", authRoutes);

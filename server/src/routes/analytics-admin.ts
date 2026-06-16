@@ -7,8 +7,8 @@ import type { OmaEnv } from "../types.js";
 
 export const adminAnalyticsRoutes = new Hono<OmaEnv>();
 
-adminAnalyticsRoutes.use("*", sessionAuth);
-adminAnalyticsRoutes.use("*", requireAdmin());
+adminAnalyticsRoutes.use("/v1/admin/*", sessionAuth);
+adminAnalyticsRoutes.use("/v1/admin/*", requireAdmin());
 
 adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
   const period = c.req.query("period") || "30d";
@@ -33,15 +33,29 @@ adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
   }
 
   try {
-    const aggregateUsage = await db.select({
-      totalRequests: count(usageRecords.id),
-      totalInputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
-      totalOutputTokens: drizzleSql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
-      totalRevenueCents: drizzleSql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
-      totalCostCents: drizzleSql<number>`coalesce(sum(${usageRecords.costCents}), 0)`,
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.createdAt} >= ${dateFilter}`);
+    const analyticsAgg = await db.execute<{
+      total_requests: string;
+      active_users: string;
+      total_input_tokens: string;
+      total_output_tokens: string;
+      total_revenue_cents: string;
+      total_cost_cents: string;
+    }>(
+      drizzleSql`
+        WITH analytics AS (
+          SELECT
+            COUNT(*) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}) AS total_requests,
+            COUNT(DISTINCT ${usageRecords.userId}) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}) AS active_users,
+            COALESCE(SUM(${usageRecords.inputTokens}) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}), 0) AS total_input_tokens,
+            COALESCE(SUM(${usageRecords.outputTokens}) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}), 0) AS total_output_tokens,
+            COALESCE(SUM(${usageRecords.totalCents}) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}), 0) AS total_revenue_cents,
+            COALESCE(SUM(${usageRecords.costCents}) FILTER (WHERE ${usageRecords.createdAt} >= ${dateFilter}), 0) AS total_cost_cents
+          FROM ${usageRecords}
+          WHERE ${usageRecords.createdAt} >= ${dateFilter}
+        )
+        SELECT * FROM analytics
+      `
+    );
 
     const byProvider = await db.select({
       provider: usageRecords.provider,
@@ -84,29 +98,24 @@ adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
 
     const providerStatus = await db.select().from(providerHealth);
 
-    const activeUsersResult = await db.select({
-      count: count(drizzleSql`distinct ${usageRecords.userId}`),
-    })
-    .from(usageRecords)
-    .where(drizzleSql`${usageRecords.createdAt} >= ${dateFilter}`);
-
     const totalUsersResult = await db.select({ count: count() }).from(users);
 
-    const agg = aggregateUsage[0];
-    const revenueCents = Number(agg?.totalRevenueCents || 0);
-    const costCents = Number(agg?.totalCostCents || 0);
+    const agg = analyticsAgg.rows[0];
+
+    const revenueCents = Number(agg?.total_revenue_cents || 0);
+    const costCents = Number(agg?.total_cost_cents || 0);
 
     return c.json({
       period,
       summary: {
-        totalRequests: Number(agg?.totalRequests || 0),
-        totalInputTokens: Number(agg?.totalInputTokens || 0),
-        totalOutputTokens: Number(agg?.totalOutputTokens || 0),
+        totalRequests: Number(agg?.total_requests || 0),
+        totalInputTokens: Number(agg?.total_input_tokens || 0),
+        totalOutputTokens: Number(agg?.total_output_tokens || 0),
         totalRevenue: revenueCents / 100,
         totalCost: costCents / 100,
         grossProfit: (revenueCents - costCents) / 100,
         margin: revenueCents > 0 ? ((revenueCents - costCents) / revenueCents * 100).toFixed(1) + "%" : "N/A",
-        uniqueUsers: Number(activeUsersResult[0]?.count || 0),
+        uniqueUsers: Number(agg?.active_users || 0),
         totalUsers: Number(totalUsersResult[0]?.count || 0),
       },
       byProvider: byProvider.map((p) => ({

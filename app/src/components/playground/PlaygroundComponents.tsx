@@ -4,14 +4,14 @@ import type { Message } from './index'
 import { MODELS } from '@/lib/models-data'
 
 export const btnBase = "relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-full " +
-  "bg-[var(--color-void)] border-[var(--color-border)] text-[var(--color-text-muted)] " +
-  "hover:bg-[var(--color-surface)] hover:text-[var(--color-text)] hover:brightness-125 " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-success)]/50 focus-visible:outline-offset-1 focus-visible:bg-[var(--color-surface)] " +
+  "bg-void border-border text-text-muted " +
+  "hover:bg-surface hover:text-text hover:brightness-125 " +
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-success/50 focus-visible:outline-offset-1 focus-visible:bg-surface " +
   "active:translate-y-[1px] " +
-  "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--color-void)] disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-muted)] disabled:active:translate-y-0 " +
+  "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-void disabled:hover:border-border disabled:hover:text-text-muted disabled:active:translate-y-0 " +
   "data-[state=loading]:text-transparent data-[state=loading]:pointer-events-none " +
-  "data-[state=error]:border-[var(--color-pink)]/30 data-[state=error]:text-[var(--color-pink)] data-[state=error]:bg-[var(--color-pink)]/10 " +
-  "data-[state=success]:border-[var(--color-success)]/30 data-[state=success]:text-[var(--color-success)] data-[state=success]:bg-[var(--color-success)]/10"
+  "data-[state=error]:border-pink/30 data-[state=error]:text-pink data-[state=error]:bg-pink/10 " +
+  "data-[state=success]:border-success/30 data-[state=success]:text-success data-[state=success]:bg-success/10"
 
 interface StatsBarProps {
   messages: Message[]
@@ -44,12 +44,12 @@ export function StatsBar({ messages, model = 'llama-3.2-3b' }: StatsBarProps) {
   if (messages.length === 0) return null
 
   return (
-    <div className="flex items-center gap-4 text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono">
+    <div className="flex items-center gap-4 text-[11px] uppercase tracking-wider text-text-muted font-mono">
       <span>MSG:{messages.filter(m => m.role === 'user').length.toString().padStart(2, '0')}</span>
       {totalTokens > 0 && (
         <>
           <span>TOK:{totalTokens.toString().padStart(4, '0')}</span>
-          <span className="text-[var(--color-success)]">CST:${totalCost.toFixed(4)}</span>
+          <span className="text-success">CST:${totalCost.toFixed(4)}</span>
         </>
       )}
     </div>
@@ -73,16 +73,16 @@ export function MobileStatsBar({ messages, model = 'llama-3.2-3b' }: StatsBarPro
   const msgCount = messages.filter(m => m.role === 'user').length
 
   return (
-    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono">
-      <span className="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted font-mono">
+      <span className="bg-surface px-1.5 py-0.5 rounded border border-border">
         {msgCount}{msgCount === 1 ? ' msg' : ' msgs'}
       </span>
       {totalTokens > 0 && (
         <>
-          <span className="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+          <span className="bg-surface px-1.5 py-0.5 rounded border border-border">
             {totalTokens >= 1000 ? `${(totalTokens / 1000).toFixed(1)}k` : totalTokens} tok
           </span>
-          <span className="bg-[var(--color-success-dim)] text-[var(--color-success)] px-1.5 py-0.5 rounded border border-[var(--color-success)]/30">
+          <span className="bg-success-dim text-success px-1.5 py-0.5 rounded border border-success/30">
             ${totalCost.toFixed(4)}
           </span>
         </>

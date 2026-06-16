@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server'
 
+import { getAdminAuthorization, unauthorizedAdminResponse } from '../../auth'
+
 /**
  * Client observability log endpoint.
  *
  * Accepts browser-emitted events (errors, 404s, React boundary catches)
  * and records them for operator inspection. This is intentionally simple
- * and self-contained — no auth, no DB write — so it cannot itself fail
+ * and self-contained — no DB write — so it cannot itself fail
  * in a way that triggers the very logger that's calling it.
  *
- * The route exists because lib/logger.ts unconditionally POSTs to
+ * The POST route exists because lib/logger.ts unconditionally POSTs to
  * `/api/admin/observability/log`. Before this file existed, every
  * client error in production was silently lost as a 404 in the terminal.
+ *
+ * The GET route requires admin auth and returns the recent ring buffer
+ * for operator inspection.
  */
 
 interface LogPayload {
@@ -22,8 +27,6 @@ interface LogPayload {
   userAgent?: string
 }
 
-// Ring buffer of recent events for ad-hoc retrieval via GET.
-// Capped so a runaway client cannot OOM the Node process.
 const RING_CAPACITY = 500
 const recentEvents: Array<LogPayload & { receivedAt: number }> = []
 
@@ -54,7 +57,10 @@ export async function POST(request: Request) {
   return new NextResponse(null, { status: 204 })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authorization = getAdminAuthorization(request)
+  if (!authorization) return unauthorizedAdminResponse()
+
   return NextResponse.json({
     count: recentEvents.length,
     events: recentEvents.slice(-50),

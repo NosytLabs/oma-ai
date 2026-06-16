@@ -690,9 +690,12 @@ describe('Static security verification — admin route chain', () => {
     // (which contains "adminRefundRoutes" twice — the import AND the mount).
     // The mount line is `adminRoutes.route("/", adminRefundRoutes);` — use the
     // longer pattern so we don't match the import.
-    const sessionAuthIdx = src.indexOf('adminRoutes.use("*", sessionAuth)')
-    const requireAdminIdx = src.indexOf('adminRoutes.use("*", requireAdmin())')
-    const rateLimitIdx = src.indexOf('adminRoutes.use("*", rateLimit(')
+    // Middleware is scoped to the actual admin paths ("/admin/*" and
+    // "/v1/admin/*") so non-admin paths fall through to 404 instead of
+    // being intercepted by sessionAuth. See P0 fix 2026-06-16.
+    const sessionAuthIdx = src.indexOf('adminRoutes.use("/admin/*", sessionAuth)')
+    const requireAdminIdx = src.indexOf('adminRoutes.use("/admin/*", requireAdmin())')
+    const rateLimitIdx = src.indexOf('adminRoutes.use("/admin/*", rateLimit(')
     const refundMountIdx = src.indexOf('adminRoutes.route("/", adminRefundRoutes)')
 
     expect(sessionAuthIdx).toBeGreaterThan(-1)

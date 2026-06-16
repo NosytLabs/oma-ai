@@ -14,7 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-[calc(100dvh-2.75rem)] bg-[var(--color-void)] text-[var(--color-text)]">
+    <div className="min-h-[calc(100dvh-2.75rem)] bg-void text-text">
       {children}
     </div>
   )

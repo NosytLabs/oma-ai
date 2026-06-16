@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback, memo } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { api } from '@/lib/api'
+import { MODELS as SOURCE_MODELS } from '@/lib/models-data'
 import {
   Search,
   ChevronUp,
@@ -45,25 +47,20 @@ export interface ModelOption {
 
 export type TierFilter = 'all' | 'frontier' | 'premium' | 'mid' | 'budget' | 'reasoning' | 'coding' | 'uncensored'
 
-export const FALLBACK_MODELS: ModelOption[] = [
-  { id: 'claude-opus-4', name: 'Claude Opus 4', category: 'frontier', provider: 'Venice', inputPer1M: 15.00, outputPer1M: 75.00, ctx: '200K' },
-  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', category: 'frontier', provider: 'Venice', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
-  { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', category: 'frontier', provider: 'Venice', inputPer1M: 3.00, outputPer1M: 15.00, ctx: '200K' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', category: 'frontier', provider: 'Venice', inputPer1M: 1.25, outputPer1M: 10.00, ctx: '1M' },
-  { id: 'gemini-2.5-pro-thinking', name: 'Gemini 2.5 Pro (thinking)', category: 'frontier', provider: 'Venice', inputPer1M: 1.25, outputPer1M: 10.00, ctx: '1M' },
-  { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', category: 'mid', provider: 'Venice', inputPer1M: 0.80, outputPer1M: 4.00, ctx: '200K' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'mid', provider: 'Venice', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
-  { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash (thinking)', category: 'mid', provider: 'Venice', inputPer1M: 0.075, outputPer1M: 0.30, ctx: '1M' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'premium', provider: 'Venice', inputPer1M: 0.15, outputPer1M: 0.60, ctx: '128K' },
-  { id: 'deepseek-v3.2', name: 'DeepSeek V3.2', category: 'premium', provider: 'Venice', inputPer1M: 0.50, outputPer1M: 1.50, ctx: '64K' },
-  { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', category: 'mid', provider: 'Both', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
-  { id: 'llama-3.3-70b-together', name: 'Llama 3.3 70B (Together)', category: 'premium', provider: 'Venice', inputPer1M: 0.35, outputPer1M: 0.90, ctx: '8K' },
-  { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', category: 'budget', provider: 'Venice', inputPer1M: 0.06, outputPer1M: 0.12, ctx: '8K' },
-  { id: 'free/gpt-3.5-turbo', name: 'GPT-3.5 Turbo (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '16K' },
-  { id: 'free/claude-3-haiku', name: 'Claude 3 Haiku (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '200K' },
-  { id: 'free/gemini-pro', name: 'Gemini Pro (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '32K' },
-  { id: 'free/llama-3-8b', name: 'Llama 3 8B (FREE)', category: 'budget', provider: 'Venice', inputPer1M: 0, outputPer1M: 0, ctx: '8K' },
-]
+export const FALLBACK_MODELS: ModelOption[] = SOURCE_MODELS.map((m) => {
+  const validCats: ModelOption['category'][] = ['frontier', 'premium', 'mid', 'budget', 'reasoning', 'coding', 'uncensored']
+  const cat = validCats.includes(m.tier as ModelOption['category']) ? (m.tier as ModelOption['category']) : 'mid'
+  const provider: ModelOption['provider'] = m.provider === 'AntSeed' ? 'AntSeed' : 'Venice'
+  return {
+    id: m.id,
+    name: m.name,
+    category: cat,
+    provider,
+    inputPer1M: m.inputPricePer1M,
+    outputPer1M: m.outputPricePer1M,
+    ctx: m.contextLength,
+  }
+})
 
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000
 let liveModelsCache: { data: ModelOption[]; ts: number } | null = null
@@ -107,12 +104,11 @@ export function useLiveModels(): ModelOption[] {
   useEffect(() => {
     if (liveModelsCache && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS) return
     let cancelled = false
-    fetch('/v1/models', { credentials: 'include' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((data: { data?: LiveModelRaw[] } | null) => {
+    api.models()
+      .then((data) => {
         if (cancelled || !data?.data?.length) return
-        const mapped = data.data
-          .filter(m => m.category !== 'video')
+        const mapped = (data.data as unknown as LiveModelRaw[])
+          .filter((m) => m.category !== 'video')
           .map(mapLiveModel)
         if (mapped.length === 0) return
         liveModelsCache = { data: mapped, ts: Date.now() }
@@ -147,15 +143,15 @@ function CodeBlock({ children, className }: CodeBlockProps) {
 
   return (
     <div className="relative group my-4">
-      <pre className="bg-[var(--color-void)] text-[var(--color-text)] p-4 overflow-x-auto text-xs leading-relaxed border border-[var(--color-border)] font-mono">
+      <pre className="bg-void text-text p-4 overflow-x-auto text-xs leading-relaxed border border-border font-mono">
         <code className={className}>{code}</code>
       </pre>
       <button
         onClick={handleCopy}
         aria-label={copied ? 'Copied' : 'Copy code'}
-        className="absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
+        className="absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-surface-elevated text-text-muted hover:text-text opacity-0 group-hover:opacity-100 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
       >
-        {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <Copy className="w-3.5 h-3.5" />}
+        {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
     </div>
   )
@@ -190,36 +186,36 @@ function SearchSources({ results, expanded, onToggle, prefersReducedMotion }: Se
   if (results.length === 0) return null
 
   return (
-    <div className="my-4 border border-[var(--color-border)] overflow-hidden">
+    <div className="my-4 border border-border overflow-hidden">
       <button
         onClick={onToggle}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'Collapse' : 'Expand'} search sources, ${results.length} result${results.length !== 1 ? 's' : ''}`}
-        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]"
+        className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
       >
-        <span className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
+        <span className="flex items-center gap-2 text-xs font-mono text-text-muted uppercase tracking-wider">
           <Search className="w-3.5 h-3.5" />
           {results.length} SOURCE{results.length !== 1 ? 'S' : ''}
         </span>
-        {expanded ? <ChevronUp className="w-4 h-4 text-[var(--color-text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)]" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-text-muted" /> : <ChevronDown className="w-4 h-4 text-text-muted" />}
       </button>
       <AnimatePresence>
         {expanded && (
-          <motion.div
+          <m.div
             initial={motionPrefersReducedMotion ? { height: 'auto' } : { height: 0 }}
             animate={{ height: 'auto' }}
             exit={motionPrefersReducedMotion ? { height: 'auto' } : { height: 0 }}
             transition={motionPrefersReducedMotion ? { duration: 0 } : undefined}
             className="overflow-hidden"
           >
-            <div className="p-3 space-y-2 bg-[var(--color-void)]">
+            <div className="p-3 space-y-2 bg-void">
               {results.map((result, i) => (
                 <a
                   key={i}
                   href={result.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-3 p-3 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-success)]/30 transition-colors group"
+                  className="flex items-start gap-3 p-3 bg-surface border border-border hover:border-success/30 transition-colors group"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -230,13 +226,13 @@ function SearchSources({ results, expanded, onToggle, prefersReducedMotion }: Se
                     onError={(e) => { (e.target as HTMLImageElement).classList.add('img-error') }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono text-[var(--color-success)] group-hover:underline truncate">{result.title}</div>
-                    <div className="text-[10px] text-[var(--color-text-muted)] font-mono truncate">{getHostname(result.url)}</div>
+                    <div className="text-xs font-mono text-success group-hover:underline truncate">{result.title}</div>
+                    <div className="text-[10px] text-text-muted font-mono truncate">{getHostname(result.url)}</div>
                   </div>
                 </a>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -265,19 +261,19 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <motion.div
+    <m.div
       initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       animate={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
       transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
       className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
       <div className={`shrink-0 w-10 h-10 flex items-center justify-center ${
-        isUser ? 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/20' : 'bg-[var(--color-surface)] border border-[var(--color-border)]'
+        isUser ? 'bg-success/10 border border-success/20' : 'bg-surface border border-border'
       }`}>
         {isUser ? (
-          <User className="w-5 h-5 text-[var(--color-success)]" />
+          <User className="w-5 h-5 text-success" />
         ) : (
-          <Bot className="w-5 h-5 text-[var(--color-text-muted)]" />
+          <Bot className="w-5 h-5 text-text-muted" />
         )}
       </div>
 
@@ -292,8 +288,8 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
         )}
         <div className={`px-5 py-4 leading-relaxed font-mono text-sm ${
           isUser
-            ? 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-text)] border-r-0'
-            : 'bg-[var(--color-surface)]/50 border border-[var(--color-border)] text-[var(--color-text-secondary)] border-l-0'
+            ? 'bg-success/10 border border-success/30 text-text border-r-0'
+            : 'bg-surface/50 border border-border text-text-secondary border-l-0'
         }`}>
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -306,7 +302,7 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
                     const match = /language-(\w+)/.exec(className || '')
                     const isInline = !match && !className
                     return isInline ? (
-                      <code className="px-1.5 py-0.5 bg-[var(--color-surface-elevated)] text-[var(--color-success)] font-mono text-xs" {...props}>
+                      <code className="px-1.5 py-0.5 bg-surface-elevated text-success font-mono text-xs" {...props}>
                         {children}
                       </code>
                     ) : (
@@ -321,16 +317,16 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
               </ReactMarkdown>
               {loading && msg.role === 'assistant' && (
                 <span className="inline-flex gap-1 mt-3">
-                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '0ms' }} />
-                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '150ms' }} />
-                  <span className={`w-1.5 h-1.5 bg-[var(--color-success)] rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '300ms' }} />
+                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '0ms' }} />
+                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '150ms' }} />
+                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '300ms' }} />
                 </span>
               )}
             </div>
           )}
         </div>
 
-        <div className={`flex items-center gap-3 mt-2 text-[10px] text-[var(--color-text-muted)] font-mono ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex items-center gap-3 mt-2 text-[10px] text-text-muted font-mono ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
           <span>{time}</span>
           {msg.tokens && (
             <span>TK:{msg.tokens}</span>
@@ -345,15 +341,15 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
             <button
               onClick={handleCopy}
               aria-label={copied ? 'Copied to clipboard' : 'Copy message to clipboard'}
-              className="flex items-center gap-1 min-h-11 px-4 py-3 hover:text-[var(--color-success)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+              className="flex items-center gap-1 min-h-11 px-4 py-3 hover:text-success transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
-              {copied ? <Check className="w-3 h-3 text-[var(--color-success)]" /> : <Copy className="w-3 h-3" />}
+              {copied ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
               {copied ? 'COPIED' : 'COPY'}
             </button>
           )}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }, (prevProps, nextProps) => {
   const prev = prevProps.msg

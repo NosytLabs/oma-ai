@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Activity, TrendingUp, DollarSign, Users, BarChart3, Terminal, RefreshCw } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { formatUsd } from '@/lib/utils'
-import { motion, useReducedMotion } from 'framer-motion'
+import { m, useReducedMotion } from 'framer-motion'
 
 const AnalyticsCharts = dynamic(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.AnalyticsCharts })), { ssr: false })
 
@@ -79,14 +79,14 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] flex items-center justify-center">
+      <div className="min-h-screen bg-void text-text flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <motion.div
+          <m.div
             animate={shouldAnimate ? { rotate: 360 } : { rotate: 0 }}
             transition={shouldAnimate ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0 }}
-            className="w-5 h-5 border border-[var(--color-accent)] border-t-transparent rounded-full"
+            className="w-5 h-5 border border-accent border-t-transparent rounded-full"
           />
-          <span className="text-[var(--color-text-muted)] font-mono text-sm">Loading analytics...</span>
+          <span className="text-text-muted font-mono text-sm">Loading analytics...</span>
         </div>
       </div>
     )
@@ -94,19 +94,19 @@ export default function AnalyticsPage() {
 
   if (!analytics || !analytics.summary) {
     return (
-      <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] flex items-center justify-center">
+      <div className="min-h-screen bg-void text-text flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center mx-auto mb-6">
-            <BarChart3 className="w-8 h-8 text-[var(--color-accent)]" />
+          <div className="w-16 h-16 rounded border border-accent/30 bg-accent/10 flex items-center justify-center mx-auto mb-6">
+            <BarChart3 className="w-8 h-8 text-accent" />
           </div>
-          <h2 className="text-xl font-bold font-mono text-[var(--color-text-bright)] mb-2">No Analytics Data</h2>
-          <p className="text-[var(--color-text-muted)] font-mono text-sm max-w-md mx-auto mb-6">
+          <h2 className="text-xl font-bold font-mono text-text-bright mb-2">No Analytics Data</h2>
+          <p className="text-text-muted font-mono text-sm max-w-md mx-auto mb-6">
             Analytics data will populate once there is API usage on the gateway. Try refreshing or selecting a different period.
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={fetchAnalytics}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 transition-colors text-sm font-mono"
+              className="flex items-center gap-2 px-4 py-2 rounded border border-accent/30 bg-accent-dim text-accent hover:bg-accent/20 transition-colors text-sm font-mono"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -119,17 +119,17 @@ export default function AnalyticsPage() {
 
 
   return (
-    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)]">
-      <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+    <div className="min-h-screen bg-void text-text">
+      <div className="border-b border-border bg-surface">
         <div className="max-w-[95rem] mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 flex items-center justify-center">
-                <Terminal className="w-4 h-4 text-[var(--color-accent)]" />
+              <div className="w-9 h-9 rounded border border-accent/30 bg-accent/10 flex items-center justify-center">
+                <Terminal className="w-4 h-4 text-accent" />
               </div>
               <div>
-                <h1 className="text-lg font-bold font-syne tracking-tight text-[var(--color-text-bright)]">Usage Analytics</h1>
-                <p className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-widest">System-wide metrics</p>
+                <h1 className="text-lg font-bold font-display tracking-tight text-text-bright">Usage Analytics</h1>
+                <p className="text-[10px] text-text-muted font-mono uppercase tracking-widest">System-wide metrics</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -140,22 +140,22 @@ export default function AnalyticsPage() {
                     onClick={() => setPeriod(p)}
                     className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
                       period === p
-                        ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] border border-[var(--color-accent)]/30'
-                        : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text)]'
+                        ? 'bg-accent-dim text-accent border border-accent/30'
+                        : 'bg-surface text-text-muted border border-border hover:text-text'
                     }`}
                   >
                     {p}
                   </button>
                 ))}
               </div>
-              <motion.button
+              <m.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={fetchAnalytics}
-                className="p-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                className="p-2 rounded border border-border bg-surface text-text-muted hover:text-text transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-              </motion.button>
+              </m.button>
             </div>
           </div>
         </div>
@@ -163,35 +163,35 @@ export default function AnalyticsPage() {
 
       <div className="max-w-[95rem] mx-auto px-4 py-6 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded border border-border bg-surface p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Requests</span>
+              <Activity className="w-3.5 h-3.5 text-text-muted" />
+              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">Total Requests</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatNumber(analytics.summary.totalRequests)}</p>
+            <p className="text-2xl font-bold font-mono text-text-bright">{formatNumber(analytics.summary.totalRequests)}</p>
           </div>
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded border border-border bg-surface p-4">
             <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Total Revenue</span>
+              <DollarSign className="w-3.5 h-3.5 text-text-muted" />
+              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">Total Revenue</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-success)]">{formatUsd(analytics.summary.totalRevenue)}</p>
+            <p className="text-2xl font-bold font-mono text-success">{formatUsd(analytics.summary.totalRevenue)}</p>
           </div>
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded border border-border bg-surface p-4">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Gross Profit</span>
+              <TrendingUp className="w-3.5 h-3.5 text-text-muted" />
+              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">Gross Profit</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-accent)]">{formatUsd(analytics.summary.grossProfit)}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">Margin: {analytics.summary.margin}</p>
+            <p className="text-2xl font-bold font-mono text-accent">{formatUsd(analytics.summary.grossProfit)}</p>
+            <p className="text-[10px] text-text-muted font-mono mt-1">Margin: {analytics.summary.margin}</p>
           </div>
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded border border-border bg-surface p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Users className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Active Users</span>
+              <Users className="w-3.5 h-3.5 text-text-muted" />
+              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">Active Users</span>
             </div>
-            <p className="text-2xl font-bold font-mono text-[var(--color-text-bright)]">{formatNumber(analytics.summary.uniqueUsers)}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1">of {formatNumber(analytics.summary.totalUsers)} total</p>
+            <p className="text-2xl font-bold font-mono text-text-bright">{formatNumber(analytics.summary.uniqueUsers)}</p>
+            <p className="text-[10px] text-text-muted font-mono mt-1">of {formatNumber(analytics.summary.totalUsers)} total</p>
           </div>
         </div>
 

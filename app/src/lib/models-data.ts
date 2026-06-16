@@ -26,19 +26,19 @@ export type Capability =
   | 'chat'
 
 export const PROVIDER_COLORS: Record<Provider, { bg: string; text: string; border: string }> = {
-  Venice: { bg: 'bg-[var(--color-violet)]/20', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30' },
-  AntSeed: { bg: 'bg-[var(--color-success)]/20', text: 'text-[var(--color-success)]', border: 'border-[var(--color-success)]/30' },
-  Claude: { bg: 'bg-[var(--color-warning)]/20', text: 'text-[var(--color-warning)]', border: 'border-[var(--color-warning)]/30' },
-  Gemini: { bg: 'bg-[var(--color-accent)]/20', text: 'text-[var(--color-accent)]', border: 'border-[var(--color-accent)]/30' },
-  OpenRouter: { bg: 'bg-[var(--color-text-secondary)]/20', text: 'text-[var(--color-text-secondary)]', border: 'border-[var(--color-text-secondary)]/30' },
-  Together: { bg: 'bg-[var(--color-tertiary)]/20', text: 'text-[var(--color-tertiary)]', border: 'border-[var(--color-tertiary)]/30' },
+  Venice: { bg: 'bg-violet/20', text: 'text-violet', border: 'border-violet/30' },
+  AntSeed: { bg: 'bg-success/20', text: 'text-success', border: 'border-success/30' },
+  Claude: { bg: 'bg-warning/20', text: 'text-warning', border: 'border-warning/30' },
+  Gemini: { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' },
+  OpenRouter: { bg: 'bg-text-secondary/20', text: 'text-text-secondary', border: 'border-text-secondary/30' },
+  Together: { bg: 'bg-tertiary/20', text: 'text-tertiary', border: 'border-tertiary/30' },
 }
 
 export const TIER_COLORS: Record<Tier, { bg: string; text: string; border: string; badge: string }> = {
-  budget: { bg: 'bg-[var(--color-warning)]/10', text: 'text-[var(--color-warning)]', border: 'border-[var(--color-warning)]/30', badge: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' },
-  mid: { bg: 'bg-[var(--color-accent)]/10', text: 'text-[var(--color-accent)]', border: 'border-[var(--color-accent)]/30', badge: 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]' },
-  premium: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
-  frontier: { bg: 'bg-[var(--color-violet)]/10', text: 'text-[var(--color-violet)]', border: 'border-[var(--color-violet)]/30', badge: 'bg-[var(--color-violet)]/20 text-[var(--color-violet)]' },
+  budget: { bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/30', badge: 'bg-warning/20 text-warning' },
+  mid: { bg: 'bg-accent/10', text: 'text-accent', border: 'border-accent/30', badge: 'bg-accent/20 text-accent' },
+  premium: { bg: 'bg-violet/10', text: 'text-violet', border: 'border-violet/30', badge: 'bg-violet/20 text-violet' },
+  frontier: { bg: 'bg-violet/10', text: 'text-violet', border: 'border-violet/30', badge: 'bg-violet/20 text-violet' },
 }
 
 export const TIER_ORDER: Tier[] = ['budget', 'mid', 'premium', 'frontier']
@@ -106,54 +106,6 @@ export const MODELS: Model[] = [
     outputPricePer1M: 0.90,
     capabilities: ['chat', 'coding'],
     modelId: 'llama-3.3-70b-together',
-  },
-  {
-    id: 'free/gpt-3.5-turbo',
-    name: 'GPT-3.5 Turbo (FREE)',
-    provider: 'OpenRouter',
-    tier: 'budget',
-    description: 'Free tier - OpenAI GPT-3.5 Turbo with rate limits',
-    contextLength: '16K',
-    inputPricePer1M: 0,
-    outputPricePer1M: 0,
-    capabilities: ['chat', 'coding'],
-    modelId: 'free/gpt-3.5-turbo',
-  },
-  {
-    id: 'free/claude-3-haiku',
-    name: 'Claude 3 Haiku (FREE)',
-    provider: 'OpenRouter',
-    tier: 'budget',
-    description: 'Free tier - Anthropic Claude 3 Haiku',
-    contextLength: '200K',
-    inputPricePer1M: 0,
-    outputPricePer1M: 0,
-    capabilities: ['chat', 'coding', 'fast'],
-    modelId: 'free/claude-3-haiku',
-  },
-  {
-    id: 'free/gemini-pro',
-    name: 'Gemini Pro (FREE)',
-    provider: 'OpenRouter',
-    tier: 'budget',
-    description: 'Free tier - Google Gemini Pro',
-    contextLength: '32K',
-    inputPricePer1M: 0,
-    outputPricePer1M: 0,
-    capabilities: ['chat', 'coding', 'vision'],
-    modelId: 'free/gemini-pro',
-  },
-  {
-    id: 'free/llama-3-8b',
-    name: 'Llama 3 8B (FREE)',
-    provider: 'OpenRouter',
-    tier: 'budget',
-    description: 'Free tier - Meta Llama 3 8B',
-    contextLength: '8K',
-    inputPricePer1M: 0,
-    outputPricePer1M: 0,
-    capabilities: ['chat', 'coding'],
-    modelId: 'free/llama-3-8b',
   },
   {
     id: 'claude-3-5-sonnet-latest',
@@ -271,4 +223,45 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
     grouped[model.tier].push(model)
   }
   return grouped
+}
+
+export const MODEL_COUNT = MODELS.length
+
+export type FeaturedModelLogo =
+  | 'llama'
+  | 'claude'
+  | 'gemini'
+  | 'deepseek'
+  | 'gpt'
+  | 'venice'
+  | 'together'
+  | 'antseed'
+
+export interface FeaturedModel {
+  id: string
+  provider: string
+  ctx: string
+  logo: FeaturedModelLogo
+}
+
+export const FEATURED_MODELS: FeaturedModel[] = [
+  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '8K', logo: 'llama' },
+  { id: 'claude-sonnet-4', provider: 'Claude', ctx: '200K', logo: 'claude' },
+  { id: 'gemini-2.5-pro', provider: 'Gemini', ctx: '1M', logo: 'gemini' },
+  { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128K', logo: 'gpt' },
+  { id: 'deepseek-v3.2', provider: 'Venice', ctx: '64K', logo: 'deepseek' },
+  { id: 'claude-3-5-haiku-latest', provider: 'Claude', ctx: '200K', logo: 'claude' },
+]
+
+export const PROVIDER_LOGOS: Record<Provider, FeaturedModelLogo> = {
+  Venice: 'venice',
+  AntSeed: 'antseed',
+  Claude: 'claude',
+  Gemini: 'gemini',
+  OpenRouter: 'gpt',
+  Together: 'together',
+}
+
+export function getProviderLogo(provider: Provider): FeaturedModelLogo {
+  return PROVIDER_LOGOS[provider]
 }

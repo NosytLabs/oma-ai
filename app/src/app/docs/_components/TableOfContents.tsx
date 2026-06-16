@@ -37,22 +37,22 @@ export function TableOfContents({ activeSectionId }: { activeSectionId: string }
 
   if (!section || section.headings.length === 0) {
     return (
-      <nav aria-label="On this page" className="text-xs text-[var(--color-text-muted)]">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+      <nav aria-label="On this page" className="text-xs text-text-muted">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
           On this page
         </p>
-        <p className="mt-3 text-[var(--color-text-tertiary)]">No sub-sections here.</p>
+        <p className="mt-3 text-text-tertiary">No sub-sections here.</p>
       </nav>
     )
   }
 
   return (
     <nav aria-label="On this page" className="text-sm">
-      <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
-        <span className="h-px w-3 bg-[var(--color-border-bright)]" aria-hidden="true" />
+      <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
+        <span className="h-px w-3 bg-border-bright" aria-hidden="true" />
         On this page
       </p>
-      <ul id={navId} className="space-y-0.5 border-l border-[var(--color-border)]">
+      <ul id={navId} className="space-y-0.5 border-l border-border">
         {section.headings.map((h) => {
           const isActive = activeHeadingId === h.id
           return (
@@ -61,8 +61,8 @@ export function TableOfContents({ activeSectionId }: { activeSectionId: string }
                 href={`#${h.id}`}
                 className={`-ml-px block border-l-2 py-1 pl-3 pr-2 text-xs leading-snug transition-colors ${
                   isActive
-                    ? 'border-[var(--color-accent)] font-medium text-[var(--color-accent)]'
-                    : 'border-transparent text-[var(--color-text-muted)] hover:border-[var(--color-border-bright)] hover:text-[var(--color-text)]'
+                    ? 'border-accent font-medium text-accent'
+                    : 'border-transparent text-text-muted hover:border-border-bright hover:text-text'
                 }`}
                 aria-current={isActive ? 'true' : undefined}
               >

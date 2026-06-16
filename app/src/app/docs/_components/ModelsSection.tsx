@@ -5,10 +5,10 @@ import { MODEL_ROWS, fmt } from '../data'
 import { SectionHeading, AnimatedSection, SubHeading } from './SharedComponents'
 
 const TIER_BADGE: Record<string, string> = {
-  budget:   'border-[var(--color-warning)]/30  bg-[var(--color-warning)]/10  text-[var(--color-warning)]',
-  mid:      'border-[var(--color-info)]/30     bg-[var(--color-info)]/10     text-[var(--color-info)]',
-  premium:  'border-[var(--color-tier-premium)]/30 bg-[var(--color-tier-premium)]/10 text-[var(--color-tier-premium)]',
-  frontier: 'border-[var(--color-info)]/30     bg-[var(--color-info)]/10     text-[var(--color-info)]',
+  budget:   'border-warning/30  bg-warning/10  text-warning',
+  mid:      'border-info/30     bg-info/10     text-info',
+  premium:  'border-tier-premium/30 bg-tier-premium/10 text-tier-premium',
+  frontier: 'border-info/30     bg-info/10     text-info',
 }
 
 const TIER_RANK: Record<string, number> = { budget: 0, mid: 1, premium: 2, frontier: 3 }
@@ -31,55 +31,55 @@ export function ModelsSection() {
 
       <SubHeading id="models-overview">Overview</SubHeading>
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             Catalog
           </p>
-          <p className="mt-1 font-syne text-2xl font-bold text-[var(--color-text)]">
+          <p className="mt-1 font-display text-2xl font-bold text-text">
             {MODEL_ROWS.length}
           </p>
-          <p className="text-xs text-[var(--color-text-muted)]">routable models, refreshed daily</p>
+          <p className="text-xs text-text-muted">routable models, refreshed daily</p>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             Providers
           </p>
-          <p className="mt-1 font-syne text-2xl font-bold text-[var(--color-text)]">4</p>
-          <p className="text-xs text-[var(--color-text-muted)]">Venice, AntSeed, OpenRouter, Together</p>
+          <p className="mt-1 font-display text-2xl font-bold text-text">4</p>
+          <p className="text-xs text-text-muted">Venice, AntSeed, OpenRouter, Together</p>
         </div>
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/40 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        <div className="rounded-lg border border-border bg-surface/40 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             Price floor
           </p>
-          <p className="mt-1 font-syne text-2xl font-bold text-[var(--color-text)]">
-            $0.01<span className="text-sm text-[var(--color-text-muted)]">/1M</span>
+          <p className="mt-1 font-display text-2xl font-bold text-text">
+            $0.01<span className="text-sm text-text-muted">/1M</span>
           </p>
-          <p className="text-xs text-[var(--color-text-muted)]">cheapest tier, in &amp; out</p>
+          <p className="text-xs text-text-muted">cheapest tier, in &amp; out</p>
         </div>
       </div>
 
       <SubHeading id="models-table">Full catalog</SubHeading>
-      <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
-        <div className="max-h-[28rem] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
+      <div className="overflow-hidden rounded-lg border border-border">
+        <div className="max-h-[28rem] overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur-sm">
+            <thead className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm">
               <tr>
-                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   Model
                 </th>
-                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   Provider
                 </th>
-                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   Tier
                 </th>
-                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   In / 1M
                 </th>
-                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   Out / 1M
                 </th>
-                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                   Ctx
                 </th>
               </tr>
@@ -88,13 +88,13 @@ export function ModelsSection() {
               {sorted.map((m) => (
                 <tr
                   key={m.id}
-                  className="border-b border-[var(--color-border)]/40 transition-colors last:border-b-0 hover:bg-[var(--color-surface)]/30"
+                  className="border-b border-border/40 transition-colors last:border-b-0 hover:bg-surface/30"
                 >
                   <td className="px-4 py-2.5">
-                    <div className="font-medium text-[var(--color-text)]">{m.name}</div>
-                    <div className="line-clamp-1 text-xs text-[var(--color-text-muted)]">{m.blurb}</div>
+                    <div className="font-medium text-text">{m.name}</div>
+                    <div className="line-clamp-1 text-xs text-text-muted">{m.blurb}</div>
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-[var(--color-text-secondary)]">
+                  <td className="px-4 py-2.5 text-xs text-text-secondary">
                     {m.provider}
                   </td>
                   <td className="px-4 py-2.5">
@@ -106,13 +106,13 @@ export function ModelsSection() {
                       {m.tier}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-[var(--color-accent)]">
+                  <td className="px-4 py-2.5 text-right font-mono text-accent">
                     {fmt(m.input)}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-[var(--color-text-secondary)]">
+                  <td className="px-4 py-2.5 text-right font-mono text-text-secondary">
                     {fmt(m.output)}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-xs text-[var(--color-text-muted)]">
+                  <td className="px-4 py-2.5 text-right text-xs text-text-muted">
                     {m.ctx}
                   </td>
                 </tr>
@@ -121,11 +121,11 @@ export function ModelsSection() {
           </table>
         </div>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
+      <p className="mt-3 text-xs leading-relaxed text-text-muted">
         Prices are per million tokens. You pay exactly what we pay the upstream — no markup, no platform fee. Live list at{' '}
         <a
           href="/api/v1/models"
-          className="font-mono text-[var(--color-accent)] underline-offset-2 hover:underline"
+          className="font-mono text-accent underline-offset-2 hover:underline"
         >
           /v1/models
         </a>

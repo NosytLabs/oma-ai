@@ -3,29 +3,21 @@
 /**
  * LottiePlayer — loads a Lottie JSON from /public and renders it via lottie-react.
  *
- * The JSONs were authored for Skia's Skottie (canvaskit-wasm) per the text-to-lottie
- * skill, but they use only standard Lottie shape-layer primitives (no Skottie-only
- * features), so lottie-react's underlying lottie-web runtime renders them correctly.
- *
- * The bgColor slot from the JSON is editable via the `bgColor` prop (default matches
- * the OMA dark void).
+ * Pauses off-screen via IntersectionObserver to save CPU/GPU, and respects
+ * prefers-reduced-motion (via framer-motion's useReducedMotion) by disabling
+ * autoplay when the user has set the system preference.
  */
 
-import { useEffect, useState } from 'react'
-import Lottie from 'lottie-react'
+import { useEffect, useRef, useState } from 'react'
+import Lottie, { type LottieRefCurrentProps } from 'lottie-react'
+import { useReducedMotion } from 'framer-motion'
 
 export interface LottiePlayerProps {
-  /** Path under /public, e.g. "/lottie-x402-flow.json" */
   src: string
-  /** Background color slot. OMA void = [10, 10, 15] = [0.04, 0.04, 0.06] in 0-1 RGBA */
   bgColor?: [number, number, number, number]
-  /** Loop the animation (default true) */
   loop?: boolean
-  /** Autoplay on mount (default true) */
   autoplay?: boolean
-  /** Render with a className for sizing */
   className?: string
-  /** Optional aria label for accessibility */
   ariaLabel?: string
 }
 
@@ -39,6 +31,10 @@ export function LottiePlayer({
 }: LottiePlayerProps) {
   const [animationData, setAnimationData] = useState<object | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const animationRef = useRef<LottieRefCurrentProps | null>(null)
+  const reducedMotion = useReducedMotion()
+  const effectiveAutoplay = autoplay && !reducedMotion
 
   useEffect(() => {
     let cancelled = false
@@ -53,16 +49,35 @@ export function LottiePlayer({
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : String(err))
       })
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [src])
+
+  useEffect(() => {
+    if (!animationData) return
+    const node = containerRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const instance = animationRef.current
+        if (!instance) return
+        if (entry.isIntersecting) {
+          if (!reducedMotion) instance.play()
+        } else {
+          instance.pause()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [animationData, reducedMotion])
 
   const bgCss = `rgba(${Math.round(bgColor[0] * 255)}, ${Math.round(bgColor[1] * 255)}, ${Math.round(bgColor[2] * 255)}, ${bgColor[3]})`
 
   if (loadError) {
     return (
       <div
+        ref={containerRef}
         className={className}
         role="img"
         aria-label={ariaLabel ?? 'Animation unavailable'}
@@ -74,6 +89,7 @@ export function LottiePlayer({
   if (!animationData) {
     return (
       <div
+        ref={containerRef}
         className={className}
         role="img"
         aria-label={ariaLabel ?? 'Loading animation'}
@@ -83,13 +99,15 @@ export function LottiePlayer({
   }
 
   return (
-    <Lottie
-      animationData={animationData}
-      loop={loop}
-      autoplay={autoplay}
-      className={className}
-      aria-label={ariaLabel}
-      style={{ width: '100%', height: '100%' }}
-    />
+    <div ref={containerRef} className={className}>
+      <Lottie
+        animationData={animationData}
+        loop={loop}
+        autoplay={effectiveAutoplay}
+        lottieRef={animationRef}
+        aria-label={ariaLabel}
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
   )
 }

@@ -10,8 +10,8 @@ interface MonthlyRevenue {
 
 export function AdminRevenueCharts({ monthlyRevenue }: { monthlyRevenue: MonthlyRevenue[] | undefined }) {
   return (
-    <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-      <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[var(--color-text-secondary)] mb-4">Revenue Chart</h3>
+    <div className="rounded border border-border bg-surface p-5">
+      <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-text-secondary mb-4">Revenue Chart</h3>
       <div className="h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthlyRevenue?.slice(-12)}>

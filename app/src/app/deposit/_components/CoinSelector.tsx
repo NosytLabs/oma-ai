@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef, useId } from 'react'
+import { m, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Search, Coins, Lock } from 'lucide-react'
 
 import { CryptoLogo } from '@/components/ui/CryptoLogo'
@@ -17,6 +17,7 @@ export function CoinSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const id = useId()
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -38,14 +39,15 @@ export function CoinSelector({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <label className="mb-2 block text-xs font-medium tracking-wider text-[var(--color-text-secondary)] font-mono uppercase">
+      <label htmlFor={id} className="mb-2 block text-xs font-medium tracking-wider text-text-secondary font-mono uppercase">
         Select Asset
       </label>
-      <motion.button
+      <m.button
+        id={id}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-surface)] px-4 py-4 text-left
-          hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40
-          focus-visible:border-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30
+        className="w-full flex items-center gap-3 rounded-lg border border-border-bright bg-surface px-4 py-4 text-left
+          hover:bg-surface-elevated hover:border-accent/40
+          focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
           transition-colors duration-150"
         whileHover={{ scale: 1 }}
         whileTap={{ scale: 0.99 }}
@@ -55,73 +57,75 @@ export function CoinSelector({
             <CryptoLogo symbol={selected.symbol} size={32} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-[var(--color-text-bright)]">{selected.symbol}</span>
+                <span className="font-semibold text-text-bright">{selected.symbol}</span>
                 {selected.isPopular && (
-                  <span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[var(--color-accent)] bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20">
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-accent bg-accent/10 border border-accent/20">
                     POPULAR
                   </span>
                 )}
               </div>
-              <div className="text-xs text-[var(--color-text-secondary)]">{selected.name} — {selected.network}</div>
+              <div className="text-xs text-text-secondary">{selected.name} — {selected.network}</div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center gap-2 text-[var(--color-text-secondary)]">
+          <div className="flex-1 flex items-center gap-2 text-text-secondary">
             <Coins className="h-5 w-5" />
             <span>Choose cryptocurrency</span>
           </div>
         )}
-        <ChevronDown className={`h-5 w-5 text-[var(--color-text-secondary)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </motion.button>
+        <ChevronDown className={`h-5 w-5 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </m.button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            className="absolute z-50 mt-2 w-full rounded-lg border border-[var(--color-border-bright)] bg-[var(--color-panel)] shadow-xl"
+          <m.div
+            className="absolute z-50 mt-2 w-full rounded-lg border border-border-bright bg-panel shadow-xl"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
-            <div className="p-3 border-b border-[var(--color-border)]">
+            <div className="p-3 border-b border-border">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                <label htmlFor={`${id}-search`} className="sr-only">Search coins</label>
                 <input
+                  id={`${id}-search`}
                   type="text"
                   placeholder="Search coins..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-sm
-                    text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]
-                    focus:outline-none focus:border-[var(--color-accent)]/50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded bg-surface border border-border text-sm
+                    text-text placeholder:text-text-muted
+                    focus:outline-none focus:border-accent/50"
                   autoFocus
                 />
               </div>
             </div>
             <div className="max-h-72 overflow-y-auto">
               {filteredCoins.map((coin) => (
-                <motion.button
+                <m.button
                   key={coin.id}
                   onClick={() => { onSelect(coin); setIsOpen(false); setSearch('') }}
                   className={`w-full flex items-center gap-3 px-4 py-3
-                    hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text-bright)]
-                    focus:bg-[var(--color-surface-elevated)] focus:text-[var(--color-text-bright)]
+                    hover:bg-surface-elevated hover:text-text-bright
+                    focus:bg-surface-elevated focus:text-text-bright
                     focus:outline-none
-                    ${selected?.id === coin.id ? 'bg-[var(--color-surface-elevated)] border-l-2 border-[var(--color-accent)]' : 'border-l-2 border-transparent'}`}
+                    ${selected?.id === coin.id ? 'bg-surface-elevated border-l-2 border-accent' : 'border-l-2 border-transparent'}`}
                   whileHover={{ x: 2 }}
                 >
                   <CryptoLogo symbol={coin.symbol} size={28} />
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{coin.symbol}</span>
-                      {coin.isPrivacy && <Lock className="h-3 w-3 text-[var(--color-pink)]" />}
+                      {coin.isPrivacy && <Lock className="h-3 w-3 text-pink" />}
                     </div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">{coin.name}</div>
+                    <div className="text-xs text-text-secondary">{coin.name}</div>
                   </div>
-                </motion.button>
+                </m.button>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

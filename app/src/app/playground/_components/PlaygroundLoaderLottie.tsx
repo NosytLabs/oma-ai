@@ -1,37 +1,19 @@
 'use client'
 
 /**
- * PlaygroundLoaderLottie — client-only loader for the playground route
- * lottie. Mirrors FeaturedX402Lottie: server renders the existing
- * skeleton, hydration mounts the LottiePlayer client-side.
+ * PlaygroundLoaderLottie — pure-CSS loader (three bouncing dots).
+ *
+ * Replaces a single-dot opacity-pulse Lottie (~1.4 KB JSON + lottie-react
+ * runtime overhead) with three staggered bouncing dots. Zero JavaScript
+ * at runtime, GPU-composited animation.
  */
 
-import { useEffect, useState } from 'react'
-import { LottiePlayer } from '@/components/LottiePlayer'
-
 export function PlaygroundLoaderLottie() {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   return (
-    <div className="mx-auto mb-4 w-24 sm:w-32" aria-label="playground initializing animation container">
-      {mounted ? (
-        <LottiePlayer
-          src="/lottie-playground-loader.json"
-          loop
-          autoplay
-          ariaLabel="Initializing playground"
-          className="w-full h-auto"
-        />
-      ) : (
-        <div
-          className="w-full aspect-square bg-[var(--color-surface)] border border-[var(--color-border)] animate-pulse"
-          aria-hidden="true"
-        />
-      )}
+    <div className="flex items-center justify-center gap-2">
+      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" />
+      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0.15s' }} />
+      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0.3s' }} />
     </div>
   )
 }

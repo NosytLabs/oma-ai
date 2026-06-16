@@ -25,18 +25,20 @@ function resolveSolanaNetwork(): string {
   return url.includes("devnet") ? "devnet" : "mainnet";
 }
 
-function buildSolanaSignInMessage(address: string, nonce: string): string {
+// SIWS (Sign-In With Solana) — header MUST reference the URI host per spec §1,
+// not a brand name. The previous "OMA wants you to sign in" header tripped
+// domain-mismatch checks against `URI: https://oma.ai`.
+export function buildSolanaSignInMessage(address: string, nonce: string, issuedAt: Date = new Date()): string {
   const network = resolveSolanaNetwork();
-  const now = new Date();
-  const expiry = new Date(now.getTime() + NONCE_TTL_MS);
+  const expiry = new Date(issuedAt.getTime() + NONCE_TTL_MS);
   return [
-    "OMA wants you to sign in with your Solana account:",
+    "oma.ai wants you to sign in with your Solana account:",
     address,
     "",
     "URI: https://oma.ai",
     "Version: 1",
     `Chain ID: solana:${network}`,
-    `Issued At: ${now.toISOString()}`,
+    `Issued At: ${issuedAt.toISOString()}`,
     `Expiration Time: ${expiry.toISOString()}`,
     `Nonce: ${nonce}`,
   ].join("\n");
@@ -116,7 +118,7 @@ export async function createSolanaChallenge(address: string) {
 
   return {
     nonce,
-    message: buildSolanaSignInMessage(normalizedAddress, nonce),
+    message: buildSolanaSignInMessage(normalizedAddress, nonce, user.updatedAt),
   };
 }
 
@@ -138,7 +140,9 @@ export async function verifySolanaChallenge(address: string, message: string, si
     return null;
   }
 
-  const expectedMessage = buildSolanaSignInMessage(normalizedAddress, user.nonce);
+  // Reuse the same issuedAt that was used to build the original challenge so
+  // the message is byte-for-byte identical to the one the user signed.
+  const expectedMessage = buildSolanaSignInMessage(normalizedAddress, user.nonce, user.updatedAt);
   if (message !== expectedMessage) {
     return null;
   }

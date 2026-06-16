@@ -1,0 +1,41 @@
+name: Retention
+
+on:
+  schedule:
+    # Daily at 03:00 UTC. Runs the bounded-retention sweep against four
+    # previously-unbounded tables (see server/src/jobs/retention.ts):
+    #   usage_records         — keep  90d
+    #   audit_logs            — keep 365d
+    #   oracle_prices         — keep  30d
+    #   deposit_notifications — keep  90d
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-retention
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Bounded retention sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run retention sweep
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npx tsx src/jobs/cli-runner.ts retention

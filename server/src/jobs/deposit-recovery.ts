@@ -262,7 +262,7 @@ export async function scheduleWrongNetworkRecovery(): Promise<void> {
   logger.info("[recovery] Wrong-network deposit recovery scheduler started");
 }
 
-async function processPendingRecoveries(): Promise<void> {
+export async function processPendingRecoveries(): Promise<void> {
   const pending = await db
     .select()
     .from(depositRecoveries)

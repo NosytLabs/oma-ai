@@ -1,161 +1,151 @@
 /**
- * Cookie management utilities optimized for security and performance.
- * Implements HttpOnly, Secure, SameSite cookies for session management.
+ * Cookie management utilities.
+ *
+ * Important: cookies written via `document.cookie` in the browser CANNOT carry
+ * the `HttpOnly` attribute. When a string containing `HttpOnly` is assigned to
+ * `document.cookie`, the browser silently discards the entire Set-Cookie value
+ * and the cookie is never set. (HttpOnly is a server-side flag that must be
+ * emitted in a real `Set-Cookie` response header.)
+ *
+ * For this app, the JWT is always exchanged via `document.cookie` from the
+ * client after `/v1/auth/account/*` returns `{ token }`, so the `oma_session`
+ * cookie here is intentionally NOT HttpOnly. The real XSS hardening is to
+ * keep the JWT short-lived and rely on standard CSP headers.
  */
 
-// Cookie configuration constants
-export const SESSION_COOKIE_NAME = 'oma_session';
-export const SESSION_META_COOKIE_NAME = 'oma_session_meta';
-export const CSRF_COOKIE_NAME = 'csrf_token';
+export const SESSION_COOKIE_NAME = 'oma_session'
+export const SESSION_META_COOKIE_NAME = 'oma_session_meta'
+export const CSRF_COOKIE_NAME = 'csrf_token'
 
 export interface SessionMeta {
-  authMethod: string;
+  authMethod: string
 }
 
-/**
- * Check if we're running in a browser environment.
- * Essential for SSR safety.
- */
 function isBrowser(): boolean {
-  return typeof window !== 'undefined';
+  return typeof window !== 'undefined'
+}
+
+function isSecureEnv(): boolean {
+  return process.env.NODE_ENV === 'production'
 }
 
 /**
- * Build a secure cookie string with proper attributes.
- * - HttpOnly: Prevents XSS from accessing cookies
- * - Secure: Only sent over HTTPS in production
- * - SameSite: CSRF protection
+ * Build a browser-writable cookie string.
+ *
+ * Note: NO `HttpOnly` here. `HttpOnly` is rejected by the browser when set via
+ * `document.cookie` and the entire cookie is dropped. `Secure` is only set in
+ * production (HTTPS) because dev runs on http://localhost.
  */
-function getSecureCookieString(name: string, value: string, maxAgeDays: number): string {
-  const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString();
-  const maxAge = maxAgeDays * 86400;
-  const isSecure = process.env.NODE_ENV === 'production';
-  
-  // Build cookie with security attributes
+function getClientCookieString(name: string, value: string, maxAgeDays: number): string {
+  const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString()
+  const maxAge = Math.floor(maxAgeDays * 86400)
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
     `expires=${expires}`,
-    `path=/`,
+    'path=/',
     `max-age=${maxAge}`,
-    'HttpOnly',
-    isSecure ? 'Secure' : '', // Only Secure in production
-    'SameSite=Strict', // Strict for maximum CSRF protection
-  ].filter(Boolean);
-  
-  return parts.join('; ');
+    isSecureEnv() ? 'Secure' : '',
+    'SameSite=Strict',
+  ].filter(Boolean)
+  return parts.join('; ')
 }
 
-/**
- * Build a cookie deletion string.
- * Sets expires to epoch to remove cookie.
- */
 function getDeleteCookieString(name: string): string {
-  return `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; HttpOnly; Secure; SameSite=Strict`;
+  return `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`
 }
 
 /**
- * Set session cookie with SSR safety check.
+ * Persist the session JWT in a client-readable cookie. The server-side
+ * middleware (`app/src/middleware.ts`) reads this same cookie to verify the
+ * user on protected routes, and the API client (`app/src/lib/api/client.ts`)
+ * reads it to attach `Authorization: Bearer ...` to outbound requests.
+ *
+ * The actual JWT is delivered by the Hono backend in the response body of
+ * `/v1/auth/account/create` and `/v1/auth/account/login`. The server does
+ * NOT emit a `Set-Cookie` header (no /api proxy in Next.js routes), so the
+ * client must persist the token itself.
  */
 export function setSessionCookie(token: string, maxAgeDays = 7): void {
-  if (!isBrowser()) return;
-  const cookieStr = getSecureCookieString(SESSION_COOKIE_NAME, token, maxAgeDays);
-  document.cookie = cookieStr;
+  if (!isBrowser()) return
+  document.cookie = getClientCookieString(SESSION_COOKIE_NAME, token, maxAgeDays)
 }
 
 /**
- * Set session metadata cookie.
+ * Persist the small non-sensitive meta marker that `wallet-provider.tsx` reads
+ * to populate `isAuthenticated`. Keeping this in a SEPARATE cookie from the
+ * JWT means we can rotate / clear the JWT without losing the auth-method
+ * hint used by the UI.
  */
 export function setSessionMetaCookie(meta: SessionMeta, maxAgeDays = 7): void {
-  if (!isBrowser()) return;
-  const cookieStr = getSecureCookieString(SESSION_META_COOKIE_NAME, JSON.stringify(meta), maxAgeDays);
-  document.cookie = cookieStr;
+  if (!isBrowser()) return
+  document.cookie = getClientCookieString(
+    SESSION_META_COOKIE_NAME,
+    JSON.stringify(meta),
+    maxAgeDays,
+  )
 }
 
-/**
- * Get session token with SSR safety.
- * Parses cookie string efficiently.
- */
 export function getSessionToken(): string | null {
-  if (!isBrowser()) return null;
-  
-  const cookies = document.cookie.split(';');
+  if (!isBrowser()) return null
+
+  const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=');
+    const [name, ...valueParts] = cookie.trim().split('=')
     if (name === SESSION_COOKIE_NAME) {
-      return decodeURIComponent(valueParts.join('='));
+      return decodeURIComponent(valueParts.join('='))
     }
   }
-  return null;
+  return null
 }
 
-/**
- * Get session metadata with SSR safety.
- */
 export function getSessionMeta(): SessionMeta | null {
-  if (!isBrowser()) return null;
-  
-  const cookies = document.cookie.split(';');
+  if (!isBrowser()) return null
+
+  const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=');
+    const [name, ...valueParts] = cookie.trim().split('=')
     if (name === SESSION_META_COOKIE_NAME) {
       try {
-        return JSON.parse(decodeURIComponent(valueParts.join('='))) as SessionMeta;
+        return JSON.parse(decodeURIComponent(valueParts.join('='))) as SessionMeta
       } catch {
-        return null;
+        return null
       }
     }
   }
-  return null;
+  return null
 }
 
-/**
- * Delete session cookies for logout.
- */
 export function deleteSessionCookie(): void {
-  if (!isBrowser()) return;
-  document.cookie = getDeleteCookieString(SESSION_COOKIE_NAME);
-  document.cookie = getDeleteCookieString(SESSION_META_COOKIE_NAME);
+  if (!isBrowser()) return
+  document.cookie = getDeleteCookieString(SESSION_COOKIE_NAME)
+  document.cookie = getDeleteCookieString(SESSION_META_COOKIE_NAME)
 }
 
-/**
- * Set CSRF token cookie.
- */
 export function setCsrfTokenCookie(token: string): void {
-  if (!isBrowser()) return;
-  const cookieStr = getSecureCookieString(CSRF_COOKIE_NAME, token, 1);
-  document.cookie = cookieStr;
+  if (!isBrowser()) return
+  document.cookie = getClientCookieString(CSRF_COOKIE_NAME, token, 1)
 }
 
-/**
- * Get CSRF token with SSR safety.
- */
 export function getCsrfToken(): string | null {
-  if (!isBrowser()) return null;
-  
-  const cookies = document.cookie.split(';');
+  if (!isBrowser()) return null
+
+  const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=');
+    const [name, ...valueParts] = cookie.trim().split('=')
     if (name === CSRF_COOKIE_NAME) {
-      return decodeURIComponent(valueParts.join('='));
+      return decodeURIComponent(valueParts.join('='))
     }
   }
-  return null;
+  return null
 }
 
-/**
- * Clear all session-related cookies.
- */
 export function clearAllSessionCookies(): void {
-  deleteSessionCookie();
+  deleteSessionCookie()
   if (isBrowser()) {
-    document.cookie = getDeleteCookieString(CSRF_COOKIE_NAME);
+    document.cookie = getDeleteCookieString(CSRF_COOKIE_NAME)
   }
 }
 
-/**
- * Check if a stored session exists.
- * Efficient check for auth state.
- */
 export function hasStoredSession(): boolean {
-  return getSessionToken() !== null;
+  return getSessionToken() !== null
 }

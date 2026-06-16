@@ -1,20 +1,15 @@
 import type { Metadata, Viewport } from 'next'
-import { Syne, Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { ToastProvider } from '@/components/ui/Toast'
+import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
+import { ToastProviderClient } from '@/components/ui/ToastProviderClient'
 import { MotionProvider } from '@/components/motion-provider'
 import { ThemeProvider, THEME_HEAD_SCRIPT } from '@/components/ThemeProvider'
+import { Providers } from '@/components/providers'
+import { MODEL_COUNT } from '@/lib/models-data'
 import './globals.css'
-
-const syne = Syne({
-  subsets: ['latin'],
-  variable: '--font-syne',
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'sans-serif'],
-})
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,14 +17,6 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   fallback: ['system-ui', 'sans-serif'],
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
-  preload: true,
-  fallback: ['Consolas', 'Monaco', 'monospace'],
 })
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
@@ -50,8 +37,7 @@ export const metadata: Metadata = {
     default: 'OMA AI - One Man Army // Open Model Access',
     template: '%s | OMA AI',
   },
-  description:
-    'Permissionless AI inference gateway. Access 91+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
+  description: `Access ${MODEL_COUNT} models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.`,
   keywords: ['AI', 'inference', 'LLM', 'OpenAI', 'Anthropic', 'crypto', 'payments', 'API', 'developers'],
   authors: [{ name: 'OMA AI' }],
   creator: 'OMA AI',
@@ -70,7 +56,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'OMA AI - One Man Army // Open Model Access',
-    description: 'Permissionless AI inference gateway. Access 91+ models with crypto payments. No sign-up required.',
+    description: `Permissionless AI inference gateway. Access ${MODEL_COUNT} models with crypto payments. No sign-up required.`,
     site: '@oma_ai',
     creator: '@oma_ai',
     images: ['/og-image.png'],
@@ -81,7 +67,7 @@ export const metadata: Metadata = {
     url: 'https://oma-ai.com',
     siteName: 'OMA AI',
     title: 'OMA AI - One Man Army // Open Model Access',
-    description: 'Permissionless AI inference gateway. Access 91+ models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.',
+    description: `Permissionless AI inference gateway. Access ${MODEL_COUNT} models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.`,
     images: [
       {
         url: '/og-image.png',
@@ -93,7 +79,6 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/favicon.svg',
-    shortcut: '/favicon.png',
   },
 }
 
@@ -103,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={inter.variable}>
       <head>
         {/* Pre-hydration theme script — runs synchronously before first paint
             to set <html data-theme="..."> from localStorage. Prevents FOUC
@@ -119,23 +104,27 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://*.coinbase.com" />
         <link rel="canonical" href={BASE_URL} />
       </head>
-      <body className="min-h-screen bg-[var(--color-void)] text-[var(--color-text)] font-sans antialiased">
+      <body className="min-h-screen bg-void text-text font-sans antialiased">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-[100] focus:bg-[var(--color-green)] focus:text-[var(--color-void)] focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-[100] focus:bg-orange focus:text-void focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold"
         >
           Skip to main content
         </a>
         <ThemeProvider>
-          <ToastProvider>
+          <ToastProviderClient>
             <MotionProvider>
-              <Navbar />
-              <main id="main-content" className="pt-14" tabIndex={-1} role="main">
-                <ErrorBoundary>{children}</ErrorBoundary>
-              </main>
-              <Footer />
+              <Providers>
+                <ConnectWalletWrapper>
+                  <Navbar />
+                </ConnectWalletWrapper>
+                <main id="main-content" className="pt-14" tabIndex={-1} role="main">
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </main>
+                <Footer />
+              </Providers>
             </MotionProvider>
-          </ToastProvider>
+          </ToastProviderClient>
         </ThemeProvider>
       </body>
     </html>

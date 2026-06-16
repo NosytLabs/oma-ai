@@ -431,6 +431,24 @@ authRoutes.get("/auth/csrf-token", async (c) => {
   return c.json({ token });
 });
 
+/**
+ * C-C1: Demo-mode entry point. Sets a 24-hour `oma-demo=1` cookie that the
+ * frontend (wallet-provider.tsx) and the app middleware both treat as a
+ * lightweight "browse without signing up" session. No account, no session
+ * token, no PII.
+ *
+ * The dashboard renders mock data when the cookie is present; the
+ * middleware lets the user through the protected-route gate so they can
+ * see what the dashboard looks like.
+ */
+authRoutes.post("/auth/demo", rateLimit({ windowMs: 60_000, maxRequests: 30 }), async (c) => {
+  const maxAge = 60 * 60 * 24; // 24h
+  const expires = new Date(Date.now() + maxAge * 1000).toUTCString();
+  const cookie = `oma-demo=1; expires=${expires}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  c.header("Set-Cookie", cookie);
+  return c.json({ success: true, expiresIn: maxAge });
+});
+
 authRoutes.post("/auth/account/login", async (c, next) => {
   const ip = extractClientIp(c);
   const key = `rl:account-login:ip:${ip}`;

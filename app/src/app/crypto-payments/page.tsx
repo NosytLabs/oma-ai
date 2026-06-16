@@ -15,13 +15,15 @@ import {
   Wallet,
   Zap,
   Shield,
-  ArrowRight,
   CheckCircle2,
   Link2,
   Globe,
   Rocket,
   Lock,
 } from 'lucide-react'
+import { CryptoLogo } from '@/components/ui/CryptoLogo'
+import { CRYPTO_LOGOS } from '@/lib/cryptoLogos'
+import { PaymentLinkForm } from './_components/PaymentLinkForm'
 
 export const metadata: Metadata = {
   title: 'Crypto payments · OMA',
@@ -38,15 +40,11 @@ const ISSUED = '2026-06-12'
 const DOC_ID = '0x4F4D41-CRYPTO'
 const BUILD = (process.env.NEXT_PUBLIC_BUILD_SHA ?? 'dev').slice(0, 7)
 
-const SUPPORTED_TOKENS = [
-  { name: 'ETH', symbol: 'ETH' },
-  { name: 'USDC', symbol: 'USDC' },
-  { name: 'USDT', symbol: 'USDT' },
-  { name: 'DAI', symbol: 'DAI' },
-  { name: 'WBTC', symbol: 'WBTC' },
-  { name: 'SOL', symbol: 'SOL' },
-  { name: 'MATIC', symbol: 'MATIC' },
-] as const
+const SUPPORTED_TOKENS = (Object.keys(CRYPTO_LOGOS) as Array<keyof typeof CRYPTO_LOGOS>)
+  .map((sym) => ({
+    symbol: sym,
+    name: CRYPTO_LOGOS[sym].name,
+  }))
 
 const PAYMENT_FEATURES = [
   {
@@ -150,14 +148,14 @@ function SectionHeading({
 }) {
   return (
     <header className="mb-5 sm:mb-7 flex items-baseline gap-3 flex-wrap">
-      <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+      <span className="text-[10px] text-text-tertiary tabular-nums">
         § {index}
       </span>
-      <h2 className="font-syne text-lg sm:text-xl text-[var(--color-text-bright)] font-bold tracking-tight">
+      <h2 className="font-display text-lg sm:text-xl text-text-bright font-bold tracking-tight">
         {title}
       </h2>
       {meta && (
-        <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+        <span className="text-[10px] text-text-tertiary tabular-nums">
           {meta}
         </span>
       )}
@@ -167,7 +165,7 @@ function SectionHeading({
 
 export default function CryptoPaymentsPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-void)] text-[var(--color-text-secondary)] font-mono selection:bg-[var(--color-accent-dim)] selection:text-[var(--color-accent)]">
+    <div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
       <div className="overflow-x-clip">
         <div className="flex flex-col">
 
@@ -179,21 +177,21 @@ export default function CryptoPaymentsPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+                className="inline-flex items-center gap-2 text-[11px] text-text-tertiary hover:text-accent transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 back to home
               </Link>
-              <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-tertiary)] tracking-widest uppercase">
+              <div className="flex items-center gap-2 text-[10px] text-text-tertiary tracking-widest uppercase">
                 <span aria-hidden="true">▌</span>
                 <span>oma</span>
-                <span className="text-[var(--color-text-muted)]">·</span>
+                <span className="text-text-muted">·</span>
                 <span>crypto payments</span>
-                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
+                <span className="text-text-muted hidden sm:inline">·</span>
                 <span className="hidden sm:inline">build {BUILD}</span>
-                <span className="text-[var(--color-text-muted)] hidden sm:inline">·</span>
+                <span className="text-text-muted hidden sm:inline">·</span>
                 <span className="hidden sm:inline">revised {ISSUED}</span>
-                <span className="text-[var(--color-text-muted)] hidden md:inline">·</span>
+                <span className="text-text-muted hidden md:inline">·</span>
                 <span className="hidden md:inline">doc #{DOC_ID}</span>
               </div>
             </div>
@@ -211,31 +209,31 @@ export default function CryptoPaymentsPage() {
 
                 <h1
                   id="subject-heading"
-                  className="font-syne font-bold text-[var(--color-text-bright)] tracking-[-0.03em] leading-[0.95] text-[clamp(2.25rem,7.5vw,5rem)]"
+                  className="h1-hero text-text-bright"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
                   <span className="block">Pay for AI,</span>
-                  <span className="block text-[var(--color-accent)]">in any token.</span>
+                  <span className="block text-accent">in any token.</span>
                 </h1>
 
-                <p className="mt-6 max-w-2xl text-[15px] sm:text-base text-[var(--color-text)] leading-relaxed">
+                <p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
                   Skip the credit card. Pay with 100+ cryptocurrencies directly
                   from your wallet. Low-friction, privacy-first payments
                   powered by Houdini Swap and the x402 protocol.
                 </p>
 
                 <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <Link href="/deposit" className="oma-btn oma-btn--primary">
-                    <span aria-hidden="true" className="text-[var(--color-text-inverse)]">
+                  <Link href="/deposit" className="bg-accent text-void hover:bg-accent-hover px-5 py-2.5 rounded-2xl font-medium transition-colors">
+                    <span aria-hidden="true" className="text-text-inverse">
                       ›
                     </span>
                     deposit now
                   </Link>
-                  <Link href="/swap" className="oma-btn oma-btn--secondary">
+                  <Link href="/swap" className="bg-surface text-text border border-border hover:bg-surface-elevated px-5 py-2.5 rounded-2xl font-medium transition-colors">
                     swap tokens
                   </Link>
-                  <span className="text-[11px] text-[var(--color-text-muted)] ml-1 tabular-nums">
-                    <span className="text-[var(--color-accent)]" aria-hidden="true">
+                  <span className="text-[11px] text-text-muted ml-1 tabular-nums">
+                    <span className="text-accent" aria-hidden="true">
                       ~
                     </span>{' '}
                     self-custodial wallet to API
@@ -245,17 +243,17 @@ export default function CryptoPaymentsPage() {
 
               <aside
                 aria-label="Document metadata"
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] min-w-0 relative overflow-hidden"
+                className="border border-border bg-surface min-w-0 relative overflow-hidden"
               >
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-60"
+                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
                 />
-                <div className="px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-panel)] flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+                <div className="px-3 py-2 border-b border-border bg-panel flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-text-muted">
                     Capabilities
                   </span>
-                  <span className="flex items-center gap-1.5 text-[10px] text-[var(--color-accent)]">
+                  <span className="flex items-center gap-1.5 text-[10px] text-accent">
                     <StatusDot />
                     <span className="sr-only">Status: </span>online
                   </span>
@@ -271,18 +269,18 @@ export default function CryptoPaymentsPage() {
                   ].map(([k, v]) => (
                     <div
                       key={k}
-                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-b-0"
+                      className="grid grid-cols-2 gap-2 px-3 py-1.5 border-b border-border last:border-b-0"
                     >
-                      <dt className="text-[var(--color-text-tertiary)] uppercase tracking-widest text-[10px]">
+                      <dt className="text-text-tertiary uppercase tracking-widest text-[10px]">
                         {k}
                       </dt>
-                      <dd className="text-[var(--color-text-secondary)] tabular-nums truncate text-right">
+                      <dd className="text-text-secondary tabular-nums truncate text-right">
                         {v}
                       </dd>
                     </div>
                   ))}
                 </dl>
-                <div className="px-3 py-2 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-tertiary)]">
+                <div className="px-3 py-2 border-t border-border text-[10px] text-text-tertiary">
                   last revised · {ISSUED}
                 </div>
               </aside>
@@ -293,7 +291,7 @@ export default function CryptoPaymentsPage() {
           <section
             id="features"
             aria-labelledby="features-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="02" title="Payment features" meta="core surface" />
             <h3 id="features-heading" className="sr-only">
@@ -304,20 +302,20 @@ export default function CryptoPaymentsPage() {
               {PAYMENT_FEATURES.map((feature, i) => (
                 <li
                   key={feature.title}
-                  className="group border border-[var(--color-border)] bg-[var(--color-surface)] p-5 hover:border-[var(--color-accent)]/40 transition-colors"
+                  className="group border border-border bg-surface p-5 hover:border-accent/40 transition-colors"
                 >
                   <div className="mb-3 flex items-center gap-3">
-                    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                    <span className="text-[10px] text-text-tertiary tabular-nums">
                       §{String(i + 1).padStart(2, '0')}
                     </span>
-                    <span className="flex h-8 w-8 items-center justify-center border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)]">
+                    <span className="flex h-8 w-8 items-center justify-center border border-accent/30 bg-accent-dim text-accent">
                       <feature.icon className="h-4 w-4" aria-hidden="true" />
                     </span>
-                    <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                    <h3 className="font-display text-[15px] font-semibold text-text-bright">
                       {feature.title}
                     </h3>
                   </div>
-                  <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                     {feature.body}
                   </p>
                 </li>
@@ -329,7 +327,7 @@ export default function CryptoPaymentsPage() {
           <section
             id="x402"
             aria-labelledby="x402-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="03" title="x402 protocol" meta="per-request" />
             <h3 id="x402-heading" className="sr-only">
@@ -337,29 +335,29 @@ export default function CryptoPaymentsPage() {
             </h3>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-start">
-              <p className="text-[13px] sm:text-sm text-[var(--color-text-secondary)] max-w-2xl">
+              <p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl">
                 OMA supports the x402 payment protocol for gasless
                 AI inference payments on Solana and Base chains. No pre-funded
                 account, no per-key provisioning.
               </p>
 
-              <ul className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+              <ul className="border border-border bg-surface divide-y divide-border">
                 {X402_FEATURES.map((feature) => (
                   <li
                     key={feature.title}
                     className="grid grid-cols-[2.5rem_2rem_minmax(0,1fr)] items-start gap-3 px-3 sm:px-4 py-3"
                   >
-                    <span className="text-[10px] text-[var(--color-text-tertiary)] tabular-nums">
+                    <span className="text-[10px] text-text-tertiary tabular-nums">
                       §
                     </span>
-                    <span className="flex h-6 w-6 items-center justify-center border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)]">
+                    <span className="flex h-6 w-6 items-center justify-center border border-accent/30 bg-accent-dim text-accent">
                       <feature.icon className="h-3 w-3" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[13px] sm:text-sm text-[var(--color-text-bright)]">
+                      <p className="text-[13px] sm:text-sm text-text-bright">
                         {feature.title}
                       </p>
-                      <p className="text-[11px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">
+                      <p className="text-[11px] sm:text-xs text-text-muted mt-0.5">
                         {feature.body}
                       </p>
                     </div>
@@ -373,7 +371,7 @@ export default function CryptoPaymentsPage() {
           <section
             id="tokens"
             aria-labelledby="tokens-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="04" title="Supported tokens" meta="100+ assets" />
             <h3 id="tokens-heading" className="sr-only">
@@ -384,23 +382,20 @@ export default function CryptoPaymentsPage() {
               {SUPPORTED_TOKENS.map((token) => (
                 <li
                   key={token.symbol}
-                  className="flex flex-col items-center border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center"
+                  className="flex flex-col items-center border border-border bg-surface p-3 text-center"
                 >
-                  <span className="mb-1 flex h-9 w-9 items-center justify-center border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[10px] font-mono font-bold text-[var(--color-accent)] tabular-nums">
-                    {token.symbol.slice(0, 2)}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-[var(--color-text-bright)] tracking-wider uppercase">
+                  <CryptoLogo symbol={token.symbol} size={36} className="mb-1" />
+                  <span className="text-[10px] sm:text-[11px] font-medium text-text-bright tracking-wider uppercase">
                     {token.symbol}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-[11px] sm:text-xs text-[var(--color-text-muted)]">
-              <span className="text-[var(--color-accent)]" aria-hidden="true">
+            <p className="mt-4 text-[11px] sm:text-xs text-text-muted">
+              <span className="text-accent" aria-hidden="true">
                 ~
               </span>{' '}
-              Plus 90+ additional tokens including major DeFi tokens,
-              stablecoins, and emerging chains.
+              Plus the long tail of Houdini-supported assets (100+). The list above is the on-ramp subset we use most often; the API can quote any pair the Houdini router knows.
             </p>
           </section>
 
@@ -408,7 +403,7 @@ export default function CryptoPaymentsPage() {
           <section
             id="wallets"
             aria-labelledby="wallets-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="05" title="Supported wallets" meta="self-custody" />
             <h3 id="wallets-heading" className="sr-only">
@@ -419,24 +414,24 @@ export default function CryptoPaymentsPage() {
               {WALLET_OPTIONS.map((wallet) => (
                 <li
                   key={wallet.name}
-                  className="flex items-center gap-3 border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+                  className="flex items-center gap-3 border border-border bg-surface p-4"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--color-accent)]/30 bg-[var(--color-accent-dim)] text-[var(--color-accent)] font-mono font-bold text-sm">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-accent/30 bg-accent-dim text-accent font-mono font-bold text-sm">
                     {wallet.name.charAt(0)}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text-bright)] truncate">
+                    <p className="text-[13px] font-semibold text-text-bright truncate">
                       {wallet.name}
                     </p>
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest truncate">
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest truncate">
                       {wallet.desc}
                     </p>
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-[11px] sm:text-xs text-[var(--color-text-muted)]">
-              <span className="text-[var(--color-accent)]" aria-hidden="true">
+            <p className="mt-4 text-[11px] sm:text-xs text-text-muted">
+              <span className="text-accent" aria-hidden="true">
                 ~
               </span>{' '}
               Nightly enables both Solana and EVM (Base) connections via a
@@ -448,26 +443,26 @@ export default function CryptoPaymentsPage() {
           <section
             id="flow"
             aria-labelledby="flow-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="06" title="How it works" meta="four steps" />
             <h3 id="flow-heading" className="sr-only">
               Deposit flow
             </h3>
 
-            <ol className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+            <ol className="border border-border bg-surface divide-y divide-border">
               {HOW_IT_STEPS.map((item) => (
                 <li
                   key={item.idx}
                   className="grid grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.4fr)] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3"
                 >
-                  <span className="text-[10px] sm:text-xs text-[var(--color-accent)] font-mono font-bold tabular-nums">
+                  <span className="text-[10px] sm:text-xs text-accent font-mono font-bold tabular-nums">
                     § {item.idx}
                   </span>
-                  <span className="text-[13px] sm:text-sm text-[var(--color-text-bright)]">
+                  <span className="text-[13px] sm:text-sm text-text-bright">
                     {item.title}
                   </span>
-                  <span className="hidden sm:inline text-[11px] sm:text-xs text-[var(--color-text-muted)]">
+                  <span className="hidden sm:inline text-[11px] sm:text-xs text-text-muted">
                     {item.body}
                   </span>
                 </li>
@@ -479,7 +474,7 @@ export default function CryptoPaymentsPage() {
           <section
             id="payment-links"
             aria-labelledby="payment-links-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="07" title="Payment links" meta="no wallet required" />
             <h3 id="payment-links-heading" className="sr-only">
@@ -487,29 +482,21 @@ export default function CryptoPaymentsPage() {
             </h3>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start">
-              <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+              <div className="border border-border bg-surface p-5">
                 <div className="mb-3 flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-                  <h3 className="font-syne text-[15px] font-semibold text-[var(--color-text-bright)]">
+                  <Link2 className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <h3 className="font-display text-[15px] font-semibold text-text-bright">
                     Generate payment links
                   </h3>
                 </div>
-                <p className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="mb-4 text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                   Create shareable payment links for AI API access. Recipients
                   can pay with crypto without needing to connect a wallet to
                   your platform.
                 </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/deposit"
-                    className="oma-btn oma-btn--primary"
-                  >
-                    generate a payment link
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </Link>
-                </div>
+                <PaymentLinkForm />
               </div>
-              <ul className="border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
+              <ul className="border border-border bg-surface divide-y divide-border">
                 {[
                   'Houdini-powered payment links with privacy tunnel',
                   'Automatic token conversion to USDC credits',
@@ -520,10 +507,10 @@ export default function CryptoPaymentsPage() {
                     className="flex items-start gap-3 px-3 sm:px-4 py-3"
                   >
                     <CheckCircle2
-                      className="h-4 w-4 shrink-0 text-[var(--color-accent)] mt-0.5"
+                      className="h-4 w-4 shrink-0 text-accent mt-0.5"
                       aria-hidden="true"
                     />
-                    <span className="text-[12.5px] sm:text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                    <span className="text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
                       {line}
                     </span>
                   </li>
@@ -536,34 +523,34 @@ export default function CryptoPaymentsPage() {
           <section
             id="procurement"
             aria-labelledby="procurement-heading"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
           >
             <SectionHeading index="08" title="Procurement" meta="next step" />
             <h3 id="procurement-heading" className="sr-only">
               Ready to deposit
             </h3>
 
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] px-5 sm:px-8 py-8 sm:py-10">
-              <p className="text-[15px] sm:text-base text-[var(--color-text-bright)] max-w-2xl leading-relaxed">
+            <div className="border border-border bg-surface px-5 sm:px-8 py-8 sm:py-10">
+              <p className="text-[15px] sm:text-base text-text-bright max-w-2xl leading-relaxed">
                 Deposit crypto. Start inferring in minutes.
               </p>
-              <p className="mt-3 text-[12px] sm:text-sm text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
+              <p className="mt-3 text-[12px] sm:text-sm text-text-secondary max-w-xl leading-relaxed">
                 No hidden fees. Full transparency. Pay with the token you
                 already hold.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/deposit" className="oma-btn oma-btn--primary">
-                  <span aria-hidden="true" className="text-[var(--color-text-inverse)]">
+                <Link href="/deposit" className="bg-accent text-void hover:bg-accent-hover px-5 py-2.5 rounded-2xl font-medium transition-colors">
+                  <span aria-hidden="true" className="text-text-inverse">
                     ›
                   </span>
                   deposit crypto
                 </Link>
-                <Link href="/swap" className="oma-btn oma-btn--secondary">
+                <Link href="/swap" className="bg-surface text-text border border-border hover:bg-surface-elevated px-5 py-2.5 rounded-2xl font-medium transition-colors">
                   swap tokens
                 </Link>
                 <Link
                   href="/pricing"
-                  className="text-[11px] sm:text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-bright)] underline underline-offset-4 transition-colors"
+                  className="text-[11px] sm:text-xs text-text-muted hover:text-text-bright underline underline-offset-4 transition-colors"
                 >
                   see the full price list →
                 </Link>
@@ -574,7 +561,7 @@ export default function CryptoPaymentsPage() {
           {/* ===== FOOTER NAV ===== */}
           <section
             aria-label="Related documents"
-            className="border-t border-[var(--color-border)] mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
           >
             <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
               {[
@@ -586,7 +573,7 @@ export default function CryptoPaymentsPage() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                    className="text-text-muted hover:text-accent transition-colors"
                   >
                     {l.label}
                   </Link>

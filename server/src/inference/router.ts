@@ -1,10 +1,9 @@
 import crypto from "crypto";
 import { getModel } from "./models.js";
-import { selectProvider } from "./provider-selector.js";
 import { callProvider } from "./call-provider.js";
 import type { Provider } from "./provider-selector.js";
 import { countMessageTokens, refundCreditsWithRetry } from "./credit-preflight.js";
-import { createTrackingStream, getStreamMetrics } from "./stream-tracker.js";
+import { createTrackingStream } from "./stream-tracker.js";
 import { calculateActualCost, getModelPricing, getEstimatedOutputTokens } from "./billing-service.js";
 import { recordUsage } from "./usage-service.js";
 import { getStakingDiscount, preflightDeduction } from "../credits/index.js";
@@ -14,10 +13,11 @@ import {
   PROVIDER_ERROR_TYPES,
   setErrorAttributes,
 } from "../tracing.js";
+import { findProvidersForModel, getCandidateProviders, recordFailover } from "./cross-provider-router.js";
+import { getModelIdForProvider } from "./provider-selector.js";
 
 export { getModelPricing } from "./billing-service.js";
-export { getStreamMetrics };
-export { selectProvider };
+export { selectProvider } from "./provider-selector.js";
 export type { Provider } from "./provider-selector.js";
 
 const MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024;
@@ -38,7 +38,14 @@ function validateRequest(body: { model?: string; messages?: import("./types.js")
   }
 }
 
-async function callProviderWithRefund(provider: Provider, providerModelId: string, body: Record<string, unknown>, userId: string, estimatedCostCents: string, signal?: AbortSignal): Promise<Response> {
+async function callProviderWithRefund(
+  provider: Provider,
+  providerModelId: string,
+  body: Record<string, unknown>,
+  userId: string,
+  estimatedCostCents: string,
+  signal?: AbortSignal,
+): Promise<Response> {
   try {
     return signal !== undefined
       ? await callProvider(provider, providerModelId, body, undefined, signal)
@@ -57,9 +64,17 @@ async function callProviderWithRefund(provider: Provider, providerModelId: strin
 }
 
 async function handleNonStreamingResponse(
-  json: unknown, modelId: string, inputTokens: number, discountPercent: number,
-  userId: string, apiKeyId: string, provider: string, estimatedCostCents: string,
-  requestId: string, requestStartTime: number, span: Span,
+  json: unknown,
+  modelId: string,
+  inputTokens: number,
+  discountPercent: number,
+  userId: string,
+  apiKeyId: string,
+  provider: string,
+  estimatedCostCents: string,
+  requestId: string,
+  requestStartTime: number,
+  span: Span,
 ): Promise<{ response: Response; provider: string; inputTokens: number; outputTokens: number }> {
   const actualInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
   const actualOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
@@ -80,14 +95,18 @@ async function handleNonStreamingResponse(
   return { response, provider, inputTokens: actualInput, outputTokens: actualOutput };
 }
 
-export async function handleChatCompletion(userId: string, apiKeyId: string, body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown }, signal?: AbortSignal): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
+export async function handleChatCompletion(
+  userId: string,
+  apiKeyId: string,
+  body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown },
+  signal?: AbortSignal,
+): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
   const requestId = crypto.randomUUID();
   const requestStartTime = Date.now();
   validateRequest(body);
 
   return trace.getTracer("oma-server").startActiveSpan("llm.inference.handleChatCompletion", { kind: SpanKind.INTERNAL }, async (span) => {
     try {
-      let _ttftMs: number | undefined;
       span.setAttribute("user.id", userId);
       span.setAttribute(LLM_ATTRS.REQUEST_ID, requestId);
       span.setAttribute(LLM_ATTRS.MODEL, body.model);
@@ -114,43 +133,78 @@ export async function handleChatCompletion(userId: string, apiKeyId: string, bod
       const deducted = await preflightDeduction(userId, estimatedCostCents);
       if (!deducted) throw Object.assign(new Error("Insufficient credits"), { status: 402 });
 
-      const { provider, providerModelId } = await selectProvider(modelId);
-      span.setAttribute(LLM_ATTRS.PROVIDER, provider);
-      span.setAttribute("llm.provider_model_id", providerModelId);
+      // Find the ordered list of candidate providers for this model.
+      const candidates = await getCandidateProviders(modelId, model);
+      const providersToTry: Provider[] = candidates
+        ? [candidates.primary, ...candidates.alternates]
+        : [];
+      if (providersToTry.length === 0) {
+        throw Object.assign(new Error("No inference providers available for this model"), { status: 503 });
+      }
+      // Touch findProvidersForModel so unused-import doesn't fire when the
+      // call site (test) pre-resolves it for inspection.
+      void findProvidersForModel;
 
-      const resp = signal !== undefined
-        ? await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal)
-        : await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents);
+      let lastError: unknown = null;
+      for (let i = 0; i < providersToTry.length; i++) {
+        const provider = providersToTry[i];
+        const providerModelId = getModelIdForProvider(model, provider, modelId);
+        try {
+          const resp = signal !== undefined
+            ? await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal)
+            : await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents);
 
-      if (body.stream) {
-        if (!resp.body) {
-          await refundCreditsWithRetry(userId, estimatedCostCents);
-          throw Object.assign(new Error("No response body for streaming"), { status: 502 });
-        }
-        const trackingStream = createTrackingStream(
-          resp.body as ReadableStream<Uint8Array>,
-          model, modelId, inputTokens, discountPercent, userId, apiKeyId, provider, estimatedCostCents, pricing, requestId,
-          async (timeToFirstToken, totalTokens, durationMs) => {
-            _ttftMs = timeToFirstToken;
-            span.setAttribute(LLM_ATTRS.TIME_TO_FIRST_TOKEN_MS, timeToFirstToken);
-            if (totalTokens > 0 && durationMs > 0)
-              span.setAttribute(LLM_ATTRS.TOKEN_THROUGHPUT_PER_SEC, totalTokens / (durationMs / 1000));
-            span.setAttribute("llm.streaming_duration_ms", durationMs);
+          span.setAttribute(LLM_ATTRS.PROVIDER, provider);
+          span.setAttribute("llm.provider_model_id", providerModelId);
+
+          if (body.stream) {
+            if (!resp.body) {
+              await refundCreditsWithRetry(userId, estimatedCostCents);
+              throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+            }
+            const trackingStream = createTrackingStream(
+              resp.body as ReadableStream<Uint8Array>,
+              model, modelId, inputTokens, discountPercent, userId, apiKeyId, provider, estimatedCostCents, pricing, requestId,
+              async (timeToFirstToken, totalTokens, durationMs) => {
+                span.setAttribute(LLM_ATTRS.TIME_TO_FIRST_TOKEN_MS, timeToFirstToken);
+                if (totalTokens > 0 && durationMs > 0)
+                  span.setAttribute(LLM_ATTRS.TOKEN_THROUGHPUT_PER_SEC, totalTokens / (durationMs / 1000));
+                span.setAttribute("llm.streaming_duration_ms", durationMs);
+              }
+            );
+            const response = new Response(trackingStream as ReadableStream<Uint8Array>, {
+              status: resp.status,
+              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
+            });
+            span.setAttribute("llm.response_start_time_ms", Date.now() - requestStartTime);
+            span.setStatus({ code: SpanStatusCode.OK });
+            return { response, provider, inputTokens };
           }
-        );
-        const response = new Response(trackingStream as ReadableStream<Uint8Array>, {
-          status: resp.status,
-          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
-        });
-        span.setAttribute("llm.response_start_time_ms", Date.now() - requestStartTime);
-        span.setStatus({ code: SpanStatusCode.OK });
-        // Note: outputTokens is not available for streaming responses until the stream completes.
-        // Usage is recorded asynchronously via the stream tracker's handleStreamEnd function.
-        return { response, provider, inputTokens };
+
+          const json = await resp.json();
+          return handleNonStreamingResponse(json, modelId, inputTokens, discountPercent, userId, apiKeyId, provider, estimatedCostCents, requestId, requestStartTime, span);
+        } catch (err) {
+          lastError = err;
+          // Try the next candidate provider (failover). Skip the trailing
+          // entry — there's nothing after it.
+          if (i < providersToTry.length - 1) {
+            const nextProvider = providersToTry[i + 1];
+            try {
+              recordFailover({
+                modelId,
+                fromProvider: provider,
+                toProvider: nextProvider,
+                latencyMs: Date.now() - requestStartTime,
+              });
+            } catch {
+              // stats errors are non-fatal
+            }
+          }
+        }
       }
 
-      const json = await resp.json();
-      return handleNonStreamingResponse(json, modelId, inputTokens, discountPercent, userId, apiKeyId, provider, estimatedCostCents, requestId, requestStartTime, span);
+      // All providers failed. Surface the last error.
+      throw lastError ?? Object.assign(new Error("All providers failed"), { status: 502 });
     } catch (err) {
       const errorType = (err as { status?: number }).status
         ? (err as { type?: string }).type ?? PROVIDER_ERROR_TYPES.UNKNOWN_ERROR

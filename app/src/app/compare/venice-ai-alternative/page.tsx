@@ -13,7 +13,7 @@ export default function VeniceAIAlternativePage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]">
+          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-accent">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Home
           </Link>
@@ -26,18 +26,18 @@ export default function VeniceAIAlternativePage() {
           className="mb-16"
         >
           <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-3 py-1.5">
-              <Layers className="h-3.5 w-3.5 text-[var(--color-accent)]" />
-              <span className="text-xs font-mono font-semibold text-[var(--color-accent)]">Gateway Layer</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5">
+              <Layers className="h-3.5 w-3.5 text-accent" />
+              <span className="text-xs font-mono font-semibold text-accent">Gateway Layer</span>
             </div>
           </div>
 
-          <h1 className="mb-6 font-syne text-4xl font-bold tracking-tight md:text-5xl" style={{ color: 'var(--color-text-bright)' }}>
+          <h1 className="h1-page mb-6" style={{ color: 'var(--color-text-bright)' }}>
             Venice AI Alternative —
             <span className="gradient-text">Gateway Layer for Easy Access</span>
           </h1>
 
-          <p className="max-w-2xl text-base leading-relaxed text-[var(--color-text)]">
+          <p className="max-w-2xl text-base leading-relaxed text-text">
             OMA sits on top of Venice AI, adding intelligent routing, credit management, and a developer-friendly dashboard while maintaining Venice&apos;s powerful inference capabilities.
           </p>
         </motion.div>
@@ -50,8 +50,8 @@ export default function VeniceAIAlternativePage() {
         >
           <div className="mb-6">
             <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">{'//'} enhancements</span>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <span className="font-mono text-xs text-text-muted">{'//'} enhancements</span>
             </div>
           </div>
 
@@ -66,19 +66,19 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-accent)]/30"
+                className="group relative overflow-hidden rounded-xl border border-border bg-panel p-6 transition-all hover:border-accent/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-2">
-                    <span className="font-mono text-xs text-[var(--color-text-muted)]">{card.label}</span>
-                    <div className="h-px flex-1 bg-[var(--color-border)]" />
+                    <span className="font-mono text-xs text-text-muted">{card.label}</span>
+                    <div className="h-px flex-1 bg-border" />
                   </div>
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <card.icon className="h-5 w-5 text-[var(--color-accent)]" />
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface">
+                    <card.icon className="h-5 w-5 text-accent" />
                   </div>
-                  <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
+                  <h3 className="mb-2 font-display text-base font-semibold text-text-bright">{card.title}</h3>
+                  <p className="text-sm leading-relaxed text-text-muted">{card.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -93,8 +93,8 @@ export default function VeniceAIAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">What OMA Adds to Venice</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">What OMA Adds to Venice</h2>
             </div>
           </div>
 
@@ -112,14 +112,14 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + index * 0.05, ease: 'easeOut' }}
-                className="group flex items-start gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
+                className="group flex items-start gap-4 rounded-lg border border-border bg-panel p-4 transition-all hover:border-accent/30"
               >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-accent/30 bg-accent/10">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                 </div>
                 <div>
-                  <span className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{item.title}: </span>
-                  <span className="text-sm text-[var(--color-text)]">{item.desc}</span>
+                  <span className="font-display text-sm font-semibold text-text-bright">{item.title}: </span>
+                  <span className="text-sm text-text">{item.desc}</span>
                 </div>
               </motion.div>
             ))}
@@ -134,8 +134,8 @@ export default function VeniceAIAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Still Powered by Venice</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">Still Powered by Venice</h2>
             </div>
           </div>
 
@@ -151,13 +151,13 @@ export default function VeniceAIAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.6 + i * 0.1, ease: 'easeOut' }}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
+                className="rounded-xl border border-border bg-surface p-5"
               >
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
-                  <h3 className="font-syne text-sm font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
+                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <h3 className="font-display text-sm font-semibold text-text-bright">{card.title}</h3>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)]">{card.desc}</p>
+                <p className="text-sm text-text-muted">{card.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -167,10 +167,10 @@ export default function VeniceAIAlternativePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
-          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center"
+          className="rounded-xl border border-border bg-panel p-8 text-center"
         >
-          <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Start Using OMA Today</h2>
-          <p className="mb-6 text-sm text-[var(--color-text)]">
+          <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-text-bright">Start Using OMA Today</h2>
+          <p className="mb-6 text-sm text-text">
             Get the Venice experience with added convenience. No account needed—just connect your wallet.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -184,14 +184,14 @@ export default function VeniceAIAlternativePage() {
           </div>
         </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-[var(--color-text-muted)]">
-          <Link href="/compare/openrouter-alternative" className="hover:text-[var(--color-accent)] transition-colors">OpenRouter Alternative</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/crypto-payments" className="hover:text-[var(--color-accent)] transition-colors">Crypto Payments</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/private-ai-api" className="hover:text-[var(--color-accent)] transition-colors">Private AI API</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+          <Link href="/compare/openrouter-alternative" className="hover:text-accent transition-colors">OpenRouter Alternative</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/crypto-payments" className="hover:text-accent transition-colors">Crypto Payments</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/private-ai-api" className="hover:text-accent transition-colors">Private AI API</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/pricing" className="hover:text-accent transition-colors">Pricing</Link>
         </div>
       </div>
     </div>

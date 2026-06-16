@@ -172,7 +172,7 @@ export async function scheduleDepositNotifications(): Promise<void> {
   logger.info("[notifications] Deposit notification scheduler started");
 }
 
-async function processPendingDeposits(): Promise<void> {
+export async function processPendingDeposits(): Promise<void> {
   const pendingDeposits = await db
     .select({
       deposit: deposits,
@@ -205,7 +205,7 @@ async function processPendingDeposits(): Promise<void> {
   }
 }
 
-async function retryFailedWebhooks(): Promise<void> {
+export async function retryFailedWebhooks(): Promise<void> {
   const failedNotifications = await db
     .select()
     .from(webhookSubscriptions)

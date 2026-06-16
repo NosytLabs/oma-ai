@@ -40,12 +40,12 @@ export class ErrorBoundary extends Component<Props, State> {
       }
       return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--color-red)]/30 bg-[var(--color-red)]/10">
-            <AlertTriangle className="h-8 w-8 text-[var(--color-red)]" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red/30 bg-red/10">
+            <AlertTriangle className="h-8 w-8 text-red" />
           </div>
           <div className="text-center">
-            <h2 className="font-mono text-[var(--color-text)] text-lg mb-2">System Fault</h2>
-            <p className="text-sm text-[var(--color-text-muted)] max-w-md font-mono">
+            <h2 className="font-mono text-text text-lg mb-2">System Fault</h2>
+            <p className="text-sm text-text-muted max-w-md font-mono">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
           </div>

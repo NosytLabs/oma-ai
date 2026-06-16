@@ -62,7 +62,7 @@ export function SkeletonCard({ rows = 4 }: { rows?: number }) {
 
 export function SkeletonTableRow({ columns = 4, rowIndex = 0 }: { columns?: number; rowIndex?: number }) {
   return (
-    <tr className="border-b border-[var(--color-border)] animate-pulse">
+    <tr className="border-b border-border animate-pulse">
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="py-4 px-5">
           <Skeleton
@@ -79,7 +79,7 @@ export function SkeletonTableRow({ columns = 4, rowIndex = 0 }: { columns?: numb
 export function SkeletonStatsCard() {
   return (
     <div
-      className="border border-[var(--color-border)] bg-[var(--color-panel)] p-6 text-center animate-pulse"
+      className="border border-border bg-panel p-6 text-center animate-pulse"
       role="presentation"
       aria-label="Loading statistics"
     >
@@ -92,7 +92,7 @@ export function SkeletonStatsCard() {
 export function SkeletonCodeBlock({ lines = 3 }: { lines?: number }) {
   return (
     <div
-      className="border border-[var(--color-border)] bg-[var(--color-panel)] p-6 rounded-lg font-mono animate-pulse"
+      className="border border-border bg-panel p-6 rounded-lg font-mono animate-pulse"
       role="presentation"
       aria-label="Loading code"
     >
@@ -107,8 +107,8 @@ export function SkeletonCodeBlock({ lines = 3 }: { lines?: number }) {
 
 export function SkeletonTable({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)]">
-      <div className="border-b border-[var(--color-border)] bg-gradient-to-r from-indigo-500/5 to-purple-500/5 px-6 py-4">
+    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+      <div className="border-b border-border bg-gradient-to-r from-indigo-500/5 to-purple-500/5 px-6 py-4">
         <div className="flex gap-4">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-3 w-20" />
@@ -118,7 +118,7 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
         </div>
       </div>
       <table className="w-full">
-        <tbody className="divide-y divide-[var(--color-border)]/50">
+        <tbody className="divide-y divide-border/50">
           {Array.from({ length: rows }).map((_, i) => (
             <tr key={i} className="flex gap-4 px-6 py-4">
               <Skeleton className="h-4 w-24" />
@@ -159,7 +159,7 @@ export function SkeletonEmptyState({ message = 'No data yet' }: { message?: stri
     <div className="card flex items-center justify-center py-12">
       <div className="text-center">
         <Skeleton className="h-8 w-8 mx-auto mb-2 opacity-50" />
-        <span className="text-sm text-[var(--color-text-secondary)]">{message}</span>
+        <span className="text-sm text-text-secondary">{message}</span>
       </div>
     </div>
   )

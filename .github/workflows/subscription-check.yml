@@ -1,0 +1,38 @@
+name: Subscription Check
+
+on:
+  schedule:
+    # Hourly. Was 1h setInterval in server/src/jobs/subscription-cron.ts.
+    # Subscription periods are monthly so hourly is sufficient — most
+    # ticks are no-ops.
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-subscription-check
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Process expired subscriptions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run subscription check
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npx tsx src/jobs/cli-runner.ts subscription-check

@@ -26,7 +26,7 @@ export function ThemeToggle() {
       aria-pressed={isLight}
       title={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
       data-theme-toggle
-      className="hidden md:inline-flex items-center justify-center w-8 h-8 rounded-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 transition-all duration-150"
+      className="hidden md:inline-flex items-center justify-center w-11 h-11 rounded-sm text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-all duration-150"
     >
       {isLight ? (
         // Moon — shown when current theme is light; clicking goes back to dark.

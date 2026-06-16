@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useId, useEffect, useRef, ReactNode } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 
 type ToastType = 'success' | 'error' | 'info'
@@ -21,12 +21,21 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | null>(null)
 
+const noop = () => {}
+const noopContext: ToastContextType = {
+  toast: noop,
+  success: noop,
+  error: noop,
+  info: noop,
+}
+
 export function useToast() {
   const context = useContext(ToastContext)
-  if (!context) {
-    throw new Error('useToast must be used within ToastProvider')
-  }
-  return context
+  // SSR-safe: when the provider hasn't mounted yet (e.g. during server
+  // pre-render of a client component, or before the lazy-loaded
+  // ToastProvider hydrates), return a no-op stub instead of throwing.
+  // Real toasts work normally once the provider is mounted on the client.
+  return context ?? noopContext
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -89,15 +98,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; onDismiss: () => void; prefersReducedMotion?: boolean | null }) {
   const motionPrefersReducedMotion = prefersReducedMotion ?? false
   const icons = {
-    success: <CheckCircle2 className="h-5 w-5 text-[var(--color-success)] shrink-0" />,
-    error: <AlertTriangle className="h-5 w-5 text-[var(--color-error)] shrink-0" />,
-    info: <Info className="h-5 w-5 text-[var(--color-info)] shrink-0" />,
+    success: <CheckCircle2 className="h-5 w-5 text-success shrink-0" />,
+    error: <AlertTriangle className="h-5 w-5 text-error shrink-0" />,
+    info: <Info className="h-5 w-5 text-info shrink-0" />,
   }
 
   const styles = {
-    success: 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10',
-    error: 'border-[var(--color-error)]/30 bg-[var(--color-error)]/10',
-    info: 'border-[var(--color-info)]/30 bg-[var(--color-info)]/10',
+    success: 'border-success/30 bg-success/10',
+    error: 'border-error/30 bg-error/10',
+    info: 'border-info/30 bg-info/10',
   }
 
   const animationVariants = {
@@ -107,7 +116,7 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
   }
 
   return (
-    <motion.div
+    <m.div
       initial={animationVariants.initial}
       animate={animationVariants.animate}
       exit={animationVariants.exit}
@@ -115,14 +124,14 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
       className={`flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm min-w-[280px] max-w-[400px] ${styles[toast.type]}`}
     >
       {icons[toast.type]}
-      <span className="flex-1 text-sm font-medium text-[var(--color-text)]">{toast.message}</span>
+      <span className="flex-1 text-sm font-medium text-text">{toast.message}</span>
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-[var(--color-text-bright)]/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+        className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-text-bright/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
-        <X className="h-4 w-4 text-[var(--color-text-secondary)]" />
+        <X className="h-4 w-4 text-text-secondary" />
       </button>
-    </motion.div>
+    </m.div>
   )
 }

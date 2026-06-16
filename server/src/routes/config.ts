@@ -9,8 +9,8 @@ import { logger } from "../lib/logger.js";
 
 export const configRoutes = new Hono<OmaEnv>();
 
-configRoutes.use("*", sessionAuth);
-configRoutes.use("*", requireAdmin());
+configRoutes.use("/v1/admin/*", sessionAuth);
+configRoutes.use("/v1/admin/*", requireAdmin());
 
 const feeConfigSchema = z.object({
   config: z.object({

@@ -31,17 +31,17 @@ export function CopyButton({ text }: { text: string }) {
         : 'Copy snippet to clipboard'
   const colorClass =
     state === 'success'
-      ? 'text-[var(--color-success)]'
+      ? 'text-success'
       : state === 'error'
-        ? 'text-[var(--color-error)]'
-        : 'text-[var(--color-text-muted)]'
+        ? 'text-error'
+        : 'text-text-muted'
 
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       onClick={handleClick}
-      className={`text-[10px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-95 rounded-sm px-1.5 py-0.5 transition-colors ${colorClass}`}
+      className={`text-[10px] uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 rounded-sm px-1.5 py-0.5 transition-colors ${colorClass}`}
     >
       {label}
     </button>

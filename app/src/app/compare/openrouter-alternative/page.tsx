@@ -12,7 +12,7 @@ export default function OpenRouterAlternativePage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]">
+          <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-mono text-text-muted transition-colors hover:text-accent">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Home
           </Link>
@@ -25,18 +25,18 @@ export default function OpenRouterAlternativePage() {
           className="mb-16"
         >
           <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/10 px-3 py-1.5">
-              <Shield className="h-3.5 w-3.5 text-[var(--color-accent)]" />
-              <span className="text-xs font-mono font-semibold text-[var(--color-accent)]">Privacy-First Alternative</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5">
+              <Shield className="h-3.5 w-3.5 text-accent" />
+              <span className="text-xs font-mono font-semibold text-accent">Privacy-First Alternative</span>
             </div>
           </div>
 
-          <h1 className="mb-6 font-syne text-4xl font-bold tracking-tight md:text-5xl text-[var(--color-text-bright)]">
+          <h1 className="h1-page mb-6 text-text-bright">
             OpenRouter Alternative for{' '}
             <span className="gradient-text">Private AI Inference</span>
           </h1>
 
-          <p className="max-w-2xl text-base leading-relaxed text-[var(--color-text)]">
+          <p className="max-w-2xl text-base leading-relaxed text-text">
             Tired of account requirements and data logging? OMA delivers Venice-powered AI inference with a privacy-first approach, crypto-native payments, and zero friction.
           </p>
         </motion.div>
@@ -48,8 +48,8 @@ export default function OpenRouterAlternativePage() {
           className="mb-16"
         >
           <div className="mb-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">{'//'} core-advantages</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+            <span className="font-mono text-xs text-text-muted">{'//'} core-advantages</span>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -64,16 +64,16 @@ export default function OpenRouterAlternativePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 transition-all hover:border-[var(--color-accent)]/30"
+                className="group relative overflow-hidden rounded-xl border border-border bg-panel p-6 transition-all hover:border-accent/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="relative flex gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <card.icon className="h-5 w-5 text-[var(--color-accent)]" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface">
+                    <card.icon className="h-5 w-5 text-accent" />
                   </div>
                   <div>
-                    <h3 className="mb-2 font-syne text-base font-semibold text-[var(--color-text-bright)]">{card.title}</h3>
-                    <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
+                    <h3 className="mb-2 font-display text-base font-semibold text-text-bright">{card.title}</h3>
+                    <p className="text-sm leading-relaxed text-text-muted">{card.desc}</p>
                   </div>
                 </div>
               </motion.div>
@@ -89,8 +89,8 @@ export default function OpenRouterAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Why Developers Choose OMA</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">Why Developers Choose OMA</h2>
             </div>
           </div>
 
@@ -108,12 +108,12 @@ export default function OpenRouterAlternativePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + i * 0.05, ease: 'easeOut' }}
-                className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-all hover:border-[var(--color-accent)]/30"
+                className="flex items-center gap-3 rounded-lg border border-border bg-panel p-4 transition-all hover:border-accent/30"
               >
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10">
-                  <CheckCircle className="h-3 w-3 text-[var(--color-accent)]" />
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-accent/30 bg-accent/10">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                 </div>
-                <span className="font-mono text-sm text-[var(--color-text)]">{feature}</span>
+                <span className="font-mono text-sm text-text">{feature}</span>
               </motion.div>
             ))}
           </div>
@@ -127,21 +127,21 @@ export default function OpenRouterAlternativePage() {
         >
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-              <h2 className="font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Compare: OMA vs OpenRouter</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-bright">Compare: OMA vs OpenRouter</h2>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]">
+          <div className="overflow-hidden rounded-xl border border-border bg-panel">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[var(--color-border)]">
-                  <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Feature</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">OpenRouter</th>
-                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">OMA</th>
+                <tr className="border-b border-border">
+                  <th className="p-4 text-left font-mono text-xs font-semibold uppercase tracking-wider text-text-muted">Feature</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-text-muted">OpenRouter</th>
+                  <th className="p-4 text-center font-mono text-xs font-semibold uppercase tracking-wider text-accent">OMA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className="divide-y divide-border">
                 {[
                   { feature: 'Account Required', openrouter: 'Yes', oma: 'No', highlight: true },
                   { feature: 'KYC Verification', openrouter: 'Yes', oma: 'No', highlight: true },
@@ -149,10 +149,10 @@ export default function OpenRouterAlternativePage() {
                   { feature: 'Data Retention', openrouter: 'Full Logging', oma: 'Minimal', highlight: true },
                   { feature: 'Dashboard', openrouter: 'Yes', oma: 'Yes', highlight: false },
                 ].map((row, i) => (
-                  <tr key={i} className={`${row.highlight ? 'bg-[var(--color-accent)]/5' : ''} transition-colors hover:bg-[var(--color-surface)]`}>
-                    <td className="p-4 font-mono text-sm text-[var(--color-text)]">{row.feature}</td>
-                    <td className="p-4 text-center font-mono text-sm text-[var(--color-text-muted)]">{row.openrouter}</td>
-                    <td className="p-4 text-center font-mono text-sm font-semibold text-[var(--color-accent)]">{row.oma}</td>
+                  <tr key={i} className={`${row.highlight ? 'bg-accent/5' : ''} transition-colors hover:bg-surface`}>
+                    <td className="p-4 font-mono text-sm text-text">{row.feature}</td>
+                    <td className="p-4 text-center font-mono text-sm text-text-muted">{row.openrouter}</td>
+                    <td className="p-4 text-center font-mono text-sm font-semibold text-accent">{row.oma}</td>
                   </tr>
                 ))}
               </tbody>
@@ -164,10 +164,10 @@ export default function OpenRouterAlternativePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.7, ease: 'easeOut' }}
-          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center"
+          className="rounded-xl border border-border bg-panel p-8 text-center"
         >
-          <h2 className="mb-3 font-syne text-2xl font-bold tracking-tight text-[var(--color-text-bright)]">Ready to Switch?</h2>
-          <p className="mb-6 text-sm text-[var(--color-text)]">
+          <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-text-bright">Ready to Switch?</h2>
+          <p className="mb-6 text-sm text-text">
             Get started in seconds. Connect your wallet, deposit credits, and start building.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -181,14 +181,14 @@ export default function OpenRouterAlternativePage() {
           </div>
         </motion.div>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-[var(--color-text-muted)]">
-          <Link href="/compare/venice-ai-alternative" className="hover:text-[var(--color-accent)] transition-colors">Venice AI Alternative</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/private-ai-api" className="hover:text-[var(--color-accent)] transition-colors">Private AI API</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/crypto-payments" className="hover:text-[var(--color-accent)] transition-colors">Crypto Payments</Link>
-          <span className="text-[var(--color-border)]">{'//'}</span>
-          <Link href="/pricing" className="hover:text-[var(--color-accent)] transition-colors">Pricing</Link>
+        <div className="mt-12 flex flex-wrap justify-center gap-4 font-mono text-xs text-text-muted">
+          <Link href="/compare/venice-ai-alternative" className="hover:text-accent transition-colors">Venice AI Alternative</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/private-ai-api" className="hover:text-accent transition-colors">Private AI API</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/crypto-payments" className="hover:text-accent transition-colors">Crypto Payments</Link>
+          <span className="text-border">{'//'}</span>
+          <Link href="/pricing" className="hover:text-accent transition-colors">Pricing</Link>
         </div>
       </div>
     </div>

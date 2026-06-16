@@ -49,20 +49,20 @@ export function ErrorsSection() {
       </div>
 
       <SubHeading id="err-common">Common errors</SubHeading>
-      <div className="mb-8 overflow-hidden rounded-lg border border-[var(--color-border)]">
+      <div className="mb-8 overflow-hidden rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/40">
-              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            <tr className="border-b border-border bg-surface/40">
+              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                 Code
               </th>
-              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                 Type
               </th>
-              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                 Description
               </th>
-              <th className="hidden px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] md:table-cell">
+              <th className="hidden px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-tertiary md:table-cell">
                 Fix
               </th>
             </tr>
@@ -71,16 +71,16 @@ export function ErrorsSection() {
             {ERROR_CODES.map((e, i) => (
               <tr
                 key={e.code}
-                className={`border-b border-[var(--color-border)]/40 transition-colors last:border-b-0 hover:bg-[var(--color-surface)]/30 ${
-                  i % 2 === 1 ? 'bg-[var(--color-surface)]/15' : ''
+                className={`border-b border-border/40 transition-colors last:border-b-0 hover:bg-surface/30 ${
+                  i % 2 === 1 ? 'bg-surface/15' : ''
                 }`}
               >
-                <td className="px-4 py-3 font-mono font-bold text-[var(--color-error)]">{e.code}</td>
-                <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-warning)]">
+                <td className="px-4 py-3 font-mono font-bold text-error">{e.code}</td>
+                <td className="px-4 py-3 font-mono text-[13px] text-warning">
                   {e.type}
                 </td>
-                <td className="px-4 py-3 text-[13px] text-[var(--color-text-muted)]">{e.desc}</td>
-                <td className="hidden px-4 py-3 text-[13px] text-[var(--color-text-muted)] md:table-cell">
+                <td className="px-4 py-3 text-[13px] text-text-muted">{e.desc}</td>
+                <td className="hidden px-4 py-3 text-[13px] text-text-muted md:table-cell">
                   {e.fix}
                 </td>
               </tr>
@@ -90,9 +90,9 @@ export function ErrorsSection() {
       </div>
 
       <SubHeading id="err-retry">Retry pattern</SubHeading>
-      <p className="mb-3 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+      <p className="mb-3 text-[13px] leading-relaxed text-text-muted">
         A reference retry loop that respects the{' '}
-        <code className="rounded border border-[var(--color-border)]/60 bg-[var(--color-panel)] px-1 font-mono text-[0.85em] text-[var(--color-accent)]">
+        <code className="rounded border border-border/60 bg-panel px-1 font-mono text-[0.85em] text-accent">
           X-RateLimit-Reset
         </code>{' '}
         header and uses exponential backoff for transient 5xx responses.

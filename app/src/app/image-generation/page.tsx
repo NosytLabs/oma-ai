@@ -19,12 +19,23 @@ const SIZE_OPTIONS = [
   { label: 'Small Square', value: '512x512' },
 ]
 
+const STYLE_OPTIONS = [
+  { label: 'Realistic', value: 'realistic' },
+  { label: 'Illustration', value: 'illustration' },
+  { label: '3D', value: '3d' },
+  { label: 'Anime', value: 'anime' },
+] as const
+
+const CREDITS_PER_IMAGE = 5
+const USD_PER_CREDIT = 0.0025
+
 const API_URL = '/api/v1/images/generations'
 
 export default function ImageGenerationPage() {
   const [prompt, setPrompt] = useState('')
   const [model, setModel] = useState('sdxl')
   const [size, setSize] = useState('1024x1024')
+  const [style, setStyle] = useState<string>('')
   const [count, setCount] = useState(1)
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<string[]>([])
@@ -37,6 +48,8 @@ export default function ImageGenerationPage() {
     setLoading(true)
     setError(null)
 
+    const enhancedPrompt = style ? `${prompt.trim()}, ${style} style` : prompt.trim()
+
     try {
       const resp = await fetch(API_URL, {
         method: 'POST',
@@ -44,7 +57,7 @@ export default function ImageGenerationPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model, prompt: prompt.trim(), n: count, size }),
+        body: JSON.stringify({ model, prompt: enhancedPrompt, n: count, size }),
       })
 
       if (resp.status === 401) {
@@ -66,7 +79,7 @@ export default function ImageGenerationPage() {
     } finally {
       setLoading(false)
     }
-  }, [prompt, model, count, size, loading, toast])
+  }, [prompt, model, count, size, style, loading, toast])
 
   const downloadImage = useCallback(async (url: string, index: number) => {
     try {
@@ -83,30 +96,31 @@ export default function ImageGenerationPage() {
   }, [toast])
 
   return (
-    <div className="min-h-screen bg-[var(--color-void)]">
+    <div className="min-h-screen bg-void">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="mb-2 text-sm font-medium text-[var(--color-accent)]">OMA AI Gateway</div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text)] sm:text-4xl font-syne">
+          <div className="mb-2 text-sm font-medium text-accent">OMA AI Gateway</div>
+          <h1 className="h1-utility text-text">
             Image Generation
           </h1>
-          <p className="mt-3 text-lg text-[var(--color-text)]">
-            Generate images from text prompts. Powered by Venice AI. 5 credits per image.
+          <p className="mt-3 text-lg text-text">
+            Generate images from text prompts. Powered by Venice AI. <span className="text-accent">{CREDITS_PER_IMAGE} credits</span>
+            <span className="text-text-muted"> (${(CREDITS_PER_IMAGE * USD_PER_CREDIT).toFixed(3)} USD)</span> per image.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
               <div>
-                <label htmlFor="prompt-input" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Prompt</label>
+                <label htmlFor="prompt-input" className="mb-2 block text-sm font-semibold text-text">Prompt</label>
                 <textarea
                   id="prompt-input"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="A serene mountain lake at sunset, digital art..."
                   rows={4}
-                  className="w-full resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2"
+                  className="w-full resize-none focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   disabled={loading}
                   aria-required="true"
                 />
@@ -115,13 +129,13 @@ export default function ImageGenerationPage() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="img-model-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Model</label>
+                <label htmlFor="img-model-select" className="mb-2 block text-sm font-semibold text-text">Model</label>
                 <select
                   id="img-model-select"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   disabled={loading}
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
                 >
                   {IMAGE_MODELS.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
@@ -130,13 +144,34 @@ export default function ImageGenerationPage() {
               </div>
 
               <div>
-                <label htmlFor="img-size-select" className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Size</label>
+                <label className="mb-2 block text-sm font-semibold text-text">Style</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {STYLE_OPTIONS.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setStyle(style === s.value ? '' : s.value)}
+                      aria-pressed={style === s.value}
+                      className={`px-2.5 py-2 text-xs font-mono rounded-lg border transition-all ${
+                        style === s.value
+                          ? 'border-accent bg-accent/10 text-accent'
+                          : 'border-border bg-surface text-text-secondary hover:border-accent/40 hover:text-text'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="img-size-select" className="mb-2 block text-sm font-semibold text-text">Size</label>
                 <select
                   id="img-size-select"
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
                   disabled={loading}
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
                 >
                   {SIZE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
@@ -145,7 +180,7 @@ export default function ImageGenerationPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">Count</label>
+                <label className="mb-2 block text-sm font-semibold text-text">Count</label>
                 <div className="flex items-center gap-2" role="radiogroup" aria-label="Number of images to generate">
                   {[1, 2, 3, 4].map((n) => (
                     <button
@@ -154,10 +189,10 @@ export default function ImageGenerationPage() {
                       disabled={loading}
                       role="radio"
                       aria-checked={count === n}
-                      className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 ${
+                      className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
                         count === n
-                          ? 'bg-[var(--color-accent)] text-[var(--color-void)] shadow-md'
-                          : 'bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-border)]'
+                          ? 'bg-accent text-void shadow-md'
+                          : 'bg-surface text-text hover:bg-border'
                       }`}
                     >
                       {n}
@@ -209,15 +244,15 @@ export default function ImageGenerationPage() {
 
         {images.length > 0 && !loading && (
           <div className="mt-8">
-            <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">Results</h2>
+            <h2 className="mb-4 text-lg font-semibold text-text">Results</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {images.map((url, i) => (
-                <div key={i} className="group relative rounded-2xl overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm aspect-square">
+                <div key={i} className="group relative rounded-2xl overflow-hidden border border-border bg-surface shadow-sm aspect-square">
                   <Image src={url} alt={`Generated image ${i + 1} of ${images.length}`} fill className="object-cover" unoptimized />
-                  <div className="absolute inset-0 bg-transparent group-hover:bg-[var(--color-overlay)] transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                  <div className="absolute inset-0 bg-transparent group-hover:bg-overlay transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                     <button
                       onClick={() => downloadImage(url, i)}
-                      className="flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] shadow-lg hover:bg-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 transition-all"
+                      className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-text shadow-lg hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-all"
                       aria-label={`Download generated image ${i + 1}`}
                     >
                       <Download className="w-4 h-4" aria-hidden="true" /> Download
@@ -226,7 +261,7 @@ export default function ImageGenerationPage() {
                   <div className="absolute bottom-3 right-3 opacity-100 group-hover:opacity-100">
                     <button
                       onClick={() => downloadImage(url, i)}
-                      className="flex items-center gap-1.5 rounded-full bg-[var(--color-surface)]/90 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] shadow-md backdrop-blur-sm hover:bg-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all"
+                      className="flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
                       aria-label={`Download generated image ${i + 1}`}
                     >
                       <Download className="w-3.5 h-3.5" aria-hidden="true" />
@@ -240,11 +275,11 @@ export default function ImageGenerationPage() {
 
         {!loading && images.length === 0 && !error && (
           <div className="mt-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center mb-6 shadow-xl">
-              <ImageIconComponent className="w-10 h-10 text-[var(--color-text-inverse)]" />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center mb-6 shadow-xl">
+              <ImageIconComponent className="w-10 h-10 text-text-inverse" />
             </div>
-            <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Describe what you want to see</h2>
-            <p className="text-[var(--color-text)] max-w-md">
+            <h2 className="text-2xl font-bold text-text mb-2">Describe what you want to see</h2>
+            <p className="text-text max-w-md">
               Enter a detailed prompt above and click Generate. Try including style, lighting, and composition details.
             </p>
           </div>

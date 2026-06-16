@@ -3,12 +3,37 @@ import net from "net";
 import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
 import { apiKeys, type ApiKey } from "../db/schema.js";
-import { eq, and, or, isNull, gt } from "drizzle-orm";
+import { eq, and, or, isNull, gt, inArray } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { getRedisClient } from "../lib/redis-client.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
 const API_KEY_CACHE_TTL_SECONDS = 300;
+
+const pendingLastUsedUpdates = new Set<string>();
+let flushTimer: ReturnType<typeof setInterval> | null = null;
+
+function startLastUsedFlusher(): void {
+  if (flushTimer) return;
+  flushTimer = setInterval(async () => {
+    if (pendingLastUsedUpdates.size === 0) return;
+    const ids = Array.from(pendingLastUsedUpdates);
+    pendingLastUsedUpdates.clear();
+    try {
+      await db.update(apiKeys)
+        .set({ lastUsedAt: sql`NOW()` })
+        .where(inArray(apiKeys.id, ids));
+    } catch {
+      // best-effort batch update
+    }
+  }, 60_000);
+}
+
+function queueLastUsedUpdate(keyId: string): void {
+  pendingLastUsedUpdates.add(keyId);
+  if (!flushTimer) startLastUsedFlusher();
+}
 
 function timingSafeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a, "utf8");
@@ -268,7 +293,7 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
 
     if (!apiKey) return null;
 
-    await tx.update(apiKeys).set({ lastUsedAt: now }).where(eq(apiKeys.id, apiKey.id));
+    queueLastUsedUpdate(apiKey.id);
     return apiKey;
   });
 
