@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Space_Grotesk, Syne, JetBrains_Mono } from 'next/font/google'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -17,6 +17,33 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   fallback: ['system-ui', 'sans-serif'],
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+  preload: true,
+  weight: ['400', '500', '600', '700'],
+  fallback: ['system-ui', 'sans-serif'],
+})
+
+const syne = Syne({
+  subsets: ['latin'],
+  variable: '--font-syne',
+  display: 'swap',
+  preload: true,
+  weight: ['400', '500', '600', '700', '800'],
+  fallback: ['system-ui', 'sans-serif'],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+  preload: false,
+  weight: ['400', '500', '600'],
+  fallback: ['ui-monospace', 'SFMono-Regular', 'monospace'],
 })
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://oma-ai.com'
@@ -88,7 +115,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Pre-hydration theme script — runs synchronously before first paint
             to set <html data-theme="..."> from localStorage. Prevents FOUC
