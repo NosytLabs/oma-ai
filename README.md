@@ -6,7 +6,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth (zero KYC), multi-provider routing, cross-chain deposits, and native crypto payments.
 
-> **Audit status (2026-06-16):** See [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) — all validation gates green (0 typecheck/lint errors, 917 server tests + 73 app tests passing, 0 skipped). The 10 prior 2026-06-14 audit reports (comprehensive + X402, Operational Model, Site Pages, Surplus, New-API References, Ponytail Cleanup, V6 Inference, Streaming Playground Auth) are archived in [`docs/archive/`](docs/archive/). Older point-in-time audit fix reports and pre-implementation research live in [`docs/archive/research/`](docs/archive/research/).
+> **Audit status (2026-06-16):** See [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) — all validation gates green (0 typecheck/lint errors, 917 server tests + 73 app tests passing, 0 skipped). Prior 2026-06-13/14 audit fix reports are preserved in git history; active findings have been applied in Wave 1+2+3.
 
 ---
 
