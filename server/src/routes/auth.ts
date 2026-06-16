@@ -3,6 +3,7 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { getOrCreateUser, verifySiweMessage, getNonce, generateSessionToken, verifySessionToken } from "../auth/siwe.js";
 import { createSolanaChallenge, getOrCreateSolanaUser, verifySolanaChallenge } from "../auth/solana.js";
+import { generateAccountNumber, hashAccountNumber } from "../auth/account-number.js";
 import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader, updateModelAllowlist, getApiKey } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
@@ -13,7 +14,7 @@ import { users, apiKeys, subscriptions, auditLogs, rateLimitOverrides } from "..
 import { eq, and } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
-import { createHash, randomBytes, createHmac, timingSafeEqual } from "crypto";
+import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { authenticator } from "@otplib/preset-default";
 import { encryptSecret, decryptSecret } from "../auth/encryption.js";
 import { config } from "../config.js";
@@ -59,27 +60,6 @@ function createCsrfCookieHeader(token: string): string {
   const expires = new Date(Date.now() + ttlMs).toUTCString();
   const maxAge = Math.floor(ttlMs / 1000);
   return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
-}
-
-function generateAccountNumber(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const segments = [];
-  for (let i = 0; i < 3; i++) {
-    let segment = "";
-    // Use 8 bytes (64 bits) of entropy per segment for security
-    const bytes = randomBytes(8);
-    for (let j = 0; j < 4; j++) {
-      // Use two bytes per character to avoid modulo bias
-      const combined = bytes[j * 2] * 256 + bytes[j * 2 + 1];
-      segment += chars[combined % chars.length];
-    }
-    segments.push(segment);
-  }
-  return `OMA-${segments.join("-")}`;
-}
-
-function hashAccountNumber(accountNumber: string): string {
-  return createHash("sha256").update(accountNumber.toUpperCase()).digest("hex");
 }
 
 export const authRoutes = new Hono<OmaEnv>();

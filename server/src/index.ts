@@ -37,6 +37,7 @@ import { openapiRoutes } from "./routes/openapi.js";
 import { providersMetaRoutes } from "./routes/providers-meta.js";
 import { usageRoutes } from "./routes/usage.js";
 import { adminObservabilityRoutes } from "./routes/admin-observability.js";
+import { missingRoutes } from "./routes/missing-routes.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { reloadModelCatalog } from "./inference/models.js";
@@ -157,6 +158,7 @@ app.route("/", onrampRoutes);
 app.route("/", creditRoutes);
 app.route("/", adminRoutes);
 app.route("/", jupiterRoutes);
+app.route("/", missingRoutes);
 app.route("/teams", teamsRouter);
 app.route("/sso", ssoRouter);
 app.route("/v1/queue", queueRoutes);
@@ -201,7 +203,6 @@ serve({
   logger.info({ port: info.port }, "[OMA] API server running");
   logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
   logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
-  logger.info({ wsUrl: `ws://localhost:${info.port}/v1/chat/completions/ws` }, "[OMA] WebSocket endpoint");
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
