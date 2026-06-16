@@ -25,10 +25,10 @@
   --color-border-bright: #3d3d4d;
    
   /* PRIMARY ACCENT - Orange (Brand Identity) */
-  --color-accent: #fb923c;
-  --color-accent-dim: rgba(251, 146, 60, 0.18);
-  --color-accent-glow: rgba(251, 146, 60, 0.25);
-  --color-accent-hover: #f97316;
+  --color-accent: #f97316;
+  --color-accent-dim: rgba(249, 115, 22, 0.18);
+  --color-accent-glow: rgba(249, 115, 22, 0.25);
+  --color-accent-hover: #fb923c;
   --color-accent-bright: #fdba74;
   --color-accent-muted: #ea580c;
   
@@ -66,7 +66,7 @@
   --color-text-inverse: #0a0a0f;
    
   /* Message bubbles - Chat UI */
-  --color-msg-user: #fb923c;
+  --color-msg-user: #f97316;
   --color-msg-user-text: #0a0a0f;
   --color-msg-ai: #18181f;
   --color-msg-ai-text: #e4e4e7;
@@ -90,8 +90,8 @@
      ================================================ */
   --color-tier-frontier: #a78bfa;        /* Violet - highest tier */
   --color-tier-frontier-dim: rgba(167, 139, 250, 0.15);
-  --color-tier-premium: #fb923c;          /* Orange - premium models */
-  --color-tier-premium-dim: rgba(251, 146, 60, 0.15);
+  --color-tier-premium: #f97316;          /* Orange - premium models */
+  --color-tier-premium-dim: rgba(249, 115, 22, 0.15);
   --color-tier-mid: #ffb800;              /* Amber - mid-range models */
   --color-tier-mid-dim: rgba(255, 184, 0, 0.15);
   --color-tier-budget: #34d399;           /* Emerald - budget options */
@@ -120,7 +120,7 @@
   /* Utility colors */
   --color-bg-secondary: #121218;
   --color-error-bg: #1a0508;
-  --color-accent-soft: rgba(251, 146, 60, 0.08);
+  --color-accent-soft: rgba(249, 115, 22, 0.08);
   --color-overlay: rgba(0, 0, 0, 0.6);
   
   /* Typography — distinctive pairing: Space Grotesk (body + heading), Syne (display), JetBrains Mono (code) */
@@ -144,14 +144,14 @@
   --color-text-muted: #6b7280;
   --color-text-inverse: #fafafa;
   --color-text-tertiary: #71717a;
-  --color-msg-user: #c2410c;
+  --color-msg-user: #ea580c;
   --color-msg-user-text: #ffffff;
   --color-msg-ai: #f4f4f5;
   --color-msg-ai-text: #18181b;
-  --color-accent: #c2410c;
-  --color-accent-dim: rgba(194, 65, 12, 0.18);
-  --color-accent-glow: rgba(194, 65, 12, 0.25);
-  --color-accent-hover: #9a3412;
+  --color-accent: #ea580c;
+  --color-accent-dim: rgba(234, 88, 12, 0.18);
+  --color-accent-glow: rgba(234, 88, 12, 0.25);
+  --color-accent-hover: #c2410c;
   --color-accent-bright: #f97316;
   --color-accent-muted: #7c2d12;
   --color-secondary: #d97706;
@@ -182,8 +182,8 @@
   --color-provider-together-dim: rgba(219, 39, 119, 0.15);
   --color-tier-frontier: #7c3aed;
   --color-tier-frontier-dim: rgba(124, 58, 237, 0.15);
-  --color-tier-premium: #c2410c;
-  --color-tier-premium-dim: rgba(194, 65, 12, 0.15);
+  --color-tier-premium: #ea580c;
+  --color-tier-premium-dim: rgba(234, 88, 12, 0.15);
   --color-tier-mid: #d97706;
   --color-tier-mid-dim: rgba(217, 119, 6, 0.15);
   --color-tier-budget: #059669;
@@ -203,7 +203,7 @@
   --color-blue: #2563eb;
   --color-bg-secondary: #e4e4e7;
   --color-error-bg: rgba(220, 38, 38, 0.08);
-  --color-accent-soft: rgba(194, 65, 12, 0.08);
+  --color-accent-soft: rgba(234, 88, 12, 0.08);
   --color-overlay: rgba(0, 0, 0, 0.4);
 }
 

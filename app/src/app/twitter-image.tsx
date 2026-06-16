@@ -35,17 +35,17 @@ export default function TwitterImage() {
             }}
           >
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 50 }}>
-              <div style={{ width: 7, height: 18, background: '#fb923c', borderRadius: 1.5 }} />
-              <div style={{ width: 7, height: 38, background: '#fb923c', borderRadius: 1.5 }} />
-              <div style={{ width: 7, height: 50, background: '#fb923c', borderRadius: 1.5 }} />
-              <div style={{ width: 7, height: 28, background: '#fb923c', borderRadius: 1.5 }} />
+              <div style={{ width: 7, height: 18, background: '#f97316', borderRadius: 1.5 }} />
+              <div style={{ width: 7, height: 38, background: '#f97316', borderRadius: 1.5 }} />
+              <div style={{ width: 7, height: 50, background: '#f97316', borderRadius: 1.5 }} />
+              <div style={{ width: 7, height: 28, background: '#f97316', borderRadius: 1.5 }} />
             </div>
           </div>
           <div style={{ fontSize: 88, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
             OMA
           </div>
         </div>
-        <div style={{ fontSize: 32, color: '#fb923c' }}>Permissionless AI inference</div>
+        <div style={{ fontSize: 32, color: '#f97316' }}>Permissionless AI inference</div>
       </div>
     ),
     { ...size }
