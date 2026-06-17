@@ -8,6 +8,16 @@ import Link from 'next/link'
 import { ArrowLeft, Github, Twitter, Mail, BookOpen, ArrowRight } from 'lucide-react'
 import { MODEL_COUNT } from '@/lib/models-data'
 
+export const metadata: Metadata = {
+  title: 'About · OMA',
+  description: `OMA is a thin inference gateway. ${MODEL_COUNT}+ models, one OpenAI-compatible API, paid in USDC. No account, no card, no sales call.`,
+  openGraph: {
+    title: 'About · OMA',
+    description:
+      'OMA is a thin inference gateway. One OpenAI-compatible endpoint, one price list, USDC on Base, wallet-only auth.',
+  },
+}
+
 const STACK_LINKS = [
   { name: 'Next.js 15', note: 'App router · React server components' },
   { name: 'Tailwind 4', note: 'Utility-first CSS · design system' },
@@ -28,17 +38,6 @@ const ENDPOINT_FLOW = [
   { idx: '05', client: 'usage deduction', server: 'POST /v1/usage', note: 'Deducts credits · records prompt / completion tokens' },
   { idx: '06', client: 'x402 verify', server: 'POST /x402/verify', note: 'EIP-3009 signature check · 402 if no payment header' },
 ] as const
-
-export const metadata: Metadata = {
-  title: 'About · OMA',
-  description:
-    'OMA is a thin inference gateway. One OpenAI-compatible endpoint, one price list, USDC on Base, wallet-only auth.',
-  openGraph: {
-    title: 'About · OMA',
-    description:
-      'OMA is a thin inference gateway. One OpenAI-compatible endpoint, one price list, USDC on Base, wallet-only auth.',
-  },
-}
 
 const ISSUED = '2026-06-12'
 
@@ -103,7 +102,7 @@ export default function AboutPage() {
 
           {/* ===== HERO ===== */}
           <section
-            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-12 sm:pb-16"
+            className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-24 sm:pb-32"
           >
             <Link
               href="/"
@@ -206,7 +205,7 @@ export default function AboutPage() {
           <section
             id="what"
             aria-labelledby="what-heading"
-            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
           >
             <header className="mb-8 sm:mb-10 max-w-2xl">
               <h2
@@ -247,7 +246,7 @@ export default function AboutPage() {
           <section
             id="built-with"
             aria-labelledby="built-with-heading"
-            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
           >
             <header className="mb-8 sm:mb-10 max-w-2xl">
               <h2
@@ -278,7 +277,7 @@ export default function AboutPage() {
           <section
             id="how"
             aria-labelledby="how-heading"
-            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
           >
             <header className="mb-8 sm:mb-10 max-w-2xl">
               <h2
@@ -790,7 +789,7 @@ export default function AboutPage() {
           <section
             id="team"
             aria-labelledby="team-heading"
-            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
           >
             <header className="mb-8 sm:mb-10 max-w-2xl">
               <h2
@@ -843,7 +842,7 @@ export default function AboutPage() {
           <section
             id="links"
             aria-labelledby="links-heading"
-            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20"
+            className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
           >
             <header className="mb-8 sm:mb-10 max-w-2xl">
               <h2

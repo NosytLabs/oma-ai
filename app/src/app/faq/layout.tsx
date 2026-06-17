@@ -1,15 +1,6 @@
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "FAQ | OMA AI",
-  description:
-    "Frequently asked questions about OMA — pricing, accounts, privacy, models, and more.",
-  openGraph: {
-    title: "FAQ | OMA AI",
-    description:
-      "Frequently asked questions about OMA — pricing, accounts, privacy, models, and more.",
-  },
-};
+// FAQ page exports its own metadata in page.tsx (more detailed).
+// This layout intentionally has no metadata export to avoid duplication.
 
 export default function FaqLayout({
   children,

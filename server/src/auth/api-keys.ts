@@ -282,23 +282,22 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
     } catch { /* ignore cache errors */ }
   }
 
-  const result = await db.transaction(async (tx) => {
-    const [apiKey] = await tx.select().from(apiKeys).where(
-      and(
-        eq(apiKeys.keyHash, keyHash),
-        eq(apiKeys.active, true),
-        or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
-      )
-    ).for("update");
+  // Neon HTTP transport does not support transactions; run the read directly.
+  // The previous `for("update")` row lock was guarding against a race where the
+  // key's `active` flag flips between the SELECT and a subsequent write — but
+  // we never write to apiKeys in this path (lastUsedAt is queued fire-and-forget
+  // below). A read-committed SELECT is sufficient.
+  const [apiKey] = await db.select().from(apiKeys).where(
+    and(
+      eq(apiKeys.keyHash, keyHash),
+      eq(apiKeys.active, true),
+      or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
+    )
+  ).limit(1);
 
-    if (!apiKey) return null;
+  if (!apiKey) return null;
+  queueLastUsedUpdate(apiKey.id);
 
-    queueLastUsedUpdate(apiKey.id);
-    return apiKey;
-  });
-
-  if (!result) return null;
-  const apiKey = result;
   const rawPrefix = rawKey.slice(0, 12);
   if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
   if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {

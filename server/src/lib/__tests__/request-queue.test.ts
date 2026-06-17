@@ -56,7 +56,7 @@ const mockRedisClient = vi.hoisted(() => ({
   sIsMember: vi.fn().mockImplementation(() => false),
   sRem: vi.fn().mockImplementation(() => 1),
   keys: vi.fn().mockImplementation(() => []),
-  eval: vi.fn().mockImplementation((script: string, _numkeys: number, ..._args: (string | number)[]) => {
+  eval: vi.fn().mockImplementation((script: string, _options: { keys: string[]; arguments: (string | number)[] }) => {
     if (!redisAvailable) throw new Error("Redis not available");
     if (typeof script === 'string' && script.includes('RPUSH')) {
       return [1, 6];
@@ -98,13 +98,15 @@ describe("request-queue", () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.stringContaining("RPUSH"),
-        2,
-        `${QUEUE_KEY_PREFIX}:pending`,
-        `oma:queue:users:user-1`,
-        expect.any(Number),
-        expect.stringContaining("req-123"),
-        "user-1",
-        "req-123"
+        {
+          keys: [`${QUEUE_KEY_PREFIX}:pending`, `oma:queue:users:user-1`],
+          arguments: [
+            expect.any(String),
+            expect.stringContaining("req-123"),
+            "user-1",
+            "req-123",
+          ],
+        }
       );
     });
 
@@ -315,13 +317,15 @@ describe("rate-limit integration", () => {
 
     expect(mockRedisClient.eval).toHaveBeenCalledWith(
       expect.stringContaining("RPUSH"),
-      2,
-      `${QUEUE_KEY_PREFIX}:pending`,
-      `oma:queue:users:user-1`,
-      expect.any(Number),
-      expect.stringContaining("req-600"),
-      "user-1",
-      "req-600"
+      {
+        keys: [`${QUEUE_KEY_PREFIX}:pending`, `oma:queue:users:user-1`],
+        arguments: [
+          expect.any(String),
+          expect.stringContaining("req-600"),
+          "user-1",
+          "req-600",
+        ],
+      }
     );
   });
 });

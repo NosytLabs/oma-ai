@@ -1,15 +1,7 @@
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "About OMA AI",
-  description:
-    "Learn about OMA — a privacy-first AI inference gateway with crypto-native payments.",
-  openGraph: {
-    title: "About OMA AI",
-    description:
-      "Learn about OMA — a privacy-first AI inference gateway with crypto-native payments.",
-  },
-};
+// About page exports its own metadata in page.tsx (more detailed openGraph).
+// This layout intentionally has no metadata export to avoid Next.js's
+// "metadata defined in both page and layout" error.
 
 export default function AboutLayout({
   children,

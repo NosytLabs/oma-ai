@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How OMA collects, processes, and protects user data.",
-};
+// Privacy page exports its own metadata in page.tsx (more detailed).
+// This layout intentionally has no metadata export to avoid duplication.
 
 export default function PrivacyLayout({
   children,
