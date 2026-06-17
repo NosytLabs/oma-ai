@@ -115,12 +115,23 @@ function InnerProvider({ children }: { children: ReactNode }) {
   const siweDoneRef = useRef<`0x${string}` | undefined>(undefined)
 
   const availableConnectors = useMemo(
-    () =>
-      connectors.map((c) => ({
-        id: c.id,
-        name: c.name,
-        icon: c.icon,
-      })),
+    () => {
+      // B-1: surface MetaMask as its own connector when window.ethereum
+      // reports isMetaMask. wagmi's `injected` connector bundles every
+      // window.ethereum provider under a single "Injected" entry, which
+      // hides MetaMask from the popular list and ships a generic wallet
+      // icon. We do this client-side only so SSR is unchanged and the
+      // existing wagmi config (injected + coinbaseWallet) is preserved.
+      const eth = typeof window !== 'undefined' ? (window as { ethereum?: { isMetaMask?: boolean } }).ethereum : undefined
+      const isMetaMask = !!eth?.isMetaMask
+      return connectors.map((c) => {
+        let name = c.name
+        if (c.id === 'injected' && isMetaMask) {
+          name = 'MetaMask'
+        }
+        return { id: c.id, name, icon: c.icon }
+      })
+    },
     [connectors],
   )
 

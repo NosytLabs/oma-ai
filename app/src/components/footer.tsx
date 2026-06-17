@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { m } from 'framer-motion'
 import { OmaLogo } from '@/components/ui/oma-logo'
 import { ApiStatus } from './api-status'
+import { StaggerReveal, fadeUp, EASE_SPRING } from '@/lib/motion'
 
 type FooterLink = { label: string; href: string }
 
@@ -13,6 +15,7 @@ type FooterSection = {
 }
 
 // Grouped site index. Section order = reading order on the page.
+// Groups mirror the navbar: Product + Tools + Account + Resources + Legal.
 const FOOTER_SECTIONS: FooterSection[] = [
   {
     title: 'Product',
@@ -20,32 +23,33 @@ const FOOTER_SECTIONS: FooterSection[] = [
       { label: 'models', href: '/models' },
       { label: 'playground', href: '/playground' },
       { label: 'pricing', href: '/pricing' },
-      { label: 'docs', href: '/docs' },
-      { label: 'dashboard', href: '/dashboard' },
+      { label: 'image gen', href: '/image-generation' },
+      { label: 'video gen', href: '/video-generation' },
     ],
   },
   {
     title: 'Tools',
     links: [
-      { label: 'image gen', href: '/image-generation' },
-      { label: 'video gen', href: '/video-generation' },
+      { label: 'compare', href: '/compare' },
+      { label: 'use cases', href: '/use-cases' },
       { label: 'swap', href: '/swap' },
+      { label: 'about', href: '/about' },
+    ],
+  },
+  {
+    title: 'Account',
+    links: [
+      { label: 'dashboard', href: '/dashboard' },
+      { label: 'deposit', href: '/deposit' },
+      { label: 'settings', href: '/settings' },
     ],
   },
   {
     title: 'Resources',
     links: [
-      { label: 'use cases', href: '/use-cases' },
-      { label: 'compare', href: '/compare' },
+      { label: 'docs', href: '/docs' },
       { label: 'faq', href: '/faq' },
       { label: 'private ai api', href: '/private-ai-api' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'about', href: '/about' },
-      { label: 'deposit', href: '/deposit' },
     ],
   },
   {
@@ -62,15 +66,36 @@ export function Footer() {
   const year = new Date().getFullYear()
   const pathname = usePathname() ?? ''
   return (
-    <footer aria-label="Site footer" className="border-t border-border bg-void font-mono">
+    <footer
+      aria-label="Site footer"
+      className="relative overflow-hidden border-t border-border bg-void font-mono"
+    >
+      {/* Top border glow — thin gradient hairline */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent"
+      />
+
+      {/* Background depth — animated grid masked to fade at edges */}
+      <div
+        aria-hidden="true"
+        className="bg-grid-animated mask-radial pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
+      />
+
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid gap-10 lg:grid-cols-[2fr_3fr]">
-          <div className="flex flex-col gap-4">
+        <StaggerReveal className="grid gap-10 lg:grid-cols-[2fr_3fr]" stagger={0.04}>
+          <m.div variants={fadeUp} className="flex flex-col gap-4">
             <Link
               href="/"
               className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm w-fit"
             >
-              <OmaLogo size="sm" />
+              <m.span
+                whileHover={{ y: -2 }}
+                transition={EASE_SPRING}
+                className="inline-flex transition-[filter] duration-500 group-hover:drop-shadow-[0_0_6px_var(--color-accent)]"
+              >
+                <OmaLogo size="sm" />
+              </m.span>
               <span className="text-sm text-text-bright font-semibold">oma</span>
               <span className="text-text-muted text-xs">·sys</span>
             </Link>
@@ -100,9 +125,9 @@ export function Footer() {
                 @oma_ai
               </a>
             </div>
-          </div>
+          </m.div>
 
-          <nav aria-label="Footer navigation" className="text-[11px]">
+          <m.nav variants={fadeUp} aria-label="Footer navigation" className="text-[11px]">
             <p className="text-text-muted mb-3 uppercase tracking-widest text-[10px]">Index</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-6">
               {FOOTER_SECTIONS.map((section) => (
@@ -118,9 +143,15 @@ export function Footer() {
                           <Link
                             href={link.href}
                             aria-current={isCurrent ? 'page' : undefined}
-                            className="inline-flex items-center gap-1.5 text-text-secondary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm transition-colors py-1"
+                            className="group/link inline-flex items-center gap-1.5 text-text-secondary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm transition-colors py-1"
                           >
-                            <span className="text-text-muted" aria-hidden="true">·</span>
+                            <m.span
+                              aria-hidden="true"
+                              initial={false}
+                              className="text-text-muted transition-[color,transform] duration-200 group-hover/link:text-accent group-hover/link:translate-x-0.5"
+                            >
+                              ·
+                            </m.span>
                             <span>{link.label}</span>
                           </Link>
                         </li>
@@ -130,8 +161,8 @@ export function Footer() {
                 </div>
               ))}
             </div>
-          </nav>
-        </div>
+          </m.nav>
+        </StaggerReveal>
 
         <div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
           <p>

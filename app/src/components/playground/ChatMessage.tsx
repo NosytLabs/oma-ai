@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { api } from '@/lib/api'
 import { MODELS as SOURCE_MODELS } from '@/lib/models-data'
+import { EASE_SPRING_SOFT } from '@/lib/motion'
 import {
   Search,
   ChevronUp,
@@ -260,11 +261,20 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
 
   const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
+  // Streaming: assistant is actively generating when content is present and still loading,
+  // OR when content is empty but loading (waiting for first token).
+  const isAssistant = msg.role === 'assistant'
+  const isStreaming = loading && isAssistant
+  const isWaitingForFirstToken = isStreaming && msg.content.length === 0
+  const isActivelyStreaming = isStreaming && msg.content.length > 0
+
   return (
     <m.div
-      initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-      animate={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
+      animate={prefersReducedMotion ? {} : { opacity: 1, y: 0, scale: 1 }}
+      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+      transition={prefersReducedMotion ? { duration: 0 } : EASE_SPRING_SOFT}
+      layout={!prefersReducedMotion}
       className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
       <div className={`shrink-0 w-10 h-10 flex items-center justify-center ${
@@ -315,11 +325,31 @@ export const ChatMessage = memo(function ChatMessage({ msg, loading, onCopy }: C
               >
                 {msg.content}
               </ReactMarkdown>
-              {loading && msg.role === 'assistant' && (
-                <span className="inline-flex gap-1 mt-3">
-                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '0ms' }} />
-                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '150ms' }} />
-                  <span className={`w-1.5 h-1.5 bg-success rounded-full ${prefersReducedMotion ? '' : 'animate-bounce'}`} style={{ animationDelay: '300ms' }} />
+              {/* Active streaming: append a blinking caret to the rendered text */}
+              {isActivelyStreaming && (
+                <span
+                  className="caret-blink inline-block align-baseline"
+                  aria-hidden="true"
+                />
+              )}
+              {/* Waiting for first token: animated typing indicator */}
+              {isWaitingForFirstToken && (
+                <span className="inline-flex items-center gap-1.5 py-1" role="status" aria-label="Generating response">
+                  <m.span
+                    className="block w-1.5 h-1.5 bg-accent rounded-full"
+                    animate={prefersReducedMotion ? undefined : { opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <m.span
+                    className="block w-1.5 h-1.5 bg-accent rounded-full"
+                    animate={prefersReducedMotion ? undefined : { opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 0.9, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
+                  />
+                  <m.span
+                    className="block w-1.5 h-1.5 bg-accent rounded-full"
+                    animate={prefersReducedMotion ? undefined : { opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                    transition={prefersReducedMotion ? undefined : { duration: 0.9, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                  />
                 </span>
               )}
             </div>

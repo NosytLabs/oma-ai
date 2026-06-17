@@ -855,8 +855,9 @@ function PlaygroundContent() {
               </div>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-            <div className="max-w-4xl mx-auto">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative">
+            <div className="pointer-events-none absolute inset-0 bg-grid-animated mask-radial" aria-hidden="true" />
+            <div className="max-w-4xl mx-auto relative z-0">
               {deferredMessages.length === 0 ? (
                 <>
                   <LazyWelcomeBanner
@@ -875,6 +876,7 @@ function PlaygroundContent() {
                 </>
               ) : (
                 <div className="space-y-8 pb-12">
+                  <AnimatePresence mode="popLayout">
                   {deferredMessages.map((msg) => {
                     const trimmed = msg.content.trimStart()
                     const looksLikeA2UI = trimmed.startsWith('{') && isA2UI(safeJsonParse(trimmed))
@@ -895,6 +897,7 @@ function PlaygroundContent() {
                       />
                     )
                   })}
+                  </AnimatePresence>
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -916,6 +919,29 @@ function PlaygroundContent() {
                       >
                         Get API Key →
                       </Link>
+                    )}
+                    {error.includes('Connect your wallet') && (
+                      <Link
+                        href="/login"
+                        className="ml-2 px-2 py-0.5 bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider hover:bg-accent-hover transition-colors"
+                      >
+                        Connect Wallet →
+                      </Link>
+                    )}
+                    {error.includes('network') && (
+                      <span className="ml-2 px-2 py-0.5 bg-warning/20 text-warning/90 text-[10px] font-semibold uppercase tracking-wider">
+                        NETWORK ISSUE
+                      </span>
+                    )}
+                    {error.includes('rate limit') && (
+                      <span className="ml-2 px-2 py-0.5 bg-warning/20 text-warning/90 text-[10px] font-semibold uppercase tracking-wider">
+                        RATE LIMIT
+                      </span>
+                    )}
+                    {error.includes('model') && (
+                      <span className="ml-2 px-2 py-0.5 bg-warning/20 text-warning/90 text-[10px] font-semibold uppercase tracking-wider">
+                        MODEL ERROR
+                      </span>
                     )}
                   </div>
                   <button onClick={() => setError(null)} className="p-1 hover:bg-error/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void">

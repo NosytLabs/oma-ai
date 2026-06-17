@@ -328,7 +328,7 @@ function QuickStartSection() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-panel p-6">
+      <div className="relative rounded-xl border border-border bg-panel p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-accent" />
@@ -797,7 +797,7 @@ for attempt in range(5):
         </table>
       </div>
 
-      <div className="rounded-xl border border-border bg-panel p-5">
+      <div className="relative rounded-xl border border-border bg-panel p-5">
         <h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
         <CopyButton text={retryCode} id="retry-code" />
         <pre id="retry-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{retryCode}</code></pre>
@@ -914,7 +914,7 @@ function DocsContent() {
             <div className="flex items-center gap-2">
               <Link
                 href="/playground"
-                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-void transition-colors hover:bg-accent-hover"
+                className="btn-primary hidden sm:inline-flex items-center gap-2"
               >
                 <Play className="h-4 w-4" />
                 Playground

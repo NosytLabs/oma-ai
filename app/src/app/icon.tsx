@@ -16,7 +16,7 @@ export default async function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           background: '#0a0a0f',
-          color: '#34d399',
+          color: '#f97316',
           fontSize: 22,
           fontWeight: 800,
           borderRadius: 6,

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { m, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Search } from 'lucide-react'
+import { EASE_SPRING_SOFT } from '@/lib/motion'
 import { TierFilter, useLiveModels } from './ChatMessage'
 
 interface ModelSelectorProps {
@@ -68,11 +69,11 @@ export function ModelSelector({ model, setModel }: ModelSelectorProps) {
       <AnimatePresence>
         {open && (
           <m.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.1 }}
-            className="absolute top-full left-0 mt-1.5 w-80 bg-void border border-border overflow-hidden z-50"
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={EASE_SPRING_SOFT}
+            className="glass-strong absolute top-full left-0 mt-1.5 w-80 overflow-hidden z-50"
             role="listbox"
             aria-label="Available AI models"
           >

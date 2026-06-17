@@ -15,7 +15,78 @@ const AccountLoginModal = dynamic(
 
 const POPULAR_IDS = ['injected', 'coinbaseWalletSDK', 'com.coinbase.wallet']
 
-function getIcon(id: string) {
+function MetaMaskIcon() {
+  return (
+    <svg viewBox="0 0 32 32" width="16" height="16" aria-hidden="true" className="h-4 w-4">
+      <path
+        d="M29 4 17.4 11.2l2.1-5.1z"
+        fill="#E2761B"
+        stroke="#E2761B"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m3 4 11.5 7.3-2-5.2zM24.7 22.6l-3 4.7 6.5 1.8 1.9-6.3zM1.9 22.8l1.9 6.3 6.5-1.8-3-4.7z"
+        fill="#E4761B"
+        stroke="#E4761B"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m10.3 14.4-1.8 2.8 6.5.3-.2-7zM21.7 14.4l-4.5-4 .1 7.1 6.5-.3zM10.3 27.3l4-1.9-3.4-2.7zM17.7 25.4l4 1.9-.6-4.6z"
+        fill="#E4761B"
+        stroke="#E4761B"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m21.7 27.3-4-1.9.3 3.2zM10.3 27.3l3.7 1.3.3-3.2zM14.1 19.4l-3.3-1 2.3-1.1zM17.9 19.4l1-2.1 2.3 1.1z"
+        fill="#D7C1B3"
+        stroke="#D7C1B3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m10.3 27.3.6-4.6-4.1.1zM21.1 22.7l.6 4.6 3.5-4.5zM27.5 17.2l-6.5.3.5 4.3 2.3-1.1 3.5-2.1.2-1.4zM4.5 17.2l-.2 1.4 3.5 2.1 2.3 1.1.5-4.3zM21 12.3l-6.5.3 1 4.8 1-2.1zM11 12.3l4.5 4 1-2.1 1-4.8z"
+        fill="#233447"
+        stroke="#233447"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m16.5 17.5-1 2.1 4.4.2-.5-4.3zM16.5 17.5l-1 2.1-3.9.2-.5-4.3zM10.8 21.8l3.9-.2-1-2.1zM17.2 19.5l-1 2.1 3.9.2z"
+        fill="#CD6116"
+        stroke="#CD6116"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m21.7 27.3-.6-4.6h-3.9l-.3 3.2zM14.1 25.4l-.3-3.2H9.8l.6 4.6zM18.9 19.5l-1 2.1 1.3 4.6.6-6.7zM11 19.5l.6 6.7 1.3-4.6-1-2.1z"
+        fill="#F6851B"
+        stroke="#F6851B"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m21 12.3-1 4.8 1.5 1.5 2.7-.2.4-3.5zM10.8 12.3l-3.6 2.6.4 3.5 2.7.2 1.5-1.5z"
+        fill="#C0AD9E"
+        stroke="#C0AD9E"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3 4l11.5 7.3 2-5.2zM29 4 17.4 6.1l2 5.2zM24.5 19.8l-.4 3.5 4.1-.1.6-6zM7.1 22.7l4.1.1-.4-3.5-3.5-.2z"
+        fill="#763D16"
+        stroke="#763D16"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function getIcon(id: string, name?: string) {
+  if (name === 'MetaMask' || id === 'io.metamask' || id === 'metaMask') return <MetaMaskIcon />
   if (id === 'injected') return <Wallet className="h-4 w-4" />
   if (id === 'walletConnect') return <Wifi className="h-4 w-4" />
   if (id.includes('coinbase')) return <CreditCard className="h-4 w-4" />
@@ -45,7 +116,7 @@ function ConnectorRow({
         {connector.icon ? (
           <Image src={connector.icon} alt="" width={16} height={16} className="h-4 w-4" />
         ) : (
-          getIcon(connector.id)
+          getIcon(connector.id, connector.name)
         )}
       </div>
       <span className="flex-1">{connector.name}</span>
@@ -124,7 +195,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
-          className="group flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-4 py-2 text-sm font-medium text-accent transition-all hover:border-accent/50 hover:bg-accent/10 cursor-pointer"
+          className="group flex items-center gap-2 rounded-sm border border-accent/30 bg-accent/5 px-4 py-2 text-sm font-medium text-accent transition-all hover:border-accent/50 hover:bg-accent/10 cursor-pointer"
           aria-expanded={open}
           aria-controls="wallet-menu"
           aria-haspopup="menu"
@@ -170,9 +241,9 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
       <button
         onClick={() => setOpen(!open)}
         disabled={isConnecting}
-        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold text-void transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-sm px-5 py-2.5 text-sm font-semibold text-void transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
-        <div className="absolute inset-0 rounded-full" style={{
+        <div className="absolute inset-0 rounded-sm" style={{
           background: 'conic-gradient(var(--color-accent), var(--color-accent-hover), var(--color-accent-dim), var(--color-accent))',
           animation: 'spin 4s linear infinite',
           padding: '1.5px',

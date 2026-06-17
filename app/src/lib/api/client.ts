@@ -120,6 +120,24 @@ export async function request<T>(
     } catch {
       // SSR or cookie access denied — skip auth header
     }
+
+    // Inject x-csrf-token for state-changing requests. The server sets the
+    // csrf_token cookie (now JS-readable in dev) and expects the same value
+    // echoed in x-csrf-token header. GET requests don't need it.
+    const method = (opts.method || 'GET').toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') {
+      try {
+        const csrfCookie = document.cookie
+          .split('; ')
+          .find((c) => c.startsWith('csrf_token='));
+        if (csrfCookie && !headers['x-csrf-token']) {
+          const token = decodeURIComponent(csrfCookie.split('=')[1]);
+          if (token) headers['x-csrf-token'] = token;
+        }
+      } catch {
+        // Cookie access denied — skip
+      }
+    }
   }
 
   const controller = new AbortController();

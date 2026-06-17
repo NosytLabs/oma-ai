@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useId } from 'react'
-import { m } from 'framer-motion'
+import { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react'
+import { m, AnimatePresence } from 'framer-motion'
 import { useWriteContract, usePublicClient, useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import {
@@ -16,6 +16,8 @@ import {
   Rocket,
   Link2,
 } from 'lucide-react'
+
+import { StaggerReveal, Magnetic, scaleIn, scaleInSpring } from '@/lib/motion'
 
 import { CryptoLogo } from '@/components/ui/CryptoLogo'
 import { useToast } from '@/components/ui/Toast'
@@ -65,6 +67,19 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
   const toast = useToast()
   const id = useId()
 
+  const stepOrder = useMemo<DepositStep[]>(() => ['select', 'route', 'processing', 'complete', 'error'], [])
+  const prevStepRef = useRef<DepositStep>('select')
+  const [slideDirection, setSlideDirection] = useState(1)
+
+  useEffect(() => {
+    const prevIdx = stepOrder.indexOf(prevStepRef.current)
+    const currIdx = stepOrder.indexOf(step)
+    if (prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx) {
+      setSlideDirection(currIdx > prevIdx ? 1 : -1)
+    }
+    prevStepRef.current = step
+  }, [step, stepOrder])
+
   const { writeContractAsync } = useWriteContract()
   const publicClient = usePublicClient()
   const { prices } = useCryptoPrices()
@@ -77,8 +92,10 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
     if (!selectedCoin) return ROUTES['usdc-base']
     if (selectedCoin.id === 'usdc-base') return ROUTES['usdc-base']
     if (selectedCoin.id === 'usdc-sol') return ROUTES['usdc-sol']
-    if (selectedCoin.chain === 'solana') return ROUTES['usdc-sol']
-    return ROUTES['houdini-swap']
+    
+    // HoudiniSwap is not configured on this server. Disable the route.
+    // Users should use Direct USDC deposit or contact support.
+    return ROUTES['usdc-base']
   }, [selectedCoin])
 
   const route = detectRoute()
@@ -118,11 +135,10 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
 
     setStep('processing')
 
+    const sessionToken = document.cookie.match(/oma_session=([^;]+)/)?.[1] || '';
+
     try {
       if (selectedCoin?.id === 'usdc-base') {
-        setProcessingStep('Requesting deposit nonce...')
-
-        const sessionToken = document.cookie.match(/oma_session=([^;]+)/)?.[1] || '';
 
         const chainId = await publicClient!.getChainId()
 
@@ -222,28 +238,26 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
         onDeposit({ id: result.depositId, status: 'completed', amountCents: String(result.credits), coin: 'USDC', createdAt: new Date().toISOString() })
         toast.success(`Successfully deposited $${amount} USDC`)
         setStep('complete')
-      } else {
-        const sessionToken = document.cookie.match(/oma_session=([^;]+)/)?.[1] || '';
+        } else {
+          let tokensResponse: Response | null = null;
+          try {
+            tokensResponse = await fetch('/api/v1/deposit/houdini/tokens', {
+              headers: { 'Authorization': `Bearer ${sessionToken}` },
+            });
+          } catch {
+            // Network error - Houdini service unreachable
+          }
 
-        let tokensResponse: Response | null = null;
-        try {
-          tokensResponse = await fetch('/api/v1/deposit/houdini/tokens', {
-            headers: { 'Authorization': `Bearer ${sessionToken}` },
-          });
-        } catch {
-          // Network error - Houdini service unreachable
+          if (!tokensResponse?.ok) {
+            const errorMsg = 'HoudiniSwap is not currently configured on this server. Please try using Direct USDC deposit or contact support.'
+            setError(errorMsg)
+            toast.error('Service unavailable')
+            setStep('error')
+            return
+          }
+
+          setStep('route')
         }
-
-        if (!tokensResponse?.ok) {
-          const errorMsg = 'HoudiniSwap is not currently configured on this server. Please try using Direct USDC deposit or contact support.'
-          setError(errorMsg)
-          toast.error('Service unavailable')
-          setStep('error')
-          return
-        }
-
-        setStep('route')
-      }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : 'Deposit failed'
       setError(errMsg)
@@ -306,14 +320,76 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
 
   const quickAmounts = [10, 50, 100, 500]
 
+  const STEPS = [
+    { key: 'select' as const, label: 'Select Asset' },
+    { key: 'route' as const, label: 'Choose Route' },
+    { key: 'processing' as const, label: 'Process' },
+    { key: 'complete' as const, label: 'Complete' },
+  ]
+
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir * 40, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir * -40, opacity: 0, transition: { duration: 0.12 } }),
+  }
+
+  const currentStepIdx = STEPS.findIndex(s => s.key === step)
+
   return (
-    <div className="space-y-4">
-      <m.div
-        className="rounded-lg border border-border-bright bg-panel p-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.25 }}
-      >
+    <div className="space-y-6">
+      {step !== 'error' && (
+        <nav aria-label="Deposit progress" className="flex items-center justify-center gap-0">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.key}
+              className="flex flex-col items-center gap-1.5"
+              aria-current={i === currentStepIdx ? 'step' : undefined}
+            >
+              <div
+                className={`relative flex h-8 w-8 items-center justify-center rounded-full border text-xs font-mono font-semibold transition-colors duration-300 ${
+                  i === currentStepIdx
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : i < currentStepIdx
+                      ? 'border-success/40 bg-success/10 text-success'
+                      : 'border-border-bright bg-surface text-text-muted'
+                }`}
+              >
+                {i < currentStepIdx ? <Check className="h-4 w-4" /> : i + 1}
+                {i === currentStepIdx && (
+                  <m.div
+                    className="absolute inset-0 rounded-full border border-accent"
+                    layoutId="step-indicator"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </div>
+              <span
+                className={`text-[10px] font-mono uppercase tracking-wider ${
+                  i === currentStepIdx
+                    ? 'text-accent'
+                    : i < currentStepIdx
+                      ? 'text-success'
+                      : 'text-text-muted'
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </nav>
+      )}
+
+      <AnimatePresence mode="wait" custom={slideDirection}>
+        <m.div
+          key={step}
+          className="rounded-lg border border-border-bright bg-panel p-6"
+          custom={slideDirection}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        >
         {step === 'select' && (
           <div className="space-y-5">
             <CoinSelector selected={selectedCoin} onSelect={setSelectedCoin} />
@@ -323,7 +399,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 <label htmlFor={id} className="text-xs font-medium uppercase tracking-wider text-text-secondary font-mono">Amount</label>
                 {selectedCoin && <span className="text-xs text-text-muted font-mono">Balance: {coinBalance ?? '--'}</span>}
               </div>
-              <div className="relative">
+              <div className="relative glow-accent-sm">
                 <input
                   id={id}
                   type="text"
@@ -352,27 +428,26 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             {selectedCoin && (
               <div className="flex gap-2">
                 {quickAmounts.map((q) => (
-                  <m.button
-                    key={q}
-                    onClick={() => setAmount(q.toString())}
-                    className="flex-1 rounded border border-border-bright py-2 text-sm font-medium
-                      text-text-secondary bg-surface
-                      hover:bg-surface-elevated hover:text-text-bright
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
-                      active:translate-y-0
-                      transition-colors duration-150"
-                    whileHover={{ scale: 1 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    ${q}
-                  </m.button>
+                  <Magnetic key={q} strength={4}>
+                    <m.button
+                      onClick={() => setAmount(q.toString())}
+                      className="flex-1 rounded border border-border-bright py-2 text-sm font-medium
+                        text-text-secondary bg-surface
+                        hover:bg-surface-elevated hover:text-text-bright
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
+                        transition-colors duration-150"
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      ${q}
+                    </m.button>
+                  </Magnetic>
                 ))}
               </div>
             )}
 
             {selectedCoin && amount && parseFloat(amount) > 0 && (
               <m.div
-                className="rounded border border-border-bright bg-surface p-4"
+                className="rounded border border-border-bright bg-surface/50 p-4 glass tilt-card sheen"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 transition={{ duration: 0.2 }}
@@ -440,60 +515,58 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
               </div>
             </m.div>
 
-            <m.div
-              className="rounded border border-border-bright bg-surface p-4"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.2 }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-amber" />
-                <span className="text-sm font-medium text-text-bright">HoudiniSwap Integration</span>
-              </div>
-              <div className="space-y-2 text-sm text-text-secondary">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>100+ cryptocurrencies supported</span>
+            <StaggerReveal stagger={0.07} className="space-y-3">
+              <m.div
+                variants={scaleIn}
+                className="rounded border border-border-bright bg-surface/50 p-4 tilt-card sheen glass"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="h-4 w-4 text-amber" />
+                  <span className="text-sm font-medium text-text-bright">HoudiniSwap Integration</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>Cross-chain swaps</span>
+                <div className="space-y-2 text-sm text-text-secondary">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>100+ cryptocurrencies supported</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>Cross-chain swaps</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>Privacy enhanced routing via Monero tunnel</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>Privacy enhanced routing via Monero tunnel</span>
-                </div>
-              </div>
-            </m.div>
+              </m.div>
 
-            <m.div
-              className="rounded border border-border-bright bg-surface p-4"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.2 }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Rocket className="h-4 w-4 text-pink" />
-                <span className="text-sm font-medium text-text-bright">x402 Pay-Per-Request</span>
-              </div>
-              <p className="text-sm text-text-secondary mb-3">
-                Create a payment link and share it with users. They can pay without connecting a wallet directly.
-              </p>
-              <div className="space-y-2 text-sm text-text-secondary">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>Gasless transactions</span>
+              <m.div
+                variants={scaleIn}
+                className="rounded border border-border-bright bg-surface/50 p-4 tilt-card sheen glass"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Rocket className="h-4 w-4 text-pink" />
+                  <span className="text-sm font-medium text-text-bright">x402 Pay-Per-Request</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>Works on Solana and Base</span>
+                <p className="text-sm text-text-secondary mb-3">
+                  Create a payment link and share it with users. They can pay without connecting a wallet directly.
+                </p>
+                <div className="space-y-2 text-sm text-text-secondary">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>Gasless transactions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>Works on Solana and Base</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange" />
+                    <span>Automatic token conversion</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange" />
-                  <span>Automatic token conversion</span>
-                </div>
-              </div>
-            </m.div>
+              </m.div>
+            </StaggerReveal>
 
             <div className="flex gap-3">
               <m.button
@@ -568,7 +641,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                   </div>
                 </div>
 
-                <div className="rounded border border-border-bright bg-surface p-4 mb-4">
+                <div className="rounded border border-border-bright bg-surface/50 glass-strong float p-4 mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-text-secondary">Amount</span>
                     <span className="font-bold text-lg text-text-bright">${paymentLinkInfo.amount} {paymentLinkInfo.token}</span>
@@ -583,7 +656,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                   </div>
                 </div>
 
-                <div className="rounded border border-border-bright bg-surface p-3 mb-4 break-all">
+                <div className="rounded border border-border-bright bg-surface/50 glass p-3 mb-4 break-all">
                   <div className="text-xs text-text-muted mb-1 font-mono">Payment Link</div>
                   <div className="text-sm font-mono text-accent">{paymentLinkInfo.url}</div>
                 </div>
@@ -631,13 +704,15 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             ) : (
               <>
                 <div className="flex items-center justify-center mb-6">
-                  <m.div
-                    className="h-14 w-14 rounded border border-border-bright bg-surface flex items-center justify-center"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  >
-                    <Loader2 className="h-7 w-7 text-accent" />
-                  </m.div>
+                  <div className="pulse-ring">
+                    <m.div
+                      className="h-14 w-14 rounded border border-border-bright bg-surface flex items-center justify-center"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    >
+                      <Loader2 className="h-7 w-7 text-accent" />
+                    </m.div>
+                  </div>
                 </div>
                 <h3 className="text-lg font-bold text-text-bright text-center mb-2">Processing Deposit</h3>
                 <p className="text-text-secondary text-sm text-center mb-4">{processingStep}</p>
@@ -658,9 +733,10 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
         {step === 'complete' && (
           <m.div
             className="text-left py-6"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
+            variants={scaleInSpring}
+            initial="hidden"
+            animate="show"
+            viewport={undefined}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-orange/30 bg-orange/10">
@@ -690,9 +766,9 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
         {step === 'error' && (
           <m.div
             className="text-left py-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-red/30 bg-red/10">
@@ -718,7 +794,8 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             </m.button>
           </m.div>
         )}
-      </m.div>
+        </m.div>
+      </AnimatePresence>
     </div>
   )
 }

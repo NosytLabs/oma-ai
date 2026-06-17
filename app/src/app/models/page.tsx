@@ -6,7 +6,7 @@ import { Search, Brain, ArrowRight, Sparkles, ChevronDown, Code, Eye, Zap as Zap
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/prices-utils'
+import { Model, Provider, Tier, MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER, formatPrice, getModelsByTier, Capability } from '@/lib/prices'
 
 const LazyModelDetailModal = dynamic(
   () => import('@/components/models/ModelDetailModal').then(mod => mod.ModelDetailModal),

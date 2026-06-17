@@ -79,7 +79,7 @@ export function CoinSelector({
       <AnimatePresence>
         {isOpen && (
           <m.div
-            className="absolute z-50 mt-2 w-full rounded-lg border border-border-bright bg-panel shadow-xl"
+            className="absolute z-50 mt-2 w-full rounded-lg border border-border-bright bg-panel shadow-xl glass"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

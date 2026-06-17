@@ -1,6 +1,8 @@
 'use client'
 
-import { Send, X, MessageSquare, Coins } from 'lucide-react'
+import { Send, MessageSquare, Coins, Loader2 } from 'lucide-react'
+import { m } from 'framer-motion'
+import { Magnetic, EASE_SPRING } from '@/lib/motion'
 import { useLiveModels } from './ChatMessage'
 
 interface MessageInputProps {
@@ -22,7 +24,10 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
   }
 
   return (
-    <div className="relative flex items-end bg-void border border-border px-2 py-2 transition-all focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/20" role="search">
+    <div
+      className="glass relative flex items-end px-2 py-2 transition-all duration-200 focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/20 focus-within:glow-accent-sm"
+      role="search"
+    >
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -42,23 +47,36 @@ export function MessageInput({ input, setInput, onSubmit, onStop, loading }: Mes
       />
       <div className="p-1">
         {loading ? (
-          <button
-            onClick={onStop}
-            aria-label="Stop generation"
-            className="flex h-11 w-11 items-center justify-center bg-surface text-text-muted hover:bg-surface-elevated hover:text-text border border-border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <Magnetic strength={4}>
+            <button
+              onClick={onStop}
+              aria-label="Stop generation"
+              className="flex h-11 w-11 items-center justify-center bg-surface text-text-muted hover:bg-surface-elevated hover:text-text border border-border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+            >
+              <m.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                className="inline-flex"
+              >
+                <Loader2 className="w-4 h-4" />
+              </m.span>
+            </button>
+          </Magnetic>
         ) : (
-          <button
-            onClick={onSubmit}
-            disabled={!input.trim()}
-            aria-label="Send message"
-            aria-describedby="message-hint"
-            className="flex h-11 w-11 items-center justify-center bg-accent text-text-inverse font-semibold transition-all hover:bg-accent-hover hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          <Magnetic strength={6}>
+            <m.button
+              onClick={onSubmit}
+              disabled={!input.trim()}
+              aria-label="Send message"
+              aria-describedby="message-hint"
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.04 }}
+              transition={EASE_SPRING}
+              className="flex h-11 w-11 items-center justify-center bg-accent text-text-inverse font-semibold transition-all hover:bg-accent-hover hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+            >
+              <Send className="w-4 h-4" />
+            </m.button>
+          </Magnetic>
         )}
       </div>
       <span id="message-hint" className="sr-only">Shift+Enter for new line, Enter to send</span>

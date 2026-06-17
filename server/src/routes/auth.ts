@@ -59,7 +59,10 @@ function createCsrfCookieHeader(token: string): string {
   const ttlMs = config.SESSION_COOKIE_TTL_MS;
   const expires = new Date(Date.now() + ttlMs).toUTCString();
   const maxAge = Math.floor(ttlMs / 1000);
-  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+  // Secure flag only on HTTPS / production. HTTP localhost dev needs the cookie
+  // to be readable by the page so the login round-trip works in the browser.
+  const secure = config.NODE_ENV === 'production' ? ' Secure;' : '';
+  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge}; HttpOnly;${secure} SameSite=Strict`;
 }
 
 export const authRoutes = new Hono<OmaEnv>();

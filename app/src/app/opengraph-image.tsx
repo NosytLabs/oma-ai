@@ -17,7 +17,7 @@ export default async function OpengraphImage() {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: 'linear-gradient(135deg, #0a0a0f 0%, #111827 60%, #064e3b 100%)',
+          background: 'linear-gradient(135deg, #0a0a0f 0%, #18181f 60%, #3d1505 100%)',
           color: '#f5f5f4',
           fontFamily: 'system-ui, sans-serif',
         }}
@@ -28,7 +28,7 @@ export default async function OpengraphImage() {
               width: 56,
               height: 56,
               borderRadius: 14,
-              background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -58,7 +58,7 @@ export default async function OpengraphImage() {
             style={{
               fontSize: 30,
               lineHeight: 1.3,
-              color: '#a7f3d0',
+              color: '#fdba74',
               maxWidth: 900,
             }}
           >
@@ -71,7 +71,7 @@ export default async function OpengraphImage() {
             display: 'flex',
             gap: 12,
             fontSize: 22,
-            color: '#94a3b8',
+            color: '#a0a0a8',
           }}
         >
           <div>Claude</div>

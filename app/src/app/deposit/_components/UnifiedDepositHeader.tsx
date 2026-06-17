@@ -2,14 +2,16 @@
 
 import { m } from 'framer-motion'
 import { Coins, Hexagon } from 'lucide-react'
+import { blurIn } from '@/lib/motion'
 
 export function UnifiedDepositHeader() {
   return (
     <m.div
       className="mb-8"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      variants={blurIn}
+      initial="hidden"
+      animate="show"
+      viewport={undefined}
     >
       <div className="flex items-center gap-4 mb-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border-bright bg-surface">

@@ -109,10 +109,19 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
     setError(null)
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (csrfToken) {
-        headers['x-csrf-token'] = csrfToken
+      // Fall back to reading the CSRF token directly from the cookie if the
+      // React state hasn't been populated yet (race between pre-fetch and
+      // user clicking Sign In). The cookie is set by /api/auth/csrf-token
+      // on the same origin, so it's always available.
+      let csrf = csrfToken
+      if (!csrf) {
+        const m = document.cookie.match(/csrf_token=([^;]+)/)
+        if (m) csrf = decodeURIComponent(m[1])
       }
-      
+      if (csrf) {
+        headers['x-csrf-token'] = csrf
+      }
+
       const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/account/login`, {
         method: 'POST',
         headers,
@@ -237,7 +246,7 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="rounded-lg p-2 text-text-muted hover:bg-surface hover:text-text transition-colors cursor-pointer"
+              className="rounded-lg p-2.5 text-text-muted hover:bg-surface hover:text-text transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>

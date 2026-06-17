@@ -132,13 +132,12 @@ const nextConfig: NextConfig = {
         ...config.optimization.splitChunks,
         cacheGroups: {
           ...config.optimization.splitChunks?.cacheGroups,
-          // Vendor chunk for node_modules
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
+          // NOTE: No generic vendor cacheGroup — Next.js 15's defaults handle
+          // node_modules splitting. The custom groups below (higher priority)
+          // isolate frequently-updated or heavy wallets/animation libs so their
+          // dedicated chunk names are stable for long-term caching. Removing this
+          // also avoids a webpack/mini-css-extract collision where a named vendor
+          // CSS chunk was loaded as <script> (MIME-type error in console).
           // Separate chunk for wagmi/viem (frequently updated)
           wagmi: {
             test: /[\\/]node_modules[\\/](wagmi|viem|@wagmi)[\\/]/,

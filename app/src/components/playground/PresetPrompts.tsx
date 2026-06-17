@@ -48,7 +48,7 @@ export function EmptyState({ onPreset }: EmptyStateProps) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-16 h-16 flex items-center justify-center mb-8 border border-border"
+        className="w-16 h-16 flex items-center justify-center mb-8 border border-border float"
       >
         <span className="text-2xl text-success font-mono">{'>'}_</span>
       </m.div>

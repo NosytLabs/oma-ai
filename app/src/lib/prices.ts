@@ -38,7 +38,7 @@ interface PriceCache {
 // CONSTANTS
 // =============================================================================
 
-const CACHE_DURATION = 30 * 1000 // 30 seconds in milliseconds
+export const CACHE_DURATION = 30 * 1000 // 30 seconds in milliseconds
 const COINGECKO_API = '/api/pricing/crypto'
 const JUPITER_PRICE_API = 'https://api.jup.ag/swap/v2/quote'
 
@@ -317,7 +317,7 @@ export function useCryptoPrices(options: UseCryptoPricesOptions = {}): UseCrypto
 /**
  * Get price for a specific symbol
  */
-export function getPriceBySymbol(prices: PriceData, symbol: string): number | null {
+function getPriceBySymbol(prices: PriceData, symbol: string): number | null {
   const upperSymbol = symbol.toUpperCase()
   
   switch (upperSymbol) {
@@ -355,21 +355,4 @@ export function formatPrice(price: number | null): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
-}
-
-/**
- * Format price change for display
- */
-export function formatPriceChange(change: number): string {
-  const sign = change >= 0 ? '+' : ''
-  return `${sign}${change.toFixed(2)}%`
-}
-
-/**
- * Get price badge color based on change
- */
-export function getPriceChangeColor(change: number): string {
-  if (change > 0) return 'text-orange'
-  if (change < 0) return 'text-red'
-  return 'text-text-dim'
 }

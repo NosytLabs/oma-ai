@@ -89,8 +89,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             style={{
               padding: '0.625rem 1.25rem',
               borderRadius: '0.5rem',
-              border: '1px solid var(--color-accent, #8b5cf6)',
-              background: 'var(--color-accent, #8b5cf6)',
+              border: '1px solid var(--color-accent, #f97316)',
+              background: 'var(--color-accent, #f97316)',
               color: 'var(--color-void, #0a0a0f)',
               fontWeight: 600,
               cursor: 'pointer',

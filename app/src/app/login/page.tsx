@@ -88,6 +88,7 @@ function LoginInner() {
         >
           <button
             type="button"
+            id="tab-wallet"
             role="tab"
             aria-selected={tab === 'wallet'}
             aria-controls="panel-wallet"
@@ -104,6 +105,7 @@ function LoginInner() {
           </button>
           <button
             type="button"
+            id="tab-account"
             role="tab"
             aria-selected={tab === 'account'}
             aria-controls="panel-account"
@@ -132,7 +134,7 @@ function LoginInner() {
               type="button"
               onClick={handleConnect}
               disabled={!isReady}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-void transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Wallet className="h-4 w-4" aria-hidden="true" />
               {isConnected ? 'Sign in with Ethereum' : 'Connect Wallet'}

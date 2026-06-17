@@ -227,7 +227,7 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 
 export const MODEL_COUNT = MODELS.length
 
-export type FeaturedModelLogo =
+type FeaturedModelLogo =
   | 'llama'
   | 'claude'
   | 'gemini'
@@ -237,31 +237,14 @@ export type FeaturedModelLogo =
   | 'together'
   | 'antseed'
 
-export interface FeaturedModel {
-  id: string
-  provider: string
-  ctx: string
-  logo: FeaturedModelLogo
-}
-
-export const FEATURED_MODELS: FeaturedModel[] = [
-  { id: 'llama-3.3-70b', provider: 'Venice', ctx: '8K', logo: 'llama' },
-  { id: 'claude-sonnet-4', provider: 'Claude', ctx: '200K', logo: 'claude' },
-  { id: 'gemini-2.5-pro', provider: 'Gemini', ctx: '1M', logo: 'gemini' },
-  { id: 'gpt-4o-mini', provider: 'OpenRouter', ctx: '128K', logo: 'gpt' },
-  { id: 'deepseek-v3.2', provider: 'Venice', ctx: '64K', logo: 'deepseek' },
-  { id: 'claude-3-5-haiku-latest', provider: 'Claude', ctx: '200K', logo: 'claude' },
-]
-
-export const PROVIDER_LOGOS: Record<Provider, FeaturedModelLogo> = {
-  Venice: 'venice',
-  AntSeed: 'antseed',
-  Claude: 'claude',
-  Gemini: 'gemini',
-  OpenRouter: 'gpt',
-  Together: 'together',
-}
-
 export function getProviderLogo(provider: Provider): FeaturedModelLogo {
-  return PROVIDER_LOGOS[provider]
+  const logos: Record<Provider, FeaturedModelLogo> = {
+    Venice: 'venice',
+    AntSeed: 'antseed',
+    Claude: 'claude',
+    Gemini: 'gemini',
+    OpenRouter: 'gpt',
+    Together: 'together',
+  }
+  return logos[provider]
 }

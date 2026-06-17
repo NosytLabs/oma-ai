@@ -3,9 +3,21 @@
 import { useState, useMemo, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { m, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Link2, Rocket } from 'lucide-react'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { MODELS as SOURCE_MODELS } from '@/lib/models-data'
+import {
+  EASE_OUT,
+  EASE_SPRING_SOFT,
+  staggerContainer,
+  fadeUp,
+  scaleIn,
+  blurIn,
+  Reveal,
+  StaggerReveal,
+  Magnetic,
+} from '@/lib/motion'
 
 const LazyTinyFishPricing = dynamic(
   () => import('@/components/tinyfish-pricing').then(mod => mod.TinyFishPricing),
@@ -114,7 +126,7 @@ function fmtPrice(n: number): string {
 function AccordionItem({ item, isOpen, onToggle, index }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void; index: number }) {
   const buttonId = `faq-button-${index}`
   const panelId = `faq-panel-${index}`
-  
+
   return (
     <div className="border-b border-border">
       <button
@@ -125,16 +137,31 @@ function AccordionItem({ item, isOpen, onToggle, index }: { item: typeof FAQ_ITE
         aria-controls={panelId}
       >
         <span className="font-medium text-text">{item.q}</span>
-        <ChevronDown className={`h-5 w-5 text-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <m.span
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.25, ease: EASE_OUT }}
+          className="shrink-0"
+        >
+          <ChevronDown className="h-5 w-5 text-text-muted" />
+        </m.span>
       </button>
-      <div 
-        id={panelId}
-        role="region"
-        aria-labelledby={buttonId}
-        className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-5' : 'max-h-0'}`}
-      >
-        <p className="text-sm text-text-secondary">{item.a}</p>
-      </div>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <m.div
+            id={panelId}
+            role="region"
+            aria-labelledby={buttonId}
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: EASE_OUT }}
+            className="overflow-hidden"
+          >
+            <p className="pb-5 text-sm text-text-secondary">{item.a}</p>
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -149,20 +176,29 @@ export default function PricingPage() {
   )
 
   return (
-    <div className="min-h-screen bg-void">
+    <div className="relative min-h-screen overflow-hidden bg-void">
+      {/* ── Ambient background ── */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-grid-animated opacity-[0.35] mask-radial" />
+        <div className="aurora opacity-30" />
+      </div>
+
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         {/* ── Header ── */}
-        <div className="mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent-dim mb-6">
+        <StaggerReveal className="mb-12" as="div" stagger={0.1}>
+          <m.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent-dim mb-6">
             <span className="text-xs font-mono text-accent uppercase tracking-widest">{'// pricing'}</span>
-          </div>
-          <h1 className="h1-page text-text-bright">
+          </m.div>
+          <m.h1
+            variants={blurIn}
+            className="h1-page text-text-bright"
+          >
             AI API Pricing
-          </h1>
-          <p className="mt-4 text-base text-text-secondary max-w-2xl">
+          </m.h1>
+          <m.p variants={fadeUp} className="mt-4 text-base text-text-secondary max-w-2xl">
             Credit-based billing. No subscriptions. No minimums. Pay per token across {MODELS.length} models via unified OpenAI-compatible API.
-          </p>
-        </div>
+          </m.p>
+        </StaggerReveal>
 
         {/* ── Payment Methods ── */}
         <div className="mb-12">
@@ -171,13 +207,13 @@ export default function PricingPage() {
             <span className="text-xs font-mono text-text-muted uppercase tracking-widest">payment methods</span>
             <div className="h-px flex-1 bg-border" />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <StaggerReveal className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3" stagger={0.08}>
             {PAYMENT_METHODS.map((method) => {
               const Icon = method.icon
               return (
-                <div key={method.title} className="relative group">
+                <m.div key={method.title} variants={scaleIn} className="relative group">
                   <div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative p-5 rounded-xl border border-border bg-surface hover:border-accent/40 transition-colors">
+                  <div className="relative tilt-card sheen glass p-5 rounded-xl border border-border hover:border-accent/40 hover:glow-accent-sm transition-colors">
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated">
                         <Icon className="h-5 w-5 text-accent" />
@@ -193,53 +229,71 @@ export default function PricingPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </m.div>
               )
             })}
-          </div>
+          </StaggerReveal>
         </div>
 
-        {/* ── x402 Banner ── */}
-        <div className="mb-12 p-4 rounded-xl border border-accent/20 bg-accent-dim">
-          <div className="flex items-start gap-3">
-            <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
-            <div>
-              <h4 className="text-sm font-semibold text-accent">x402 Protocol</h4>
-              <p className="mt-1 text-xs text-text-secondary leading-relaxed">
-                Native x402 support lets applications integrate AI payments without managing credit balances.
-                <Link href="/crypto-payments" className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors">Learn more →</Link>
-              </p>
+        {/* ── x402 Banner (recommended highlight) ── */}
+        <Reveal className="mb-12" y={20}>
+          <div className="relative border-gradient float p-4 rounded-xl bg-accent-dim">
+            <div className="flex items-start gap-3">
+              <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-accent">x402 Protocol</h4>
+                  <span className="inline-flex items-center rounded-full bg-accent text-void px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">recommended</span>
+                </div>
+                <p className="mt-1 text-xs text-text-secondary leading-relaxed">
+                  Native x402 support lets applications integrate AI payments without managing credit balances.
+                  <Link href="/crypto-payments" className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors">Learn more →</Link>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* ── Model Table - Mobile Responsive ── */}
         <div className="mb-16">
           <div className="rounded-xl border border-border bg-surface overflow-hidden">
             <div className="border-b border-border px-4 py-4 sm:px-6">
               <div className="flex flex-wrap gap-2 mb-4">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.key}
-                    onClick={() => setCategory(cat.key)}
-                    className={`px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-all duration-150 ${
-                      category === cat.key
-                        ? CATEGORY_STYLES[cat.key].active
-                        : CATEGORY_STYLES[cat.key].inactive
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+                {CATEGORIES.map((cat) => {
+                  const active = category === cat.key
+                  return (
+                    <m.button
+                      key={cat.key}
+                      onClick={() => setCategory(cat.key)}
+                      whileTap={{ scale: 0.96 }}
+                      transition={EASE_SPRING_SOFT}
+                      className={`relative px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-colors duration-150 ${
+                        active
+                          ? CATEGORY_STYLES[cat.key].active
+                          : CATEGORY_STYLES[cat.key].inactive
+                      }`}
+                    >
+                      {active && (
+                        <m.span
+                          layoutId="pricing-category-pill"
+                          className="absolute inset-0 rounded-full"
+                          transition={EASE_SPRING_SOFT}
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      {cat.label}
+                    </m.button>
+                  )
+                })}
               </div>
               <p className="text-xs text-text-muted font-mono">{filtered.length} models</p>
             </div>
-            
+
             {/* Horizontal scroll wrapper with gradient hint */}
             <div className="relative">
               {/* Right gradient hint for scrollable content */}
               <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
-              
+
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 <table className="w-full text-left min-w-[640px] sm:min-w-0">
                   <thead>
@@ -251,31 +305,41 @@ export default function PricingPage() {
                       <th scope="col" className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">Ctx</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filtered.map((m, i) => (
-                      <tr key={m.id} className={`border-b border-border/50 transition-colors hover:bg-surface-elevated/50 ${i % 2 === 1 ? 'bg-surface-elevated/30' : ''}`}>
+                  {/* key=category re-triggers stagger on filter change */}
+                  <m.tbody
+                    key={category}
+                    variants={staggerContainer(0.035)}
+                    initial="hidden"
+                    animate="show"
+                  >
+                    {filtered.map((mm, i) => (
+                      <m.tr
+                        key={mm.id}
+                        variants={fadeUp}
+                        className={`border-b border-border/50 transition-colors hover:bg-surface-elevated/50 ${i % 2 === 1 ? 'bg-surface-elevated/30' : ''}`}
+                      >
                         <td className="px-4 py-3">
-                          <span className="text-sm font-medium text-text-bright">{m.name}</span>
-                          <span className="ml-2 text-xs text-text-secondary font-mono hidden sm:inline">{m.id}</span>
+                          <span className="text-sm font-medium text-text-bright">{mm.name}</span>
+                          <span className="ml-2 text-xs text-text-secondary font-mono hidden sm:inline">{mm.id}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
-                            m.provider === 'Venice' ? 'bg-accent/20 text-accent' :
-                            m.provider === 'AntSeed' ? 'bg-accent/20 text-accent' :
+                            mm.provider === 'Venice' ? 'bg-accent/20 text-accent' :
+                            mm.provider === 'AntSeed' ? 'bg-accent/20 text-accent' :
                             'bg-secondary/20 text-secondary'
                           }`}>
-                            {m.provider}
+                            {mm.provider}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-accent">{fmtPrice(m.inputPer1M)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-text-secondary">{fmtPrice(m.outputPer1M)}</td>
-                        <td className="px-4 py-3 text-right text-xs text-text-secondary font-mono">{m.ctx}</td>
-                      </tr>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-accent">{fmtPrice(mm.inputPer1M)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-medium text-text-secondary">{fmtPrice(mm.outputPer1M)}</td>
+                        <td className="px-4 py-3 text-right text-xs text-text-secondary font-mono">{mm.ctx}</td>
+                      </m.tr>
                     ))}
-                  </tbody>
+                  </m.tbody>
                 </table>
               </div>
-              
+
               {/* Mobile scroll indicator - swipe hint */}
               <div className="sm:hidden flex items-center justify-center py-2 text-[10px] sm:text-xs text-text-muted">
                 <span className="font-mono">Swipe to scroll &rarr;</span>
@@ -285,7 +349,7 @@ export default function PricingPage() {
         </div>
 
         {/* ── FAQ ── */}
-        <div className="mb-12">
+        <Reveal className="mb-12">
           <div className="flex items-center gap-2 mb-6">
             <HelpCircle className="h-4 w-4 text-accent" />
             <h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">FAQ</h3>
@@ -301,35 +365,51 @@ export default function PricingPage() {
               />
             ))}
           </div>
-        </div>
+        </Reveal>
 
         {/* ── CTA ── */}
-        <div className="mb-12 py-8">
-          <div className="flex flex-col items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center"
+        <div className="relative mb-12 overflow-hidden rounded-2xl py-10">
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+            <div className="aurora opacity-40" />
+          </div>
+          <Reveal className="flex flex-col items-center gap-4" y={20}>
+            <m.h2
+              initial={{ opacity: 0, filter: 'blur(8px)', y: 16 }}
+              whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              viewport={{ once: true, margin: '-60px 0px -60px 0px' }}
+              transition={{ duration: 0.7, ease: EASE_OUT }}
+              className="h2-page text-text-bright text-center"
             >
-              <Zap className="h-4 w-4 mr-2" />
-              Start AI Inference
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Link>
-            <Link
-              href="/deposit"
-              className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center"
-            >
-              <Coins className="h-4 w-4 mr-2" />
-              Deposit Crypto
-            </Link>
+              Start building today
+            </m.h2>
+            <Magnetic strength={10}>
+              <Link
+                href="/dashboard"
+                className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Start AI Inference
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Magnetic>
+            <Magnetic strength={10}>
+              <Link
+                href="/deposit"
+                className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center"
+              >
+                <Coins className="h-4 w-4 mr-2" />
+                Deposit Crypto
+              </Link>
+            </Magnetic>
             <Link href="/models" className="text-sm text-text-secondary hover:text-accent transition-colors px-4 py-3 text-center">
               View All Models
               <ArrowRight className="w-4 h-4 ml-1 inline-block" />
             </Link>
-          </div>
+          </Reveal>
         </div>
 
         {/* ── TinyFish ── */}
-        <div className="mb-12">
+        <Reveal className="mb-12">
           <div className="flex items-center gap-2 mb-6">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs font-mono text-text-muted uppercase tracking-widest">add-ons</span>
@@ -338,10 +418,10 @@ export default function PricingPage() {
           <Suspense fallback={<Skeleton className="h-64 w-full" />}>
             <LazyTinyFishPricing />
           </Suspense>
-        </div>
+        </Reveal>
 
         {/* ── Billing Notes ── */}
-        <div className="p-4 rounded-xl border border-amber/20 bg-amber/5">
+        <Reveal className="p-4 rounded-xl border border-amber/20 bg-amber/5">
           <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-3">Billing</h4>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {[
@@ -356,7 +436,7 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   )

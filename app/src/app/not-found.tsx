@@ -54,7 +54,7 @@ export default function NotFound() {
             className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-accent transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Return to previous page</span>
+            <span>Back to homepage</span>
           </Link>
         </div>
       </div>
