@@ -9,6 +9,7 @@ import { checkCircuitBreaker } from "../../credits/price-guard.js";
 import type { OmaEnv } from "../../types.js";
 import { mapHoudiniStatus } from "./houdini.js";
 import { completeHoudiniDeposit } from "../../credits/deposit.js";
+import { logger } from "../../lib/logger.js";
 
 export const balanceRoutes = new Hono<OmaEnv>();
 
@@ -110,7 +111,7 @@ balanceRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const errType = (err as { type?: string }).type ?? "server_error";
-    console.error(`[deposit] /v1/deposit/status error:`, err);
+    logger.error({ err, depositId }, "[deposit] /v1/deposit/status error");
     return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
   }
 });

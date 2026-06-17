@@ -4,6 +4,7 @@ import { usageRecords, providerHealth, users } from "../db/schema.js";
 import { desc, count, sql as drizzleSql } from "drizzle-orm";
 import { sessionAuth, requireAdmin } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
+import { logger } from "../lib/logger.js";
 
 export const adminAnalyticsRoutes = new Hono<OmaEnv>();
 
@@ -152,7 +153,7 @@ adminAnalyticsRoutes.get("/v1/admin/analytics/overview", async (c) => {
       })),
     });
   } catch (err) {
-    console.error('Admin analytics overview error:', err);
+    logger.error({ err, period }, "Admin analytics overview error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

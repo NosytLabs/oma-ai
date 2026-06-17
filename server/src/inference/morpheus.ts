@@ -19,6 +19,7 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
 import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
+import { logger } from "../lib/logger.js";
 
 const MORPHEUS_TIMEOUT_MS = 60_000;
 const MORPHEUS_STREAM_TIMEOUT_MS = 120_000;
@@ -72,7 +73,7 @@ export async function chatCompletion(body: {
 }, signal?: AbortSignal): Promise<Response> {
   return withRetry(() => provider.chatCompletion(body, signal), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`Morpheus request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn({ attempt, delayMs: Math.round(delay), err: err.message }, "Morpheus request failed, retrying");
     },
   });
 }
@@ -86,7 +87,7 @@ export async function completion(body: {
 }): Promise<Response> {
   return withRetry(() => provider.completion(body), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`Morpheus completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn({ attempt, delayMs: Math.round(delay), err: err.message }, "Morpheus completion failed, retrying");
     },
   });
 }

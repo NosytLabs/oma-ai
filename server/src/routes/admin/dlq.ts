@@ -8,6 +8,7 @@ import {
   discardSettlementFromDlq,
 } from "../../lib/settlement-retry.js";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 export const dlqRoutes = new Hono<OmaEnv>();
 
@@ -54,7 +55,7 @@ dlqRoutes.get("/v1/admin/dlq/settlements", async (c) => {
       },
     });
   } catch (err) {
-    console.error("Admin settlement DLQ error:", err);
+    logger.error({ err }, "Admin settlement DLQ error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -87,7 +88,7 @@ dlqRoutes.post("/v1/admin/dlq/settlements/:id/retry", async (c) => {
       permanentlyFailed: result.permanentlyFailed,
     });
   } catch (err) {
-    console.error("Admin settlement retry error:", err);
+    logger.error({ err, id }, "Admin settlement retry error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -117,7 +118,7 @@ dlqRoutes.post("/v1/admin/dlq/settlements/:id/discard", async (c) => {
       discarded: true,
     });
   } catch (err) {
-    console.error("Admin settlement discard error:", err);
+    logger.error({ err, id }, "Admin settlement discard error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -159,7 +160,7 @@ dlqRoutes.post("/v1/admin/dlq/settlements/process", async (c) => {
       })),
     });
   } catch (err) {
-    console.error("Admin settlement DLQ process error:", err);
+    logger.error({ err }, "Admin settlement DLQ process error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

@@ -1,6 +1,7 @@
 import type { Context, Next } from "hono";
 import { validateApiKey, shouldRecommendRotation, isIpAllowedByList } from "./api-keys.js";
 import { verifySessionToken } from "./siwe.js";
+import { verifyNeonAuthToken, isNeonAuthConfigured } from "./neon-auth.js";
 import { decryptSecret } from "./encryption.js";
 import { db } from "../db/client.js";
 import { users, teamMembers } from "../db/schema.js";
@@ -26,7 +27,7 @@ function validateAdminAddresses(): void {
 
   for (const address of addresses) {
     if (!isValidEthereumAddress(address)) {
-      console.error(`[FATAL] ADMIN_WALLET_ADDRESSES contains invalid Ethereum address: ${address}`);
+      logger.fatal({ address }, "[FATAL] ADMIN_WALLET_ADDRESSES contains invalid Ethereum address");
       process.exit(1);
     }
   }
@@ -116,63 +117,107 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
   }
   const token = authHeader.slice(7);
 
+  // Path 1: local HS256 session token (SIWE / Solana / account-number / sso).
   let session: { userId: string; authMethod: string } | null;
   try {
     session = (await verifySessionToken(token)) as { userId: string; authMethod: string } | null;
   } catch (err) {
     logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[sessionAuth] verifySessionToken threw");
-    return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
+    session = null;
   }
-  if (!session) {
-    return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
-  }
-  c.set("userId", session.userId);
-  c.set("authMethod", session.authMethod as "siwe" | "solana" | "account-number" | "sso");
 
-  const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
-  if (user?.twoFactorEnabled) {
-    const redis = await getRedisClient();
-    if (!redis) {
-      return c.json({ error: { message: "Authentication service unavailable", type: "server_error" } }, 503);
-    }
-    const failKey = `2fa_fail:${session.userId}`;
+  if (session) {
+    c.set("userId", session.userId);
+    c.set("authMethod", session.authMethod as "siwe" | "solana" | "account-number" | "sso");
 
-    // SEC-7: atomic INCR-then-check. The pre-fix code did `GET failKey`
-    // then `INCR` after the verify, which let N concurrent requests all
-    // see `fails < 5` and bypass the brute-force cap. INCR is atomic in
-    // Redis; the post-increment value is unique per request.
-    const newCount = await redis.incr(failKey);
-    if (newCount === 1) {
-      // First failure in this window — set the TTL exactly once so the
-      // 5-min cap doesn't slide forward on every retry.
-      await redis.expire(failKey, 300);
-    }
-    if (newCount >= 5) {
-      return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
-    }
-
-    const twoFactorCode = c.req.header("X-2FA-Code");
-    if (!twoFactorCode) {
-      return c.json({ error: { message: "2FA code required", type: "authentication_error", code: "2fa_required" } }, 401);
-    }
-    const [userWithSecret] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, session.userId)).limit(1);
-    if (userWithSecret?.twoFactorSecret) {
-      let secret: string;
-      try {
-        const parsed = JSON.parse(userWithSecret.twoFactorSecret);
-        secret = decryptSecret(parsed.encrypted, parsed.iv, parsed.authTag);
-      } catch {
-        return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
+    const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
+    if (user?.twoFactorEnabled) {
+      const redis = await getRedisClient();
+      if (!redis) {
+        return c.json({ error: { message: "Authentication service unavailable", type: "server_error" } }, 503);
       }
-      const isValid = authenticator.verify({ token: twoFactorCode, secret });
-      if (!isValid) {
-        return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
+      const failKey = `2fa_fail:${session.userId}`;
+
+      // SEC-7: atomic INCR-then-check. The pre-fix code did `GET failKey`
+      // then `INCR` after the verify, which let N concurrent requests all
+      // see `fails < 5` and bypass the brute-force cap. INCR is atomic in
+      // Redis; the post-increment value is unique per request.
+      const newCount = await redis.incr(failKey);
+      if (newCount === 1) {
+        // First failure in this window — set the TTL exactly once so the
+        // 5-min cap doesn't slide forward on every retry.
+        await redis.expire(failKey, 300);
       }
-      await redis.del(failKey);
+      if (newCount >= 5) {
+        return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
+      }
+
+      const twoFactorCode = c.req.header("X-2FA-Code");
+      if (!twoFactorCode) {
+        return c.json({ error: { message: "2FA code required", type: "authentication_error", code: "2fa_required" } }, 401);
+      }
+      const [userWithSecret] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, session.userId)).limit(1);
+      if (userWithSecret?.twoFactorSecret) {
+        let secret: string;
+        try {
+          const parsed = JSON.parse(userWithSecret.twoFactorSecret);
+          secret = decryptSecret(parsed.encrypted, parsed.iv, parsed.authTag);
+        } catch {
+          return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
+        }
+        const isValid = authenticator.verify({ token: twoFactorCode, secret });
+        if (!isValid) {
+          return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
+        }
+        await redis.del(failKey);
+      }
+    }
+
+    await next();
+    return;
+  }
+
+  // Path 2: Neon Auth (managed Better Auth) JWT via JWKS. This is a
+  // pure-additive parallel path. When NEON_AUTH_URL is unset, this is
+  // a no-op and we 401 below. Neon-Auth-authenticated requests skip
+  // the local 2FA gate because Better Auth enforces its own session
+  // policies server-side.
+  if (isNeonAuthConfigured()) {
+    let neonAuth;
+    try {
+      neonAuth = await verifyNeonAuthToken(token);
+    } catch (err) {
+      logger.error(
+        { err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' },
+        "[sessionAuth] verifyNeonAuthToken threw",
+      );
+      neonAuth = null;
+    }
+    if (neonAuth) {
+      c.set("neonAuthUserId", neonAuth.neonAuthUserId);
+      // If a local OMA user row is linked to this Neon Auth user, we
+      // populate userId + authMethod so downstream code that only
+      // reads `c.get('userId')` continues to work. The linking is
+      // best-effort and read-only here — Neon Auth sign-in is the
+      // authoritative identity, the local row is just convenience
+      // for billing / credits / API key rows.
+      const [linked] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.neonAuthUserId, neonAuth.neonAuthUserId))
+        .limit(1);
+      if (linked) {
+        c.set("userId", linked.id);
+      } else {
+        c.set("userId", `neon-auth:${neonAuth.neonAuthUserId}`);
+      }
+      c.set("authMethod", "neon-auth");
+      await next();
+      return;
     }
   }
 
-  await next();
+  return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
 }
 
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {

@@ -3,6 +3,7 @@ import { db } from "../../db/client.js";
 import { apiKeys, users, usageRecords } from "../../db/schema.js";
 import { eq, desc, sql, count } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 const pageSchema = (await import("zod")).z.coerce.number().int().positive().default(1);
 const limitSchema = (await import("zod")).z.coerce.number().int().positive().max(100).default(50);
@@ -76,7 +77,7 @@ keysRoutes.get("/admin/keys", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Admin keys error:', err);
+    logger.error({ err, page, limit }, "Admin keys error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

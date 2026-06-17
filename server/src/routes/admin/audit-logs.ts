@@ -4,6 +4,7 @@ import { db } from "../../db/client.js";
 import { auditLogs } from "../../db/schema.js";
 import { eq, desc, count, and, gte, lte } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 const limitSchema = z.coerce.number().int().positive().max(100).default(50);
 const dateSchema = z.string().refine((d) => !isNaN(Date.parse(d)), { message: "Invalid date format" }).optional();
@@ -81,7 +82,7 @@ auditLogsRoutes.get("/v1/admin/audit-logs", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Admin audit logs error:', err);
+    logger.error({ err }, "Admin audit logs error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { m, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { log } from '@/lib/logger'
 import {
   X,
   Trash2,
@@ -233,7 +234,7 @@ function PlaygroundContent() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs))
         } catch (err) {
-          console.warn('Failed to save conversation to storage:', err)
+          log.warn('Failed to save conversation to storage', err)
         }
       }, 2000)
     }
@@ -359,7 +360,7 @@ function PlaygroundContent() {
       }
       return { results, contextMessage }
     } catch (err) {
-      console.warn('Web search failed:', err)
+      log.warn('Web search failed', err)
       toast.error('Web search unavailable — proceeding without search results')
       return { results: [], contextMessage: null }
     } finally {
@@ -467,7 +468,7 @@ function PlaygroundContent() {
             flushToState()
           }
         } catch (err) {
-          console.warn('Failed to parse streaming response:', err)
+          log.warn('Failed to parse streaming response', err)
         }
       }
       const handleBlock = (block: string) => {

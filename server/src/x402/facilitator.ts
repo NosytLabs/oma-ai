@@ -13,6 +13,7 @@ import { addSettlementToDlq } from "../lib/dlq.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getRedisClient } from "../lib/redis-client.js";
 import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS, NONCE_REDIS_TTL_SECONDS } from "../constants.js";
+import { logger } from "../lib/logger.js";
 
 const LOCK_TTL_SECONDS = 30;
 // ponytail: in tests HOUDINI_ADDRESS_TO may be unset and TREASURY_BASE_ADDRESS
@@ -253,7 +254,7 @@ async function verifyEvmPayment(
   async function attemptVerification(rpcUrl: string, fallbackRpcUrl: string | undefined): Promise<PaymentResponse> {
     const isFallback = rpcUrl !== config.CHAIN_RPC_URL;
     if (isFallback && fallbackRpcUrl) {
-      console.warn(`[FACILITATOR] [WARN] EVM RPC fallback active: ${rpcUrl}`);
+      logger.warn({ rpcUrl }, "[FACILITATOR] EVM RPC fallback active");
     }
 
     const client = createPublicClient({
@@ -341,7 +342,7 @@ async function verifyEvmPayment(
           };
         }
       } catch (decodeErr) {
-        console.error(`[facilitator] Failed to decode USDC transfer data:`, decodeErr);
+        logger.error({ err: decodeErr }, "[facilitator] Failed to decode USDC transfer data");
         return { valid: false, error: `Failed to decode USDC transfer data` };
       }
     }
@@ -368,7 +369,7 @@ async function verifyEvmPayment(
       primaryErr.name === "TypeError"
     );
 
-    console.error(`[facilitator] EVM verification error:`, primaryErr);
+    logger.error({ err: primaryErr }, "[facilitator] EVM verification error");
     if (!isNetworkError) {
       return { valid: false, error: `EVM verification failed` };
     }
@@ -401,10 +402,11 @@ function mockVerifyPayment(
   // mock signature does not verify twice. Returns synchronously here; the
   // async Redis call is fire-and-forget at the route level.
   void consumeNonce(payload.nonce).then((r) => {
-    if (!r.ok) console.warn(`[FACILITATOR] [WARN] Mock-mode replay blocked: ${r.reason}`);
+    if (!r.ok) logger.warn({ reason: r.reason }, "[FACILITATOR] Mock-mode replay blocked");
   });
-  console.warn(
-    `[FACILITATOR] [WARN] Mock-mode verification accepted -- signature=${signature.slice(0, 16)}... scheme=${payload.scheme} amount=${payload.amount}`,
+  logger.warn(
+    { signaturePrefix: signature.slice(0, 16), scheme: payload.scheme, amount: payload.amount },
+    "[FACILITATOR] Mock-mode verification accepted",
   );
 
   const mockTxHash =
@@ -454,7 +456,7 @@ export async function verifyPayment(
     if (config.NODE_ENV === "production") {
       throw new Error(`[FACILITATOR] FATAL: Mock payment mode explicitly forbidden in production`);
     }
-    console.warn("[FACILITATOR] [WARN] Processing payment in mock mode -- signatures are NOT verified on-chain");
+    logger.warn("[FACILITATOR] Processing payment in mock mode -- signatures are NOT verified on-chain");
     return mockVerifyPayment(signature, payload);
   }
 
@@ -586,7 +588,7 @@ export async function settlePaymentAsync(
               }
             }
             lastError = err instanceof Error ? err : new Error(String(err));
-            console.error(`Failed to persist settlement to DB (attempt ${attempt}/3):`, lastError);
+            logger.error({ err: lastError, attempt }, "Failed to persist settlement to DB");
             if (attempt < 3) {
               const backoffMs = Math.min(100 * Math.pow(2, attempt - 1), 1000);
               await new Promise((resolve) => setTimeout(resolve, backoffMs));

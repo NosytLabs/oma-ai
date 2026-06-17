@@ -45,11 +45,18 @@ export const users = pgTable("users", {
   twoFactorSecret: text("two_factor_secret"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   nonce: text("nonce").notNull(), // TTL: expired after 10min (checked in siwe.ts); production cleanup via cron
+  // Neon Auth (managed Better Auth) linkage. Set when the user signs in
+  // via the Neon Auth host so we can join on the OMA users row from
+  // /auth/middleware.ts's sessionAuth() Neon Auth path. Nullable: SIWE /
+  // Solana / account-number users never have this set.
+  neonAuthUserId: text("neon_auth_user_id"),
+  neonAuthLinkedAt: timestamp("neon_auth_linked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   index("idx_users_address").on(t.address),
   index("idx_users_account_number_hash").on(t.accountNumberHash),
+  index("idx_users_neon_auth_user_id").on(t.neonAuthUserId),
   index("idx_users_nonce_not_null").on(t.updatedAt).where(sql`${t.nonce} != ''`),
 ]);
 

@@ -33,15 +33,20 @@ vi.mock('@/components/wallet-context', () => ({
 }))
 
 // lucide-react icons are SVG passthroughs; keep the API the same.
-vi.mock('lucide-react', () => ({
-  Menu: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="menu-icon" {...props} />,
-  X: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="x-icon" {...props} />,
-  Key: (props: React.SVGAttributes<SVGElement>) => <svg {...props} />,
-  Zap: (props: React.SVGAttributes<SVGElement>) => <svg {...props} />,
-  Github: (props: React.SVGAttributes<SVGElement>) => <svg {...props} />,
-  Activity: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="activity-icon" {...props} />,
-  Settings: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="settings-icon" {...props} />,
-}))
+// Use importOriginal so every icon used by the navbar (Box, Terminal, Tag,
+// FileText, Sparkles, Wand2, etc.) resolves to a real component, then
+// override only the handful we assert on directly.
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>()
+  const passthrough = (props: React.SVGAttributes<SVGElement>) => <svg {...props} />
+  return {
+    ...actual,
+    Menu: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="menu-icon" {...props} />,
+    X: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="x-icon" {...props} />,
+    Github: passthrough,
+    Settings: (props: React.SVGAttributes<SVGElement>) => <svg data-testid="settings-icon" {...props} />,
+  }
+})
 
 // Other Navbar children that don't matter for the focus-trap test.
 vi.mock('@/components/ui/oma-logo', () => ({

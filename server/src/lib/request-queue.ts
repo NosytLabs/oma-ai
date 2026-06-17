@@ -1,4 +1,5 @@
 import { getRedisClient, isRedisReady } from "./redis-client.js";
+import { logger } from "./logger.js";
 import type { ChatMessage } from "../inference/types.js";
 
 export interface QueuedRequest {
@@ -101,7 +102,7 @@ export async function enqueueRequest(request: QueuedRequest): Promise<void> {
     }
   } catch (err) {
     if (err instanceof Error && err.message.startsWith("Queue full")) throw err;
-    console.error("[queue] Failed to enqueue request:", err);
+    logger.error({ err, requestId: request.id, userId: request.userId }, "[queue] Failed to enqueue request");
     throw err;
   }
 }
@@ -130,7 +131,7 @@ export async function getQueueStatus(userId: string): Promise<QueueStatus> {
       inQueue: userPosition > 0,
     };
   } catch (err) {
-    console.error("[queue] Failed to get queue status:", err);
+    logger.error({ err, userId }, "[queue] Failed to get queue status");
     return { queueDepth: -1, userPosition: -1, estimatedWaitSeconds: 0, inQueue: false };
   }
 }
@@ -143,7 +144,7 @@ export async function getQueuePosition(userId: string, requestId: string): Promi
     const exists = await redis.sIsMember(`oma:queue:users:${userId}`, requestId);
     return exists ? 1 : -1;
   } catch (err) {
-    console.error("[queue] Failed to get queue position:", err);
+    logger.error({ err, userId, requestId }, "[queue] Failed to get queue position");
     return -1;
   }
 }
@@ -176,7 +177,7 @@ export async function processNextRequest(): Promise<QueuedRequest | null> {
 
     return parsed;
   } catch (err) {
-    console.error("[queue] Failed to process next request:", err);
+    logger.error({ err }, "[queue] Failed to process next request");
     return null;
   }
 }
@@ -189,7 +190,7 @@ export async function peekQueue(count: number = 10): Promise<QueuedRequest[]> {
     const items = await redis.lRange(getQueueKey(), 0, count - 1);
     return items.map((item) => JSON.parse(item as string) as QueuedRequest);
   } catch (err) {
-    console.error("[queue] Failed to peek queue:", err);
+    logger.error({ err }, "[queue] Failed to peek queue");
     return [];
   }
 }
@@ -216,7 +217,7 @@ export async function removeFromQueue(userId: string, requestId: string): Promis
     }
     return false;
   } catch (err) {
-    console.error("[queue] Failed to remove from queue:", err);
+    logger.error({ err, userId, requestId }, "[queue] Failed to remove from queue");
     return false;
   }
 }
@@ -235,7 +236,7 @@ export async function clearQueue(): Promise<boolean> {
     }
     return true;
   } catch (err) {
-    console.error("[queue] Failed to clear queue:", err);
+    logger.error({ err }, "[queue] Failed to clear queue");
     return false;
   }
 }
@@ -257,7 +258,7 @@ export function startQueueProcessor(handler?: (request: QueuedRequest) => Promis
         }
       }
     } catch (err) {
-      console.error("[queue] Background processor error:", err);
+      logger.error({ err }, "[queue] Background processor error");
     } finally {
       processingFlag = false;
     }
@@ -310,7 +311,7 @@ export async function getQueueStats(): Promise<{
       oldestRequestAgeMs,
     };
   } catch (err) {
-    console.error("[queue] Failed to get queue stats:", err);
+    logger.error({ err }, "[queue] Failed to get queue stats");
     return { depth: -1, avgWaitTimeMs: -1, oldestRequestAgeMs: -1 };
   }
 }

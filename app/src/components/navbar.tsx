@@ -26,6 +26,7 @@ import {
   ArrowLeftRight,
   Info,
   CornerDownLeft,
+  Wand2,
 } from 'lucide-react'
 import { ApiStatus } from './api-status'
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
@@ -260,6 +261,11 @@ export function Navbar() {
   const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'
   const isToolsActive = toolsLinks.some(l => isCurrentPath(pathname, l.href))
 
+  // Pre-compute mobile-menu card active states so the JSX stays clean and
+  // we can highlight the card that contains the current page.
+  const accountHrefs = ['/dashboard', '/deposit', '/settings', '/docs']
+  const isAccountCardActive = accountHrefs.some(href => isCurrentPath(pathname, href))
+
   return (
     <header
       className={`sticky top-0 left-0 right-0 z-50 border-b font-mono transition-colors duration-300 ${
@@ -337,37 +343,44 @@ export function Navbar() {
 
             {/* Tools dropdown (desktop) */}
             <div ref={toolsRef} className="relative hidden md:block">
-              <button
-                ref={toolsToggleRef}
-                type="button"
-                onClick={() => setToolsOpen(v => !v)}
-                aria-haspopup="menu"
-                aria-expanded={toolsOpen}
-                aria-controls="tools-menu"
-                aria-label="Tools menu"
-                className={`relative inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  isToolsActive
-                    ? 'text-accent'
-                    : 'text-text-secondary hover:text-text-bright'
-                }`}
+              <m.div
+                whileHover={prefersReduced ? undefined : { y: -1 }}
+                whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+                transition={EASE_SPRING}
+                className="inline-block"
               >
-                {isToolsActive && !toolsOpen && (
-                  <m.span
-                    layoutId="nav-active"
-                    aria-hidden="true"
-                    className="absolute inset-0 rounded-sm bg-accent-dim"
-                    transition={EASE_SPRING_SOFT}
-                  />
-                )}
-                <Sparkles className="relative z-10 h-3 w-3 opacity-70" aria-hidden="true" />
-                <span className="relative z-10">tools</span>
-                <ChevronDown
-                  className={`relative z-10 h-3 w-3 opacity-60 transition-transform duration-200 ${
-                    toolsOpen ? 'rotate-180' : ''
+                <button
+                  ref={toolsToggleRef}
+                  type="button"
+                  onClick={() => setToolsOpen(v => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={toolsOpen}
+                  aria-controls="tools-menu"
+                  aria-label="Tools menu"
+                  className={`relative inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    isToolsActive
+                      ? 'text-accent'
+                      : 'text-text-secondary hover:text-text-bright'
                   }`}
-                  aria-hidden="true"
-                />
-              </button>
+                >
+                  {isToolsActive && !toolsOpen && (
+                    <m.span
+                      layoutId="nav-active"
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-sm bg-accent-dim"
+                      transition={EASE_SPRING_SOFT}
+                    />
+                  )}
+                  <Wand2 className="relative z-10 h-3 w-3 opacity-70" aria-hidden="true" />
+                  <span className="relative z-10">tools</span>
+                  <ChevronDown
+                    className={`relative z-10 h-3 w-3 opacity-60 transition-transform duration-200 ${
+                      toolsOpen ? 'rotate-180' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+              </m.div>
 
               <AnimatePresence>
                 {toolsOpen && (
@@ -469,7 +482,11 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="inline-flex h-9 items-center gap-2 rounded-sm border border-border bg-surface px-2.5 text-xs text-text transition-colors hover:border-accent/60 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className={`inline-flex h-9 items-center gap-2 rounded-sm border bg-surface px-2.5 text-xs text-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    showUserMenu
+                      ? 'border-accent/60 bg-panel'
+                      : 'border-border hover:border-accent/60 hover:bg-panel'
+                  }`}
                   aria-label="Open user menu"
                   aria-expanded={showUserMenu}
                   aria-haspopup="menu"
@@ -592,17 +609,27 @@ export function Navbar() {
 
                 {/* Grouped card grid */}
                 <div className="space-y-3">
-                  {mobileGroups.map((group, gi) => (
+                  {mobileGroups.map((group, gi) => {
+                    const isCardActive = group.links.some(link => isCurrentPath(pathname, link.href))
+                    return (
                     <m.div
                       key={group.title}
                       initial="hidden"
                       animate="show"
                       variants={staggerContainer(0.04, gi * 0.05)}
-                      className="rounded-sm border border-border bg-surface/40 p-2"
+                      className={`rounded-sm border bg-surface/40 p-2 transition-colors ${
+                        isCardActive ? 'border-accent/40' : 'border-border'
+                      }`}
                     >
                       <div className="mb-1.5 flex items-baseline justify-between px-1">
-                        <p className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-semibold">
+                        <p className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-semibold flex items-center gap-1.5">
                           {group.title}
+                          {isCardActive && (
+                            <span
+                              className="h-1 w-1 rounded-full bg-accent"
+                              aria-label="Current section"
+                            />
+                          )}
                         </p>
                         <p className="text-[10px] text-text-tertiary tabular-nums">
                           {group.caption}
@@ -637,18 +664,27 @@ export function Navbar() {
                         })}
                       </m.ul>
                     </m.div>
-                  ))}
+                    )
+                  })}
 
                   {/* Account card */}
                   <m.div
                     initial="hidden"
                     animate="show"
                     variants={staggerContainer(0.04, mobileGroups.length * 0.05)}
-                    className="rounded-sm border border-border bg-surface/40 p-2"
+                    className={`rounded-sm border bg-surface/40 p-2 transition-colors ${
+                      isAccountCardActive ? 'border-accent/40' : 'border-border'
+                    }`}
                   >
                     <div className="mb-1.5 flex items-baseline justify-between px-1">
-                      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-semibold">
+                      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-semibold flex items-center gap-1.5">
                         account
+                        {isAccountCardActive && (
+                          <span
+                            className="h-1 w-1 rounded-full bg-accent"
+                            aria-label="Current section"
+                          />
+                        )}
                       </p>
                       <p className="text-[10px] text-text-tertiary tabular-nums">
                         {isConnected ? 'connected' : 'guest'}

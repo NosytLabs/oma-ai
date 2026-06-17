@@ -44,7 +44,7 @@ export function resetStreamMetrics(): void {
 
 function logStreamDebug(message: string, data?: Record<string, unknown>) {
   if (DEBUG_STREAM) {
-    console.debug(`[router:stream] ${message}`, data ?? {});
+    logger.debug(data ?? {}, `[router:stream] ${message}`);
   }
 }
 

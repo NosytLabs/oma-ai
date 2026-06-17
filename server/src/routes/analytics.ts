@@ -5,6 +5,7 @@ import { usageRecords } from "../db/schema.js";
 import { desc, count, sql as drizzleSql } from "drizzle-orm";
 import { bearerAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
+import { logger } from "../lib/logger.js";
 
 const periodSchema = z.enum(["7d", "30d", "90d"]).default("30d");
 
@@ -114,7 +115,7 @@ analyticsRoutes.get("/v1/analytics/usage", async (c) => {
       })),
     });
   } catch (err) {
-    console.error('Analytics usage error:', err);
+    logger.error({ err, userId }, "Analytics usage error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -166,7 +167,7 @@ analyticsRoutes.get("/v1/analytics/models", async (c) => {
       })),
     });
   } catch (err) {
-    console.error('Analytics models error:', err);
+    logger.error({ err, userId }, "Analytics models error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

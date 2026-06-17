@@ -3,6 +3,7 @@ import { db } from "../../db/client.js";
 import { users, usageRecords, deposits } from "../../db/schema.js";
 import { sql, count } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 export const revenueRoutes = new Hono<OmaEnv>();
 
@@ -77,7 +78,7 @@ revenueRoutes.get("/admin/revenue", async (c) => {
       })),
     });
   } catch (err) {
-    console.error('Admin revenue error:', err);
+    logger.error({ err, period }, "Admin revenue error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

@@ -1,4 +1,5 @@
 import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 
 const COINGECKO_OMA_ID = "oma-2";
 const FALLBACK_PRICE_CENTS = 10;
@@ -49,7 +50,7 @@ async function refreshPrice(): Promise<void> {
     cachedPrice = config.OMA_PRICE_OVERRIDE;
     cachedPriceChange24h = 0;
     liveFeedWorking = false;
-    console.warn(`[oracle] CoinGecko unreachable, using OMA_PRICE_OVERRIDE=${config.OMA_PRICE_OVERRIDE}`);
+    logger.warn({ override: config.OMA_PRICE_OVERRIDE }, "[oracle] CoinGecko unreachable, using OMA_PRICE_OVERRIDE");
     recordTwapSample(now, cachedPrice);
     return;
   }
@@ -63,8 +64,9 @@ async function refreshPrice(): Promise<void> {
   // false, the request should be rejected (or routed to a degraded /
   // maintenance mode) rather than billed at the fallback rate. The
   // isOracleLive() function already returns false in this state.
-  console.warn(
-    `[oracle] DEGRADED: CoinGecko unreachable and no OMA_PRICE_OVERRIDE set, using fallback $${(FALLBACK_PRICE_CENTS / 100).toFixed(2)}. Consumers must check isOracleLive() before billing.`,
+  logger.warn(
+    { fallbackUsd: (FALLBACK_PRICE_CENTS / 100).toFixed(2) },
+    "[oracle] DEGRADED: CoinGecko unreachable and no OMA_PRICE_OVERRIDE set; using fallback. Consumers must check isOracleLive() before billing.",
   );
   recordTwapSample(now, cachedPrice);
 }

@@ -68,111 +68,214 @@ const MODEL_PRICING: ModelPricing[] = SOURCE_MODELS.map((m) => ({
 const ENDPOINTS: EndpointInfo[] = [
   {
     method: 'POST', path: '/v1/chat/completions', title: 'Chat Completions',
-    desc: 'Sends a multi-turn conversation to a chat model and returns a completion.',
-    auth: 'Bearer token',
+    desc: 'OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) - Model ID e.g. "oma/llama-3.2-3b"',
-      messages: 'ChatMessage[] (required) - Array of {role, content}',
-      temperature: 'number (0-2, default: 0.7)',
-      max_tokens: 'integer - Max tokens to generate',
-      stream: 'boolean (default: false) - Enable SSE streaming',
-      top_p: 'number (0-1)',
-      frequency_penalty: 'number (-2 to 2)',
-      presence_penalty: 'number (-2 to 2)',
+      model: 'string (required) — any model id from /v1/models, e.g. "llama-3.2-3b"',
+      messages: 'array of { role, content } — role ∈ system | user | assistant | tool',
+      temperature: 'number 0–2 (optional, default from upstream)',
+      max_tokens: 'integer — cap on completion length',
+      stream: 'boolean — Server-Sent Events when true (text/event-stream)',
+      tools: 'array of tool definitions (optional)',
+      response_format: 'object (optional) — e.g. { type: "json_object" }',
     },
     response: `{
-  "id": "chatcmpl-abc123",
+  "id": "chatcmpl-9f3k2a",
   "object": "chat.completion",
   "created": 1717194000,
-  "model": "oma/llama-3.2-3b",
-  "choices": [{
-    "index": 0,
-    "message": {
-      "role": "assistant",
-      "content": "Hello! How can I help you today?"
-    },
-    "finish_reason": "stop"
-  }],
-  "usage": {
-    "prompt_tokens": 18,
-    "completion_tokens": 12,
-    "total_tokens": 30
-  }
+  "model": "llama-3.2-3b",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "Hello. How can I help today?" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 18, "completion_tokens": 12, "total_tokens": 30 }
 }`,
   },
   {
     method: 'POST', path: '/v1/completions', title: 'Completions (Legacy)',
-    desc: 'Legacy prompt-based completion endpoint. Use Chat Completions for new projects.',
-    auth: 'Bearer token',
+    desc: 'Deprecated prompt-based completion endpoint. Use Chat Completions for new projects.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required)',
-      prompt: 'string (required)',
-      max_tokens: 'integer',
-      temperature: 'number (0-2)',
-      top_p: 'number',
-      stop: 'string | string[]',
+      model: 'string (required) — model id from /v1/models',
+      prompt: 'string (required) — string only, arrays are rejected',
+      max_tokens: 'integer (optional)',
+      temperature: 'number 0–2 (optional)',
+      top_p: 'number 0–1 (optional)',
+      n: 'integer 1–10 (optional)',
+      stop: 'string | string[] (optional)',
+      stream: 'boolean (optional) — SSE when true',
+      presence_penalty: 'number -2 to 2 (optional)',
+      frequency_penalty: 'number -2 to 2 (optional)',
     },
     response: `{
   "id": "cmpl-abc123",
   "object": "text_completion",
+  "created": 1717194000,
+  "model": "llama-3.2-3b",
   "choices": [{
     "text": " in a land far, far away...",
     "index": 0,
-    "finish_reason": "length"
+    "finish_reason": "length",
+    "logprobs": null
   }],
   "usage": { "prompt_tokens": 5, "completion_tokens": 10, "total_tokens": 15 }
 }`,
   },
   {
     method: 'GET', path: '/v1/models', title: 'List Models',
-    desc: 'Returns a list of all available models. No authentication required.',
+    desc: 'Returns every model currently routable — text, image, video. No auth required. Cached for 1h.',
     auth: 'None',
     response: `{
   "object": "list",
   "data": [
-    {"id": "oma/llama-3.2-3b", "object": "model", "owned_by": "meta"},
-    {"id": "oma/deepseek-v3.2", "object": "model", "owned_by": "deepseek"}
+    {
+      "id": "llama-3.2-3b",
+      "object": "model",
+      "created": 1717194000,
+      "owned_by": "oma",
+      "permission": [],
+      "root": "llama-3.2-3b",
+      "parent": null,
+      "pricing": { "prompt": "0.00000006", "completion": "0.00000012" },
+      "category": "chat",
+      "context_length": 8192
+    },
+    {
+      "id": "venice-flux-schnell",
+      "object": "model",
+      "created": 1717194000,
+      "owned_by": "oma",
+      "pricing": { "prompt": "0.00001000" },
+      "category": "image"
+    }
   ]
 }`,
   },
   {
-    method: 'POST', path: '/v1/embeddings', title: 'Embeddings (Venice)',
-    desc: 'Generates vector embeddings for text using Venice embedding models.',
-    auth: 'Bearer token',
+    method: 'GET', path: '/v1/models/:model', title: 'Get Model',
+    desc: 'Returns pricing, capabilities, and provider metadata for a single model. No auth required.',
+    auth: 'None',
+    response: `{
+  "id": "claude-sonnet-4",
+  "object": "model",
+  "created": 1717194000,
+  "owned_by": "oma",
+  "permission": [],
+  "root": "claude-sonnet-4",
+  "parent": null,
+  "pricing": { "prompt": "0.00000300", "completion": "0.00001500" },
+  "category": "chat",
+  "context_length": 200000,
+  "supports_streaming": true,
+  "provider": "anthropic"
+}`,
+  },
+  {
+    method: 'POST', path: '/v1/embeddings', title: 'Embeddings',
+    desc: 'Vector embeddings via Venice. Use for semantic search, RAG, clustering.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) - e.g. "venice-embed-256"',
-      input: 'string | string[] (required)',
-      encoding_format: 'string ("base64" or "float")',
+      model: 'string (required) — e.g. "text-embedding-3-small" or any Venice embedding model',
+      input: 'string | string[] (required) — max 50,000 chars per input',
     },
     response: `{
   "object": "list",
-  "data": [{
-    "object": "embedding",
-    "index": 0,
-    "embedding": [0.0023, -0.0091, 0.0027, ...]
-  }],
-  "model": "venice-embed-256",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023, -0.0091, 0.0027, 0.0114, -0.0042]
+    }
+  ],
+  "model": "text-embedding-3-small",
   "usage": { "prompt_tokens": 10, "total_tokens": 10 }
 }`,
   },
   {
-    method: 'POST', path: '/v1/images/generations', title: 'Image Generation (Venice)',
-    desc: 'Generates images from text prompts using Venice FLUX models.',
-    auth: 'Bearer token',
+    method: 'POST', path: '/v1/images/generations', title: 'Image Generation',
+    desc: 'Text-to-image via Venice FLUX models. Pricing is per-image.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) - e.g. "venice/flux-schnell"',
-      prompt: 'string (required)',
-      n: 'integer (1-4, default: 1)',
-      size: 'string ("1024x1024", "512x512", etc.)',
-      negative_prompt: 'string (optional)',
+      model: 'string (required) — e.g. "venice-flux-schnell"',
+      prompt: 'string (required) — max 4000 chars',
+      n: 'integer 1–10 (optional, default 1)',
+      size: 'string (optional) — e.g. "1024x1024"',
     },
     response: `{
   "created": 1717194000,
-  "data": [{
-    "url": "https://api.oma-ai.com/v1/files/img_abc123.png",
-    "revised_prompt": "A cat wearing a hat"
-  }]
+  "data": [
+    {
+      "url": "https://files.oma-ai.com/img_4f3k2a.png",
+      "revised_prompt": "A cat wearing a small felt hat, soft window light, 35mm"
+    }
+  ]
 }`,
+  },
+  {
+    method: 'POST', path: '/v1/audio/speech', title: 'Audio Speech (TTS)',
+    desc: 'Text-to-speech. Returns raw audio bytes (audio/mpeg by default).',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
+    body: {
+      model: 'string (required) — e.g. "tts-1"',
+      input: 'string (required) — max 10,000 chars',
+      voice: 'string (optional) — voice id',
+      response_format: 'string (optional) — mp3 | opus | aac | flac | wav | pcm',
+      speed: 'number 0.25–4.0 (optional, default 1.0)',
+    },
+    response: `// 200 OK
+// Content-Type: audio/mpeg
+// (binary audio data)`,
+  },
+  {
+    method: 'POST', path: '/v1/audio/transcriptions', title: 'Audio Transcriptions',
+    desc: 'Speech-to-text via Whisper. Multipart form upload.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
+    body: {
+      file: 'binary (required) — audio file to transcribe',
+      model: 'string (required) — "whisper-1" or any Venice transcription model',
+      language: 'string (optional) — ISO-639-1 code, e.g. "en"',
+      prompt: 'string (optional) — context hint to guide the model',
+      response_format: 'string (optional) — json | text | srt | verbose_json | vtt',
+      temperature: 'number (optional)',
+    },
+    response: `{
+  "text": "Hello, how can I help you today?"
+}`,
+  },
+  {
+    method: 'POST', path: '/v1/videos/generations', title: 'Video Generation',
+    desc: 'Text-to-video via Venice video models. Returns a queue id — poll /v1/videos/retrieve.',
+    auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
+    body: {
+      model: 'string (required) — e.g. "venice-video-1"',
+      prompt: 'string (required) — max 4000 chars',
+      duration: 'string (optional) — e.g. "5s", "10s"',
+      aspect_ratio: 'string (optional) — e.g. "16:9", "9:16"',
+      resolution: 'string (optional) — e.g. "720p", "1080p"',
+      image_url: 'string URL (optional) — source image for image-to-video',
+    },
+    response: `{
+  "id": "vid_abc123",
+  "object": "video",
+  "status": "processing",
+  "queue_id": "abc123"
+}`,
+  },
+  {
+    method: 'GET', path: '/v1/videos/retrieve', title: 'Video Retrieve',
+    desc: 'Polls the status of a video generation job by queue_id.',
+    auth: 'Bearer token (API key)',
+    body: undefined,
+    response: `// 200 OK
+// {
+//   "id": "vid_abc123",
+//   "object": "video",
+//   "status": "completed",     // "processing" | "completed"
+//   "video_url": "https://files.oma-ai.com/vid_abc123.mp4"
+// }`,
   },
 ]
 
@@ -307,7 +410,7 @@ function QuickStartSection() {
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "oma/llama-3.2-3b",
+    "model": "llama-3.2-3b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`
 
@@ -361,7 +464,7 @@ client = OpenAI(
     base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
-    model="oma/llama-3.2-3b",
+    model="llama-3.2-3b",
     messages=[{"role": "user", "content": "Hello!"}]
 )`
 
@@ -371,7 +474,7 @@ const client = new OpenAI({
   baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
-  model: "oma/llama-3.2-3b",
+  model: "llama-3.2-3b",
   messages: [{ role: "user", content: "Hello!" }]
 });`
 
@@ -400,7 +503,7 @@ func main() {
         { label: 'cURL', lang: 'bash', code: `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"oma/llama-3.2-3b","messages":[{"role":"user","content":"Hello"}]}'` },
+  -d '{"model":"llama-3.2-3b","messages":[{"role":"user","content":"Hello"}]}'` },
         { label: 'Python', lang: 'python', code: pythonCode },
         { label: 'JavaScript', lang: 'javascript', code: jsCode },
         { label: 'Go', lang: 'go', code: goCode },
@@ -687,7 +790,7 @@ client = OpenAI(
     base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
-    model="oma/llama-3.2-3b",
+    model="llama-3.2-3b",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)`
@@ -699,7 +802,7 @@ const client = new OpenAI({
   baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
-  model: "oma/llama-3.2-3b",
+  model: "llama-3.2-3b",
   messages: [{ role: "user", content: "Hello!" }]
 });`
 
@@ -712,7 +815,7 @@ response = requests.post(
         "Content-Type": "application/json"
     },
     json={
-        "model": "oma/llama-3.2-3b",
+        "model": "llama-3.2-3b",
         "messages": [{"role": "user", "content": "Hello!"}]
     }
 )
@@ -751,7 +854,7 @@ print(response.json())`
         <CodeBlock code={`import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'oma_sk_...' });
-const { text } = await generateText({ model: oma('oma/llama-3.2-3b'), prompt: 'Hello!' });`} />
+const { text } = await generateText({ model: oma('llama-3.2-3b'), prompt: 'Hello!' });`} />
       </div>
     </AnimatedSection>
   )
@@ -763,7 +866,7 @@ from openai import OpenAI
 client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
 for attempt in range(5):
     try:
-        response = client.chat.completions.create(model="oma/llama-3.2-3b", messages=[{"role": "user", "content": "Hi"}])
+        response = client.chat.completions.create(model="llama-3.2-3b", messages=[{"role": "user", "content": "Hi"}])
         break
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 429:

@@ -9,6 +9,7 @@ import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { QuoteCache } from "../lib/quote-cache.js";
 import { addToDlq } from "../lib/dlq.js";
+import { logger } from "../lib/logger.js";
 
 export const onrampRoutes = new Hono<OmaEnv>();
 
@@ -114,7 +115,7 @@ onrampRoutes.post("/v1/onramp/webhook", async (c) => {
   const signature = c.req.header("X-Onramp-Signature") || "";
 
   if (!config.ONRAMP_WEBHOOK_SECRET) {
-    console.error("[ONRAMP] FATAL: ONRAMP_WEBHOOK_SECRET is not set. Webhook secrets must not fall back to JWT_SECRET.");
+    logger.error("[ONRAMP] FATAL: ONRAMP_WEBHOOK_SECRET is not set. Webhook secrets must not fall back to JWT_SECRET.");
     return c.json({ error: { message: "Onramp webhook not configured", type: "config_error" } }, 503);
   }
   const secret = config.ONRAMP_WEBHOOK_SECRET;

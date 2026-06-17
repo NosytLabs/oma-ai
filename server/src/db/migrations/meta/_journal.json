@@ -10,6 +10,27 @@
       "breakpoints": true
     },
     {
+      "idx": 24,
+      "version": "7",
+      "when": 1781438972000,
+      "tag": "0024_provider_affinity",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1781438972000,
+      "tag": "0025_audit_action_provider_test",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1781438972000,
+      "tag": "0026_api_keys_ip_allowlist",
+      "breakpoints": true
+    },
+    {
       "idx": 27,
       "version": "7",
       "when": 1781424000000,

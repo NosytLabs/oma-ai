@@ -8,6 +8,7 @@ import { generateSessionToken, getOrCreateUser } from "../auth/siwe.js";
 import { config } from "../config.js";
 import { getRedisClient } from "../lib/redis-client.js";
 import { XMLParser } from "fast-xml-parser";
+import { logger } from "../lib/logger.js";
 
 export const ssoRouter = new Hono<{ Variables: { user: { id: string }, teamRole?: string } }>();
 
@@ -83,7 +84,7 @@ function extractSamlAttributes(xml: string): { email: string | null; domain: str
 
    } catch (err) {
      // If XML parsing fails, fall back to regex-based extraction for backward compatibility
-     console.warn("[SECURITY] XML parsing failed, falling back to regex extraction:", err);
+      logger.warn({ err }, "[SECURITY] XML parsing failed, falling back to regex extraction");
      
      const emailMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*email[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
      const domainMatch = xml.match(/<saml(?:2)?:Attribute\s+Name="[^"]*domain[^"]*"\s*>[\s\S]*?<saml(?:2)?:AttributeValue[^>]*>([^<]+)<\/saml(?:2)?:AttributeValue>/i);
@@ -100,26 +101,26 @@ function extractSamlAttributes(xml: string): { email: string | null; domain: str
 
 async function validateSamlSignature(xml: string, certificate: string | null): Promise<boolean> {
   if (!certificate) {
-    console.warn("[SECURITY] SAML signature validation skipped: no certificate configured for connection. Rejecting unvalidated response.");
+    logger.warn("[SECURITY] SAML signature validation skipped: no certificate configured for connection. Rejecting unvalidated response.");
     return false;
   }
 
   try {
     const signatureMatch = xml.match(/<ds:Signature[^>]*>[\s\S]*?<\/ds:Signature>/);
     if (!signatureMatch) {
-      console.warn("[SECURITY] SAML response contains no XML signature. Rejecting unvalidated response.");
+      logger.warn("[SECURITY] SAML response contains no XML signature. Rejecting unvalidated response.");
       return false;
     }
 
     const sigValueMatch = signatureMatch[0].match(/<ds:SignatureValue[^>]*>([^<]+)<\/ds:SignatureValue>/i);
     if (!sigValueMatch || !sigValueMatch[1]?.trim()) {
-      console.warn("[SECURITY] SAML signature has no SignatureValue element. Rejecting.");
+      logger.warn("[SECURITY] SAML signature has no SignatureValue element. Rejecting.");
       return false;
     }
 
     const certMatch = signatureMatch[0].match(/<ds:X509Certificate[^>]*>([^<]+)<\/ds:X509Certificate>/i);
     if (!certMatch || !certMatch[1]?.trim()) {
-      console.warn("[SECURITY] SAML signature has no X509Certificate in KeyInfo. Rejecting.");
+      logger.warn("[SECURITY] SAML signature has no X509Certificate in KeyInfo. Rejecting.");
       return false;
     }
 
@@ -130,13 +131,13 @@ async function validateSamlSignature(xml: string, certificate: string | null): P
     const configuredHash = nodeCreateHash("sha256").update(configuredCert).digest();
 
     if (!timingSafeEqual(cleanHash, configuredHash)) {
-      console.warn("[SECURITY] SAML response certificate does not match configured certificate. Rejecting.");
+      logger.warn("[SECURITY] SAML response certificate does not match configured certificate. Rejecting.");
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error("[SECURITY] SAML signature validation error:", err);
+    logger.error({ err }, "[SECURITY] SAML signature validation error");
     return false;
   }
 }

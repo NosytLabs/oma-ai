@@ -1,6 +1,7 @@
 import { config } from "../config.js";
 import type { ChatMessage } from "./types.js";
 import { BaseInferenceProvider, createErrorMapper, withRetry } from "./base.js";
+import { logger } from "../lib/logger.js";
 
 const DEEPINFRA_TIMEOUT_MS = 60_000;
 const DEEPINFRA_STREAM_TIMEOUT_MS = 120_000;
@@ -53,7 +54,7 @@ export async function chatCompletion(body: {
 }, signal?: AbortSignal): Promise<Response> {
   return withRetry(() => provider.chatCompletion(body, signal), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`DeepInfra request failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn({ attempt, delayMs: Math.round(delay), err: err.message }, "DeepInfra request failed, retrying");
     },
   });
 }
@@ -67,7 +68,7 @@ export async function completion(body: {
 }): Promise<Response> {
   return withRetry(() => provider.completion(body), {
     onRetry: (attempt, delay, err) => {
-      console.warn(`DeepInfra completion failed, attempt ${attempt}, retrying in ${Math.round(delay)}ms: ${err.message}`);
+      logger.warn({ attempt, delayMs: Math.round(delay), err: err.message }, "DeepInfra completion failed, retrying");
     },
   });
 }

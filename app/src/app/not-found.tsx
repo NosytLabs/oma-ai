@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { useEffect } from 'react'
 import { ArrowLeft, Home, Search } from 'lucide-react'
 import { NotFoundLottie } from './_components/NotFoundLottie'
+import { log } from '@/lib/logger'
 
 export default function NotFound() {
   useEffect(() => {
-    // Log 404 for monitoring
     if (process.env.NODE_ENV === 'production') {
-      console.warn('[404] Page not found:', window.location.pathname)
+      log.warn('[404] Page not found', { path: window.location.pathname })
     }
   }, [])
 

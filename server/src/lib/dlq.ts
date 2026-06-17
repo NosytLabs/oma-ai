@@ -1,4 +1,5 @@
 import { getRedisClient } from "./redis-client.js";
+import { logger } from "./logger.js";
 
 export interface DlqEntry {
   provider: string;
@@ -39,7 +40,7 @@ function redactPii(body: string): string {
 export async function addToDlq(provider: string, rawBody: string, errorMessage: string, listName: keyof typeof DLQ_LISTS = "webhook"): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) {
-    console.error(`[DLQ] Failed to connect to Redis. Could not save DLQ entry for provider ${provider}`);
+    logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
     return;
   }
 
@@ -53,7 +54,7 @@ export async function addToDlq(provider: string, rawBody: string, errorMessage: 
   try {
     await redis.lPush(DLQ_LISTS[listName], JSON.stringify(entry));
   } catch (err) {
-    console.error(`[DLQ] Error pushing to DLQ:`, err);
+    logger.error({ err, provider }, "[DLQ] Error pushing to DLQ");
   }
 }
 
@@ -66,7 +67,7 @@ export async function addSettlementToDlq(
 ): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) {
-    console.error("[DLQ] Failed to connect to Redis. Could not save settlement DLQ entry");
+    logger.error({ orderId }, "[DLQ] Failed to connect to Redis. Could not save settlement DLQ entry");
     return;
   }
 
@@ -82,7 +83,7 @@ export async function addSettlementToDlq(
   try {
     await redis.lPush(DLQ_LISTS.settlement, JSON.stringify(entry));
   } catch (err) {
-    console.error("[DLQ] Error pushing settlement to DLQ:", err);
+    logger.error({ err, orderId }, "[DLQ] Error pushing settlement to DLQ");
   }
 }
 
@@ -94,7 +95,7 @@ export async function getDlqEntries(start: number, count: number, listName: keyo
     const entries = await redis.lRange(DLQ_LISTS[listName], start, start + count - 1);
     return entries.map((e) => JSON.parse(e) as DlqEntry);
   } catch (err) {
-    console.error(`[DLQ] Error reading from DLQ:`, err);
+    logger.error({ err, listName }, "[DLQ] Error reading from DLQ");
     return [];
   }
 }
@@ -107,7 +108,7 @@ export async function getSettlementDlqEntries(start: number, count: number): Pro
     const entries = await redis.lRange(DLQ_LISTS.settlement, start, start + count - 1);
     return entries.map((e) => JSON.parse(e) as SettlementDlqEntry);
   } catch (err) {
-    console.error("[DLQ] Error reading settlement DLQ:", err);
+    logger.error({ err }, "[DLQ] Error reading settlement DLQ");
     return [];
   }
 }
@@ -124,7 +125,7 @@ export async function retryFromDlq(): Promise<DlqEntry | null> {
     await redis.lTrim(DLQ_LISTS.webhook, 1, -1);
     return entry;
   } catch (err) {
-    console.error(`[DLQ] Error retrying from DLQ:`, err);
+    logger.error({ err }, "[DLQ] Error retrying from DLQ");
     return null;
   }
 }
@@ -141,7 +142,7 @@ export async function retrySettlementFromDlq(): Promise<SettlementDlqEntry | nul
     await redis.lTrim(DLQ_LISTS.settlement, 1, -1);
     return entry;
   } catch (err) {
-    console.error("[DLQ] Error retrying settlement from DLQ:", err);
+    logger.error({ err }, "[DLQ] Error retrying settlement from DLQ");
     return null;
   }
 }
@@ -154,7 +155,7 @@ export async function clearDlq(listName: keyof typeof DLQ_LISTS = "webhook"): Pr
     await redis.del(DLQ_LISTS[listName]);
     return true;
   } catch (err) {
-    console.error(`[DLQ] Error clearing DLQ:`, err);
+    logger.error({ err, listName }, "[DLQ] Error clearing DLQ");
     return false;
   }
 }
@@ -182,7 +183,7 @@ export async function removeSettlementDlqEntry(index: number): Promise<boolean> 
     }
     return true;
   } catch (err) {
-    console.error("[DLQ] Error removing settlement DLQ entry:", err);
+    logger.error({ err, index }, "[DLQ] Error removing settlement DLQ entry");
     return false;
   }
 }
@@ -194,7 +195,7 @@ export async function getSettlementDlqLength(): Promise<number> {
   try {
     return await redis.lLen(DLQ_LISTS.settlement);
   } catch (err) {
-    console.error("[DLQ] Error getting settlement DLQ length:", err);
+    logger.error({ err }, "[DLQ] Error getting settlement DLQ length");
     return 0;
   }
 }

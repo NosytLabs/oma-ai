@@ -4,6 +4,7 @@ import { db } from "../../db/client.js";
 import { invoices, users } from "../../db/schema.js";
 import { eq, desc, count, and } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 const lineItemSchema = z.object({
   description: z.string().min(1).max(500),
@@ -72,7 +73,7 @@ invoicesRoutes.post("/admin/invoices", async (c) => {
 
     return c.json({ invoice: result[0] }, 201);
   } catch (err) {
-    console.error('Admin create invoice error:', err);
+    logger.error({ err, userId, amount }, "Admin create invoice error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -106,7 +107,7 @@ invoicesRoutes.get("/admin/invoices/:id", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Admin invoice detail error:', err);
+    logger.error({ err, invoiceId }, "Admin invoice detail error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });
@@ -162,7 +163,7 @@ invoicesRoutes.get("/admin/invoices", async (c) => {
       },
     });
   } catch (err) {
-    console.error('Admin invoices list error:', err);
+    logger.error({ err, status, userId: userIdFilter }, "Admin invoices list error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

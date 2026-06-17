@@ -49,13 +49,33 @@ describe('HomePage', () => {
 
   it('renders pricing and models links', () => {
     renderWithQueryClient(<HomePage />)
-    const pricingLinks = screen.getAllByRole('link', { name: /see pricing/i })
+    const pricingLinks = screen.getAllByRole('link', { name: /see (full )?pricing/i })
     expect(pricingLinks.length).toBeGreaterThan(0)
     expect(pricingLinks[0]).toHaveAttribute('href', '/pricing')
 
-    const modelsLinks = screen.getAllByRole('link', { name: /see all models|browse all models/i })
+    const modelsLinks = screen.getAllByRole('link', { name: /view models|browse all models/i })
     expect(modelsLinks.length).toBeGreaterThan(0)
     expect(modelsLinks[0]).toHaveAttribute('href', '/models')
+  })
+
+  it('renders the pricing tease stats', () => {
+    renderWithQueryClient(<HomePage />)
+    expect(screen.getAllByText(/pay for tokens/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/cheapest model/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/no subscription/i).length).toBeGreaterThan(0)
+  })
+
+  it('renders the FAQ tease', () => {
+    renderWithQueryClient(<HomePage />)
+    expect(screen.getAllByText(/do i need an account/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/quick answers/i).length).toBeGreaterThan(0)
+  })
+
+  it('renders model cards as clickable links', () => {
+    renderWithQueryClient(<HomePage />)
+    const modelLinks = screen.getAllByRole('link', { name: /details/i })
+    expect(modelLinks.length).toBeGreaterThan(0)
+    expect(modelLinks[0]).toHaveAttribute('href', '/models')
   })
 })
 

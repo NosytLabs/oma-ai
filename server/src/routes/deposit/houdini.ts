@@ -63,7 +63,7 @@ houdiniRoutes.post("/v1/deposit/houdini", sessionAuth, async (c) => {
   const allowedCoins = await houdiniClient.getTokens()
     .then((t) => t.map((x: Token) => x.symbol))
     .catch((err: unknown) => {
-      console.error("[houdini] Failed to fetch allowed coins:", err);
+      logger.error({ err }, "[houdini] Failed to fetch allowed coins");
       return [];
     });
   if (allowedCoins.length > 0 && !(allowedCoins as string[]).includes(fromCoin)) {
@@ -303,7 +303,7 @@ houdiniRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[deposit:houdini] Exchange failed: fromCoin=${fromCoin}, fromAmount=${fromAmount}, error=${message}`);
+    logger.error({ err: message, fromCoin, fromAmount }, "[deposit:houdini] Exchange failed");
     return c.json({ error: { message: `Exchange failed: ${message}`, type: "exchange_error" } }, 502);
   }
 });

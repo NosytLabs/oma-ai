@@ -1,5 +1,6 @@
 import { estimateTokens } from "./models.js";
 import { refundCredits } from "../credits/index.js";
+import { logger } from "../lib/logger.js";
 import type { ChatMessage } from "./types.js";
 
 export function countMessageTokens(messages: ChatMessage[]): number {
@@ -23,7 +24,7 @@ export async function refundCreditsWithRetry(userId: string, amount: string, req
       return;
     } catch (err) {
       if (attempt === retries) {
-        console.error(`[router] Refund credits failed after ${retries} attempts:`, err);
+        logger.error({ err, userId, amount, requestId, attempts: retries }, "[router] Refund credits failed");
         return;
       }
       await new Promise(resolve => setTimeout(resolve, 100 * attempt));

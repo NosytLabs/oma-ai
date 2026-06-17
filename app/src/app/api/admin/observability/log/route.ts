@@ -10,9 +10,12 @@ import { getAdminAuthorization, unauthorizedAdminResponse } from '../../auth'
  * and self-contained — no DB write — so it cannot itself fail
  * in a way that triggers the very logger that's calling it.
  *
- * The POST route exists because lib/logger.ts unconditionally POSTs to
- * `/api/admin/observability/log`. Before this file existed, every
- * client error in production was silently lost as a 404 in the terminal.
+ * The POST route is intended to be called from top-level error
+ * boundaries (or a custom `window.onerror` handler) — not from every
+ * `console.*` call site. A 1:1 fan-out would amplify a single broken
+ * network into a log-storm. The shared `lib/logger.ts` wrapper does
+ * NOT post here automatically; callers wire that up explicitly when
+ * they need operator visibility.
  *
  * The GET route requires admin auth and returns the recent ring buffer
  * for operator inspection.

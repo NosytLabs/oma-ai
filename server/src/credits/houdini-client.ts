@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { WebSocket as Ws } from "ws";
+import { logger } from "../lib/logger.js";
 
 const BASE_URL = config.HOUDINI_API_URL;
 const POLL_INTERVAL_MS = 30_000;
@@ -303,7 +304,7 @@ export class HoudiniClient {
           }
         }
       } catch (err) {
-        console.warn("[houdini] Malformed WebSocket message:", err);
+        logger.warn({ err }, "[houdini] Malformed WebSocket message");
       }
     });
     ws.addEventListener("close", () => { this.ws = null; });

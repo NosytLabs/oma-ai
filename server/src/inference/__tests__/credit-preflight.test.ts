@@ -102,16 +102,17 @@ describe('refundCreditsWithRetry', () => {
 
   it('gives up after max retries and logs error', async () => {
     const { refundCredits } = await import('../../credits/index.js')
+    const { logger } = await import('../../lib/logger.js')
     vi.mocked(refundCredits).mockRejectedValue(new Error('Persistent error'))
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
 
     await refundCreditsWithRetry('user-1', '100', undefined, 2)
 
     expect(refundCredits).toHaveBeenCalledTimes(2)
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Refund credits failed after 2 attempts'),
-      expect.any(Error),
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ attempts: 2, err: expect.any(Error) }),
+      expect.stringContaining('Refund credits failed'),
     )
-    consoleSpy.mockRestore()
+    loggerSpy.mockRestore()
   })
 })

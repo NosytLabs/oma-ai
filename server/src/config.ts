@@ -219,6 +219,20 @@ const envSchema = z.object({
 
   // Connection pool size for Neon Postgres (used with PgBouncer)
   CONNECTION_POOL_SIZE: z.coerce.number().int().positive().default(10),
+
+  // ===========================================================================
+  // Neon Auth (managed Better Auth service).
+  //
+  // When NEON_AUTH_URL is set, sessionAuth() in auth/middleware.ts falls
+  // back to verifying tokens against the JWKS at NEON_AUTH_JWKS_URL after
+  // the local HS256 check fails. The two paths are independent — setting
+  // these does NOT change how SIWE / Solana / account-number / API-key
+  // tokens are issued or verified. Provision via the Neon MCP:
+  //   mcp__neon__provision_neon_auth → mcp__neon__get_neon_auth_config
+  // ===========================================================================
+  NEON_AUTH_URL: z.string().url().optional(),
+  NEON_AUTH_JWKS_URL: z.string().url().optional(),
+  NEON_AUTH_ENABLED: z.coerce.boolean().default(true),
 });
 
 export type Config = z.infer<typeof envSchema>;

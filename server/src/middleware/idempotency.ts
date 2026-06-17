@@ -1,4 +1,5 @@
 import { getRedisClient } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROCESSING_LOCK_TTL = 30;
@@ -58,7 +59,7 @@ export async function checkIdempotencyKey(
     await redis.expire(lockKey, PROCESSING_LOCK_TTL);
     return { isNew: true };
   } catch (err) {
-    console.error("[idempotency] Error:", err);
+    logger.error({ err, key }, "[idempotency] Error");
     return { isNew: true };
   }
 }
@@ -93,6 +94,6 @@ export async function releaseIdempotencyLock(key: string): Promise<void> {
   try {
     await redis.del(`idem:${key}`);
   } catch (err) {
-    console.error("[idempotency] Error releasing lock:", err);
+    logger.error({ err, key }, "[idempotency] Error releasing lock");
   }
 }

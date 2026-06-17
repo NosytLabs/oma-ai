@@ -8,12 +8,15 @@ import {
   ArrowRight,
   Box,
   Check,
+  ChevronDown,
   Coins,
   Copy,
   Globe,
+  HelpCircle,
   Key,
   Loader2,
   Plug,
+  Receipt,
   ShieldCheck,
   Sparkles,
   TerminalSquare,
@@ -204,6 +207,9 @@ function Hero({
               <span className="text-text-bright">{uptime}</span> uptime
               <span className="mx-1.5 text-text-tertiary">·</span>
               <span className="text-text-bright">{onlineProviders}/{totalProviders}</span> providers online
+              <span className="mx-1.5 text-text-tertiary">·</span>
+              <span className="text-text-bright">from $0.06</span>
+              <span className="text-text-tertiary">/1M tokens</span>
             </span>
           </m.div>
 
@@ -243,32 +249,32 @@ function Hero({
               </Link>
             </Magnetic>
             <Magnetic strength={6}>
-              <Link href="/pricing" className="btn-secondary inline-flex items-center gap-2">
-                See pricing
+              <Link href="/models" className="btn-secondary inline-flex items-center gap-2">
+                View models
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             </Magnetic>
-            <Magnetic strength={6}>
-              <button
-                type="button"
-                onClick={startDemo}
-                disabled={demoLoading}
-                aria-label="Try the dashboard without signing up"
-                className="btn-secondary inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {demoLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    Starting demo…
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4" aria-hidden="true" />
-                    Try without signing up
-                  </>
-                )}
-              </button>
-            </Magnetic>
           </m.div>
+          <m.button
+            type="button"
+            onClick={startDemo}
+            disabled={demoLoading}
+            {...fadeUp(0.24)}
+            aria-label="Try the dashboard without signing up"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {demoLoading ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                Starting demo…
+              </>
+            ) : (
+              <>
+                <Zap className="h-3 w-3" aria-hidden="true" />
+                or try without signing up →
+              </>
+            )}
+          </m.button>
           {demoError && (
             <m.p
               {...fadeUp(0.22)}
@@ -479,41 +485,50 @@ function ModelCard({
   return (
     <m.div
       variants={scaleIn}
-      className="tilt-card group relative rounded-xl border border-border bg-panel/40 p-4 hover:border-accent/40 hover:bg-panel/80 hover:glow-accent-sm transition-all"
+      className="h-full"
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-void text-[10px] font-mono text-accent">
-            {MONOGRAM[model.logo]}
+      <Link
+        href="/models"
+        className="tilt-card group relative block rounded-xl border border-border bg-panel/40 p-4 pb-7 hover:border-accent/40 hover:bg-panel/80 hover:glow-accent-sm transition-all h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+      >
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-void text-[10px] font-mono text-accent">
+              {MONOGRAM[model.logo]}
+            </span>
+            <m.span
+              className="text-[10px] text-text-tertiary font-mono tabular-nums"
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: rank * 0.2 }}
+            >
+              #{String(rank + 1).padStart(2, '0')}
+            </m.span>
+          </div>
+          <span className="text-[10px] font-mono uppercase tracking-wider text-text-tertiary">
+            {model.ctx}
           </span>
-          <m.span
-            className="text-[10px] text-text-tertiary font-mono tabular-nums"
-            animate={{ opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: rank * 0.2 }}
-          >
-            #{String(rank + 1).padStart(2, '0')}
-          </m.span>
         </div>
-        <span className="text-[10px] font-mono uppercase tracking-wider text-text-tertiary">
-          {model.ctx}
+        <p className="text-sm font-mono text-text-bright truncate mb-1" title={model.id}>
+          {model.id}
+        </p>
+        <p className="text-[11px] text-text-tertiary mb-3 truncate">
+          {model.provider}
+        </p>
+        <div className="flex items-baseline gap-1.5 text-[11px] font-mono">
+          <span className="text-accent tabular-nums">
+            {formatPrice(model.inputPricePer1M)}
+          </span>
+          <span className="text-text-tertiary">/</span>
+          <span className="text-accent tabular-nums">
+            {formatPrice(model.outputPricePer1M)}
+          </span>
+          <span className="text-text-tertiary ml-auto">per 1M</span>
+        </div>
+        <span className="pointer-events-none absolute right-4 bottom-2 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-text-tertiary opacity-0 group-hover:opacity-100 group-hover:text-accent transition-all">
+          details
+          <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </span>
-      </div>
-      <p className="text-sm font-mono text-text-bright truncate mb-1" title={model.id}>
-        {model.id}
-      </p>
-      <p className="text-[11px] text-text-tertiary mb-3 truncate">
-        {model.provider}
-      </p>
-      <div className="flex items-baseline gap-1.5 text-[11px] font-mono">
-        <span className="text-accent tabular-nums">
-          {formatPrice(model.inputPricePer1M)}
-        </span>
-        <span className="text-text-tertiary">/</span>
-        <span className="text-accent tabular-nums">
-          {formatPrice(model.outputPricePer1M)}
-        </span>
-        <span className="text-text-tertiary ml-auto">per 1M</span>
-      </div>
+      </Link>
     </m.div>
   )
 }
@@ -550,6 +565,90 @@ function ModelsShowcase({ featuredModels }: { featuredModels: HomeClientProps['f
         >
           {featuredModels.map((m, i) => (
             <ModelCard key={m.id} model={m} rank={i} />
+          ))}
+        </StaggerReveal>
+      </div>
+    </section>
+  )
+}
+
+function PricingTease() {
+  const stats = [
+    {
+      icon: Coins,
+      value: '$0.06',
+      unit: '/ 1M input',
+      label: 'Cheapest model',
+      detail: 'Llama 3.2 3B for scripts, summaries, and lightweight chat.',
+    },
+    {
+      icon: Receipt,
+      value: '1:1',
+      unit: 'USDC',
+      label: 'No markup on deposit',
+      detail: 'Credits mirror USDC at par. What you deposit is what you spend.',
+    },
+    {
+      icon: Zap,
+      value: '$0',
+      unit: 'monthly',
+      label: 'No subscription',
+      detail: 'No tiers, no seats, no enterprise contract. Pay only for tokens.',
+    },
+  ] as const
+  return (
+    <section className="border-b border-border bg-surface/30">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <m.div {...fadeUp(0)} className="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.25em] text-accent mb-3">
+              <Coins className="h-3 w-3" aria-hidden="true" />
+              Pricing
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-text-bright tracking-tight">
+              Pay for tokens. <span className="text-accent">Nothing else.</span>
+            </h2>
+            <p className="mt-3 text-text-secondary text-sm sm:text-base">
+              No subscriptions, no rate limits, no surprise overage bills. One billable unit, settled in USDC.
+            </p>
+          </div>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 text-sm text-text-bright hover:text-accent transition-colors"
+          >
+            See full pricing
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </m.div>
+
+        <StaggerReveal
+          stagger={0.08}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        >
+          {stats.map((s) => (
+            <m.div
+              key={s.label}
+              variants={scaleIn}
+              className="relative rounded-xl border border-border bg-panel/40 p-5 hover:border-accent/40 transition-colors"
+            >
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 border border-accent/20 text-accent mb-4">
+                <s.icon className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="flex items-baseline gap-1.5 mb-1">
+                <span className="text-3xl font-bold text-text-bright font-mono tabular-nums">
+                  {s.value}
+                </span>
+                <span className="text-xs text-text-tertiary font-mono">
+                  {s.unit}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-text-bright mb-1.5">
+                {s.label}
+              </p>
+              <p className="text-xs text-text-tertiary leading-relaxed">
+                {s.detail}
+              </p>
+            </m.div>
           ))}
         </StaggerReveal>
       </div>
@@ -691,6 +790,97 @@ function FeatureGrid() {
             </m.div>
           ))}
         </StaggerReveal>
+      </div>
+    </section>
+  )
+}
+
+const FAQ_TEASE_ITEMS = [
+  {
+    q: 'Do I need an account to use OMA?',
+    a: 'No. Your wallet is your account. Sign in with Ethereum or Solana, and the dashboard generates an API key. No email, no password, no KYC.',
+  },
+  {
+    q: 'How is OMA different from OpenRouter or Venice?',
+    a: 'OpenAI-compatible shape, multi-provider routing, and a wallet-only settlement layer on Base. You get one endpoint, one bill, and one auth flow — across every model we serve.',
+  },
+  {
+    q: 'What is x402 and do I have to use it?',
+    a: 'x402 is an open HTTP-native payment standard. You can ignore it and deposit USDC into a credit balance instead. x402 is the opt-in path for per-request gasless settlement.',
+  },
+  {
+    q: 'What happens if I run out of credits mid-request?',
+    a: 'You get a 402 with a Pay-Req header. If your client handles 402, it pays and retries inline. Otherwise, top up and retry — the same model, the same endpoint, no rate limit.',
+  },
+] as const
+
+function FAQTease() {
+  const [open, setOpen] = useState<number | null>(0)
+  return (
+    <section className="border-b border-border">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <m.div {...fadeUp(0)} className="flex flex-wrap items-end justify-between gap-4 mb-8">
+          <div>
+            <p className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.25em] text-accent mb-3">
+              <HelpCircle className="h-3 w-3" aria-hidden="true" />
+              FAQ
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-text-bright tracking-tight">
+              Quick answers. <span className="text-accent">No fine print.</span>
+            </h2>
+          </div>
+          <Link
+            href="/faq"
+            className="inline-flex items-center gap-1.5 text-sm text-text-bright hover:text-accent transition-colors"
+          >
+            Read the full FAQ
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </m.div>
+
+        <m.div {...fadeUp(0.08)} className="rounded-xl border border-border bg-panel/40 divide-y divide-border overflow-hidden">
+          {FAQ_TEASE_ITEMS.map((item, i) => {
+            const isOpen = open === i
+            const buttonId = `home-faq-button-${i}`
+            const panelId = `home-faq-panel-${i}`
+            return (
+              <div key={item.q}>
+                <button
+                  id={buttonId}
+                  type="button"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-panel/60 focus-visible:outline-none focus-visible:bg-panel/60"
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                >
+                  <span className="text-sm font-medium text-text-bright">
+                    {item.q}
+                  </span>
+                  <m.span
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' as const }}
+                    className="shrink-0"
+                  >
+                    <ChevronDown className="h-4 w-4 text-text-tertiary" aria-hidden="true" />
+                  </m.span>
+                </button>
+                <m.div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  initial={false}
+                  animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' as const }}
+                  className="overflow-hidden"
+                >
+                  <p className="px-5 pb-4 text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    {item.a}
+                  </p>
+                </m.div>
+              </div>
+            )
+          })}
+        </m.div>
       </div>
     </section>
   )
@@ -1038,6 +1228,8 @@ export default function HomeClient({
 
       <ModelsShowcase featuredModels={featuredModels} />
 
+      <PricingTease />
+
       <X402Section />
 
       <FeatureGrid />
@@ -1061,6 +1253,8 @@ export default function HomeClient({
           </m.div>
         </div>
       </section>
+
+      <FAQTease />
 
       <FinalCTA />
     </div>
