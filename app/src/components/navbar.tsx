@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useWallet } from '@/components/wallet-context'
-import dynamic from 'next/dynamic'
 import { OmaLogo } from '@/components/ui/oma-logo'
 import {
   Menu,

@@ -1,0 +1,96 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Track the constructor args for each connector so we can assert that
+// WalletConnect is only registered when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+// is set. We stub wagmi/connectors so the test doesn't need a window or
+// actual WalletConnect runtime.
+const connectorCalls = vi.hoisted(() => [] as Array<{ name: string; args: unknown }>)
+
+vi.mock('wagmi/connectors', () => {
+  // wagmi v3 connectors are created by calling coinbaseWallet({...}), injected(),
+  // etc., and each call returns a CreateConnectorFn — a function that wagmi
+  // later invokes with { emitter, chains, ... }. Track each construction so we
+  // can assert what's registered.
+  const makeSpy = (name: string) => {
+    const factory = (...args: unknown[]) => {
+      connectorCalls.push({ name, args })
+      // Return a CreateConnectorFn that, when called by createConfig, returns
+      // a minimal Connector-shaped stub.
+      const connectorFn = () => ({
+        id: name,
+        name,
+        type: name,
+        rdns: undefined,
+        emitter: undefined,
+      })
+      return connectorFn
+    }
+    return factory
+  }
+  return {
+    injected: makeSpy('injected'),
+    coinbaseWallet: makeSpy('coinbaseWallet'),
+    walletConnect: makeSpy('walletConnect'),
+  }
+})
+
+import { getWagmiConfig } from './wagmi'
+
+describe('getWagmiConfig', () => {
+  const ORIGINAL_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+
+  beforeEach(() => {
+    connectorCalls.length = 0
+  })
+
+  afterEach(() => {
+    if (ORIGINAL_PROJECT_ID === undefined) {
+      delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    } else {
+      process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = ORIGINAL_PROJECT_ID
+    }
+  })
+
+  it('registers injected and coinbaseWallet connectors', () => {
+    delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    const config = getWagmiConfig() as any
+
+    const names = connectorCalls.map((c) => c.name)
+    expect(names).toContain('injected')
+    expect(names).toContain('coinbaseWallet')
+    expect(config.connectors).toHaveLength(2)
+  })
+
+  it('does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset', () => {
+    delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    const config = getWagmiConfig() as any
+
+    const names = connectorCalls.map((c) => c.name)
+    expect(names).not.toContain('walletConnect')
+    expect(config.connectors).toHaveLength(2)
+  })
+
+  it('registers walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set', () => {
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = 'test-walletconnect-project-id'
+    const config = getWagmiConfig() as any
+
+    const names = connectorCalls.map((c) => c.name)
+    expect(names).toContain('walletConnect')
+
+    const wcCall = connectorCalls.find((c) => c.name === 'walletConnect')
+    expect(wcCall).toBeDefined()
+    const wcArgs = wcCall as any
+    expect(wcArgs.args[0].projectId).toBe('test-walletconnect-project-id')
+    expect(config.connectors).toHaveLength(3)
+  })
+
+  it('always configures Base + Base Sepolia chains', () => {
+    delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    const config = getWagmiConfig() as any
+
+    const ids = config.chains.map((c: { id: number }) => c.id)
+    expect(ids).toContain(8453) // base mainnet
+    expect(ids).toContain(84532) // base sepolia
+  })
+})

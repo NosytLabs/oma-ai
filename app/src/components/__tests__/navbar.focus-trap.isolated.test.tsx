@@ -55,12 +55,18 @@ vi.mock('@/components/ui/oma-logo', () => ({
 vi.mock('../api-status', () => ({
   ApiStatus: () => <span data-testid="api-status" />,
 }))
-vi.mock('../connect-button', () => ({
-  ConnectButton: () => <button data-testid="connect-button">Connect</button>,
+vi.mock('../web3', () => ({
+  Web3ConnectButton: () => <button data-testid="connect-button">Connect</button>,
 }))
 vi.mock('../ThemeToggle', () => ({
   ThemeToggle: () => <button data-testid="theme-toggle">Theme</button>,
 }))
+// Mock @ant-design/web3 — the navbar lazy-loads its ConnectButton via next/dynamic,
+// which would otherwise throw WagmiProviderNotFoundError in jsdom.
+vi.mock('@ant-design/web3', () => ({
+  ConnectButton: () => <button type="button">Connect</button>,
+}))
+
 
 import { Navbar } from '../navbar'
 
