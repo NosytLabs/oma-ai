@@ -15,14 +15,12 @@ import {
   Github,
   LogOut,
   ChevronDown,
-  Sparkles,
   Box,
   Terminal,
   Tag,
   FileText,
   Image as ImageIcon,
   Video as VideoIcon,
-  BarChart3,
   ArrowLeftRight,
   Info,
   CornerDownLeft,
@@ -38,10 +36,7 @@ import {
   staggerContainer,
 } from '@/lib/motion'
 
-const ImprovedConnectButton = dynamic(
-  () => import('./ui/ImprovedConnectButton').then(m => m.ImprovedConnectButton),
-  { ssr: false }
-)
+import { Web3ConnectButton } from './web3'
 import { ThemeToggle } from './ThemeToggle'
 
 /* ============================================================
@@ -69,8 +64,6 @@ const primaryLinks: NavItem[] = [
 const toolsLinks: NavItem[] = [
   { href: '/image-generation', label: 'image',     icon: ImageIcon,       desc: 'text → image' },
   { href: '/video-generation', label: 'video',     icon: VideoIcon,       desc: 'text → video' },
-  { href: '/compare',          label: 'compare',   icon: BarChart3,       desc: 'benchmarks' },
-  { href: '/use-cases',        label: 'use cases', icon: Sparkles,        desc: 'examples' },
   { href: '/swap',             label: 'swap',      icon: ArrowLeftRight,  desc: 'token exchange' },
   { href: '/about',            label: 'about',     icon: Info,            desc: 'who we are' },
 ]
@@ -563,7 +556,7 @@ export function Navbar() {
               </div>
             ) : (
               <Magnetic strength={6}>
-                <ImprovedConnectButton />
+                <Web3ConnectButton />
               </Magnetic>
             )}
 

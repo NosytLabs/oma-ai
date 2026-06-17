@@ -1,6 +1,27 @@
 import { NextResponse } from 'next/server'
-import { getAdminAuthorization, unauthorizedAdminResponse } from '../../../admin/auth'
 import { API_URL } from '@/lib/api/admin-config'
+
+// Inlined admin auth helpers (previously imported from src/app/api/admin/auth.ts,
+// which was removed in the I-HIGH-1 admin-route cleanup). The /api/admin/* paths
+// now proxy straight to the backend; this v1 endpoint is the lone consumer of
+// the helpers so inlining here keeps the surface minimal.
+function getAdminAuthorization(request: Request) {
+  const authorization = request.headers.get('Authorization')
+  if (authorization) return authorization
+  const cookieHeader = request.headers.get('cookie')
+  if (!cookieHeader) return null
+  const sessionCookie = cookieHeader
+    .split(';')
+    .map(part => part.trim())
+    .find(part => part.startsWith('oma_session='))
+  if (!sessionCookie) return null
+  const sessionToken = sessionCookie.slice('oma_session='.length)
+  return sessionToken ? `Bearer ${sessionToken}` : null
+}
+
+function unauthorizedAdminResponse() {
+  return NextResponse.json({ error: { message: 'Authentication required' } }, { status: 401 })
+}
 
 /**
  * Surplus Minimum Discount Routing — operator-internal floor policy.
@@ -57,7 +78,7 @@ export async function GET() {
           http_status: 422,
           code: 'discount_floor_violation',
         },
-        docs: 'https://oma-ai.com/compare/surplus-min-discount-routing',
+        docs: 'https://oma-ai.com/docs#pricing',
       },
       {
         headers: {
