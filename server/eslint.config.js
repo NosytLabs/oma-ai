@@ -19,6 +19,10 @@ export default tseslint.config(
       '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
+      // Discourage console.log for ad-hoc logging in production code.
+      // warn/error are allowed (legitimate startup / config-fatal messages).
+      // Tests can opt out via the per-test override block below.
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
   {
@@ -29,6 +33,8 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      // Tests frequently assert on console output, so allow log/info too.
+      'no-console': 'off',
     },
   },
 )

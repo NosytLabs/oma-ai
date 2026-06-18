@@ -11,13 +11,24 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   {
-    ignores: [".next/**", "node_modules/**", "dist/**", "out/**", "coverage/**", "next-env.d.ts", "**/*.js", "!*.test.js", "!*.config.js"],
+    ignores: [".next/**", "node_modules/**", "dist/**", "out/**", "coverage/**", "next-env.d.ts", "**/*.js", "!*.test.js", "!*.config.js", "scripts/**"],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }],
       "@typescript-eslint/no-unused-expressions": "off",
+      // Discourage console.log for ad-hoc logging in production code.
+      // warn/error/info/debug are allowed (legitimate error-boundary, logger,
+      // and proxy error calls; the logger wraps these and adds a tag prefix).
+      "no-console": ["warn", { allow: ["warn", "error", "info", "debug"] }],
+    },
+  },
+  {
+    files: ["**/__tests__/**/*", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+    rules: {
+      // Tests frequently assert on console output.
+      "no-console": "off",
     },
   },
 ];
