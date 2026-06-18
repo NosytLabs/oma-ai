@@ -6,7 +6,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth (zero KYC), multi-provider routing, cross-chain deposits, and native crypto payments.
 
-> **Audit status (2026-06-16):** See [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) — all validation gates green (0 typecheck/lint errors, 917 server tests + 73 app tests passing, 0 skipped). Prior 2026-06-13/14 audit fix reports are preserved in git history; active findings have been applied in Wave 1+2+3.
+> **Audit status (2026-06-17):** See [docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md](docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md) — all validation gates green (0 typecheck/lint errors, 865 server tests + 90 app tests passing, 0 skipped). The 5 critical + 2 quick-win findings from this audit pass were shipped in commits `97df14d`–`cb9af95`; the 2 pre-existing typecheck errors and 6 navbar test failures it called out are also resolved on `master` as of `cb9af95`. Prior 2026-06-13/14 audit notes are preserved in git history.
 
 ---
 
@@ -209,10 +209,9 @@ cd server && npm run dev # Backend :3001
 | [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Full technical guide |
 | [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) | REST + x402 API reference |
 | [docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md](docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md) | Production deploy runbook |
-| [docs/AUDIT-COMPREHENSIVE-2026-06-16.md](docs/AUDIT-COMPREHENSIVE-2026-06-16.md) | **Authoritative audit (all gates green, 2026-06-16)** |
+| [docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md](docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md) | **Latest audit (all gates green, 2026-06-17)** |
 | [docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md](docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md) | x402 payment flow |
 | [app/docs/AGENT-PROTOCOLS.md](app/docs/AGENT-PROTOCOLS.md) | A2A / MCP / x402 / A2UI protocols |
-| [`../../docs/archive/`](../../docs/archive/) | Older audit fix reports + research artifacts (Neon, DB pruning, competitor UX) |
 
 ---
 
