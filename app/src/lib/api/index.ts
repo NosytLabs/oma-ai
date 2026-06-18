@@ -14,7 +14,6 @@ import { deposit } from './deposit.js';
 import { balance, models, usage } from './resources.js';
 import { health, inference, x402 } from './inference.js';
 import { admin } from './admin.js';
-import { recoveries, webhooks } from './webhooks.js';
 import { creditHistory } from './credits.js';
 
 export { ApiError, BackendUnavailableError, DEFAULT_TTL, STALE_TTL } from './client.js';
@@ -94,7 +93,5 @@ export const api = {
   },
 
   admin,
-  webhooks,
-  recoveries,
   creditHistory,
 };
