@@ -1,6 +1,6 @@
 import { createConfig, http, createStorage } from 'wagmi'
 import { base, baseSepolia } from 'wagmi/chains'
-import { injected, coinbaseWallet } from 'wagmi/connectors'
+import { injected, coinbaseWallet, walletConnect } from 'wagmi/connectors'
 
 const MAINNET_RPC_FALLBACK = 'https://mainnet.base.org'
 const TESTNET_RPC_FALLBACK = 'https://sepolia.base.org'
@@ -11,12 +11,22 @@ const testnetUrl =
   process.env.NEXT_PUBLIC_QUICKNODE_TESTNET_URL || TESTNET_RPC_FALLBACK
 
 export function getWagmiConfig() {
+  const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+
+  const connectors = [
+    injected(),
+    coinbaseWallet({ appName: 'OMA AI' }),
+    // WalletConnect is only registered when a project ID is configured. Without
+    // one, the connector would silently fail to initialize. Operators can opt
+    // in by setting NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in their .env.local.
+    ...(walletConnectProjectId
+      ? [walletConnect({ projectId: walletConnectProjectId, showQrModal: true })]
+      : []),
+  ]
+
   return createConfig({
     chains: [base, baseSepolia],
-    connectors: [
-      injected(),
-      coinbaseWallet({ appName: 'OMA AI' }),
-    ],
+    connectors,
     transports: {
       [base.id]: http(mainnetUrl, {
         batch: { batchSize: 8, wait: 50 },

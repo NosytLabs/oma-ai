@@ -98,15 +98,13 @@ describe("request-queue", () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.stringContaining("RPUSH"),
-        {
-          keys: [`${QUEUE_KEY_PREFIX}:pending`, `oma:queue:users:user-1`],
-          arguments: [
-            expect.any(String),
-            expect.stringContaining("req-123"),
-            "user-1",
-            "req-123",
-          ],
-        }
+        2,
+        `${QUEUE_KEY_PREFIX}:pending`,
+        `oma:queue:users:user-1`,
+        MAX_QUEUE_DEPTH,
+        expect.stringContaining("req-123"),
+        "user-1",
+        "req-123",
       );
     });
 
@@ -317,15 +315,13 @@ describe("rate-limit integration", () => {
 
     expect(mockRedisClient.eval).toHaveBeenCalledWith(
       expect.stringContaining("RPUSH"),
-      {
-        keys: [`${QUEUE_KEY_PREFIX}:pending`, `oma:queue:users:user-1`],
-        arguments: [
-          expect.any(String),
-          expect.stringContaining("req-600"),
-          "user-1",
-          "req-600",
-        ],
-      }
+      2,
+      `${QUEUE_KEY_PREFIX}:pending`,
+      `oma:queue:users:user-1`,
+      MAX_QUEUE_DEPTH,
+      expect.stringContaining("req-600"),
+      "user-1",
+      "req-600",
     );
   });
 });

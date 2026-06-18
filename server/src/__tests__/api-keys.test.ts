@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { queryQueue, redisState } = vi.hoisted(() => ({
+const { queryQueue, redisState, lastInsert } = vi.hoisted(() => ({
   queryQueue: [] as Array<{ type: string; payload: unknown }>,
   redisState: { cache: new Map<string, string | null>() },
+  lastInsert: { value: null as null | { keyHash: string; keyPrefix: string; userId: string } },
 }))
 
 vi.mock('../db/client.js', () => ({
@@ -11,6 +12,7 @@ vi.mock('../db/client.js', () => ({
       values: (v: unknown) => ({
         returning: async () => {
           queryQueue.push({ type: 'insert', payload: v })
+          lastInsert.value = v as { keyHash: string; keyPrefix: string; userId: string }
           return [
             {
               id: 'key-1',
@@ -39,6 +41,23 @@ vi.mock('../db/client.js', () => ({
               },
               limit: (n: number) => {
                 queryQueue.push({ type: 'select-limit', payload: { cond: captured.conditions, n } })
+                // High-1 regression: validateApiKey runs OUTSIDE a transaction
+                // after createApiKey returns. Return the most recently inserted
+                // key so the round-trip path (create -> validate) works.
+                if (lastInsert.value) {
+                  return Promise.resolve([
+                    {
+                      id: 'key-1',
+                      userId: lastInsert.value.userId,
+                      name: 'test',
+                      keyHash: lastInsert.value.keyHash,
+                      keyPrefix: lastInsert.value.keyPrefix,
+                      active: true,
+                      createdAt: new Date('2026-01-01T00:00:00Z'),
+                      expiresAt: null,
+                    },
+                  ])
+                }
                 return Promise.resolve([])
               },
             }
