@@ -1,0 +1,14 @@
+{
+  "name": "oma-monorepo",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Workspace root for the OMA AI Gateway monorepo (app/ frontend + server/ backend).",
+  "scripts": {
+    "validate": "cd app && npm run typecheck && npm run lint && npm test && cd ../server && npm run typecheck && npm run lint && npm test",
+    "validate:app": "cd app && npm run typecheck && npm run lint && npm test",
+    "validate:server": "cd server && npm run typecheck && npm run lint && npm test",
+    "validate:typecheck": "cd app && npm run typecheck && cd ../server && npm run typecheck",
+    "validate:lint": "cd app && npm run lint && cd ../server && npm run lint",
+    "validate:test": "cd app && npm test && cd ../server && npm test"
+  }
+}
