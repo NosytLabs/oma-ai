@@ -18,7 +18,7 @@ const GROUPS: FAQGroup[] = [
       {
         iconName: 'HelpCircle',
         q: 'How do I start?',
-        a: 'Connect a wallet, sign the SIWE challenge, and the dashboard generates an API key. No email, no password, no KYC. You can make your first call in under a minute.',
+        a: 'Connect a wallet, sign the SIWE challenge, and the dashboard generates an API key. No email, no password, no account. You can make your first call in under a minute.',
       },
       {
         iconName: 'KeyRound',

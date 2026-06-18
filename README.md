@@ -4,7 +4,7 @@
 **Version:** 2.1.0  
 **Status:** Production Ready
 
-Self-hosted AI inference gateway with wallet-based auth (zero KYC), multi-provider routing, cross-chain deposits, and native crypto payments.
+Self-hosted AI inference gateway with wallet-based auth (no account required), multi-provider routing, cross-chain deposits, and native crypto payments.
 
 > **Audit status (2026-06-17):** See [docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md](docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md) — all validation gates green (0 typecheck/lint errors, 865 server tests + 90 app tests passing, 0 skipped). The 5 critical + 2 quick-win findings from this audit pass were shipped in commits `97df14d`–`cb9af95`; the 2 pre-existing typecheck errors and 6 navbar test failures it called out are also resolved on `master` as of `cb9af95`. Prior 2026-06-13/14 audit notes are preserved in git history.
 

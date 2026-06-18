@@ -351,7 +351,7 @@ function ValueProps() {
     {
       icon: ShieldCheck,
       title: 'No account needed',
-      body: 'Just connect a wallet. No email, no password, no KYC. Your keys, your models, your data.',
+      body: 'Just connect a wallet. No email, no password, no account. Your keys, your models, your data.',
       href: '/login',
       cta: 'Get started',
     },
@@ -798,7 +798,7 @@ function FeatureGrid() {
 const FAQ_TEASE_ITEMS = [
   {
     q: 'Do I need an account to use OMA?',
-    a: 'No. Your wallet is your account. Sign in with Ethereum or Solana, and the dashboard generates an API key. No email, no password, no KYC.',
+    a: 'No. Your wallet is your account. Sign in with Ethereum or Solana, and the dashboard generates an API key. No email, no password, no account.',
   },
   {
     q: 'How is OMA different from OpenRouter or Venice?',

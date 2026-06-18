@@ -66,7 +66,7 @@
 
 **Supporting points:**
 - Self-hosted deployment option for maximum data control
-- No KYC required - wallet signature only
+- Wallet-based auth (no account required)
 - SIWE authentication keeps your identity separate from usage
 
 **Rationale:** Venice is known for private AI. OMA adds a gateway layer with credit system and multi-provider routing.
