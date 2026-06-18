@@ -5,15 +5,14 @@ import { Hono } from "hono";
 import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import type { OmaEnv } from "../types.js";
-import { sessionAuth } from "../auth/middleware.js";
-import { requireRole } from "../middleware/rbac.js";
+import { sessionAuth, requireAdmin } from "../auth/middleware.js";
 
 export const adminObservabilityRoutes = new Hono<OmaEnv>();
 
 adminObservabilityRoutes.use("/admin/*", sessionAuth);
 adminObservabilityRoutes.use("/v1/admin/*", sessionAuth);
-adminObservabilityRoutes.use("/admin/*", requireRole(["admin"]));
-adminObservabilityRoutes.use("/v1/admin/*", requireRole(["admin"]));
+adminObservabilityRoutes.use("/admin/*", requireAdmin());
+adminObservabilityRoutes.use("/v1/admin/*", requireAdmin());
 
 // GET /v1/admin/usage?days=30
 adminObservabilityRoutes.on("GET", ["/admin/usage", "/v1/admin/usage"], async (c) => {
