@@ -16,13 +16,6 @@ const PAGES = [
   { url: '/faq', name: 'faq' },
   { url: '/privacy', name: 'privacy' },
   { url: '/terms', name: 'terms' },
-  { url: '/use-cases', name: 'use-cases' },
-  { url: '/compare', name: 'compare' },
-  { url: '/crypto-payments', name: 'crypto-payments' },
-  { url: '/swap', name: 'swap' },
-  { url: '/image-generation', name: 'image-generation' },
-  { url: '/video-generation', name: 'video-generation' },
-  { url: '/private-ai-api', name: 'private-ai-api' },
 ];
 
 const AXE_PATH = join(process.cwd(), 'app/node_modules/axe-core/axe.min.js');
