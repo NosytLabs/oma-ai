@@ -30,7 +30,31 @@ jobs:
         working-directory: server
         run: npm ci
 
+      # Site is in refactor/revamp phase (not live). Workflows that need
+      # production secrets would otherwise fail at server/src/config.ts:240
+      # (envSchema.parse(process.env)). Skip with a clear warning instead of
+      # burning runner minutes on a guaranteed-failure import.
+      - name: Skip if required secrets are not configured
+        id: check-secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          MISSING=""
+          for var in DATABASE_URL JWT_SECRET; do
+            if [ -z "${!var}" ]; then
+              MISSING="$MISSING $var"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::warning::Required secrets not configured (refactor/revamp phase, site not live); skipping:$MISSING"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run credit expiry
+        if: steps.check-secrets.outputs.skip != 'true'
         working-directory: server
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
