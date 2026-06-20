@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
 
   // Enable standalone output for optimized Docker deployments
   output: "standalone",
+
+  // Disable the floating Next.js dev indicator (red "N" circle)
+  devIndicators: false,
   outputFileTracingRoot: process.cwd(),
   
   // Build-time env injection so footer.tsx can show the real deploy SHA + date.
@@ -34,6 +37,13 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_DATE:
       process.env.NEXT_PUBLIC_BUILD_DATE ??
       new Date().toISOString().slice(0, 10),
+    // Freeze the year at build time so footer.tsx:60 doesn't drift across
+    // server/client timezones around midnight on Dec 31. Same pattern as
+    // BUILD_DATE above. Falls back to build-time `new Date()` so a manual
+    // override is unnecessary in normal flows.
+    NEXT_PUBLIC_BUILD_YEAR:
+      process.env.NEXT_PUBLIC_BUILD_YEAR ??
+      String(new Date().getFullYear()),
   },
 
   // React 19 and Next.js 15 optimizations
@@ -80,6 +90,47 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [],
   },
 
+  // antd v5 + @ant-design/web3 ship ESM that Next 15's webpack can't
+  // always transpile in dev mode (causes silent compile hangs / OOM).
+  // transpilePackages forces Babel/SWC to process them.
+  transpilePackages: [
+    'antd',
+    '@ant-design/web3',
+    '@ant-design/web3-wagmi',
+    '@ant-design/web3-common',
+    '@ant-design/web3-icons',
+    '@ant-design/web3-assets',
+    '@ant-design/cssinjs',
+    '@ant-design/icons',
+    'rc-util',
+    'rc-pagination',
+    'rc-picker',
+    'rc-field-form',
+    'rc-tree',
+    'rc-table',
+    'rc-input',
+    'rc-select',
+    'rc-tooltip',
+    'rc-dropdown',
+    'rc-menu',
+    'rc-motion',
+    'rc-overflow',
+    'rc-dialog',
+    'rc-notification',
+    'rc-collapse',
+    'rc-tabs',
+    'rc-progress',
+    'rc-steps',
+    'rc-cascader',
+    'rc-checkbox',
+    'rc-radio',
+    'rc-switch',
+    'rc-rate',
+    'rc-slider',
+    'rc-upload',
+    'rc-resize-observer',
+  ],
+
   // Keep these server-side — they pull in Node-only modules (porto, wallet SDKs)
   // that the Edge Runtime / static-prerender step cannot bundle. Without this
   // entry, `npm run build` fails on the `/private-ai-api` prerender with
@@ -95,8 +146,6 @@ const nextConfig: NextConfig = {
   // the proven fix is to disable the barrel optimizer, NOT to
   // externalize these client packages.
   serverExternalPackages: [
-    'porto',
-    '@metamask/connect-evm',
     // siwe@3's dist bundles CJS-require('ethers') at module load (utils.js,
     // ethersCompat.js). webpack's barrel optimization pulls these in via the
     // SiweMessage import in wallet-provider.tsx and fails to resolve 'ethers'
@@ -125,6 +174,19 @@ const nextConfig: NextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         'ws': false,
+        // wagmi 2.x lazy-imports the `tempo` connector (and others) via
+        // `@wagmi/core/dist/esm/tempo/Connectors.js` which statically does
+        // `import 'accounts'`. Next.js's webpack tries to resolve this at
+        // build time even though tempo is opt-in (only loaded when the
+        // user opts in via `createConfig({ connectors: [tempo()] })`).
+        // Setting `false` tells webpack to leave it as an external require
+        // so the bundler skips the unresolvable import. Without this,
+        // `npm run build` fails with:
+        //   Module not found: Can't resolve 'accounts'
+        //   ./node_modules/@wagmi/core/dist/esm/tempo/Connectors.js
+        // Same pattern applies to optional wallet SDKs marked in
+        // `cacheGroups.walletLibs` above.
+        'accounts': false,
       };
       
       // Optimize chunk splitting for better caching
@@ -177,7 +239,7 @@ const nextConfig: NextConfig = {
     //     config: [__filename],
     //   },
     // };
-    
+
     return config;
   },
   
@@ -261,6 +323,28 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Public static-ish endpoints - allow short edge cache
+      // (sitemap.xml, robots.txt, llms.txt, agent-card.json are all
+      // regenerated on each deploy and safe to cache for 1h)
+      {
+        source: "/(sitemap\\.xml|robots\\.txt|llms\\.txt|\\.well-known/agent-card\\.json)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      // Public info endpoints that don't carry per-user data
+      {
+        source: "/api/(v1/privacy|health|pricing/crypto)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+          },
+        ],
+      },
     ];
   },
   
@@ -290,7 +374,7 @@ function generateContentSecurityPolicy(): string {
     "img-src 'self' data: https: blob:",
     "font-src 'self'",
     "frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
-    "connect-src 'self' http://localhost:3001 ws://localhost:3001 https://api.jup.ag https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com https://*.infura.io https://*.alchemy.com wss://*.walletconnect.com wss://*.ws.alchemy.com https://eth.coinbase.com https://base-rpc.publicnode.com https://api.alchemy.com https://*.lens.dev https://viem.sh https://*.infura.io",
+    "connect-src 'self' http://localhost:3001 ws://localhost:3001 https://api.jup.ag https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com https://*.infura.io https://*.alchemy.com wss://*.walletconnect.com wss://*.ws.alchemy.com https://eth.coinbase.com https://base-rpc.publicnode.com https://mainnet.base.org https://api.alchemy.com https://*.lens.dev https://viem.sh https://*.infura.io",
     "frame-ancestors 'self'",
     "object-src 'none'",
     "base-uri 'self'",
