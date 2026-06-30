@@ -301,13 +301,17 @@ function InnerProvider({ children }: { children: ReactNode }) {
 	]);
 
 	const connectEvm = useCallback(
-		(connectorId?: string) => {
+		async (connectorId?: string): Promise<void> => {
 			const connector = connectorId
 				? connectors.find((c) => c.id === connectorId)
 				: connectors[0];
-			if (connector) {
-				connect({ connector });
-			}
+			if (!connector) return;
+			// `connect()` returns a Promise that rejects when the user
+			// rejects the wallet popup, the connector is not installed, or
+			// the chain is wrong. Surface the rejection so the caller can
+			// update UI state (toast, error banner, etc.) instead of silently
+			// swallowing it.
+			await connect({ connector });
 		},
 		[connect, connectors],
 	);

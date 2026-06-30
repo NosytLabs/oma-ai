@@ -19,7 +19,7 @@ interface WalletContextValue {
 	isDemo: boolean;
 	authMethod: AuthMethod;
 	accountNumber: string | null;
-	connectEvm: (connectorId?: string) => void;
+	connectEvm: (connectorId?: string) => Promise<void> | void;
 	disconnect: () => Promise<void>;
 	evmAddress: `0x${string}` | undefined;
 	evmChain: { id: number; name: string } | undefined;
