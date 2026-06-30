@@ -1,14 +1,10 @@
 /**
  * ISOLATED Unit Test for server/src/inference/vendor-meta.ts
  * Target: server/src/inference/vendor-meta.ts
- * Session: ses_m10_4_vendor_meta
- *
- * **WARNING**: THIS FILE WILL BE DELETED AFTER TEST PASSES
- * Test code preserved in: .opencode/unit-tests/2026-06-14T05-00Z-m10-4-vendor-meta.md
  *
  * M10.4 — Vendor Meta spec requires:
- *   1. getVendorMeta() returns the configured inference providers (currently 10:
- *      8 named + a duplicate litellm entry + gemini)
+ *   1. getVendorMeta() returns the configured inference providers (currently 2:
+ *      venice + surplus)
  *   2. Each entry has all 9 required fields:
  *      { name, displayName, baseUrl, iconUrl, docsUrl,
  *        supportsStreaming, supportsTools, supportsVision, hasApiKey }
@@ -16,9 +12,7 @@
  *   4. The serialized response MUST NOT leak any API key value.
  *
  * Isolation strategy:
- *   - Mock `../config.js` with deterministic key presence: venice=YES, antseed=NO,
- *     litellm=YES, openrouter=YES, together=NO, deepinfra=YES, morpheus=NO,
- *     surplus=YES (these specific booleans are what tests assert against).
+ *   - Mock `../config.js` with deterministic key presence: venice=YES, surplus=YES.
  *   - Mock `../lib/logger.js` to a no-op.
  *   - No DB, no Redis, no HTTP — pure synchronous test of the public surface.
  */
@@ -44,13 +38,7 @@ vi.mock("../lib/logger.js", () => ({
 vi.mock("../config.js", () => ({
   config: {
     VENICE_API_KEY: "venice-secret-DO-NOT-LEAK",
-    OPENROUTER_API_KEY: "openrouter-secret-DO-NOT-LEAK",
-    TOGETHER_API_KEY: undefined,
-    DEEPINFRA_API_KEY: "deepinfra-secret-DO-NOT-LEAK",
-    LITELLM_API_KEY: "litellm-secret-DO-NOT-LEAK",
-    MORPHEUS_API_KEY: undefined,
     SURPLUS_WALLET_PRIVATE_KEY: "0x" + "a".repeat(64), // looks like a 64-hex private key
-    ANTSEED_PROXY_URL: undefined,
   },
 }));
 
@@ -65,14 +53,12 @@ vi.mock("../inference/venice.js", () => ({
 import { getVendorMeta, VENDOR_META, type VendorMeta } from "../inference/vendor-meta.js";
 
 // ============================================================================
-// Test 1: shape — 8 providers, all 9 required fields populated.
+// Test 1: shape — 2 providers, all 9 required fields populated.
 // ============================================================================
 describe("M10.4 vendor-meta — shape contract", () => {
-  // ponytail: was "8 named + duplicate litellm + gemini = 10" — claude
-  // removed and duplicate litellm dropped; now 9 unique providers.
-  it("returns the configured providers (9 unique providers)", async () => {
+  it("returns the configured providers (2 providers: venice + surplus)", async () => {
     const providers = await getVendorMeta();
-    expect(providers).toHaveLength(9);
+    expect(providers).toHaveLength(2);
   });
 
   it("each provider has all 9 required fields (name, displayName, baseUrl, iconUrl, docsUrl, supportsStreaming, supportsTools, supportsVision, hasApiKey)", async () => {
@@ -95,24 +81,13 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("name is one of the expected inference providers (venice/antseed/litellm/openrouter/together/deepinfra/surplus/morpheus/gemini)", async () => {
-    const expected = new Set([
-      "venice",
-      "antseed",
-      "litellm",
-      "openrouter",
-      "together",
-      "deepinfra",
-      "surplus",
-      "morpheus",
-      "gemini",
-    ]);
+  it("name is one of the expected inference providers (venice, surplus)", async () => {
+    const expected = new Set(["venice", "surplus"]);
     const providers = await getVendorMeta();
     for (const p of providers) {
       expect(expected.has(p.name), `unexpected provider name: ${p.name}`).toBe(true);
     }
-    // all expected names are present (no missing)
-    expect(new Set(providers.map((p) => p.name)).size).toBeGreaterThanOrEqual(8);
+    expect(new Set(providers.map((p) => p.name)).size).toBe(2);
   });
 
   it("hasApiKey is a boolean (not undefined, not string, not the key value itself)", async () => {
@@ -122,19 +97,13 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("hasApiKey reflects mocked config — venice=YES, openrouter=YES, litellm=YES, deepinfra=YES, surplus=YES, together=NO, morpheus=NO, antseed=NO", async () => {
+  it("hasApiKey reflects mocked config — venice=YES, surplus=YES", async () => {
     const providers = await getVendorMeta();
     const byName: Record<string, VendorMeta> = {};
     for (const p of providers) byName[p.name] = p;
 
     expect(byName.venice.hasApiKey, "venice secret is set in mocked config → hasApiKey=true").toBe(true);
-    expect(byName.openrouter.hasApiKey, "openrouter secret is set → true").toBe(true);
-    expect(byName.litellm.hasApiKey, "litellm secret is set → true").toBe(true);
-    expect(byName.deepinfra.hasApiKey, "deepinfra secret is set → true").toBe(true);
     expect(byName.surplus.hasApiKey, "surplus wallet private key is set → true").toBe(true);
-    expect(byName.together.hasApiKey, "together secret is undefined → false").toBe(false);
-    expect(byName.morpheus.hasApiKey, "morpheus secret is undefined → false").toBe(false);
-    expect(byName.antseed.hasApiKey, "antseed proxy URL is undefined → false").toBe(false);
   });
 
   it("baseUrl and docsUrl are valid https URLs", async () => {
@@ -146,11 +115,9 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("VENDOR_META constant is exported and has the same 9 entries", () => {
+  it("VENDOR_META constant is exported and has the same 2 entries", () => {
     expect(Array.isArray(VENDOR_META)).toBe(true);
-    expect(VENDOR_META).toHaveLength(9);
-    // The const is `as const` (readonly tuple-like); we still expect each
-    // entry to satisfy the same field contract.
+    expect(VENDOR_META).toHaveLength(2);
     for (const p of VENDOR_META) {
       expect(p).toHaveProperty("name");
       expect(p).toHaveProperty("hasApiKey");
@@ -162,22 +129,10 @@ describe("M10.4 vendor-meta — shape contract", () => {
 // Test 2: security — the /v1/providers/meta route must NOT leak any key value.
 // ============================================================================
 describe("M10.4 vendor-meta — secret-leak guard", () => {
-  // We can't import the route without dragging in `hono`, so we just serialize
-  // the data the route would return. The route does `c.json({ count, providers })`,
-  // which is a shallow pass-through of the VendorMeta array.
   it("does NOT contain any mocked secret value as a substring of any field", async () => {
     const providers = await getVendorMeta();
     const SECRETS_TO_NEVER_LEAK = [
       "venice-secret-DO-NOT-LEAK",
-      "openrouter-secret-DO-NOT-LEAK",
-      "litellm-secret-DO-NOT-LEAK",
-      "deepinfra-secret-DO-NOT-LEAK",
-      // The surplus wallet private key is a 0x + 64 hex chars. The route
-      // response must never include the literal key value. The shape of the
-      // hasApiKey field is a boolean so the key cannot appear there. We
-      // additionally check the stringified JSON of each provider does not
-      // contain a 0x[a-fA-F0-9]{60,} substring (which would indicate the
-      // private key leaked via a string field).
     ];
     for (const p of providers) {
       const stringified = JSON.stringify(p);
@@ -192,7 +147,6 @@ describe("M10.4 vendor-meta — secret-leak guard", () => {
 
   it("the stringified response contains no 0x-prefixed long hex string (private-key or address leak guard)", async () => {
     const providers = await getVendorMeta();
-    // Pattern: 0x followed by 40+ hex chars (addresses are 40, private keys are 64)
     const hexKeyPattern = /0x[a-fA-F0-9]{40,}/;
     for (const p of providers) {
       const stringified = JSON.stringify(p);

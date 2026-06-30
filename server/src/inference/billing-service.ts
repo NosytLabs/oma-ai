@@ -1,5 +1,6 @@
 import { getModel, calculateCost, estimateTokens, ensureCatalogLoaded } from './models.js';
 import type { ModelPricing } from './types.js';
+import { config } from '../config.js';
 
 export { estimateTokens };
 
@@ -21,20 +22,9 @@ export async function getModelPricing(modelId: string): Promise<ModelPricing> {
     };
   }
 
-  if (modelId.startsWith("litellm/")) {
-    return { inputPer1k: 0.0015, outputPer1k: 0.002, provider: "litellm", markup: 5 };
-  }
-  if (modelId.startsWith("openrouter/")) {
-    return { inputPer1k: 0.0015, outputPer1k: 0.002, provider: "openrouter", markup: 5 };
-  }
-  if (modelId.startsWith("together/")) {
-    return { inputPer1k: 0.001, outputPer1k: 0.002, provider: "together", markup: 5 };
-  }
-  if (modelId.startsWith("deepinfra/")) {
-    return { inputPer1k: 0.001, outputPer1k: 0.002, provider: "deepinfra", markup: 5 };
-  }
-
-  return { inputPer1k: 0.001, outputPer1k: 0.002, provider: "venice", markup: 150 };
+  // ponytail: default 150% markup was too aggressive — loses price-sensitive
+  // customers. Read from config so operators can tune without code changes.
+  return { inputPer1k: 0.001, outputPer1k: 0.002, provider: "venice", markup: config.OMA_MARKUP_PCT };
 }
 
 export async function estimateCost(

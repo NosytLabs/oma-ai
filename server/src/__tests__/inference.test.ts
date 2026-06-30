@@ -115,13 +115,14 @@ vi.mock('../inference/venice.js', () => {
   };
 })
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../inference/models.js', () => ({
@@ -254,13 +255,13 @@ describe('Inference Routes', () => {
       expect(res.headers.get('Content-Type')).toContain('text/event-stream')
     })
 
-    it('falls back to AntSeed when Venice circuit open', async () => {
+    it('routes through surplus when Venice circuit open', async () => {
       vi.mocked(handleChatCompletion).mockResolvedValue({
-        response: new Response(JSON.stringify({ id: 'chat-2', choices: [{ message: { role: 'assistant', content: 'from antseed' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), {
+        response: new Response(JSON.stringify({ id: 'chat-2', choices: [{ message: { role: 'assistant', content: 'from surplus' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
-        provider: 'antseed',
+        provider: 'surplus',
       })
       vi.mocked(deductCredits).mockResolvedValue(undefined)
       vi.mocked(validateApiKey).mockResolvedValueOnce(validKey)
@@ -337,15 +338,15 @@ describe('Inference Routes', () => {
       expect(res.headers.get('Content-Type')).toContain('text/event-stream')
     })
 
-    it('falls back to AntSeed when Venice circuit open', async () => {
+    it('routes through surplus when Venice circuit open', async () => {
       vi.mocked(validateApiKey).mockResolvedValueOnce(validKey)
       vi.mocked(getBalance).mockResolvedValueOnce({ balanceCents: '1000', totalDepositedCents: '1000', totalUsedCents: '0', lastActivityAt: null })
       vi.mocked(handleChatCompletion).mockResolvedValueOnce({
-        response: new Response(JSON.stringify({ id: 'chat-2', choices: [{ message: { role: 'assistant', content: 'from antseed' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), {
+        response: new Response(JSON.stringify({ id: 'chat-2', choices: [{ message: { role: 'assistant', content: 'from surplus' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
-        provider: 'antseed',
+        provider: 'surplus',
       })
 
       const res = await app.request('/v1/chat/completions', {

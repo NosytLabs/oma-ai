@@ -1,0 +1,13 @@
+publicHoistPatterns:
+  - 'motion-dom'
+  - 'motion-utils'
+allowBuilds:
+  '@reown/appkit': true
+  '@sentry/cli': true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@base-org/account@2.5.7'
+overrides:
+  ws: '>=8.21.0'
+  postcss: '>=8.5.10'

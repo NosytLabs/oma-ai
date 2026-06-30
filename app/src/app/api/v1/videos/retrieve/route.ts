@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server'
-import { API_URL } from '@/lib/api/admin-config'
+import { type NextRequest, NextResponse } from 'next/server'
+import { DEFAULT_API_URL as API_URL } from '@/lib/config'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { generalLimiter } from '@/lib/rate-limiter'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,7 +16,17 @@ const PASSTHROUGH_RESPONSE_HEADERS = [
   'content-type',
 ] as const
 
-export async function GET(request: Request) {
+export const GET = withRateLimit(async (request: NextRequest) => {
+  // --- Auth gate ---
+  const authHeader = request.headers.get('authorization')
+  const sessionCookie = request.cookies.get('oma_session')?.value
+  if (!authHeader && !sessionCookie) {
+    return NextResponse.json(
+      { error: { message: 'Unauthorized', type: 'auth_required' } },
+      { status: 401 },
+    )
+  }
+
   const { searchParams } = new URL(request.url)
   const queueId = searchParams.get('queue_id')
   if (!queueId) {
@@ -36,6 +48,7 @@ export async function GET(request: Request) {
       method: 'GET',
       headers: requestHeaders,
       cache: 'no-store',
+      signal: AbortSignal.timeout(60_000),
     })
   } catch (err) {
     console.error('[video-proxy] /v1/videos/retrieve error:', err)
@@ -58,4 +71,4 @@ export async function GET(request: Request) {
     payload = { error: { message: 'Upstream returned invalid JSON', type: 'proxy_error' } }
   }
   return NextResponse.json(payload, { status: upstream.status, headers: responseHeaders })
-}
+}, { limiter: generalLimiter, route: '/api/v1/videos/retrieve' })

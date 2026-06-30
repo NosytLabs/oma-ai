@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { createServer } from "node:http";
 import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
@@ -14,11 +14,11 @@ import { depositRoutes } from "./routes/deposit/index.js";
 import { searchRoutes } from "./routes/search.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { crosschainRoutes } from "./x402/crosschain.js";
+import { x402V2Routes } from "./x402/v2.js";
 import { onrampRoutes } from "./routes/onramp.js";
 import { creditRoutes } from "./routes/credits.js";
 import { adminRoutes } from "./routes/admin/index.js";
 import { jupiterRoutes } from "./routes/jupiter.js";
-import { queueRoutes } from "./routes/queue.js";
 import { configRoutes } from "./routes/config.js";
 import { analyticsRoutes } from "./routes/analytics.js";
 import { adminAnalyticsRoutes } from "./routes/analytics-admin.js";
@@ -33,6 +33,7 @@ import { openapiRoutes } from "./routes/openapi.js";
 import { providersMetaRoutes } from "./routes/providers-meta.js";
 import { usageRoutes } from "./routes/usage.js";
 import { adminObservabilityRoutes } from "./routes/admin-observability.js";
+import { logRoutes } from "./routes/log.js";
 import { missingRoutes } from "./routes/missing-routes.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
@@ -45,15 +46,14 @@ import {
   stopBackgroundProbing,
   stopCacheCleanup,
 } from "./inference/provider-health.js";
-import { stopQueueProcessor } from "./lib/request-queue.js";
 import { initProviderResultReporter } from "./inference/provider-result.js";
 import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheaptokens.js";
 
 reloadModelCatalog();
 
 // External cron jobs (moved to .github/workflows/* to allow NEON scale-to-zero).
-// The work functions are still exported from each module so the CLI runner
-// (src/jobs/cli-runner.ts) and existing unit tests can call them directly.
+// The work functions are still exported from each module so existing unit tests
+// can call them directly.
 //   credit-expiry          → .github/workflows/credit-expiry.yml          (daily)
 //   subscription-check     → .github/workflows/subscription-check.yml     (hourly)
 //   nonce-cleanup          → .github/workflows/nonce-cleanup.yml          (every 15m)
@@ -80,6 +80,18 @@ if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
   process.exit(1);
 }
 
+// H5: Fail fast on missing or weak CSRF_SECRET. generateCsrfToken() throws if
+// CSRF_SECRET is unset, but that function is only called when a user requests
+// a CSRF token — failing at startup is safer. In dev/test the zod default
+// (≥32 chars) is acceptable.
+if (config.NODE_ENV === "production" && (!config.CSRF_SECRET || config.CSRF_SECRET.length < 32)) {
+  const msg = config.CSRF_SECRET
+    ? `CSRF_SECRET length is ${config.CSRF_SECRET.length} (minimum 32).`
+    : "CSRF_SECRET is not set.";
+  logger.fatal(`[SECURITY] ${msg} Refusing to start.`);
+  process.exit(1);
+}
+
 if (config.NODE_ENV !== "test") {
   initProviderResultReporter();
   startBackgroundDbSync();
@@ -98,6 +110,9 @@ app.use("*", async (c, next) => {
   c.header("X-Request-ID", correlationId);
   await next();
 });
+
+// C10: Add response compression — reduces API response sizes by 3-10x
+app.use("*", compress());
 
 app.use("*", securityHeaders);
 
@@ -123,7 +138,7 @@ const corsOptions = {
   },
   credentials: true,
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization", "X-Houdini-Order-Id", "X-Houdini-Signature"],
+  allowHeaders: ["Content-Type", "Authorization", "X-Houdini-Order-Id", "X-Houdini-Signature", "PAYMENT-SIGNATURE", "PAYMENT-REQUIRED"],
   exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
   maxAge: 86400,
 };
@@ -149,13 +164,13 @@ app.route("/", modelRoutes);
 app.route("/", depositRoutes);
 app.route("/", searchRoutes);
 app.route("/", x402Routes);
+app.route("/", x402V2Routes);
 app.route("/", crosschainRoutes);
 app.route("/", onrampRoutes);
 app.route("/", creditRoutes);
 app.route("/", adminRoutes);
 app.route("/", jupiterRoutes);
 app.route("/", missingRoutes);
-app.route("/v1/queue", queueRoutes);
 app.route("/", configRoutes);
 app.route("/", analyticsRoutes);
 app.route("/", adminAnalyticsRoutes);
@@ -169,6 +184,7 @@ app.route("/", exportRoutes);
 // only match admin paths and don't shadow other routes. Router defines its own
 // path prefixes internally.
 app.route("/", adminObservabilityRoutes);
+app.route("/", logRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));
 
@@ -186,47 +202,50 @@ app.onError((err, c) => {
   return c.json({ error: { message: err.message, type: "client_error" } }, status);
 });
 
-const httpServer = createServer();
-
-serve({
+const server = serve({
   fetch: app.fetch,
   port: config.PORT,
 }, (info) => {
   logger.info({ port: info.port }, "[OMA] API server running");
   logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
   logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
+});
 
-  const shutdown = async (signal: string) => {
-    logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
+const shutdown = async (signal: string) => {
+  logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
 
-    stopBackgroundDbSync();
-    stopBackgroundProbing();
-    stopCacheCleanup();
-    stopQueueProcessor();
+  stopBackgroundDbSync();
+  stopBackgroundProbing();
+  stopCacheCleanup();
 
-    httpServer.close(async () => {
-      logger.info("[OMA] HTTP server closed");
+  server.close(async () => {
+    logger.info("[OMA] HTTP server closed");
 
-      try {
-        const { closeRedisClient } = await import("./lib/redis-client.js");
-        await closeRedisClient();
-        logger.info("[OMA] Redis connection closed");
-      } catch (err) {
-        logger.warn({ error: err }, "[OMA] Redis close error");
-      }
+    try {
+      const { closeRedisClient } = await import("./lib/redis-client.js");
+      await closeRedisClient();
+      logger.info("[OMA] Redis connection closed");
+    } catch (err) {
+      logger.warn({ error: err }, "[OMA] Redis close error");
+    }
 
-      logger.info("[OMA] Graceful shutdown complete");
-      process.exit(0);
-    });
+    logger.info("[OMA] Graceful shutdown complete");
+    process.exit(0);
+  });
 
-    setTimeout(() => {
-      logger.error("[OMA] Forced shutdown after timeout");
-      process.exit(1);
-    }, 10_000);
-  };
+  setTimeout(() => {
+    logger.error("[OMA] Forced shutdown after timeout");
+    process.exit(1);
+  }, 10_000);
+};
 
+// Register shutdown handlers only in non-test environments. Tests that import
+// `app` from this module trigger the module-level serve() which creates an HTTP
+// server, but vitest's mock cleanup can leave `server` undefined when the
+// shutdown handler fires during teardown, causing unhandled rejections.
+if (config.NODE_ENV !== "test") {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
-});
+}
 
 export default app;

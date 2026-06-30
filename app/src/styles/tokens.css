@@ -1,0 +1,310 @@
+/* ================================================
+   COLOR SCHEME
+   Hint the browser so native form controls, scrollbars,
+   and the address bar match the active theme.
+   ================================================ */
+
+:root {
+  color-scheme: dark light;
+  interpolate-size: allow-keywords;
+
+  /* Smooth theme transitions — animate all color/border/shadow changes */
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.25s ease,
+              box-shadow 0.3s ease;
+}
+
+@theme {
+  /* ================================================
+     OMA AI - Refined Color Palette
+     Brand: Terminal-inspired with Orange anchor
+     ================================================ */
+   
+  /* Core palette - Terminal dark theme */
+  --color-void: #0a0a0f;
+  --color-surface: #121218;
+  --color-panel: #18181f;
+  --color-surface-elevated: #1e1e26;
+  --color-border: #2a2a35;
+  --color-border-bright: #3d3d4d;
+   
+  /* PRIMARY ACCENT - Orange (Brand Identity) */
+  --color-accent: #f97316;
+  --color-accent-dim: rgba(249, 115, 22, 0.18);
+  --color-accent-glow: rgba(249, 115, 22, 0.25);
+  --color-accent-hover: #fb923c;
+  --color-accent-bright: #fdba74;
+  --color-accent-muted: #ea580c;
+  
+  /* SECONDARY ACCENT - Gold (distinct from --color-warning; used for the
+     hero/gradient gold accent, not for cautionary UI). */
+  --color-secondary: #f5a623;
+  --color-secondary-dim: rgba(245, 166, 35, 0.12);
+  --color-secondary-hover: #d68a12;
+  
+  /* WARNING — distinct caution amber/orange (not brand gold). Kept separate from
+     --color-secondary so caution UI doesn't read as brand accent. */
+  --color-warning: #fb923c;
+  --color-warning-dim: rgba(251, 146, 60, 0.12);
+  --color-warning-soft: rgba(251, 146, 60, 0.08);
+  
+  /* TERTIARY ACCENT - For diversity (Violet) */
+  --color-tertiary: #a78bfa;
+  --color-tertiary-dim: rgba(167, 139, 250, 0.12);
+  
+  /* Semantic colors - Brand-aligned (split: success=emerald, info=blue, distinct from accent) */
+  --color-success: #34d399;
+  --color-success-dim: rgba(52, 211, 153, 0.12);
+  --color-success-soft: rgba(52, 211, 153, 0.08);
+  --color-error: #ff3366;
+  --color-pink: #ec4899;
+  --color-red: #ef4444;
+  --color-error-dim: rgba(255, 51, 102, 0.12);
+  --color-error-soft: rgba(255, 51, 102, 0.08);
+  --color-info: #60a5fa;
+  --color-info-dim: rgba(96, 165, 250, 0.12);
+  --color-info-soft: rgba(96, 165, 250, 0.08);
+   
+  /* Text hierarchy - WCAG 2.1 AA compliant (4.5:1+ contrast ratio) */
+  --color-text: #e4e4e7;
+  --color-text-bright: #ffffff;
+  --color-text-secondary: #c4c4d0;
+  --color-text-muted: #a0a0a8;
+  --color-text-tertiary: #9a9aae;
+  --color-text-inverse: #0a0a0f;
+   
+  /* Message bubble accents — used by ChatMessageRedesign's inline styles
+     via Tailwind's bg-accent/10 + bg-surface token references.
+     The --color-msg-* token block was removed 2026-06-23 (0 references). */
+
+  /* ================================================
+     PROVIDER COLORS
+     Consistent brand-aligned provider identification
+     ================================================ */
+  --color-provider-venice: #a78bfa;      /* Violet - primary premium provider */
+  --color-provider-venice-dim: rgba(167, 139, 250, 0.15);
+  --color-provider-antseed: #34d399;      /* Emerald - secondary provider */
+  --color-provider-antseed-dim: rgba(52, 211, 153, 0.15);
+  --color-provider-openrouter: #60a5fa;  /* Blue - third-party */
+  --color-provider-openrouter-dim: rgba(96, 165, 250, 0.15);
+  --color-provider-together: #f472b6;     /* Pink - additional provider */
+  --color-provider-together-dim: rgba(244, 114, 182, 0.15);
+  
+  /* ================================================
+     MODEL TIER COLORS
+     Clear visual hierarchy for pricing tiers
+     ================================================ */
+  --color-tier-frontier: #a78bfa;        /* Violet - highest tier */
+  --color-tier-frontier-dim: rgba(167, 139, 250, 0.15);
+  --color-tier-premium: #f97316;          /* Orange - premium models */
+  --color-tier-premium-dim: rgba(249, 115, 22, 0.15);
+  --color-tier-mid: #ffb800;              /* Amber - mid-range models */
+  --color-tier-mid-dim: rgba(255, 184, 0, 0.15);
+  --color-tier-budget: #34d399;           /* Emerald - budget options */
+  --color-tier-budget-dim: rgba(52, 211, 153, 0.15);
+  --color-tier-reasoning: #f472b6;        /* Pink - reasoning models */
+  --color-tier-reasoning-dim: rgba(244, 114, 182, 0.15);
+  --color-tier-coding: #60a5fa;           /* Blue - coding models */
+  --color-tier-coding-dim: rgba(96, 165, 250, 0.15);
+  --color-tier-uncensored: #ff3366;       /* Red/Pink - special models */
+  --color-tier-uncensored-dim: rgba(255, 51, 102, 0.15);
+  
+  /* ponytail: legacy color alias removed in v14. All call sites have been
+     migrated to var(--color-success) (emerald in dark, green-600 in light).
+     Verified 2026-06-23 — 0 remaining uses of text-green/bg-green/border-green
+     in src/. Use --color-success for new code. */
+  --color-amber: #ffb800;
+  --color-violet: #a78bfa;
+  --color-blue: #60a5fa;
+  /* Backwards-compat alias — multiple components still reference
+     bg-orange / text-orange / border-orange. Map to the brand accent
+     so they render with the canonical orange instead of Tailwind's
+     default palette. New code should use var(--color-accent). */
+  --color-orange: #f97316;
+  --color-orange-dim: rgba(249, 115, 22, 0.18);
+
+  /* Shadow tokens */
+  --shadow-accent-sm: 0 0 8px var(--color-accent-glow);
+  --shadow-accent-card-hover: 0 0 15px var(--color-accent-soft);
+
+  /* Radius scale — single source of truth for corner rounding.
+     - xs: 2px  (hairline, breadcrumbs, dividers)
+     - sm: 4px  (buttons, inputs)
+     - md: 8px  (cards, panels)
+     - lg: 12px (modals, large cards, hero CTAs)
+     - xl: 16px (full-bleed cards, image grids)
+     - 2xl: 24px (pill buttons, large modals) */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Container widths — used as max-width utilities throughout the app.
+     - narrow: 768px  (reading content, FAQs, blog posts)
+     - default: 1024px (forms, settings)
+     - wide: 1152px (marketing pages, primary content) — used by 90% of pages
+     - x-wide: 1280px (catalog grids, dashboards)
+     - full: 1536px (data tables, dashboards) */
+  --container-narrow: 48rem;
+  --container-default: 64rem;
+  --container-wide: 72rem;
+  --container-x-wide: 80rem;
+  --container-full: 96rem;
+
+  /* Z-index scale — prevents the spaghetti of z-40, z-50, z-100, etc.
+     - base: 0    (default flow)
+     - raised: 10 (sticky elements)
+     - nav: 40    (sticky navbar)
+     - overlay: 50 (modals, menus, dropdowns)
+     - toast: 100 (notifications)
+     - tooltip: 110 (tooltips above everything) */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-nav: 40;
+  --z-overlay: 50;
+  --z-toast: 100;
+  --z-tooltip: 110;
+   
+  /* Utility colors */
+  --color-accent-soft: rgba(249, 115, 22, 0.08);
+  
+  /* Typography — distinctive pairing: Space Grotesk (body + heading), Syne (display), JetBrains Mono (code) */
+  --font-sans: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-display: var(--font-syne), "Syne", var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, Monaco, monospace;
+
+  /* Micro typography scale — for dense UIs, badges, captions, code labels */
+  --text-2xs: 0.625rem;   /* 10px — code labels, badges */
+  --text-3xs: 0.6875rem;  /* 11px — table headers, captions */
+  --text-micro: 0.75rem;  /* 12px — small meta */
+  --text-note: 0.8125rem; /* 13px — legal, descriptions */
+
+  /* Micro typography line-heights */
+  --text-2xs--line-height: 1rem;
+  --text-3xs--line-height: 1rem;
+  --text-micro--line-height: 1.25rem;
+  --text-note--line-height: 1.375rem;
+
+  /* Text color semantics */
+  --color-label: var(--color-text-muted);       /* for UI labels, table headers */
+  --color-caption: var(--color-text-tertiary);  /* for image captions, footnotes */
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-void: #fafafa;
+  --color-surface: #f4f4f5;
+  --color-panel: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e4e4e7;
+  --color-border-bright: #a1a1aa;
+  --color-text: #18181b;
+  --color-text-bright: #09090b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: #fafafa;
+  --color-text-tertiary: #5b5b66;
+  --color-accent: #ea580c;
+  --color-accent-dim: rgba(234, 88, 12, 0.18);
+  --color-accent-glow: rgba(234, 88, 12, 0.25);
+  --color-accent-hover: #c2410c;
+  --color-accent-bright: #f97316;
+  --color-accent-muted: #7c2d12;
+  --color-secondary: #b45309;
+  --color-secondary-dim: rgba(180, 83, 9, 0.12);
+  --color-secondary-hover: #92450a;
+  --color-warning: #c2410c;
+  --color-warning-dim: rgba(194, 65, 12, 0.12);
+  --color-warning-soft: rgba(194, 65, 12, 0.08);
+  --color-tertiary: #7c3aed;
+  --color-tertiary-dim: rgba(124, 58, 237, 0.12);
+  --color-success: #059669;
+  --color-success-dim: rgba(5, 150, 105, 0.12);
+  --color-success-soft: rgba(5, 150, 105, 0.08);
+  --color-error: #dc2626;
+  --color-error-dim: rgba(220, 38, 38, 0.12);
+  --color-error-soft: rgba(220, 38, 38, 0.08);
+  --color-info: #2563eb;
+  --color-info-dim: rgba(37, 99, 211, 0.12);
+  --color-info-soft: rgba(37, 99, 211, 0.08);
+  --color-provider-venice: #7c3aed;
+  --color-provider-venice-dim: rgba(124, 58, 237, 0.15);
+  --color-provider-antseed: #059669;
+  --color-provider-antseed-dim: rgba(5, 150, 105, 0.15);
+  --color-provider-openrouter: #2563eb;
+  --color-provider-openrouter-dim: rgba(37, 99, 235, 0.15);
+  --color-provider-together: #db2777;
+  --color-provider-together-dim: rgba(219, 39, 119, 0.15);
+  --color-tier-frontier: #7c3aed;
+  --color-tier-frontier-dim: rgba(124, 58, 237, 0.15);
+  --color-tier-premium: #ea580c;
+  --color-tier-premium-dim: rgba(234, 88, 12, 0.15);
+  --color-tier-mid: #d97706;
+  --color-tier-mid-dim: rgba(217, 119, 6, 0.15);
+  --color-tier-budget: #059669;
+  --color-tier-budget-dim: rgba(5, 150, 105, 0.15);
+  --color-tier-reasoning: #db2777;
+  --color-tier-reasoning-dim: rgba(219, 39, 119, 0.15);
+  --color-tier-coding: #2563eb;
+  --color-tier-coding-dim: rgba(37, 99, 235, 0.15);
+  --color-tier-uncensored: #dc2626;
+  --color-tier-uncensored-dim: rgba(220, 38, 38, 0.15);
+  --color-amber: #d97706;
+  --color-pink: #db2777;
+  --color-violet: #7c3aed;
+  --color-red: #dc2626;
+  --color-blue: #2563eb;
+  --color-accent-soft: rgba(234, 88, 12, 0.08);
+  --color-orange: #ea580c;
+  --color-orange-dim: rgba(234, 88, 12, 0.18);
+}
+
+/* ============================================================================
+ * OMA Motion Design System
+ * ----------------------------------------------------------------------------
+ * Single source of truth for animation tokens. Every motion in the app
+ * should reference one of these tokens. Do NOT use linear easing for
+ * spatial movement; do NOT use opacity-only for important state changes.
+ * All animations respect `prefers-reduced-motion` (handled above).
+ *
+ * Signature easing: cubic-bezier(0.16, 1, 0.3, 1) — smooth deceleration
+ * with subtle overshoot; used for 80% of animations.
+ *
+ * Duration budget (enter / exit ratio 1.3x — entrances 30-50% longer than
+ * exits because users care more about what appears than what disappears):
+ *   - Microinteractions (buttons, toggles): 200-300ms
+ *   - Tooltips / badges:                  150-200ms
+ *   - Card entrance / exit:              250-400ms
+ *   - Modal / dialog:                    300-400ms
+ *   - Page transitions:                  400-600ms
+ *   - Loading states (pulse):            1.5s loop
+ *
+ * Easing-by-type:
+ *   Entrance:    cubic-bezier(0.16, 1, 0.3, 1)        -- smooth decelerate
+ *   Exit:        cubic-bezier(0.7, 0, 1, 1)            -- accelerate out
+ *   Hover:       cubic-bezier(0.2, 0, 0, 1)            -- quick, responsive
+ *   Press:       ease-out                               -- button feedback
+ *   Bounce:      cubic-bezier(0.175, 0.885, 0.32, 1.275) -- settle
+ *   Shake:       ease-in-out                            -- error feedback
+ *
+ * Stagger total must stay under 500ms to maintain perceived connection.
+ *   - Micro cascade:   30-50ms  (list items, grid cells)
+ *   - Standard:        60-100ms (cards, panels, nav)
+ *   - Dramatic:        100-150ms (hero, major UI blocks)
+ *
+ * Every significant animation has three layers:
+ *   1. Primary   — main action (position, scale, opacity)
+ *   2. Secondary — supporting richness (shadow shift, icon nudge, color)
+ *   3. Ambient   — background life (gradient pulse, particles)
+ *
+ * Troubleshooting:
+ *   - Looks robotic: missing arcs / using linear easing → add signature easing
+ *   - Feels too slow: reduce to 200-300ms range
+ *   - Looks flat: missing secondary + ambient layers
+ *   - Too distracting: apply stagger, reduce amplitude
+ * ========================================================================== */

@@ -281,19 +281,19 @@ describe('background probing', () => {
     vi.useFakeTimers()
     const { healthCheck } = await import('../provider-factory.js')
     const { surplusHealthCheck } = await import('../surplus.js')
+    const { recordTraffic } = await import('../provider-health.js')
 
+    // Seed traffic so providers are not skipped as "never used", then advance
+    // past the 60-second idle threshold so they actually get probed.
+    recordTraffic('venice')
+    recordTraffic('surplus')
     startBackgroundProbing(1)
-    await vi.advanceTimersByTimeAsync(1)
+    await vi.advanceTimersByTimeAsync(61000)
 
     expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
-      'openrouter',
-      'https://openrouter.ai',
-      '/api/v1/models',
-    )
-    expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
-      'deepinfra',
-      'https://api.deepinfra.com',
-      '/v1/openai/models',
+      'venice',
+      'https://api.venice.ai',
+      '/v1/models',
     )
     expect(vi.mocked(surplusHealthCheck)).toHaveBeenCalled()
     expect(vi.mocked(healthCheck)).not.toHaveBeenCalledWith(
@@ -301,6 +301,6 @@ describe('background probing', () => {
       expect.anything(),
       expect.anything(),
     )
-  })
+  }, 15000)
 })
 

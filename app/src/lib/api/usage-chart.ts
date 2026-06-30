@@ -7,6 +7,7 @@
  * is unit-testable without a React render harness.
  */
 import { CHART_PALETTE } from '@/components/ui/charts/shared'
+import { toDollars } from '@/lib/utils'
 
 /** Raw shape returned by `api.oma.getUsage()` — mirrors `UsageRecord`. */
 export interface UsageRecordLike {
@@ -52,7 +53,7 @@ export function mapUsageToChartData(
     const day = new Date(u.createdAt).toISOString().slice(0, 10)
     const prev = byDay.get(day) ?? { requests: 0, cost: 0 }
     prev.requests += 1
-    prev.cost += parseFloat(String(u.costCents)) / 100
+    prev.cost += toDollars(u.costCents)
     byDay.set(day, prev)
   }
   return Array.from(byDay.entries())
@@ -75,7 +76,7 @@ export function mapUsageToModelData(
   if (usage.length === 0) return []
   const byModel = new Map<string, number>()
   for (const u of usage) {
-    byModel.set(u.model, (byModel.get(u.model) ?? 0) + parseFloat(String(u.costCents)) / 100)
+    byModel.set(u.model, (byModel.get(u.model) ?? 0) + toDollars(u.costCents))
   }
   return Array.from(byModel.entries())
     .sort(([, a], [, b]) => b - a)

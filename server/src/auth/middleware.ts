@@ -47,17 +47,11 @@ if (isProductionEnv) {
 type SingleflightRecord = { promise: Promise<unknown> };
 const singleflightInflight = new Map<string, SingleflightRecord>();
 
-export async function singleflight<T>(key: string, fn: () => Promise<T> | T): Promise<T> {
+async function singleflight<T>(key: string, fn: () => Promise<T> | T): Promise<T> {
   const existing = singleflightInflight.get(key);
-  if (existing) {
-    return existing.promise as Promise<T>;
-  }
+  if (existing) return existing.promise as Promise<T>;
   const promise = (async () => {
-    try {
-      return await fn();
-    } finally {
-      singleflightInflight.delete(key);
-    }
+    try { return await fn(); } finally { singleflightInflight.delete(key); }
   })();
   singleflightInflight.set(key, { promise });
   return promise;
@@ -128,7 +122,7 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
 
   if (session) {
     c.set("userId", session.userId);
-    c.set("authMethod", session.authMethod as "siwe" | "solana" | "account-number" | "sso");
+    c.set("authMethod", session.authMethod as "siwe" | "account-number" | "sso" | "neon-auth");
 
     const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
     if (user?.twoFactorEnabled) {
@@ -136,26 +130,27 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
       if (!redis) {
         return c.json({ error: { message: "Authentication service unavailable", type: "server_error" } }, 503);
       }
-      const failKey = `2fa_fail:${session.userId}`;
-
-      // SEC-7: atomic INCR-then-check. The pre-fix code did `GET failKey`
-      // then `INCR` after the verify, which let N concurrent requests all
-      // see `fails < 5` and bypass the brute-force cap. INCR is atomic in
-      // Redis; the post-increment value is unique per request.
-      const newCount = await redis.incr(failKey);
-      if (newCount === 1) {
-        // First failure in this window — set the TTL exactly once so the
-        // 5-min cap doesn't slide forward on every retry.
-        await redis.expire(failKey, 300);
-      }
-      if (newCount >= 5) {
-        return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
-      }
 
       const twoFactorCode = c.req.header("X-2FA-Code");
       if (!twoFactorCode) {
         return c.json({ error: { message: "2FA code required", type: "authentication_error", code: "2fa_required" } }, 401);
       }
+
+      // SEC-7: atomic INCR-then-check — increment the counter BEFORE
+      // calling verify so concurrent requests all see the incremented
+      // value and the gate fires before any expensive verify operation.
+      const failKey = `2fa_fail:${session.userId}`;
+      const nxSet = await redis.set(failKey, "1", { NX: true, EX: 300 });
+      let currentCount: number;
+      if (nxSet === "OK") {
+        currentCount = 1;
+      } else {
+        currentCount = await redis.incr(failKey);
+      }
+      if (currentCount >= 5) {
+        return c.json({ error: { message: "Too many 2FA attempts", type: "authentication_error", code: "2fa_brute_force" } }, 429);
+      }
+
       const [userWithSecret] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, session.userId)).limit(1);
       if (userWithSecret?.twoFactorSecret) {
         let secret: string;
@@ -169,6 +164,7 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
         if (!isValid) {
           return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
         }
+        // Success — clear fail counter.
         await redis.del(failKey);
       }
     }
@@ -257,33 +253,6 @@ export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
     }
   }
   await next();
-}
-
-export function requireTeamRole(...allowedRoles: string[]) {
-  return async (c: Context<OmaEnv>, next: Next) => {
-    const userId = c.get("userId");
-    if (!userId) {
-      return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
-    }
-
-    const teamId = c.req.query("teamId") || c.req.header("X-Team-ID") || c.req.param("teamId");
-    if (!teamId) {
-      return c.json({ error: { message: "Team ID required", type: "bad_request", code: "team_id_required" } }, 400);
-    }
-
-    const [membership] = await db
-      .select({ role: teamMembers.role })
-      .from(teamMembers)
-      .where(and(eq(teamMembers.userId, userId), eq(teamMembers.teamId, teamId)))
-      .limit(1);
-
-    if (!membership || !allowedRoles.includes(membership.role)) {
-      return c.json({ error: { message: "Insufficient permissions", type: "forbidden" } }, 403);
-    }
-
-    c.set("teamRole", membership.role);
-    await next();
-  };
 }
 
 const PLATFORM_TEAM_ID = config.PLATFORM_TEAM_ID || "";

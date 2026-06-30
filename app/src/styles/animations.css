@@ -1,0 +1,206 @@
+/* SVG noise texture overlay on body — perf: reduced from 0.35 to 0.06 so
+   the GPU doesn't have to recomposite every frame through a 35%-opacity
+   fractal texture. The atmospheric effect is preserved at a fraction of
+   the cost. Opt-out with `.no-noise` on a parent (used by fullscreen
+   pages like /chat). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  pointer-events: none;
+}
+
+.no-noise::before {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--color-border) 25%, var(--color-surface-elevated) 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* --- Keyframes --- */
+
+@keyframes oma-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes oma-grid-pan {
+  0% { background-position: 0 0; }
+  100% { background-position: 48px 48px; }
+}
+
+@keyframes oma-aurora {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  33% { transform: translate(30px, -20px) scale(1.08); opacity: 0.7; }
+  66% { transform: translate(-20px, 20px) scale(0.95); opacity: 0.45; }
+}
+
+@keyframes oma-sheen {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+
+@keyframes oma-pulse-ring {
+  0% { box-shadow: 0 0 0 0 var(--color-accent-glow); }
+  70% { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes oma-gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes oma-blink-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* --- Animated grid background --- */
+
+.bg-grid-animated {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 50%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 50%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  animation: oma-grid-pan 6s linear infinite;
+}
+
+/* ============================================================
+   SCROLL PROGRESS BAR — thin accent indicator at viewport top
+   ============================================================ */
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 100;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-bright), var(--color-secondary));
+  transform-origin: 0% 50%;
+  box-shadow: 0 0 8px var(--color-accent-glow);
+  pointer-events: none;
+}
+
+@keyframes oma-page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes oma-glow-breathe {
+  0%, 100% { box-shadow: 0 0 8px var(--color-accent-glow); }
+  50% { box-shadow: 0 0 20px var(--color-accent-glow), 0 0 40px var(--color-accent-soft); }
+}
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-exit {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(100px) scale(0.95); }
+}
+
+/* ============================================================
+   REDUCED MOTION — consolidated from all sections
+   All animations respect prefers-reduced-motion.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-in,
+  .animate-shimmer,
+  .animate-pulse {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--color-border);
+  }
+
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+  }
+
+  .bg-grid-animated,
+  .aurora::before,
+  .aurora::after,
+  .border-gradient::before,
+  .float,
+  .pulse-ring {
+    animation: none;
+  }
+  .tilt-card:hover {
+    transform: none;
+  }
+  .sheen::after {
+    display: none;
+  }
+
+  .scroll-progress {
+    display: none;
+  }
+
+  .page-enter {
+    animation: none;
+  }
+
+  .card-hover-lift:hover {
+    transform: none;
+  }
+
+  .glow-breathe {
+    animation: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    transition: none;
+  }
+
+  .toast-enter,
+  .toast-exit {
+    animation: none;
+  }
+}

@@ -6,7 +6,7 @@ import { getModel } from "../../inference/models.js";
 import { getBalance } from "../../credits/index.js";
 import { tokenBucket, modelRateLimit } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import {
   checkIdempotencyKey,
@@ -19,7 +19,7 @@ import {
   checkRequestBodySizeLimit,
 } from "./validation.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
-import { logger } from "../../lib/logger.js";
+import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 export const chatCompletionsRouter = new Hono<OmaEnv>();
 
@@ -150,13 +150,8 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
         const totalCents =
           json.usage?.totalCents ??
           Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
-        if (totalCents > 0 && apiKey) {
-          trackSpend(apiKey.keyHash, Math.ceil(totalCents)).catch((err) => {
-            logger.error(
-              { err, keyPrefix: apiKey.keyHash.slice(0, 8) },
-              "[spend-limit] Track failed",
-            );
-          });
+        if (totalCents > 0) {
+          trackApiKeySpend(apiKey?.keyHash, Math.ceil(totalCents));
         }
         if (idempotencyKey) {
           await storeIdempotencyResult(idempotencyKey, json);
@@ -175,16 +170,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           (err as { type?: string }).type ?? "inference_error",
         );
         span?.setAttribute("http.status_code", status);
-        logger.error({ err }, "[chat] /v1/chat/completions error:");
-        return c.json(
-          {
-            error: {
-              message: "An internal error occurred",
-              type: (err as { type?: string }).type ?? "inference_error",
-            },
-          },
-          status as Parameters<typeof c.json>[1],
-        );
+        return inferenceErrorHandler(c, err, "/v1/chat/completions");
       }
     },
     undefined,

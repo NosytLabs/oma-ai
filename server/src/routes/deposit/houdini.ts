@@ -3,6 +3,7 @@ import { z } from "zod";
 import { processHoudiniDeposit, completeHoudiniDepositWithTx, processPaymentLinkDeposit } from "../../credits/deposit.js";
 import { houdiniClient, SwapType } from "../../credits/houdini-client.js";
 import { sessionAuth } from "../../auth/middleware.js";
+import { requireHoudini } from "../../inference/houdini-middleware.js";
 import { auditLog } from "../../middleware/audit.js";
 import { db } from "../../db/client.js";
 import { deposits } from "../../db/schema.js";
@@ -45,16 +46,10 @@ const paymentLinkSchema = z.object({
 export const houdiniRoutes = new Hono<OmaEnv>();
 
 houdiniRoutes.post("/v1/deposit/houdini", sessionAuth, async (c) => {
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
+
   const userId = c.get("userId");
-  
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server. Direct crypto deposits are currently unavailable.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
   
   const parsed = houdiniDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
@@ -187,14 +182,8 @@ houdiniRoutes.post("/v1/deposit/houdini/webhook", async (c) => {
 });
 
 houdiniRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
   
   const parsed = houdiniQuoteSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
@@ -221,14 +210,8 @@ houdiniRoutes.post("/v1/deposit/houdini/quote", sessionAuth, async (c) => {
 });
 
 houdiniRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
   
   const blockchain = c.req.query("blockchain");
 
@@ -242,14 +225,8 @@ houdiniRoutes.get("/v1/deposit/houdini/tokens", async (c) => {
 });
 
 houdiniRoutes.get("/v1/deposit/houdini/chains", async (c) => {
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
   
   try {
     const chains = await houdiniClient.getChains();
@@ -261,14 +238,8 @@ houdiniRoutes.get("/v1/deposit/houdini/chains", async (c) => {
 });
 
 houdiniRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
   
   const userId = c.get("userId");
   const parsed = houdiniExchangeSchema.safeParse(await c.req.json());
@@ -309,14 +280,8 @@ houdiniRoutes.post("/v1/deposit/houdini/exchange", sessionAuth, async (c) => {
 });
 
 houdiniRoutes.post("/v1/deposit/houdini/payment-link", sessionAuth, async (c) => {
-  if (!houdiniClient.isConfigured()) {
-    return c.json({ 
-      error: { 
-        message: "HoudiniSwap is not configured on this server. Payment links are currently unavailable.", 
-        type: "configuration_error" 
-      } 
-    }, 503);
-  }
+  const earlyReturn = requireHoudini(c);
+  if (earlyReturn) return earlyReturn;
   
   const userId = c.get("userId");
   const parsed = paymentLinkSchema.safeParse(await c.req.json());

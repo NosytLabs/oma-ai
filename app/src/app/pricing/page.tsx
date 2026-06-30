@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
-import dynamic from 'next/dynamic'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { m, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Coins, Zap, CreditCard, HelpCircle, ChevronDown, Link2, Rocket } from 'lucide-react'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { MODELS as SOURCE_MODELS } from '@/lib/models-data'
+import { MODELS } from '@/lib/models-data'
 import {
   EASE_OUT,
   EASE_SPRING_SOFT,
@@ -18,14 +16,6 @@ import {
   StaggerReveal,
   Magnetic,
 } from '@/lib/motion'
-
-const LazyTinyFishPricing = dynamic(
-  () => import('@/components/tinyfish-pricing').then(mod => mod.TinyFishPricing),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-64 w-full" />
-  }
-)
 
 type Category = 'all' | 'frontier' | 'premium' | 'mid' | 'budget'
 
@@ -48,7 +38,7 @@ const VENDOR_DISPLAY: Record<string, string> = {
   Together: 'Together',
 }
 
-const MODELS: PricedModel[] = SOURCE_MODELS.map((m) => ({
+const PRICED_MODELS: PricedModel[] = MODELS.map((m) => ({
   id: m.id,
   name: m.name,
   category: m.tier as Category,
@@ -129,7 +119,7 @@ function AccordionItem({ item, isOpen, onToggle, index }: { item: typeof FAQ_ITE
 
   return (
     <div className="border-b border-border">
-      <button
+      <button type="button"
         id={buttonId}
         onClick={onToggle}
         className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-text-bright focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
@@ -171,7 +161,7 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const filtered = useMemo(() =>
-    MODELS.filter((m) => category === 'all' || m.category === category),
+    PRICED_MODELS.filter((m) => category === 'all' || m.category === category),
     [category]
   )
 
@@ -247,7 +237,7 @@ export default function PricingPage() {
                 </div>
                 <p className="mt-1 text-xs text-text-secondary leading-relaxed">
                   Native x402 support lets applications integrate AI payments without managing credit balances.
-                  <Link href="/crypto-payments" className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors">Learn more →</Link>
+                  <Link href="/deposit" className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors">Learn more →</Link>
                 </p>
               </div>
             </div>
@@ -408,17 +398,7 @@ export default function PricingPage() {
           </Reveal>
         </div>
 
-        {/* ── TinyFish ── */}
-        <Reveal className="mb-12">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-mono text-text-muted uppercase tracking-widest">add-ons</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-            <LazyTinyFishPricing />
-          </Suspense>
-        </Reveal>
+
 
         {/* ── Billing Notes ── */}
         <Reveal className="p-4 rounded-xl border border-amber/20 bg-amber/5">

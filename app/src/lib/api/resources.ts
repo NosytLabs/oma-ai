@@ -5,7 +5,7 @@
 import type {
   BalanceResponse,
   ModelsResponse,
-  UsageResponse,
+  UsageRecord,
 } from './types.js';
 import { getCached, setCache, STALE_TTL } from './client.js';
 
@@ -24,9 +24,10 @@ export const balance = {
 };
 
 export const usage = {
-  get() {
+  get(options?: { limit?: number }) {
+    const limit = options?.limit ?? 50
     return import('./client.js').then(({ request }) =>
-      request<UsageResponse>('/v1/usage'),
+      request<{ records: UsageRecord[]; count: number }>(`/v1/usage/recent?limit=${limit}`),
     );
   },
 };

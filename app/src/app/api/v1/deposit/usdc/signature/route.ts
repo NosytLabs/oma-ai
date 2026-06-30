@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { readSessionOrReject, proxyPost } from '../_proxy'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { generalLimiter } from '@/lib/rate-limiter'
 
 export const runtime = 'nodejs'
 
-export async function POST(req: Request): Promise<Response> {
+export const POST = withRateLimit(async (req: Request): Promise<Response> => {
   const session = await readSessionOrReject()
   if (!session) {
     return NextResponse.json(
@@ -18,4 +20,4 @@ export async function POST(req: Request): Promise<Response> {
     body = {}
   }
   return proxyPost('/v1/deposit/usdc/signature', body, session)
-}
+}, { limiter: generalLimiter, route: '/api/v1/deposit/usdc/signature' })

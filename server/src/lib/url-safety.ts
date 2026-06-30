@@ -58,39 +58,8 @@ const PRIVATE_IP_RANGES: ReadonlyArray<{ cidr: string; test: (ip: string) => boo
   { cidr: 'fe80::/10', test: (ip) => ip.toLowerCase().startsWith('fe80:') || ip.toLowerCase().startsWith('fe80::') },
 ];
 
-export function isPrivateIp(ip: string): boolean {
+function isPrivateIp(ip: string): boolean {
   return PRIVATE_IP_RANGES.some((range) => range.test(ip));
-}
-
-/**
- * H3: Resolve a hostname to a single public IP, throwing if the host
- * has no public addresses. Use this to obtain a pinable IP for the
- * `lookup` option of an http/https Agent. Combined with the pin
- * (see {@link createPinnedLookup}), this closes the TOCTOU window
- * between the static check and the actual fetch.
- */
-export async function resolvePublicIp(hostname: string): Promise<string> {
-  const v4 = await dns.resolve4(hostname).catch(() => [] as string[]);
-  for (const addr of v4) {
-    if (!isPrivateIp(addr)) return addr;
-  }
-  const v6 = await dns.resolve6(hostname).catch(() => [] as string[]);
-  for (const addr of v6) {
-    if (!isPrivateIp(addr)) return addr;
-  }
-  throw new Error(`No public IP for hostname: ${hostname}`);
-}
-
-/**
- * H3: Return a `lookup` function suitable for `http.Agent`/`https.Agent`
- * that pins every connection to `pinnedIp`. The hostname is supplied
- * for logging only — Node will still SNI the original hostname via the
- * `servername` Agent option if the caller sets it.
- */
-export function createPinnedLookup(pinnedIp: string): (hostname: string, options: unknown, callback: (err: Error | null, address: string, family: number) => void) => void {
-  return (_hostname, _options, callback) => {
-    callback(null, pinnedIp, 4);
-  };
 }
 
 /**

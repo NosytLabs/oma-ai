@@ -7,14 +7,22 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, Github, Twitter, Mail, BookOpen, ArrowRight } from 'lucide-react'
 import { MODEL_COUNT } from '@/lib/models-data'
+import { StatusDot } from '@/components/ui/StatusDot'
 
 export const metadata: Metadata = {
   title: 'About · OMA',
   description: `OMA is a thin inference gateway. ${MODEL_COUNT}+ models, one OpenAI-compatible API, paid in USDC. No account, no card, no sales call.`,
+  alternates: { canonical: '/about' },
   openGraph: {
     title: 'About · OMA',
     description:
       'OMA is a thin inference gateway. One OpenAI-compatible endpoint, one price list, USDC on Base, wallet-only auth.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'OMA AI Gateway' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About · OMA',
+    description: 'OMA is a thin inference gateway. One API, USDC on Base, wallet-only auth.',
   },
 }
 
@@ -73,27 +81,6 @@ const PILLARS = [
   },
 ] as const
 
-function StatusDot({ tone = 'accent' }: { tone?: 'accent' | 'warning' | 'error' }) {
-  const color =
-    tone === 'warning'
-      ? 'var(--color-warning)'
-      : tone === 'error'
-        ? 'var(--color-error)'
-        : 'var(--color-accent)'
-  return (
-    <span className="relative inline-flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
-      <span
-        className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping"
-        style={{ backgroundColor: color }}
-      />
-      <span
-        className="relative inline-flex rounded-full h-1.5 w-1.5"
-        style={{ backgroundColor: color }}
-      />
-    </span>
-  )
-}
-
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
@@ -120,7 +107,7 @@ export default function AboutPage() {
                 </span>
 
                 <h1
-                  className="h1-hero text-text-bright mt-6"
+                  className="h1-page text-text-bright mt-6"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
                   <span className="block">We built OMA because</span>

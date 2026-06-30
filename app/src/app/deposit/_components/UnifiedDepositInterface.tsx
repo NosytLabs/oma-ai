@@ -54,7 +54,7 @@ interface PaymentLinkInfo {
   depositId: string
 }
 
-export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingDeposit) => void }) {
+export function UnifiedDepositInterface({ onDeposit }: { onDeposit?: (d: PendingDeposit) => void }) {
   const [step, setStep] = useState<DepositStep>('select')
   const [selectedCoin, setSelectedCoin] = useState<CoinOption | null>(null)
   const [amount, setAmount] = useState('')
@@ -108,7 +108,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
     const fetchBalance = async () => {
       try {
         const bal = await api.oma.getBalance();
-        const balanceCents = parseInt(bal.balanceCents || '0');
+        const balanceCents = parseInt(bal.balanceCents || '0', 10);
         setCoinBalance((balanceCents / 100).toFixed(2));
       } catch {
         setCoinBalance(null);
@@ -121,7 +121,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
     if (value === '' || /^\d*\.?\d*$/.test(value)) setAmount(value)
   }
 
-  const handleStartDeposit = async () => {
+  const handleStartDeposit = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) return
     setError('')
 
@@ -140,7 +140,10 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
     try {
       if (selectedCoin?.id === 'usdc-base') {
 
-        const chainId = await publicClient!.getChainId()
+        if (!publicClient) {
+          throw new Error('Wallet not connected. Please connect your wallet to continue.')
+        }
+        const chainId = await publicClient.getChainId()
 
         const nonceResponse = await fetch('/api/v1/deposit/usdc/nonce', {
           method: 'POST',
@@ -175,7 +178,7 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
         setProcessingStep('Transaction broadcasting...')
         setTxHash(tx)
 
-        await publicClient!.waitForTransactionReceipt({ hash: tx })
+        await publicClient.waitForTransactionReceipt({ hash: tx })
 
         setProcessingStep('Verifying deposit and crediting account...')
 
@@ -235,10 +238,10 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
           return res.json()
         })
 
-        onDeposit({ id: result.depositId, status: 'completed', amountCents: String(result.credits), coin: 'USDC', createdAt: new Date().toISOString() })
+        onDeposit?.({ id: result.depositId, status: 'completed', amountCents: String(result.credits), coin: 'USDC', createdAt: new Date().toISOString() })
         toast.success(`Successfully deposited $${amount} USDC`)
         setStep('complete')
-        } else {
+      } else {
           let tokensResponse: Response | null = null;
           try {
             tokensResponse = await fetch('/api/v1/deposit/houdini/tokens', {
@@ -264,7 +267,11 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
       toast.error(errMsg)
       setStep('error')
     }
-  }
+  // treasuryAddress is a module-level constant (never changes), so including
+  // it in deps is unnecessary but harmless for correctness — the linter
+  // warns because it can't be a dependency that triggers re-renders.
+   
+  }, [amount, selectedCoin, publicClient, walletAddress, onDeposit, toast, writeContractAsync, signMessage])
 
   const handleCreatePaymentLink = async () => {
     if (!amount || parseFloat(amount) <= 0 || !selectedCoin) return
@@ -526,15 +533,15 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 </div>
                 <div className="space-y-2 text-sm text-text-secondary">
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>100+ cryptocurrencies supported</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>Cross-chain swaps</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>Privacy enhanced routing via Monero tunnel</span>
                   </div>
                 </div>
@@ -553,15 +560,15 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
                 </p>
                 <div className="space-y-2 text-sm text-text-secondary">
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>Gasless transactions</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>Works on Solana and Base</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange" />
+                    <Check className="h-4 w-4 text-success" />
                     <span>Automatic token conversion</span>
                   </div>
                 </div>
@@ -739,8 +746,8 @@ export function UnifiedDepositInterface({ onDeposit }: { onDeposit: (d: PendingD
             viewport={undefined}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-orange/30 bg-orange/10">
-                <CheckCircle2 className="h-6 w-6 text-orange" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-success/30 bg-success/10">
+                <CheckCircle2 className="h-6 w-6 text-success" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-text-bright">Deposit Complete!</h3>

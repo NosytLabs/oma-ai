@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { generalLimiter } from '@/lib/rate-limiter'
+
+export const runtime = 'nodejs'
 
 /**
  * Frontend liveness check.
@@ -14,7 +18,7 @@ import { NextResponse } from 'next/server'
  *
  * Always 200. No auth. No upstream call. Cheap & cacheable.
  */
-export async function GET() {
+export const GET = withRateLimit(async () => {
   return NextResponse.json(
     {
       status: 'ok',
@@ -27,4 +31,4 @@ export async function GET() {
       },
     }
   )
-}
+}, { limiter: generalLimiter, route: '/api/health' })

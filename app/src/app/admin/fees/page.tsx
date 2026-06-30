@@ -194,7 +194,7 @@ export default function AdminFeesPage() {
                     min={5}
                     max={200}
                     value={editValues[provider.id] || 10}
-                    onChange={(e) => setEditValues({ ...editValues, [provider.id]: parseInt(e.target.value) || 10 })}
+                    onChange={(e) => setEditValues({ ...editValues, [provider.id]: parseInt(e.target.value, 10) || 10 })}
                     className="w-24 px-3 py-2 rounded border border-border bg-panel text-text text-right font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
                   />
                   <span className="text-text-muted font-mono w-6 text-right">%</span>
@@ -232,7 +232,7 @@ export default function AdminFeesPage() {
                 min={5}
                 max={200}
                 value={calculatorInput.markup}
-                onChange={(e) => setCalculatorInput({ ...calculatorInput, markup: parseInt(e.target.value) || 10 })}
+                onChange={(e) => setCalculatorInput({ ...calculatorInput, markup: parseInt(e.target.value, 10) || 10 })}
                 className="w-full sm:max-w-[160px] px-3 py-2 rounded border border-border bg-panel text-text font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
               />
             </div>

@@ -3,8 +3,28 @@ export function formatCents(cents: string | number): string {
   return (n / 100).toFixed(2)
 }
 
+/**
+ * Convert a cents value (string from API or number) to a dollar number.
+ * Centralizes the `parseFloat(String(x)) / 100` pattern that was duplicated
+ * across 9+ components. Returns 0 for null/undefined/non-finite input.
+ */
+export function toDollars(cents: string | number | null | undefined): number {
+  if (cents == null) return 0
+  const n = typeof cents === 'string' ? parseFloat(cents) : cents
+  if (!Number.isFinite(n)) return 0
+  return n / 100
+}
+
+/**
+ * Single source of truth for "X minutes ago" / "X hours ago" formatting.
+ * Replaces the three inline copies that previously lived in
+ * `RecentTransactions.tsx`, `ProviderHealthCard.tsx`, and the original
+ * `formatTime` here. Returns the locale date string for anything older
+ * than 30 days.
+ */
 export function formatTime(iso: string): string {
   const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
   const now = new Date()
   const diffMs = now.getTime() - d.getTime()
   const diffMin = Math.floor(diffMs / 60000)
@@ -13,7 +33,7 @@ export function formatTime(iso: string): string {
   const diffHr = Math.floor(diffMin / 60)
   if (diffHr < 24) return `${diffHr}h ago`
   const diffDay = Math.floor(diffHr / 24)
-  if (diffDay < 7) return `${diffDay}d ago`
+  if (diffDay < 30) return `${diffDay}d ago`
   return d.toLocaleDateString()
 }
 
@@ -23,37 +43,9 @@ export function maskKey(prefix: string): string {
 
 /**
  * Format a USD amount with a `$` prefix and fixed decimals.
- * Prefer `formatCurrency` (below) for new code — it supports a `compact` option
- * for axis ticks and tooltips.
  */
 export function formatUsd(amount: number, decimals = 2): string {
   return `$${amount.toFixed(decimals)}`
-}
-
-/**
- * Adaptive USD currency formatter used for chart axis ticks, tooltips, and
- * dashboard summaries.
- * - < $1k (compact off): "$12.34"
- * - < $1k (compact on):  "$12.34"
- * - < $1M (compact on):  "$12.3k"
- * - >= $1M (compact on): "$1.2M"
- */
-export function formatCurrency(
-  value: number,
-  opts: { compact?: boolean; decimals?: number } = {},
-): string {
-  const { compact = false, decimals = 2 } = opts
-  if (!Number.isFinite(value)) return '$0'
-  if (!compact) {
-    return `$${value.toLocaleString('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    })}`
-  }
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}k`
-  return `$${value.toFixed(decimals)}`
 }
 
 /**
@@ -69,4 +61,39 @@ export function formatAddress(addr: string | null | undefined): string {
   if (!addr) return '—'
   if (addr.length <= 14) return addr
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+}
+
+/**
+ * Format an ISO date string with date and time.
+ * "2026-01-15T10:30:00Z" → "Jan 15, 2026, 10:30 AM"
+ */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Format an ISO date string with date only (no time).
+ * "2026-01-15T10:30:00Z" → "Jan 15, 2026"
+ */
+export function formatDateShort(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+/**
+ * Format a per-million-token price for display.
+ * 0.50 → "$0.50"   0 → "Free"
+ */
+export function formatPricePerMillion(pricePer1M: number): string {
+  if (pricePer1M === 0) return 'Free'
+  return `$${pricePer1M.toFixed(2)}`
 }

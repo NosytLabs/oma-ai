@@ -1,4 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
+import { DEFAULT_API_URL } from '@/lib/config'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { authLimiter } from '@/lib/rate-limiter'
+
+export const runtime = 'nodejs'
 
 /**
  * /api/auth/csrf-token — proxies to backend /auth/csrf-token.
@@ -6,12 +11,13 @@ import { NextRequest, NextResponse } from 'next/server'
  * we forward it to the browser under our own origin so subsequent
  * same-origin requests (like the account login POST) include it.
  */
-export async function GET(_req: NextRequest) {
-  const backend = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+export const GET = withRateLimit(async (_req: NextRequest) => {
+  const backend = DEFAULT_API_URL
   try {
     const res = await fetch(`${backend}/auth/csrf-token`, {
       method: 'GET',
       credentials: 'include',
+      signal: AbortSignal.timeout(60_000),
     })
     const body = await res.text()
     const out = new NextResponse(body, {
@@ -28,4 +34,4 @@ export async function GET(_req: NextRequest) {
   } catch (_e) {
     return NextResponse.json({ error: { message: 'Backend unreachable' } }, { status: 502 })
   }
-}
+}, { limiter: authLimiter, route: '/api/auth/csrf-token' })

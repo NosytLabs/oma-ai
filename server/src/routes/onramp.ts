@@ -110,7 +110,7 @@ onrampRoutes.get("/v1/onramp/session/:id", bearerAuth, async (c) => {
   });
 });
 
-onrampRoutes.post("/v1/onramp/webhook", async (c) => {
+onrampRoutes.post("/v1/onramp/webhook", rateLimit({ windowMs: 60_000, maxRequests: 30 }), async (c) => {
   const rawBody = await c.req.raw.text();
   const signature = c.req.header("X-Onramp-Signature") || "";
 

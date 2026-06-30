@@ -12,8 +12,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
-import React from 'react'
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
+import type React from 'react'
 
 // next/navigation hooks (used by Navbar via usePathname).
 vi.mock('next/navigation', () => ({
@@ -29,6 +29,8 @@ vi.mock('@/components/wallet-context', () => ({
     evmAddress: undefined,
     isConnected: false,
     disconnect: vi.fn(),
+    availableConnectors: [],
+    connectEvm: vi.fn(),
   }),
 }))
 
@@ -56,15 +58,34 @@ vi.mock('../api-status', () => ({
   ApiStatus: () => <span data-testid="api-status" />,
 }))
 vi.mock('../web3', () => ({
-  Web3ConnectButton: () => <button data-testid="connect-button">Connect</button>,
+  Web3ConnectButton: () => <button type="button" data-testid="connect-button">Connect</button>,
 }))
 vi.mock('../ThemeToggle', () => ({
-  ThemeToggle: () => <button data-testid="theme-toggle">Theme</button>,
+  ThemeToggle: () => <button type="button" data-testid="theme-toggle">Theme</button>,
 }))
 // Mock @ant-design/web3 — the navbar lazy-loads its ConnectButton via next/dynamic,
 // which would otherwise throw WagmiProviderNotFoundError in jsdom.
 vi.mock('@ant-design/web3', () => ({
   ConnectButton: () => <button type="button">Connect</button>,
+}))
+
+// Mock wagmi directly — ImprovedConnectButton imports `useEnsName`, which
+// requires a WagmiProvider context. The component is mocked in spirit above
+// (see the Web3ConnectButton mock), but vite's module graph still resolves
+// the wagmi import chain at render time. Stubbing the hooks keeps the test
+// honest (it still exercises the navbar DOM) without needing a real provider.
+vi.mock('wagmi', () => ({
+  useEnsName: () => ({ data: undefined }),
+  useAccount: () => ({ address: undefined, isConnected: false }),
+  useConnect: () => ({ connect: vi.fn(), connectors: [], isPending: false }),
+  useDisconnect: () => ({ disconnect: vi.fn() }),
+  useChainId: () => 1,
+  useSwitchChain: () => ({ switchChain: vi.fn() }),
+  useConfig: () => ({}),
+  useClient: () => ({}),
+  WagmiProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  createConfig: () => ({}),
+  http: () => ({}),
 }))
 
 
@@ -144,15 +165,18 @@ describe('Navbar — mobile menu focus trap', () => {
     expect(screen.queryByRole('dialog', { name: /mobile navigation/i })).toBeNull()
   })
 
-  it('on close, focus is restored to the toggle button', () => {
+  it('on close, focus is restored to the toggle button', async () => {
     render(<Navbar />)
     const toggle = openMenu()
     // After openMenu, focus has moved into the menu (first link). The trap
     // remembered the toggle as the prior focus owner, and on close the
     // cleanup function should restore it.
-    const menu = screen.getByRole('dialog', { name: /mobile navigation/i })
     expect(document.activeElement).not.toBe(toggle)
-    fireEvent.keyDown(menu, { key: 'Escape' })
-    expect(document.activeElement).toBe(toggle)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    // After the focus trap cleanup runs, focus should be restored.
+    // Use waitFor to let React process the state update + effect cleanup.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(toggle)
+    })
   })
 })

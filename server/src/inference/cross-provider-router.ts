@@ -3,15 +3,7 @@ import type { Provider } from "./provider-selector.js";
 
 const PROVIDER_ID_FIELDS: ReadonlyArray<{ provider: Provider; field: keyof ModelDef }> = [
   { provider: "venice", field: "veniceId" },
-  { provider: "antseed", field: "antseedId" },
-  { provider: "litellm", field: "litellmId" },
-  { provider: "openrouter", field: "openrouterId" },
-  { provider: "together", field: "togetherId" },
-  { provider: "deepinfra", field: "deepinfraId" },
   { provider: "surplus", field: "surplusId" },
-  { provider: "morpheus", field: "morpheusId" },
-  { provider: "claude", field: "claudeId" },
-  { provider: "gemini", field: "geminiId" },
 ];
 
 const ALIAS_MAP: Record<string, string> = {
@@ -39,15 +31,7 @@ export interface RouterStats {
 
 const STATS_BY_PROVIDER: Record<Provider, RouterProviderStat> = {
   venice: { attempts: 0, failovers: 0 },
-  antseed: { attempts: 0, failovers: 0 },
-  litellm: { attempts: 0, failovers: 0 },
-  openrouter: { attempts: 0, failovers: 0 },
-  together: { attempts: 0, failovers: 0 },
-  deepinfra: { attempts: 0, failovers: 0 },
   surplus: { attempts: 0, failovers: 0 },
-  morpheus: { attempts: 0, failovers: 0 },
-  claude: { attempts: 0, failovers: 0 },
-  gemini: { attempts: 0, failovers: 0 },
 };
 
 let totalRequests = 0;
@@ -68,15 +52,8 @@ export async function findProvidersForModel(
   return out;
 }
 
-function inferProviderFromModel(model: string): Provider {
-  if (model.startsWith("openrouter/") || model.startsWith("openai/")) return "openrouter";
-  if (model.startsWith("litellm/")) return "litellm";
-  if (model.startsWith("together/")) return "together";
-  if (model.startsWith("deepinfra/")) return "deepinfra";
-  if (model.startsWith("morpheus/") || model.startsWith("mor/")) return "morpheus";
-  if (model.startsWith("claude-")) return "claude";
-  if (model.startsWith("gemini-")) return "gemini";
-  return "antseed";
+function inferProviderFromModel(_model: string): Provider {
+  return "venice";
 }
 
 export async function getCandidateProviders(
@@ -84,9 +61,8 @@ export async function getCandidateProviders(
   modelDef: ModelDef | null,
 ): Promise<{ primary: Provider; alternates: Provider[] }> {
   if (!modelDef) {
-    // Ponytail: mirror the legacy selectProvider inference for catalog-unknown
-    // models so prefix-routed callers (openrouter/x, litellm/x, etc.) still
-    // land on the right provider and unknowns still default to antseed.
+    // Mirror the legacy selectProvider inference for catalog-unknown models.
+    // All unknown models now route through Venice.
     return { primary: inferProviderFromModel(modelId), alternates: [] };
   }
   const all = await findProvidersForModel(modelId, modelDef);

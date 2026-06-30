@@ -1,6 +1,7 @@
 import { db } from '../db/client.js'
 import { creditBatches, creditBalances } from '../db/schema.js'
 import { eq, sql, and, gt, lt, asc, desc, inArray } from 'drizzle-orm'
+import { CREDIT_EXPIRY_DAYS } from '../constants.js'
 
 export async function preflightDeduction(userId: string, totalCents: string): Promise<boolean> {
   try {
@@ -81,8 +82,7 @@ export async function preflightDeduction(userId: string, totalCents: string): Pr
   }
 }
 
-const CREDIT_EXPIRY_DAYS = 90
-const ACTIVE_EXTENSION_DAYS = 90
+const ACTIVE_EXTENSION_DAYS = CREDIT_EXPIRY_DAYS
 
 export function getCreditExpiryDate(): Date {
   const d = new Date()

@@ -5,9 +5,23 @@ vi.mock('@hono/node-server', () => ({
   getRequestListener: vi.fn(() => ({ on: vi.fn(), handle: vi.fn() })),
 }))
 
+// Mock the on-chain USDC verifier. The deposit route calls this before
+// crediting the user; tests in this file exercise the off-chain deposit
+// flow, not the on-chain receipt check, so a pass-through is correct.
+vi.mock('../credits/verify-usdc-on-chain.js', () => ({
+  verifyUsdcOnChain: vi.fn().mockResolvedValue({ valid: true, txHash: '0xabc', amount: '10' }),
+}))
+
 vi.mock('viem', () => ({
   verifyMessage: vi.fn().mockResolvedValue(true),
-}))
+  // Mock for the on-chain USDC verifier import — tests in this file don't
+  // exercise the on-chain path so a stub is enough.
+  parseAbi: vi.fn(() => []),
+  decodeFunctionData: vi.fn(),
+  createPublicClient: vi.fn(),
+  formatUnits: vi.fn((v: bigint) => v.toString()),
+  http: vi.fn(),
+}));
 
 vi.mock('../db/client.js', () => {
   const mockSelect = vi.fn().mockReturnThis()
@@ -202,13 +216,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({

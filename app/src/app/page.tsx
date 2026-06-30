@@ -7,11 +7,11 @@ import { MODEL_COUNT, MODELS, getProviderLogo } from '@/lib/models-data'
 export const metadata: Metadata = {
   title: 'OMA · One key for every model',
   description:
-    'Pay per request in USDC. No subscriptions. No rate limits. 17+ AI models, one OpenAI-compatible API. No account, no card, no sales call.',
+    'Anonymous AI inference. No KYC, no email, no subscriptions. Pay per request in USDC. Mullvad-style account numbers and private inference through Venice. 17+ AI models, one OpenAI-compatible API.',
   openGraph: {
     title: 'OMA · One key for every model',
     description:
-      'Pay per request in USDC. No subscriptions. No rate limits. 17+ AI models behind one OpenAI-compatible API.',
+      'Anonymous AI inference. No KYC, no email, no subscriptions. Mullvad-style account numbers and private inference through Venice. Pay per request in USDC.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
 }

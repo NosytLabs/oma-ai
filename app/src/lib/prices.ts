@@ -4,7 +4,8 @@
  * Implements 30-second client-side caching
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 // Re-export types and functions from models-data for backwards compatibility
 export type { Tier, Provider, Model, Capability } from './models-data'
@@ -194,7 +195,7 @@ export async function getCryptoPrices(forceRefresh = false): Promise<PriceData> 
 }
 
 // =============================================================================
-// REACT HOOKS
+// REACT HOOKS (TanStack Query)
 // =============================================================================
 
 interface UseCryptoPricesOptions {
@@ -213,98 +214,40 @@ interface UseCryptoPricesReturn {
   error: string | null
   /** Force a fresh price fetch */
   refresh: () => Promise<void>
-  /** Time until next auto-refresh */
+  /** Time until next auto-refresh (approximate) */
   nextRefreshIn: number
 }
 
 /**
- * React hook for accessing crypto prices with auto-refresh
- * Caches prices for 30 seconds to avoid excessive API calls
+ * React hook for accessing crypto prices with auto-refresh.
+ * Built on TanStack Query for caching, deduplication, and background refetching.
  */
 export function useCryptoPrices(options: UseCryptoPricesOptions = {}): UseCryptoPricesReturn {
   const { refreshInterval = CACHE_DURATION, autoRefresh = true } = options
+  const queryClient = useQueryClient()
 
-  const [prices, setPrices] = useState<PriceData>({
-    sol: null,
-    btc: null,
-    eth: null,
+  const { data, isLoading, error, dataUpdatedAt } = useQuery({
+    queryKey: ['cryptoPrices'],
+    queryFn: () => getCryptoPrices(),
+    staleTime: CACHE_DURATION,
+    refetchInterval: autoRefresh ? refreshInterval : false,
+    refetchOnWindowFocus: false,
   })
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [nextRefreshIn, setNextRefreshIn] = useState(refreshInterval)
-  const [lastFetchTime, setLastFetchTime] = useState(0)
+
+  const prices: PriceData = data ?? { sol: null, btc: null, eth: null }
 
   const refresh = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+    await queryClient.invalidateQueries({ queryKey: ['cryptoPrices'] })
+  }, [queryClient])
 
-    try {
-      const freshPrices = await getCryptoPrices(true)
-      setPrices(freshPrices)
-      setLastFetchTime(Date.now())
-      setNextRefreshIn(refreshInterval)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch prices')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [refreshInterval])
-
-  // Initial fetch and auto-refresh
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null
-
-    const fetchPrices = async () => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const freshPrices = await getCryptoPrices()
-        setPrices(freshPrices)
-        setLastFetchTime(Date.now())
-        setNextRefreshIn(refreshInterval)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch prices')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    // Initial fetch
-    fetchPrices()
-
-    // Set up auto-refresh if enabled
-    if (autoRefresh) {
-      intervalId = setInterval(fetchPrices, refreshInterval)
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [autoRefresh, refreshInterval])
-
-  // Update countdown to next refresh
-  useEffect(() => {
-    if (!autoRefresh || !lastFetchTime) return
-
-    const updateCountdown = () => {
-      const elapsed = Date.now() - lastFetchTime
-      const remaining = Math.max(0, refreshInterval - elapsed)
-      setNextRefreshIn(remaining)
-    }
-
-    updateCountdown()
-    const intervalId = setInterval(updateCountdown, 1000)
-
-    return () => clearInterval(intervalId)
-  }, [autoRefresh, lastFetchTime, refreshInterval])
+  // Approximate countdown to next refresh
+  const elapsed = Date.now() - dataUpdatedAt
+  const nextRefreshIn = autoRefresh ? Math.max(0, refreshInterval - elapsed) : 0
 
   return {
     prices,
     isLoading,
-    error,
+    error: error instanceof Error ? error.message : error ? 'Failed to fetch prices' : null,
     refresh,
     nextRefreshIn,
   }

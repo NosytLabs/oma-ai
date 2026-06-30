@@ -59,7 +59,7 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
   }
 }
 
-export async function getRedisClient() {
+export async function getRedisClient(): Promise<ReturnType<typeof createClient> | null> {
   if (connectionFailed && connectionAttempted && reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
     return null;
   }
@@ -108,10 +108,4 @@ export async function redisHealthCheck(): Promise<{ status: string; latency?: nu
   } catch {
     return { status: "error" };
   }
-}
-
-export function resetRedisConnectionState(): void {
-  connectionFailed = false;
-  connectionAttempted = false;
-  reconnectAttempts = 0;
 }

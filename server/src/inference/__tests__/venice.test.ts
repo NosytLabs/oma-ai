@@ -34,6 +34,7 @@ describe("veniceModels", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(mockResponse),
+      headers: new Headers(),
     });
 
     const models = await veniceModels();
@@ -58,6 +59,7 @@ describe("videoGeneration", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(mockResponse),
+      headers: new Headers(),
     });
 
     const result = await videoGeneration({
@@ -81,6 +83,7 @@ describe("videoGeneration", () => {
       ok: false,
       status: 500,
       text: vi.fn().mockResolvedValue("Video generation failed"),
+      headers: new Headers(),
     });
 
     try {
@@ -107,6 +110,7 @@ describe("retrieveVideo", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(mockResponse),
+      headers: new Headers(),
     });
 
     const result = await retrieveVideo("video-123");
@@ -123,6 +127,7 @@ describe("retrieveVideo", () => {
       ok: false,
       status: 500,
       text: vi.fn().mockResolvedValue("Retrieval failed"),
+      headers: new Headers(),
     });
 
     try {

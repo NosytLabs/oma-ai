@@ -113,8 +113,9 @@ export default function ApiKeysPage() {
     }
   }, [queryClient, toast])
 
-  const handleSaveLimits = useCallback(async (keyId: string) => {
+const handleSaveLimits = useCallback(async (keyId: string) => {
     if (!keyId || !rateLimits[keyId]) return;
+    // biome-ignore lint/style/noNonNullAssertion: checked above
     const limits = rateLimits[keyId]!;
     try {
       await api.oma.updateApiKeyRateLimits(keyId, { rpm: limits.rpm, tpm: limits.tpm });
@@ -222,7 +223,6 @@ export default function ApiKeysPage() {
                 spellCheck={false}
                 aria-label="New API key name"
                 className="flex-1 text-sm bg-transparent border-0 focus:outline-none text-text-bright placeholder:text-text-muted"
-                autoFocus
                 disabled={creating}
               />
               <m.button
@@ -235,7 +235,7 @@ export default function ApiKeysPage() {
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
                 Generate
               </m.button>
-              <button
+              <button type="button"
                 onClick={() => { setShowCreateForm(false); setNewKeyName('') }}
                 className="btn-secondary py-2 px-4"
                 disabled={creating}
@@ -312,7 +312,7 @@ export default function ApiKeysPage() {
                     >
                       {copied === `prefix-${key.id}` ? (
                         <>
-                          <Check className="h-4 w-4 text-orange" />
+                          <Check className="h-4 w-4 text-success" />
                           Copied
                         </>
                       ) : (
@@ -371,7 +371,7 @@ export default function ApiKeysPage() {
                             value={rateLimits[key.id]?.rpm ?? 60}
                             onChange={(e) => setRateLimits(prev => ({
                               ...prev,
-                              [key.id]: { ...prev[key.id], rpm: parseInt(e.target.value) || 0 }
+                              [key.id]: { ...prev[key.id], rpm: parseInt(e.target.value, 10) || 0 }
                             }))}
                             className="w-full text-sm font-medium bg-void border border-border rounded-lg px-4 py-2 focus:outline-none focus:border-accent/50"
                             min={1}
@@ -386,7 +386,7 @@ export default function ApiKeysPage() {
                             value={rateLimits[key.id]?.tpm ?? 100000}
                             onChange={(e) => setRateLimits(prev => ({
                               ...prev,
-                              [key.id]: { ...prev[key.id], tpm: parseInt(e.target.value) || 0 }
+                              [key.id]: { ...prev[key.id], tpm: parseInt(e.target.value, 10) || 0 }
                             }))}
                             className="w-full text-sm font-medium bg-void border border-border rounded-lg px-4 py-2 focus:outline-none focus:border-accent/50"
                             min={1}
@@ -395,7 +395,7 @@ export default function ApiKeysPage() {
                         </div>
                       </div>
                       <div className="mt-4 flex justify-end gap-3">
-                        <button
+                        <button type="button"
                           onClick={() => setEditingLimits(null)}
                           className="btn-secondary py-2 px-4"
                         >
@@ -457,7 +457,7 @@ export default function ApiKeysPage() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {copied === `full-${createdKey.id}` ? <Check className="h-5 w-5 text-orange" /> : <Copy className="h-5 w-5" />}
+                  {copied === `full-${createdKey.id}` ? <Check className="h-5 w-5 text-success" /> : <Copy className="h-5 w-5" />}
                 </m.button>
               </div>
 
@@ -517,7 +517,7 @@ export default function ApiKeysPage() {
                   Any applications using this key will immediately lose access.
                 </p>
                 <div className="flex justify-end gap-3">
-                  <button
+                  <button type="button"
                     onClick={cancelRevoke}
                     disabled={revokingId === confirmRevokeId}
                     className="btn-secondary py-2 px-4 disabled:opacity-50"

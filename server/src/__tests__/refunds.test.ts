@@ -6,6 +6,8 @@ import { Hono } from 'hono'
 // ---------------------------------------------------------------------------
 
 // Mock the DB client with chainable methods used by the refunds route.
+// The insert chain captures the .values() payload so the test mock can echo
+// back the user's `reason` rather than hardcoding one.
 vi.mock('../db/client.js', () => {
   const mDb = {
     select: vi.fn().mockReturnThis(),
@@ -14,6 +16,21 @@ vi.mock('../db/client.js', () => {
     orderBy: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     offset: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    values: vi.fn().mockImplementation(function (this: any, payload: Record<string, unknown>) {
+      // Capture payload so the chained .returning() can echo `reason` back.
+      ;(this as any).__lastInsert = payload
+      return this
+    }),
+    returning: vi.fn().mockImplementation(function (this: any) {
+      const last = (this as any).__lastInsert ?? {}
+      return Promise.resolve([{
+        id: '11111111-1111-4111-8111-111111111111',
+        reason: last.reason ?? 'requested_by_customer',
+        status: 'pending',
+        createdAt: new Date(),
+      }])
+    }),
   }
   return { db: mDb }
 })
@@ -30,6 +47,18 @@ vi.mock('../auth/middleware.js', () => ({
   requireAdmin: () => async (_c: any, next: any) => next(),
   requireTeamRole: () => async (_c: any, next: any) => next(),
   optionalAuth: async (_c: any, next: any) => next(),
+}))
+
+// Bypass rate-limit middleware — the route uses rateLimit({windowMs:60_000,
+// maxRequests:10}) which trips when prior tests in the same vitest worker
+// have incremented the same IP bucket. We test the zod validation, not the
+// rate-limit; keep these concerns separate.
+vi.mock('../middleware/rate-limit.js', () => ({
+  rateLimit: () => async (_c: unknown, next: () => void) => next(),
+  tokenBucket: () => async (_c: unknown, next: () => void) => next(),
+  modelRateLimit: () => async (_c: unknown, next: () => void) => next(),
+  burstRateLimit: () => async (_c: unknown, next: () => void) => next(),
+  expressiveRateLimit: () => async (_c: unknown, next: () => void) => next(),
 }))
 
 vi.mock('../config.js', () => ({
@@ -117,7 +146,10 @@ describe('Refunds POST /v1/refunds/request — zod validation (M5)', () => {
 
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.refundId).toMatch(/^refund_/)
+    // H-REFUND-1: refundId is now a UUID from the actual DB insert, not a
+    // synthesized `refund_` string. The shape and downstream admin query
+    // both work with the UUID.
+    expect(body.refundId).toMatch(/^[0-9a-f-]{36}$/i)
     expect(body.depositId).toBe(VALID_DEPOSIT_ID)
     expect(body.reason).toBe('duplicate')
     expect(body.status).toBe('pending')
@@ -199,7 +231,11 @@ describe('Refunds POST /v1/refunds/request — zod validation (M5)', () => {
 
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.reason).toBe('No reason provided')
+    // H-REFUND-1: when reason is omitted, the DB stores the canonical
+    // default "requested_by_customer" and the response echoes it back. The
+    // previous "No reason provided" string was a UI fallback that never
+    // reached the database, so admins saw no record.
+    expect(body.reason).toBe('requested_by_customer')
   })
 
   // (f) Each allowed reason enum value works

@@ -10,7 +10,7 @@ import {
   storeIdempotencyResult,
 } from "../../middleware/idempotency.js";
 import { modelRateLimit, tokenBucket } from "../../middleware/rate-limit.js";
-import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit } from "../../middleware/spend-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
 import { withSpan } from "../../tracing.js";
 import type { OmaEnv } from "../../types.js";
@@ -20,6 +20,7 @@ import {
 } from "./validation.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
 import { getModel } from "../../inference/models.js";
+import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 import { logger } from "../../lib/logger.js";
 
 type LegacyChoice = {
@@ -174,6 +175,10 @@ completionsRouter.post("/v1/completions", async (c) => {
   logger.warn(
     "[deprecation] /v1/completions is deprecated. Use /v1/chat/completions instead.",
   );
+  // Sunset header: signal to clients that this endpoint will be removed.
+  c.header("Sunset", "2026-09-01");
+  c.header("Deprecation", "true");
+  c.header("Link", "</v1/chat/completions>; rel=\"successor-version\"");
 
   const userId = c.get("userId");
   const apiKey = c.get("apiKey");
@@ -290,13 +295,8 @@ completionsRouter.post("/v1/completions", async (c) => {
         const totalCents =
           json.usage?.totalCents ??
           Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
-        if (totalCents > 0 && apiKey) {
-          trackSpend(apiKey.keyHash, Math.ceil(totalCents)).catch((err) => {
-            logger.error(
-              { err, keyPrefix: apiKey.keyHash.slice(0, 8) },
-              "[spend-limit] Track failed",
-            );
-          });
+        if (totalCents > 0) {
+          trackApiKeySpend(apiKey?.keyHash, Math.ceil(totalCents));
         }
 
         const legacyJson = toLegacyCompletionResponse(json);
@@ -318,16 +318,7 @@ completionsRouter.post("/v1/completions", async (c) => {
           (err as { type?: string }).type ?? "inference_error",
         );
         span?.setAttribute("http.status_code", status);
-        logger.error({ err }, "[chat] /v1/completions error:");
-        return c.json(
-          {
-            error: {
-              message: "An internal error occurred",
-              type: (err as { type?: string }).type ?? "inference_error",
-            },
-          },
-          status as Parameters<typeof c.json>[1],
-        );
+        return inferenceErrorHandler(c, err, "/v1/completions");
       }
     },
     undefined,

@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { sessionAuth } from "../auth/middleware.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
-import { deposits } from "../db/schema.js";
+import { deposits, refundRequests } from "../db/schema.js";
 import { eq, and, sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 
@@ -14,7 +15,7 @@ const refundRequestSchema = z.object({
   reason: z.enum(["duplicate", "fraudulent", "requested_by_customer", "service_issue"]).optional(),
 });
 
-refundRoutes.post("/v1/refunds/request", sessionAuth, async (c) => {
+refundRoutes.post("/v1/refunds/request", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
   const userId = c.get("userId");
 
   const parsed = refundRequestSchema.safeParse(await c.req.json());
@@ -52,15 +53,23 @@ refundRoutes.post("/v1/refunds/request", sessionAuth, async (c) => {
     return c.json({ error: { message: "No credits to refund", type: "invalid_request" } }, 400);
   }
 
-  const refundId = `refund_${Date.now()}_${userId.slice(0, 8)}`;
+  // H-REFUND-1: actually insert into refund_requests. Previously this handler
+  // synthesized a refundId without writing to the DB, so the admin refund
+  // queue never saw user-initiated requests.
+  const [row] = await db.insert(refundRequests).values({
+    userId,
+    depositId,
+    amountCents: String(Math.round(refundAmount * 100)),
+    reason: reason ?? "requested_by_customer",
+  }).returning();
 
   return c.json({
-    refundId,
+    refundId: row.id,
     depositId,
     amount: refundAmount,
-    reason: reason || "No reason provided",
-    status: "pending",
-    createdAt: new Date().toISOString(),
+    reason: row.reason,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
     message: "Refund request submitted. You'll receive credits back within 3-5 business days.",
   });
 });

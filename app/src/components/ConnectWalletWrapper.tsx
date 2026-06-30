@@ -1,21 +1,30 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import dynamic from 'next/dynamic'
+import { WalletProvider } from './wallet-provider'
 
+/**
+ * ConnectWalletWrapper
+ *
+ * The WalletProvider is a client component that mounts wagmi/react-query state.
+ * We render it on the server too — wagmi is SSR-safe (its connector setup is
+ * no-op until window.ethereum is read in InnerProvider). The previous
+ * `next/dynamic({ ssr: false })` wrapping caused Next.js to bail out the
+ * whole layout tree to client-side rendering on every page, which:
+ *   - prevented server components in the page from streaming their content
+ *     (home, login, pricing, docs all rendered empty shells);
+ *   - produced a `BAILOUT_TO_CLIENT_SIDE_RENDERING` template in the SSR HTML
+ *     and a noisy "1 Error" badge in the dev overlay.
+ *
+ * The mounted-state dance below preserves the original intent — don't run any
+ * wallet logic until the browser is available — without forcing an SSR
+ * bailout. InnerProvider already gates on `isMounted` itself.
+ */
 const WalletSkeleton = () => (
-  <div className="animate-pulse flex items-center gap-2 px-4 py-2.5">
+  <div className="animate-pulse flex items-center gap-2 px-4 py-2.5" aria-hidden="true">
     <div className="h-2 w-2 rounded-full bg-text-muted/30" />
     <div className="h-4 w-20 rounded bg-text-muted/30" />
   </div>
-)
-
-const WalletProvider = dynamic(
-  () => import('./wallet-provider').then(mod => mod.WalletProvider),
-  {
-    ssr: false,
-    loading: () => <WalletSkeleton />
-  }
 )
 
 interface ConnectWalletWrapperProps {
@@ -29,15 +38,9 @@ export function ConnectWalletWrapper({ children }: ConnectWalletWrapperProps) {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return <WalletSkeleton />
-  }
-
   return (
     <Suspense fallback={<WalletSkeleton />}>
-      <WalletProvider>
-        {children}
-      </WalletProvider>
+      <WalletProvider mounted={mounted}>{children}</WalletProvider>
     </Suspense>
   )
 }

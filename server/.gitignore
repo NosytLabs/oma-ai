@@ -9,3 +9,4 @@ coverage/
 *.jpg
 audit_*/
 audit_results_*
+test-results/

@@ -12,24 +12,36 @@ export interface NonceResponse {
 export interface User {
   id: string;
   address: string;
-  solanaAddress: string | null;
+  evmAddress: string | null;
   accountNumber: string | null;
   createdAt: string;
+  /** Whether TOTP 2FA is enabled on the account. */
+  twoFactorEnabled?: boolean;
+  /** Number of unused backup codes remaining after 2FA setup. */
+  backupCodesRemaining?: number;
+  /** ISO timestamp of last password change (null for wallet-only accounts). */
+  lastPasswordChange?: string | null;
 }
 
+/** Response from POST /auth/verify (SIWE login). */
 export interface VerifyResponse {
   token: string;
-  user: User;
+  /** The signer's address (0x… for EVM). */
+  address: string;
+  /** Mullvad-style 16-digit account number. */
+  accountNumber: string;
+  authMethod: "siwe";
 }
 
+/** Response from POST /auth/wallet (link wallet & get API key). */
 export interface WalletResponse {
-  address: string;
-  balanceCents: number;
-  totalDeposited: number;
-  totalUsed: number;
-  sessionLimit: number;
-  sessionUsed: number;
-  promoBalanceCents: number;
+  apiKey: string | null;
+  prefix: string;
+  id: string;
+  name: string;
+  createdAt: string;
+  /** Present when a wallet key already exists. */
+  warning?: string;
 }
 
 export interface ApiKey {
@@ -59,11 +71,10 @@ export interface UsageRecord {
   promptTokens: number;
   completionTokens: number;
   costCents: string;
+  provider?: string;
+  latencyMs?: number | null;
+  status?: string;
   createdAt: string;
-}
-
-export interface UsageResponse {
-  usage: UsageRecord[];
 }
 
 export interface CreditBatch {
@@ -143,14 +154,6 @@ export interface HoudiniExchangeResult {
   expiresAt: string;
 }
 
-export interface PendingDeposit {
-  id: string;
-  type: 'usdc' | 'oma' | 'houdini';
-  amountCents: string;
-  status: string;
-  createdAt: string;
-}
-
 export interface Token {
   id: string;
   symbol: string;
@@ -160,15 +163,6 @@ export interface Token {
   blockchain: string;
   network?: string;
   logoUrl?: string;
-}
-
-export type SupportedCoin = Token;
-
-export interface Chain {
-  id: string;
-  name: string;
-  symbol: string;
-  blockchain: string;
 }
 
 export interface Quote {
@@ -182,27 +176,6 @@ export interface Quote {
   swapType: string;
   slippage: number;
 }
-
-export interface Order {
-  orderId: string;
-  quoteId: string;
-  status: OrderStatus;
-  fromToken: string;
-  toToken: string;
-  fromAmount: string;
-  toAmount: string;
-  depositAddress: string;
-  expiresAt: string;
-}
-
-export type OrderStatus =
-  | 'pending'
-  | 'deposit_received'
-  | 'swapping'
-  | 'settling'
-  | 'completed'
-  | 'expired'
-  | 'failed';
 
 // ─── Inference / Chat ─────────────────────────────────────────────────────────
 

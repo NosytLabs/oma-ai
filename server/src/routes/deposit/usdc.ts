@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { processUsdcDeposit } from "../../credits/deposit.js";
+import { verifyUsdcOnChain } from "../../credits/verify-usdc-on-chain.js";
 import { sessionAuth } from "../../auth/middleware.js";
 import { auditLog } from "../../middleware/audit.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
@@ -196,6 +197,15 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, depositRateLimit, async (c) => 
 
   const existing = await db.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).limit(1);
   if (existing.length > 0) return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
+
+  // H-USDC-1: on-chain verification. Without this, a user can submit any
+  // 64-hex txHash + valid EIP-191 signature and be credited. The function
+  // exists and is fully tested at credits/verify-usdc-on-chain.ts.
+  const chainVerify = await verifyUsdcOnChain(txHash, amount);
+  if (!chainVerify.valid) {
+    logger.warn({ txHash, amount, error: chainVerify.error }, "[deposit:usdc] on-chain verify rejected");
+    return c.json({ error: { message: chainVerify.error ?? "On-chain verification failed", type: "on_chain_verification_failed" } }, 400);
+  }
 
   try {
     const result = await processUsdcDeposit(userId, amount, txHash);

@@ -7,18 +7,40 @@ const TESTNET_RPC_FALLBACK = 'https://sepolia.base.org'
 
 const mainnetUrl =
   process.env.NEXT_PUBLIC_QUICKNODE_MAINNET_URL || MAINNET_RPC_FALLBACK
+// ponytail: dedicated Sepolia endpoint when set; otherwise reuse the mainnet URL
+// (the QuickNode endpoint is multichain-flagged, but the X-QN-Network-Version
+// header is not honored by the current endpoint — verified 2026-06-23 — so we
+// fall back to public Sepolia RPC unless an operator provisions a dedicated
+// Base Sepolia endpoint).
 const testnetUrl =
   process.env.NEXT_PUBLIC_QUICKNODE_TESTNET_URL || TESTNET_RPC_FALLBACK
 
-export function getWagmiConfig() {
-  const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+function getWagmiConfig() {
+  const rawProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+
+  // Reject known placeholder values so the app doesn't send 403-bound
+  // requests to api.web3modal.org. A real project ID must be obtained from
+  // https://cloud.walletconnect.com and set in .env.local.
+  const WALLETCONNECT_PLACEHOLDER = 'your_walletconnect_project_id'
+  const walletConnectProjectId =
+    rawProjectId && rawProjectId !== WALLETCONNECT_PLACEHOLDER
+      ? rawProjectId
+      : undefined
+
+  if (!walletConnectProjectId && rawProjectId) {
+    console.warn(
+      '[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set to the default placeholder. ' +
+        'WalletConnect connector will not be registered. ' +
+        'Get a free project ID at https://cloud.walletconnect.com',
+    )
+  }
 
   const connectors = [
     injected(),
     coinbaseWallet({ appName: 'OMA AI' }),
-    // WalletConnect is only registered when a project ID is configured. Without
-    // one, the connector would silently fail to initialize. Operators can opt
-    // in by setting NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in their .env.local.
+    // WalletConnect is only registered when a valid project ID is configured.
+    // Without one, the connector would silently fail to initialize. Operators
+    // can opt in by setting NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in .env.local.
     ...(walletConnectProjectId
       ? [walletConnect({ projectId: walletConnectProjectId, showQrModal: true })]
       : []),

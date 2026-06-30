@@ -52,6 +52,18 @@ vi.mock('@hono/node-server', () => ({
   serve: vi.fn(),
 }))
 
+vi.mock('viem', () => ({
+  parseAbi: vi.fn(() => []),
+  decodeFunctionData: vi.fn(),
+  createPublicClient: vi.fn(),
+  formatUnits: vi.fn((v: bigint) => v.toString()),
+  http: vi.fn(),
+}))
+
+vi.mock('../credits/verify-usdc-on-chain.js', () => ({
+  verifyUsdcOnChain: vi.fn().mockResolvedValue({ valid: true, txHash: '0xabc', amount: '10' }),
+}))
+
 vi.mock('../db/client.js', () => {
   const mockSelect = vi.fn().mockReturnThis()
   const mockFrom = vi.fn().mockReturnThis()
@@ -232,13 +244,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({
@@ -570,7 +583,8 @@ describe('Cross-Chain x402', () => {
   })
 
   // POST /v1/x402/proxy/chat/completions is stubbed in facilitator.ts (returns 501).
-  // The full implementation (Flow 2 in OMA-X402-CROSSCHAIN-ARCHITECTURE.md) is
-  // deferred to Phase 2. The 402-with-payment_pending contract is documented in
-  // API-DOCUMENTATION.md §6.6 and docs/page.tsx but not yet wired.
+  // The full implementation (Flow 2 in ARCHITECTURE.md §x402 & Cross-Chain Payments)
+  // is deferred to Phase 2 (EIP-3009 settlement). The 402-with-payment_pending
+  // contract is documented in API-DOCUMENTATION.md §6.6 and docs/page.tsx but
+  // not yet wired.
 })

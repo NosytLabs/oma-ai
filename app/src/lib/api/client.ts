@@ -1,14 +1,20 @@
+import { DEFAULT_API_URL } from '@/lib/config'
+
 /**
  * Core HTTP client for the oma-ai frontend.
  *
- * - In the browser: uses `NEXT_PUBLIC_API_URL` directly to reach the Hono
- *   backend. The Next.js `/api/v1/chat/completions` proxy is intentionally
- *   disabled by default (CHAT_PROXY_ENABLED=false) and is only used in
- *   self-hosted deployments that need the proxy hop for same-origin cookies.
- * - On the server (SSR): uses `NEXT_PUBLIC_API_URL` (or `OPENAI_BASE_URL` for
- *   legacy reasons) to reach the backend directly.
+ * - In the browser: `/api/*` paths go through the Next.js server (same origin)
+ *   so the rewrite proxy handles forwarding to the backend. This ensures cookies
+ *   (CSRF, session) are set on the same origin as the page.
+ * - Non-`/api` paths (e.g. `/v1/models`) go directly to the backend.
+ * - On the server (SSR): uses `NEXT_PUBLIC_API_URL` to reach the backend
+ *   directly.
  */
-const API = (process.env.NEXT_PUBLIC_API_URL || process.env.OPENAI_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '');
+function getBaseUrl(path: string): string {
+  // Browser: /api/* paths use relative URL → goes through Next.js proxy
+  if (typeof window !== 'undefined' && path.startsWith('/api')) return ''
+  return DEFAULT_API_URL
+}
 
 /**
  * Request deduplication — prevents duplicate concurrent requests.
@@ -24,7 +30,7 @@ interface CacheEntry<T> {
 
 /** Response cache with TTL support. Used for /v1/balance, /v1/models. */
 const cache = new Map<string, CacheEntry<unknown>>();
-export const DEFAULT_TTL = 60_000;        // 60s default
+const DEFAULT_TTL = 60_000;        // 60s default
 export const STALE_TTL = 300_000;         // 5 min for stale-while-revalidate
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -56,12 +62,28 @@ export class BackendUnavailableError extends Error {
   }
 }
 
-/** Get a cached entry by key. Returns null if missing or expired. */
+/**
+ * True when an error from the API client represents an expired/invalid
+ * session (HTTP 401/403 from a Bearer-authenticated endpoint). The
+ * playground uses this to surface a one-time toast on session expiry
+ * instead of letting the credits pill silently disappear.
+ */
+export function isAuthError(err: unknown): boolean {
+  if (err instanceof ApiError) {
+    return err.status === 401 || err.status === 403;
+  }
+  // Some callers throw raw Errors with a `status` property when the
+  // request helper isn't on the path — accept those too.
+  const anyErr = err as { status?: number } | null | undefined;
+  return anyErr?.status === 401 || anyErr?.status === 403;
+}
+
+/** Get a cached entry by key. Returns null if missing or beyond STALE_TTL. */
 export function getCached<T>(key: string): T | null {
   const entry = cache.get(key) as CacheEntry<T> | undefined;
   if (!entry) return null;
   const age = Date.now() - entry.timestamp;
-  if (age > entry.ttl) {
+  if (age > STALE_TTL) {
     cache.delete(key);
     return null;
   }
@@ -85,6 +107,24 @@ export function invalidateCache(pattern?: string): void {
 }
 
 /**
+ * Options accepted by `request()`. Extends the standard `RequestInit` with
+ * a `responseType` discriminator so callers can ask for a `Blob` (CSV/JSON
+ * export downloads) instead of the default JSON parse.
+ */
+export interface RequestOptions extends RequestInit {
+  /**
+   * How to interpret a successful response body.
+   * - `'json'` (default) — parse the body as JSON and return it as `T`.
+   * - `'blob'` — return the body as a `Blob` (for binary downloads such as
+   *   CSV/JSON exports). The caller casts `T` to `Blob`.
+   *
+   * Error responses are still parsed as JSON when possible so we can
+   * surface a typed `ApiError` regardless of the requested response type.
+   */
+  responseType?: 'json' | 'blob'
+}
+
+/**
  * Core request function.
  * - Deduplicates in-flight requests
  * - 30s timeout via AbortController
@@ -93,10 +133,14 @@ export function invalidateCache(pattern?: string): void {
  */
 export async function request<T>(
   path: string,
-  opts: RequestInit = {},
+  opts: RequestOptions = {},
 ): Promise<T> {
-  const bodyHash = opts.body ? JSON.stringify(opts.body) : '';
-  const requestKey = `${opts.method || 'GET'}:${path}:${bodyHash.slice(0, 64)}`;
+  // Lightweight dedup key: method + path + first 200 chars of body (if any).
+  // Full JSON.stringify is wasteful for dedup — we only need enough to distinguish
+  // different request payloads.
+  const bodyPrefix = opts.body ? JSON.stringify(opts.body).slice(0, 200) : '';
+  const responseType = opts.responseType ?? 'json';
+  const requestKey = `${opts.method || 'GET'}:${path}:${bodyPrefix}`;
 
   if (pendingRequests.has(requestKey)) {
     return pendingRequests.get(requestKey) as Promise<T>;
@@ -114,8 +158,8 @@ export async function request<T>(
         .split('; ')
         .find((c) => c.startsWith('oma_session='));
       if (sessionCookie) {
-        const token = sessionCookie.split('=')[1];
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const token = sessionCookie.slice('oma_session='.length);
+        if (token) headers.Authorization = `Bearer ${token}`;
       }
     } catch {
       // SSR or cookie access denied — skip auth header
@@ -143,10 +187,12 @@ export async function request<T>(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
+  const { responseType: _ignored, ...fetchOpts } = opts;
+
   const fetchPromise = (async () => {
     try {
-      const res = await fetch(`${API}${path}`, {
-        ...opts,
+      const res = await fetch(`${getBaseUrl(path)}${path}`, {
+        ...fetchOpts,
         headers,
         signal: controller.signal,
       });
@@ -175,6 +221,7 @@ export async function request<T>(
       }
 
       if (res.status === 204) return undefined as T;
+      if (responseType === 'blob') return (await res.blob()) as T;
       return (await res.json()) as T;
     } catch (error) {
       clearTimeout(timeoutId);

@@ -26,6 +26,7 @@ export async function proxyPost(path: string, body: unknown, session: string): P
     },
     body: JSON.stringify(body),
     cache: 'no-store',
+    signal: AbortSignal.timeout(60_000),
   })
   const text = await upstream.text()
   return new Response(text, {
@@ -43,6 +44,7 @@ export async function proxyGet(path: string, session: string): Promise<Response>
       Authorization: `Bearer ${session}`,
     },
     cache: 'no-store',
+    signal: AbortSignal.timeout(60_000),
   })
   const text = await upstream.text()
   return new Response(text, {

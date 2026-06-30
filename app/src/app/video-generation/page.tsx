@@ -211,7 +211,7 @@ export default function VideoGenerationPage() {
 
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <div className="mb-6 flex rounded-xl bg-surface p-1" role="tablist" aria-label="Video generation mode">
-            <button
+            <button type="button"
               onClick={() => setMode('text-to-video')}
               role="tab"
               aria-selected={mode === 'text-to-video'}
@@ -224,7 +224,7 @@ mode === 'text-to-video'
             >
               <Sparkles className="w-4 h-4" aria-hidden="true" /> Text to Video
             </button>
-            <button
+            <button type="button"
               onClick={() => setMode('image-to-video')}
               role="tab"
               aria-selected={mode === 'image-to-video'}
@@ -347,7 +347,7 @@ mode === 'image-to-video'
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
+            <button type="button"
               onClick={generate}
               disabled={!prompt.trim() || loading || polling}
               className="btn-primary w-full sm:w-auto justify-center"
@@ -362,7 +362,7 @@ mode === 'image-to-video'
               )}
             </button>
             {(videoUrl || queueId) && (
-              <button onClick={reset} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Start new video generation">
+              <button type="button" onClick={reset} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Start new video generation">
                 <Plus className="w-4 h-4" aria-hidden="true" /> New
               </button>
             )}
@@ -426,7 +426,7 @@ mode === 'image-to-video'
           <div className="mt-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
               <h2 className="text-lg font-semibold text-text">Your Video</h2>
-              <button onClick={downloadVideo} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Download generated video">
+              <button type="button" onClick={downloadVideo} className="btn-secondary w-full sm:w-auto justify-center" aria-label="Download generated video">
                 <Download className="w-4 h-4" aria-hidden="true" /> Download
               </button>
             </div>

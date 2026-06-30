@@ -24,25 +24,28 @@ export function ConnectWalletView({ onConnect }: ConnectWalletViewProps) {
       </Link>
       <div className="text-center max-w-md px-4">
         <m.div
-          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center border border-border bg-void"
+          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-accent/20 bg-accent/5"
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: 'spring' }}
         >
-          <Wallet className="h-10 w-10 text-success" />
+          <Wallet className="h-10 w-10 text-accent" />
         </m.div>
-        <h2 className="mb-3 text-2xl font-bold text-text-bright">CONNECT_WALLET</h2>
+        <h2 className="mb-3 text-2xl font-bold tracking-tight text-text-bright">Connect your wallet</h2>
         <p className="mb-6 text-sm text-text-secondary">
           Sign in to view your credits, usage stats, and manage API keys.
         </p>
-        <button
+        <button type="button"
           onClick={() => onConnect()}
           aria-label="Connect wallet"
-          className="group flex items-center justify-center mx-auto border border-success bg-void px-8 py-3 text-sm uppercase tracking-widest text-success transition-colors hover:bg-border hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-[1px]"
+          className="group inline-flex items-center justify-center mx-auto gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-void shadow-lg shadow-accent/20 transition-all hover:bg-accent/90 focus-ring active:translate-y-[1px]"
         >
-          <Zap className="h-4 w-4 mr-2" />
-          Connect Wallet
+          <Zap className="h-4 w-4" />
+          Connect wallet
         </button>
+        <p className="mt-4 text-[11px] text-text-muted">
+          No email, no signup — your wallet is your account.
+        </p>
       </div>
     </m.div>
   )

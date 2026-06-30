@@ -6,6 +6,7 @@ import { desc, count, sql as drizzleSql } from "drizzle-orm";
 import { bearerAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
 import { logger } from "../lib/logger.js";
+import { parsePeriodDate } from "../lib/period.js";
 
 const periodSchema = z.enum(["7d", "30d", "90d"]).default("30d");
 
@@ -21,21 +22,7 @@ analyticsRoutes.get("/v1/analytics/usage", async (c) => {
 
   const periodResult = periodSchema.safeParse(c.req.query("period") || "30d");
   const period = periodResult.success ? periodResult.data : "30d";
-  let dateFilter: Date;
-  const now = new Date();
-  switch (period) {
-    case "7d":
-      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
-    case "30d":
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      break;
-    case "90d":
-      dateFilter = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      break;
-    default:
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  }
+  const dateFilter = parsePeriodDate(period);
 
   try {
     const [aggregateUsage, byModel, dailyUsage, topModels] = await Promise.all([
@@ -128,21 +115,7 @@ analyticsRoutes.get("/v1/analytics/models", async (c) => {
 
   const periodResult = periodSchema.safeParse(c.req.query("period") || "30d");
   const period = periodResult.success ? periodResult.data : "30d";
-  let dateFilter: Date;
-  const now = new Date();
-  switch (period) {
-    case "7d":
-      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
-    case "30d":
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      break;
-    case "90d":
-      dateFilter = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      break;
-    default:
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  }
+  const dateFilter = parsePeriodDate(period);
 
   try {
     const popularModels = await db.select({

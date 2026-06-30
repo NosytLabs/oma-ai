@@ -5,7 +5,7 @@ import { parseProviderWeights, parseModelWeights } from "../lib/router-utils.js"
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
+export type Provider = "venice" | "surplus";
 
 // ponytail: Surplus x402 signer is broken (EIP-712 scheme wrong; see surplus.ts:303-311).
 // Only allow routing to surplus when the wallet key is set AND we're in development.
@@ -13,21 +13,11 @@ export type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "togeth
 const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV === "development";
 
 export const ALL_PROVIDERS: Provider[] = SURPLUS_ENABLED
-  ? ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"]
-  : ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "morpheus", "claude", "gemini"];
+  ? ["venice", "surplus"]
+  : ["venice"];
 
-// ponytail: OPENSOURCE_PREFIXES was a dead loop — every miss fell through to
-// `return "antseed"` below. Removed. If a future provider wants to claim
-// open-source-prefix routing, add a guarded branch above the default.
-function inferProviderFromModel(model: string): Provider {
-  if (model.startsWith("openrouter/") || model.startsWith("openai/")) return "openrouter";
-  if (model.startsWith("litellm/")) return "litellm";
-  if (model.startsWith("together/")) return "together";
-  if (model.startsWith("deepinfra/")) return "deepinfra";
-  if (model.startsWith("morpheus/") || model.startsWith("mor/")) return "morpheus";
-  if (model.startsWith("claude-")) return "claude";
-  if (model.startsWith("gemini-")) return "gemini";
-  return "antseed";
+function inferProviderFromModel(_model: string): Provider {
+  return "venice";
 }
 
 export interface ModelWeightConfig {
@@ -50,20 +40,11 @@ function selectProviderWeighted(weights: Map<Provider, number>, available: Provi
 
 export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string {
   if (!modelDef) {
-    if (model.startsWith("litellm/")) return model.replace("litellm/", "");
     return model;
   }
   const idMap: Record<string, string> = {
     venice: modelDef.veniceId ?? modelDef.id,
-    antseed: modelDef.antseedId ?? modelDef.id,
-    litellm: modelDef.litellmId ?? modelDef.id,
-    openrouter: modelDef.openrouterId ?? modelDef.id,
-    together: modelDef.togetherId ?? modelDef.id,
-    deepinfra: modelDef.deepinfraId ?? modelDef.id,
     surplus: modelDef.surplusId ?? modelDef.id,
-    morpheus: modelDef.morpheusId ?? modelDef.id,
-    claude: modelDef.claudeId ?? modelDef.id,
-    gemini: modelDef.geminiId ?? modelDef.id,
   };
   return idMap[provider] ?? modelDef.id;
 }

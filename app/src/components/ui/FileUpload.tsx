@@ -60,7 +60,7 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
     return (
       <div className={`relative rounded-2xl border border-border overflow-hidden ${className}`}>
         <Image src={preview} alt="Upload preview" fill className="object-cover" />
-        <button
+        <button type="button"
           onClick={handleClear}
           aria-label="Remove image"
           className="absolute top-3 right-3 p-2 bg-surface/90 backdrop-blur-sm rounded-xl text-text-muted hover:text-error hover:bg-surface shadow-lg transition-all"
@@ -74,6 +74,9 @@ export function FileUpload({ onFileSelect, onClear, accept = 'image/*', maxSizeM
   return (
     <div className={className}>
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}

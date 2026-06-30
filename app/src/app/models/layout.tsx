@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Models',
   description: 'Browse 91+ AI models including Claude, Llama, Qwen, DeepSeek, and more. Compare pricing across Venice AI, AntSeed, and other providers.',
   keywords: ['AI models', 'Claude', 'Llama', 'Qwen', 'DeepSeek', 'AI API', 'LLM pricing'],
+  alternates: { canonical: '/models' },
   openGraph: {
     title: 'AI Models | OMA AI',
     description: 'Browse 91+ AI models with transparent pricing. Route inference across multiple providers with automatic failover.',

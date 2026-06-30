@@ -8,7 +8,7 @@ export async function deductCredits(
   markupCents: number,
   totalCents: number,
   model: string,
-  provider: "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "tinyfish",
+  provider: "venice" | "surplus" | "tinyfish",
   apiKeyId: string,
   inputTokens: number,
   outputTokens: number,

@@ -1,0 +1,519 @@
+'use client'
+
+import { useCallback, useEffect, useRef } from 'react'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
+import { useToast } from '@/components/ui/Toast'
+import { log } from '@/lib/logger'
+import { DEFAULT_API_URL } from '@/lib/config'
+import { buildAuthHeaders } from '@/lib/cookies'
+import { estimateTokens } from '@/lib/text'
+import type { Message, SearchResult } from '@/components/chat'
+
+const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`
+const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`
+const MAX_MESSAGE_LENGTH = 100 * 1024
+const BATCH_INTERVAL_MS = 250
+
+/**
+ * ponytail: SSE events end with \n\n. A single event can have multiple
+ * `data:` lines that must be concatenated. Per the SSE spec, ignore lines
+ * starting with `:` (comment). A bare `data:` line is treated as the string
+ * "data: ". The event ends at the first blank line.
+ */
+function parseSSEBlock(block: string): { event?: string; data: string[]; id?: string } | null {
+  if (!block || block.trim() === "") return null
+  const lines = block.split("\n")
+  const data: string[] = []
+  let event: string | undefined
+  let id: string | undefined
+  for (const line of lines) {
+    if (!line || line.startsWith(":")) continue
+    const colon = line.indexOf(":")
+    const field = colon === -1 ? line : line.slice(0, colon)
+    const value = colon === -1 ? "" : line.slice(colon + 1).replace(/^ /, "")
+    if (field === "data") data.push(value)
+    else if (field === "event") event = value
+    else if (field === "id") id = value
+  }
+  if (data.length === 0 && !event && !id) return null
+  return { event, data, id }
+}
+
+export interface UseStreamingChatOptions {
+  messagesRef: RefObject<Message[]>
+  compareMessagesRef: RefObject<Message[]>
+  input: string
+  loading: boolean
+  setInput: Dispatch<SetStateAction<string>>
+  setMessages: Dispatch<SetStateAction<Message[]>>
+  setLoading: Dispatch<SetStateAction<boolean>>
+  setError: Dispatch<SetStateAction<string | null>>
+  model: string
+  systemPrompt: string
+  compareMode: boolean
+  compareModel: string
+  setCompareMessages: Dispatch<SetStateAction<Message[]>>
+  inputRef: RefObject<HTMLTextAreaElement | null>
+  isNearBottomRef: RefObject<boolean>
+  temperature: number
+  topP: number
+  maxTokens: number
+  topK: number
+  freqPenalty: number
+  presPenalty: number
+  stream: boolean
+  webSearchEnabled: boolean
+  setSearching: Dispatch<SetStateAction<boolean>>
+}
+
+export interface UseStreamingChatResult {
+  sendMessage: (overridePrompt?: string) => Promise<void>
+  abortRef: RefObject<AbortController | null>
+}
+
+/**
+ * Owns the SSE streaming pipeline for both the primary chat and the
+ * compare-mode side panel. The hook is intentionally chat-shaped — it
+ * does not own the input box, the message list rendering, or the
+ * settings panel. It only:
+ *   1. fetches web search context (when enabled) in parallel for both
+ *      primary and compare panels
+ *   2. opens two parallel SSE streams (or one when compare mode is off)
+ *   3. parses the SSE event stream, batches content updates at 250ms
+ *      to keep renders cheap during streaming
+ *   4. classifies terminal errors (auth / rate-limit / network) and
+ *      either strips empty assistant placeholders (abort) or surfaces
+ *      the message via setError
+ */
+export function useStreamingChat(opts: UseStreamingChatOptions): UseStreamingChatResult {
+  const toast = useToast()
+  const abortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const fetchWebSearch = useCallback(async (
+    query: string,
+    setSearchingFn: (b: boolean) => void,
+  ): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
+    if (!opts.webSearchEnabled || !query.trim()) {
+      return { results: [], contextMessage: null }
+    }
+    setSearchingFn(true)
+    try {
+      const searchResp = await fetch(`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query.trim())}`, {
+        credentials: 'include',
+        headers: buildAuthHeaders({ Accept: 'application/json' }),
+      })
+      if (searchResp.status === 404) {
+        toast.info('Web search is not yet available on this deployment')
+        return { results: [], contextMessage: null }
+      }
+      if (!searchResp.ok) {
+        toast.error(`Web search failed (${searchResp.status})`)
+        return { results: [], contextMessage: null }
+      }
+      const searchData = await searchResp.json()
+      const rawResults = (searchData?.results ?? []) as Array<{
+        title: string
+        url: string
+        snippet: string
+        site_name?: string
+        favicon?: string
+      }>
+      if (rawResults.length === 0) {
+        return { results: [], contextMessage: null }
+      }
+      const results: SearchResult[] = rawResults.map((r) => ({
+        title: r.title,
+        url: r.url,
+        snippet: r.snippet,
+        favicon: r.favicon,
+      }))
+      const contextMessage: Message = {
+        role: 'system',
+        content: `Web search results for "${query.trim()}":\n\n${rawResults.map((r) =>
+          `- ${r.title}\n  ${r.snippet}\n  Source: ${r.url}${r.site_name ? ` (${r.site_name})` : ''}`
+        ).join('\n\n')}`,
+        timestamp: Date.now(),
+      }
+      return { results, contextMessage }
+    } catch (err) {
+      log.warn('Web search failed', err)
+      toast.error('Web search unavailable — proceeding without search results')
+      return { results: [], contextMessage: null }
+    } finally {
+      setSearchingFn(false)
+    }
+  }, [opts.webSearchEnabled, toast])
+
+  const streamChatCompletion = useCallback(async (params: {
+    model: string
+    history: Message[]
+    setMessages: Dispatch<SetStateAction<Message[]>>
+    searchContext: Message | null
+    searchResults: SearchResult[]
+    signal: AbortSignal
+  }): Promise<void> => {
+    const { model: useModel, history, setMessages: setMsgs, searchContext, searchResults, signal } = params
+
+    let messagesToSend = history
+    if (searchContext) {
+      messagesToSend = [searchContext, ...history]
+    }
+    if (opts.systemPrompt.trim()) {
+      const sysMsg: Message = {
+        role: 'system',
+        content: opts.systemPrompt.trim(),
+        timestamp: Date.now(),
+      }
+      messagesToSend = [sysMsg, ...messagesToSend]
+    }
+
+    const response = await fetch(CHAT_ENDPOINT, {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthHeaders({
+        'Content-Type': 'application/json',
+        'Accept': opts.stream ? 'text/event-stream' : 'application/json',
+      }),
+      body: JSON.stringify({
+        model: useModel,
+        messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+        temperature: opts.temperature,
+        top_p: opts.topP,
+        max_tokens: opts.maxTokens,
+        top_k: opts.topK,
+        frequency_penalty: opts.freqPenalty,
+        presence_penalty: opts.presPenalty,
+        stream: opts.stream,
+        ...(opts.stream ? { stream_options: { include_usage: true } } : {}),
+      }),
+      signal,
+    })
+
+    if (response.status === 401) {
+      throw new Error('Authentication required — please reconnect your wallet to continue')
+    }
+    if (response.status === 429) {
+      const errBody = await response.json().catch(() => null)
+      throw new Error(errBody?.error?.message || 'rate limit exceeded — please wait and try again')
+    }
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => null)
+      const errMsg = errBody?.error?.message || `HTTP ${response.status}: ${response.statusText}`
+      throw new Error(errMsg)
+    }
+
+    const startTime = Date.now()
+
+    if (opts.stream && response.body) {
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+      let accumulatedReasoning = ''
+      let realTokenCount = 0
+      let lastUpdateTime = 0
+      let lastFlushedContent = ''
+      let lastFlushedReasoning = ''
+
+      const flushToState = (force = false) => {
+        const now = Date.now()
+        if (force || (now - lastUpdateTime >= BATCH_INTERVAL_MS && (accumulated !== lastFlushedContent || accumulatedReasoning !== lastFlushedReasoning))) {
+          lastUpdateTime = now
+          lastFlushedContent = accumulated
+          lastFlushedReasoning = accumulatedReasoning
+          // Use the real usage count once it arrives in the final chunk;
+          // otherwise approximate from accumulated text.
+          const tokenCount = realTokenCount || estimateTokens(accumulated)
+          setMsgs(prev => {
+            const updated = [...prev]
+            const lastIdx = updated.length - 1
+            if (lastIdx >= 0) {
+              updated[lastIdx] = {
+                ...updated[lastIdx],
+                content: accumulated,
+                reasoning: accumulatedReasoning || undefined,
+                tokens: tokenCount,
+                outputTokens: realTokenCount || estimateTokens(accumulated),
+                latency: now - startTime,
+                searchResults: searchResults.length > 0 ? searchResults : updated[lastIdx].searchResults,
+              }
+            }
+            return updated
+          })
+        }
+      }
+
+      let sseBuffer = ''
+      const SSE_BUFFER_MAX_BYTES = 1024 * 1024 // 1 MB cap to prevent unbounded growth
+      const processData = (raw: string) => {
+        const data = raw.trim()
+        if (!data || data === '[DONE]') return
+        try {
+          const parsed = JSON.parse(data)
+          const choice = parsed.choices?.[0]
+          const delta = choice?.delta?.content
+          if (delta) {
+            if (accumulated.length < MAX_MESSAGE_LENGTH) {
+              accumulated += delta
+            }
+            flushToState()
+          }
+          // Reasoning models (DeepSeek R1, Claude extended thinking) emit
+          // `reasoning_content` separately from `content`. Capture it so the
+          // thinking phase is visible in the collapsible "Thinking" section
+          // instead of showing blank while the model reasons.
+          const reasoningDelta = choice?.delta?.reasoning_content
+          if (reasoningDelta) {
+            if (accumulatedReasoning.length < MAX_MESSAGE_LENGTH) {
+              accumulatedReasoning += reasoningDelta
+            }
+            flushToState()
+          }
+          // OpenAI streams emit a final chunk with `usage` when
+          // `stream_options.include_usage` is set (or some providers do it
+          // unconditionally). Prefer the real count over our estimate.
+          if (parsed.usage?.total_tokens) {
+            realTokenCount = parsed.usage.total_tokens
+          }
+        } catch (err) {
+          log.warn('Failed to parse streaming response', err)
+        }
+      }
+      const handleBlock = (block: string) => {
+        const parsed = parseSSEBlock(block)
+        if (!parsed) return
+        for (const d of parsed.data) {
+          processData(d)
+        }
+      }
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        sseBuffer += decoder.decode(value, { stream: true })
+        if (sseBuffer.length > SSE_BUFFER_MAX_BYTES) {
+          throw new Error('SSE buffer exceeded 1 MB limit — connection may be stalled or sending non-SSE data')
+        }
+
+        // Per the SSE spec, events are delimited by a blank line. Normalize
+        // CRLF to LF so a single `\n\n` split handles all line endings.
+        const normalized = sseBuffer.replace(/\r\n/g, '\n')
+        const parts = normalized.split('\n\n')
+        sseBuffer = parts.pop() ?? ''
+        for (const block of parts) handleBlock(block)
+      }
+      if (sseBuffer.trim()) {
+        handleBlock(sseBuffer)
+        sseBuffer = ''
+      }
+      flushToState(true)
+    } else {
+      const data = await response.json()
+      const content = data.choices?.[0]?.message?.content || ''
+      const reasoning = data.choices?.[0]?.message?.reasoning_content || ''
+      const usage = data.usage
+      setMsgs(prev => {
+        const updated = [...prev]
+        const lastIdx = updated.length - 1
+        if (lastIdx >= 0) {
+          updated[lastIdx] = {
+            ...updated[lastIdx],
+            content,
+            reasoning: reasoning || undefined,
+            tokens: usage?.total_tokens || 0,
+            inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
+            outputTokens: usage?.completion_tokens || estimateTokens(content),
+            latency: Date.now() - startTime,
+            searchResults: searchResults.length > 0 ? searchResults : updated[lastIdx].searchResults,
+          }
+        }
+        return updated
+      })
+    }
+  }, [
+    opts.systemPrompt,
+    opts.temperature,
+    opts.topP,
+    opts.maxTokens,
+    opts.topK,
+    opts.freqPenalty,
+    opts.presPenalty,
+    opts.stream,
+  ])
+
+  const sendMessage = useCallback(async (overridePrompt?: string) => {
+    const promptText = (overridePrompt ?? opts.input).trim()
+    if (!promptText || opts.loading) return
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      role: 'user',
+      content: promptText,
+      timestamp: Date.now(),
+      inputTokens: estimateTokens(promptText),
+    }
+
+    const currentMessages = opts.messagesRef.current
+    const allMessages = [...currentMessages, userMessage]
+    opts.setMessages(allMessages)
+    opts.setInput('')
+    opts.setLoading(true)
+    opts.setError(null)
+
+    const assistantMessage: Message = {
+      id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+    }
+    opts.setMessages([...allMessages, assistantMessage])
+
+    // Build compare side: add user message + empty assistant message so the
+    // panel mirrors the conversation shape.
+    let compareAllMessages: Message[] = []
+    if (opts.compareMode) {
+      compareAllMessages = [...opts.compareMessagesRef.current, userMessage]
+      opts.setCompareMessages([
+        ...compareAllMessages,
+        { id: `compare-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, role: 'assistant', content: '', timestamp: Date.now() },
+      ])
+    }
+
+    const abortController = new AbortController()
+    abortRef.current = abortController
+    opts.isNearBottomRef.current = true
+
+    try {
+      // Run web searches in parallel for compare mode
+      const [primarySearch, compareSearch] = await Promise.all([
+        fetchWebSearch(promptText, opts.setSearching),
+        opts.compareMode
+          ? fetchWebSearch(promptText, () => {})
+          : Promise.resolve({ results: [], contextMessage: null }),
+      ])
+
+      // Fire both streams in parallel. Use Promise.allSettled so one stream
+      // failing doesn't leave the other running as a zombie.
+      const primaryPromise = streamChatCompletion({
+        model: opts.model,
+        history: allMessages,
+        setMessages: opts.setMessages,
+        searchContext: primarySearch.contextMessage,
+        searchResults: primarySearch.results,
+        signal: abortController.signal,
+      })
+
+      const comparePromise = opts.compareMode
+        ? streamChatCompletion({
+            model: opts.compareModel,
+            history: compareAllMessages,
+            setMessages: opts.setCompareMessages,
+            searchContext: compareSearch.contextMessage,
+            searchResults: compareSearch.results,
+            signal: abortController.signal,
+          })
+        : Promise.resolve() as Promise<void>
+
+      const results = await Promise.allSettled([primaryPromise, comparePromise])
+      const [primaryResult, compareResult] = results
+
+      if (primaryResult.status === 'rejected') {
+        throw primaryResult.reason
+      }
+
+      if (compareResult.status === 'rejected') {
+        const err = compareResult.reason
+        const message = err instanceof Error ? err.message : 'Compare model request failed'
+        opts.setError(`Compare: ${message}`)
+        opts.setCompareMessages(prev => {
+          const updated = [...prev]
+          if (updated.length > 0 && updated[updated.length - 1]?.content === '') {
+            return updated.slice(0, -1)
+          }
+          return updated
+        })
+      }
+    } catch (err: unknown) {
+      const aborted = abortController.signal.aborted ||
+        (err instanceof Error && err.name === 'AbortError')
+      if (aborted) {
+        opts.setMessages(prev => {
+          const updated = [...prev]
+          if (updated[updated.length - 1]?.content === '') {
+            return updated.slice(0, -1)
+          }
+          return updated
+        })
+        if (opts.compareMode) {
+          opts.setCompareMessages(prev => {
+            const updated = [...prev]
+            if (updated[updated.length - 1]?.content === '') {
+              return updated.slice(0, -1)
+            }
+            return updated
+          })
+        }
+      } else {
+        // Network failures (backend down / CORS) surface as TypeError —
+        // translate to a friendly message rather than a cryptic "fetch failed".
+        let message: string
+        if (err instanceof TypeError) {
+          message = 'Cannot reach the backend server — check your connection and that the API is running'
+        } else if (err instanceof Error) {
+          message = err.message
+        } else {
+          message = 'Unknown error'
+        }
+        opts.setError(message)
+        opts.setMessages(prev => {
+          const updated = [...prev]
+          if (updated[updated.length - 1]?.content === '') {
+            return updated.slice(0, -1)
+          }
+          return updated
+        })
+        if (opts.compareMode) {
+          opts.setCompareMessages(prev => {
+            const updated = [...prev]
+            if (updated[updated.length - 1]?.content === '') {
+              return updated.slice(0, -1)
+            }
+            return updated
+          })
+        }
+      }
+    } finally {
+      opts.setLoading(false)
+      setTimeout(() => opts.inputRef.current?.focus(), 100)
+    }
+  // "opts" is intentionally excluded from deps: it's a fresh object on every
+  // render, so including it would cause infinite re-renders. sendMessage reads
+  // from refs (opts.*Ref) and the latest opts via closure — the useCallback
+  // identity changes only when the listed deps change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    opts.input,
+    opts.loading,
+    opts.model,
+    opts.compareMode,
+    opts.compareModel,
+    opts.compareMessagesRef,
+    opts.messagesRef,
+    opts.isNearBottomRef,
+    opts.inputRef,
+    opts.setInput,
+    opts.setMessages,
+    opts.setLoading,
+    opts.setError,
+    opts.setCompareMessages,
+    opts.setSearching,
+    fetchWebSearch,
+    streamChatCompletion,
+  ])
+
+  return { sendMessage, abortRef }
+}

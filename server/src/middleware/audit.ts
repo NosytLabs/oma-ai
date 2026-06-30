@@ -1,7 +1,6 @@
+import type { Context, Next } from "hono";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema.js";
-import type { Context, Next } from "hono";
-import type { OmaEnv } from "../types.js";
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger.js";
 
@@ -35,52 +34,45 @@ export async function auditLog(params: AuditLogParams): Promise<void> {
   }
 }
 
-function getClientIp(c: Context<OmaEnv>): string {
-  const xForwardedFor = c.req.header("x-forwarded-for");
-  if (xForwardedFor) {
-    const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
-    // RFC 7239: the leftmost IP in X-Forwarded-For is the original
-    // client; subsequent entries are intermediate proxies. Take the
-    // leftmost to record the actual client, not the last hop.
-    return ips.length > 0 ? ips[0] : "unknown";
-  }
-  return c.req.header("x-real-ip") || "unknown";
-}
-
-export function createAuditLogger(params: Omit<AuditLogParams, "ipAddress" | "userAgent">) {
-  return async (c: Context<OmaEnv>, _next: Next) => {
+/**
+ * Middleware that logs an audit entry after the request completes.
+ * Sets context: userId (from prior middleware), client IP, user-agent.
+ */
+export function createAuditLogger(params: { action: AuditAction; resource: string }) {
+  return async (c: Context, next: Next) => {
+    await next();
     const userId = c.get("userId") as string | undefined;
-    const ipAddress = getClientIp(c);
-    const userAgent = c.req.header("user-agent") || undefined;
-
-    await auditLog({
-      ...params,
-      userId: userId ?? params.userId,
-      ipAddress,
-      userAgent,
-    });
-    await _next();
-  };
-}
-
-export function auditWriteOp(action: AuditAction, resource: string, getResourceId?: (c: Context<OmaEnv>) => string | undefined, metadataFn?: (c: Context<OmaEnv>) => Record<string, unknown> | undefined) {
-  return async (c: Context<OmaEnv>, next: Next) => {
-    const userId = c.get("userId") as string | undefined;
-    const ipAddress = getClientIp(c);
-    const userAgent = c.req.header("user-agent") || undefined;
-    const resourceId = getResourceId ? getResourceId(c) : undefined;
-    const metadata = metadataFn ? metadataFn(c) : undefined;
-
+    const ipAddress = c.req.header("x-real-ip")
+      ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? "unknown";
+    const userAgent = c.req.header("user-agent") ?? null;
     await auditLog({
       userId,
-      action,
-      resource,
-      resourceId,
+      action: params.action,
+      resource: params.resource,
+      resourceId: c.get("resourceId") as string | undefined,
+      metadata: c.get("auditMetadata") as Record<string, unknown> | undefined,
       ipAddress,
-      userAgent,
-      metadata,
+      userAgent: userAgent ?? undefined,
     });
-
-    await next();
   };
 }
+
+/**
+ * Convenience wrapper: sets resourceId and metadata from per-request
+ * functions before delegating to createAuditLogger.
+ */
+export function auditWriteOp(
+  action: AuditAction,
+  resource: string,
+  resourceIdFn: (c: Context) => string,
+  metadataFn: (c: Context) => Record<string, unknown>,
+) {
+  const auditMiddleware = createAuditLogger({ action, resource });
+  return async (c: Context, next: Next) => {
+    c.set("resourceId", resourceIdFn(c));
+    c.set("auditMetadata", metadataFn(c));
+    await auditMiddleware(c, next);
+  };
+}
+

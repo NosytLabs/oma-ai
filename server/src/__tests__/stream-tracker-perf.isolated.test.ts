@@ -56,9 +56,6 @@ vi.mock('../config.js', () => ({
 
 import {
   createTrackingStream,
-  resetStreamMetrics,
-  clearEstimateCache,
-  getEstimateCacheSize,
 } from '../inference/stream-tracker.js';
 
 const encoder = new TextEncoder();
@@ -103,8 +100,6 @@ const baseParams = {
 };
 
 beforeEach(() => {
-  resetStreamMetrics();
-  clearEstimateCache();
   vi.clearAllMocks();
 });
 
@@ -290,13 +285,12 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
    * For repeated identical content strings, the LRU should short-circuit
    * the call to `estimateTokens`. We assert that calling the public
    * createTrackingStream N times with the same content causes
-   * `estimateTokens` to be invoked at most a small number of times
-   * (the LRU caches it). The test uses N=10 to make the count
-   * difference unambiguous (1 underlying call vs 10).
+   * `estimateTokens` to be invoked only once (the LRU caches it).
+   * The test uses N=6 to make the count difference unambiguous (1
+   * underlying call vs 6).
    *
    * NB: We use a UNIQUE content string here so the LRU is guaranteed
    * to start cold for this test (not contaminated by other tests).
-   * The beforeEach clearEstimateCache() ensures a clean slate.
    */
   it('test 4: estimateTokens LRU short-circuits repeated identical content', async () => {
     const { estimateTokens } = await import('../inference/models.js');
@@ -324,8 +318,6 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
     );
     await consumeStream(warmupStream);
     await new Promise((r) => setTimeout(r, 10));
-    // After warmup, LRU has 1 entry for UNIQUE.
-    expect(getEstimateCacheSize()).toBe(1);
     // Snapshot the mock call count after warmup
     const callsAfterWarmup = (estimateTokens as any).mock.calls.length;
     expect(callsAfterWarmup).toBe(1);
@@ -354,7 +346,6 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
     const callsAfterLoop = (estimateTokens as any).mock.calls.length;
     // The 5 cached iterations should add ZERO new underlying calls.
     expect(callsAfterLoop).toBe(callsAfterWarmup);
-    expect(getEstimateCacheSize()).toBe(1);
   });
 
   /**

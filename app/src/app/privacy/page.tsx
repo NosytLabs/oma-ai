@@ -11,10 +11,17 @@ export const metadata: Metadata = {
   title: 'Privacy · OMA',
   description:
     'OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.',
+  alternates: { canonical: '/privacy' },
   openGraph: {
     title: 'Privacy · OMA',
     description:
       'OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'OMA AI Gateway' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy · OMA',
+    description: 'Minimal data collection policy. No prompt or completion logging, ever.',
   },
 }
 
@@ -126,7 +133,7 @@ export default function PrivacyPage() {
                 </span>
 
                 <h1
-                  className="h1-hero text-text-bright mt-6"
+                  className="h1-page text-text-bright mt-6"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
                   <span className="block">Minimal data,</span>

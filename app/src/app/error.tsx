@@ -11,14 +11,7 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // Log error for monitoring
-    if (process.env.NODE_ENV === 'production') {
-      console.error('[ErrorBoundary]', {
-        message: error.message,
-        stack: error.stack,
-        digest: error.digest,
-      })
-    }
+    console.error('[GlobalError]', error)
   }, [error])
 
   const isKnownError = error.digest !== undefined
@@ -56,7 +49,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
+          <button type="button"
             onClick={reset}
             className="btn-primary"
           >
@@ -79,8 +72,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           </a>
         </div>
 
-        {process.env.NODE_ENV === 'development' && error.stack && (
-          <details className="mt-8 text-left">
+        {error.stack && (
+          <details open className="mt-8 text-left" style={{maxHeight: '400px', overflow: 'auto'}}>
             <summary className="text-xs text-text-muted cursor-pointer hover:text-text flex items-center gap-2">
               <Bug className="h-3 w-3" />
               Stack Trace

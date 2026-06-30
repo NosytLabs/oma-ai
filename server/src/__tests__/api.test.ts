@@ -6,6 +6,17 @@ vi.mock('@hono/node-server', () => ({
 
 vi.mock('viem', () => ({
   verifyMessage: vi.fn().mockResolvedValue(true),
+  parseAbi: vi.fn(() => []),
+  decodeFunctionData: vi.fn(),
+  createPublicClient: vi.fn(),
+  formatUnits: vi.fn((v: bigint) => v.toString()),
+  http: vi.fn(),
+}))
+
+// Pass-through the on-chain USDC verifier. The api test doesn't exercise
+// the on-chain receipt path; the deposit test mock is the source of truth.
+vi.mock('../credits/verify-usdc-on-chain.js', () => ({
+  verifyUsdcOnChain: vi.fn().mockResolvedValue({ valid: true, txHash: '0xabc', amount: '10' }),
 }))
 
 vi.mock('../db/client.js', () => {
@@ -46,7 +57,7 @@ vi.mock('../db/client.js', () => {
   return { db: chain, getDb: () => chain }
 })
 
-vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), validateApiKey: vi.fn(), createApiKey: vi.fn(), listApiKeys: vi.fn().mockResolvedValue([]), revokeApiKey: vi.fn(), getApiKey: vi.fn(), refreshApiKey: vi.fn() }))
+vi.mock('../auth/api-keys.js', () => ({ shouldRecommendRotation: vi.fn().mockReturnValue(false), validateApiKey: vi.fn(), createApiKey: vi.fn(), listApiKeys: vi.fn().mockResolvedValue([]), revokeApiKey: vi.fn(), getApiKey: vi.fn() }))
 
 vi.mock('../auth/siwe.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../auth/siwe.js')>()
@@ -116,13 +127,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../auth/middleware.js', () => ({

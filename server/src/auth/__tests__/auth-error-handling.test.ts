@@ -79,7 +79,7 @@ vi.mock("../../config.js", () => ({
   ADMIN_WALLET_ADDRESSES_SET: new Set<string>(),
 }));
 
-import { bearerAuth, optionalAuth, requireAdmin, requireTeamRole } from "../middleware.js";
+import { bearerAuth, optionalAuth } from "../middleware.js";
 import { validateApiKey } from "../api-keys.js";
 import { verifySessionToken } from "../siwe.js";
 
@@ -183,48 +183,3 @@ describe("optionalAuth — internal auth-validation errors must not 500 the requ
   });
 });
 
-describe("requireAdmin / requireTeamRole — DB errors are real 500s (not auth failures)", () => {
-  it("requireAdmin returns 500 when the team-membership DB lookup throws (callers are already authenticated)", async () => {
-    // The admin lookup is not an auth-validation step — the user is
-    // already authenticated. A throw here is a server error.
-    // Skip the wallet-admin branch (set is empty) and force the
-    // team-membership SELECT to reject.
-    const chain = {
-      from: () => chain,
-      where: () => chain,
-      limit: () => Promise.reject(new Error("DB is down")),
-    };
-    dbSelect.mockReturnValueOnce(chain);
-
-    const app = new Hono<OmaEnv>();
-    app.use("*", async (c, next) => {
-      c.set("userId", "user-already-authed");
-      await next();
-    });
-    app.use("*", requireAdmin());
-    app.get("/probe", (c) => c.json({ ok: true }));
-
-    const res = await app.request("/probe?teamId=team-xyz");
-    expect(res.status).toBe(500);
-  });
-
-  it("requireTeamRole returns 500 when the team-membership DB lookup throws", async () => {
-    const chain = {
-      from: () => chain,
-      where: () => chain,
-      limit: () => Promise.reject(new Error("DB is down")),
-    };
-    dbSelect.mockReturnValueOnce(chain);
-
-    const app = new Hono<OmaEnv>();
-    app.use("*", async (c, next) => {
-      c.set("userId", "user-already-authed");
-      await next();
-    });
-    app.use("*", requireTeamRole("admin"));
-    app.get("/probe", (c) => c.json({ ok: true }));
-
-    const res = await app.request("/probe?teamId=team-xyz");
-    expect(res.status).toBe(500);
-  });
-});

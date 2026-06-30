@@ -12,7 +12,7 @@ import {
 import { auditLog } from "../middleware/audit.js";
 import { db } from "../db/client.js";
 import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts } from "../db/schema.js";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { calculateCostCredits, getModel } from "../inference/models.js";
 import { validationError } from "../lib/validation.js";
@@ -174,6 +174,9 @@ creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
 creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
+    const limit = Math.min(Number(c.req.query("limit") ?? 100), 500);
+    const days = Math.min(Number(c.req.query("days") ?? 90), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     const usageResult = await db.select({
       model: usageRecords.model,
@@ -182,7 +185,12 @@ creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
       totalCents: usageRecords.totalCents,
     })
       .from(usageRecords)
-      .where(eq(usageRecords.userId, userId));
+      .where(and(
+        eq(usageRecords.userId, userId),
+        sql`${usageRecords.createdAt} >= ${since}`,
+      ))
+      .orderBy(desc(usageRecords.createdAt))
+      .limit(limit);
 
     const modelTotals: Record<string, { inputTokens: number; outputTokens: number; totalCents: number; count: number }> = {};
     for (const record of usageResult) {
@@ -204,6 +212,8 @@ creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
         requestCount: data.count,
       })),
       totalUsageCents: Object.values(modelTotals).reduce((sum, m) => sum + m.totalCents, 0),
+      periodDays: days,
+      recordLimit: limit,
     });
   } catch (err) {
     logger.error({ err }, "[credits] Usage error:");
@@ -297,13 +307,17 @@ creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
 
   const usage = usageRecordsResult[0];
 
-  if (usage.status === "refunded") {
+  // C2: Atomically claim the refund slot — only one concurrent request can
+  // succeed. Uses UPDATE...WHERE with status check and .returning() to detect
+  // if we actually changed the row (eliminates TOCTOU race condition).
+  const [updated] = await db.update(usageRecords)
+    .set({ status: "refunded", refundedAt: new Date() })
+    .where(and(eq(usageRecords.id, usageId), sql`${usageRecords.status} != 'refunded'`))
+    .returning();
+
+  if (!updated) {
     return c.json({ error: { message: "Usage record has already been refunded", type: "duplicate_refund" } }, 409);
   }
-
-  await db.update(usageRecords)
-    .set({ status: "refunded", refundedAt: new Date() })
-    .where(eq(usageRecords.id, usageId));
 
   await addCredits(userId, Number(usage.totalCents));
 

@@ -48,14 +48,16 @@ function AccordionItem({
   isOpen,
   onToggle,
   index,
+  groupIdx,
 }: {
   item: FAQGroup['items'][number]
   isOpen: boolean
   onToggle: () => void
   index: number
+  groupIdx: string
 }) {
-  const buttonId = `faq-button-${index}`
-  const panelId = `faq-panel-${index}`
+  const buttonId = `faq-button-${groupIdx}-${index}`
+  const panelId = `faq-panel-${groupIdx}-${index}`
   const Icon = ICON_MAP[item.iconName] ?? HelpCircle
   return (
     <div className="border-b border-border last:border-b-0">
@@ -130,13 +132,14 @@ export function FAQClient({ groups }: { groups: FAQGroup[] }) {
               </header>
 
               <div className="rounded-xl border border-border bg-surface px-4 sm:px-5">
-                {g.items.map((item, i) => {
+                  {g.items.map((item, i) => {
                   const key = `${g.idx}-${i}`
                   return (
                     <AccordionItem
                       key={key}
                       item={item}
                       index={i}
+                      groupIdx={g.idx}
                       isOpen={!!openMap[key]}
                       onToggle={() => toggle(key)}
                     />

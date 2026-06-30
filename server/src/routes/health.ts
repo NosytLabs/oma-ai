@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
+import { SERVICE_VERSION } from "../constants.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
 
@@ -54,7 +55,7 @@ healthRoutes.get("/ready", async (c) => {
   return c.json(
     {
       status: allOk ? "ok" : "degraded",
-      version: "2.0.0",
+      version: SERVICE_VERSION,
       service: "oma-ai",
       uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
       checks,
@@ -72,7 +73,7 @@ healthRoutes.get("/health", async (c) => {
     return c.json(
       {
         status: "ok",
-        version: "2.0.0",
+        version: SERVICE_VERSION,
         service: "oma-ai",
         uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
         dbLatencyMs: Date.now() - dbStart,
@@ -83,7 +84,7 @@ healthRoutes.get("/health", async (c) => {
     return c.json(
       {
         status: "degraded",
-        version: "2.0.0",
+        version: SERVICE_VERSION,
         service: "oma-ai",
         uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
         error: (err as Error).message,
@@ -97,7 +98,7 @@ healthRoutes.get("/health", async (c) => {
 healthRoutes.get("/version", (c) => {
   return c.json({
     service: "oma-ai",
-    version: "2.0.0",
+    version: SERVICE_VERSION,
     buildSha: BUILD_SHA,
     buildTime: BUILD_TIME,
     nodeEnv: process.env.NODE_ENV ?? "unknown",

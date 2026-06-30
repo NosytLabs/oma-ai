@@ -15,7 +15,7 @@ interface DonutChartProps {
 }
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{payload: ModelData}> }) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     const data = payload[0].payload
     return (
       <div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">

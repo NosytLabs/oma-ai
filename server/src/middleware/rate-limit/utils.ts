@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { OmaEnv } from "../../types.js";
+import { logger } from "../../lib/logger.js";
 
 const TRUSTED_PROXIES_ENV = process.env.TRUSTED_PROXY_IPS || "";
 const TRUSTED_PROXIES: Set<string> = new Set(
@@ -8,18 +9,19 @@ const TRUSTED_PROXIES: Set<string> = new Set(
     .filter((ip) => ip.length > 0)
 );
 
+// C3: Production warning when no trusted proxies are configured
+if (TRUSTED_PROXIES.size === 0 && process.env.NODE_ENV === "production") {
+  logger.warn("[SECURITY] TRUSTED_PROXY_IPS is empty in production. Rate limiting by IP may be bypassed via x-forwarded-for spoofing. Set TRUSTED_PROXY_IPS to your reverse proxy IPs.");
+}
+
 // Model-specific limits (requests per minute). Keys must match a real Venice
 // model ID — only entries that survive the live Venice catalog audit are kept.
 // `getModelLimits()` is called per-model; any ID not listed here falls through
 // to the default limits in the rate-limit middleware.
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
-  "claude-opus-4-7": { rpm: 30, tpm: 60000 },
-  "deepseek-v4-pro": { rpm: 60, tpm: 120000 },
-  "claude-sonnet-4-6": { rpm: 60, tpm: 120000 },
+  "deepseek-v3.2": { rpm: 60, tpm: 120000 },
   "llama-3.3-70b": { rpm: 60, tpm: 120000 },
-  "kimi-k2-5": { rpm: 60, tpm: 120000 },
-  "deepseek-v4-flash": { rpm: 120, tpm: 240000 },
-  "kimi-k2-6": { rpm: 120, tpm: 240000 },
+  "llama-3.2-3b": { rpm: 120, tpm: 240000 },
 };
 
 function isTrustedProxy(ip: string): boolean {
@@ -27,29 +29,31 @@ function isTrustedProxy(ip: string): boolean {
 }
 
 export function extractClientIp(c: Context<OmaEnv>): string {
-  const xForwardedFor = c.req.header("x-forwarded-for");
   const xRealIp = c.req.header("x-real-ip");
 
+  // ponytail: H2 — when TRUSTED_PROXY_IPS is empty (the production-safe
+  // default), REFUSE to read x-forwarded-for entirely. Without this guard,
+  // an attacker sends 1000 requests with `x-forwarded-for: <random>` and
+  // bypasses the IP-based rate-limit bucket (each request lands in a
+  // different bucket). Operators who deploy behind a reverse proxy MUST set
+  // TRUSTED_PROXY_IPS to the proxy's egress IPs to enable header parsing.
+  if (TRUSTED_PROXIES.size === 0) {
+    return xRealIp || "unknown";
+  }
+
+  const xForwardedFor = c.req.header("x-forwarded-for");
   if (xForwardedFor) {
     const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
     if (ips.length > 0) {
       const firstIp = ips[0];
-
-      if (TRUSTED_PROXIES.size > 0) {
-        // SECURITY: When trusted proxies are configured, only trust the first
-        // IP if the LAST IP in the chain is one of our trusted proxies.
-        // Otherwise the header is potentially client-spoofed.
-        const lastIp = ips[ips.length - 1];
-        if (isTrustedProxy(lastIp)) {
-          return firstIp;
-        }
-        // Last IP is not a trusted proxy — fall through to x-real-ip.
-      } else {
-        // No trusted proxies configured — treat the request as a direct
-        // connection and take the first IP from x-forwarded-for as the client.
-        // This is required for the IP allowlist (G3) to function in dev/test.
+      const lastIp = ips[ips.length - 1];
+      // SECURITY: When trusted proxies are configured, only trust the first
+      // IP if the LAST IP in the chain is one of our trusted proxies.
+      // Otherwise the header is potentially client-spoofed.
+      if (isTrustedProxy(lastIp)) {
         return firstIp;
       }
+      // Last IP is not a trusted proxy — fall through to x-real-ip.
     }
   }
 

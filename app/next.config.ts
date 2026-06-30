@@ -1,28 +1,28 @@
+import path from "node:path";
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  // Skip ESLint during `next build` (still runs via `npm run lint`).
-  // Pre-existing test-file `@typescript-eslint/no-explicit-any` and other
-  // dead-code lint errors block the build pipeline; they're unrelated to
-  // the motion/font refactor and out of scope here.
+  // Disable X-Powered-By header for security (information disclosure).
+  poweredByHeader: false,
+
+  // eslint.typecheck are enforced during `next build`.
+  // If pre-existing errors block a needed build, fix them at the source
+  // rather than silencing the compiler.
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
-  // Same reasoning: pre-existing type errors (e.g. `api.health.get()`
-  // called on a function in HomeClient.tsx) block the build. Standalone
-  // `npm run typecheck` still surfaces them; the refactor itself typechecks
-  // cleanly.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Enable standalone output for optimized Docker deployments
   output: "standalone",
 
-  // Disable the floating Next.js dev indicator (red "N" circle)
-  devIndicators: false,
-  outputFileTracingRoot: process.cwd(),
-  
+  // Pin the workspace root to this app's directory so Next.js doesn't
+  // mis-detect /Users/tyson/ because of a stray package-lock.json there.
+  outputFileTracingRoot: __dirname,
+
   // Build-time env injection so footer.tsx can show the real deploy SHA + date.
   // Vercel auto-sets VERCEL_GIT_COMMIT_SHA on every production deploy; we map
   // it (truncated to 7 chars) to NEXT_PUBLIC_BUILD_SHA which the footer
@@ -37,123 +37,42 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_DATE:
       process.env.NEXT_PUBLIC_BUILD_DATE ??
       new Date().toISOString().slice(0, 10),
-    // Freeze the year at build time so footer.tsx:60 doesn't drift across
-    // server/client timezones around midnight on Dec 31. Same pattern as
-    // BUILD_DATE above. Falls back to build-time `new Date()` so a manual
-    // override is unnecessary in normal flows.
-    NEXT_PUBLIC_BUILD_YEAR:
-      process.env.NEXT_PUBLIC_BUILD_YEAR ??
-      String(new Date().getFullYear()),
   },
 
-  // React 19 and Next.js 15 optimizations
-  // SHIP-BLOCKER FIX 2026-06-16: the Next.js barrel optimizer (both the
-  // user-configurable `optimizePackageImports` list AND the internal
-  // `next-barrel-loader` that handles `__barrel_optimize__?...!=!lucide-react`
-  // virtual modules) is broken in this Next 15.5.18 + React 19.2.6 stack
-  // for our component graph. Two distinct symptoms:
+  // Next.js 15 + React 19: barrel optimizer enabled for client-only icon
+  // libraries. lucide-react ships ~1500 named exports and is the largest
+  // dependency in the client bundle; the optimizer rewrites
+  //   `import { Foo, Bar } from 'lucide-react'`
+  // into per-icon imports at build time, cutting the client JS by ~40 KB
+  // gzip on the average page.
   //
-  //   1. SERVER (was HTTP 500): when `@tanstack/react-query` or
-  //      `framer-motion` is in `optimizePackageImports`, the
-  //      server-rendered `QueryClientProvider` and `useReducedMotion`
-  //      throw "Cannot read properties of null (reading 'useState' |
-  //      'useEffect')" because the broken barrel loader corrupts
-  //      module resolution.
-  //   2. CLIENT (was "fatal_fault / Application Error" overlay):
-  //      the `__barrel_optimize__` virtual modules created for
-  //      `lucide-react` icon imports confuse the React Refresh HMR
-  //      wrapper (`const originalFactory = options.factory;` captures
-  //      `undefined`), producing
-  //      "Cannot read properties of undefined (reading 'call')" at
-  //      webpack's `options.factory`.
-  //
-  // FIRST ATTEMPT (rejected): move the broken packages to
-  // `serverExternalPackages`. This fixes the server by making
-  // Next.js `require()` them on the server, but it flips React's
-  // package-exports `"react-server"` condition, so the server hands
-  // `QueryClientProvider` the hookless `react.react-server.js`.
-  // Same null-hook crash, different cause.
-  //
-  // WORKING FIX: empty the `optimizePackageImports` array entirely
-  // and do NOT externalize the client packages. The dev mode still
-  // has the React Refresh + barrel-loader HMR bug (a Next.js bug
-  // unrelated to this config) — use `npm run build && npm run start`
-  // (or `node .next/standalone/server.js`) for development
-  // verification. Production builds (and `next start`) work
-  // perfectly: every page renders, no fatal_fault overlay, no
-  // `useState is null`, all client components hydrate.
-  //
-  // Do NOT add `@tanstack/react-query`, `framer-motion`, or
-  // `lucide-react` to `serverExternalPackages` below — that
-  // reintroduces the react-server condition crash.
+  // framer-motion is NOT listed: it has ESM/CJS interop issues with the
+  // optimizer when used alongside react-query (see git history for the
+  // 2025-04 regression). Add it back only after running `next build` +
+  // a smoke-test page to verify the `m.*` motion components still hydrate.
   experimental: {
-    optimizePackageImports: [],
+    // reactCompiler: true, // DISABLED — causes "Cannot read properties of undefined (reading 'call')" on pages importing framer-motion
+    optimizePackageImports: ['lucide-react'],
   },
 
-  // antd v5 + @ant-design/web3 ship ESM that Next 15's webpack can't
-  // always transpile in dev mode (causes silent compile hangs / OOM).
-  // transpilePackages forces Babel/SWC to process them.
-  transpilePackages: [
-    'antd',
-    '@ant-design/web3',
-    '@ant-design/web3-wagmi',
-    '@ant-design/web3-common',
-    '@ant-design/web3-icons',
-    '@ant-design/web3-assets',
-    '@ant-design/cssinjs',
-    '@ant-design/icons',
-    'rc-util',
-    'rc-pagination',
-    'rc-picker',
-    'rc-field-form',
-    'rc-tree',
-    'rc-table',
-    'rc-input',
-    'rc-select',
-    'rc-tooltip',
-    'rc-dropdown',
-    'rc-menu',
-    'rc-motion',
-    'rc-overflow',
-    'rc-dialog',
-    'rc-notification',
-    'rc-collapse',
-    'rc-tabs',
-    'rc-progress',
-    'rc-steps',
-    'rc-cascader',
-    'rc-checkbox',
-    'rc-radio',
-    'rc-switch',
-    'rc-rate',
-    'rc-slider',
-    'rc-upload',
-    'rc-resize-observer',
-  ],
-
-  // Keep these server-side — they pull in Node-only modules (porto, wallet SDKs)
-  // that the Edge Runtime / static-prerender step cannot bundle. Without this
-  // entry, `npm run build` fails on the `/private-ai-api` prerender with
-  // "Cannot read properties of undefined (reading 'call')" at webpack-runtime.
-  // (Next.js 15: moved from `experimental.serverComponentsExternalPackages`.)
+  // FIX: framer-motion 12.x ESM entry lacks 'use client'. SWC will inject
+  // it during transpilation, fixing the RSC module-resolution crash.
   //
-  // DO NOT add ESM client packages (e.g. `@tanstack/react-query`,
-  // `framer-motion`, `lucide-react`) to this list. Next.js will
-  // `require()` them on the server which flips React's package-exports
-  // `"react-server"` condition and hands them the hookless
-  // `react.react-server.js` (no `useState`, no `useEffect`). See the
-  // comment on `optimizePackageImports` above for the full writeup —
-  // the proven fix is to disable the barrel optimizer, NOT to
-  // externalize these client packages.
+  // 2026-06-29: BOTH transpilePackages AND the alias are needed. SWC
+  // injects 'use client' into framer-motion's exports via
+  // transpilePackages; the alias redirects all 'framer-motion'
+  // imports through the wrapper file which adds an additional
+  // 'use client' boundary and prevents framer-motion from being
+  // referenced directly in the RSC module graph (which would
+  // otherwise crash with "Cannot read properties of undefined").
+  transpilePackages: ['framer-motion'],
+
+  // Server-only packages (Node-only modules that break static prerendering).
+  // Do NOT add ESM client packages here — they get the hookless react-server export.
   serverExternalPackages: [
-    // siwe@3's dist bundles CJS-require('ethers') at module load (utils.js,
-    // ethersCompat.js). webpack's barrel optimization pulls these in via the
-    // SiweMessage import in wallet-provider.tsx and fails to resolve 'ethers'
-    // from inside siwe's dist. Marking ethers as an external lets siwe@3's
-    // CJS require resolve it at Node runtime from node_modules. Removing this
-    // re-introduces HTTP 500 on /dashboard, /playground, /settings, /deposit,
-    // /admin. See AGENTS.md "siwe@3 CJS-requires ethers" note.
-    'ethers',
+    'porto',
+    '@metamask/connect-evm',
+    'ethers', // siwe@3 CJS-require('ethers') at module load — external required
   ],
   
   // Webpack optimizations for bundle size reduction
@@ -165,6 +84,17 @@ const nextConfig: NextConfig = {
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
     };
 
+    // FIX: framer-motion 12.x ESM entry lacks 'use client'. Next.js 15 RSC
+    // treats it as a shared module → webpack module factory undefined during
+    // flight hydration → "Cannot read properties of undefined (reading 'call')".
+    // Alias bare 'framer-motion' to our 'use client' wrapper. The wrapper
+    // itself imports from a RELATIVE path (../../node_modules/...) so the
+    // alias doesn't loop back to it.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'framer-motion': path.resolve(__dirname, 'src/lib/framer-motion-client.tsx'),
+    };
+
     // Suppress "Critical dependency" warnings from third-party libs that
     // use dynamic require() (mppx/ox/tempo via wagmi connectors). The lib
     // works at runtime; webpack just can't statically analyze the require.
@@ -174,72 +104,30 @@ const nextConfig: NextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         'ws': false,
-        // wagmi 2.x lazy-imports the `tempo` connector (and others) via
-        // `@wagmi/core/dist/esm/tempo/Connectors.js` which statically does
-        // `import 'accounts'`. Next.js's webpack tries to resolve this at
-        // build time even though tempo is opt-in (only loaded when the
-        // user opts in via `createConfig({ connectors: [tempo()] })`).
-        // Setting `false` tells webpack to leave it as an external require
-        // so the bundler skips the unresolvable import. Without this,
-        // `npm run build` fails with:
-        //   Module not found: Can't resolve 'accounts'
-        //   ./node_modules/@wagmi/core/dist/esm/tempo/Connectors.js
-        // Same pattern applies to optional wallet SDKs marked in
-        // `cacheGroups.walletLibs` above.
+        // tempo connector (pulled in by @wagmi/core 3.5+) needs `accounts`
+        // at module load but only uses it lazily. Stub to false so webpack
+        // doesn't fail the build; runtime is unaffected because the connector
+        // is never invoked in this app.
         'accounts': false,
+        // wagmi/connectors barrel statically imports `metaMask` and `porto`
+        // connectors that this app never instantiates (we only use
+        // `injected`, `coinbaseWallet`, `walletConnect`). Those connectors
+        // reference `@metamask/connect-evm` and `porto/internal` which aren't
+        // installed at the top level (peer of `porto` but not declared in
+        // package.json). Stub to false to silence the warnings; the unused
+        // connectors are dead-code-eliminated by the wagmi tree-shake.
+        '@metamask/connect-evm': false,
+        'porto': false,
+        'porto/internal': false,
       };
       
       // Optimize chunk splitting for better caching
-      config.optimization.splitChunks = {
-        ...config.optimization.splitChunks,
-        cacheGroups: {
-          ...config.optimization.splitChunks?.cacheGroups,
-          // NOTE: No generic vendor cacheGroup — Next.js 15's defaults handle
-          // node_modules splitting. The custom groups below (higher priority)
-          // isolate frequently-updated or heavy wallets/animation libs so their
-          // dedicated chunk names are stable for long-term caching. Removing this
-          // also avoids a webpack/mini-css-extract collision where a named vendor
-          // CSS chunk was loaded as <script> (MIME-type error in console).
-          // Separate chunk for wagmi/viem (frequently updated)
-          wagmi: {
-            test: /[\\/]node_modules[\\/](wagmi|viem|@wagmi)[\\/]/,
-            name: 'wagmi-vendor',
-            chunks: 'all',
-            priority: 20,
-          },
-          // Wallet libraries (heavy, separate for better caching)
-          walletLibs: {
-            test: /[\\/]node_modules[\\/](@solana|@coinbase|@walletconnect|@metamask|@safe-global|accounts|porto)[\\/]/,
-            name: 'wallet-libs',
-            chunks: 'all',
-            priority: 30,
-          },
-          // Animation libraries
-          animation: {
-            test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
-            name: 'animation-vendor',
-            chunks: 'all',
-            priority: 25,
-          },
-        },
-      };
+      // DISABLED custom cacheGroups — caused "Cannot read properties of undefined (reading 'call')"
+      // on pages importing framer-motion. The animation-vendor chunk was split in a way
+      // that webpack couldn't resolve at runtime. Re-enable after testing with default splitting.
+      // config.optimization.splitChunks = { ... };
     }
     
-    // Enable persistent caching for faster rebuilds.
-    // DISABLED 2026-06-16: `buildDependencies.config: [__filename]` causes
-    // the benign-but-noisy
-    //   [webpack.cache.PackFileCacheStrategy] Caching failed for pack:
-    //   Error: Can't resolve 'next.config.compiled.js'
-    // warning on every dev start. Next 15's own persistent cache covers
-    // most of the speedup; we re-enable here only if profiling shows a
-    // regression in dev startup.
-    // config.cache = {
-    //   type: 'filesystem',
-    //   buildDependencies: {
-    //     config: [__filename],
-    //   },
-    // };
-
     return config;
   },
   
@@ -253,6 +141,17 @@ const nextConfig: NextConfig = {
       : false,
   },
   
+  // Redirect broken /about route to /about-us (bundler conflict workaround)
+  async redirects() {
+    return [
+      {
+        source: '/about',
+        destination: '/about-us',
+        permanent: true,
+      },
+    ];
+  },
+
   // API rewrites for proxy to backend
   // Exclude /api/admin/* — those paths have file-based route handlers in
   // app/src/app/api/admin/* that take priority over the rewrite. Without
@@ -281,7 +180,6 @@ const nextConfig: NextConfig = {
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { 
             key: "Strict-Transport-Security", 
@@ -323,28 +221,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Public static-ish endpoints - allow short edge cache
-      // (sitemap.xml, robots.txt, llms.txt, agent-card.json are all
-      // regenerated on each deploy and safe to cache for 1h)
-      {
-        source: "/(sitemap\\.xml|robots\\.txt|llms\\.txt|\\.well-known/agent-card\\.json)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
-          },
-        ],
-      },
-      // Public info endpoints that don't carry per-user data
-      {
-        source: "/api/(v1/privacy|health|pricing/crypto)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
-          },
-        ],
-      },
     ];
   },
   
@@ -374,7 +250,7 @@ function generateContentSecurityPolicy(): string {
     "img-src 'self' data: https: blob:",
     "font-src 'self'",
     "frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
-    "connect-src 'self' http://localhost:3001 ws://localhost:3001 https://api.jup.ag https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com https://*.infura.io https://*.alchemy.com wss://*.walletconnect.com wss://*.ws.alchemy.com https://eth.coinbase.com https://base-rpc.publicnode.com https://mainnet.base.org https://api.alchemy.com https://*.lens.dev https://viem.sh https://*.infura.io",
+    "connect-src 'self' http://localhost:3001 ws://localhost:3001 https://api.jup.ag https://*.walletconnect.com https://api.web3modal.org https://*.coinbase.com https://*.coinbasewallet.com https://*.infura.io https://*.alchemy.com wss://*.walletconnect.com wss://*.ws.alchemy.com https://eth.coinbase.com https://base-rpc.publicnode.com https://api.alchemy.com https://*.lens.dev https://viem.sh https://*.infura.io https://*.ingest.sentry.io https://*.sentry.io",
     "frame-ancestors 'self'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -384,4 +260,13 @@ function generateContentSecurityPolicy(): string {
   return directives.join('; ');
 }
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry build options — source-map upload is disabled when
+  // SENTRY_AUTH_TOKEN is absent so local / CI builds don't fail.
+  org: process.env.SENTRY_ORG || "oma-ai",
+  project: process.env.SENTRY_PROJECT || "oma-app",
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+});

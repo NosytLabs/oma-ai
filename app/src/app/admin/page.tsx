@@ -2,30 +2,20 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, Users, CreditCard, DollarSign, Key, TrendingUp, Activity, RefreshCw, Download, Eye, Zap, Clock, Gauge, Terminal } from 'lucide-react'
+import { Search, Users, CreditCard, DollarSign, Key, TrendingUp, Activity, RefreshCw, Download, Eye, Zap, Clock, Gauge, Terminal, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { m } from 'framer-motion'
-import { formatUsd, formatAddress } from '@/lib/utils'
+import { formatUsd, formatAddress, formatDateShort } from '@/lib/utils'
 import { api } from '@/lib/api'
+import { ApiError } from '@/lib/api/client'
+import type { AdminUser } from '@/lib/api/admin'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 const AdminOverviewCharts = dynamic(() => import('@/components/admin/AdminOverviewCharts').then(m => ({ default: m.AdminOverviewCharts })), { ssr: false })
 const AdminRevenueChart = dynamic(() => import('@/components/admin/AdminRevenueCharts').then(m => ({ default: m.AdminRevenueCharts })), { ssr: false })
 
 type Tab = 'overview' | 'users' | 'usage' | 'revenue' | 'keys' | 'fees' | 'rate-limits'
-
-type User = {
-  id: string
-  address: string
-  solanaAddress: string | null
-  accountNumber: string | null
-  createdAt: string
-  lastActivityAt: string | null
-  balanceCredits: number
-  totalDeposited: number
-  totalUsed: number
-  totalRequests: number
-}
 
 type UsageStats = {
   period: string
@@ -104,19 +94,19 @@ export default function AdminPage() {
 
   const keysQuery = useQuery({
     queryKey: ['adminKeys'],
-    queryFn: () => api.admin.getKeys(1, 100).then((data) => data?.keys ?? []),
+    queryFn: () => api.admin.getKeys(1, 100).then((data) => ((data as { keys?: ApiKey[] })?.keys ?? [])),
     staleTime: 30_000,
   })
 
-  const users: User[] = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data?.users])
+  const users = useMemo(() => (usersQuery.data?.users ?? []) as AdminUser[], [usersQuery.data?.users])
   const usersLoading = usersQuery.isLoading
   const usersTotal = usersQuery.data?.pagination?.total ?? 0
   const usageStats: UsageStats | null = usageQuery.data ?? null
-  const revenueStats: RevenueStats | null = revenueQuery.data ?? null
+  const revenueStats = (revenueQuery.data ?? null) as RevenueStats | null
   const apiKeys: ApiKey[] = keysQuery.data ?? []
 
   const adminStats: AdminStats | null = useMemo(() => {
-    if (!usageStats || !revenueStats || !usersQuery.data || !usersQuery.data.pagination) return null
+    if (!usageStats || !revenueStats || !usersQuery.data?.pagination) return null
     const now = new Date()
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const activeUsersLast24h = users.filter((u) =>
@@ -141,18 +131,12 @@ export default function AdminPage() {
     const q = searchQuery.toLowerCase()
     return users.filter(u => 
       u.address.toLowerCase().includes(q) ||
-      u.solanaAddress?.toLowerCase().includes(q) ||
       u.accountNumber?.toLowerCase().includes(q)
     )
   }, [users, searchQuery])
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
-
   const exportCSV = (data: unknown[], filename: string) => {
-    if (!data || !data.length) return
+    if (!data?.length) return
     const headers = Object.keys(data[0] as object)
     const csv = [headers.join(','), ...data.map(row => headers.map(h => JSON.stringify((row as Record<string, unknown>)[h] ?? '')).join(','))]
     const blob = new Blob([csv.join('\n')], { type: 'text/csv' })
@@ -160,7 +144,9 @@ export default function AdminPage() {
     const a = document.createElement('a')
     a.href = url
     a.download = `${filename}.csv`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
@@ -174,7 +160,34 @@ export default function AdminPage() {
     }))
   }, [revenueStats])
 
-  return (
+  const isUnauthorized = useMemo(() => {
+    const errors = [usersQuery.error, usageQuery.error, revenueQuery.error, keysQuery.error]
+    return errors.some((err) => err instanceof ApiError && err.status === 403)
+  }, [usersQuery.error, usageQuery.error, revenueQuery.error, keysQuery.error])
+
+  if (isUnauthorized) {
+    return (
+      <div className="min-h-screen bg-void text-text flex flex-col items-center justify-center px-4">
+        <div className="rounded border border-border bg-surface p-10 max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded border border-red-300/30 bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+            <ShieldAlert className="w-8 h-8 text-red-400" />
+          </div>
+          <h1 className="text-xl font-bold font-display tracking-tight text-text-bright mb-2">Not Authorized</h1>
+          <p className="text-sm text-text-muted font-mono mb-6">
+            You don&apos;t have admin access. This area is restricted to authorized administrators only.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text hover:border-border-bright transition-colors text-sm font-mono"
+          >
+            Return Home
+           </Link>
+        </div>
+      </div>
+   )
+  }
+
+  const content = (
     <div className="min-h-screen bg-void text-text">
       <div className="border-b border-border bg-surface">
         <div className="max-w-[95rem] mx-auto px-4 py-3">
@@ -211,7 +224,7 @@ export default function AdminPage() {
         <div className="max-w-[95rem] mx-auto px-4">
           <div role="tablist" aria-label="Admin sections" className="flex gap-0.5 overflow-x-auto scrollbar-none">
             {(['overview', 'users', 'usage', 'revenue', 'keys', 'fees', 'rate-limits'] as Tab[]).map((tab) => (
-              <button
+              <button type="button"
                 key={tab}
                 role="tab"
                 id={`admin-tab-${tab}`}
@@ -255,7 +268,7 @@ export default function AdminPage() {
               Admin statistics will appear here once there is user activity on the gateway. Connect your database and start the server to begin tracking.
             </p>
             <div className="flex items-center gap-3">
-              <button
+              <button type="button"
                 onClick={() => refreshStats()}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-accent/30 bg-accent-dim text-accent hover:bg-accent/20 transition-colors text-sm font-mono"
               >
@@ -321,7 +334,7 @@ export default function AdminPage() {
 
             <div className="rounded border border-border bg-surface p-5">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-text-secondary">Provider Costs // This Month</h3>
+                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-text-secondary">Provider Costs (This Month)</h3>
                 <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               </div>
               <div className="space-y-3">
@@ -369,8 +382,8 @@ export default function AdminPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
                 <input
                   type="search"
-                  placeholder="Search by address, solana address, or account number..."
-                  aria-label="Search users by address, solana address, or account number"
+                  placeholder="Search by address or account number..."
+                  aria-label="Search users by address or account number"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:border-accent/50"
@@ -403,15 +416,12 @@ export default function AdminPage() {
                     <tr key={user.id} className="border-b border-border/50 hover:bg-surface/50">
                       <td className="px-4 py-3">
                         <div className="font-mono text-sm text-text-secondary">{formatAddress(user.address)}</div>
-                        {user.solanaAddress && (
-                          <div className="text-[11px] text-text-muted font-mono">{formatAddress(user.solanaAddress)}</div>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-accent">{formatUsd(user.balanceCredits)}</td>
                       <td className="px-4 py-3 text-right font-mono text-success">{formatUsd(user.totalDeposited)}</td>
                       <td className="px-4 py-3 text-right font-mono text-amber">{formatUsd(user.totalUsed)}</td>
                       <td className="px-4 py-3 text-right font-mono text-text-muted">{user.totalRequests?.toLocaleString() || 0}</td>
-                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{user.lastActivityAt ? formatDate(user.lastActivityAt) : 'Never'}</td>
+                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{user.lastActivityAt ? formatDateShort(user.lastActivityAt) : 'Never'}</td>
                       <td className="px-4 py-3">
                         <Link
                           href={`/admin/users/${user.id}`}
@@ -432,7 +442,7 @@ export default function AdminPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <button
+              <button type="button"
                 onClick={() => setUsersPage(usersPage - 1)}
                 disabled={usersPage <= 1}
                 className="px-4 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text hover:border-border-bright disabled:opacity-30 disabled:cursor-not-allowed disabled:border-border/50 disabled:text-text-muted text-sm font-mono transition-colors"
@@ -440,7 +450,7 @@ export default function AdminPage() {
                 Previous
               </button>
               <span className="text-xs text-text-muted font-mono">Page {usersPage} of {Math.ceil(usersTotal / 50) || 1}</span>
-              <button
+              <button type="button"
                 onClick={() => setUsersPage(usersPage + 1)}
                 disabled={usersPage >= Math.ceil(usersTotal / 50)}
                 className="px-4 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text hover:border-border-bright disabled:opacity-30 disabled:cursor-not-allowed disabled:border-border/50 disabled:text-text-muted text-sm font-mono transition-colors"
@@ -457,7 +467,7 @@ export default function AdminPage() {
               <div className="flex items-center gap-4">
                 <span className="text-xs text-text-muted font-mono uppercase tracking-wider">Period:</span>
                 {['7d', '30d', '90d'].map((p) => (
-                  <button
+                  <button type="button"
                     key={p}
                     onClick={() => { setUsagePeriod(p) }}
                     className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
@@ -469,7 +479,7 @@ export default function AdminPage() {
                 ))}
               </div>
               {usageStats && (
-                <button
+                <button type="button"
                   onClick={() => exportCSV(usageStats.dailyUsage, `usage-${usagePeriod}`)}
                   className="flex items-center gap-2 px-4 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text text-sm font-mono transition-colors"
                 >
@@ -570,7 +580,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-4">
               <span className="text-xs text-text-muted font-mono uppercase tracking-wider">Period:</span>
               {['7d', '30d', '90d', 'all'].map((p) => (
-                <button
+                <button type="button"
                   key={p}
                     onClick={() => { setRevenuePeriod(p) }}
                   className={`px-3 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
@@ -610,7 +620,7 @@ export default function AdminPage() {
                   <div className="rounded border border-border bg-surface overflow-hidden">
                     <div className="px-4 py-3 border-b border-border bg-panel flex items-center justify-between">
                       <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-text-secondary">Monthly Breakdown</h3>
-                      <button
+                      <button type="button"
                         onClick={() => exportCSV(revenueStats.monthlyRevenue, `revenue-${revenuePeriod}`)}
                         className="flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-surface text-text-muted hover:text-text text-[11px] font-mono"
                       >
@@ -649,7 +659,7 @@ export default function AdminPage() {
                 <Key className="w-3.5 h-3.5" />
                 <span>{apiKeys.length} API keys</span>
               </div>
-              <button
+              <button type="button"
                 onClick={() => exportCSV(apiKeys, 'api-keys')}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text text-sm font-mono transition-colors"
               >
@@ -691,8 +701,8 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-text-muted">{key.totalRequests.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right font-mono text-amber">{formatUsd(key.totalSpend)}</td>
-                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{formatDate(key.createdAt)}</td>
-                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{key.lastUsedAt ? formatDate(key.lastUsedAt) : 'Never'}</td>
+                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{formatDateShort(key.createdAt)}</td>
+                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{key.lastUsedAt ? formatDateShort(key.lastUsedAt) : 'Never'}</td>
                     </tr>
                   ))}
                   {apiKeys.length === 0 && (
@@ -724,5 +734,24 @@ export default function AdminPage() {
         )}
       </div>
     </div>
+  )
+
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4">
+          <h2 className="font-mono text-text text-lg">Admin Panel Error</h2>
+          <p className="text-sm text-text-muted max-w-md font-mono">An unexpected error occurred in the admin panel.</p>
+          <button type="button"
+            onClick={() => window.location.reload()}
+            className="btn-primary flex items-center gap-2"
+          >
+            ↻ Retry
+          </button>
+        </div>
+      }
+    >
+      {content}
+    </ErrorBoundary>
   )
 }

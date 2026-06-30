@@ -11,10 +11,17 @@ export const metadata: Metadata = {
   title: 'Terms · OMA',
   description:
     'OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.',
+  alternates: { canonical: '/terms' },
   openGraph: {
     title: 'Terms · OMA',
     description:
       'OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'OMA AI Gateway' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms · OMA',
+    description: 'OMA API usage rules, acceptable use policy, credit mechanics, and account termination.',
   },
 }
 
@@ -128,7 +135,7 @@ export default function TermsPage() {
                 </span>
 
                 <h1
-                  className="h1-hero text-text-bright mt-6"
+                  className="h1-page text-text-bright mt-6"
                   style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
                 >
                   <span className="block">Pay per call,</span>
@@ -414,7 +421,7 @@ export default function TermsPage() {
                 </a>
                 , or reach us via{' '}
                 <Link
-                  href="/about"
+                  href="/docs"
                   className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
                 >
                   our docs

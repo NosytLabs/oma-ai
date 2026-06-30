@@ -95,13 +95,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({
@@ -190,6 +191,38 @@ describe('x402 Facilitator', () => {
   describe('POST /x402/settle', () => {
     it('returns 200 with valid payload', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
+
+      // C2 fix: /x402/settle derives `amount` from the verified cache (populated
+      // by /x402/verify), not from the request body. Populate the cache first.
+      const paymentSig = {
+        x402Version: '1',
+        signature: 'test-sig-settle',
+        authorization: 'test-auth',
+        payload: {
+          x402Version: '1',
+          scheme: 'evm',
+          networkId: 'base',
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+          amount: '1.00',
+          payee: '0xMerchantAddress',
+          payFrom: '0xPayer',
+          maxAmountRequired: '1.00',
+          validBefore: Math.floor(Date.now() / 1000) + 3600,
+          validAfter: Math.floor(Date.now() / 1000) - 3600,
+        },
+      }
+
+      const verifyRes = await app.request('/x402/verify', {
+        method: 'POST',
+        headers: {
+          'PAYMENT-SIGNATURE': JSON.stringify(paymentSig),
+        },
+      })
+      expect(verifyRes.status).toBe(200)
+      const verifyBody = await verifyRes.json()
+      // verify returns a (random, mock-generated) txHash we must round-trip into /settle.
+      const txHash: string = verifyBody.txHash
+
       const res = await app.request('/x402/settle', {
         method: 'POST',
         headers: {
@@ -197,7 +230,7 @@ describe('x402 Facilitator', () => {
           'Authorization': 'Bearer session-token',
         },
         body: JSON.stringify({
-          txHash: '0x' + 'c'.repeat(64),
+          txHash,
           amount: '1.00',
           networkId: 'base',
           payee: '0xMerchantAddress',
@@ -285,7 +318,7 @@ describe('x402 Facilitator', () => {
         body: JSON.stringify({ test: 'trigger-402' }),
       })
       expect(res.status).toBe(402)
-      const payReqHeader = res.headers.get('Pay-Req')
+      const payReqHeader = res.headers.get('PAYMENT-REQUIRED')
       expect(payReqHeader).toBeTruthy()
       const payReq = JSON.parse(payReqHeader!)
       expect(payReq).toHaveProperty('amount')
@@ -307,10 +340,39 @@ describe('x402 Facilitator', () => {
         body: JSON.stringify({ test: 'data' }),
       })
       expect(res.status).toBe(402)
-      const payReqHeader = res.headers.get('Pay-Req')
+      const payReqHeader = res.headers.get('PAYMENT-REQUIRED')
       expect(payReqHeader).toBeTruthy()
       const payReq = JSON.parse(payReqHeader!)
       expect(payReq).toHaveProperty('payment-URL')
+    })
+  })
+
+  // AUDIT-4: /v2/x402/* routes must be mounted on the app (previously
+  // defined in v2.ts but never wired into src/index.ts). These tests
+  // exercise the routes through the full Hono app to catch future
+  // unmount regressions.
+  describe('x402 V2 routes mounted on app', () => {
+    it('GET /v2/x402/pay-req-test returns 402 with base64 PAYMENT-REQUIRED header', async () => {
+      const res = await app.request('/v2/x402/pay-req-test', { method: 'POST' })
+      expect(res.status).toBe(402)
+      const headerVal = res.headers.get('PAYMENT-REQUIRED')
+      expect(headerVal).toBeTruthy()
+      const decoded = JSON.parse(Buffer.from(headerVal!, 'base64').toString('utf8'))
+      expect(decoded.x402Version).toBe(2)
+      expect(decoded.accepts[0].scheme).toBe('exact')
+      expect(decoded.accepts[0].network).toBe('eip155:8453')
+    })
+
+    it('GET /v2/x402/verify returns 400 when PAYMENT-SIGNATURE missing', async () => {
+      const res = await app.request('/v2/x402/verify', { method: 'POST' })
+      expect(res.status).toBe(400)
+    })
+
+    it('GET /v2/x402/settle returns 501 (EIP-3009 pending)', async () => {
+      const res = await app.request('/v2/x402/settle', { method: 'POST' })
+      expect(res.status).toBe(501)
+      const body = await res.json() as { error: { code: string } }
+      expect(body.error.code).toBe('x402_v2_settlement_pending')
     })
   })
 })

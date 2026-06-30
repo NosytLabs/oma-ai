@@ -51,12 +51,12 @@ export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: Creat
           transition={{ type: 'spring', damping: 25 }}
         >
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border border-accent/20 bg-accent-dim text-accent">
+            <div className="flex h-12 w-12 items-center justify-center border border-accent/20 bg-accent/10 text-accent">
               <Key className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-text-bright">KEY_CREATED</h3>
-              <p className="text-xs text-text-muted uppercase tracking-widest">Copy now - not shown again</p>
+              <h3 className="text-lg font-bold text-text-bright">API key created</h3>
+              <p className="text-xs text-text-muted">Copy now — this is the only time you’ll see the full key.</p>
             </div>
           </div>
 
@@ -68,9 +68,9 @@ export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: Creat
           {!revealed ? (
             <div className="mb-4 flex items-center gap-2 border border-border bg-void p-4">
               <code className="flex-1 break-all text-sm text-text-muted font-mono">{'*'.repeat(32)}</code>
-              <button
+              <button type="button"
                 onClick={handleReveal}
-                className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void focus-visible:border-accent focus-visible:text-accent"
+                className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent"
                 aria-label="Reveal API key"
               >
                 <Eye className="h-5 w-5" />
@@ -84,16 +84,16 @@ export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: Creat
               </div>
               <div className="mb-4 flex items-center gap-2 border border-accent/30 bg-accent-dim p-4">
                 <code className="flex-1 break-all text-sm text-accent font-mono">{createdKey.key}</code>
-                <button
+                <button type="button"
                   onClick={() => onCopy(createdKey.key, `full-${createdKey.id}`)}
                   aria-label="Copy full API key"
-                  className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void focus-visible:border-accent focus-visible:text-accent"
+                  className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent"
                 >
                   {copied === `full-${createdKey.id}` ? <Check className="h-5 w-5 text-accent" /> : <Copy className="h-5 w-5" />}
                 </button>
-                <button
+                <button type="button"
                   onClick={handleReveal}
-                  className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-error hover:text-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void focus-visible:border-error focus-visible:text-error"
+                  className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-error hover:text-error focus-ring focus-visible:border-error focus-visible:text-error"
                   aria-label="Hide API key"
                 >
                   <EyeOff className="h-5 w-5" />
@@ -102,12 +102,12 @@ export function CreatedKeyModal({ createdKey, copied, onCopy, onDismiss }: Creat
             </>
           )}
 
-          <button
+          <button type="button"
             onClick={onDismiss}
             aria-describedby="key-warning"
-            className="w-full border border-accent bg-accent-dim py-3 text-sm uppercase tracking-widest text-accent transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void active:translate-y-[1px]"
+            className="w-full border border-accent bg-accent/10 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 focus-ring active:translate-y-[1px]"
           >
-            I HAVE COPIED THIS KEY
+            I have copied this key
           </button>
         </m.div>
       </m.div>

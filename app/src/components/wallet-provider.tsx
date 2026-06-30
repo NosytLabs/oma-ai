@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
 import { base } from 'wagmi/chains'
 import { SiweMessage } from 'siwe'
-import { getWagmiConfig } from '@/lib/wagmi'
+import { getWagmiConfigSingleton } from '@/lib/wagmi'
 import { api, type User } from "@/lib/api/index"
 import { WalletContext, type AuthMethod, type WalletKind } from './wallet-context'
+import { setSessionCookie, deleteSessionCookie } from '@/lib/cookies'
 
 export type { AuthMethod } from './wallet-context'
 
@@ -16,13 +17,30 @@ function useIsMounted() {
   return mounted
 }
 
+// L-A1: Secure is only valid on HTTPS — http://localhost dev runs on plain
+// HTTP and the browser silently drops any Set-Cookie / document.cookie value
+// that carries the Secure attribute. Without this conditional:
+//   - oma_session_meta never gets written after SIWE verify in dev →
+//     getStoredSession() returns null on every reload → isAuthenticated is
+//     false even after a successful SIWE flow
+//   - oma-demo (24h demo-mode entry cookie) is never set when the user
+//     clicks "Try Demo" on /dashboard?demo=1
+// mirrors the same conditional in lib/cookies.ts#getClientCookieString.
+function isSecureEnv(): boolean {
+  return process.env.NODE_ENV === 'production'
+}
+
 function setCookie(name: string, value: string, maxAgeDays: number) {
   const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict; Secure`
+  const secure = isSecureEnv() ? '; Secure' : ''
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict${secure}`
 }
 
 function deleteCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict; Secure`
+  const secure = isSecureEnv() ? '; Secure' : ''
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict${secure}`
 }
 
 export const DEMO_COOKIE_NAME = 'oma-demo'
@@ -65,15 +83,36 @@ function getCookieValue(name: string): string | null {
 }
 
 function storeSession(token: string, authMethod: AuthMethod) {
-  // The HttpOnly session cookie is set by the server in the auth response.
-  // The client must NOT write the JWT to localStorage (XSS-readable).
+  // L-A2: server-side /auth/verify returns the JWT in the response body and
+  // does NOT set an HttpOnly session cookie (verified in
+  // server/src/routes/auth.ts:163-180 — only /auth/csrf-token and /auth/demo
+  // emit Set-Cookie). The JWT must therefore be persisted client-side, or
+  // the next page reload will treat the user as anonymous:
+  //   - getStoredSession() reads oma_session_meta → sees authMethod → sets
+  //     session state → isAuthenticated becomes true
+  //   - api.auth.getUser() reads oma_session (set below) → attaches
+  //     Authorization: Bearer <jwt> → server returns the user row
+  //
+  // Before this fix, storeSession only wrote the meta cookie; getUser() was
+  // called with no Authorization header → 401 → clearSession() → the SIWE
+  // login appeared to "succeed" but did not survive a page reload.
+  //
+  // The JWT is intentionally NOT HttpOnly (see lib/cookies.ts header — JS
+  // writes via document.cookie cannot carry HttpOnly). XSS hardening is
+  // via the short 24h JWT lifetime and CSP headers, not via the cookie flag.
+  setSessionCookie(token, 7);
   setCookie('oma_session_meta', JSON.stringify({ authMethod }), 7);
 }
 
 function clearSession() {
-  // Clear the non-sensitive meta cookie; the HttpOnly session cookie is
-  // cleared by the server on /auth/logout.
-  deleteCookie('oma_session_meta');
+  // L-A2: clear both the meta cookie AND the JWT cookie client-side so
+  // subsequent api.auth.* calls (e.g. getUser) don't keep sending a stale
+  // Authorization header before the server's Set-Cookie takes effect. The
+  // server also emits a Set-Cookie clearing oma_session on /auth/logout
+  // (defense in depth), but doing it here means the client UI updates
+  // immediately and no race window exists where the user is "logged out"
+  // server-side but still has a valid cookie locally.
+  deleteSessionCookie();
 }
 
 function buildSiweMessage(address: string, nonce: string): string {
@@ -137,7 +176,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
 
   const evmChain = useMemo(() => {
     if (!chainId) return undefined
-    const config = getWagmiConfig()
+    const config = getWagmiConfigSingleton()
     const found = config.chains.find((c) => c.id === chainId)
     return found ? { id: found.id, name: found.name } : undefined
   }, [chainId])
@@ -176,9 +215,11 @@ function InnerProvider({ children }: { children: ReactNode }) {
     async function siweLogin() {
       setIsAuthenticating(true)
       try {
+        // biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
         const nonceRes = await api.auth.getNonce(address!)
         const nonce = nonceRes.nonce
 
+        // biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
         const message = buildSiweMessage(address!, nonce)
 
         const signature = await signMessageAsync({ message })
@@ -266,11 +307,15 @@ function InnerProvider({ children }: { children: ReactNode }) {
     [evmConnected, signMessageAsync],
   )
 
-  const isConnected = evmConnected;
+  const isConnected = evmConnected || !!session;
   const isConnecting = evmConnecting || isAuthenticating;
   const authMethod = session?.authMethod ?? null;
   const accountNumber = user?.accountNumber ?? null;
-  const activeWallet: WalletKind | null = evmConnected ? 'evm' : null;
+  const activeWallet: WalletKind = evmConnected
+    ? 'evm'
+    : authMethod === 'account-number'
+      ? 'account-number'
+      : 'none';
 
   const hasEvmWallet = !!evmConnected;
   const canDepositBase = !!evmConnected || !!accountNumber;
@@ -288,16 +333,13 @@ function InnerProvider({ children }: { children: ReactNode }) {
       disconnect,
       evmAddress: address,
       evmChain,
-      solanaAddress: null,
       signMessage,
       isConnecting,
       isAuthenticating,
       availableConnectors,
       activeWallet,
       hasEvmWallet,
-      hasSolanaWallet: false,
       canDepositBase,
-      canDepositSolana: false,
       canUseSwap,
       refreshUser,
     }),
@@ -309,9 +351,10 @@ function InnerProvider({ children }: { children: ReactNode }) {
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
 }
 
-export function WalletProvider({ children }: { children: ReactNode }) {
-  const isMounted = useIsMounted()
-  const config = getWagmiConfig()
+export function WalletProvider({ children, mounted: mountedProp }: { children: ReactNode; mounted?: boolean }) {
+  const isMountedFallback = useIsMounted()
+  const isMounted = mountedProp ?? isMountedFallback
+  const config = getWagmiConfigSingleton()
 
   return (
     <WagmiProvider config={config}>

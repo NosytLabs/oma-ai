@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { ConnectWalletWrapper } from '@/components/ConnectWalletWrapper'
 import { ToastProviderClient } from '@/components/ui/ToastProviderClient'
 import { MotionProvider } from '@/components/motion-provider'
+import { ScrollProgress } from '@/components/scroll-progress'
 import { ThemeProvider, THEME_HEAD_SCRIPT } from '@/components/ThemeProvider'
 import { Providers } from '@/components/providers'
 import { MODEL_COUNT } from '@/lib/models-data'
@@ -134,18 +135,19 @@ export default function RootLayout({
       <body className="min-h-screen bg-void text-text font-sans antialiased">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)]"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)]"
         >
           Skip to main content
         </a>
         <ThemeProvider>
           <ToastProviderClient>
             <MotionProvider>
+              <ScrollProgress />
               <Providers>
                 <ConnectWalletWrapper>
                   <Navbar />
                 </ConnectWalletWrapper>
-                <main id="main-content" className="pt-14" tabIndex={-1} role="main">
+                <main id="main-content" className="pt-14 page-enter" tabIndex={-1} >
                   <ErrorBoundary>{children}</ErrorBoundary>
                 </main>
                 <Footer />

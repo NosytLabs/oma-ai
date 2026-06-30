@@ -1,0 +1,265 @@
+'use client'
+
+/**
+ * MESSAGES LIST — Scrollable message area
+ *
+ * Renders one of three things based on `mediaMode`:
+ *   - 'text'  → either the welcome/example banner (empty) or the
+ *               AnimatePresence-wrapped message list (populated),
+ *               with a "Jump to bottom" pill when the user has
+ *               scrolled away from a streaming response
+ *   - 'image' → ImageGenerationPanel
+ *   - 'video' → VideoGenerationPanel
+ *
+ * Mobile improvements:
+ *   - Reduced padding on small screens (p-3 instead of p-4/p-8)
+ *   - Larger touch targets for jump-to-bottom pill
+ *   - Better scroll snapping behavior
+ *   - Feature discovery hints in empty state
+ */
+
+import dynamic from 'next/dynamic'
+import { AnimatePresence, m } from 'framer-motion'
+import { ChevronDown, Keyboard, GitCompare, Zap } from 'lucide-react'
+import type { RefObject } from 'react'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { A2UIRenderer, isA2UI } from '@/components/chat/A2UIRenderer'
+import type { ExampleConversation, Message } from '@/components/chat'
+
+const LazyWelcomeBanner = dynamic(
+  () => import('@/components/chat/WelcomeBannerRedesign').then((mod) => mod.WelcomeBanner),
+  { ssr: false, loading: () => null }
+)
+
+const LazyExampleConversations = dynamic(
+  () => import('@/components/chat/ExampleConversations').then((mod) => mod.ExampleConversations),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> }
+)
+
+const LazyChatMessage = dynamic(
+  () => import('@/components/chat/ChatMessageRedesign').then((mod) => mod.ChatMessageRedesigned),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex gap-4">
+        <Skeleton className="w-10 h-10 shrink-0 rounded" />
+        <div className="flex flex-col max-w-[80%] gap-2">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
+    ),
+  }
+)
+
+const LazyEmptyState = dynamic(
+  () => import('@/components/chat/ChatEmptyState').then((mod) => mod.ChatEmptyState),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> }
+)
+
+const LazyImageGenerationPanel = dynamic(
+  () => import('@/components/chat/ImageGenerationPanel').then((mod) => mod.ImageGenerationPanel),
+  { ssr: false, loading: () => <Skeleton className="h-96 w-full" /> }
+)
+
+const LazyVideoGenerationPanel = dynamic(
+  () => import('@/components/chat/VideoGenerationPanel').then((mod) => mod.VideoGenerationPanel),
+  { ssr: false, loading: () => <Skeleton className="h-96 w-full" /> }
+)
+
+/** Safe JSON parse that returns null on failure or non-object input. */
+function safeJsonParse(s: string): unknown {
+  try {
+    const v = JSON.parse(s)
+    if (v && typeof v === 'object') return v
+    return null
+  } catch {
+    return null
+  }
+}
+
+export interface MessagesListProps {
+  scrollContainerRef: RefObject<HTMLDivElement | null>
+  messagesEndRef: RefObject<HTMLDivElement | null>
+  isScrolledAway: boolean
+  loading: boolean
+  jumpToBottom: () => void
+  handleScroll: () => void
+  deferredMessages: Message[]
+  mediaMode: 'text' | 'image' | 'video'
+  handleCopy: () => void
+  handlePreset: (prompt: string, model?: string) => void
+  handleExampleSelect: (example: ExampleConversation) => void
+  inputRef: RefObject<HTMLTextAreaElement | null>
+}
+
+/**
+ * Feature hints shown below the empty state on first visit.
+ * These help users discover advanced capabilities they might
+ * not find on their own (compare mode, system prompts, etc.).
+ */
+const FEATURE_HINTS = [
+  {
+    icon: GitCompare,
+    label: 'Compare Models',
+    description: 'Try two models side-by-side with the COMPARE button in the toolbar',
+  },
+  {
+    icon: Keyboard,
+    label: 'Shortcuts',
+    description: 'Press ? for keyboard shortcuts — Cmd+K to switch models quickly',
+  },
+  {
+    icon: Zap,
+    label: 'Web Search',
+    description: 'Enable WEB to ground responses in real-time internet data',
+  },
+]
+
+const FEATURE_HINTS_KEY = 'oma-chat-feature-hints-seen'
+
+export function MessagesList({
+  scrollContainerRef,
+  messagesEndRef,
+  isScrolledAway,
+  loading,
+  jumpToBottom,
+  handleScroll,
+  deferredMessages,
+  mediaMode,
+  handleCopy,
+  handlePreset,
+  handleExampleSelect,
+  inputRef,
+}: MessagesListProps) {
+  const showFeatureHints =
+    deferredMessages.length === 0 &&
+    (() => {
+      try {
+        return localStorage.getItem(FEATURE_HINTS_KEY) !== '1'
+      } catch {
+        return false
+      }
+    })()
+
+  return (
+    <div
+      ref={scrollContainerRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-y-auto p-3 md:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative chat-container chat-scroll"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-grid-animated mask-radial" aria-hidden="true" />
+      <div className="max-w-4xl mx-auto relative z-0">
+        {mediaMode === 'image' ? (
+          <LazyImageGenerationPanel />
+        ) : mediaMode === 'video' ? (
+          <LazyVideoGenerationPanel />
+        ) : (
+          deferredMessages.length === 0 ? (
+              <div className="pb-8">
+                <LazyWelcomeBanner
+                  onSelectExample={() => {
+                    const el = document.getElementById('example-conversations')
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }}
+                  onGetStarted={() => {
+                    inputRef.current?.focus()
+                  }}
+                />
+                <div className="pt-4 md:pt-6">
+                  <LazyEmptyState onPreset={handlePreset} />
+                </div>
+                <LazyExampleConversations onSelect={handleExampleSelect} />
+
+                {/* Feature discovery hints */}
+                {showFeatureHints && (
+                  <m.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6, duration: 0.3 }}
+                    className="mt-8 px-4 md:px-0"
+                  >
+                    <div className="max-w-4xl mx-auto">
+                      <h3 className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-3 font-bold">
+                        DISCOVER MORE
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {FEATURE_HINTS.map((hint, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-2.5 px-3 py-3 border border-border/40 bg-surface/30 text-[10px] font-mono text-text-muted"
+                          >
+                            <hint.icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-text-muted/50" />
+                            <div>
+                              <span className="font-bold text-text-secondary block mb-0.5">
+                                {hint.label}
+                              </span>
+                              <span className="leading-relaxed normal-case">{hint.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </m.div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6 md:space-y-8 pb-12">
+                <AnimatePresence mode="popLayout">
+                  {deferredMessages.map((msg) => {
+                    const trimmed = msg.content.trimStart()
+                    const parsed = safeJsonParse(trimmed)
+                    const looksLikeA2UI = trimmed.startsWith('{') && isA2UI(parsed)
+                    if (looksLikeA2UI) {
+                      return (
+                        <div key={`${msg.role}-${msg.timestamp}`} className="flex gap-4">
+                          <A2UIRenderer payload={parsed} />
+                        </div>
+                      )
+                    }
+                    return (
+                      <LazyChatMessage
+                        key={`${msg.role}-${msg.timestamp}`}
+                        msg={msg}
+                        loading={loading}
+                        onCopy={handleCopy}
+                      />
+                    )
+                  })}
+                </AnimatePresence>
+                <div ref={messagesEndRef} />
+                {/* Floating "Jump to bottom" pill — only visible while the
+                    user is scrolled up AND a response is loading. Standard
+                    chat-UI affordance (Discord, ChatGPT, Slack). */}
+                <AnimatePresence>
+                  {isScrolledAway && loading && (
+                    <m.button
+                      type="button"
+                      onClick={jumpToBottom}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      aria-label="Jump to latest message"
+                      className="
+                        sticky bottom-2 left-1/2 -translate-x-1/2 z-10
+                        inline-flex items-center gap-1.5 rounded-full
+                        border border-accent/40 bg-accent/10
+                        px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
+                        shadow-lg backdrop-blur-md hover:bg-accent/20
+                        min-h-[44px]
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+                      "
+                    >
+                      <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                      New messages
+                    </m.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+        )}
+      </div>
+    </div>
+  )
+}

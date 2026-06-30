@@ -1,7 +1,6 @@
 /**
- * ISOLATED Unit Test for SIWE + Solana message format compliance.
- * Target: server/src/auth/siwe.ts, server/src/auth/solana.ts
- * Session: task_w_SEC10
+ * ISOLATED Unit Test for SIWE message format compliance.
+ * Target: server/src/auth/siwe.ts
  *
  * **WARNING**: This test file is part of the regression suite for SEC-10.
  * It exercises the pure message builders/parsers — no DB, no Redis, no HTTP.
@@ -10,67 +9,18 @@
 import { describe, it, expect } from "vitest";
 import { SiweMessage } from "siwe";
 
-const TEST_SOLANA_ADDRESS = "11111111111111111111111111111112"; // System program, valid base58 + 32 bytes
-const TEST_NONCE = "abcdef1234567890"; // 16 chars, alphanumeric
-// ponytail: 65-byte signature shape (130 hex chars) — library only fails on
-// spec-level checks (domain/time/nonce) before reaching the signature step,
-// so a structurally valid but cryptographically invalid signature keeps
-// stderr quiet.
-const DUMMY_SIG = "0x" + "00".repeat(65);
+// 65-byte dummy signature (130 hex chars). r=1, s=1, v=27 — this passes
+// @noble/curves' 0 < r < CURVE.n structural check (all-zeros r=0 fails it)
+// while still being cryptographically invalid, so the library's spec-level
+// guards (domain/time/nonce) are exercised without spurious curve-math
+// unhandled rejections in the test runner.
+const DUMMY_SIG = "0x" + "01".repeat(32) + "01".repeat(32) + "1b";
 
-// ponytail: mock config so the network string is deterministic. The function
-// under test only reads SOLANA_RPC_URL via resolveSolanaNetwork(); no DB or
-// Redis is touched.
 vi.mock("../../config.js", () => ({
   config: {
-    SOLANA_RPC_URL: "",
+    PRIMARY_DOMAIN: "oma.ai",
   },
 }));
-
-// Import the target after the mock so the module sees the stubbed config.
-import { buildSolanaSignInMessage } from "../solana.js";
-
-const FIXED_ISSUED_AT = new Date("2026-06-14T22:00:00.000Z");
-
-// ============================================================================
-// SEC-10 / Solana regression tests
-// ============================================================================
-describe("SEC-10 / Solana message format", () => {
-  it("is deterministic for identical inputs (regression for the challenge/verify timestamp-mismatch bug)", () => {
-    const a = buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, FIXED_ISSUED_AT);
-    const b = buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, FIXED_ISSUED_AT);
-    expect(a).toBe(b);
-  });
-
-  it("changes only when its inputs change", () => {
-    const base = buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, FIXED_ISSUED_AT);
-    expect(buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, "differentnonce1234", FIXED_ISSUED_AT)).not.toBe(base);
-    expect(buildSolanaSignInMessage("11111111111111111111111111111113", TEST_NONCE, FIXED_ISSUED_AT)).not.toBe(base);
-    expect(buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, new Date("2026-06-14T22:00:01.000Z"))).not.toBe(base);
-  });
-
-  it("includes every required Sign-In With Solana field", () => {
-    const message = buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, FIXED_ISSUED_AT);
-    expect(message).toContain("oma.ai wants you to sign in with your Solana account:");
-    expect(message).toContain(TEST_SOLANA_ADDRESS);
-    expect(message).toContain("URI: https://oma.ai");
-    expect(message).toContain("Version: 1");
-    expect(message).toContain("Chain ID: solana:mainnet");
-    expect(message).toContain("Nonce: " + TEST_NONCE);
-    // ISO 8601 datetimes
-    expect(message).toContain("Issued At: 2026-06-14T22:00:00.000Z");
-    expect(message).toContain("Expiration Time: 2026-06-14T22:10:00.000Z"); // +10 min TTL
-  });
-
-  it("keeps header/domain aligned with the URI field (sign-in with solana spec §1)", () => {
-    const message = buildSolanaSignInMessage(TEST_SOLANA_ADDRESS, TEST_NONCE, FIXED_ISSUED_AT);
-    const headerLine = message.split("\n")[0];
-    // The header must reference the same domain as the URI field, not a brand
-    // name. This was the SEC-10 deviation we fixed (was "OMA …", now "oma.ai …").
-    expect(headerLine.startsWith("oma.ai ")).toBe(true);
-    expect(message).toContain("URI: https://oma.ai");
-  });
-});
 
 // ============================================================================
 // SEC-10 / SIWE EIP-4361 compliance — exercised through the `siwe` library

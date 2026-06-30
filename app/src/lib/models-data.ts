@@ -248,3 +248,19 @@ export function getProviderLogo(provider: Provider): FeaturedModelLogo {
   }
   return logos[provider]
 }
+
+/**
+ * Returns the URL path for a provider's logo SVG in /public/logos/.
+ * Used by Hero and ModelCard for <Image> src attributes.
+ */
+export function getProviderLogoUrl(provider: Provider): string {
+  const logoMap: Record<Provider, string> = {
+    Venice: '/logos/venice.svg',
+    AntSeed: '/logos/antseed.svg',
+    Claude: '/logos/claude.svg',
+    Gemini: '/logos/gemini.svg',
+    OpenRouter: '/logos/openrouter.svg',
+    Together: '/logos/together.svg',
+  }
+  return logoMap[provider] ?? '/logos/default.svg'
+}

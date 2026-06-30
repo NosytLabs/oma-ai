@@ -46,7 +46,6 @@ vi.mock('../auth/api-keys.js', () => ({
   listApiKeys: vi.fn().mockResolvedValue([]),
   revokeApiKey: vi.fn(),
   getApiKey: vi.fn(),
-  refreshApiKey: vi.fn(),
   createApiKeyCookieHeader: vi.fn((apiKey: string) => `oma_api_key=${apiKey}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}`),
   createLogoutCookieHeader: vi.fn(() => "oma_api_key=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"),
 }))
@@ -96,13 +95,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({
@@ -163,6 +163,8 @@ describe('API Key Cookie Security', () => {
 
     it('sets httpOnly cookie with API key and returns success', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
+const { validateApiKey } = await import('../auth/api-keys.js');
+vi.mocked(validateApiKey).mockResolvedValueOnce({ userId: 'user-1', id: 'key-1', keyPrefix: 'oma_sk', active: true } as any)
 
       const res = await app.request('/auth/api-key/cookie', {
         method: 'POST',

@@ -7,48 +7,48 @@ import dynamic from 'next/dynamic'
 import {
   Wallet,
   Hexagon,
-  Link2,
-  Unlink,
-  Shield,
-  AlertTriangle,
-  Loader2,
-  LogOut,
-  Clock,
-  Trash2,
-  X,
-  Copy,
-  Check,
-  Fingerprint,
-  Calendar,
-  User as UserIcon,
-  ShieldOff,
-  Key,
   KeyRound,
   Sparkles,
+  Key,
+  Shield,
+  Activity,
+  AlertTriangle,
+  X,
+  User as UserIcon,
+  type LucideIcon,
 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { m, AnimatePresence } from 'framer-motion'
+import { ProfileSection } from './_components/ProfileSection'
+import { WalletsSection } from './_components/WalletsSection'
+import { ApiKeysSection } from './_components/ApiKeysSection'
+import { SessionsSection } from './_components/SessionsSection'
+import { DangerZoneSection } from './_components/DangerZoneSection'
 
-// B-C1 fix: also offer account-number login (and demo) on /settings, not
-// just EVM. The unauthenticated card now previews the 5 actual settings
-// sections the user will see once signed in.
 const AccountLoginModal = dynamic(
   () => import('@/components/account-login-modal').then(m => m.AccountLoginModal),
   { ssr: false }
 )
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+type SettingsTab = 'profile' | 'wallets' | 'api-keys' | 'sessions' | 'danger'
+
+interface TabDef {
+  id: SettingsTab
+  label: string
+  icon: LucideIcon
+  description: string
 }
 
+const TABS: TabDef[] = [
+  { id: 'profile',   label: 'Profile',   icon: UserIcon, description: 'Account details' },
+  { id: 'wallets',   label: 'Wallets',   icon: Wallet,   description: 'Connected wallets & account number' },
+  { id: 'api-keys',  label: 'API keys',  icon: Key,      description: 'Programmatic access' },
+  { id: 'sessions',  label: 'Sessions',  icon: Activity, description: 'Active devices' },
+  { id: 'danger',    label: 'Danger',    icon: Shield,   description: 'Delete account' },
+]
+
 export default function SettingsPage() {
-  const { isAuthenticated, connectEvm, evmAddress, disconnect } = useWallet()
+  const { isAuthenticated, connectEvm, disconnect } = useWallet()
   const toast = useToast()
 
   const [user, setUser] = useState<User | null>(null)
@@ -57,16 +57,14 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [unlinkingEvm, setUnlinkingEvm] = useState(false)
   const [generatingAccount, setGeneratingAccount] = useState(false)
-  // B-C1: pre-fetch CSRF + track which auth method the user picked
-  // from the unauthenticated card. Avoids the A-C1 race in the modal.
   const [csrfToken, setCsrfToken] = useState<string | null>(null)
   const [showAccountLogin, setShowAccountLogin] = useState(false)
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
 
   useEffect(() => {
     let cancelled = false
@@ -129,9 +127,9 @@ export default function SettingsPage() {
     try {
       await api.auth.logout()
       disconnect()
+      window.location.href = '/'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Logout failed')
-    } finally {
       setLoggingOut(false)
     }
   }
@@ -140,11 +138,10 @@ export default function SettingsPage() {
     setDeleting(true)
     try {
       await api.auth.deleteAccount()
-      setShowDeleteConfirm(false)
       disconnect()
+      window.location.href = '/'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Account deletion failed')
-    } finally {
       setDeleting(false)
     }
   }
@@ -162,6 +159,11 @@ export default function SettingsPage() {
     }
   }
 
+  const handleRevokeKey = async (keyId: string) => {
+    await api.auth.deleteKey(keyId)
+    setApiKeys((prev) => prev.filter((k) => k.id !== keyId))
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
@@ -177,25 +179,22 @@ export default function SettingsPage() {
           >
             <UserIcon className="h-7 w-7 text-accent" />
           </m.div>
-          <h2 className="mb-2 text-center text-xl font-bold tracking-tight font-display">Sign in to manage your account</h2>
+          <h2 className="mb-2 text-center text-xl font-bold tracking-tight">Sign in to manage your account</h2>
           <p className="mb-6 text-center text-sm text-text-secondary">
             Settings covers your wallets, account number, sessions, and API keys.
           </p>
 
-          {/* B-C1 fix: preview the actual sections the user will see. */}
           <ul className="mb-6 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
-            {[
-              { icon: Wallet, label: 'Connected Wallets' },
-              { icon: Fingerprint, label: 'Account Number' },
-              { icon: Key, label: 'API Keys' },
-              { icon: Clock, label: 'Active Sessions' },
-            ].map(({ icon: Icon, label }) => (
+            {TABS.slice(0, 4).map(({ icon: Icon, label, description }) => (
               <li
                 key={label}
-                className="flex items-center gap-2 border border-border bg-surface/50 px-3 py-2 text-xs text-text-secondary"
+                className="flex items-start gap-2 rounded-lg border border-border bg-surface/50 px-3 py-2 text-xs"
               >
-                <Icon className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
-                {label}
+                <Icon className="h-3.5 w-3.5 mt-0.5 text-text-muted shrink-0" aria-hidden="true" />
+                <div>
+                  <div className="font-medium text-text">{label}</div>
+                  <div className="text-text-muted">{description}</div>
+                </div>
               </li>
             ))}
           </ul>
@@ -205,10 +204,10 @@ export default function SettingsPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => connectEvm()}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-text-inverse shadow-lg shadow-accent/20 transition-all hover:bg-accent/90 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-void shadow-lg shadow-accent/20 transition-all hover:bg-accent/90 sm:w-auto"
             >
               <Hexagon className="h-4 w-4" />
-              Connect Wallet
+              Connect wallet
             </m.button>
             <m.button
               whileHover={{ scale: 1.02 }}
@@ -217,7 +216,7 @@ export default function SettingsPage() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-text transition-colors hover:border-accent/60 hover:text-text-bright sm:w-auto"
             >
               <KeyRound className="h-4 w-4" />
-              Account Number
+              Use account number
             </m.button>
           </div>
           <div className="mt-3 text-center">
@@ -242,21 +241,21 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <m.div 
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <m.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="h1-utility">Settings</h1>
-        <p className="mt-1 text-xs text-text-secondary">
-          Account {loading ? 'Syncing...' : error ? 'Degraded' : 'Nominal'}
+        <h1 className="text-2xl font-bold tracking-tight text-text-bright">Settings</h1>
+        <p className="mt-1 text-sm text-text-muted">
+          {loading ? 'Syncing…' : error ? 'Some sections may be stale' : 'Up to date'}
         </p>
       </m.div>
 
       <AnimatePresence>
         {error && (
-          <m.div 
+          <m.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -264,425 +263,102 @@ export default function SettingsPage() {
           >
             <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
             <span className="text-sm text-text">{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto text-text-secondary hover:text-text">
+            <button type="button" onClick={() => setError(null)} className="ml-auto rounded p-1 text-text-secondary hover:bg-error/10 hover:text-text">
               <X className="h-3.5 w-3.5" />
             </button>
           </m.div>
         )}
       </AnimatePresence>
 
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mb-6 border border-border p-6"
-      >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-text-muted">
-          <Wallet className="h-3.5 w-3.5" />
-          Connected Wallets
-        </div>
-
-        <div className="space-y-3">
-          <m.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-            className="flex items-center gap-3 border border-border p-4"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue/30 bg-blue/10">
-              <Hexagon className="h-5 w-5 text-blue" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-bold text-text">EVM Wallet</span>
-                  <span className="rounded-full bg-blue/20 px-2 py-0.5 text-[10px] font-bold text-blue">Base</span>
-                </div>
-                {evmAddress ? (
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-accent" title={evmAddress}>
-                      {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
-                    </span>
-                    <m.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleCopy(evmAddress, 'evm')}
-                      className="shrink-0 rounded-lg p-2.5 transition-colors hover:bg-surface"
-                    >
-                      {copied === 'evm' ? (
-                        <Check className="h-3.5 w-3.5 text-success" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-text-muted" />
-                      )}
-                    </m.button>
-                  </div>
-                ) : (
-                  <span className="text-xs text-text-muted">Not connected</span>
-                )}
-              </div>
-            {evmAddress ? (
-              <m.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleUnlinkEvm}
-                disabled={unlinkingEvm}
-                className="inline-flex items-center gap-1.5 border border-amber/30 px-3 py-1.5 text-[10px] font-semibold text-amber transition-all hover:bg-amber/5 disabled:opacity-40"
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
+        {/* Sidebar tabs */}
+        <nav
+          className="flex flex-col gap-1"
+          aria-label="Settings sections"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button type="button"
+                key={tab.id}
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  isActive
+                    ? 'border-accent/30 bg-accent/10 text-text-bright'
+                    : 'border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright'
+                }`}
               >
-                {unlinkingEvm ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Unlink className="h-3 w-3" />
-                )}
-                Unlink
-              </m.button>
-            ) : (
-              <m.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => connectEvm()}
-                className="inline-flex items-center gap-1.5 border border-accent bg-void px-3 py-1.5 text-[10px] font-semibold text-accent"
-              >
-                <Link2 className="h-3 w-3" />
-                Connect
-              </m.button>
-            )}
-          </m.div>
-        </div>
-      </m.div>
-
-      <m.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mb-6 border border-border p-6"
-      >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-text-muted">
-          <Fingerprint className="h-3.5 w-3.5" />
-          Account Number
-        </div>
-
-        <div className="flex items-center gap-3 border border-border px-4 py-4">
-          {user?.accountNumber ? (
-            <>
-              <div className="flex-1 min-w-0">
-                <div className="text-lg font-mono font-bold tracking-wider text-accent">
-                  {user.accountNumber}
+                <Icon
+                  className={`h-4 w-4 shrink-0 ${isActive ? 'text-accent' : 'text-text-muted'}`}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <div className="font-medium">{tab.label}</div>
+                  <div className="text-[11px] text-text-muted truncate">{tab.description}</div>
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted">
-                  <Shield className="h-3 w-3" />
-                  <span>Mullvad-style account number for wallet-free login</span>
-                </div>
-              </div>
-              <m.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleCopy(user.accountNumber!, 'accountNumber')}
-                className="rounded-lg p-2.5 transition-colors hover:bg-surface"
-              >
-                {copied === 'accountNumber' ? (
-                  <Check className="h-5 w-5 text-success" />
-                ) : (
-                  <Copy className="h-5 w-5 text-text-muted" />
-                )}
-              </m.button>
-            </>
-          ) : (
-            <>
-              <div className="flex-1">
-                <div className="text-sm text-text-muted">
-                  No account number generated yet
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted">
-                  <Shield className="h-3 w-3" />
-                  <span>Generate to enable wallet-free login with your account number</span>
-                </div>
-              </div>
-              <m.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGenerateAccountNumber}
-                disabled={generatingAccount}
-                className="inline-flex items-center gap-1.5 border border-accent bg-void px-4 py-2 text-xs font-semibold text-accent transition-all hover:bg-accent/10 disabled:opacity-40"
-              >
-                {generatingAccount ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Key className="h-3 w-3" />
-                )}
-                Generate
-              </m.button>
-            </>
-          )}
-        </div>
-      </m.div>
+              </button>
+            )
+          })}
 
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mb-6 border border-border p-6"
-      >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-text-muted">
-          <UserIcon className="h-3.5 w-3.5" />
-          Account Information
-        </div>
-        <div className="space-y-3">
-          <m.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.25 }}
-            className="flex items-center gap-3 border border-border px-4 py-3"
-          >
-            <Fingerprint className="h-4 w-4 shrink-0 text-text-muted" />
-            <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-text-muted">User ID</span>
-              <div className="text-sm text-text font-mono">
-                {user?.id || '---'}
-              </div>
-            </div>
-          </m.div>
-          <m.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center gap-3 border border-border px-4 py-3"
-          >
-            <Calendar className="h-4 w-4 shrink-0 text-text-muted" />
-            <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-text-muted">Account Created</span>
-              <div className="text-sm text-text">
-                {user?.createdAt ? formatDate(user.createdAt) : '---'}
-              </div>
-            </div>
-          </m.div>
-          <m.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.35 }}
-            className="flex items-center gap-3 border border-border px-4 py-3"
-          >
-            <Shield className="h-4 w-4 shrink-0 text-text-muted" />
-            <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-wider text-text-muted">Authentication</span>
-              <div className="text-sm text-text">
-                SIWE (EIP-4361) Wallet Auth
-              </div>
-            </div>
-          </m.div>
-        </div>
-      </m.div>
+        </nav>
 
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mb-6 border border-border p-6"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-text-muted">
-            <Key className="h-3.5 w-3.5" />
-            API Keys
-          </div>
-          <m.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex items-center gap-1.5 border border-amber/30 px-3 py-1.5 text-[10px] font-semibold text-amber transition-all hover:bg-amber/5 disabled:opacity-40"
-          >
-            {loggingOut ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <LogOut className="h-3 w-3" />
-            )}
-            Logout
-          </m.button>
+        {/* Tab panel */}
+        <div className="min-w-0">
+          <AnimatePresence mode="wait">
+            <m.div
+              key={activeTab}
+              id={`panel-${activeTab}`}
+              role="tabpanel"
+              aria-labelledby={`tab-${activeTab}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'profile' && (
+                <ProfileSection
+                  user={user}
+                  onUserChange={setUser}
+                  onError={setError}
+                />
+              )}
+              {activeTab === 'wallets' && (
+                <WalletsSection
+                  user={user}
+                  onCopy={handleCopy}
+                  copied={copied}
+                  onGenerateAccountNumber={handleGenerateAccountNumber}
+                  generatingAccount={generatingAccount}
+                  onUnlinkEvm={handleUnlinkEvm}
+                  unlinkingEvm={unlinkingEvm}
+                />
+              )}
+              {activeTab === 'api-keys' && (
+                <ApiKeysSection
+                  apiKeys={apiKeys}
+                  onCopy={handleCopy}
+                  copied={copied}
+                  onLogout={handleLogout}
+                  loggingOut={loggingOut}
+                  onRevokeKey={handleRevokeKey}
+                />
+              )}
+              {activeTab === 'sessions' && <SessionsSection sessions={sessions} />}
+              {activeTab === 'danger' && (
+                <DangerZoneSection
+                  onDeleteAccount={handleDeleteAccount}
+                  deleting={deleting}
+                />
+              )}
+            </m.div>
+          </AnimatePresence>
         </div>
-
-        <div className="space-y-2">
-          {apiKeys.length === 0 ? (
-            <div className="border border-border px-4 py-6 text-center">
-              <p className="text-sm text-text-muted">No API keys yet. Connect your wallet to generate one.</p>
-            </div>
-          ) : (
-            apiKeys.map((key, index) => (
-              <m.div
-                key={key.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 + index * 0.05 }}
-                className="flex items-center gap-3 border border-border px-4 py-3"
-              >
-                <Key className="h-4 w-4 shrink-0 text-text-muted" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-text">{key.name}</span>
-                    {key.name === 'Default wallet key' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue/10 px-2 py-0.5 text-[9px] font-bold text-blue">
-                        Primary
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] text-text-muted mt-0.5">
-                    <span className="font-mono">{key.prefix}***</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-2.5 w-2.5" />
-                      {formatDate(key.createdAt)}
-                    </span>
-                    {key.lastUsedAt && (
-                      <span className="flex items-center gap-1">
-                        Last used: {formatDate(key.lastUsedAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <m.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleCopy(key.prefix, key.id)}
-                  className="rounded-lg p-2.5 transition-colors hover:bg-surface"
-                >
-                  {copied === key.id ? (
-                    <Check className="h-3.5 w-3.5 text-success" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-text-muted" />
-                  )}
-                </m.button>
-              </m.div>
-            ))
-          )}
-        </div>
-      </m.div>
-
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-        className="mb-6 border border-border p-6"
-      >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-text-muted">
-          <Clock className="h-3.5 w-3.5" />
-          Sessions
-        </div>
-
-        <div className="space-y-2">
-          {sessions.length === 0 ? (
-            <div className="border border-border px-4 py-6 text-center">
-              <p className="text-sm text-text-muted">No active sessions.</p>
-            </div>
-          ) : (
-            sessions.map((session, index) => (
-              <m.div
-                key={session.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + index * 0.05 }}
-                className="flex items-center gap-3 border border-border px-4 py-3"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/20 bg-accent/5">
-                  <Fingerprint className="h-4 w-4 text-accent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-text">{session.device}</span>
-                    {session.current && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-bold text-success">
-                        Current
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] text-text-muted mt-0.5">
-                    <span>{session.ip}</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-2.5 w-2.5" />
-                      Last active: {formatDate(session.lastActive)}
-                    </span>
-                  </div>
-                </div>
-              </m.div>
-            ))
-          )}
-        </div>
-      </m.div>
-
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="border border-red/20 p-6"
-      >
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-red">
-          <ShieldOff className="h-3.5 w-3.5" />
-          Danger Zone
-        </div>
-
-        <div className="border border-red/20 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-red" />
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-red mb-1">Delete Account</h3>
-              <p className="text-xs text-text-muted mb-4">
-                Permanently delete your OMA account, all API keys, credits, and staking positions.
-                This action cannot be undone. Credits are non-redeemable and will be forfeited.
-              </p>
-
-              <AnimatePresence mode="wait">
-                {!showDeleteConfirm ? (
-                  <m.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="inline-flex items-center gap-1.5 border border-red bg-red px-4 py-2 text-xs font-semibold text-text-inverse transition-all hover:bg-red/90"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete Account
-                  </m.button>
-                ) : (
-                  <m.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="border border-red/40 p-4"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-4 w-4 text-red" />
-                      <span className="text-sm font-bold text-red">Final Confirmation</span>
-                    </div>
-                    <p className="text-xs text-text-muted mb-4">
-                      Are you absolutely sure? All data will be permanently destroyed.
-                      Remaining credits will be burned. Staked OMA will be returned after cooldown.
-                    </p>
-                    <div className="flex gap-2">
-                      <m.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleDeleteAccount}
-                        disabled={deleting}
-                        className="inline-flex items-center justify-center gap-2 border border-red bg-red px-6 py-3 text-xs font-semibold text-text-inverse disabled:opacity-40"
-                      >
-                        {deleting ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</>
-                        ) : (
-                          'Yes, Delete Everything'
-                        )}
-                      </m.button>
-                      <m.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowDeleteConfirm(false)}
-                        disabled={deleting}
-                        className="flex-1 border border-border py-3 text-xs font-semibold text-text transition-all hover:bg-surface"
-                      >
-                        Cancel
-                      </m.button>
-                    </div>
-                  </m.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </m.div>
+      </div>
     </div>
   )
 }

@@ -19,7 +19,7 @@ export default function DepositPage() {
       </div>
 
       <UnifiedDepositHeader />
-      <UnifiedDepositInterface onDeposit={(_deposit) => {}} />
+      <UnifiedDepositInterface />
     </m.div>
   )
 }

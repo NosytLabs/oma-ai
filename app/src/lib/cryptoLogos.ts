@@ -4,7 +4,7 @@
  * Uses CoinGecko CDN for production logos with fallback URLs
  */
 
-export interface CryptoLogoConfig {
+interface CryptoLogoConfig {
   symbol: string
   name: string
   coingeckoId: string

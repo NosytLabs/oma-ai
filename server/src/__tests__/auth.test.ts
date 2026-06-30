@@ -33,7 +33,7 @@ vi.mock('../db/client.js', () => {
   mockLimit.mockResolvedValue([])
   mockInsert.mockReturnValue(chain)
   mockValues.mockReturnValue(chain)
-  mockReturning.mockResolvedValue([{ id: 'user-1', address: '0xabc', accountNumber: 'OMA-TEST-ACCT-NUMB', nonce: 'nonce123', createdAt: new Date(), updatedAt: new Date() }])
+  mockReturning.mockResolvedValue([{ id: 'user-1', address: '0xabc', accountNumber: '1234567890123456', nonce: 'nonce123', createdAt: new Date(), updatedAt: new Date() }])
   mockUpdate.mockReturnValue(chain)
   mockSet.mockReturnValue(chain)
 
@@ -61,23 +61,6 @@ vi.mock('../auth/siwe.js', () => ({
   getNonce: vi.fn().mockResolvedValue('nonce_abc123'),
   generateSessionToken: vi.fn().mockReturnValue('session.token.value'),
   verifySessionToken: vi.fn(),
-}))
-
-vi.mock('../auth/solana.js', () => ({
-  createSolanaChallenge: vi.fn().mockResolvedValue({
-    nonce: 'solana_nonce_123',
-    message: 'OMA wants you to sign in with your Solana account:\nSo11111111111111111111111111111111111111112\n\nNonce: solana_nonce_123',
-  }),
-  verifySolanaChallenge: vi.fn(),
-  getOrCreateSolanaUser: vi.fn().mockResolvedValue({
-    id: 'sol-user-1',
-    address: 'So11111111111111111111111111111111111111112',
-    solanaAddress: 'So11111111111111111111111111111111111111112',
-    accountNumber: null,
-    nonce: 'solana_nonce_123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }),
 }))
 
 vi.mock('../credits/index.js', () => ({
@@ -117,13 +100,14 @@ vi.mock('../inference/venice.js', () => ({
   veniceChatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  antseedChatCompletion: vi.fn(),
-}))
+
 
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({
@@ -154,7 +138,6 @@ vi.mock('../config.js', () => ({
 import app from '../index.js'
 import { db } from '../db/client.js'
 import { verifySiweMessage, verifySessionToken } from '../auth/siwe.js'
-import { createSolanaChallenge, verifySolanaChallenge } from '../auth/solana.js'
 
 describe('Auth Endpoints', () => {
   beforeEach(() => {
@@ -247,75 +230,6 @@ describe('Auth Endpoints', () => {
     })
   })
 
-  describe('POST /auth/solana/challenge', () => {
-    it('returns a challenge with a valid Solana address', async () => {
-      const res = await app.request('/auth/solana/challenge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: 'So11111111111111111111111111111111111111112' }),
-      })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body).toHaveProperty('message')
-      expect(body).toHaveProperty('nonce', 'solana_nonce_123')
-      expect(vi.mocked(createSolanaChallenge)).toHaveBeenCalledWith('So11111111111111111111111111111111111111112')
-    })
-
-    it('returns 400 with an invalid Solana address', async () => {
-      const res = await app.request('/auth/solana/challenge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: 'not-solana' }),
-      })
-
-      expect(res.status).toBe(400)
-    })
-  })
-
-  describe('POST /auth/solana/verify', () => {
-    it('returns 401 when Solana verification fails', async () => {
-      vi.mocked(verifySolanaChallenge).mockResolvedValueOnce(null as any)
-
-      const res = await app.request('/auth/solana/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: 'So11111111111111111111111111111111111111112',
-          message: 'solana-message',
-          signature: 'c2ln',
-        }),
-      })
-
-      expect(res.status).toBe(401)
-      const body = await res.json()
-      expect(body.error.type).toBe('authentication_error')
-    })
-
-    it('returns token and Solana account details on successful verification', async () => {
-      vi.mocked(verifySolanaChallenge).mockResolvedValueOnce({
-        address: 'So11111111111111111111111111111111111111112',
-      })
-
-      const res = await app.request('/auth/solana/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: 'So11111111111111111111111111111111111111112',
-          message: 'solana-message',
-          signature: 'c2ln',
-        }),
-      })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body).toHaveProperty('token')
-      expect(body).toHaveProperty('solanaAddress', 'So11111111111111111111111111111111111111112')
-      expect(body).toHaveProperty('authMethod', 'solana')
-      expect(body).toHaveProperty('accountNumber')
-    })
-  })
-
   describe('POST /auth/account/create', () => {
     it('creates a standalone account-number account without a wallet session', async () => {
       const res = await app.request('/auth/account/create', {
@@ -334,15 +248,14 @@ describe('Auth Endpoints', () => {
 
   describe('GET /user', () => {
     it('returns authMethod from the current session', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'solana' } as any)
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' } as any)
       const mockedDb = db as any
       mockedDb.limit
         .mockResolvedValueOnce([{ twoFactorEnabled: false }])
         .mockResolvedValueOnce([{
           id: 'user-1',
-          address: 'So11111111111111111111111111111111111111112',
-          solanaAddress: 'So11111111111111111111111111111111111111112',
-          accountNumber: 'OMA-ABCD-EFGH-JKLM',
+          address: '0xabc123def456789012345678901234567890abcd',
+          accountNumber: '1234567890123456',
           createdAt: new Date(),
         }])
 
@@ -352,7 +265,7 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body).toHaveProperty('authMethod', 'solana')
+      expect(body).toHaveProperty('authMethod', 'siwe')
     })
   })
 

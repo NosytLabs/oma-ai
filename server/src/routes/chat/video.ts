@@ -3,14 +3,14 @@ import { Hono } from "hono";
 import { bearerAuth } from "../../auth/middleware.js";
 import { VIDEO_MODELS } from "../../inference/models.js";
 import * as venice from "../../inference/venice.js";
-import { getBalance, deductCredits } from "../../credits/index.js";
+import { getBalance } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
-import { logger } from "../../lib/logger.js";
+import { chargeAndTrack, trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 const videoGenerationSchema = z.object({
   model: z.string().min(1).max(100),
@@ -30,9 +30,40 @@ videoRouter.use("/v1/videos/generations", tokenBucket({ refillRate: 2, bucketSiz
 // allowance quickly (each generation is ~$0.90+), so apply the same
 // spendLimit() gate as chat/completions to cap daily spend.
 videoRouter.use("/v1/videos/generations", spendLimit());
+videoRouter.use("/v1/videos/quote", bearerAuth);
+videoRouter.use("/v1/videos/quote", requestTimeout());
+videoRouter.use("/v1/videos/quote", tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }));
 videoRouter.use("/v1/videos/retrieve", bearerAuth);
 videoRouter.use("/v1/videos/retrieve", requestTimeout());
 videoRouter.use("/v1/videos/retrieve", tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }));
+
+videoRouter.post("/v1/videos/quote", async (c) => {
+  const parsed = videoGenerationSchema.safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { model, prompt, duration, aspect_ratio, resolution, image_url } = parsed.data;
+
+  const videoModel = VIDEO_MODELS[model];
+  if (!videoModel) {
+    return c.json({ error: { message: `Invalid video model '${model}'. Available: ${Object.keys(VIDEO_MODELS).join(", ")}`, type: "invalid_request_error" } }, 400);
+  }
+
+  try {
+    const quote = await venice.videoQuote({ model, prompt, duration, aspect_ratio, resolution, image_url });
+    return c.json({
+      object: "video.quote",
+      model,
+      // OMA price is what the user will actually be charged (includes markup)
+      price: videoModel.price,
+      currency: "usd",
+      estimated_seconds: quote.estimated_seconds,
+      // Raw Venice cost for transparency
+      provider_price: quote.price,
+      provider_currency: quote.currency,
+    });
+  } catch (err) {
+    return inferenceErrorHandler(c, err, "/v1/videos/quote");
+  }
+});
 
 videoRouter.post("/v1/videos/generations", async (c) => {
   const userId = c.get("userId");
@@ -57,17 +88,12 @@ videoRouter.post("/v1/videos/generations", async (c) => {
   try {
     const { queueId, status } = await venice.videoGeneration({ model, prompt, duration, aspect_ratio, resolution, image_url });
 
-    const requestId = crypto.randomUUID();
-    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", 0, 0, requestId);
-
-    if (apiKey) trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+    const _requestId = await chargeAndTrack(userId, totalCents, model, "venice", apiKey?.id ?? "unknown", 0);
+    trackApiKeySpend(apiKey?.keyHash, totalCents);
 
     return c.json({ id: `vid_${queueId}`, object: "video", status, queue_id: queueId });
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/videos/generations error:");
-    return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
+    return inferenceErrorHandler(c, err, "/v1/videos/generations");
   }
 });
 
@@ -84,9 +110,6 @@ videoRouter.get("/v1/videos/retrieve", bearerAuth, async (c) => {
       video_url: result.video_url || result.download_url,
     });
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/videos/retrieve error:");
-    return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
+    return inferenceErrorHandler(c, err, "/v1/videos/retrieve");
   }
 });

@@ -8,7 +8,7 @@ export default function Loading() {
       <p className="sr-only">Loading app…</p>
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        <p className="text-text-secondary text-sm font-mono">Loading OMA...</p>
+        <p className="text-text-secondary text-sm font-mono">Loading OMA…</p>
       </div>
     </div>
   )

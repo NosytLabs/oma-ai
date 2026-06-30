@@ -22,6 +22,10 @@ services:
         sync: false  # Set to https://oma-ai-server.onrender.com
       - key: NEXT_PUBLIC_APP_URL
         sync: false  # Set to https://oma-ai-app.onrender.com
+      - key: NEXT_PUBLIC_QUICKNODE_MAINNET_URL
+        sync: false  # QuickNode Base mainnet (multichain) HTTP endpoint
+      - key: NEXT_PUBLIC_QUICKNODE_TESTNET_URL
+        sync: false  # Optional dedicated Base Sepolia endpoint
       - key: PORT
         value: '3000'
 
@@ -75,6 +79,12 @@ services:
         value: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
       - key: X402_PRICE_USD
         value: '0.01'
+      - key: X402_FACILITATOR_PROVIDER
+        value: coinbase-cdp  # "coinbase-cdp" (default) or "quicknode"
+      - key: QUICKNODE_X402_URL
+        sync: false  # Only set when X402_FACILITATOR_PROVIDER=quicknode; from QuickNode marketplace x402 addon
+      - key: QUICKNODE_X402_API_KEY
+        sync: false  # QuickNode API key for x402 facilitator calls
       - key: CORS_ORIGIN
         sync: false  # Set to https://oma-ai-app.onrender.com
       - key: LOG_LEVEL

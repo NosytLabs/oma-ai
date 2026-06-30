@@ -34,13 +34,14 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "wrong_network_recovery",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "tinyfish", "groq", "cerebras", "bedrock", "surplus", "morpheus", "claude", "gemini"]);
+export const providerEnum = pgEnum("provider", ["venice", "tinyfish", "surplus"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
-  address: text("address").notNull().unique(),
+  address: text("address").unique(), // Nullable: post-0030 wallet links carry EVM/Solana separately; account-only users have null
+  evmAddress: text("evm_address"), // EVM-only address (post-0030). Nullable; partial unique index in DB.
   solanaAddress: text("solana_address"),
-  accountNumber: text("account_number"), // Mullvad-style: OMA-XXXX-XXXX-XXXX (unique, nullable)
+  accountNumber: text("account_number"), // 16-digit numeric (unique, nullable)
   accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
   twoFactorSecret: text("two_factor_secret"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
@@ -55,6 +56,7 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   index("idx_users_address").on(t.address),
+  index("idx_users_evm_address").on(t.evmAddress),
   index("idx_users_account_number_hash").on(t.accountNumberHash),
   index("idx_users_neon_auth_user_id").on(t.neonAuthUserId),
   index("idx_users_nonce_not_null").on(t.updatedAt).where(sql`${t.nonce} != ''`),
@@ -81,6 +83,28 @@ export const apiKeys = pgTable(
 );
 
 export type ApiKey = Omit<typeof apiKeys.$inferSelect, "allowedModels"> & { expired?: boolean; ipAllowlist?: string[] | null; allowedModels?: string[] | null };
+
+// ponytail: 2FA backup codes (migration 0031). Plaintext shown once at
+// enrollment; only SHA-256 hashes stored; `used_at` flips to now() on redemption.
+// Consumed by auth/two-factor.ts. Partial index on `user_id WHERE used_at IS NULL`
+// is the hot path for "how many unused codes does this user have".
+export const twoFactorBackupCodes = pgTable(
+  "two_factor_backup_codes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    codeHash: text("code_hash").notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_2fa_backup_codes_user").on(t.userId),
+    index("idx_2fa_backup_codes_user_unused").on(t.userId).where(sql`${t.usedAt} IS NULL`),
+    index("idx_2fa_backup_codes_hash").on(t.codeHash),
+  ],
+);
 
 export const deposits = pgTable(
   "deposits",
@@ -385,6 +409,10 @@ export const teamMembers = pgTable(
   ]
 );
 
+// Reserved for future SSO / SAML / OIDC team-scoped connections. Not yet
+// wired into the auth surface — keep the table so the migration stays
+// additive (no schema-rebuild on rollout), but expect callers to be added
+// when SSO is implemented.
 export const ssoConnections = pgTable(
   "sso_connections",
   {
@@ -587,6 +615,13 @@ export const auditActionEnum = pgEnum("audit_action", [
   "PROVIDER_TEST_SUCCESS",
   "REFUND_GRANTED",
   "REFUND_DENIED",
+  // ponytail: post-0030 wallet lifecycle events. wallet-link.ts writes these
+  // on every link/unlink/rotate. Live DB enum migration was added by 0030.
+  "WALLET_LINKED",
+  "WALLET_UNLINKED",
+  "WALLET_ROTATED",
+  "ACCOUNT_NUMBER_ROTATED",
+  "ACCOUNT_NUMBER_RECOVERED",
 ]);
 
 export const auditLogs = pgTable(

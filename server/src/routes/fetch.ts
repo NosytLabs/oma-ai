@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { bearerAuth } from '../auth/middleware.js';
 import { fetchWebPages } from '../inference/tinyfish-fetch.js';
 import { tokenBucket } from '../middleware/rate-limit.js';
@@ -11,20 +12,15 @@ fetchRoutes.use('/v1/fetch/*', bearerAuth);
 fetchRoutes.use('/v1/fetch/*', tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }));
 
 fetchRoutes.post('/v1/fetch', async (c) => {
-  const body = await c.req.json<{ urls: string[] }>();
-
-  if (!body.urls || !Array.isArray(body.urls)) {
-    return c.json({ error: 'urls must be an array' }, 400);
+  const fetchSchema = z.object({ urls: z.array(z.string().url()).min(1).max(10) });
+  const parsed = fetchSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json({ error: 'Validation failed', details: parsed.error.issues }, 400);
   }
 
-  if (body.urls.length === 0 || body.urls.length > 10) {
-    return c.json({ error: 'urls must contain 1-10 items' }, 400);
-  }
+  const { urls } = parsed.data;
 
-  for (const url of body.urls) {
-    if (typeof url !== 'string' || !url.startsWith('http')) {
-      return c.json({ error: 'each url must be a valid http(s) URL' }, 400);
-    }
+  for (const url of urls) {
     // H2: use the shared SSRF guard from lib/url-safety.ts so all
     // user-controlled URL entry points share a single, well-tested
     // implementation. The private `isUrlSafe` previously defined here
@@ -38,7 +34,7 @@ fetchRoutes.post('/v1/fetch', async (c) => {
     }
   }
 
-  const results = await fetchWebPages(body.urls);
+  const results = await fetchWebPages(urls);
 
   return c.json({ results });
 });

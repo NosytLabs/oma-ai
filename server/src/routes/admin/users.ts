@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../../db/client.js";
 import { users, creditBalances, usageRecords, deposits, apiKeys } from "../../db/schema.js";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { eq, desc, sql, count, or, ilike } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { logger } from "../../lib/logger.js";
 
@@ -18,13 +18,15 @@ usersRoutes.get("/admin/users", async (c) => {
   const limit = limitResult.success ? limitResult.data : 50;
   const offset = (page - 1) * limit;
   const searchResult = searchSchema.safeParse(c.req.query("search") || "");
-  const _search = searchResult.success ? searchResult.data : "";
+  const search = searchResult.success ? searchResult.data : "";
+  // M6: Escape SQL wildcard characters in search to prevent pattern injection
+  const escapedSearch = (search ?? "").replace(/%/g, "\\%").replace(/_/g, "\\_");
+  const hasSearch = escapedSearch.length > 0;
 
   try {
     const baseQuery = db.select({
       id: users.id,
       address: users.address,
-      solanaAddress: users.solanaAddress,
       accountNumber: users.accountNumber,
       createdAt: users.createdAt,
       lastActivityAt: creditBalances.lastActivityAt,
@@ -38,14 +40,22 @@ usersRoutes.get("/admin/users", async (c) => {
     .from(users)
     .leftJoin(creditBalances, eq(users.id, creditBalances.userId))
     .leftJoin(usageRecords, eq(users.id, usageRecords.userId))
-    .groupBy(users.id, users.address, users.solanaAddress, users.accountNumber, users.createdAt, creditBalances.lastActivityAt, creditBalances.totalDepositedCents, creditBalances.totalUsedCents, creditBalances.balanceCents)
+    .where(hasSearch ? or(
+      ilike(users.address, `%${escapedSearch}%`),
+      ilike(users.accountNumber, `%${escapedSearch}%`),
+    ) : undefined)
+    .groupBy(users.id, users.address, users.accountNumber, users.createdAt, creditBalances.lastActivityAt, creditBalances.totalDepositedCents, creditBalances.totalUsedCents, creditBalances.balanceCents)
     .orderBy(desc(users.createdAt))
     .limit(limit)
     .offset(offset);
 
     const results = await baseQuery;
 
-    const totalResult = await db.select({ count: count() }).from(users);
+    const totalResult = await db.select({ count: count() }).from(users)
+      .where(hasSearch ? or(
+        ilike(users.address, `%${escapedSearch}%`),
+        ilike(users.accountNumber, `%${escapedSearch}%`),
+      ) : undefined);
     const total = totalResult[0]?.count || 0;
 
     return c.json({
@@ -134,7 +144,6 @@ usersRoutes.get("/admin/users/:id", async (c) => {
       user: {
         id: user.id,
         address: user.address,
-        solanaAddress: user.solanaAddress,
         accountNumber: user.accountNumber,
         createdAt: user.createdAt,
       },

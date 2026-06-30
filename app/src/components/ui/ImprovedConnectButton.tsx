@@ -107,7 +107,7 @@ function ConnectorRow({
   isPending: boolean
 }) {
   return (
-    <button
+    <button type="button"
       onClick={() => onConnect(connector.id)}
       disabled={isPending}
       className="group w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-left transition-all hover:bg-surface disabled:opacity-50"
@@ -193,7 +193,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
     const displayName = ensName || truncate(address)
     return (
       <div className="relative" ref={ref}>
-        <button
+        <button type="button"
           onClick={() => setOpen(!open)}
           className="group flex items-center gap-2 rounded-sm border border-accent/30 bg-accent/5 px-4 py-2 text-sm font-medium text-accent transition-all hover:border-accent/50 hover:bg-accent/10 cursor-pointer"
           aria-expanded={open}
@@ -212,7 +212,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
         </button>
         {open && (
           <>
-            <button className="fixed inset-0 z-40 cursor-default bg-overlay/40" onClick={() => setOpen(false)} aria-label="Close" />
+            <button type="button" className="fixed inset-0 z-40 cursor-default bg-overlay/40" onClick={() => setOpen(false)} aria-label="Close" />
             <div id="wallet-menu" role="menu" className={`absolute ${positionClass} z-50 mt-2 w-64 border border-border bg-panel shadow-xl shadow-overlay`}>
               <div className="border-b border-border px-4 py-3">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted">Connected</p>
@@ -221,7 +221,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
                   <p className="text-xs text-text-muted mt-1">{evmChain.name}</p>
                 )}
               </div>
-              <button
+              <button type="button"
                 role="menuitem"
                 onClick={() => { disconnect(); setOpen(false) }}
                 className="flex w-full items-center gap-2 px-4 py-3 text-sm text-red opacity-80 transition-colors hover:text-red hover:bg-red/10 cursor-pointer"
@@ -238,7 +238,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
 
   return (
     <div className="relative" ref={ref}>
-      <button
+      <button type="button"
         onClick={() => setOpen(!open)}
         disabled={isConnecting}
         className="group relative inline-flex items-center gap-2 overflow-hidden rounded-sm px-5 py-2.5 text-sm font-semibold text-void transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -264,7 +264,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
 
       {open && (
         <>
-          <button className="fixed inset-0 z-40 cursor-default bg-overlay/40" onClick={() => setOpen(false)} aria-label="Close" />
+          <button type="button" className="fixed inset-0 z-40 cursor-default bg-overlay/40" onClick={() => setOpen(false)} aria-label="Close" />
           <div id="wallet-menu" role="menu" className={`absolute ${positionClass} z-50 mt-2 w-72 border border-border bg-panel shadow-xl shadow-overlay`}>
             <div className="border-b border-border px-4 py-3">
               <p className="text-[10px] font-mono font-medium uppercase tracking-widest text-text-muted">
@@ -305,7 +305,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
                 </div>
               )}
 
-              <button
+              <button type="button"
                 role="menuitem"
                 onClick={() => { setOpen(false); setShowAccountLogin(true) }}
                 className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-surface cursor-pointer"
@@ -321,7 +321,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
             </div>
 
             <div className="border-t border-border p-3">
-              <button
+              <button type="button"
                 onClick={() => setShowInfo(!showInfo)}
                 className="flex items-center gap-2 text-[11px] text-text-muted transition-colors hover:text-text cursor-pointer"
               >
@@ -346,7 +346,7 @@ export function ImprovedConnectButton({ align = 'right' }: { align?: 'left' | 'r
                     </a>
                     {' '}or MetaMask.
                   </p>
-                  <button
+                  <button type="button"
                     onClick={() => setOpen(false)}
                     className="mt-1 inline-flex items-center gap-1 text-accent hover:underline"
                   >

@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('../provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
   reportProviderResultSuccess: vi.fn(),
 }))
 
@@ -39,12 +42,7 @@ vi.mock('../usage-service.js', () => ({
 }))
 
 vi.mock('../venice.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../antseed.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../openrouter.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../together.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../deepinfra.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../claude.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../gemini.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../surplus.js', () => ({ surplusChatCompletion: vi.fn() }))
 
 vi.mock('../circuit-breaker.js', () => ({
   isCircuitOpen: vi.fn().mockResolvedValue(false),
@@ -54,6 +52,9 @@ vi.mock('../circuit-breaker.js', () => ({
 
 vi.mock('../provider-result.js', () => ({
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../../config.js', () => ({
@@ -78,14 +79,11 @@ beforeEach(() => {
 })
 
 describe('findProvidersForModel', () => {
-  it('returns ALL_PROVIDERS for a model that has slots for all providers', async () => {
+  it('returns providers for a model that has slots for multiple providers', async () => {
     const modelDef = {
       id: 'llama-test',
       veniceId: 'llama-test',
-      openrouterId: 'meta-llama/llama-test',
-      togetherId: 'llama-test-together',
-      deepinfraId: 'meta-llama/Llama-test',
-      antseedId: 'llama-test',
+      surplusId: 'llama-test-surplus',
       provider: 'both' as const,
       primaryProvider: 'venice' as const,
       inputPricePer1M: 0,
@@ -101,33 +99,31 @@ describe('findProvidersForModel', () => {
       creditsPerMillionOutput: 0,
     }
     const providers = await findProvidersForModel('llama-test', modelDef)
-    expect(providers.length).toBeGreaterThanOrEqual(4)
+    expect(providers.length).toBeGreaterThanOrEqual(2)
     expect(providers).toContain('venice')
-    expect(providers).toContain('openrouter')
-    expect(providers).toContain('together')
-    expect(providers).toContain('deepinfra')
+    expect(providers).toContain('surplus')
   })
 
   it('only returns providers with a non-null *Id field for the model', async () => {
     const modelDef = {
-      id: 'claude-test',
-      claudeId: 'claude-test',
-      provider: 'claude' as const,
-      primaryProvider: 'claude' as const,
+      id: 'venice-only',
+      veniceId: 'venice-only',
+      provider: 'venice' as const,
+      primaryProvider: 'venice' as const,
       inputPricePer1M: 0,
       outputPricePer1M: 0,
       markupPercent: 0,
       category: 'frontier' as const,
       maxTokens: 200000,
       supportsStreaming: true,
-      displayName: 'Claude Test',
+      displayName: 'Venice Only',
       capabilities: [],
-      description: 'claude only',
+      description: 'venice only',
       creditsPerMillionInput: 0,
       creditsPerMillionOutput: 0,
     }
-    const providers = await findProvidersForModel('claude-test', modelDef)
-    expect(providers).toEqual(['claude'])
+    const providers = await findProvidersForModel('venice-only', modelDef)
+    expect(providers).toEqual(['venice'])
   })
 
   it('returns empty array for null model def (model unknown to catalog)', async () => {
@@ -141,10 +137,9 @@ describe('getCandidateProviders', () => {
     const modelDef = {
       id: 'llama-x',
       veniceId: 'llama-x',
-      openrouterId: 'meta-llama/llama-x',
-      togetherId: 'llama-x-together',
+      surplusId: 'llama-x-surplus',
       provider: 'both' as const,
-      primaryProvider: 'openrouter' as const,
+      primaryProvider: 'venice' as const,
       inputPricePer1M: 0,
       outputPricePer1M: 0,
       markupPercent: 0,
@@ -158,10 +153,9 @@ describe('getCandidateProviders', () => {
       creditsPerMillionOutput: 0,
     }
     const { primary, alternates } = await getCandidateProviders('llama-x', modelDef)
-    expect(primary).toBe('openrouter')
-    expect(alternates).toContain('venice')
-    expect(alternates).toContain('together')
-    expect(alternates[0]).not.toBe('openrouter')
+    expect(primary).toBe('venice')
+    expect(alternates).toContain('surplus')
+    expect(alternates[0]).not.toBe('venice')
   })
 })
 
@@ -171,8 +165,6 @@ describe('resolveModelAlias', () => {
     expect(resolved).not.toBe('llama')
     expect(typeof resolved).toBe('string')
     expect(resolved.length).toBeGreaterThan(0)
-    // Should not be the alias itself
-    expect(resolved).not.toBe('llama')
   })
 
   it('resolves "auto" to a default model id', async () => {
@@ -182,8 +174,8 @@ describe('resolveModelAlias', () => {
   })
 
   it('passes through real model names unchanged', async () => {
-    const resolved = await resolveModelAlias('gpt-4o-mini')
-    expect(resolved).toBe('gpt-4o-mini')
+    const resolved = await resolveModelAlias('deepseek-v3.2')
+    expect(resolved).toBe('deepseek-v3.2')
   })
 
   it('passes through unknown names unchanged', async () => {
@@ -194,28 +186,26 @@ describe('resolveModelAlias', () => {
 
 describe('recordFailover / getRouterStats', () => {
   it('tracks a failover event', () => {
-    recordFailover({ modelId: 'm1', fromProvider: 'venice', toProvider: 'openrouter', latencyMs: 1500 })
+    recordFailover({ modelId: 'm1', fromProvider: 'venice', toProvider: 'surplus', latencyMs: 1500 })
     const stats = getRouterStats()
     expect(stats.totalRequests).toBe(1)
     expect(stats.failoverCount).toBe(1)
     expect(stats.byProvider.venice.attempts).toBe(1)
-    expect(stats.byProvider.openrouter.attempts).toBe(1)
+    expect(stats.byProvider.surplus.attempts).toBe(1)
     expect(stats.byProvider.venice.failovers).toBe(1)
   })
 
   it('aggregates multiple failovers', () => {
-    recordFailover({ modelId: 'm1', fromProvider: 'venice', toProvider: 'openrouter', latencyMs: 100 })
-    recordFailover({ modelId: 'm1', fromProvider: 'together', toProvider: 'deepinfra', latencyMs: 200 })
-    recordFailover({ modelId: 'm2', fromProvider: 'venice', toProvider: 'antseed', latencyMs: 300 })
+    recordFailover({ modelId: 'm1', fromProvider: 'venice', toProvider: 'surplus', latencyMs: 100 })
+    recordFailover({ modelId: 'm1', fromProvider: 'surplus', toProvider: 'venice', latencyMs: 200 })
+    recordFailover({ modelId: 'm2', fromProvider: 'venice', toProvider: 'surplus', latencyMs: 300 })
     const stats = getRouterStats()
     expect(stats.totalRequests).toBe(3)
     expect(stats.failoverCount).toBe(3)
-    expect(stats.byProvider.venice.attempts).toBe(2)
+    expect(stats.byProvider.venice.attempts).toBe(3)
     expect(stats.byProvider.venice.failovers).toBe(2)
-    expect(stats.byProvider.openrouter.attempts).toBe(1)
-    expect(stats.byProvider.together.attempts).toBe(1)
-    expect(stats.byProvider.deepinfra.attempts).toBe(1)
-    expect(stats.byProvider.antseed.attempts).toBe(1)
+    expect(stats.byProvider.surplus.attempts).toBe(3)
+    expect(stats.byProvider.surplus.failovers).toBe(1)
   })
 
   it('returns zero stats when nothing recorded', () => {

@@ -14,7 +14,7 @@ enum CircuitState {
   HALF_OPEN = "HALF_OPEN",
 }
 
-type Provider = "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini";
+type Provider = "venice" | "surplus";
 
 interface HealthRecord {
   state: CircuitState;
@@ -105,7 +105,7 @@ const lastTrafficAt = new Map<Provider, number>();
 const PROBE_INTERVAL_MS = 45_000;
 const IDLE_THRESHOLD_MS = 60_000;
 
-const ALL_PROVIDERS: Provider[] = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus", "claude", "gemini"];
+const ALL_PROVIDERS: Provider[] = ["venice", "surplus"];
 
 async function createInitialRecord(provider: Provider): Promise<HealthRecord> {
   const record: HealthRecord = {
@@ -393,29 +393,15 @@ async function probeIdleProviders(): Promise<void> {
 function getProviderBaseUrl(provider: Provider): string {
   const baseUrls: Record<Provider, string> = {
     venice: "https://api.venice.ai",
-    antseed: "https://antseed.com",
-    litellm: "https://openai.llmgateway.eu",
-    openrouter: "https://openrouter.ai",
-    together: "https://api.together.xyz",
-    deepinfra: "https://api.deepinfra.com",
     surplus: "https://api.surplusintelligence.ai",
-    morpheus: "https://api.mor.org",
-    claude: "https://api.anthropic.com",
-    gemini: "https://generativelanguage.googleapis.com",
   };
   return baseUrls[provider];
 }
 
 function getProviderHealthPath(provider: Provider): string {
   switch (provider) {
-    case "openrouter":
-      return "/api/v1/models";
-    case "deepinfra":
-      return "/v1/openai/models";
     case "surplus":
       return "/api/inference/v1/models";
-    case "morpheus":
-      return "/api/v1/models";
     default:
       return "/v1/models";
   }

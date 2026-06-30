@@ -1,11 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('../venice.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../antseed.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../openrouter.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../together.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../deepinfra.js', () => ({ chatCompletion: vi.fn() }))
-vi.mock('../litellm.js', () => ({ chatCompletion: vi.fn() }))
+vi.mock('../surplus.js', () => ({ surplusChatCompletion: vi.fn() }))
 vi.mock('../provider-result.js', () => ({ reportProviderResult: vi.fn() }))
 vi.mock('../circuit-breaker.js', () => ({
   isCircuitOpen: vi.fn().mockResolvedValue(false),
@@ -35,47 +31,16 @@ describe('callProvider', () => {
     )
   })
 
-  it('routes to antseed provider', async () => {
+  it('routes to surplus provider', async () => {
     const mockResp = new Response('ok', { status: 200 })
-    const { chatCompletion } = await import('../antseed.js')
-    vi.mocked(chatCompletion).mockResolvedValue(mockResp)
+    const { surplusChatCompletion } = await import('../surplus.js')
+    vi.mocked(surplusChatCompletion).mockResolvedValue(mockResp)
 
-    const result = await callProvider('antseed', 'test-model', mockBody)
+    const result = await callProvider('surplus', 'test-model', mockBody)
     expect(result).toBe(mockResp)
   })
 
-  it('routes to openrouter provider', async () => {
-    const mockResp = new Response('ok', { status: 200 })
-    const { chatCompletion } = await import('../openrouter.js')
-    vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-
-    await callProvider('openrouter', 'test-model', mockBody)
-    expect(chatCompletion).toHaveBeenCalled()
-  })
-
-  it('routes to together provider', async () => {
-    const mockResp = new Response('ok', { status: 200 })
-    const { chatCompletion } = await import('../together.js')
-    vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-
-    await callProvider('together', 'test-model', mockBody)
-    expect(chatCompletion).toHaveBeenCalled()
-  })
-
-  it('routes to deepinfra provider', async () => {
-    const mockResp = new Response('ok', { status: 200 })
-    const { chatCompletion } = await import('../deepinfra.js')
-    vi.mocked(chatCompletion).mockResolvedValue(mockResp)
-
-    await callProvider('deepinfra', 'test-model', mockBody)
-    expect(chatCompletion).toHaveBeenCalled()
-  })
-
-  it('throws on unknown provider (no silent litellm fallthrough)', async () => {
-    // ponytail: the previous `else` branch silently routed typos to litellm.
-    // The dispatch is now strict; unknown provider names must surface as 500
-    // so monitoring catches them. The type system prevents most of these at
-    // compile time, but `as Provider` casts in tests / scripts can still drift.
+  it('throws on unknown provider', async () => {
     const unknown = 'not-a-real-provider' as unknown as Parameters<typeof callProvider>[0]
     await expect(callProvider(unknown, 'test-model', mockBody)).rejects.toThrow(/Unknown inference provider/)
   })

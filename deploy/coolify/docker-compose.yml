@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   app:
     image: oma-app:${APP_TAG:-latest}
@@ -11,6 +10,7 @@ services:
       - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=${WALLETCONNECT_PROJECT_ID}
       - NEXT_PUBLIC_BASE_TREASURY=${BASE_TREASURY}
       - NEXT_PUBLIC_SOLANA_TREASURY=${SOLANA_TREASURY}
+      - NEXT_PUBLIC_TREASURY_BASE_ADDRESS=${NEXT_PUBLIC_TREASURY_BASE_ADDRESS:-${BASE_TREASURY}}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
@@ -28,21 +28,48 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DATABASE_URL=postgresql://oma:${POSTGRES_PASSWORD}@postgres:5432/oma
-      - REDIS_URL=redis://redis:6379
-      - VENICE_API_KEY=${VENICE_API_KEY}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
-      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - CSRF_SECRET=${CSRF_SECRET:-}
+      - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET:-}
       - CORS_ORIGIN=${CORS_ORIGIN}
-      - FACILITATOR_MODE=${FACILITATOR_MODE:-production}
+      - FACILITATOR_MODE=${FACILITATOR_MODE:-mock}
       - BASE_TREASURY=${BASE_TREASURY}
       - SOLANA_TREASURY=${SOLANA_TREASURY}
+      - CHAIN_RPC_URL=${CHAIN_RPC_URL:-https://mainnet.base.org}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      # AI Provider keys (set the ones you have)
+      - VENICE_API_KEY=${VENICE_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY:-}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ZERO_G_API_KEY=${ZERO_G_API_KEY:-}
+      - MORPHEUS_API_KEY=${MORPHEUS_API_KEY:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - LITELLM_PROXY_URL=${LITELLM_PROXY_URL:-}
+      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL:-}
+      - TINYFISH_API_KEY=${TINYFISH_API_KEY:-}
+      # Payment & wallet
+      - TREASURY_PRIVATE_KEY=${TREASURY_PRIVATE_KEY:-}
+      - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY:-}
+      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET:-}
+      - OMA_API_KEY=${OMA_API_KEY:-}
+      - OMA_AGENT_KEY=${OMA_AGENT_KEY:-}
+      # Admin
+      - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES:-}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - oma-network
 
@@ -66,13 +93,33 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - oma-network
+
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local:16
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=oma
+      - POSTGRES_USER=oma
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+    volumes:
+      - ./backups:/backups
     networks:
       - oma-network
 

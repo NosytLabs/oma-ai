@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { sessionAuth } from "../auth/middleware.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import { auditLog } from "../middleware/audit.js";
 import { getBalance, invalidateBalanceCache } from "../credits/index.js";
 import { db } from "../db/client.js";
@@ -93,7 +94,7 @@ const withdrawalRequestSchema = z.object({
 
 export const withdrawalRoutes = new Hono<OmaEnv>();
 
-withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, async (c) => {
+withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
   const userId = c.get("userId");
   const parsed = withdrawalRequestSchema.safeParse(await c.req.json());
   if (!parsed.success) {
@@ -201,26 +202,42 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
   }
 
   try {
-    const [withdrawal] = await db.insert(withdrawals).values({
-      userId,
-      type: "usdc_withdrawal",
-      amountCents: String(amountCents),
-      netAmountCents: String(netAmountCents),
-      feeCents: String(Math.round(protocolFee) + networkFeeCents),
-      toAddress,
-      chainId: String(chainId),
-      status: "pending",
-      txHash: null,
-    }).returning();
+    // C1: Wrap insert + balance deduction in a transaction with row-level lock
+    // to prevent double-spend race conditions.
+    const withdrawal = await db.transaction(async (tx) => {
+      // Lock the balance row to prevent concurrent withdrawals from reading stale data
+      const [lockedBalance] = await tx.select()
+        .from(creditBalances)
+        .where(eq(creditBalances.userId, userId))
+        .for("update");
 
-    await db.update(creditBalances)
-      .set({
-        balanceCents: sql`${creditBalances.balanceCents} - ${amountCents}`,
-        totalUsedCents: sql`${creditBalances.totalUsedCents} + ${amountCents}`,
-        lastActivityAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(creditBalances.userId, userId));
+      if (!lockedBalance || parseInt(lockedBalance.balanceCents, 10) < amountCents) {
+        throw new Error("INSUFFICIENT_BALANCE");
+      }
+
+      const [w] = await tx.insert(withdrawals).values({
+        userId,
+        type: "usdc_withdrawal",
+        amountCents: String(amountCents),
+        netAmountCents: String(netAmountCents),
+        feeCents: String(Math.round(protocolFee) + networkFeeCents),
+        toAddress,
+        chainId: String(chainId),
+        status: "pending",
+        txHash: null,
+      }).returning();
+
+      await tx.update(creditBalances)
+        .set({
+          balanceCents: sql`${creditBalances.balanceCents} - ${amountCents}`,
+          totalUsedCents: sql`${creditBalances.totalUsedCents} + ${amountCents}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(creditBalances.userId, userId));
+
+      return w;
+    });
 
     await invalidateBalanceCache(userId);
 
@@ -245,8 +262,11 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
       estimatedArrival: "5-30 minutes",
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err: message, userId, amount }, "[withdraw] Withdrawal failed:");
+    // M4: Log full error server-side but return generic message to client
+    logger.error({ err, userId, amount }, "[withdraw] Withdrawal failed:");
+    const message = err instanceof Error && err.message === "INSUFFICIENT_BALANCE"
+      ? "Insufficient balance for withdrawal"
+      : "Withdrawal failed. Please try again later.";
     return c.json({ error: { message, type: "withdrawal_error" } }, 500);
   }
 });
@@ -282,16 +302,14 @@ withdrawalRoutes.get("/v1/withdraw/:id", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const withdrawalId = c.req.param("id") as string;
 
+  // C5: Filter by both id AND userId in single query to prevent timing-based
+  // existence leak (404 vs 403 response time difference).
   const [withdrawal] = await db.select().from(withdrawals)
-    .where(eq(withdrawals.id, withdrawalId))
+    .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.userId, userId)))
     .limit(1);
 
   if (!withdrawal) {
     return c.json({ error: { message: "Withdrawal not found", type: "not_found" } }, 404);
-  }
-
-  if (withdrawal.userId !== userId) {
-    return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
   }
 
   return c.json({
@@ -310,12 +328,13 @@ withdrawalRoutes.get("/v1/withdraw/:id", sessionAuth, async (c) => {
 withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const withdrawalId = c.req.param("id") as string;
-  const body = await c.req.json();
-  const txHash = body.txHash as string | undefined;
 
-  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-    return c.json({ error: { message: "Invalid transaction hash", type: "validation_error" } }, 400);
+  const confirmSchema = z.object({ txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/) });
+  const parsed = confirmSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json({ error: { message: "Invalid transaction hash", type: "validation_error", details: parsed.error.issues } }, 400);
   }
+  const txHash = parsed.data.txHash;
 
   const [withdrawal] = await db.select().from(withdrawals)
     .where(eq(withdrawals.id, withdrawalId))

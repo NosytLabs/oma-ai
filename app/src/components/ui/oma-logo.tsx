@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 /* Hallmark · P4 H5 E4 S5 R4 V4
  * component: logo · genre: atmospheric · theme: terminal (catalog)

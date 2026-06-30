@@ -36,6 +36,8 @@ revenueRoutes.get("/admin/revenue", async (c) => {
     const revenueAgg = await db.select({
       totalRevenueCents: sql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
       totalCostCents: sql<number>`coalesce(sum(${usageRecords.costCents}), 0)`,
+      totalMarkupCents: sql<number>`coalesce(sum(${usageRecords.markupCents}), 0)`,
+      requestCount: sql<number>`count(${usageRecords.id})`,
     })
     .from(usageRecords)
     .where(sql`${usageRecords.createdAt} >= ${dateFilter}`);
@@ -61,12 +63,20 @@ revenueRoutes.get("/admin/revenue", async (c) => {
       .from(users)
       .where(sql`${users.createdAt} >= ${dateFilter}`);
 
+    const totalRev = Number(revenueAgg[0]?.totalRevenueCents || 0);
+    const totalCost = Number(revenueAgg[0]?.totalCostCents || 0);
+    const totalMarkup = Number(revenueAgg[0]?.totalMarkupCents || 0);
+    const inferenceMarginPct = totalRev > 0 ? Math.round(((totalRev - totalCost) / totalRev) * 10000) / 100 : 0;
+
     return c.json({
       period,
       summary: {
-        totalRevenue: Number(revenueAgg[0]?.totalRevenueCents || 0) / 100,
-        totalCost: Number(revenueAgg[0]?.totalCostCents || 0) / 100,
-        grossProfit: (Number(revenueAgg[0]?.totalRevenueCents || 0) - Number(revenueAgg[0]?.totalCostCents || 0)) / 100,
+        totalRevenue: totalRev / 100,
+        totalCost: totalCost / 100,
+        grossProfit: (totalRev - totalCost) / 100,
+        totalMarkup: totalMarkup / 100,
+        inferenceMarginPct,
+        requestCount: Number(revenueAgg[0]?.requestCount || 0),
         totalDeposits: Number(depositsAgg[0]?.totalDeposits || 0),
         depositCount: Number(depositsAgg[0]?.count || 0),
         newUsers: Number(activeUsers[0]?.count || 0),

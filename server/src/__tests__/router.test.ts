@@ -4,6 +4,9 @@ import * as router from '../inference/router.js'
 vi.mock('../inference/provider-health.js', () => ({
   isProviderAvailable: vi.fn().mockResolvedValue(true),
   reportProviderResult: vi.fn(),
+  stopBackgroundDbSync: vi.fn(),
+  stopBackgroundProbing: vi.fn(),
+  stopCacheCleanup: vi.fn(),
 }))
 
 vi.mock('../credits/index.js', () => ({
@@ -39,24 +42,8 @@ vi.mock('../inference/venice.js', () => ({
   chatCompletion: vi.fn(),
 }))
 
-vi.mock('../inference/antseed.js', () => ({
-  chatCompletion: vi.fn(),
-}))
-
-vi.mock('../inference/openrouter.js', () => ({
-  chatCompletion: vi.fn(),
-}))
-
-vi.mock('../inference/together.js', () => ({
-  chatCompletion: vi.fn(),
-}))
-
-vi.mock('../inference/deepinfra.js', () => ({
-  chatCompletion: vi.fn(),
-}))
-
-vi.mock('../inference/litellm.js', () => ({
-  chatCompletion: vi.fn(),
+vi.mock('../inference/surplus.js', () => ({
+  surplusChatCompletion: vi.fn(),
 }))
 
 vi.mock('../inference/circuit-breaker.js', () => ({
@@ -74,22 +61,16 @@ vi.mock('../config.js', () => ({
 
 describe('Router', () => {
   describe('selectProvider', () => {
-    it('infers litellm provider for litellm/ prefix', async () => {
-      const result = await router.selectProvider('litellm/anthropic/claude-3')
-      expect(result.provider).toBe('litellm')
-      expect(result.providerModelId).toBe('anthropic/claude-3')
-    })
-
-    it('infers openrouter for openrouter/ prefix', async () => {
-      const result = await router.selectProvider('openrouter/anthropic/claude-3')
-      expect(result.provider).toBe('openrouter')
+    it('selects venice for known venice model', async () => {
+      const result = await router.selectProvider('llama-3.3-70b')
+      expect(result.provider).toBe('venice')
     })
 
     it('throws 503 when all providers unavailable', async () => {
       const { isProviderAvailable } = await import('../inference/provider-health.js')
       vi.mocked(isProviderAvailable).mockResolvedValue(false)
-      
-      await expect(router.selectProvider('claude-3')).rejects.toMatchObject({
+
+      await expect(router.selectProvider('llama-3.3-70b')).rejects.toMatchObject({
         message: expect.stringContaining('unavailable'),
         status: 503,
       })
@@ -103,7 +84,7 @@ describe('Router', () => {
       stream: false as const,
     }
 
-it('does not refund credits when non-streaming call succeeds with error JSON', async () => {
+    it('does not refund credits when non-streaming call succeeds with error JSON', async () => {
       const { isProviderAvailable } = await import('../inference/provider-health.js')
       vi.mocked(isProviderAvailable).mockResolvedValue(true)
 
@@ -112,7 +93,7 @@ it('does not refund credits when non-streaming call succeeds with error JSON', a
         headers: { 'Content-Type': 'application/json' },
       })
 
-      const { chatCompletion } = await import('../inference/antseed.js')
+      const { chatCompletion } = await import('../inference/venice.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
 
       const { refundCredits } = await import('../credits/index.js')
@@ -141,14 +122,14 @@ it('does not refund credits when non-streaming call succeeds with error JSON', a
         headers: { 'Content-Type': 'text/event-stream' },
       })
 
-      const { chatCompletion } = await import('../inference/antseed.js')
+      const { chatCompletion } = await import('../inference/venice.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
 
-       const result = await router.handleChatCompletion('user-1', 'key-1', { ...mockBody, stream: true })
+      const result = await router.handleChatCompletion('user-1', 'key-1', { ...mockBody, stream: true })
 
-       expect(result.provider).toBe('antseed')
-       expect(result.response).toBeInstanceOf(Response)
-       expect(result.response.headers.get('Content-Type')).toContain('text/event-stream')
+      expect(result.provider).toBe('venice')
+      expect(result.response).toBeInstanceOf(Response)
+      expect(result.response.headers.get('Content-Type')).toContain('text/event-stream')
     })
   })
 })

@@ -6,7 +6,9 @@
  * smell — extract a property-based test instead.
  */
 import { describe, it, expect } from 'vitest'
-import { redactPii, REDACTED_VALUE } from '../privacy.js'
+import { redactPii } from '../privacy.js'
+
+const REDACTED_VALUE = '[REDACTED]'
 
 const PK_64 = '0x' + 'a'.repeat(64)
 const ADDR_40 = '0x' + 'b'.repeat(40)
@@ -16,7 +18,7 @@ const MNEMONIC_12 =
 describe('redactPii', () => {
   it('redacts sensitive keys, value-shaped secrets, and recurses; keeps addresses', () => {
     const input = {
-      model: 'claude-opus-4-7',
+      model: 'deepseek-v3-2',
       stream: false,
       apiKey: 'sk-test-should-disappear',
       authorization: 'Bearer eyJ.should-disappear',
@@ -58,7 +60,7 @@ describe('redactPii', () => {
     expect(deepItem.addr).toBe(ADDR_40) // address: kept
 
     // Non-PII string values pass through unchanged
-    expect(out.model).toBe('claude-opus-4-7')
+    expect(out.model).toBe('deepseek-v3-2')
     expect(out.stream).toBe(false)
     expect(out.sender).toBe(ADDR_40) // top-level address: kept
     expect(out.safeText).toBe('just a normal log message')

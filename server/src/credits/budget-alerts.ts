@@ -1,7 +1,6 @@
 import { db } from "../db/client.js";
-import { budgetAlerts, budgetAlertHistory, creditBalances, usageRecords } from "../db/schema.js";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
-import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { budgetAlerts, budgetAlertHistory, creditBalances } from "../db/schema.js";
+import { eq, and, gte } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 export type BudgetThreshold = 50 | 75 | 90 | 100;
@@ -63,155 +62,6 @@ export async function getBudgetAlertConfig(userId: string): Promise<BudgetAlertC
     weeklyLimitCents: alert.weeklyLimitCents ? Number(alert.weeklyLimitCents) : undefined,
     monthlyLimitCents: alert.monthlyLimitCents ? Number(alert.monthlyLimitCents) : undefined,
   };
-}
-
-function getPeriodBounds(period: BudgetPeriod): { start: Date; end: Date } {
-  const now = new Date();
-  const start = new Date(now);
-  const end = new Date(now);
-
-  switch (period) {
-    case "daily":
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      break;
-    case "weekly": {
-      const dayOfWeek = start.getDay();
-      start.setDate(start.getDate() - dayOfWeek);
-      start.setHours(0, 0, 0, 0);
-      end.setDate(start.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-      break;
-    }
-    case "monthly":
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
-      end.setMonth(end.getMonth() + 1);
-      end.setDate(0);
-      end.setHours(23, 59, 59, 999);
-      break;
-    case "lifetime":
-      start.setFullYear(2000, 0, 1);
-      end.setFullYear(2099, 11, 31);
-      break;
-  }
-
-  return { start, end };
-}
-
-export async function getBudgetUsage(userId: string, period: BudgetPeriod = "monthly"): Promise<BudgetUsage | null> {
-  const config = await getBudgetAlertConfig(userId);
-  if (!config) return null;
-
-  const { start, end } = getPeriodBounds(period);
-  
-  let limitCents = 0;
-  switch (period) {
-    case "daily":
-      limitCents = config.dailyLimitCents ?? config.budgetLimitCents;
-      break;
-    case "weekly":
-      limitCents = config.weeklyLimitCents ?? (config.budgetLimitCents * 7);
-      break;
-    case "monthly":
-      limitCents = config.monthlyLimitCents ?? (config.budgetLimitCents * 30);
-      break;
-    case "lifetime":
-      limitCents = config.budgetLimitCents;
-      break;
-  }
-
-  const result = await db
-    .select({
-      total: sql<number>`COALESCE(SUM(${usageRecords.totalCents}::numeric), 0)`,
-    })
-    .from(usageRecords)
-    .where(
-      and(
-        eq(usageRecords.userId, userId),
-        gte(usageRecords.createdAt, start),
-        lte(usageRecords.createdAt, end)
-      )
-    )
-    .limit(1);
-
-  const spentCents = Number(result[0]?.total ?? 0);
-  const percentUsed = limitCents > 0 ? (spentCents / limitCents) * 100 : 0;
-
-  return {
-    spentCents,
-    limitCents,
-    percentUsed,
-    period,
-    resetAt: end,
-  };
-}
-
-export async function checkMultiPeriodThresholds(userId: string): Promise<AlertTriggered | null> {
-  const periods: BudgetPeriod[] = ["daily", "weekly", "monthly", "lifetime"];
-
-  for (const period of periods) {
-    const usage = await getBudgetUsage(userId, period);
-    if (!usage) continue;
-
-    const thresholds = [50, 75, 90, 100];
-    for (const threshold of thresholds) {
-      if (usage.percentUsed >= threshold) {
-        const alertType = `${threshold}_percent` as AlertTriggered["alertType"];
-        return {
-          threshold: threshold as BudgetThreshold,
-          percentUsed: usage.percentUsed,
-          spentCents: usage.spentCents,
-          budgetLimitCents: usage.limitCents,
-          alertType,
-          period,
-        };
-      }
-    }
-  }
-
-  return null;
-}
-
-export async function getAllBudgetUsage(userId: string): Promise<BudgetUsage[]> {
-  const periods: BudgetPeriod[] = ["daily", "weekly", "monthly", "lifetime"];
-  const usages: BudgetUsage[] = [];
-
-  for (const period of periods) {
-    const usage = await getBudgetUsage(userId, period);
-    if (usage) {
-      usages.push(usage);
-    }
-  }
-
-  return usages;
-}
-
-async function getRedisForBudget() {
-  const redis = await getRedisClient();
-  if (redis && isRedisReady()) return redis;
-  return null;
-}
-
-export async function cacheBudgetUsage(userId: string, usage: BudgetUsage): Promise<void> {
-  const redis = await getRedisForBudget();
-  if (!redis) return;
-
-  const cacheKey = `budget:usage:${userId}:${usage.period}`;
-  await redis.setEx(cacheKey, 60, JSON.stringify(usage));
-}
-
-export async function getCachedBudgetUsage(userId: string, period: BudgetPeriod): Promise<BudgetUsage | null> {
-  const redis = await getRedisForBudget();
-  if (!redis) return null;
-
-  const cacheKey = `budget:usage:${userId}:${period}`;
-  const cached = await redis.get(cacheKey);
-  
-  if (cached) {
-    return JSON.parse(cached) as BudgetUsage;
-  }
-  return null;
 }
 
 export async function setBudgetAlertConfig(
@@ -326,11 +176,24 @@ export async function sendEmailNotification(userId: string, alert: AlertTriggere
 export async function sendWebhookNotification(userId: string, alert: AlertTriggered, webhookUrl: string): Promise<void> {
   const urlParsed = new URL(webhookUrl);
   const hostname = urlParsed.hostname;
-  const PRIVATE_HOSTNAMES = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
-  if (PRIVATE_HOSTNAMES.some(h => hostname === h || hostname.endsWith('.local'))) {
+
+  // Block private/reserved IPs, cloud metadata, and localhost
+  const BLOCKED_HOSTNAMES = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.169.254'];
+  if (BLOCKED_HOSTNAMES.some(h => hostname === h || hostname.endsWith('.local'))) {
     logger.warn(`[BUDGET-ALERT] Blocked SSRF attempt to ${webhookUrl}`);
     return;
   }
+
+  // Block private IP ranges (10.x, 172.16-31.x, 192.168.x)
+  const ipMatch = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipMatch) {
+    const [, a, b] = ipMatch.map(Number);
+    if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) {
+      logger.warn(`[BUDGET-ALERT] Blocked SSRF attempt to private IP ${webhookUrl}`);
+      return;
+    }
+  }
+
   logger.info(`[BUDGET-ALERT] Webhook notification for user ${userId}: ${alert.threshold}% threshold reached to ${webhookUrl}`);
 }
 

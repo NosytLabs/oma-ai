@@ -1,70 +1,41 @@
 'use client'
 
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
 
 type HealthStatus = 'checking' | 'online' | 'offline'
 
 const POLL_INTERVAL_MS = 30_000
-const TIMEOUT_MS = 5_000
+const STALE_TIME_MS = 25_000
 
-let cachedStatus: HealthStatus = 'checking'
-let cachedAt = 0
-let inFlight: Promise<void> | null = null
-const listeners = new Set<() => void>()
-
-function emit() {
-  for (const l of listeners) l()
-}
-
-async function pollOnce() {
-  if (inFlight) return inFlight
-  inFlight = (async () => {
-    try {
-      const res = await fetch('/api/health', {
-        method: 'GET',
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      })
-      cachedStatus = res.ok ? 'online' : 'offline'
-    } catch {
-      cachedStatus = 'offline'
-    } finally {
-      cachedAt = Date.now()
-      inFlight = null
-      emit()
-    }
-  })()
-  return inFlight
-}
-
-let started = false
-function ensurePolling() {
-  if (started || typeof window === 'undefined') return
-  started = true
-  void pollOnce()
-  setInterval(() => void pollOnce(), POLL_INTERVAL_MS)
-}
-
-function subscribe(cb: () => void) {
-  listeners.add(cb)
-  ensurePolling()
-  return () => {
-    listeners.delete(cb)
+async function fetchHealth(): Promise<HealthStatus> {
+  try {
+    const res = await fetch('/api/health', {
+      method: 'GET',
+      signal: AbortSignal.timeout(5_000),
+    })
+    return res.ok ? 'online' : 'offline'
+  } catch {
+    return 'offline'
   }
 }
 
-function getSnapshot(): HealthStatus {
-  return cachedStatus
-}
-
-function getServerSnapshot(): HealthStatus {
-  return 'checking'
-}
-
 export function useApiHealth() {
-  const status = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-  const refresh = useCallback(() => void pollOnce(), [])
-  return { status, refresh, lastCheckedAt: cachedAt }
+  const queryClient = useQueryClient()
+  const { data: status = 'checking', dataUpdatedAt } = useQuery({
+    queryKey: ['apiStatus'],
+    queryFn: fetchHealth,
+    staleTime: STALE_TIME_MS,
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchOnWindowFocus: false,
+  })
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['apiStatus'] })
+  }, [queryClient])
+
+  return { status, refresh, lastCheckedAt: dataUpdatedAt }
 }
 
 interface ApiStatusProps {
@@ -122,7 +93,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
         </span>
       </div>
       {status === 'offline' && showRetryButton && (
-        <button
+        <button type="button"
           onClick={handleRetry}
           className="flex items-center gap-1 text-[10px] text-text-muted hover:text-text transition-colors"
           aria-label="Retry connection"
@@ -134,4 +105,3 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
   )
 }
 
-export default ApiStatus

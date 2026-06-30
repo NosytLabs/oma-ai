@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'API Playground',
   description: 'Test AI models in real-time with our interactive API playground. Supports streaming, multiple models, and system prompts.',
   keywords: ['AI playground', 'API testing', 'chatbot', 'streaming', 'OpenAI compatible'],
+  alternates: { canonical: '/playground' },
   openGraph: {
     title: 'API Playground | OMA AI',
     description: 'Test AI models in real-time. Stream responses, try different models, and experiment with prompts.',

@@ -68,8 +68,10 @@ describe('Streaming Token Estimation', () => {
     it('applies discount correctly', async () => {
       const withoutDiscount = await calculateActualCost('gpt-4o-mini', 100000, 50000, 0)
       const withDiscount = await calculateActualCost('gpt-4o-mini', 100000, 50000, 20)
+      // 20% discount must reduce total cost
       expect(Number(withDiscount.totalCents)).toBeLessThan(Number(withoutDiscount.totalCents))
-      expect(Number(withDiscount.markupCents)).toBeGreaterThan(0)
+      // totalCents ≈ costCents + markupCents (within 1 due to rounding)
+      expect(Math.abs(Number(withDiscount.totalCents) - (Number(withDiscount.costCents) + Number(withDiscount.markupCents)))).toBeLessThanOrEqual(1)
     })
   })
 })

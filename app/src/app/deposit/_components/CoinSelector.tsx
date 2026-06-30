@@ -98,7 +98,6 @@ export function CoinSelector({
                   className="w-full pl-10 pr-4 py-2.5 rounded bg-surface border border-border text-sm
                     text-text placeholder:text-text-muted
                     focus:outline-none focus:border-accent/50"
-                  autoFocus
                 />
               </div>
             </div>

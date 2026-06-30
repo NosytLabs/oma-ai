@@ -22,40 +22,11 @@ const envSchema = z.object({
   // let callers opt out per-request (private:false) for non-sensitive traffic.
   // Production should leave this unset (defaults to false).
   OMMA_ALLOW_NON_PRIVATE_VENICE: z.coerce.boolean().default(false),
-  // Operator treasury: cold-side signer for sweeping USDC profits out of the
-  // hot facilitator wallet. The sweep endpoint returns 501 if unset (read-only
-  // mode). Production should source this from a multisig or HSM-backed key.
-  TREASURY_PRIVATE_KEY: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{64}$/)
-    .optional(),
-  // Destination address for the operator's profit sweep. Must be set if
-  // TREASURY_PRIVATE_KEY is set; sweep returns 403 if this is missing.
-  ADMIN_SWEEP_ADDRESS: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  // Google Gemini API
-  GEMINI_API_KEY: z.string().optional(),
-  ANTSEED_PROXY_URL: z.string().min(1).optional(),
-  LITELLM_PROXY_URL: z.string().min(1).optional(),
-  LITELLM_API_KEY: z.string().min(1).optional(),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(), // Claude Messages API
-  OPENROUTER_API_KEY: z.string().min(1).optional(),
-  OPENROUTER_API_URL: z.string().min(1).default("https://openrouter.ai/api/v1"),
-  OPENROUTER_REFERRER: z.string().min(1).optional(),
-  OPENROUTER_VENICE_KEY: z.string().optional(),
-  OPENROUTER_ALLOW_FALLBACKS: z.boolean().default(true),
-  TOGETHER_API_KEY: z.string().min(1).optional(),
-  TOGETHER_API_URL: z.string().min(1).default("https://api.together.xyz/v1"),
-  DEEPINFRA_API_KEY: z.string().min(1).optional(),
-  DEEPINFRA_API_URL: z.string().min(1).default("https://api.deepinfra.com/v1/openai"),
-  // ponytail: GROQ / CEREBRAS / BEDROCK removed — never wired into provider-selector
-  // or call-provider. Code that referenced them was dead. If a future build
-  // wants to re-add any of these, add the provider to provider-selector AND
-  // call-provider in the same commit.
-  MORPHEUS_API_KEY: z.string().min(1).optional(),
-  MORPHEUS_BASE_URL: z.string().min(1).default("https://api.mor.org/api/v1"),
+  // ponytail: Non-private providers (OpenRouter, Together, DeepInfra, Claude,
+  // Gemini, Morpheus, AntSeed, LiteLLM) removed. OMA routes exclusively through
+  // Venice-based providers (Venice direct, Surplus, CheapTokens) to guarantee
+  // zero-data-retention privacy. If you need a non-private provider, add it to
+  // provider-selector.ts, call-provider.ts, and models.ts in the same commit.
   SURPLUS_WALLET_PRIVATE_KEY: z.string().min(1).optional(),
   HOUDINI_API_KEY: z.string().min(1).optional(),
   HOUDINI_API_SECRET: z.string().min(1).optional(),
@@ -65,9 +36,17 @@ const envSchema = z.object({
   HOUDINI_WS_URL: z.string().min(1).default("wss://partner-api.houdiniswap.com/v2/ws"),
   HOUDINI_ADDRESS_TO: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   CHEAPTOKENS_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  CHAIN_RPC_URL: z.string().min(1).optional().default("https://base-rpc.publicnode.com"),
+  // Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
+  // production endpoint). Set to https://base-rpc.publicnode.com or another
+  // provider for dev/test environments.
+  CHAIN_RPC_URL: z.string().min(1).optional().default("https://special-special-mound.base-mainnet.quiknode.pro/a1ac6d8d0cc41dbf51b475c28ff92995bf2bcc39/"),
   CHAIN_RPC_URL_FALLBACK: z.string().optional(),
-  AERODROME_POOL_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  // Explicit QuickNode overrides. Set in render.yaml via QUICKNODE_RPC_URL when
+  // you want the URL to live in a single named env var (vs. CHAIN_RPC_URL).
+  // QUICKNODE_RPC_URL takes precedence over CHAIN_RPC_URL when both are set.
+  QUICKNODE_RPC_URL: z.string().url().optional(),
+  QUICKNODE_RPC_URL_FALLBACK: z.string().url().optional(),
+  QUICKNODE_API_KEY: z.string().min(1).optional(),
   SOLANA_RPC_URL: z.string().min(1).default("https://api.mainnet-beta.solana.com"),
   SOLANA_RPC_URL_FALLBACK: z.string().optional(),
   FACILITATOR_MODE: z.enum(["mock", "live"]).default("mock"),
@@ -78,6 +57,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   ENCRYPTION_KEY: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  // Canonical production domain. Used as the SIWE/SIWS `domain` bind target
+  // and as the default for sign-in message headers. Set in production; tests
+  // and dev default to a permissive value.
+  PRIMARY_DOMAIN: z.string().min(1).default("oma.ai"),
   // Public-facing API URL. Used by OpenAPI spec, SSO SAML entity/ACS URLs, and any
   // server-rendered surface that surfaces the public endpoint to clients.
   // Falls back to the production domain; production deployments can override
@@ -145,17 +128,12 @@ const envSchema = z.object({
   // CSRF protection secret (required for session-based auth flows)
   CSRF_SECRET: z.string().min(32).default("dev-csrf-secret-change-me-in-prod-32ch"),
 
-  // Server-to-server auth: Next.js app → API (bypasses user OAuth)
-  OMA_API_KEY: z.string().min(1).optional(),
-  // Server-to-server auth: autonomous agent / cron callbacks
-  OMA_AGENT_KEY: z.string().min(1).optional(),
-
-  // Weighted load balancing for provider failover (format: "venice:70,antseed:30,litellm:0,openrouter:0,together:0,deepinfra:0")
+  // Weighted load balancing for provider failover (format: "venice:70,surplus:30")
   // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
   // If not set, defaults to sequential fallback (primary provider first, then others in order).
   PROVIDER_WEIGHTS: z.string().optional(),
 
-  // Per-model weighted load balancing (format: "gpt-4=venice:70,openrouter:30;dalle-3=openrouter:100;claude-3=venice:50,antseed:50")
+  // Per-model weighted load balancing (format: "deepseek-v3.2=venice:70,surplus:30")
   // Takes precedence over PROVIDER_WEIGHTS for matching models. Format: modelId=provider:weight,...
   MODEL_WEIGHTS: z.string().optional(),
 
@@ -219,6 +197,21 @@ const envSchema = z.object({
 
   // Connection pool size for Neon Postgres (used with PgBouncer)
   CONNECTION_POOL_SIZE: z.coerce.number().int().positive().default(10),
+
+  // ===========================================================================
+  // x402 facilitator provider selection.
+  //
+  // "coinbase-cdp" (default) — verify/settle locally using viem + CHAIN_RPC_URL,
+  //                            settlement to BASE_TREASURY via FACILITATOR_PRIVATE_KEY.
+  // "quicknode"            — delegate verify/settle to QuickNode's hosted x402
+  //                            facilitator (marketplace addon). Requires
+  //                            QUICKNODE_X402_URL + QUICKNODE_X402_API_KEY.
+  //                            Falls back to "coinbase-cdp" if QuickNode env vars
+  //                            are unset.
+  // ===========================================================================
+  X402_FACILITATOR_PROVIDER: z.enum(["coinbase-cdp", "quicknode"]).default("coinbase-cdp"),
+  QUICKNODE_X402_URL: z.string().url().optional(),
+  QUICKNODE_X402_API_KEY: z.string().min(1).optional(),
 
   // ===========================================================================
   // Neon Auth (managed Better Auth service).
@@ -321,7 +314,7 @@ function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean 
       return false;
     }
     const weightEntries = weightsStr.split(",");
-    const ALL_PROVIDERS_LIST = ["venice", "antseed", "litellm", "openrouter", "together", "deepinfra", "surplus", "morpheus"];
+    const ALL_PROVIDERS_LIST = ["venice", "surplus"];
     let totalWeight = 0;
     for (const we of weightEntries) {
       const [provider, weight] = we.split(":").map(s => s.trim());

@@ -98,10 +98,6 @@ vi.mock("../lib/logger.js", () => ({
 import {
   createApiKey,
   validateApiKey,
-  isValidIpOrCidr,
-  ipMatchesCidr,
-  isIpAllowedByList,
-  validateIpAllowlist,
 } from "../auth/api-keys.js";
 import { bearerAuth } from "../auth/middleware.js";
 
@@ -110,93 +106,6 @@ beforeEach(() => {
   dbStore.selectRows.length = 0;
 });
 
-// ─── Pure helper unit tests ─────────────────────────────────────────────────────
-
-describe("ip allowlist helpers", () => {
-  it("accepts bare IPv4 addresses", () => {
-    expect(isValidIpOrCidr("192.168.1.5")).toBe(true);
-    expect(isValidIpOrCidr("0.0.0.0")).toBe(true);
-    expect(isValidIpOrCidr("255.255.255.255")).toBe(true);
-  });
-
-  it("accepts bare IPv6 addresses", () => {
-    expect(isValidIpOrCidr("::1")).toBe(true);
-    expect(isValidIpOrCidr("2001:db8::1")).toBe(true);
-    expect(isValidIpOrCidr("fe80::1")).toBe(true);
-  });
-
-  it("accepts IPv4 CIDR blocks", () => {
-    expect(isValidIpOrCidr("10.0.0.0/8")).toBe(true);
-    expect(isValidIpOrCidr("192.168.1.0/24")).toBe(true);
-    expect(isValidIpOrCidr("0.0.0.0/0")).toBe(true);
-  });
-
-  it("accepts IPv6 CIDR blocks", () => {
-    expect(isValidIpOrCidr("2001:db8::/32")).toBe(true);
-    expect(isValidIpOrCidr("::/0")).toBe(true);
-  });
-
-  it("rejects malformed entries", () => {
-    expect(isValidIpOrCidr("")).toBe(false);
-    expect(isValidIpOrCidr("not-an-ip")).toBe(false);
-    expect(isValidIpOrCidr("999.999.999.999")).toBe(false);
-    expect(isValidIpOrCidr("10.0.0.0/33")).toBe(false); // v4 max is 32
-    expect(isValidIpOrCidr("::1/129")).toBe(false);    // v6 max is 128
-    expect(isValidIpOrCidr("10.0.0.0/-1")).toBe(false);
-    expect(isValidIpOrCidr("10.0.0.0/abc")).toBe(false);
-    expect(isValidIpOrCidr("10.0.0.0/")).toBe(false);
-  });
-
-  it("strips IPv6 zone-id before validation", () => {
-    expect(isValidIpOrCidr("fe80::1%eth0")).toBe(true);
-  });
-
-  it("ipMatchesCidr matches IPv4 inside a CIDR block", () => {
-    expect(ipMatchesCidr("192.168.1.5", "192.168.1.0/24")).toBe(true);
-    expect(ipMatchesCidr("192.168.1.255", "192.168.1.0/24")).toBe(true);
-    expect(ipMatchesCidr("192.168.2.5", "192.168.1.0/24")).toBe(false);
-    expect(ipMatchesCidr("10.0.0.1", "10.0.0.0/8")).toBe(true);
-  });
-
-  it("ipMatchesCidr matches IPv6 inside a CIDR block", () => {
-    expect(ipMatchesCidr("::1", "::1")).toBe(true);
-    expect(ipMatchesCidr("2001:db8::1", "2001:db8::/32")).toBe(true);
-    expect(ipMatchesCidr("2001:db9::1", "2001:db8::/32")).toBe(false);
-  });
-
-  it("ipMatchesCidr does not cross v4/v6 families", () => {
-    expect(ipMatchesCidr("::1", "127.0.0.1")).toBe(false);
-    expect(ipMatchesCidr("127.0.0.1", "::1")).toBe(false);
-  });
-
-  it("ipMatchesCidr treats /0 as universal", () => {
-    expect(ipMatchesCidr("8.8.8.8", "0.0.0.0/0")).toBe(true);
-    expect(ipMatchesCidr("::1", "::/0")).toBe(true);
-  });
-
-  it("isIpAllowedByList returns true on null/empty list (no breaking change)", () => {
-    expect(isIpAllowedByList("1.2.3.4", null)).toBe(true);
-    expect(isIpAllowedByList("1.2.3.4", undefined)).toBe(true);
-    expect(isIpAllowedByList("1.2.3.4", [])).toBe(true);
-  });
-
-  it("isIpAllowedByList matches when ANY entry matches", () => {
-    const list = ["10.0.0.0/8", "192.168.1.0/24"];
-    expect(isIpAllowedByList("10.5.5.5", list)).toBe(true);
-    expect(isIpAllowedByList("192.168.1.10", list)).toBe(true);
-    expect(isIpAllowedByList("172.16.0.1", list)).toBe(false);
-  });
-
-  it("validateIpAllowlist normalizes entries and throws on garbage", () => {
-    expect(validateIpAllowlist(null)).toBeNull();
-    expect(validateIpAllowlist(undefined)).toBeNull();
-    expect(validateIpAllowlist([])).toBeNull();
-    expect(validateIpAllowlist(["10.0.0.0/8", "::1"])).toEqual(["10.0.0.0/8", "::1"]);
-    expect(validateIpAllowlist(["  10.0.0.0/8  "])).toEqual(["10.0.0.0/8"]); // trim
-    expect(() => validateIpAllowlist(["not-an-ip"])).toThrow(/Invalid IP/);
-    expect(() => validateIpAllowlist(["10.0.0.0/33"])).toThrow(/Invalid IP/);
-  });
-});
 
 // ─── createApiKey() — new options persisted ─────────────────────────────────────
 
@@ -291,12 +200,16 @@ describe("bearerAuth — expiry enforcement", () => {
 });
 
 describe("bearerAuth — IP allowlist enforcement", () => {
+  // ponytail: H2 — when TRUSTED_PROXY_IPS is empty (the test config's
+  // production-safe default), extractClientIp REFUSES to read x-forwarded-for
+  // and falls back to x-real-ip. We use x-real-ip in tests to mirror what
+  // production sees from a direct connection (no trusted reverse proxy).
   it("rejects requests from IPs not in the allowlist (403 ip_not_allowed)", async () => {
     setActiveKey({ ipAllowlist: ["192.168.1.0/24"] });
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "10.0.0.1", // not in 192.168.1.0/24
+        "x-real-ip": "10.0.0.1", // not in 192.168.1.0/24
       },
     });
     expect(res.status).toBe(403);
@@ -309,7 +222,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "192.168.1.5",
+        "x-real-ip": "192.168.1.5",
       },
     });
     expect(res.status).toBe(200);
@@ -320,7 +233,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "::1",
+        "x-real-ip": "::1",
       },
     });
     expect(res.status).toBe(200);
@@ -331,7 +244,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "2001:db8::1",
+        "x-real-ip": "2001:db8::1",
       },
     });
     expect(res.status).toBe(403);
@@ -342,7 +255,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "203.0.113.42",
+        "x-real-ip": "203.0.113.42",
       },
     });
     expect(res.status).toBe(200);
@@ -353,7 +266,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "203.0.113.42",
+        "x-real-ip": "203.0.113.42",
       },
     });
     expect(res.status).toBe(200);
@@ -364,7 +277,7 @@ describe("bearerAuth — IP allowlist enforcement", () => {
     const res = await buildAuthApp().request("/p/protected", {
       headers: {
         Authorization: `Bearer ${TEST_RAW_KEY}`,
-        "x-forwarded-for": "192.168.1.5",
+        "x-real-ip": "192.168.1.5",
       },
     });
     expect(res.status).toBe(200);
@@ -375,7 +288,7 @@ describe("bearerAuth — combined expiry + IP checks", () => {
   it("checks expiry BEFORE IP (expired key with permissive IP is still rejected)", async () => {
     setActiveKey({ expiresAt: new Date("2025-01-01T00:00:00Z"), ipAllowlist: ["0.0.0.0/0"] });
     const res = await buildAuthApp().request("/p/protected", {
-      headers: { Authorization: `Bearer ${TEST_RAW_KEY}`, "x-forwarded-for": "8.8.8.8" },
+      headers: { Authorization: `Bearer ${TEST_RAW_KEY}`, "x-real-ip": "8.8.8.8" },
     });
     expect(res.status).toBe(401);
   });

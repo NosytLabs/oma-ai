@@ -8,6 +8,17 @@ export const metadata: Metadata = {
   title: 'FAQ · OMA',
   description:
     'Common questions about OMA, the wallet-only inference gateway, x402 pay-per-request, USDC on Base, and the data we keep on file.',
+  alternates: { canonical: '/faq' },
+  openGraph: {
+    title: 'FAQ · OMA',
+    description: 'Common questions about the wallet-only inference gateway, x402 pay-per-request, USDC on Base, and the data we keep on file.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'OMA AI Gateway' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FAQ · OMA',
+    description: 'Frequently asked questions about OMA and the inference gateway.',
+  },
 }
 
 const GROUPS: FAQGroup[] = [
@@ -177,7 +188,7 @@ export default function FaqPage() {
               </span>
 
               <h1
-                className="h1-hero text-text-bright mt-6"
+                className="h1-page text-text-bright mt-6"
                 style={{ overflowWrap: 'anywhere', minWidth: 0, textWrap: 'balance' }}
               >
                 <span className="block">Questions,</span>

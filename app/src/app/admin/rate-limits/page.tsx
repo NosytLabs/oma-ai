@@ -158,8 +158,8 @@ export default function AdminRateLimitsPage() {
     createOverrideMutation.mutate({
       targetType: overrideForm.targetType,
       targetId: overrideForm.targetId,
-      rpm: overrideForm.rpm ? parseInt(overrideForm.rpm) : undefined,
-      tpm: overrideForm.tpm ? parseInt(overrideForm.tpm) : undefined,
+      rpm: overrideForm.rpm ? parseInt(overrideForm.rpm, 10) : undefined,
+      tpm: overrideForm.tpm ? parseInt(overrideForm.tpm, 10) : undefined,
       expiresAt: overrideForm.expiresAt || undefined,
     })
   }
@@ -263,7 +263,7 @@ export default function AdminRateLimitsPage() {
       )}
 
       <div className="flex gap-0.5 border-b border-border" role="tablist">
-        <button
+        <button type="button"
           role="tab"
           aria-selected={activeTab === 'tiers'}
           onClick={() => setActiveTab('tiers')}
@@ -276,7 +276,7 @@ export default function AdminRateLimitsPage() {
           <Gauge className="w-3.5 h-3.5 inline mr-1.5" />
           Tiers
         </button>
-        <button
+        <button type="button"
           role="tab"
           aria-selected={activeTab === 'overrides'}
           onClick={() => setActiveTab('overrides')}
@@ -318,7 +318,7 @@ export default function AdminRateLimitsPage() {
                           type="number"
                           min={1}
                           value={tier.rpm}
-                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, rpm: parseInt(e.target.value) || 60 } })}
+                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, rpm: parseInt(e.target.value, 10) || 60 } })}
                           className="w-full sm:max-w-[160px] px-3 py-2 rounded border border-border bg-panel text-text font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
                         />
                       </div>
@@ -329,7 +329,7 @@ export default function AdminRateLimitsPage() {
                           type="number"
                           min={1}
                           value={tier.tpm}
-                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, tpm: parseInt(e.target.value) || 10000 } })}
+                          onChange={(e) => setEditTiers({ ...editTiers, [tierId]: { ...tier, tpm: parseInt(e.target.value, 10) || 10000 } })}
                           className="w-full sm:max-w-[160px] px-3 py-2 rounded border border-border bg-panel text-text font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
                         />
                       </div>
@@ -448,7 +448,7 @@ export default function AdminRateLimitsPage() {
                 >
                   {createOverrideMutation.isPending ? 'Creating...' : 'Create Override'}
                 </m.button>
-                <button
+                <button type="button"
                   onClick={() => setShowOverrideForm(false)}
                   className="px-4 py-2 rounded border border-border bg-surface text-text-muted hover:text-text text-sm font-mono transition-colors"
                 >
@@ -494,7 +494,7 @@ export default function AdminRateLimitsPage() {
                         {format(new Date(override.createdAt), 'MMM d, yyyy')}
                       </td>
                       <td className="px-4 py-3">
-                        <button
+                        <button type="button"
                           onClick={() => handleDeleteOverride(override)}
                           aria-label={`Delete override for ${override.targetId}`}
                           className="p-1.5 rounded hover:bg-error/10 text-text-muted hover:text-error transition-colors"

@@ -8,6 +8,29 @@ function isValidTxHash(txHash: string): boolean {
   return EVM_TX_HASH_RE.test(txHash);
 }
 
+// Bonus credit tiers: larger deposits get bonus credits on top of the base
+// $1 = 100 credits conversion. This matches the pricing page:
+//   Starter ($10):   1,000 credits (no bonus)
+//   Builder ($50):   5,500 credits (+10% bonus)
+//   Scale ($200):   24,000 credits (+20% bonus)
+const BONUS_TIERS = [
+  { thresholdUsd: 200, bonusPct: 0.20 },
+  { thresholdUsd: 50, bonusPct: 0.10 },
+] as const;
+
+export function calculateCreditsWithBonus(amountUsd: number): { baseCents: number; bonusCents: number; totalCents: number } {
+  const baseCents = Math.round(amountUsd * 100);
+  let bonusPct = 0;
+  for (const tier of BONUS_TIERS) {
+    if (amountUsd >= tier.thresholdUsd) {
+      bonusPct = tier.bonusPct;
+      break;
+    }
+  }
+  const bonusCents = Math.round(baseCents * bonusPct);
+  return { baseCents, bonusCents, totalCents: baseCents + bonusCents };
+}
+
 // Transaction type from Drizzle - complex generic makes 'any' pragmatic here
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function createDepositAndCreditBatch(
@@ -50,7 +73,7 @@ export async function processUsdcDeposit(userId: string, amountUsd: number, txHa
     throw new Error("Invalid amountUsd: must be a positive finite number");
   }
 
-  const creditsCents = Math.round(amountUsd * 100);
+  const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
 
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).for("update");
@@ -120,9 +143,9 @@ async function completeHoudiniDepositImpl(
   if (deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
   if (deposit.status !== "pending") throw new Error("Deposit is not pending");
 
-  // creditsCents is derived solely from the on-chain toAmount; no caller override.
+  // creditsCents is derived from the on-chain toAmount + bonus tier.
   const netAmountUsd = toAmount;
-  const creditsCents = Math.round(netAmountUsd * 100);
+  const { totalCents: creditsCents } = calculateCreditsWithBonus(netAmountUsd);
 
   await tx.update(deposits)
     .set({
@@ -160,7 +183,7 @@ export async function processCctpDeposit(userId: string, amountUsd: number, txHa
     throw new Error("Invalid CCTP attestation: must be a valid hex string");
   }
 
-  const creditsCents = Math.round(amountUsd * 100);
+  const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
 
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).for("update");
@@ -208,7 +231,7 @@ export async function processLifiDeposit(
     throw new Error("Invalid LiFi fromChain");
   }
 
-  const creditsCents = Math.round(amountUsd * 100);
+  const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
 
   return db.transaction(async (tx) => {
     const existing = await tx.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txHash)).for("update");
@@ -250,7 +273,7 @@ export async function processPaymentLinkDeposit(
     if (userId && deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
     if (deposit.status !== "pending") throw new Error("Deposit is not pending");
 
-    const creditsCents = Math.round(amountUsd * 100);
+    const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
 
     await tx.update(deposits)
       .set({

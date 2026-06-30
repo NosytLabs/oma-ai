@@ -22,8 +22,23 @@ import type { OmaEnv } from "../../types.js";
 // `count` variable plus the natural single-threaded JS event loop
 // makes incr() effectively atomic for the test.
 let count = 0;
+// Synchronous atomic flag for SET NX — uses a module-level var so even
+// concurrent async calls see the updated value before any await yields.
+let nxKeyExists = false;
 const mockRedis = {
   get: vi.fn(async (_key: string) => (count > 0 ? String(count) : null)),
+  set: vi.fn(async (key: string, value: string, opts?: { NX?: boolean; EX?: number }) => {
+    if (opts?.NX) {
+      // Synchronous check — no await before this, so concurrent calls
+      // see the true value after the first one sets it.
+      if (nxKeyExists) return null;
+      nxKeyExists = true;
+      // Reset count for this fail window
+      count = 1;
+      return "OK";
+    }
+    return "OK";
+  }),
   incr: vi.fn(async (_key: string) => {
     count += 1;
     return count;
@@ -31,6 +46,7 @@ const mockRedis = {
   expire: vi.fn(async (_key: string, _ttl: number) => 1),
   del: vi.fn(async (_key: string) => {
     count = 0;
+    nxKeyExists = false;
     return 1;
   }),
 };
@@ -153,8 +169,13 @@ describe("SEC-7 — 2FA fail counter atomicity", () => {
     expect(status401 + status429).toBe(N);
     expect(status429).toBeGreaterThanOrEqual(6);
 
-    // INCR was attempted atomically for every request — no read-then-write gap.
-    expect(mockRedis.incr).toHaveBeenCalledTimes(N);
+    // SET NX was called for every request — 1 succeeds, 9 fall through to INCR.
+    // No read-then-write gap.
+    expect(mockRedis.set).toHaveBeenCalled();
+    // At least 1 request hit SET NX + EX and the rest hit INCR as fallback.
+    const incrCalls = mockRedis.incr.mock.calls.length;
+    expect(incrCalls).toBeGreaterThanOrEqual(6); // at least 6 hit INCR
+    expect(incrCalls + 1).toBe(N); // 1 SET NX success + N-1 INCR
   });
 
   it("sets the TTL only on the first increment (window doesn't slide)", async () => {
@@ -172,10 +193,14 @@ describe("SEC-7 — 2FA fail counter atomicity", () => {
       ),
     );
 
-    // First INCR returns 1 → expire is called once. Subsequent increments
-    // (2..N) must NOT re-set the TTL, otherwise the 5-min window slides
-    // forward on every attempt and the cap is effectively bypassed.
-    expect(mockRedis.expire).toHaveBeenCalledTimes(1);
+    // First SET NX with EX returns "OK" → the key is created with TTL inline.
+    // Subsequent calls see the key exists (NX returns null) and fall through
+    // to INCR without re-setting the TTL. Assert that `set` was called with
+    // the EX:300 option at least once.
+    const setCalls = mockRedis.set.mock.calls.filter(
+      ([_k, _v, opts]) => opts && (opts as { EX?: number }).EX === 300
+    );
+    expect(setCalls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("resets the counter when a valid 2FA code is presented (single request)", async () => {

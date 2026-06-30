@@ -1,10 +1,11 @@
 import { config } from "../config.js";
-import type { ChatMessage } from "./types.js";
+import type { ChatMessage, InferenceError } from "./types.js";
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { getActiveVeniceKey } from "./cheaptokens.js";
 import { BaseInferenceProvider, type ProviderConfig } from "./base.js";
 import { createProvider } from "./provider-factory.js";
 import { reportProviderResult } from "./provider-result.js";
+import { logger } from "../lib/logger.js";
 
 const VENICE_TIMEOUT_MS = 30_000;
 const VENICE_STREAM_TIMEOUT_MS = 120_000;
@@ -17,6 +18,7 @@ export interface VeniceParameters {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  include_venice_system_prompt?: boolean;
   private?: boolean;
 }
 
@@ -30,6 +32,7 @@ export function buildVeniceChatCompletion(body: {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  include_venice_system_prompt?: boolean;
   private?: boolean;
   [key: string]: unknown;
 }): { model: string; messages: ChatMessage[]; stream?: boolean; [key: string]: unknown } {
@@ -52,6 +55,7 @@ export function buildVeniceChatCompletion(body: {
     enable_web_citations: body.enable_web_citations as boolean,
     strip_thinking_response: body.strip_thinking_response as boolean,
     disable_thinking: body.disable_thinking as boolean,
+    include_venice_system_prompt: body.include_venice_system_prompt as boolean,
     private: effectivePrivate,
   };
 
@@ -62,6 +66,7 @@ export function buildVeniceChatCompletion(body: {
     enable_web_citations: _enable_web_citations,
     strip_thinking_response: _strip_thinking_response,
     disable_thinking: _disable_thinking,
+    include_venice_system_prompt: _include_venice_system_prompt,
     private: _private,
     model,
     messages,
@@ -90,6 +95,41 @@ function veniceHeaders(): Record<string, string> {
     "Content-Type": "application/json",
     Authorization: `Bearer ${activeKey}`,
   };
+}
+
+/**
+ * Log Venice-specific response headers for observability and support.
+ *  - CF-RAY: Cloudflare ray ID (critical for Venice support tickets).
+ *    Logged at info level on errors, debug level on success to avoid noise.
+ *  - x-venice-model-deprecation-warning: signals an upcoming model deprecation
+ *  - x-venice-model-deprecation-date: the deprecation effective date
+ */
+function logVeniceResponseHeaders(
+  resp: Response,
+  endpoint: string,
+  model?: string,
+): void {
+  // Defensive: `resp.headers` is always present on a real fetch Response, but
+  // guard against undefined so header-logging can never mask the downstream
+  // error mapping (mapVeniceError) by throwing an opaque TypeError.
+  const headers = resp.headers;
+  if (!headers || typeof headers.get !== "function") return;
+  const cfRay = headers.get("CF-RAY");
+  const deprecationWarning = headers.get("x-venice-model-deprecation-warning");
+  const deprecationDate = headers.get("x-venice-model-deprecation-date");
+  if (cfRay) {
+    if (!resp.ok) {
+      logger.info({ cfRay, endpoint, model, status: resp.status, type: "venice_cf_ray" }, "Venice CF-RAY (error)");
+    } else {
+      logger.debug({ cfRay, endpoint, model, type: "venice_cf_ray" }, "Venice CF-RAY");
+    }
+  }
+  if (deprecationWarning || deprecationDate) {
+    logger.warn(
+      { endpoint, model, deprecationWarning, deprecationDate, type: "venice_model_deprecated" },
+      "Venice model deprecation warning",
+    );
+  }
 }
 
 const mapVeniceError = createVeniceErrorMapper();
@@ -156,7 +196,7 @@ function createVeniceErrorMapper(): (status: number, body: string) => never {
       retryable = false;
     }
 
-    throw Object.assign(new Error(message), { status, code, retryable, type });
+    throw Object.assign(new Error(message), { status, code, retryable, type }) as InferenceError;
   };
 }
 
@@ -165,7 +205,7 @@ function checkVeniceConfig(): void {
     throw Object.assign(
       new Error("Venice API key not configured"),
       { status: 503, code: "venice_config_missing", retryable: false, type: "venice_config_missing" }
-    );
+    ) as InferenceError;
   }
 }
 
@@ -210,6 +250,7 @@ class VeniceProvider extends BaseInferenceProvider {
           signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
         });
 
+        logVeniceResponseHeaders(resp, "/embeddings", body.model);
         span.setAttribute("http.status_code", resp.status);
 
         if (!resp.ok) {
@@ -268,6 +309,7 @@ class VeniceProvider extends BaseInferenceProvider {
           signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
         });
 
+        logVeniceResponseHeaders(resp, "/image/generate", body.model);
         span.setAttribute("http.status_code", resp.status);
 
         if (!resp.ok) {
@@ -326,6 +368,7 @@ class VeniceProvider extends BaseInferenceProvider {
           signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
         });
 
+        logVeniceResponseHeaders(resp, "/audio/speech", body.model);
         span.setAttribute("http.status_code", resp.status);
 
         if (!resp.ok) {
@@ -388,6 +431,7 @@ export async function chatCompletion(body: {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  include_venice_system_prompt?: boolean;
   [key: string]: unknown;
 }, signal?: AbortSignal): Promise<Response> {
   return provider.chatCompletion(buildVeniceChatCompletion(body), signal);
@@ -441,6 +485,7 @@ export function streamChatCompletion(body: {
   enable_web_citations?: boolean;
   strip_thinking_response?: boolean;
   disable_thinking?: boolean;
+  include_venice_system_prompt?: boolean;
   [key: string]: unknown;
 }): Promise<Response> {
   return provider.streamChatCompletion(buildVeniceChatCompletion(body));
@@ -451,13 +496,15 @@ export async function veniceModels(): Promise<unknown[]> {
     throw Object.assign(
       new Error("Venice API key not configured"),
       { status: 503, code: "venice_config_missing", retryable: false, type: "venice_config_missing" }
-    );
+    ) as InferenceError;
   }
 
   const resp = await fetch(veniceUrl("/api/v1/models"), {
     headers: { Authorization: `Bearer ${config.VENICE_API_KEY}` },
     signal: AbortSignal.timeout(10_000),
   });
+
+  logVeniceResponseHeaders(resp, "/models");
 
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
@@ -493,7 +540,46 @@ export async function transcription(body: {
     signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
   });
 
+  logVeniceResponseHeaders(resp, "/audio/transcriptions", body.model);
+
   return resp;
+}
+
+export async function videoQuote(body: {
+  model: string;
+  prompt: string;
+  duration?: string;
+  aspect_ratio?: string;
+  resolution?: string;
+  image_url?: string;
+}): Promise<{ price: number; currency: string; estimated_seconds: number }> {
+  const response = await fetch(veniceUrl("/api/v1/video/quote"), {
+    method: "POST",
+    headers: veniceHeaders(),
+    body: JSON.stringify({
+      model: body.model,
+      prompt: body.prompt,
+      duration: body.duration || "5s",
+      aspect_ratio: body.aspect_ratio || "16:9",
+      resolution: body.resolution || "720p",
+      ...(body.image_url && { image_url: body.image_url }),
+    }),
+    signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
+  });
+
+  logVeniceResponseHeaders(response, "/video/quote", body.model);
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    mapVeniceError(response.status, text);
+  }
+
+  const data = await response.json();
+  return {
+    price: data.price ?? 0,
+    currency: data.currency ?? "usd",
+    estimated_seconds: data.estimated_seconds ?? 0,
+  };
 }
 
 export async function videoGeneration(body: {
@@ -518,6 +604,8 @@ export async function videoGeneration(body: {
     signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
   });
 
+  logVeniceResponseHeaders(response, "/video/queue", body.model);
+
   if (!response.ok) {
     const text = await response.text().catch(() => "");
     mapVeniceError(response.status, text);
@@ -536,6 +624,8 @@ export async function retrieveVideo(queueId: string): Promise<{
     veniceUrl(`/api/v1/video/retrieve?queue_id=${queueId}`),
     { headers: veniceHeaders(), signal: AbortSignal.timeout(VENICE_TIMEOUT_MS) }
   );
+
+  logVeniceResponseHeaders(response, "/video/retrieve");
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -557,7 +647,7 @@ export interface VeniceHealthResult {
  * (/v1/providers/meta) can surface liveness without a slow request hanging
  * the whole response.
  *
- * Shape intentionally matches the surplus/morpheus convention so the meta
+ * Shape intentionally matches the surplus convention so the meta
  * route can be agnostic about which provider produced the result.
  */
 export async function healthCheckVenice(): Promise<VeniceHealthResult> {

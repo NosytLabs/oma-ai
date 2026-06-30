@@ -18,7 +18,7 @@
 
 import type { ReactNode } from 'react'
 import { useEffect, useRef } from 'react'
-import { m, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, type Variants } from 'framer-motion'
+import { m, useMotionValue, useReducedMotion, useSpring, type Variants } from 'framer-motion'
 
 /* ============================================================
    EASING & SPRING PRESETS
@@ -26,17 +26,14 @@ import { m, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform
    ============================================================ */
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const
-export const EASE_IN_OUT = [0.65, 0, 0.35, 1] as const
 export const EASE_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 } as const
 export const EASE_SPRING_SOFT = { type: 'spring', stiffness: 220, damping: 26, mass: 1 } as const
-export const EASE_SPRING_BOUNCY = { type: 'spring', stiffness: 500, damping: 18, mass: 0.6 } as const
 
 /* ============================================================
    VIEWPORT
    ============================================================ */
 
-export const VIEWPORT_ONCE = { once: true, margin: '-60px 0px -60px 0px' } as const
-export const VIEWPORT_EVERY = { margin: '-60px 0px -60px 0px' } as const
+const VIEWPORT_ONCE = { once: true, margin: '-60px 0px -60px 0px' } as const
 
 /* ============================================================
    VARIANT PRESETS — plain objects, work with `m` + `variants`
@@ -57,21 +54,6 @@ export const fadeUp: Variants = {
     y: 0,
     transition: { duration: 0.6, ease: EASE_OUT },
   },
-}
-
-export const fadeDown: Variants = {
-  hidden: { opacity: 0, y: -24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
-}
-
-export const fadeIn: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.5, ease: EASE_OUT } },
-}
-
-export const fadeLeft: Variants = {
-  hidden: { opacity: 0, x: -28 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE_OUT } },
 }
 
 export const fadeRight: Variants = {
@@ -100,6 +82,16 @@ export const blurIn: Variants = {
   },
 }
 
+/** "Safe" variant aliases — identical to the base variants but available
+ *  under the *Safe name so existing imports resolve. The "Safe" name was
+ *  introduced during an earlier refactor; the variants are functionally
+ *  the same. */
+export const blurInSafe: Variants = blurIn
+export const scaleInSafe: Variants = scaleIn
+export const scaleInSpringSafe: Variants = scaleInSpring
+export const fadeUpSafe: Variants = fadeUp
+export const fadeRightSafe: Variants = fadeRight
+
 /* ============================================================
    CONVENIENCE: legacy fadeUp props (drop-in replacement for
    the old `fadeUp(delay)` helper used across the codebase).
@@ -112,6 +104,34 @@ export function fadeUpProps(delay = 0) {
     viewport: VIEWPORT_ONCE,
     transition: { duration: 0.5, delay, ease: EASE_OUT },
   }
+}
+
+/* ============================================================
+   FadeIn — convenience wrapper, works like Reveal
+   ============================================================ */
+
+interface FadeInProps {
+  children: ReactNode
+  delay?: number
+  y?: number
+  className?: string
+  as?: 'div' | 'section' | 'li' | 'span'
+  once?: boolean
+}
+
+export function FadeIn({
+  children,
+  delay = 0,
+  y = 20,
+  className,
+  as = 'div',
+  once = true,
+}: FadeInProps) {
+  return (
+    <Reveal delay={delay} y={y} className={className} as={as} once={once}>
+      {children}
+    </Reveal>
+  )
 }
 
 /* ============================================================
@@ -197,37 +217,6 @@ export function StaggerReveal({
     >
       {children}
     </MotionTag>
-  )
-}
-
-/* ============================================================
-   Parallax — subtle y-translate tied to scroll progress
-   ============================================================ */
-
-interface ParallaxProps {
-  children: ReactNode
-  className?: string
-  /** px offset at full scroll */
-  offset?: number
-}
-
-export function Parallax({ children, className, offset = 60 }: ParallaxProps) {
-  const prefersReduced = useReducedMotion()
-  const { scrollYProgress } = useScroll()
-  const y = useSpring(useTransform(scrollYProgress, [0, 1], [0, offset]), {
-    stiffness: 120,
-    damping: 30,
-    mass: 0.5,
-  })
-
-  if (prefersReduced) {
-    return <div className={className}>{children}</div>
-  }
-
-  return (
-    <m.div className={className} style={{ y }}>
-      {children}
-    </m.div>
   )
 }
 

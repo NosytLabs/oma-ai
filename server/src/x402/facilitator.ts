@@ -12,13 +12,23 @@ import { eq, and } from "drizzle-orm";
 import { addSettlementToDlq } from "../lib/dlq.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getRedisClient } from "../lib/redis-client.js";
-import { USDC_BASE, USDC_DECIMALS, CACHE_TTL_MS, RECEIPT_EXPIRY_SECONDS, NONCE_REDIS_TTL_SECONDS } from "../constants.js";
+import {
+  USDC_BASE,
+  USDC_DECIMALS,
+  USDC_MAX_ATOMIC,
+  CACHE_TTL_MS,
+  RECEIPT_EXPIRY_SECONDS,
+  NONCE_REDIS_TTL_SECONDS,
+} from "../constants.js";
 import { logger } from "../lib/logger.js";
 
 const LOCK_TTL_SECONDS = 30;
 // ponytail: in tests HOUDINI_ADDRESS_TO may be unset and TREASURY_BASE_ADDRESS
 // may resolve to the placeholder; resolve defensively.
 const SERVER_TREASURY = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+if (!SERVER_TREASURY) {
+  logger.warn("[FACILITATOR] SERVER_TREASURY is empty — payee validation is DISABLED. Set HOUDINI_ADDRESS_TO or TREASURY_BASE_ADDRESS to enable merchant pinning.");
+}
 
 // ponytail: CRIT-2 (x402 nonce/replay). Atomic consume via Redis SET NX EX.
 // Returns true if the nonce is fresh (first time seen), false if already
@@ -52,6 +62,72 @@ async function releaseSettlementLock(cacheKey: string): Promise<void> {
   if (!redis) return;
   const lockKey = `settlement:lock:${cacheKey}`;
   await redis.del(lockKey);
+}
+
+// ============================================================
+// QuickNode hosted x402 facilitator (marketplace add-on)
+// ============================================================
+//
+// When X402_FACILITATOR_PROVIDER=quicknode AND QUICKNODE_X402_URL is set,
+// verify/settle are delegated to QuickNode's hosted x402 facilitator. Local
+// verify (viem + CHAIN_RPC_URL) is the default — most deployments want to
+// keep settlement keys in their own custody. The QuickNode path is for
+// operators who specifically opted into hosted facilitator service.
+//
+// Wire shape: POST {QUICKNODE_X402_URL}/verify with the same PaymentSignature
+// shape used locally. Hosted endpoint returns { valid, txHash, amount,
+// networkId, error? } mirroring `verifyPayment`'s return.
+// ponytail: not over the top. One fetch helper, one switch on provider.
+
+const QUICKNODE_X402_ENABLED =
+  config.X402_FACILITATOR_PROVIDER === "quicknode" &&
+  !!config.QUICKNODE_X402_URL &&
+  !!config.QUICKNODE_X402_API_KEY;
+
+interface QuicknodeX402VerifyResponse {
+  valid: boolean;
+  txHash?: string;
+  amount?: string;
+  networkId?: string;
+  error?: string;
+}
+
+async function quicknodeX402Verify(
+  paymentSig: PaymentSignature,
+): Promise<PaymentResponse> {
+  if (!config.QUICKNODE_X402_URL || !config.QUICKNODE_X402_API_KEY) {
+    return { valid: false, error: "QuickNode x402 not configured" };
+  }
+  const baseUrl = config.QUICKNODE_X402_URL.replace(/\/+$/, "");
+  try {
+    const res = await fetch(`${baseUrl}/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": config.QUICKNODE_X402_API_KEY,
+      },
+      body: JSON.stringify(paymentSig),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      logger.error(
+        { status: res.status, body: text.slice(0, 500) },
+        "[FACILITATOR] QuickNode x402 verify non-2xx",
+      );
+      return { valid: false, error: `QuickNode x402 verify failed: HTTP ${res.status}` };
+    }
+    const body = (await res.json()) as QuicknodeX402VerifyResponse;
+    return {
+      valid: !!body.valid,
+      txHash: body.txHash as Hash | undefined,
+      amount: body.amount,
+      networkId: body.networkId,
+      error: body.error,
+    };
+  } catch (err) {
+    logger.error({ err }, "[FACILITATOR] QuickNode x402 verify network error");
+    return { valid: false, error: "QuickNode x402 verify network error" };
+  }
 }
 
 // ============================================================
@@ -112,7 +188,12 @@ export interface SettlementRecord {
   networkId: string;
   payee: string;
   settledAt: number;
-  receipt: string;
+  // ponytail: receipt is optional on a *cached verified record* written by
+  // /x402/verify. The full settlement (with receipt) is written by
+  // settlePayment/settlePaymentAsync. This makes the cache state
+  // distinguishable: `receipt` undefined = verified-but-not-settled;
+  // `receipt` present = fully settled (idempotent re-lookup).
+  receipt?: string;
 }
 
 export interface SettlementResponse {
@@ -226,10 +307,26 @@ function createReceiptPayload(
   return `${RECEIPT_VERSION}:${txHash}:${amount}:${networkId}:${payee}:${settledAt}:${expiryTime}`;
 }
 
-function parseUsdcAtomic(s: string): bigint {
-  const [whole = "0", frac = ""] = s.split(".");
+export function parseUsdcAtomic(s: string): bigint {
+  // Reject leading/trailing whitespace silently — padded input is malformed.
+  if (s !== s.trim()) throw new Error("Invalid USDC amount: leading or trailing whitespace");
+  if (!s) throw new Error("Invalid USDC amount: empty string");
+  if (/[eE]/.test(s)) throw new Error("Invalid USDC amount: scientific notation not allowed");
+  if (/[^0-9.]/.test(s)) throw new Error("Invalid USDC amount: non-numeric characters");
+  if (s.startsWith("-")) throw new Error("Invalid USDC amount: negative values not allowed");
+  if (s.startsWith("+")) throw new Error("Invalid USDC amount: sign-prefixed values not allowed");
+  const parts = s.split(".");
+  if (parts.length > 2) throw new Error("Invalid USDC amount: multi-dot format");
+  if (parts[1] && parts[1].length > USDC_DECIMALS) {
+    throw new Error(`Invalid USDC amount: max ${USDC_DECIMALS} decimal places`);
+  }
+  const [whole = "0", frac = ""] = parts;
   const padded = (frac + "0".repeat(USDC_DECIMALS)).slice(0, USDC_DECIMALS);
-  return BigInt(whole) * 1_000_000n + BigInt(padded || "0");
+  const result = BigInt(whole) * 1_000_000n + BigInt(padded || "0");
+  if (result > USDC_MAX_ATOMIC) {
+    throw new Error("Invalid USDC amount: exceeds maximum supply");
+  }
+  return result;
 }
 
 // ============================================================
@@ -394,16 +491,16 @@ async function verifyEvmPayment(
 // error if FACILITATOR_MODE=mock is used in production or staging.
 // See: config.ts line ~41-43
 
-function mockVerifyPayment(
+async function mockVerifyPayment(
   signature: string,
   payload: PaymentPayload,
-): PaymentResponse {
+): Promise<PaymentResponse> {
   // ponytail: CRIT-2 — even mock mode must consume the nonce so a replayed
-  // mock signature does not verify twice. Returns synchronously here; the
-  // async Redis call is fire-and-forget at the route level.
-  void consumeNonce(payload.nonce).then((r) => {
-    if (!r.ok) logger.warn({ reason: r.reason }, "[FACILITATOR] Mock-mode replay blocked");
-  });
+  // mock signature does not verify twice.
+  const nonceResult = await consumeNonce(payload.nonce);
+  if (!nonceResult.ok) {
+    logger.warn({ reason: nonceResult.reason }, "[FACILITATOR] Mock-mode replay blocked");
+  }
   logger.warn(
     { signaturePrefix: signature.slice(0, 16), scheme: payload.scheme, amount: payload.amount },
     "[FACILITATOR] Mock-mode verification accepted",
@@ -457,11 +554,49 @@ export async function verifyPayment(
       throw new Error(`[FACILITATOR] FATAL: Mock payment mode explicitly forbidden in production`);
     }
     logger.warn("[FACILITATOR] Processing payment in mock mode -- signatures are NOT verified on-chain");
-    return mockVerifyPayment(signature, payload);
+    const result = await mockVerifyPayment(signature, payload);
+    // ponytail: C2 — cache the verified record so /x402/settle can derive
+    // `amount` from the cache instead of trusting the request body.
+    if (result.valid && result.txHash) {
+      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
+        txHash: result.txHash,
+        amount: result.amount ?? payload.amount,
+        networkId: result.networkId ?? payload.networkId,
+        payee: payload.payee,
+        settledAt: 0,
+      });
+    }
+    return result;
+  }
+
+  // ponytail: route to QuickNode's hosted x402 facilitator when explicitly
+  // configured. Local viem-based verification is the default.
+  if (QUICKNODE_X402_ENABLED) {
+    const result = await quicknodeX402Verify(paymentSig);
+    if (result.valid && result.txHash) {
+      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
+        txHash: result.txHash,
+        amount: result.amount ?? payload.amount,
+        networkId: result.networkId ?? payload.networkId,
+        payee: payload.payee,
+        settledAt: 0,
+      });
+    }
+    return result;
   }
 
   if (payload.scheme === "evm") {
-    return verifyEvmPayment(signature, authorization, payload);
+    const result = await verifyEvmPayment(signature, authorization, payload);
+    if (result.valid && result.txHash) {
+      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
+        txHash: result.txHash,
+        amount: result.amount ?? payload.amount,
+        networkId: result.networkId ?? payload.networkId,
+        payee: payload.payee,
+        settledAt: 0,
+      });
+    }
+    return result;
   }
 
   return { valid: false, error: `Unsupported scheme: ${payload.scheme}` };
@@ -500,7 +635,10 @@ export async function settlePaymentAsync(
   const cacheKey = `${networkId}:${txHash}`;
 
   const existing = settlementCache.get(cacheKey);
-  if (existing) {
+  // ponytail: a cached verified record (no receipt) is NOT a settled record;
+  // fall through to write a real settlement. Only short-circuit when the
+  // existing record carries a receipt (i.e. previously settled).
+  if (existing?.receipt) {
     return { settled: true, receipt: existing.receipt };
   }
 
@@ -508,7 +646,7 @@ export async function settlePaymentAsync(
   if (!lockAcquired) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const existingAfterLock = settlementCache.get(cacheKey);
-    if (existingAfterLock) {
+    if (existingAfterLock?.receipt) {
       return { settled: true, receipt: existingAfterLock.receipt };
     }
     const lockRetry = await acquireSettlementLock(cacheKey);
@@ -645,7 +783,12 @@ export function settlePayment(
   const cacheKey = `${networkId}:${txHash}`;
 
   const existing = settlementCache.get(cacheKey);
-  if (existing) {
+  // ponytail: C2 — only short-circuit on cache hit if the existing record is a
+  // *complete settlement* (has a receipt) AND the amount matches. The
+  // /x402/verify path caches a placeholder record (settledAt:0, no receipt)
+  // so settle can derive `amount` from the verify cache. Without this guard,
+  // settlePayment would return `{ settled: true, receipt: undefined }`.
+  if (existing?.receipt && existing.amount === amount) {
     return { settled: true, receipt: existing.receipt };
   }
 
@@ -683,7 +826,7 @@ export function isSettled(txHash: string, networkId: string): boolean {
 export async function getSettlementReceiptAsync(txHash: string, networkId: string): Promise<string | null> {
   const cacheKey = `${networkId}:${txHash}`;
   const cached = settlementCache.get(cacheKey);
-  if (cached) {
+  if (cached?.receipt) {
     return cached.receipt;
   }
   const existing = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
@@ -743,7 +886,7 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
   // payee; verify now matches that contract.
   if (SERVER_TREASURY) {
     const declared = (paymentSig.payload?.payee ?? "").toLowerCase();
-    if (declared && declared !== SERVER_TREASURY) {
+    if (!declared || declared !== SERVER_TREASURY) {
       return c.json(
         { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
         400,
@@ -775,11 +918,24 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
     return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 401);
   }
 
-  const body = await c.req.json<{ txHash?: string; amount?: string; networkId?: string; payee?: string }>();
-
-  if (!body.txHash || !body.amount || !body.networkId || !body.payee) {
+  // ponytail: C2 — amount is derived from the verified cache, NEVER from the
+  // body. Without this, a client could call `/x402/verify` with a 0.01 USDC tx,
+  // get a valid receipt, then call `/x402/settle` with `amount: "1000000"` and
+  // stamp a receipt claiming they paid a million dollars. The receipt signed
+  // here is what downstream services (credit ledger, audit log) consume.
+  let body: { txHash?: string; amount?: string; networkId?: string; payee?: string };
+  try {
+    body = await c.req.json<{ txHash?: string; amount?: string; networkId?: string; payee?: string }>();
+  } catch {
     return c.json(
-      { error: { message: "txHash, amount, networkId, and payee are required", type: "payment_error" } },
+      { error: { message: "Invalid JSON body", type: "payment_error" } },
+      400,
+    );
+  }
+
+  if (!body.txHash || !body.networkId) {
+    return c.json(
+      { error: { message: "txHash and networkId are required (amount is derived from verified cache, not the body)", type: "payment_error" } },
       400,
     );
   }
@@ -797,21 +953,76 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
       500,
     );
   }
-  if (body.payee.toLowerCase() !== expectedPayee) {
+  if (body.payee && body.payee.toLowerCase() !== expectedPayee) {
     return c.json(
       { error: { message: "Payee does not match configured merchant address", type: "payment_error" } },
       400,
     );
   }
 
-  const result = settlePayment(body.txHash, body.amount, body.networkId, expectedPayee);
+  // ponytail: log a warning when the legacy client sends body.amount, so we
+  // can track migration progress and surface it in the docs changelog.
+  if (body.amount !== undefined) {
+    logger.warn(
+      { txHash: body.txHash, clientAmount: body.amount },
+      "[FACILITATOR] /x402/settle body.amount is ignored; amount is derived from the verified cache",
+    );
+  }
+
+  // Optional PAYMENT-SIGNATURE header: if present, parse and validate JSON
+  // shape (legacy dual-channel settle+verify path).
+  const paymentHeader = c.req.header("PAYMENT-SIGNATURE");
+  if (paymentHeader) {
+    try {
+      JSON.parse(paymentHeader);
+    } catch {
+      return c.json(
+        { error: { message: "Invalid PAYMENT-SIGNATURE header: must be valid JSON", type: "payment_error" } },
+        400,
+      );
+    }
+  }
+
+  // Look up the verified record from the in-memory cache. The cache is
+  // populated by `/x402/verify` after a successful on-chain verification.
+  // If the cache has no entry for this txHash, the client never verified
+  // the payment — refuse to settle (the cache holds the canonical amount).
+  const cached = settlementCache.get(`${body.networkId}:${body.txHash}`);
+  if (!cached) {
+    return c.json(
+      {
+        error: {
+          message: "No verified payment on file for this txHash. Call /x402/verify first.",
+          type: "missing_verify",
+          code: "x402_verify_required",
+        },
+      },
+      400,
+    );
+  }
+  const settledAmount = cached.amount;
+  const settledNetworkId = cached.networkId;
+
+  const result = settlePayment(body.txHash, settledAmount, settledNetworkId, expectedPayee);
   return c.json(result, result.settled ? 200 : 422);
 });
 
-x402Routes.post("/x402/pay-req-test", async (c) => {
+x402Routes.post("/x402/pay-req-test",
+  rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+  async (c) => {
+  // ponytail: refuse to mount the test route with an unset merchant address —
+  // falling back to 0x000… lets an attacker mint a Pay-Req header with a
+  // bogus payee and probe verification behavior. Returns 503 (not 500) so
+  // it's clearly "intentionally disabled", not "broken".
+  const payeeAddress = config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS;
+  if (!payeeAddress) {
+    return c.json(
+      { error: { message: "x402 test endpoint disabled: HOUDINI_ADDRESS_TO and TREASURY_BASE_ADDRESS both unset", type: "feature_disabled" } },
+      503,
+    );
+  }
   const now = Math.floor(Date.now() / 1000);
-  const paymentURL = `https://pay.om.ai/x402/deposit?network=base&asset=USDC&return_to=${encodeURIComponent(c.req.url)}`;
-  const payeeAddress = config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000";
+  const paymentURL = `https://oma-ai.com/deposit?route=x402&network=base&asset=USDC&return_to=${encodeURIComponent(c.req.url)}`;
   const amount = "1.00";
 
   const paymentRequired: PaymentRequired = {
@@ -828,7 +1039,7 @@ x402Routes.post("/x402/pay-req-test", async (c) => {
     "payment-URL": paymentURL,
   };
 
-  c.header("Pay-Req", JSON.stringify(paymentRequired));
+  c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));
   return c.json(
     {
       error: {
@@ -845,10 +1056,16 @@ const testPricing: Record<string, string> = {
   "/x402/middleware-test": "0.50",
 };
 
-x402Routes.use("/x402/middleware-test", paymentMiddleware({
-  pricing: testPricing,
-  payeeAddress: config.HOUDINI_ADDRESS_TO || "0x0000000000000000000000000000000000000000",
-}));
+const testPayeeAddress = config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS;
+// ponytail: only mount the middleware test when a real merchant address is set.
+// Falling back to the zero address would let `/x402/middleware-test` accept
+// payments to nobody and falsely report "success" — see audit X402-2026-06-14.
+if (testPayeeAddress) {
+  x402Routes.use("/x402/middleware-test", paymentMiddleware({
+    pricing: testPricing,
+    payeeAddress: testPayeeAddress,
+  }));
+}
 
 x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
@@ -871,7 +1088,7 @@ x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000,
       );
     }
     const declared = (parsed?.payload?.payee ?? parsed?.payload?.payTo ?? "").toLowerCase();
-    if (declared && declared !== expectedPayee) {
+    if (!declared || declared !== expectedPayee) {
       return c.json(
         { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
         400,
@@ -949,7 +1166,7 @@ export function paymentMiddleware(
 
     if (!paymentHeader) {
       const now = Math.floor(Date.now() / 1000);
-      const paymentURL = `https://pay.om.ai/x402/deposit?network=${networkId}&asset=${encodeURIComponent(asset)}&return_to=${encodeURIComponent(c.req.url)}`;
+      const paymentURL = `https://oma-ai.com/deposit?route=x402&network=${networkId}&asset=${encodeURIComponent(asset)}&return_to=${encodeURIComponent(c.req.url)}`;
 
       const paymentRequired: PaymentRequired = {
         x402Version: "1",
@@ -965,7 +1182,7 @@ export function paymentMiddleware(
         "payment-URL": paymentURL,
       };
 
-      c.header("Pay-Req", JSON.stringify(paymentRequired));
+      c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));
       return c.json(
         {
           error: {
@@ -988,10 +1205,7 @@ export function paymentMiddleware(
       );
     }
 
-    if (
-      paymentSig.payload?.payee?.toLowerCase() !== payeeAddress.toLowerCase() &&
-      paymentSig.payload?.payee !== payeeAddress
-    ) {
+    if (paymentSig.payload?.payee?.toLowerCase() !== payeeAddress.toLowerCase()) {
       return c.json(
         { error: { message: "Payment payee mismatch", type: "payment_error" } },
         402,

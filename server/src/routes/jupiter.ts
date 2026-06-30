@@ -8,11 +8,11 @@ import { z } from "zod";
 import { addCredits } from "../credits/index.js";
 import { db } from "../db/client.js";
 import { deposits } from "../db/schema.js";
-import { eq } from "drizzle-orm";
 import { config } from "../config.js";
 import { validationError } from "../lib/validation.js";
 import { sessionAuth } from "../auth/middleware.js";
 import type { OmaEnv } from "../types.js";
+import { fetchSolanaTx, checkDuplicateDeposit, toLamports, SolanaVerifyError } from "../credits/solana-verify.js";
 
 // Jupiter constants
 export const SOL_MINT = "So11111111111111111111111111111111111111112";
@@ -128,10 +128,7 @@ jupiterRoutes.post("/v1/deposit/jupiter/quote", sessionAuth, async (c) => {
   const { inputMint, outputMint, amount, slippageBps } = parsed.data;
 
   // Convert SOL amount to lamports if SOL mint
-  let amountLamports = amount;
-  if (inputMint === SOL_MINT) {
-    amountLamports = Math.round(amount * 1e9);
-  }
+  const amountLamports = toLamports(amount, inputMint, SOL_MINT);
 
   try {
     const quote = await getQuote({
@@ -171,10 +168,7 @@ jupiterRoutes.post("/v1/deposit/jupiter/swap-tx", sessionAuth, async (c) => {
   const { inputMint, outputMint, amount, userPublicKey } = parsed.data;
 
   // Convert SOL amount to lamports if SOL mint
-  let amountLamports = amount;
-  if (inputMint === SOL_MINT) {
-    amountLamports = Math.round(amount * 1e9);
-  }
+  const amountLamports = toLamports(amount, inputMint, SOL_MINT);
 
   try {
     const result = await jupiterClient.getSwapTx(inputMint, outputMint, amountLamports, userPublicKey);
@@ -206,43 +200,13 @@ jupiterRoutes.post("/v1/deposit/jupiter/complete", sessionAuth, async (c) => {
   const { inputMint, outputMint, amount, txSignature } = parsed.data;
 
   // Check for duplicate
-  const existing = await db.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, txSignature)).limit(1);
-  if (existing.length > 0) {
+  if (await checkDuplicateDeposit(txSignature)) {
     return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
   }
 
   // Verify transaction on Solana RPC
   try {
-    const solRpcUrl = config.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
-    const txResponse = await fetch(solRpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getTransaction",
-        params: [
-          txSignature,
-          { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
-        ],
-      }),
-    });
-
-    if (!txResponse.ok) {
-      return c.json({ error: { message: "Failed to verify Solana transaction", type: "verification_error" } }, 502);
-    }
-
-    const txData = (await txResponse.json()) as { result: Record<string, unknown> | null; error?: { message: string } };
-    if (txData.error || !txData.result) {
-      return c.json({ error: { message: "Transaction not found or invalid", type: "verification_error" } }, 400);
-    }
-
-    // Verify transaction had no execution errors
-    const txResult = txData.result as Record<string, unknown>;
-    const meta = txResult.meta as { err?: unknown } | undefined;
-    if (meta?.err !== null && meta?.err !== undefined) {
-      return c.json({ error: { message: "Transaction had execution errors", type: "verification_error" } }, 400);
-    }
+    const txResult = await fetchSolanaTx(txSignature);
 
     // Parse transaction to find the swap output
     const instructions = (txResult?.transaction as Record<string, unknown> | undefined)?.message as Record<string, unknown> | undefined;
@@ -265,15 +229,11 @@ jupiterRoutes.post("/v1/deposit/jupiter/complete", sessionAuth, async (c) => {
 
         // If we couldn't find USDC transfer, use estimate based on Jupiter quote
         if (usdcAmount === 0) {
-          let amountLamports = amount;
-          if (inputMint === SOL_MINT) {
-            amountLamports = Math.round(amount * 1e9);
-          }
           try {
             const quote = await getQuote({
               inputMint,
               outputMint,
-              amount: amountLamports,
+              amount: toLamports(amount, inputMint, SOL_MINT),
               slippageBps: 50,
             });
             usdcAmount = parseFloat(quote.outAmount) / 1e6;
@@ -303,6 +263,9 @@ jupiterRoutes.post("/v1/deposit/jupiter/complete", sessionAuth, async (c) => {
       inputAmount: amount,
     });
   } catch (err: unknown) {
+    if (err instanceof SolanaVerifyError) {
+      return c.json({ error: { message: err.message, type: "verification_error" } }, err.status as Parameters<typeof c.json>[1]);
+    }
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message: `Deposit completion failed: ${message}`, type: "deposit_error" } }, 500);
   }
@@ -325,43 +288,13 @@ jupiterRoutes.post("/v1/deposit/jupiter/direct-sol", sessionAuth, async (c) => {
   }
 
   // Check for duplicate
-  const existing = await db.select({ id: deposits.id }).from(deposits).where(eq(deposits.txHash, signature)).limit(1);
-  if (existing.length > 0) {
+  if (await checkDuplicateDeposit(signature)) {
     return c.json({ error: { message: "Duplicate transaction", type: "duplicate" } }, 409);
   }
 
   try {
     // Verify transaction on Solana RPC
-    const solRpcUrl = config.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
-    const txResponse = await fetch(solRpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getTransaction",
-        params: [
-          signature,
-          { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
-        ],
-      }),
-    });
-
-    if (!txResponse.ok) {
-      return c.json({ error: { message: "Failed to verify Solana transaction", type: "verification_error" } }, 502);
-    }
-
-    const txData = (await txResponse.json()) as { result: Record<string, unknown> | null; error?: { message: string } };
-    if (txData.error || !txData.result) {
-      return c.json({ error: { message: "Transaction not found or invalid", type: "verification_error" } }, 400);
-    }
-
-    // Verify transaction had no execution errors
-    const txResult = txData.result as Record<string, unknown>;
-    const meta = txResult.meta as { err?: unknown } | undefined;
-    if (meta?.err !== null && meta?.err !== undefined) {
-      return c.json({ error: { message: "Transaction had execution errors", type: "verification_error" } }, 400);
-    }
+    const txResult = await fetchSolanaTx(signature);
 
     // Extract fee-payer from transaction message accountKeys[0]
     const txMessage = (txResult?.transaction as Record<string, unknown> | undefined)?.message as Record<string, unknown> | undefined;
@@ -423,6 +356,9 @@ jupiterRoutes.post("/v1/deposit/jupiter/direct-sol", sessionAuth, async (c) => {
       solAmount: transferAmount,
     });
   } catch (err: unknown) {
+    if (err instanceof SolanaVerifyError) {
+      return c.json({ error: { message: err.message, type: "verification_error" } }, err.status as Parameters<typeof c.json>[1]);
+    }
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message: `Deposit failed: ${message}`, type: "deposit_error" } }, 500);
   }

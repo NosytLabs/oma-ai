@@ -1,5 +1,5 @@
 import { reportProviderResult } from "./provider-result.js";
-import type { ChatMessage } from "./types.js";
+import type { ChatMessage, InferenceError } from "./types.js";
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 
 export interface ProviderConfig {
@@ -79,15 +79,15 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
           const message = err instanceof Error ? err.message : String(err);
           throw Object.assign(
             new Error(`${this.config.name} connection failed: ${message}`),
-            { status: 502 }
-          );
+            { status: 502, type: "connection_error" }
+          ) as InferenceError;
         }
 
         span.setAttribute("http.status_code", resp.status);
@@ -95,7 +95,7 @@ export abstract class BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           this.config.mapError(resp.status, text);
@@ -153,15 +153,15 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
           const message = err instanceof Error ? err.message : String(err);
           throw Object.assign(
             new Error(`${this.config.name} connection failed: ${message}`),
-            { status: 502 }
-          );
+            { status: 502, type: "connection_error" }
+          ) as InferenceError;
         }
 
         span.setAttribute("http.status_code", resp.status);
@@ -169,7 +169,7 @@ export abstract class BaseInferenceProvider {
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra" | "surplus" | "morpheus" | "claude" | "gemini", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           this.config.mapError(resp.status, text);
@@ -232,7 +232,7 @@ export function createErrorMapper(providerName: string) {
       message = body.slice(0, 500);
     }
 
-    throw Object.assign(new Error(message), { status, type });
+    throw Object.assign(new Error(message), { status, type }) as InferenceError;
   };
 }
 

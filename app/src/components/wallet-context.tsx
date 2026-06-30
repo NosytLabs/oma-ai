@@ -2,8 +2,8 @@
 
 import { createContext, useContext } from 'react'
 
-export type AuthMethod = 'siwe' | 'solana' | 'account-number' | 'sso' | null;
-export type WalletKind = 'evm' | 'solana' | 'account-number';
+export type AuthMethod = 'siwe' | 'account-number' | null;
+export type WalletKind = 'evm' | 'account-number' | 'none';
 
 interface WalletContextValue {
   isReady: boolean;
@@ -23,16 +23,13 @@ interface WalletContextValue {
   disconnect: () => Promise<void>;
   evmAddress: `0x${string}` | undefined;
   evmChain: { id: number; name: string } | undefined;
-  solanaAddress: string | null;
   signMessage: (message: string) => Promise<string>;
   isConnecting: boolean;
   isAuthenticating: boolean;
   availableConnectors: { id: string; name: string; icon?: string }[];
-  activeWallet: WalletKind | null;
+  activeWallet: WalletKind;
   hasEvmWallet: boolean;
-  hasSolanaWallet: boolean;
   canDepositBase: boolean;
-  canDepositSolana: boolean;
   canUseSwap: boolean;
   refreshUser: () => Promise<void>;
 }
@@ -48,16 +45,13 @@ export const WalletContext = createContext<WalletContextValue>({
   disconnect: async () => {},
   evmAddress: undefined,
   evmChain: undefined,
-  solanaAddress: null,
   signMessage: async (_message: string) => '',
   isConnecting: false,
   isAuthenticating: false,
   availableConnectors: [],
-  activeWallet: null,
+  activeWallet: 'none',
   hasEvmWallet: false,
-  hasSolanaWallet: false,
   canDepositBase: false,
-  canDepositSolana: false,
   canUseSwap: false,
   refreshUser: async () => {},
 })

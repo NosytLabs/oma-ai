@@ -26,7 +26,7 @@ vi.mock('../config.js', () => ({
   },
 }))
 
-import { createTrackingStream, getStreamMetrics } from '../stream-tracker.js'
+import { createTrackingStream } from '../stream-tracker.js'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -140,14 +140,19 @@ describe('createTrackingStream', () => {
   })
 
   it('handles parse errors gracefully', async () => {
-    const before = getStreamMetrics().parseErrors
     const upstream = makeUpstream([
       'data: {invalid json}\n\n',
       'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
       'data: [DONE]\n\n',
     ])
     const tracking = createTrackingStream(upstream, defaultParams.model, defaultParams.modelId, defaultParams.inputTokens, defaultParams.discountPercent, defaultParams.userId, defaultParams.apiKeyId, defaultParams.provider, defaultParams.estimatedTotalCents, defaultParams.pricing, defaultParams.requestId)
-    await consumeStream(tracking)
-    expect(getStreamMetrics().parseErrors).toBeGreaterThan(before)
+    // Stream should complete without throwing despite the invalid JSON chunk
+    const output = await consumeStream(tracking)
+    // Valid chunks after the parse error should still be forwarded
+    expect(output).toContain('ok')
+    expect(output).toContain('[DONE]')
+    // Usage should still be recorded since [DONE] was received
+    const { recordUsage } = await import('../usage-service.js')
+    expect(recordUsage).toHaveBeenCalled()
   })
 })

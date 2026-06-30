@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { sessionAuth } from "../auth/middleware.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
 import { deposits, withdrawals, usageRecords, creditBalances } from "../db/schema.js";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -25,7 +26,7 @@ function formatJSON(data: Record<string, unknown>[]): string {
   return JSON.stringify(data, null, 2);
 }
 
-exportRoutes.get("/v1/export/deposits", sessionAuth, async (c) => {
+exportRoutes.get("/v1/export/deposits", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const userId = c.get("userId");
   const format = c.req.query("format") || "csv";
   const limit = Math.min(parseInt(c.req.query("limit") || "100", 10), 1000);

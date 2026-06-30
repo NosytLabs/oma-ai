@@ -4,7 +4,7 @@ import { config } from "../config.js";
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 
-export function deriveEncryptionKey(masterKey: string): Buffer {
+function deriveEncryptionKey(masterKey: string): Buffer {
   return createHash("sha256").update(masterKey).digest();
 }
 

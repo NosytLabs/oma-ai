@@ -2,45 +2,101 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main, develop]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
-  server:
+  lint-typecheck:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: server
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: server/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
 
-  app:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: app/package-lock.json
-      - run: npm ci --legacy-peer-deps
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: https://api.oma-ai.com
-          NEXT_PUBLIC_APP_URL: https://oma-ai.com
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            app/package-lock.json
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Server typecheck
+        run: cd server && npm run typecheck
+
+      - name: Server lint
+        run: cd server && npm run lint
+
+      - name: Install app dependencies
+        run: cd app && npm ci
+
+      - name: App typecheck
+        run: cd app && npm run typecheck
+
+      - name: App lint
+        run: cd app && npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            app/package-lock.json
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Server tests
+        run: cd server && npm test
+
+      - name: Install app dependencies
+        run: cd app && npm ci
+
+      - name: App tests
+        run: cd app && npm test
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Audit server dependencies
+        run: cd server && npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Audit app dependencies
+        run: cd app && npm audit --audit-level=high
+        continue-on-error: true
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-typecheck, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            app/package-lock.json
+
+      - name: Install and build server
+        run: cd server && npm ci && npm run build
+
+      - name: Install and build app
+        run: cd app && npm ci && npm run build

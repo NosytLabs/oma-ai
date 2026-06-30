@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useId, useEffect, useRef, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useId, useEffect, useRef, type ReactNode } from 'react'
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 
@@ -72,6 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const timers = timersRef.current
     return () => {
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: forEach return value is intentionally ignored
       timers.forEach((t) => clearTimeout(t))
       timers.clear()
     }
@@ -125,7 +126,7 @@ function ToastItem({ toast, onDismiss, prefersReducedMotion }: { toast: Toast; o
     >
       {icons[toast.type]}
       <span className="flex-1 text-sm font-medium text-text">{toast.message}</span>
-      <button
+      <button type="button"
         onClick={onDismiss}
         aria-label="Dismiss notification"
         className="rounded-lg min-h-11 min-w-11 flex items-center justify-center p-1 hover:bg-text-bright/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"

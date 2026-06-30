@@ -1,8 +1,9 @@
 /**
- * Auth namespace: SIWE + Solana + account-number login + API key listing.
+ * Auth namespace: SIWE + account-number login + API key listing.
  */
 import type {
   ApiKey,
+  ApiKeyWithSecret,
   NonceResponse,
   Session,
   User,
@@ -56,21 +57,6 @@ export const auth = {
     });
   },
 
-  solana: {
-    getChallenge(address: string) {
-      return request<{ message: string }>(p('/auth/solana/challenge'), {
-        method: 'POST',
-        body: JSON.stringify({ address }),
-      });
-    },
-    verify(address: string, message: string, signature: string) {
-      return request<{ token: string }>(p('/auth/solana/verify'), {
-        method: 'POST',
-        body: JSON.stringify({ address, message, signature }),
-      });
-    },
-  },
-
   wallet(message: string, signature: string) {
     return request<WalletResponse>(p('/auth/wallet'), {
       method: 'POST',
@@ -106,5 +92,46 @@ export const auth = {
     return request<{ success: boolean; expiresIn: number }>(p('/auth/demo'), {
       method: 'POST',
     });
+  },
+
+  createKey(name: string) {
+    return request<ApiKeyWithSecret>(p('/keys'), {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  deleteKey(id: string) {
+    return request<void>(p(`/keys/${id}`), { method: 'DELETE' });
+  },
+
+  setup2FA() {
+    return request<{
+      secret: string;
+      qrCodeDataUrl: string;
+      otpauthUri: string;
+      backupCodes: string[];
+    }>(p('/auth/2fa/setup'), { method: 'POST' });
+  },
+
+  verify2FA(code: string) {
+    return request<{ success: boolean }>(p('/auth/2fa/verify'), {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  disable2FA(code: string) {
+    return request<{ success: boolean }>(p('/auth/2fa/disable'), {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  getBackupCodes() {
+    return request<{ backupCodes: string[]; remaining: number }>(
+      p('/auth/2fa/backup-codes'),
+      { method: 'GET' },
+    );
   },
 };

@@ -4,6 +4,7 @@ import { m } from 'framer-motion'
 import { AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import type { CreditBatch } from '@/lib/api'
+import { toDollars } from '@/lib/utils'
 
 interface ExpiringCreditsWarningProps {
   creditBatches: CreditBatch[]
@@ -21,38 +22,41 @@ export function ExpiringCreditsWarning({ creditBatches }: ExpiringCreditsWarning
 
   return (
     <m.div
-      className="p-4 bg-secondary/10 border border-secondary/20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      role="status"
+      className="flex flex-col gap-2 rounded-lg border border-secondary/30 bg-secondary/5 px-4 py-3 sm:flex-row sm:items-center"
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex h-5 w-5 items-center justify-center text-secondary mt-0.5">
-          <AlertTriangle className="h-4 w-4" />
+      <div className="flex items-start gap-3 sm:items-center sm:flex-1">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-secondary/30 bg-secondary/10 text-secondary">
+          <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
         </div>
         <div className="flex-1">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-secondary mb-2">CREDITS_EXPIRING</h3>
-          <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-secondary">Credits expiring soon</h3>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
             {expiringBatches.map(batch => {
               const expDate = new Date(batch.expiresAt)
               const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
               return (
-                <div key={batch.id} className="flex items-center justify-between text-xs">
-                  <span className="text-text-secondary">
-                    ${(parseInt(batch.remainingCents) / 100).toFixed(2)}
+                <span key={batch.id} className="flex items-center gap-1.5">
+                  <span className="font-mono">${toDollars(batch.remainingCents).toFixed(2)}</span>
+                  <span className="text-text-muted">·</span>
+                  <span className="text-secondary">
+                    {daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`}
                   </span>
-                  <span className="text-secondary font-medium">
-                    {daysLeft === 0 ? 'EXPIRES TODAY' : daysLeft === 1 ? 'EXPIRES TOMORROW' : `EXPIRES IN ${daysLeft}d`}
-                  </span>
-                </div>
+                </span>
               )
             })}
           </div>
-          <Link href="/dashboard/credits" className="mt-2 inline-block text-[10px] uppercase tracking-widest text-secondary hover:text-secondary/80 transition-colors">
-            BUY MORE Credits_
-          </Link>
         </div>
       </div>
+      <Link
+        href="/dashboard/credits"
+        className="self-end inline-flex items-center gap-1 rounded-md border border-secondary/30 bg-secondary/10 px-3 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-secondary/20 sm:self-auto"
+      >
+        Top up →
+      </Link>
     </m.div>
   )
 }

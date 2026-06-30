@@ -9,6 +9,22 @@ import { TextEncoder } from "util";
 import type { AuthMethod } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { NONCE_TTL_MS, NONCE_REDIS_TTL_SECONDS } from "../constants.js";
+import { logger } from "../lib/logger.js";
+
+/**
+ * Allowed SIWE `domain` values. EIP-4361 §4 requires the verifier to bind
+ * the message to a known domain — without this, an attacker can lure a
+ * victim to sign a SIWE message on `evil.com` and replay it against us.
+ *
+ * `PRIMARY_DOMAIN` is the canonical production domain; `ALLOWED_SIWE_DOMAINS`
+ * (comma-separated env var) extends the list for staging / previews.
+ */
+function getAllowedSiweDomains(): string[] {
+  const out = new Set<string>([config.PRIMARY_DOMAIN]);
+  const extra = process.env.ALLOWED_SIWE_DOMAINS?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+  for (const d of extra) out.add(d);
+  return [...out];
+}
 
 if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
   throw new Error("FATAL: JWT_SECRET must be configured with at least 32 characters. Current value is missing or too short.");
@@ -16,7 +32,7 @@ if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
 const JWT_SECRET = new TextEncoder().encode(config.JWT_SECRET);
 const ISSUER = "oma-ai";
 const AUDIENCE = "oma-ai-api";
-const AUTH_METHODS = new Set<AuthMethod>(["siwe", "solana", "account-number", "sso"]);
+const AUTH_METHODS = new Set<AuthMethod>(["siwe", "account-number", "sso"]);
 
 export type SessionIdentity = {
   userId: string;
@@ -40,20 +56,71 @@ export async function getOrCreateUser(address: string) {
 export async function verifySiweMessage(message: string, signature: string) {
   const siweMessage = new SiweMessage(message);
   const normalized = siweMessage.address.toLowerCase();
-  const rows = await db.select({ nonce: users.nonce, updatedAt: users.updatedAt }).from(users).where(eq(users.address, normalized)).limit(1);
-  if (rows.length === 0) {
-    return null;
+
+  // Post-0030: users may have address=null and evmAddress set. Check both columns.
+  let row: { nonce: string; updatedAt: Date } | null = null;
+  let lookupField: "address" | "evmAddress" = "address";
+
+  const legacyRow = await db
+    .select({ nonce: users.nonce, updatedAt: users.updatedAt })
+    .from(users)
+    .where(eq(users.address, normalized))
+    .limit(1);
+
+  if (legacyRow.length > 0) {
+    row = legacyRow[0];
+  } else {
+    const evmRow = await db
+      .select({ nonce: users.nonce, updatedAt: users.updatedAt })
+      .from(users)
+      .where(eq(users.evmAddress, normalized))
+      .limit(1);
+    if (evmRow.length > 0) {
+      row = evmRow[0];
+      lookupField = "evmAddress";
+    }
   }
-  const { nonce: userNonce, updatedAt } = rows[0];
+
+  if (!row) return null;
+
+  const { nonce: userNonce, updatedAt } = row;
   const age = Date.now() - updatedAt.getTime();
-  if (age > NONCE_TTL_MS) {
+  if (age > NONCE_TTL_MS) return null;
+  // H-SIWE-1: bind verification to one of the allowlisted domains. EIP-4361
+  // §4 requires the verifier to enforce `domain` so an evil.com message
+  // can't be replayed against oma.ai. siwe@3's `verify()` takes a single
+  // string, so we iterate over the allowlist until one matches.
+  const allowed = getAllowedSiweDomains();
+  let result: { success: true; data: SiweMessage } | { success: false; error?: Error } | null = null;
+  for (const domain of allowed) {
+    const r = await siweMessage.verify({ signature, nonce: userNonce, domain });
+    if (r.success) {
+      result = r as { success: true; data: SiweMessage };
+      break;
+    }
+  }
+  if (!result || !result.success) {
     return null;
   }
-  const result = await siweMessage.verify({ signature, nonce: userNonce });
-  if (!result.success) {
+  // Belt-and-braces explicit re-check: the siwe library returns success:false
+  // on a domain mismatch, but log the attempt for visibility.
+  if (!allowed.includes(siweMessage.domain)) {
+    logger.warn({ claimed: siweMessage.domain }, "[siwe] rejected — domain not in allowlist");
     return null;
   }
-  await db.update(users).set({ nonce: nanoid(32), updatedAt: new Date() }).where(eq(users.address, normalized));
+  // Rotate the nonce on the correct lookup field so the same message can't
+  // be replayed. Post-0030 users are keyed by evmAddress.
+  if (lookupField === "evmAddress") {
+    await db
+      .update(users)
+      .set({ nonce: nanoid(32), updatedAt: new Date() })
+      .where(eq(users.evmAddress, normalized));
+  } else {
+    await db
+      .update(users)
+      .set({ nonce: nanoid(32), updatedAt: new Date() })
+      .where(eq(users.address, normalized));
+  }
   return result.data;
 }
 
@@ -70,6 +137,7 @@ export async function getNonce(address: string) {
     }
   }
 
+  // Check both address and evmAddress columns (post-0030).
   const existing = await db.select({
     nonce: users.nonce,
     updatedAt: users.updatedAt,
@@ -83,7 +151,26 @@ export async function getNonce(address: string) {
       }
       return existing[0].nonce;
     }
+  } else {
+    // Post-0030: check evmAddress column
+    const evmExisting = await db.select({
+      nonce: users.nonce,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.evmAddress, normalized)).limit(1);
+    if (evmExisting.length > 0) {
+      const age = Date.now() - evmExisting[0].updatedAt.getTime();
+      if (age < NONCE_TTL_MS) {
+        if (redis && redisReady) {
+          const redisKey = `nonce:${normalized}`;
+          await redis.setex(redisKey, NONCE_REDIS_TTL_SECONDS, evmExisting[0].nonce);
+        }
+        return evmExisting[0].nonce;
+      }
+    }
   }
+
+  // If no existing user found with this address (legacy or evmAddress), create one.
+  // For new users we always write to the legacy `address` column for backwards compat.
   const nonce = nanoid(32);
   await db.insert(users)
     .values({ address: normalized, nonce, updatedAt: new Date() })

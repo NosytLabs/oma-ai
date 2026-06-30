@@ -3,14 +3,14 @@ import { Hono } from "hono";
 import { bearerAuth } from "../../auth/middleware.js";
 import { getModel, WHISPER_MODEL, estimateTokens } from "../../inference/models.js";
 import * as venice from "../../inference/venice.js";
-import { getBalance, deductCredits } from "../../credits/index.js";
+import { getBalance } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { spendLimit, trackSpend } from "../../middleware/spend-limit.js";
+import { spendLimit } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
-import { logger } from "../../lib/logger.js";
+import { chargeAndTrack, trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 const audioSpeechSchema = z.object({
   model: z.string().min(1).max(100),
@@ -56,18 +56,14 @@ audioRouter.post("/v1/audio/speech", async (c) => {
       return c.json({ error: { message: text || "Text-to-speech failed", type: "inference_error" } }, resp.status as Parameters<typeof c.json>[1]);
     }
 
-    const requestId = crypto.randomUUID();
-    await deductCredits(userId, totalCents - 1, 1, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens, 0, requestId);
-    if (apiKey) trackSpend(apiKey.keyHash, totalCents).catch(() => {});
+    const _requestId = await chargeAndTrack(userId, totalCents, model, "venice", apiKey?.id ?? "unknown", inputTokens);
+    trackApiKeySpend(apiKey?.keyHash, totalCents);
 
     const audioBuffer = await resp.arrayBuffer();
     const contentType = resp.headers.get("content-type") ?? "audio/mpeg";
     return c.body(audioBuffer, 200, { "Content-Type": contentType });
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/audio/speech error:");
-    return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
+    return inferenceErrorHandler(c, err, "/v1/audio/speech");
   }
 });
 
@@ -111,14 +107,10 @@ audioRouter.post("/v1/audio/transcriptions", async (c) => {
     }
 
     const json = await resp.json();
-    const requestId = crypto.randomUUID();
-    await deductCredits(userId, transcriptionCost - 1, 1, transcriptionCost, model, "venice", apiKey?.id ?? "unknown", 0, 0, requestId);
-    if (apiKey) trackSpend(apiKey.keyHash, transcriptionCost).catch(() => {});
+    const _requestId = await chargeAndTrack(userId, transcriptionCost, model, "venice", apiKey?.id ?? "unknown", 0);
+    trackApiKeySpend(apiKey?.keyHash, transcriptionCost);
     return c.json(json);
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/audio/transcriptions error:");
-    return c.json({ error: { message: "An internal error occurred", type: errType } }, status as Parameters<typeof c.json>[1]);
+    return inferenceErrorHandler(c, err, "/v1/audio/transcriptions");
   }
 });

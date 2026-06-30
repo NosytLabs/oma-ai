@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { generalLimiter } from '@/lib/rate-limiter'
+
+export const runtime = 'nodejs'
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3'
 const JUPITER_API = 'https://api.jup.ag/swap/v2/quote'
@@ -23,34 +27,12 @@ interface PaymentLinkRequest {
   metadata?: Record<string, string>
 }
 
-interface x402PaymentRequest {
-  modelId: string
-  chain: 'base' | 'solana'
-  walletAddress: string
-  maxAmount?: number
-}
-
 const SUPPORTED_COINS: Record<string, { id: string; symbol: string; name: string }> = {
   btc: { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' },
   eth: { id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
   sol: { id: 'solana', symbol: 'SOL', name: 'Solana' },
   usdc: { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin' },
   xmr: { id: 'monero', symbol: 'XMR', name: 'Monero' },
-}
-
-const X402_CONFIGS = {
-  base: {
-    chainId: 8453,
-    network: 'Base',
-    usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    facilitatorUrl: 'https://x402.facilitator.xyz/base',
-  },
-  solana: {
-    chainId: 'mainnet-beta',
-    network: 'Solana',
-    usdcMint: USDC_MINT,
-    facilitatorUrl: 'https://x402.facilitator.xyz/solana',
-  },
 }
 
 async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
@@ -65,6 +47,7 @@ async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
 
     const response = await fetch(`${JUPITER_API}?${queryParams.toString()}`, {
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(60_000),
     })
 
     if (!response.ok) return null
@@ -87,10 +70,10 @@ async function fetchSolFromJupiter(): Promise<CoinPrice | null> {
 }
 
 async function fetchFromCoinGecko(coinIds: string[]): Promise<Record<string, { usd: number; usd_24h_change?: number; last_updated_at?: number }>> {
-  const response = await fetch(
-    `${COINGECKO_API}/simple/price?ids=${coinIds.join(',')}&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true`,
-    { next: { revalidate: 30 } }
-  )
+    const response = await fetch(
+     `${COINGECKO_API}/simple/price?ids=${coinIds.join(',')}&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true`,
+     { next: { revalidate: 30 }, signal: AbortSignal.timeout(60_000) }
+   )
 
   if (!response.ok) {
     throw new Error(`CoinGecko API error: ${response.status}`)
@@ -99,7 +82,7 @@ async function fetchFromCoinGecko(coinIds: string[]): Promise<Record<string, { u
   return response.json()
 }
 
-export async function GET() {
+export const GET = withRateLimit(async () => {
   try {
     const coinIds = Object.values(SUPPORTED_COINS)
       .filter(c => c.id !== 'solana')
@@ -149,99 +132,82 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+}, { limiter: generalLimiter, route: '/api/pricing/crypto' })
 
-export async function POST(request: Request) {
+export const POST = withRateLimit(async (request: Request) => {
   try {
     const body = await request.json()
     const { action } = body
 
-    switch (action) {
-      case 'create-payment-link': {
-        const { amount, chain, token = 'USDC' } = body as PaymentLinkRequest & { action: string }
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        const sessionToken = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || ''
-        const response = await fetch(`${apiUrl}/v1/deposit/houdini/payment-link`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {}),
-          },
-          body: JSON.stringify({ amount, chain, token }),
-        })
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({}))
-          return NextResponse.json(
-            { error: { message: error?.error?.message || 'Payment link creation failed', type: 'upstream_error' } },
-            { status: response.status }
-          )
-        }
-
-        const data = await response.json().catch(() => ({}))
-        return NextResponse.json({
-          success: true,
-          paymentLink: {
-            id: data.paymentLink?.id,
-            url: data.paymentLink?.url,
-            amount: data.paymentLink?.amount,
-            chain: data.paymentLink?.chain,
-            token: data.paymentLink?.token,
-            expiresAt: data.paymentLink?.expiresAt,
-            status: data.paymentLink?.status,
-            depositId: data.depositId,
-          },
-        })
-      }
-
-      case 'create-x402-session': {
-        const { modelId, chain, walletAddress, maxAmount } = body as x402PaymentRequest & { action: string }
-        
-        const sessionId = `x402_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-        const x402Config = X402_CONFIGS[chain as keyof typeof X402_CONFIGS]
-        
-        return NextResponse.json({
-          success: true,
-          session: {
-            id: sessionId,
-            modelId,
-            chain,
-            walletAddress,
-            maxAmount: maxAmount || 10,
-            status: 'active',
-            facilitator: x402Config.facilitatorUrl,
-            createdAt: new Date().toISOString(),
-          },
-        })
-      }
-
-      case 'get-x402-status': {
-        const { sessionId } = body
-        
-        return NextResponse.json({
-          success: true,
-          status: {
-            sessionId,
-            balance: 0,
-            spent: 0,
-            requests: 0,
-            lastActivity: new Date().toISOString(),
-          },
-        })
-      }
-
-      default:
-        return NextResponse.json(
-          { error: { message: 'Unknown action', type: 'validation_error' } },
-          { status: 400 }
-        )
+    if (action !== 'create-payment-link') {
+      return NextResponse.json(
+        { error: { message: 'Unknown action', type: 'validation_error' } },
+        { status: 400 },
+      )
     }
+
+    const { amount, chain, token = 'USDC' } = body as PaymentLinkRequest & { action: string }
+
+    // --- Server-side validation ---
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json(
+        { error: { message: 'amount must be a positive number', type: 'validation_error' } },
+        { status: 400 },
+      )
+    }
+    const validChains = ['base', 'solana'] as const
+    if (!validChains.includes(chain as typeof validChains[number])) {
+      return NextResponse.json(
+        { error: { message: `chain must be one of: ${validChains.join(', ')}`, type: 'validation_error' } },
+        { status: 400 },
+      )
+    }
+    if (typeof token !== 'string' || token.length === 0 || token.length > 32) {
+      return NextResponse.json(
+        { error: { message: 'token must be a non-empty string (max 32 chars)', type: 'validation_error' } },
+        { status: 400 },
+      )
+    }
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const sessionToken = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || ''
+    const response = await fetch(`${apiUrl}/v1/deposit/houdini/payment-link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {}),
+      },
+      body: JSON.stringify({ amount, chain, token }),
+      signal: AbortSignal.timeout(60_000),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      return NextResponse.json(
+        { error: { message: error?.error?.message || 'Payment link creation failed', type: 'upstream_error' } },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json().catch(() => ({}))
+    return NextResponse.json({
+      success: true,
+      paymentLink: {
+        id: data.paymentLink?.id,
+        url: data.paymentLink?.url,
+        amount: data.paymentLink?.amount,
+        chain: data.paymentLink?.chain,
+        token: data.paymentLink?.token,
+        expiresAt: data.paymentLink?.expiresAt,
+        status: data.paymentLink?.status,
+        depositId: data.depositId,
+      },
+    })
   } catch (error) {
-    console.error('x402 API error:', error)
+    console.error('Payment link API error:', error)
     return NextResponse.json(
-      { error: { message: 'Failed to process x402 request', type: 'internal_server_error' } },
+      { error: { message: 'Failed to process payment link request', type: 'internal_server_error' } },
       { status: 500 }
     )
   }
-}
+}, { limiter: generalLimiter, route: '/api/pricing/crypto' })

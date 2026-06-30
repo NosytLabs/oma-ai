@@ -3,14 +3,13 @@ import { Hono } from "hono";
 import { bearerAuth } from "../../auth/middleware.js";
 import { getModel } from "../../inference/models.js";
 import * as venice from "../../inference/venice.js";
-import { getBalance, deductCredits } from "../../credits/index.js";
+import { getBalance } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
-import { logger } from "../../lib/logger.js";
+import { chargeAndTrack, trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 const imageGenerationSchema = z.object({
   model: z.string().min(1).max(100),
@@ -69,31 +68,10 @@ imagesRouter.post("/v1/images/generations", async (c) => {
     }
     const json = await resp.json();
 
-    const requestId = crypto.randomUUID();
-    await deductCredits(
-      userId,
-      totalCents - 1,
-      1,
-      totalCents,
-      model,
-      "venice",
-      apiKey?.id ?? "unknown",
-      0,
-      0,
-      requestId,
-    );
-
-    if (apiKey) {
-      trackSpend(apiKey.keyHash, totalCents).catch(() => {});
-    }
+    const _requestId = await chargeAndTrack(userId, totalCents, model, "venice", apiKey?.id ?? "unknown", 0);
+    trackApiKeySpend(apiKey?.keyHash, totalCents);
     return c.json(json);
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/images/generations error:");
-    return c.json(
-      { error: { message: "An internal error occurred", type: errType } },
-      status as Parameters<typeof c.json>[1],
-    );
+    return inferenceErrorHandler(c, err, "/v1/images/generations");
   }
 });

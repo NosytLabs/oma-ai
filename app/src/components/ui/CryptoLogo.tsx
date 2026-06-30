@@ -183,4 +183,3 @@ export function CryptoLogo({
   )
 }
 
-export default CryptoLogo

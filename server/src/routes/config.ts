@@ -20,6 +20,8 @@ const feeConfigSchema = z.object({
   }),
 });
 
+const storedFeeConfigSchema = feeConfigSchema.shape.config;
+
 const rateLimitConfigSchema = z.object({
   config: z.object({
     tiers: z.record(z.object({
@@ -28,6 +30,8 @@ const rateLimitConfigSchema = z.object({
     })),
   }),
 });
+
+const storedRateLimitConfigSchema = rateLimitConfigSchema.shape.config;
 
 const rateLimitOverrideSchema = z.object({
   targetType: z.enum(["user", "api_key"]),
@@ -44,12 +48,7 @@ configRoutes.get("/v1/admin/config/fees", async (c) => {
     const defaultConfig = {
       providers: {
         venice: { markupPercent: 10 },
-        openrouter: { markupPercent: 10 },
-        together: { markupPercent: 10 },
-        deepinfra: { markupPercent: 10 },
-        litellm: { markupPercent: 10 },
-        antseed: { markupPercent: 10 },
-        tinyfish: { markupPercent: 10 },
+        surplus: { markupPercent: 10 },
       },
     };
 
@@ -57,8 +56,12 @@ configRoutes.get("/v1/admin/config/fees", async (c) => {
       return c.json({ config: defaultConfig });
     }
 
-    const parsed = JSON.parse(configs[0].value);
-    return c.json({ config: parsed });
+    const raw = JSON.parse(configs[0].value);
+    const parsed = storedFeeConfigSchema.safeParse(raw);
+    if (!parsed.success) {
+      return c.json({ error: { message: "Invalid stored fee config", details: parsed.error.issues } }, 500);
+    }
+    return c.json({ config: parsed.data });
   } catch (err) {
     logger.error({ err }, "Get fee config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
@@ -68,26 +71,26 @@ configRoutes.get("/v1/admin/config/fees", async (c) => {
 configRoutes.put("/v1/admin/config/fees", async (c) => {
   try {
     const body = await c.req.json();
-    const parsed = feeConfigSchema.parse(body);
+    const parsed = feeConfigSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: { message: "Invalid config format", details: parsed.error.issues } }, 400);
+    }
 
     const existing = await db.select().from(adminConfig).where(eq(adminConfig.key, "fee_config"));
     
     if (existing.length) {
       await db.update(adminConfig)
-        .set({ value: JSON.stringify(parsed.config), updatedAt: new Date() })
+        .set({ value: JSON.stringify(parsed.data.config), updatedAt: new Date() })
         .where(eq(adminConfig.key, "fee_config"));
     } else {
       await db.insert(adminConfig).values({
         key: "fee_config",
-        value: JSON.stringify(parsed.config),
+        value: JSON.stringify(parsed.data.config),
       });
     }
 
-    return c.json({ success: true, config: parsed.config });
+    return c.json({ success: true, config: parsed.data.config });
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return c.json({ error: { message: "Invalid config format", details: err.errors } }, 400);
-    }
     logger.error({ err }, "Update fee config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
@@ -110,8 +113,12 @@ configRoutes.get("/v1/admin/config/rate-limits", async (c) => {
       return c.json({ config: defaultConfig });
     }
 
-    const parsed = JSON.parse(configs[0].value);
-    return c.json({ config: parsed });
+    const raw = JSON.parse(configs[0].value);
+    const parsed = storedRateLimitConfigSchema.safeParse(raw);
+    if (!parsed.success) {
+      return c.json({ error: { message: "Invalid stored rate limit config", details: parsed.error.issues } }, 500);
+    }
+    return c.json({ config: parsed.data });
   } catch (err) {
     logger.error({ err }, "Get rate limit config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
@@ -121,26 +128,26 @@ configRoutes.get("/v1/admin/config/rate-limits", async (c) => {
 configRoutes.put("/v1/admin/config/rate-limits", async (c) => {
   try {
     const body = await c.req.json();
-    const parsed = rateLimitConfigSchema.parse(body);
+    const parsed = rateLimitConfigSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: { message: "Invalid config format", details: parsed.error.issues } }, 400);
+    }
 
     const existing = await db.select().from(adminConfig).where(eq(adminConfig.key, "rate_limit_config"));
     
     if (existing.length) {
       await db.update(adminConfig)
-        .set({ value: JSON.stringify(parsed.config), updatedAt: new Date() })
+        .set({ value: JSON.stringify(parsed.data.config), updatedAt: new Date() })
         .where(eq(adminConfig.key, "rate_limit_config"));
     } else {
       await db.insert(adminConfig).values({
         key: "rate_limit_config",
-        value: JSON.stringify(parsed.config),
+        value: JSON.stringify(parsed.data.config),
       });
     }
 
-    return c.json({ success: true, config: parsed.config });
+    return c.json({ success: true, config: parsed.data.config });
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return c.json({ error: { message: "Invalid config format", details: err.errors } }, 400);
-    }
     logger.error({ err }, "Update rate limit config error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
@@ -186,21 +193,21 @@ configRoutes.get("/v1/admin/rate-limit-overrides", async (c) => {
 configRoutes.post("/v1/admin/rate-limit-overrides", async (c) => {
   try {
     const body = await c.req.json();
-    const parsed = rateLimitOverrideSchema.parse(body);
+    const parsed = rateLimitOverrideSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: { message: "Invalid override format", details: parsed.error.issues } }, 400);
+    }
 
     const result = await db.insert(rateLimitOverrides).values({
-      targetType: parsed.targetType,
-      targetId: parsed.targetId,
-      rpm: parsed.rpm,
-      tpm: parsed.tpm,
-      expiresAt: parsed.expiresAt ? new Date(parsed.expiresAt) : null,
+      targetType: parsed.data.targetType,
+      targetId: parsed.data.targetId,
+      rpm: parsed.data.rpm,
+      tpm: parsed.data.tpm,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
     }).returning();
 
     return c.json({ success: true, override: result[0] }, 201);
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return c.json({ error: { message: "Invalid override format", details: err.errors } }, 400);
-    }
     logger.error({ err }, "Create rate limit override error:");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }

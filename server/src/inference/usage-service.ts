@@ -21,7 +21,7 @@ export async function recordUsage(params: UsageRecordParams): Promise<void> {
     userId: params.userId,
     apiKeyId: params.apiKeyId,
     model: params.modelId,
-    provider: params.provider as "venice" | "antseed" | "litellm" | "openrouter" | "together" | "deepinfra",
+    provider: params.provider as "venice" | "surplus",
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
     costCents: params.costCents,

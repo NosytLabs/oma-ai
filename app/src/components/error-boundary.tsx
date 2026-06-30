@@ -9,7 +9,7 @@
 //
 // If a future Next.js patch fixes the dev HMR bug, lucide can return here.
 
-import { Component, ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -61,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={this.handleReset}
             className="btn-primary flex items-center gap-2"
           >
@@ -76,4 +76,3 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default ErrorBoundary

@@ -10,9 +10,8 @@
  *   - `./api/auth.ts`     — `api.auth.*` (SIWE, Solana, sessions, keys)
  *   - `./api/deposit.ts`  — `api.deposit.*` (USDC, OMA, Houdini, status)
  *   - `./api/resources.ts`— `api.balance`, `api.usage`, `api.models`
- *   - `./api/inference.ts`— `api.inference`, `api.x402`, `api.health`
+ *   - `./api/inference.ts`— `api.health`
  *   - `./api/admin.ts`    — `api.admin.*`
- *   - `./api/webhooks.ts` — `api.webhooks`, `api.recoveries`
  *   - `./api/index.ts`    — composite `api` object + barrel re-exports
  *
  * All existing `import { api, type Foo } from '@/lib/api'` call sites

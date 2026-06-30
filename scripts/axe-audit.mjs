@@ -16,6 +16,15 @@ const PAGES = [
   { url: '/faq', name: 'faq' },
   { url: '/privacy', name: 'privacy' },
   { url: '/terms', name: 'terms' },
+  { url: '/login', name: 'login' },
+  { url: '/chat', name: 'chat' },
+  { url: '/dashboard', name: 'dashboard', demo: true },
+  { url: '/playground', name: 'playground', demo: true },
+  { url: '/settings', name: 'settings', demo: true },
+  { url: '/deposit', name: 'deposit', demo: true },
+  { url: '/admin', name: 'admin', demo: true },
+  { url: '/image-generation', name: 'image-generation' },
+  { url: '/video-generation', name: 'video-generation' },
 ];
 
 const AXE_PATH = join(process.cwd(), 'app/node_modules/axe-core/axe.min.js');
@@ -38,6 +47,15 @@ for (const page of PAGES) {
   const url = BASE_URL + page.url;
   const tab = await ctx.newPage();
   try {
+    // Set demo cookie for authenticated pages so middleware lets us through
+    if (page.demo) {
+      await tab.context().addCookies([{
+        name: 'oma-demo',
+        value: '1',
+        domain: new URL(BASE_URL).hostname,
+        path: '/',
+      }]);
+    }
     const resp = await tab.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
     const status = resp?.status() ?? 0;
     if (status >= 300) {

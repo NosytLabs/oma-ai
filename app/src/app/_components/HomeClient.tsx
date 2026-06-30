@@ -23,11 +23,13 @@ import {
   Wallet,
   Zap,
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { useHealthQuery } from '@/app/dashboard/_hooks/useHealthQuery'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { formatPrice } from '@/lib/prices'
 import { api } from '@/lib/api'
 import type { HealthResponse, Model as ApiModel } from '@/lib/api/types'
+import { DEFAULT_API_URL } from '@/lib/config'
 import { estimateTokens } from '@/lib/text'
 import {
   EASE_SPRING,
@@ -68,7 +70,7 @@ const MONOGRAM: Record<ModelLogo, string> = {
 }
 
 const STEPS = [
-  { n: '1', t: 'Connect wallet', d: 'MetaMask, Coinbase, or WalletConnect. No email, no signup.' },
+  { n: '1', t: 'Get access', d: 'Generate an anonymous account number (Mullvad-style), connect a wallet, or skip straight to x402 pay-per-request. No KYC, no email.' },
   { n: '2', t: 'Add credits', d: 'Send USDC, swap from any token, or use x402 gasless payments.' },
   { n: '3', t: 'Start building', d: 'Call any model with one OpenAI-compatible request.' },
 ] as const
@@ -217,7 +219,7 @@ function Hero({
             variants={staggerContainer(0.18, 0.05)}
             initial="hidden"
             animate="show"
-            className="font-display font-bold text-text-bright tracking-[-0.04em] leading-[0.95] text-[clamp(2.75rem,9vw,5.5rem)] max-w-4xl"
+            className="h1-hero text-text-bright max-w-4xl"
           >
             <m.span variants={blurIn} className="block">
               One key.
@@ -231,8 +233,9 @@ function Hero({
             {...fadeUp(0.12)}
             className="mt-6 max-w-2xl text-base sm:text-lg text-text-secondary leading-relaxed"
           >
-            Pay per request in USDC. No subscriptions. No rate limits.
+            Anonymous AI inference. No KYC, no email, no subscriptions.
             {' '}{modelsCount}+ AI models behind one OpenAI-compatible API.
+            Mullvad-style account numbers. Pay per request in USDC.
           </m.p>
 
           <m.div
@@ -242,7 +245,7 @@ function Hero({
             <Magnetic strength={6}>
               <Link
                 href="/playground"
-                className="btn-primary sheen inline-flex items-center gap-2 transition-shadow hover:glow-accent-sm"
+                className="btn-primary sheen glow-breathe inline-flex items-center gap-2 transition-shadow hover:glow-accent-sm"
               >
                 Try the playground
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -291,9 +294,9 @@ function Hero({
           >
             <div className="glass-strong sheen rounded-xl overflow-hidden shadow-[0_20px_60px_-30px_color-mix(in_srgb,var(--color-accent-hover)_40%,transparent)]">
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-void/60">
-                <span className="h-3 w-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
-                <span className="h-3 w-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
-                <span className="h-3 w-3 rounded-full bg-[#28c840]" aria-hidden="true" />
+                <span className="h-3 w-3 rounded-full bg-error" aria-hidden="true" />
+                <span className="h-3 w-3 rounded-full bg-warning" aria-hidden="true" />
+                <span className="h-3 w-3 rounded-full bg-success" aria-hidden="true" />
                 <span className="ml-2 text-[11px] text-text-tertiary font-mono caret-blink">curl</span>
                 <div className="ml-auto">
                   <CopyButton text={CURL_SNIPPET} />
@@ -316,12 +319,11 @@ function Hero({
             className="mt-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-xs text-text-tertiary font-mono"
           >
             {TRUST.map((t, i) => (
-              <span key={t.label} className="inline-flex items-center gap-2">
-                <span className="text-accent" aria-hidden="true">·</span>
+              <span key={t.label} className="inline-flex items-center gap-1.5">
                 <span className="text-text-bright">{t.label}</span>
-                <span className="hidden sm:inline">— {t.hint}</span>
+                <span className="hidden sm:inline text-text-muted">{t.hint}</span>
                 {i < TRUST.length - 1 && (
-                  <span className="text-text-tertiary/50" aria-hidden="true">|</span>
+                  <span className="text-text-tertiary/40 hidden sm:inline" aria-hidden="true">/</span>
                 )}
               </span>
             ))}
@@ -350,10 +352,10 @@ function ValueProps() {
     },
     {
       icon: ShieldCheck,
-      title: 'No account needed',
-      body: 'Just connect a wallet. No email, no password, no account. Your keys, your models, your data.',
+      title: 'Anonymous & private',
+      body: 'No KYC, no email, no PII. Generate a Mullvad-style account number in one click — or use per-request x402 payments with zero account needed.',
       href: '/login',
-      cta: 'Get started',
+      cta: 'Get anonymous access',
     },
   ] as const
   return (
@@ -367,7 +369,7 @@ function ValueProps() {
             <m.div
               key={c.title}
               variants={fadeUpVariant}
-              className="tilt-card sheen group relative rounded-2xl border border-border bg-panel/60 p-6 hover:border-accent/50 transition-colors"
+              className="tilt-card card-hover-lift sheen group relative rounded-2xl border border-border bg-panel/60 p-6 hover:border-accent/50 transition-colors"
             >
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20 text-accent mb-4 transition-shadow group-hover:glow-accent-sm">
                 <c.icon className="h-5 w-5" aria-hidden="true" />
@@ -406,7 +408,8 @@ function HowItWorks() {
             Three steps. <span className="text-accent">Thirty seconds.</span>
           </h2>
           <p className="mt-4 text-text-secondary max-w-xl mx-auto text-sm sm:text-base">
-            Connect your wallet, top up with USDC, and start calling AI models
+            Generate an anonymous account number, connect a wallet, or use
+            x402 pay-per-request. Top up with USDC and start calling AI models
             in under a minute.
           </p>
         </m.div>
@@ -489,7 +492,7 @@ function ModelCard({
     >
       <Link
         href="/models"
-        className="tilt-card group relative block rounded-xl border border-border bg-panel/40 p-4 pb-7 hover:border-accent/40 hover:bg-panel/80 hover:glow-accent-sm transition-all h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+        className="tilt-card card-hover-lift group relative block rounded-xl border border-border bg-panel/40 p-4 pb-7 hover:border-accent/40 hover:bg-panel/80 hover:glow-accent-sm transition-all h-full focus-ring"
       >
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -798,19 +801,19 @@ function FeatureGrid() {
 const FAQ_TEASE_ITEMS = [
   {
     q: 'Do I need an account to use OMA?',
-    a: 'No. Your wallet is your account. Sign in with Ethereum or Solana, and the dashboard generates an API key. No email, no password, no account.',
+    a: 'No. Generate a Mullvad-style anonymous account number in one click — no KYC, no email, no PII. Or connect a wallet. Or use x402 for per-request pay-as-you-go with no account at all. Your choice.',
   },
   {
     q: 'How is OMA different from OpenRouter or Venice?',
-    a: 'OpenAI-compatible shape, multi-provider routing, and a wallet-only settlement layer on Base. You get one endpoint, one bill, and one auth flow — across every model we serve.',
+    a: 'Anonymous by design. Mullvad-style account numbers and private inference through Venice. One endpoint, one bill, one auth flow, every model we serve. No data retention.',
   },
   {
     q: 'What is x402 and do I have to use it?',
-    a: 'x402 is an open HTTP-native payment standard. You can ignore it and deposit USDC into a credit balance instead. x402 is the opt-in path for per-request gasless settlement.',
+    a: 'x402 is an open HTTP-native payment standard. Skip login entirely — pay per request with a single signature. No account, no wallet, no JWT. Best for agents and one-off calls.',
   },
   {
     q: 'What happens if I run out of credits mid-request?',
-    a: 'You get a 402 with a Pay-Req header. If your client handles 402, it pays and retries inline. Otherwise, top up and retry — the same model, the same endpoint, no rate limit.',
+    a: 'You get a 402 with a Pay-Req header. If your client handles 402, it pays and retries inline. Otherwise, top up and retry. Same model, same endpoint, no rate limit.',
   },
 ] as const
 
@@ -889,27 +892,17 @@ function FAQTease() {
 function MiniPlayground({ models }: { models: { id: string; provider: string }[] }) {
   const [model, setModel] = useState<string>(models[0]?.id ?? 'llama-3.3-70b')
   const [prompt, setPrompt] = useState<string>('')
-  const [running, setRunning] = useState(false)
-  const [result, setResult] = useState<{
-    text: string
-    tokens: number
-  } | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const estimatedTokens = useMemo(() => estimateTokens(prompt), [prompt])
 
-  const run = async () => {
-    if (!prompt.trim() || running) return
-    setRunning(true)
-    setError(null)
-    setResult(null)
-    try {
-      const res = await fetch('/api/v1/chat/completions', {
+  const runMutation = useMutation({
+    mutationFn: async (vars: { model: string; prompt: string }) => {
+      const res = await fetch(`${DEFAULT_API_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: prompt.trim() }],
+          model: vars.model,
+          messages: [{ role: 'user', content: vars.prompt.trim() }],
           stream: false,
           max_tokens: 256,
         }),
@@ -926,12 +919,18 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
       }
       const text = data.choices?.[0]?.message?.content ?? ''
       const tokens = data.usage?.total_tokens ?? estimateTokens(text)
-      setResult({ text, tokens })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Request failed')
-    } finally {
-      setRunning(false)
-    }
+      return { text, tokens }
+    },
+  })
+
+  const running = runMutation.isPending
+  const error = runMutation.error instanceof Error ? runMutation.error.message : null
+  const result = runMutation.data ?? null
+
+  const run = () => {
+    if (!prompt.trim() || running) return
+    runMutation.reset()
+    runMutation.mutate({ model, prompt })
   }
 
   return (
@@ -947,7 +946,13 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
       </div>
       <div className="p-4 sm:p-5 flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <label htmlFor="playground-model" className="sr-only">
+            Choose AI model
+          </label>
           <select
+            id="playground-model"
+            name="playgroundModel"
+            aria-label="Choose AI model"
             value={model}
             onChange={(e) => setModel(e.target.value)}
             className="bg-void border border-border text-text-secondary text-xs font-mono px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel sm:w-56"
@@ -958,8 +963,14 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
               </option>
             ))}
           </select>
+          <label htmlFor="playground-prompt" className="sr-only">
+            Enter your prompt
+          </label>
           <input
+            id="playground-prompt"
+            name="playgroundPrompt"
             type="text"
+            aria-label="Prompt input"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => {
@@ -1016,7 +1027,7 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
                 <div className="mt-2 pt-2 border-t border-error/20">
                   <span className="inline-flex items-center gap-1 text-xs text-warning">
                     <AlertTriangle className="h-3 w-3" />
-                    Network issue — check your connection
+                    Network issue. Check your connection.
                   </span>
                 </div>
               )}
@@ -1024,7 +1035,7 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
                 <div className="mt-2 pt-2 border-t border-error/20">
                   <span className="inline-flex items-center gap-1 text-xs text-warning">
                     <AlertTriangle className="h-3 w-3" />
-                    Rate limit exceeded — try again later
+                    Rate limit exceeded. Try again later.
                   </span>
                 </div>
               )}
@@ -1032,7 +1043,7 @@ function MiniPlayground({ models }: { models: { id: string; provider: string }[]
                 <div className="mt-2 pt-2 border-t border-error/20">
                   <span className="inline-flex items-center gap-1 text-xs text-warning">
                     <AlertTriangle className="h-3 w-3" />
-                    Model not available — try another model
+                    Model not available. Try another model.
                   </span>
                 </div>
               )}
@@ -1108,15 +1119,16 @@ function FinalCTA() {
           {...fadeUp(0.08)}
           className="mt-5 text-text-secondary text-base sm:text-lg max-w-xl mx-auto"
         >
-          Connect a wallet, hit the API, get an answer. No sales call,
-          no enterprise contract, no rate limit.
+          Anonymous AI inference. No KYC, no email, no sales call.
+          Generate a Mullvad-style account number in one click or use
+          x402 pay-per-request. No enterprise contract, no rate limit.
         </m.p>
         <m.div
           {...fadeUp(0.16)}
           className="mt-8 flex flex-wrap items-center justify-center gap-3"
         >
           <Magnetic strength={6}>
-            <Link href="/dashboard" className="btn-primary sheen inline-flex items-center gap-2 transition-shadow hover:glow-accent-sm">
+            <Link href="/dashboard" className="btn-primary sheen glow-breathe inline-flex items-center gap-2 transition-shadow hover:glow-accent-sm">
               <Wallet className="h-4 w-4" aria-hidden="true" />
               Connect wallet
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -1145,13 +1157,7 @@ export default function HomeClient({
   liveModelCount,
   featuredModels,
 }: HomeClientProps) {
-  const healthQuery = useQuery({
-    queryKey: ['health'],
-    queryFn: () => api.health(),
-    refetchInterval: 15_000,
-    staleTime: 10_000,
-    retry: 1,
-  })
+  const healthQuery = useHealthQuery({ refetchInterval: 15_000, staleTime: 10_000 })
 
   const modelsQuery = useQuery({
     queryKey: ['models'],
@@ -1179,7 +1185,9 @@ export default function HomeClient({
   }, [healthQuery.data])
 
   const onlineProviders = Object.values(providerStates).filter(Boolean).length
-  const totalProviders = 3
+  // ponytail: totalProviders tracks keys in the same object we count online for,
+  // so adding a provider here auto-updates the denominator — no hardcoded magic number.
+  const totalProviders = Object.keys(providerStates).length
   const modelsCount =
     liveModelCount ?? modelsQuery.data?.data?.length ?? FEATURED_HINT_COUNT
 
@@ -1214,10 +1222,11 @@ export default function HomeClient({
               Zero to API call
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-text-bright tracking-tight">
-              Try it in the browser. <span className="text-accent">No signup.</span>
+              Try it in the browser. <span className="text-accent">No account needed.</span>
             </h2>
             <p className="mt-3 text-text-secondary text-sm sm:text-base">
               Pick a model, type a prompt, get an answer. Real API, real latency, real bill.
+              No KYC, no email, no signup.
             </p>
           </m.div>
           <m.div {...fadeUp(0.1)}>

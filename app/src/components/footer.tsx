@@ -30,8 +30,6 @@ const FOOTER_SECTIONS: FooterSection[] = [
   {
     title: 'Tools',
     links: [
-      { label: 'compare', href: '/compare' },
-      { label: 'use cases', href: '/use-cases' },
       { label: 'swap', href: '/swap' },
       { label: 'about', href: '/about' },
     ],
@@ -49,7 +47,6 @@ const FOOTER_SECTIONS: FooterSection[] = [
     links: [
       { label: 'docs', href: '/docs' },
       { label: 'faq', href: '/faq' },
-      { label: 'private ai api', href: '/private-ai-api' },
     ],
   },
   {
@@ -57,7 +54,7 @@ const FOOTER_SECTIONS: FooterSection[] = [
     links: [
       { label: 'terms', href: '/terms' },
       { label: 'privacy', href: '/privacy' },
-      { label: 'crypto payments', href: '/crypto-payments' },
+      { label: 'crypto payments', href: '/deposit' },
     ],
   },
 ]
@@ -100,7 +97,9 @@ export function Footer() {
               <span className="text-text-muted text-xs">·sys</span>
             </Link>
             <p className="text-xs text-text-secondary leading-relaxed max-w-md">
-              Permissionless AI inference. One key, every model, pay in crypto. No account required.
+              Permissionless AI inference. One key, every model, pay in crypto.
+              <br />
+              Try any endpoint with x402 — no signup, no email, no card.
               <br />
               Base chain · mainnet. Built and operated by the OMA collective.
             </p>
@@ -137,7 +136,7 @@ export function Footer() {
                   </p>
                   <ul className="flex flex-col gap-1">
                     {section.links.map((link) => {
-                      const isCurrent = pathname === link.href || pathname.startsWith(link.href + '/')
+                      const isCurrent = pathname === link.href || pathname.startsWith(`${link.href}/`)
                       return (
                         <li key={link.label}>
                           <Link
@@ -166,7 +165,7 @@ export function Footer() {
 
         <div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
           <p>
-            © {year} OMA AI · base chain // one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'} · last deploy {process.env.NEXT_PUBLIC_BUILD_DATE ?? 'dev'}
+            © {year} OMA AI · base chain · one man army · build {process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? 'dev'} · last deploy {process.env.NEXT_PUBLIC_BUILD_DATE ?? 'dev'}
           </p>
           <p className="mt-1">
             Inference routes to upstream providers. Uptime is best-effort, not guaranteed. Verify before you bet on it.

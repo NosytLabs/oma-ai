@@ -28,12 +28,12 @@ import {
   Settings,
   Zap,
 } from 'lucide-react'
-import { useState, useCallback, useMemo, useId } from 'react'
+import { useState, useCallback, useMemo, useId, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { m, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
-import { formatCents } from '@/lib/utils'
+import { formatCents, toDollars } from '@/lib/utils'
 
 interface CreditHistoryItem {
   id: string
@@ -100,6 +100,25 @@ export default function CreditsPage() {
   const [savingAutoReload, setSavingAutoReload] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const _id = useId()
+
+  // Load the user's saved auto-reload settings so a returning user sees their
+  // existing config (toggle ON, threshold/reload amount filled in) rather
+  // than a blank form. Without this, the only way to discover the existing
+  // config was to click "Save" again, which would overwrite threshold/amount
+  // with empty values.
+  const autoReloadQuery = useQuery({
+    queryKey: ['autoReload'],
+    queryFn: () => api.oma.getAutoReload(),
+    enabled: isConnected,
+    staleTime: 60_000,
+  })
+  useEffect(() => {
+    const data = autoReloadQuery.data
+    if (!data) return
+    setAutoReload(Boolean(data.enabled))
+    setAutoReloadThreshold(data.thresholdCents != null ? toDollars(data.thresholdCents).toFixed(2) : '')
+    setAutoReloadAmount(data.reloadAmountCents != null ? toDollars(data.reloadAmountCents).toFixed(2) : '')
+  }, [autoReloadQuery.data])
 
   const history: CreditHistoryItem[] = useMemo(
     () => historyQuery.data ?? [],
@@ -598,7 +617,7 @@ const handleBuyCredits = async () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 text-sm ${
-                        item.type === 'deposit' ? 'text-orange' : 
+                        item.type === 'deposit' ? 'text-success' : 
                         item.type === 'refund' ? 'text-accent' : 'text-warning'
                       }`}>
                         {item.type === 'deposit' ? (
@@ -613,13 +632,13 @@ const handleBuyCredits = async () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-text-secondary">{item.source || '-'}</td>
                     <td className="px-6 py-4 text-sm font-medium">
-                      <span className={item.amount > 0 ? 'text-orange' : 'text-warning'}>
+                      <span className={item.amount > 0 ? 'text-success' : 'text-warning'}>
                         {item.amount > 0 ? '+' : ''}{item.amount > 0 ? '$' : '-$'}{Math.abs(item.amount / 100).toFixed(2)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        item.status === 'completed' ? 'bg-orange/10 text-orange' :
+                        item.status === 'completed' ? 'bg-success/10 text-success' :
                         item.status === 'pending' ? 'bg-warning/10 text-warning' :
                         'bg-error/10 text-error'
                       }`}>

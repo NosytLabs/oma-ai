@@ -2,6 +2,7 @@ import { getSettlementDlqEntries, retrySettlementFromDlq, addSettlementToDlq, ge
 import { verifyPayment, settlePaymentAsync } from "../x402/facilitator.js";
 import type { PaymentSignature } from "../x402/facilitator.js";
 import { config } from "../config.js";
+import { USDC_BASE } from "../constants.js";
 
 const MAX_RETRIES = 3;
 const RETRY_BATCH_SIZE = 10;
@@ -22,6 +23,7 @@ async function attemptSettlementRetry(entry: {
   lastError: string;
 }): Promise<SettlementRetryResult> {
   const { orderId, amount, chain } = entry;
+  const now = Math.floor(Date.now() / 1000);
 
   try {
     const paymentSig: PaymentSignature = {
@@ -32,13 +34,13 @@ async function attemptSettlementRetry(entry: {
         x402Version: "1",
         scheme: "evm",
         networkId: chain,
-        asset: "USDC",
+        asset: USDC_BASE,
         amount,
         payee: config.HOUDINI_ADDRESS_TO || "",
         payFrom: "",
         maxAmountRequired: amount,
-        validBefore: 0,
-        validAfter: 0,
+        validBefore: now + 300,
+        validAfter: now - 60,
       },
     };
 

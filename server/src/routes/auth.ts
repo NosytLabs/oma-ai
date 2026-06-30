@@ -1,10 +1,11 @@
 import { Hono } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { getOrCreateUser, verifySiweMessage, getNonce, generateSessionToken, verifySessionToken } from "../auth/siwe.js";
-import { createSolanaChallenge, getOrCreateSolanaUser, verifySolanaChallenge } from "../auth/solana.js";
+import { unlinkWallet } from "../auth/wallet-link.js";
 import { generateAccountNumber, hashAccountNumber } from "../auth/account-number.js";
-import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader, updateModelAllowlist, getApiKey } from "../auth/api-keys.js";
+import { createApiKey, listApiKeys, revokeApiKey, createApiKeyCookieHeader, createLogoutCookieHeader, updateModelAllowlist, getApiKey, validateApiKey } from "../auth/api-keys.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
@@ -15,8 +16,15 @@ import { eq, and } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
 import { randomBytes, createHmac, timingSafeEqual } from "crypto";
-import { authenticator } from "@otplib/preset-default";
-import { encryptSecret, decryptSecret } from "../auth/encryption.js";
+import {
+  setupTwoFactor,
+  enableTwoFactor,
+  disableTwoFactor,
+  regenerateBackupCodes,
+  getTwoFactorStatus,
+  getBackupCodeCount,
+  TwoFactorError,
+} from "../auth/two-factor.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
@@ -62,13 +70,32 @@ function createCsrfCookieHeader(token: string): string {
   // Secure flag only on HTTPS / production. HTTP localhost dev needs the cookie
   // to be readable by the page so the login round-trip works in the browser.
   const secure = config.NODE_ENV === 'production' ? ' Secure;' : '';
-  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge}; HttpOnly;${secure} SameSite=Strict`;
+  // ponytail: C1 — NO HttpOnly. Double-submit CSRF requires the browser to read
+  // the cookie and echo it in the `x-csrf-token` header on state-changing
+  // requests. HttpOnly blocks JS reads, which 403s every state change. Defense
+  // in depth: SameSite=Strict + Secure (prod) + HMAC-signed body.
+  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge};${secure} SameSite=Strict`;
 }
 
 export const authRoutes = new Hono<OmaEnv>();
 
+// Map a TwoFactorError (or unknown error) onto the standard JSON error
+// envelope used by the rest of the auth surface. Unknown errors fall
+// through to 500. The previous inline handlers used the same shape
+// (error: { message, type }).
+function twoFactorErrorResponse(c: Context, err: unknown) {
+  if (err instanceof TwoFactorError) {
+    return c.json(
+      { error: { message: err.message, type: "invalid_request_error", code: err.code } },
+      err.httpStatus,
+    );
+  }
+  logger.error({ err }, "[auth/2fa] unexpected error");
+  return c.json({ error: { message: "Internal server error", type: "internal_error" } }, 500);
+}
+
 const nonceSchema = z.object({
-  address: z.string().regex(/^0x[a-fA-F0-9]{40}$|^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
+  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
 });
 
 const verifySchema = z.object({
@@ -78,18 +105,6 @@ const verifySchema = z.object({
 });
 
 const walletSchema = z.object({
-  message: z.string().min(1),
-  signature: z.string().min(1),
-});
-
-const solanaAddressSchema = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-
-const solanaChallengeSchema = z.object({
-  address: solanaAddressSchema,
-});
-
-const solanaVerifySchema = z.object({
-  address: solanaAddressSchema,
   message: z.string().min(1),
   signature: z.string().min(1),
 });
@@ -173,46 +188,6 @@ authRoutes.post("/auth/verify", rateLimit({ windowMs: 60_000, maxRequests: 20 })
   return c.json({ token, address: user.address, accountNumber, authMethod: "siwe" });
 });
 
-authRoutes.post("/auth/solana/challenge", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
-  const parsed = solanaChallengeSchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json(validationError(parsed.error), 400);
-
-  try {
-    const challenge = await createSolanaChallenge(parsed.data.address);
-    return c.json(challenge);
-  } catch {
-    return c.json({ error: { message: "Invalid Solana address", type: "validation_error" } }, 400);
-  }
-});
-
-authRoutes.post("/auth/solana/verify", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
-  const parsed = solanaVerifySchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json(validationError(parsed.error), 400);
-
-  const verified = await verifySolanaChallenge(parsed.data.address, parsed.data.message, parsed.data.signature);
-  if (!verified) {
-    return c.json({ error: { message: "Solana verification failed", type: "authentication_error" } }, 401);
-  }
-
-  const user = await getOrCreateSolanaUser(verified.address);
-
-  let accountNumber: string;
-  try {
-    accountNumber = await ensureAccountNumber(user);
-  } catch {
-    return c.json({ error: { message: "Failed to generate unique account number", type: "internal_error" } }, 500);
-  }
-
-  const token = await generateSessionToken(user.id, "solana");
-  return c.json({
-    token,
-    address: user.address,
-    solanaAddress: user.solanaAddress ?? verified.address,
-    accountNumber,
-    authMethod: "solana",
-  });
-});
-
 authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
   const parsed = walletSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
@@ -248,13 +223,40 @@ authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 })
   }, 201);
 });
 
+// ============================================================
+// Wallet unlinking (deletes the wallet link for a user)
+// ============================================================
+authRoutes.delete("/auth/wallet/:type", sessionAuth, async (c) => {
+  const userId = c.get("userId") as string;
+  const { type } = c.req.param();
+
+  if (type !== "evm") {
+    return c.json({ error: { message: "Invalid wallet type. Use 'evm'.", type: "invalid_request_error" } }, 400);
+  }
+
+  try {
+    const snapshot = await unlinkWallet(userId, type);
+    return c.json({
+      unlinked: true,
+      message: `${type} wallet unlinked`,
+      accountSnapshot: snapshot,
+    });
+  } catch (err) {
+    if (err instanceof Error && "httpStatus" in err) {
+      const walletErr = err as unknown as { message: string; httpStatus: number; code: string };
+      return c.json({ error: { message: walletErr.message, type: "invalid_request_error", code: walletErr.code } }, walletErr.httpStatus as 400 | 401 | 404 | 409 | 500);
+    }
+    return c.json({ error: { message: "Failed to unlink wallet", type: "server_error" } }, 500);
+  }
+});
+
 authRoutes.get("/user", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const authMethod = c.get("authMethod");
   const [user] = await db.select({
     id: users.id,
     address: users.address,
-    solanaAddress: users.solanaAddress,
+    evmAddress: users.evmAddress,
     accountNumber: users.accountNumber,
     createdAt: users.createdAt,
   }).from(users).where(eq(users.id, userId)).limit(1);
@@ -280,78 +282,128 @@ authRoutes.delete("/account", sessionAuth, async (c) => {
   return c.json({ success: true });
 });
 
-authRoutes.post("/auth/logout", sessionAuth, async (c) => c.json({ success: true }));
+authRoutes.post("/auth/logout", sessionAuth, async (c) => {
+  // L-A4: clear the oma_session cookie (set client-side via document.cookie
+  // by wallet-provider.storeSession after SIWE verify) so a logged-out user
+  // can't keep using the JWT. Without this, the JWT cookie lingers on the
+  // browser until its 7-day max-age expires — long after the user thought
+  // they were logged out. The JWT itself expires server-side in 24h but the
+  // browser cookie persists longer; clearing the cookie on logout closes
+  // that gap immediately.
+  const isDev = config.NODE_ENV === "development";
+  const name = isDev ? "oma_session" : "__Host-oma_session";
+  let clearCookie = `${name}=; Path=/; SameSite=Strict; Max-Age=0`;
+  if (!isDev) clearCookie += "; Secure";
+  c.header("Set-Cookie", clearCookie);
+  return c.json({ success: true });
+});
 
 authRoutes.post("/auth/2fa/setup", sessionAuth, async (c) => {
   const userId = c.get("userId");
-  const [user] = await db.select({ address: users.address }).from(users).where(eq(users.id, userId)).limit(1);
+  const [user] = await db
+    .select({ address: users.address, accountNumber: users.accountNumber })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
   if (!user) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
 
-  const secret = authenticator.generateSecret();
-  const otpauth = authenticator.keyuri(user.address, "OMA", secret);
+  // ponytail: post-0030 the address column is nullable (account-only users
+  // have no wallet). 2FA setup requires *some* user identifier to bind the
+  // authenticator to; fall back to the account number when no address is set.
+  const userLabel = user.address ?? user.accountNumber ?? `account:${userId}`;
 
-  const { encrypted, iv, authTag } = encryptSecret(secret);
-  await db.update(users).set({ twoFactorSecret: JSON.stringify({ encrypted, iv, authTag }) }).where(eq(users.id, userId));
-
-  return c.json({ secret, otpauth });
+  try {
+    const payload = await setupTwoFactor(userId, userLabel);
+    return c.json({
+      secret: payload.secret,
+      otpauthUri: payload.otpauthUri,
+      qrCodeDataUrl: payload.qrCodeDataUrl,
+      backupCodes: payload.backupCodes,
+    });
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
+  }
 });
 
 authRoutes.post("/auth/2fa/verify", sessionAuth, async (c) => {
-  const userId = c.get("userId");
   const parsed = z.object({ code: z.string().min(6).max(6) }).safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { code } = parsed.data;
+  const userId = c.get("userId");
 
-  const [user] = await db.select({ twoFactorSecret: users.twoFactorSecret }).from(users).where(eq(users.id, userId)).limit(1);
-  if (!user?.twoFactorSecret) return c.json({ error: { message: "2FA not set up", type: "invalid_request_error" } }, 400);
-
-  let secret: string;
   try {
-    const parsed = JSON.parse(user.twoFactorSecret);
-    secret = decryptSecret(parsed.encrypted, parsed.iv, parsed.authTag);
-  } catch {
-    return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
+    await enableTwoFactor(userId, code);
+    return c.json({ success: true, message: "2FA enabled" });
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
   }
-
-  const isValid = authenticator.verify({ token: code, secret });
-  if (!isValid) return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
-
-  await db.update(users).set({ twoFactorEnabled: true }).where(eq(users.id, userId));
-  return c.json({ success: true, message: "2FA enabled" });
 });
 
 authRoutes.post("/auth/2fa/disable", sessionAuth, async (c) => {
+  // ponytail: previously required a `password` field that was never validated
+  // (dead code). Removed — 2FA disable is gated by session auth + valid TOTP
+  // or backup code via the auth/two-factor helper.
+  const parsed = z
+    .object({
+      code: z.string().min(1),
+      isBackupCode: z.boolean().optional().default(false),
+    })
+    .safeParse(await c.req.json());
+  if (!parsed.success) return c.json(validationError(parsed.error), 400);
+  const { code, isBackupCode } = parsed.data;
   const userId = c.get("userId");
-  const parsed = z.object({ password: z.string().min(1), code: z.string().min(6).max(6) }).safeParse(await c.req.json());
+
+  try {
+    await disableTwoFactor(userId, code, isBackupCode);
+    return c.json({ success: true, message: "2FA disabled" });
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
+  }
+});
+
+// GET: return the count of unused 2FA backup codes for the current user.
+// The plaintext codes are shown EXACTLY ONCE at setup time (returned by
+// /auth/2fa/setup) — they cannot be recovered afterwards because they're
+// stored hashed at rest. To roll new codes, call POST /auth/2fa/backup-codes.
+authRoutes.get("/auth/2fa/backup-codes", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  try {
+    const remaining = await getBackupCodeCount(userId);
+    return c.json({ remaining });
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
+  }
+});
+
+// Regenerate the user's 2FA backup codes. Gated by session auth and the
+// current TOTP code (a backup code would be circular — they prove possession
+// of *some* 2FA factor, but not of the live device). Returns the new
+// plaintext codes EXACTLY ONCE.
+authRoutes.post("/auth/2fa/backup-codes", sessionAuth, async (c) => {
+  const parsed = z.object({ code: z.string().min(6).max(6) }).safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { code } = parsed.data;
+  const userId = c.get("userId");
 
-  const [user] = await db.select({ twoFactorSecret: users.twoFactorSecret, twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, userId)).limit(1);
-  if (!user?.twoFactorEnabled) return c.json({ error: { message: "2FA not enabled", type: "invalid_request_error" } }, 400);
-
-  let secret: string;
   try {
-    const parsed2 = JSON.parse(user.twoFactorSecret!);
-    secret = decryptSecret(parsed2.encrypted, parsed2.iv, parsed2.authTag);
-  } catch {
-    return c.json({ error: { message: "Failed to decrypt 2FA secret", type: "internal_error" } }, 500);
+    const result = await regenerateBackupCodes(userId, code);
+    return c.json({ backupCodes: result.backupCodes });
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
   }
-
-  const isCodeValid = authenticator.verify({ token: code, secret });
-  if (!isCodeValid) return c.json({ error: { message: "Invalid 2FA code", type: "authentication_error" } }, 401);
-
-  await db.update(users).set({ twoFactorEnabled: false, twoFactorSecret: null }).where(eq(users.id, userId));
-  return c.json({ success: true, message: "2FA disabled" });
 });
 
 authRoutes.get("/auth/2fa/status", sessionAuth, async (c) => {
   const userId = c.get("userId");
-  const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, userId)).limit(1);
-  if (!user) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
-  return c.json({ enabled: user.twoFactorEnabled });
+  try {
+    const status = await getTwoFactorStatus(userId);
+    return c.json(status);
+  } catch (err) {
+    return twoFactorErrorResponse(c, err);
+  }
 });
 
-// Account-number auth (Mullvad-style)
+// Account-number auth (16-digit)
 authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const authHeader = c.req.header("Authorization");
   const session = authHeader?.startsWith("Bearer ")
@@ -408,31 +460,16 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
   return c.json({ token, accountNumber: user.accountNumber, authMethod: "account-number" }, 201);
 });
 
-authRoutes.get("/auth/csrf-token", async (c) => {
+const csrfTokenHandler: MiddlewareHandler<OmaEnv> = async (c) => {
   const token = generateCsrfToken();
   c.header("Set-Cookie", createCsrfCookieHeader(token));
   return c.json({ token });
-});
+};
 
-/**
- * C-C1: Demo-mode entry point. Sets a 24-hour `oma-demo=1` cookie that the
- * frontend (wallet-provider.tsx) and the app middleware both treat as a
- * lightweight "browse without signing up" session. No account, no session
- * token, no PII.
- *
- * The dashboard renders mock data when the cookie is present; the
- * middleware lets the user through the protected-route gate so they can
- * see what the dashboard looks like.
- */
-authRoutes.post("/auth/demo", rateLimit({ windowMs: 60_000, maxRequests: 30 }), async (c) => {
-  const maxAge = 60 * 60 * 24; // 24h
-  const expires = new Date(Date.now() + maxAge * 1000).toUTCString();
-  const cookie = `oma-demo=1; expires=${expires}; path=/; max-age=${maxAge}; SameSite=Lax`;
-  c.header("Set-Cookie", cookie);
-  return c.json({ success: true, expiresIn: maxAge });
-});
+authRoutes.get("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
+authRoutes.post("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
 
-authRoutes.post("/auth/account/login", async (c, next) => {
+authRoutes.post("/auth/account/login", async (c) => {
   const ip = extractClientIp(c);
   const key = `rl:account-login:ip:${ip}`;
 
@@ -443,12 +480,25 @@ authRoutes.post("/auth/account/login", async (c, next) => {
     return c.json({ error: { message: "Service temporarily unavailable", type: "rate_limit_error", code: "service_unavailable" } }, 503);
   }
 
+  // H6: Use SET NX EX to avoid the INCR+EXPIRE race (crash between INCR and
+  // EXPIRE leaves the key without a TTL). Only the first request creates the
+  // key with a 60-second expiry; subsequent requests atomically INCR it.
+  let current: number;
   try {
-    const current = await redis.incr(key);
+    const nxSet = await redis.set(key, "1", { NX: true, EX: 60 });
+    if (nxSet === "OK") {
+      current = 1;
+    } else {
+      current = await redis.incr(key);
+    }
+  } catch {
+    // If SET NX fails (e.g. WRONGTYPE), fall through to the existing incr path
+    current = await redis.incr(key);
     if (current === 1) await redis.expire(key, 60);
-    const ttl = await redis.ttl(key);
+  }
+  const ttl = await redis.ttl(key);
 
-    if (current > 5) {
+  if (current > 5) {
       await db.insert(auditLogs).values({
         userId: null,
         action: "ACCOUNT_LOGIN_RATE_LIMITED",
@@ -461,21 +511,19 @@ authRoutes.post("/auth/account/login", async (c, next) => {
         logger.warn({ err, ip }, "Failed to write ACCOUNT_LOGIN_RATE_LIMITED audit log");
       });
       c.header("Retry-After", String(Math.max(ttl, 1)));
-      return c.json({ error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } }, 429);
-    }
-  } catch (err) {
-    logger.error({ err, ip }, "Account login rate limit Redis error");
-    return c.json({ error: { message: "Service temporarily unavailable", type: "rate_limit_error", code: "service_unavailable" } }, 503);
-  }
+       return c.json({ error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } }, 429);
+     }
 
-  await next();
-}, async (c) => {
   const csrfToken = c.req.header("x-csrf-token");
   const cookieHeader = c.req.header("Cookie") || "";
   const csrfCookieMatch = cookieHeader.match(/csrf_token=([^;]+)/);
   const csrfCookie = csrfCookieMatch ? csrfCookieMatch[1] : null;
   
-  if (!csrfToken || !csrfCookie || csrfToken !== csrfCookie) {
+  // C6: Use timing-safe comparison for CSRF cookie vs header match
+  const csrfValid = csrfToken && csrfCookie &&
+    csrfToken.length === csrfCookie.length &&
+    timingSafeEqual(Buffer.from(csrfToken), Buffer.from(csrfCookie));
+  if (!csrfValid) {
     return c.json({ error: { message: "Invalid CSRF token", type: "csrf_error", code: "csrf_validation_failed" } }, 403);
   }
   
@@ -567,9 +615,24 @@ authRoutes.patch("/keys/:id", sessionAuth, async (c) => {
 });
 
 authRoutes.post("/auth/api-key/cookie", sessionAuth, async (c) => {
+  const userId = c.get("userId");
   const parsed = z.object({ apiKey: z.string().min(1) }).safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { apiKey } = parsed.data;
+
+  // SEC-10: ownership check — we must validate the API key belongs to this
+  // user before storing it as a cookie. Without this check, User A could set
+  // a cookie with User B's known API key and impersonate B for API calls.
+  const ownerKey = await getApiKey(userId, apiKey);
+  if (!ownerKey) {
+    // Fallback: also try validateApiKey which does a full lookup by hash.
+    // getApiKey expects (userId, keyId) — but a raw key string isn't keyId,
+    // so it only matches when the caller passes the actual key ID.
+    const validated = await validateApiKey(apiKey);
+    if (!validated || validated.userId !== userId) {
+      return c.json({ error: { message: "API key not found or does not belong to this account", type: "invalid_request_error" } }, 404);
+    }
+  }
 
   const cookieHeader = createApiKeyCookieHeader(apiKey);
   c.header("Set-Cookie", cookieHeader);

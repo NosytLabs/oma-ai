@@ -25,7 +25,6 @@
  * a Neon-Auth-authenticated request from a SIWE/Solana one.
  */
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
-import { TextEncoder } from "util";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
@@ -136,29 +135,4 @@ export async function verifyNeonAuthToken(token: string): Promise<NeonAuthSessio
   };
 }
 
-/**
- * Probe the JWKS endpoint and return whether it responded successfully.
- * Intended for the health/ready probes. Never throws.
- */
-export async function pingNeonAuth(): Promise<{ ok: boolean; reason?: string }> {
-  if (!isNeonAuthConfigured()) {
-    return { ok: false, reason: "not_configured" };
-  }
-  try {
-    const res = await fetch(config.NEON_AUTH_JWKS_URL!, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) {
-      return { ok: false, reason: `jwks_${res.status}` };
-    }
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, reason: err instanceof Error ? err.message : String(err) };
-  }
-}
 
-// Suppress unused-import warning for TextEncoder (kept for parity with siwe.ts
-// in case future code needs a local symmetric secret alongside the JWKS path).
-void TextEncoder;

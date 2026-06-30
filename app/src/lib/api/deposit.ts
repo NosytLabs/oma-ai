@@ -1,130 +1,80 @@
 /**
- * Deposit namespace: USDC, OMA, Houdini swap, status, recovery.
- * Successful deposits invalidate the /v1/balance cache.
+ * Deposit API namespace.
+ * Server: /Users/tyson/Desktop/Code/OMA-AI/app/server/src/routes/deposit/
+
+ * Methods return promises that resolve to shapes matching consumer expectations
+ * in app/swap/page.tsx, app/admin/page.tsx, and components/dashboard/NotificationBell.tsx.
  */
-import type {
-  Chain,
-  DepositStatus,
-  HoudiniDepositResult,
-  HoudiniExchangeResult,
-  PendingDeposit,
-  Quote,
-  Token,
-} from './types.js';
-import { invalidateCache, request } from './client.js';
+import { request } from './client.js';
 
 export const deposit = {
-  usdc(amount: number, txHash: string) {
-    invalidateCache('/v1/balance');
-    return request<DepositStatus>('/v1/deposit/usdc', {
+  /** USDC deposit — fetch deposit address for a given amount. */
+  async usdc(amount: number, txHash: string) {
+    return request('/v1/deposit/usdc', {
       method: 'POST',
       body: JSON.stringify({ amount, txHash }),
     });
   },
 
-  oma(amount: number, txHash: string) {
-    invalidateCache('/v1/balance');
-    return request<DepositStatus>('/v1/deposit/oma', {
+  /** OMA token deposit. */
+  async oma(amount: number, txHash: string) {
+    return request('/v1/deposit/oma', {
       method: 'POST',
       body: JSON.stringify({ amount, txHash }),
     });
   },
 
-  houdini(fromCoin: string, amount: string, quoteId?: string, swapType?: string) {
-    return request<HoudiniDepositResult>('/v1/deposit/houdini', {
+  /** Houdini swap deposit. */
+  async houdini(fromCoin: string, amount: string, quoteId?: string, swapType?: string) {
+    return request('/v1/deposit/houdini', {
       method: 'POST',
       body: JSON.stringify({ fromCoin, amount, quoteId, swapType }),
     });
   },
 
-  status(id: string) {
-    return request<DepositStatus>(`/v1/deposit/status/${id}`);
+  /** Houdini supported tokens for a blockchain. */
+  async houdiniTokens(blockchain: string) {
+    return request(`/v1/deposit/houdini/tokens?blockchain=${blockchain}`);
   },
 
-  pending() {
-    return request<PendingDeposit[]>('/v1/deposit/pending');
+  /** Houdini quote for a swap — returns array of quote objects. */
+  async houdiniQuote(
+    fromSymbol: string,
+    toSymbol: string,
+    amount: string,
+    privacyMode?: string,
+    slippage?: number,
+  ) {
+    const params = new URLSearchParams({
+      from: fromSymbol,
+      to: toSymbol,
+      amount,
+    });
+    if (privacyMode) params.set('privacy', privacyMode);
+    if (slippage !== undefined) params.set('slippage', String(slippage));
+    return request(`/v1/deposit/houdini/quote?${params.toString()}`);
   },
 
-  houdiniTokens(blockchain: string = 'BASE') {
-    return request<Token[]>(`/v1/deposit/houdini/tokens?blockchain=${blockchain}`);
-  },
-
-  houdiniChains() {
-    return request<Chain[]>('/v1/deposit/houdini/chains');
-  },
-
-  houdiniQuote(fromToken: string, toToken: string, amount: string, swapType?: string, slippageTolerance?: number) {
-    return request<Quote[]>('/v1/deposit/houdini/quote', {
+  /** Houdini exchange — execute a swap. */
+  async houdiniExchange(
+    quoteId: string,
+    fromSymbol: string,
+    amount: string,
+    recipient: string,
+  ) {
+    return request('/v1/deposit/houdini/exchange', {
       method: 'POST',
-      body: JSON.stringify({ fromToken, toToken, amount, swapType, slippageTolerance }),
+      body: JSON.stringify({ quoteId, fromSymbol, amount, recipient }),
     });
   },
 
-  houdiniExchange(quoteId: string, fromCoin: string, fromAmount: string, refundAddress?: string) {
-    return request<HoudiniExchangeResult>('/v1/deposit/houdini/exchange', {
-      method: 'POST',
-      body: JSON.stringify({ quoteId, fromCoin, fromAmount, refundAddress }),
-    });
+  /** Deposit status by ID. */
+  async status(id: string) {
+    return request(`/v1/deposit/status?id=${id}`);
   },
 
-  getStatus() {
-    return request<{
-      deposits: Array<{
-        id: string;
-        type: string;
-        status: string;
-        amountUsd: string;
-        creditsIssued: string;
-        txHash: string | null;
-        createdAt: string;
-        completedAt: string | null;
-      }>;
-    }>('/v1/deposit/status');
-  },
-
-  getById(depositId: string) {
-    return request<{
-      deposit: {
-        id: string;
-        type: string;
-        status: string;
-        amountUsd: string;
-        creditsIssued: string;
-        txHash: string | null;
-        houdiniId: string | null;
-        createdAt: string;
-        completedAt: string | null;
-      };
-      retryStatus: {
-        attempts: number;
-        canRetry: boolean;
-        nextRetryAt: string | null;
-        status: string;
-      } | null;
-    }>(`/v1/deposit/${depositId}`);
-  },
-
-  retry(depositId: string) {
-    return request<{ success: boolean; message: string }>(
-      `/v1/deposit/${depositId}/retry`,
-      { method: 'POST' },
-    );
-  },
-
-  getNotifications() {
-    return request<{
-      notifications: Array<{
-        id: string;
-        depositId: string;
-        type: string;
-        status: string;
-        amountUsd: string | null;
-        creditsIssued: string | null;
-        txHash: string | null;
-        method: string | null;
-        createdAt: string;
-        notifiedAt: string | null;
-      }>;
-    }>('/v1/notifications');
+  /** Notifications related to deposits. */
+  async getNotifications() {
+    return request('/v1/deposit/notifications');
   },
 };

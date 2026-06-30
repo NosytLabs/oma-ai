@@ -11,7 +11,7 @@ import {
 describe('Circuit Breaker', () => {
   describe('getCircuitBreakerKey', () => {
     it('returns provider:model format when model provided', () => {
-      expect(getCircuitBreakerKey('venice', 'claude-3')).toBe('venice:claude-3')
+      expect(getCircuitBreakerKey('venice', 'deepseek-v3-2')).toBe('venice:deepseek-v3-2')
     })
 
     it('returns provider only when no model', () => {

@@ -7,13 +7,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { m } from 'framer-motion'
-import { formatUsd } from '@/lib/utils'
+import { formatUsd, formatDateTime, formatDateShort } from '@/lib/utils'
 
 type UserDetail = {
   user: {
     id: string
     address: string
-    solanaAddress: string | null
     accountNumber: string | null
     createdAt: string
   }
@@ -72,17 +71,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const error = userDetailQuery.isError ? (userDetailQuery.error instanceof Error ? userDetailQuery.error.message : 'Failed to fetch user') : null
 
   const formatCredits = useMemo(() => (cents: number) => `${cents.toLocaleString()} credits`, [])
-  // formatUsd is imported from @/lib/utils
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
-
-  const formatDateShort = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+  // formatUsd, formatDateTime, formatDateShort are imported from @/lib/utils
 
   if (loading) {
     return (
@@ -110,7 +99,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div className="rounded border border-border bg-surface p-8 text-center">
             <p className="text-xl font-bold text-text-bright mb-2 font-display">User Not Found</p>
             <p className="text-text-muted font-mono mb-4">{error || 'The requested user does not exist.'}</p>
-            <button
+            <button type="button"
               onClick={() => router.push('/admin')}
               className="px-4 py-2 rounded border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 text-sm font-mono"
             >
@@ -204,23 +193,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   </a>
                 </div>
               </div>
-              {user.solanaAddress && (
-                <div>
-                  <label className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1 block">Solana Address</label>
-                  <div className="flex items-center gap-2">
-                    <p className="font-mono text-sm text-text-bright break-all">{user.solanaAddress}</p>
-                    <a
-                      href={`https://solscan.io/account/${user.solanaAddress}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="View Solana address on Solscan"
-                      className="p-1 rounded hover:bg-panel text-text-muted hover:text-text flex-shrink-0"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              )}
               {user.accountNumber && (
                 <div>
                   <label className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1 block">Account Number</label>
@@ -231,7 +203,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1 block">Member Since</label>
-                <p className="text-sm text-text-bright font-mono">{formatDate(user.createdAt)}</p>
+                <p className="text-sm text-text-bright font-mono">{formatDateTime(user.createdAt)}</p>
               </div>
               <div>
                 <label className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1 block">API Keys</label>
@@ -369,7 +341,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                           <span className="text-text-muted">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{formatDate(deposit.createdAt)}</td>
+                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{formatDateTime(deposit.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

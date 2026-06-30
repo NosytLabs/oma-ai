@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server'
-import { API_URL } from '@/lib/api/admin-config'
+import { type NextRequest, NextResponse } from 'next/server'
+import { DEFAULT_API_URL as API_URL } from '@/lib/config'
+import { withRateLimit } from '@/lib/rate-limit-middleware'
+import { generationLimiter } from '@/lib/rate-limiter'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const MAX_BODY_BYTES = 1 * 1024 * 1024 // 1 MB
 
 const PASSTHROUGH_REQUEST_HEADERS = [
   'authorization',
@@ -16,7 +20,26 @@ const PASSTHROUGH_RESPONSE_HEADERS = [
   'x-request-id',
 ] as const
 
-export async function POST(request: Request) {
+export const POST = withRateLimit(async (request: NextRequest) => {
+  // --- Auth gate ---
+  const authHeader = request.headers.get('authorization')
+  const sessionCookie = request.cookies.get('oma_session')?.value
+  if (!authHeader && !sessionCookie) {
+    return NextResponse.json(
+      { error: { message: 'Unauthorized', type: 'auth_required' } },
+      { status: 401 },
+    )
+  }
+
+  // --- Body size guard ---
+  const contentLength = Number(request.headers.get('content-length') ?? 0)
+  if (contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json(
+      { error: { message: 'Payload too large (max 1 MB)', type: 'payload_too_large' } },
+      { status: 413 },
+    )
+  }
+
   const requestHeaders = new Headers()
   for (const name of PASSTHROUGH_REQUEST_HEADERS) {
     const value = request.headers.get(name)
@@ -25,7 +48,14 @@ export async function POST(request: Request) {
 
   let body: BodyInit
   try {
-    body = await request.arrayBuffer()
+    const buf = await request.arrayBuffer()
+    if (buf.byteLength > MAX_BODY_BYTES) {
+      return NextResponse.json(
+        { error: { message: 'Payload too large (max 1 MB)', type: 'payload_too_large' } },
+        { status: 413 },
+      )
+    }
+    body = buf
   } catch {
     return NextResponse.json(
       { error: { message: 'Invalid request body', type: 'invalid_request_error' } },
@@ -40,6 +70,7 @@ export async function POST(request: Request) {
       headers: requestHeaders,
       body,
       cache: 'no-store',
+      signal: AbortSignal.timeout(60_000),
     })
   } catch (err) {
     console.error('[image-proxy] /v1/images/generations error:', err)
@@ -62,4 +93,4 @@ export async function POST(request: Request) {
     payload = { error: { message: 'Upstream returned invalid JSON', type: 'proxy_error' } }
   }
   return NextResponse.json(payload, { status: upstream.status, headers: responseHeaders })
-}
+}, { limiter: generationLimiter, route: '/api/v1/images/generations' })

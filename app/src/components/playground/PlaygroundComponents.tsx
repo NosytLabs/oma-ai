@@ -1,6 +1,6 @@
 'use client'
 
-import type { Message } from './index'
+import type { Message } from '@/components/chat'
 import { MODELS } from '@/lib/models-data'
 
 export const btnBase = "relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-full " +

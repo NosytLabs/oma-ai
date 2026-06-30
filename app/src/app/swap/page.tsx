@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useMemo, useId } from 'react'
 import Link from 'next/link'
 import { useWallet } from '@/components/wallet-provider'
-import { api, type Token, type Quote } from '@/lib/api'
+import { api, type Token, type Quote, type HoudiniExchangeResult } from '@/lib/api'
 import { CryptoLogo } from '@/components/ui/CryptoLogo'
+import { ErrorBoundary } from '@/components/error-boundary'
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -55,13 +56,28 @@ const USDC_PRESETS = [10, 25, 50, 100, 250] as const
 
 export default function SwapPage() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 pt-20 pb-8 bg-void">
-      <div className="mx-auto max-w-md">
-        <SwapHeader />
-        <SwapInterface />
-        <SwapFooter />
+    <ErrorBoundary
+      fallback={
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4">
+          <h2 className="font-mono text-text text-lg">Swap Error</h2>
+          <p className="text-sm text-text-muted max-w-md font-mono">Something went wrong loading the swap interface.</p>
+          <button type="button"
+            onClick={() => window.location.reload()}
+            className="btn-primary flex items-center gap-2"
+          >
+            ↻ Retry
+          </button>
+        </div>
+      }
+    >
+      <div className="min-h-[calc(100vh-4rem)] px-4 pt-20 pb-8 bg-void">
+        <div className="mx-auto max-w-md">
+          <SwapHeader />
+          <SwapInterface />
+          <SwapFooter />
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
 
@@ -122,7 +138,7 @@ function WalletConnectPrompt({ onConnect }: { onConnect: () => void }) {
       <p className="mb-6 text-sm max-w-xs mx-auto text-text-secondary">
         Connect your Base wallet to start swapping cryptocurrencies directly, no OMA credits required.
       </p>
-      <button
+      <button type="button"
         onClick={onConnect}
         className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-8 py-4 text-sm font-semibold text-void shadow-lg shadow-accent/25 transition-all hover:bg-accent-hover hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
         aria-label="Connect your Base wallet to start swapping"
@@ -179,7 +195,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
     const fetchTokens = async () => {
       setIsLoadingTokens(true)
       try {
-        const fetchedTokens = await api.deposit.houdiniTokens(DEFAULT_BLOCKCHAIN)
+        const fetchedTokens = (await api.deposit.houdiniTokens(DEFAULT_BLOCKCHAIN)) as Token[]
         setTokens(fetchedTokens)
         
         // Set defaults
@@ -220,15 +236,15 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
     setError('')
 
     try {
-      const quotes = await api.deposit.houdiniQuote(
+      const quotes = (await api.deposit.houdiniQuote(
         swapState.fromToken.symbol,
         swapState.toToken.symbol,
         swapState.fromAmount,
         privacyMode ? 'private' : undefined,
         slippage / 100
-      )
+      )) as Quote[]
 
-      if (quotes && quotes.length > 0) {
+      if (quotes && (quotes as unknown[]).length > 0) {
         const bestQuote = quotes[0]
         setSwapState(prev => ({
           ...prev,
@@ -255,12 +271,13 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
     setStep('swapping')
 
     try {
-      const result = await api.deposit.houdiniExchange(
+      const rawResult = await api.deposit.houdiniExchange(
         swapState.quote.quoteId,
-        swapState.fromToken!.symbol,
+        swapState.fromToken?.symbol,
         swapState.fromAmount,
         evmAddress
       )
+      const result = rawResult as HoudiniExchangeResult
 
       setSwapState(prev => ({
         ...prev,
@@ -312,7 +329,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
     <div className="space-y-4">
       {/* Settings Button */}
       <div className="flex items-center justify-end">
-        <button
+        <button type="button"
           onClick={() => setShowSettings(!showSettings)}
           aria-label={showSettings ? 'Close settings' : 'Open settings'}
           aria-expanded={showSettings}
@@ -330,7 +347,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
             <span className="text-sm font-medium text-text">Slippage Tolerance</span>
             <div className="flex items-center gap-2">
               {[0.5, 1.0, 3.0].map(val => (
-                <button
+                <button type="button"
                   key={val}
                   onClick={() => setSlippage(val)}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
@@ -347,7 +364,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-text">Privacy Mode</span>
-            <button
+            <button type="button"
               onClick={() => setPrivacyMode(!privacyMode)}
               className={`relative flex h-6 w-11 items-center rounded-full transition-colors ${
                 privacyMode ? 'bg-pink' : 'bg-surface'
@@ -383,7 +400,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
 
       {/* Switch Button */}
       <div className="flex justify-center -my-1">
-        <button
+        <button type="button"
           onClick={handleSwitchTokens}
           aria-label="Switch from and to tokens"
           className="flex h-10 w-10 items-center justify-center rounded-full shadow-md transition-all hover:scale-110 hover:border-accent hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent"
@@ -472,7 +489,7 @@ function SwapForm({ evmAddress }: { evmAddress?: `0x${string}` }) {
 
       {/* Get Quote Button */}
       {step === 'select' && (
-        <button
+        <button type="button"
           onClick={handleGetQuote}
           disabled={!swapState.fromToken || !swapState.toToken || !swapState.fromAmount || parseFloat(swapState.fromAmount) <= 0 || isLoadingQuote}
           className="w-full flex items-center justify-center gap-2 rounded-full bg-accent py-4 text-sm font-semibold text-void shadow-lg shadow-accent/25 transition-all hover:bg-accent-hover hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:bg-text-muted disabled:shadow-none"
@@ -556,7 +573,7 @@ function TokenInputCard({
           )}
         </div>
         <div className="relative">
-          <button
+          <button type="button"
             onClick={() => setShowSelector(!showSelector)}
             aria-label={`Select ${label.toLowerCase().replace('you ', '')} token`}
             aria-expanded={showSelector}
@@ -593,14 +610,12 @@ function TokenInputCard({
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm placeholder:text-text-muted focus:outline-none"
-
-                      autoFocus
                     />
                   </div>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {filteredTokens.map((token) => (
-                    <button
+                    <button type="button"
                       key={token.id}
                       onClick={() => {
                         if (otherToken?.symbol !== token.symbol) {
@@ -722,14 +737,14 @@ function QuoteCard({ swapState, slippage, privacyMode, onBack, onConfirm, isExec
 
       {/* Actions */}
       <div className="flex gap-3">
-        <button
+        <button type="button"
           onClick={onBack}
           className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all"
 
         >
           Back
         </button>
-        <button
+        <button type="button"
           onClick={onConfirm}
           disabled={isExecuting}
           className="flex-1 flex items-center justify-center gap-2 rounded-full bg-accent py-3.5 text-sm font-semibold text-void shadow-lg shadow-accent/25 transition-all hover:bg-accent-hover disabled:opacity-50"
@@ -800,7 +815,7 @@ function DepositAddressCard({ swapState, copied, onCopy, onDone }: DepositAddres
           <div className="flex-1 font-mono text-sm break-all rounded-lg px-3 py-2.5 border bg-void border-border text-text-secondary">
             {depositAddress}
           </div>
-          <button
+          <button type="button"
             onClick={() => onCopy(depositAddress)}
             aria-label="Copy deposit address"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg hover:bg-surface transition-all"
@@ -873,7 +888,7 @@ function DepositAddressCard({ swapState, copied, onCopy, onDone }: DepositAddres
       </Link>
 
       {/* Done Button */}
-      <button
+      <button type="button"
         onClick={onDone}
         aria-label="Start new swap"
         className="w-full rounded-full border py-3.5 text-sm font-semibold transition-all"
@@ -902,7 +917,7 @@ function ErrorCard({ error, onRetry }: ErrorCardProps) {
       </div>
       <h3 className="mb-2 text-xl font-bold text-error">Swap Failed</h3>
       <p className="mb-6 text-sm max-w-xs mx-auto text-text-secondary">{error}</p>
-      <button
+      <button type="button"
         onClick={onRetry}
         className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-void shadow-lg transition-all hover:bg-accent-hover"
       >

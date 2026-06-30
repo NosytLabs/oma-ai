@@ -1,16 +1,5 @@
 import * as venice from "./venice.js";
-import * as antseed from "./antseed.js";
-// ponytail: litellm removed from dispatch — the previous `else` fallthrough is
-// gone (now throws on unknown provider). litellm.ts itself is still useful as
-// a directly-instantiable provider if someone wires it through the explicit
-// if/else chain.
-import * as openrouter from "./openrouter.js";
-import * as together from "./together.js";
-import * as deepinfra from "./deepinfra.js";
 import * as surplus from "./surplus.js";
-import * as morpheus from "./morpheus.js";
-import * as claude from "./claude.js";
-import * as gemini from "./gemini.js";
 import { reportProviderResult } from "./provider-result.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
@@ -54,42 +43,13 @@ export async function callProvider(
       resp = signal !== undefined
         ? await venice.chatCompletion(reqBody as Parameters<typeof venice.chatCompletion>[0], signal)
         : await venice.chatCompletion(reqBody as Parameters<typeof venice.chatCompletion>[0]);
-    } else if (provider === "antseed") {
-      resp = signal !== undefined
-        ? await antseed.chatCompletion(reqBody as Parameters<typeof antseed.chatCompletion>[0], signal)
-        : await antseed.chatCompletion(reqBody as Parameters<typeof antseed.chatCompletion>[0]);
-    } else if (provider === "openrouter") {
-      resp = signal !== undefined
-        ? await openrouter.chatCompletion(reqBody as Parameters<typeof openrouter.chatCompletion>[0], signal)
-        : await openrouter.chatCompletion(reqBody as Parameters<typeof openrouter.chatCompletion>[0]);
-    } else if (provider === "together") {
-      resp = signal !== undefined
-        ? await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0], signal)
-        : await together.chatCompletion(reqBody as Parameters<typeof together.chatCompletion>[0]);
-    } else if (provider === "deepinfra") {
-      resp = signal !== undefined
-        ? await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0], signal)
-        : await deepinfra.chatCompletion(reqBody as Parameters<typeof deepinfra.chatCompletion>[0]);
-    } else if (provider === "morpheus") {
-      resp = signal !== undefined
-        ? await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0], signal)
-        : await morpheus.chatCompletion(reqBody as Parameters<typeof morpheus.chatCompletion>[0]);
     } else if (provider === "surplus") {
       resp = signal !== undefined
         ? await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0], signal)
         : await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
-    } else if (provider === "claude") {
-      resp = signal !== undefined
-        ? await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0], signal)
-        : await claude.chatCompletion(reqBody as Parameters<typeof claude.chatCompletion>[0]);
-    } else if (provider === "gemini") {
-      resp = signal !== undefined
-        ? await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0], signal)
-        : await gemini.chatCompletion(reqBody as Parameters<typeof gemini.chatCompletion>[0]);
     } else {
-      // ponytail: previously fell through to litellm, which silently masked
-      // typos in provider names. Surface the unknown provider so the upstream
-      // error is visible in monitoring.
+      // ponytail: only Venice-based providers are supported. Surface the
+      // unknown provider so the upstream error is visible in monitoring.
       throw Object.assign(
         new Error(`Unknown inference provider: ${String(provider)}`),
         { status: 500, provider, type: PROVIDER_ERROR_TYPES.UNKNOWN_ERROR }

@@ -35,12 +35,13 @@ vi.mock('wagmi/connectors', () => {
   }
 })
 
-import { getWagmiConfig } from './wagmi'
-
-describe('getWagmiConfig', () => {
+describe('getWagmiConfigSingleton', () => {
   const ORIGINAL_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 
-  beforeEach(() => {
+  // Reset the wagmi module between tests so the singleton cache (and the
+  // connector call log) starts fresh each time.
+  beforeEach(async () => {
+    vi.resetModules()
     connectorCalls.length = 0
   })
 
@@ -52,9 +53,15 @@ describe('getWagmiConfig', () => {
     }
   })
 
-  it('registers injected and coinbaseWallet connectors', () => {
+  const loadSingleton = async () => {
+    const mod = await import('./wagmi')
+    // biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
+    return mod.getWagmiConfigSingleton() as any
+  }
+
+  it('registers injected and coinbaseWallet connectors', async () => {
     delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-    const config = getWagmiConfig() as any
+    const config = await loadSingleton()
 
     const names = connectorCalls.map((c) => c.name)
     expect(names).toContain('injected')
@@ -62,32 +69,33 @@ describe('getWagmiConfig', () => {
     expect(config.connectors).toHaveLength(2)
   })
 
-  it('does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset', () => {
+  it('does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset', async () => {
     delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-    const config = getWagmiConfig() as any
+    const config = await loadSingleton()
 
     const names = connectorCalls.map((c) => c.name)
     expect(names).not.toContain('walletConnect')
     expect(config.connectors).toHaveLength(2)
   })
 
-  it('registers walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set', () => {
+  it('registers walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set', async () => {
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = 'test-walletconnect-project-id'
-    const config = getWagmiConfig() as any
+    const config = await loadSingleton()
 
     const names = connectorCalls.map((c) => c.name)
     expect(names).toContain('walletConnect')
 
     const wcCall = connectorCalls.find((c) => c.name === 'walletConnect')
     expect(wcCall).toBeDefined()
+    // biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
     const wcArgs = wcCall as any
     expect(wcArgs.args[0].projectId).toBe('test-walletconnect-project-id')
     expect(config.connectors).toHaveLength(3)
   })
 
-  it('always configures Base + Base Sepolia chains', () => {
+  it('always configures Base + Base Sepolia chains', async () => {
     delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-    const config = getWagmiConfig() as any
+    const config = await loadSingleton()
 
     const ids = config.chains.map((c: { id: number }) => c.id)
     expect(ids).toContain(8453) // base mainnet

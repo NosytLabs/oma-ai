@@ -85,7 +85,7 @@ export function providerColor(provider: string): string {
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 //
-// `formatCurrency` and `formatAddress` are consolidated in `src/lib/utils.tsx`.
+// `formatAddress` is consolidated in `src/lib/utils.tsx`.
 // Recharts axes / tooltips should import from there so every chart in the app
 // produces the same shape. The helpers below stay chart-specific (date, etc.).
 
@@ -169,7 +169,7 @@ export function ChartEmptyState({
       {action ?? (ctaLabel && ctaHref ? (
         <a
           href={ctaHref}
-          className="mt-2 inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-accent transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+          className="mt-2 inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-accent transition-colors hover:bg-accent/20 focus-ring"
         >
           {ctaLabel}
         </a>

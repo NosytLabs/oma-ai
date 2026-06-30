@@ -1,14 +1,17 @@
 // ponytail: production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 'use client'
 
-import { useState, useEffect, useRef, ReactNode, useId } from 'react'
+import { useState, useEffect, useRef, type ReactNode, useId } from 'react'
 import Link from 'next/link'
 import {
   BookOpen, Key, Gauge, Copy, Check, Terminal, Shield, Zap,
   Lock, AlertCircle, DollarSign, Menu, X, ChevronRight, Play,
   Package, HardDrive, CheckCircle2
 } from 'lucide-react'
-import { MODELS as SOURCE_MODELS, MODEL_COUNT } from '@/lib/models-data'
+import { MODELS, MODEL_COUNT } from '@/lib/models-data'
+import { SyntaxHighlighter } from './_components/SyntaxHighlighter'
+import { DocsSearch } from './_components/DocsSearch'
+import { NAV_ITEMS } from './_lib/nav-data'
 
 /* ==================== TYPES ==================== */
 
@@ -57,7 +60,7 @@ const PLAN_LIMITS: PlanLimits[] = [
   { name: 'Business', rpm: 1000, tpm: 1000000, concurrent: 100, color: 'text-warning', badge: 'bg-warning/20 text-warning' },
 ]
 
-const MODEL_PRICING: ModelPricing[] = SOURCE_MODELS.map((m) => ({
+const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
   id: m.id,
   name: m.name,
   input: m.inputPricePer1M,
@@ -71,13 +74,13 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — any model id from /v1/models, e.g. "llama-3.2-3b"',
-      messages: 'array of { role, content } — role ∈ system | user | assistant | tool',
-      temperature: 'number 0–2 (optional, default from upstream)',
-      max_tokens: 'integer — cap on completion length',
-      stream: 'boolean — Server-Sent Events when true (text/event-stream)',
+      model: 'string (required). Any model id from /v1/models, e.g. "llama-3.2-3b"',
+      messages: 'array of { role, content }. role is system, user, assistant, or tool',
+      temperature: 'number 0 to 2 (optional, default from upstream)',
+      max_tokens: 'integer. Cap on completion length',
+      stream: 'boolean. Server-Sent Events when true (text/event-stream)',
       tools: 'array of tool definitions (optional)',
-      response_format: 'object (optional) — e.g. { type: "json_object" }',
+      response_format: 'object (optional), e.g. { type: "json_object" }',
     },
     response: `{
   "id": "chatcmpl-9f3k2a",
@@ -99,14 +102,14 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'Deprecated prompt-based completion endpoint. Use Chat Completions for new projects.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — model id from /v1/models',
-      prompt: 'string (required) — string only, arrays are rejected',
+      model: 'string (required). Model id from /v1/models',
+      prompt: 'string (required). String only, arrays are rejected',
       max_tokens: 'integer (optional)',
-      temperature: 'number 0–2 (optional)',
-      top_p: 'number 0–1 (optional)',
-      n: 'integer 1–10 (optional)',
+      temperature: 'number 0 to 2 (optional)',
+      top_p: 'number 0 to 1 (optional)',
+      n: 'integer 1 to 10 (optional)',
       stop: 'string | string[] (optional)',
-      stream: 'boolean (optional) — SSE when true',
+      stream: 'boolean (optional). SSE when true',
       presence_penalty: 'number -2 to 2 (optional)',
       frequency_penalty: 'number -2 to 2 (optional)',
     },
@@ -126,7 +129,7 @@ const ENDPOINTS: EndpointInfo[] = [
   },
   {
     method: 'GET', path: '/v1/models', title: 'List Models',
-    desc: 'Returns every model currently routable — text, image, video. No auth required. Cached for 1h.',
+    desc: 'Returns every model currently routable: text, image, video. No auth required. Cached for 1h.',
     auth: 'None',
     response: `{
   "object": "list",
@@ -178,8 +181,8 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'Vector embeddings via Venice. Use for semantic search, RAG, clustering.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — e.g. "text-embedding-3-small" or any Venice embedding model',
-      input: 'string | string[] (required) — max 50,000 chars per input',
+      model: 'string (required), e.g. "text-embedding-3-small" or any Venice embedding model',
+      input: 'string | string[] (required), max 50,000 chars per input',
     },
     response: `{
   "object": "list",
@@ -199,10 +202,10 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'Text-to-image via Venice FLUX models. Pricing is per-image.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — e.g. "venice-flux-schnell"',
-      prompt: 'string (required) — max 4000 chars',
-      n: 'integer 1–10 (optional, default 1)',
-      size: 'string (optional) — e.g. "1024x1024"',
+      model: 'string (required), e.g. "venice-flux-schnell"',
+      prompt: 'string (required), max 4000 chars',
+      n: 'integer 1 to 10 (optional, default 1)',
+      size: 'string (optional), e.g. "1024x1024"',
     },
     response: `{
   "created": 1717194000,
@@ -219,11 +222,11 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'Text-to-speech. Returns raw audio bytes (audio/mpeg by default).',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — e.g. "tts-1"',
-      input: 'string (required) — max 10,000 chars',
-      voice: 'string (optional) — voice id',
-      response_format: 'string (optional) — mp3 | opus | aac | flac | wav | pcm',
-      speed: 'number 0.25–4.0 (optional, default 1.0)',
+      model: 'string (required), e.g. "tts-1"',
+      input: 'string (required), max 10,000 chars',
+      voice: 'string (optional). Voice id',
+      response_format: 'string (optional): mp3 | opus | aac | flac | wav | pcm',
+      speed: 'number 0.25 to 4.0 (optional, default 1.0)',
     },
     response: `// 200 OK
 // Content-Type: audio/mpeg
@@ -234,11 +237,11 @@ const ENDPOINTS: EndpointInfo[] = [
     desc: 'Speech-to-text via Whisper. Multipart form upload.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      file: 'binary (required) — audio file to transcribe',
-      model: 'string (required) — "whisper-1" or any Venice transcription model',
-      language: 'string (optional) — ISO-639-1 code, e.g. "en"',
-      prompt: 'string (optional) — context hint to guide the model',
-      response_format: 'string (optional) — json | text | srt | verbose_json | vtt',
+      file: 'binary (required). Audio file to transcribe',
+      model: 'string (required), e.g. "whisper-1"',
+      language: 'string (optional). ISO-639-1 code, e.g. "en"',
+      prompt: 'string (optional). Context hint to guide the model',
+      response_format: 'string (optional): json | text | srt | verbose_json | vtt',
       temperature: 'number (optional)',
     },
     response: `{
@@ -247,15 +250,15 @@ const ENDPOINTS: EndpointInfo[] = [
   },
   {
     method: 'POST', path: '/v1/videos/generations', title: 'Video Generation',
-    desc: 'Text-to-video via Venice video models. Returns a queue id — poll /v1/videos/retrieve.',
+    desc: 'Text-to-video via Venice video models. Returns a queue id. Poll /v1/videos/retrieve.',
     auth: 'Bearer token (API key) or PAYMENT-SIGNATURE (x402)',
     body: {
-      model: 'string (required) — e.g. "venice-video-1"',
-      prompt: 'string (required) — max 4000 chars',
-      duration: 'string (optional) — e.g. "5s", "10s"',
-      aspect_ratio: 'string (optional) — e.g. "16:9", "9:16"',
-      resolution: 'string (optional) — e.g. "720p", "1080p"',
-      image_url: 'string URL (optional) — source image for image-to-video',
+      model: 'string (required), e.g. "venice-video-1"',
+      prompt: 'string (required), max 4000 chars',
+      duration: 'string (optional), e.g. "5s", "10s"',
+      aspect_ratio: 'string (optional), e.g. "16:9", "9:16"',
+      resolution: 'string (optional), e.g. "720p", "1080p"',
+      image_url: 'string URL (optional). Source image for image-to-video',
     },
     response: `{
   "id": "vid_abc123",
@@ -288,17 +291,6 @@ const ERROR_CODES: ErrorInfo[] = [
   { code: 503, type: 'service_unavailable', desc: 'All upstream providers down. Try again shortly.' },
 ]
 
-const NAV_ITEMS = [
-  { id: 'quickstart', label: 'Quick Start', icon: Play },
-  { id: 'authentication', label: 'Authentication', icon: Key },
-  { id: 'endpoints', label: 'Endpoints Reference', icon: Terminal },
-  { id: 'rate-limits', label: 'Rate Limits', icon: Gauge },
-  { id: 'pricing', label: 'Pricing', icon: DollarSign },
-  { id: 'x402', label: 'x402 Payments', icon: Zap },
-  { id: 'sdks', label: 'SDK Installation', icon: Package },
-  { id: 'errors', label: 'Error Codes', icon: AlertCircle },
-]
-
 const QUICK_START_STEPS = [
   { n: '1', title: 'Get API Key', desc: 'Create an account and generate your API key from the dashboard.' },
   { n: '2', title: 'Add to Headers', desc: 'Include your key in the Authorization header: Bearer oma_sk_...' },
@@ -318,7 +310,7 @@ function fmt(n: number): string {
 function CopyButton({ text, id }: { text: string; id: string }) {
   const [copied, setCopied] = useState(false)
   return (
-    <button
+    <button type="button"
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
       className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
       aria-label={copied ? 'Copied' : 'Copy code'}
@@ -329,7 +321,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
   )
 }
 
-function CodeBlock({ code, title }: { code: string; title?: string }) {
+function CodeBlock({ code, title, lang }: { code: string; title?: string; lang?: string }) {
   const id = useId()
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-panel">
@@ -339,7 +331,7 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
         </div>
       )}
       <CopyButton text={code} id={id} />
-      <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-text-secondary">{code}</code></pre>
+      <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><SyntaxHighlighter code={code} lang={lang ?? 'text'} /></pre>
     </div>
   )
 }
@@ -351,7 +343,7 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
     <div className="overflow-hidden rounded-xl border border-border bg-panel">
       <div className="flex border-b border-border/50">
         {tabs.map((t, i) => (
-          <button
+          <button type="button"
             key={t.label}
             onClick={() => setActive(i)}
             className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
@@ -364,7 +356,7 @@ function TabbedCode({ tabs }: { tabs: Tab[] }) {
       </div>
       <div className="relative">
         <CopyButton text={tabs[active].code} id={id} />
-        <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><code className="font-mono text-text-secondary">{tabs[active].code}</code></pre>
+        <pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed"><SyntaxHighlighter code={tabs[active].code} lang={tabs[active].lang} /></pre>
       </div>
     </div>
   )
@@ -439,8 +431,7 @@ function QuickStartSection() {
           </div>
           <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">cURL</span>
         </div>
-        <CopyButton text={curlCode} id="quickstart-code" />
-        <pre id="quickstart-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{curlCode}</code></pre>
+        <CodeBlock code={curlCode} lang="bash" />
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -535,7 +526,7 @@ function EndpointsSection() {
       <div className="space-y-4">
         {ENDPOINTS.map(ep => (
           <div key={ep.path} className="rounded-xl border border-border bg-surface/50 overflow-hidden">
-            <button
+            <button type="button"
               onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface/80"
             >
@@ -577,7 +568,7 @@ function EndpointsSection() {
 
                 <div>
                   <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Response</h4>
-                  <CodeBlock code={ep.response} />
+                  <CodeBlock code={ep.response} lang="json" />
                 </div>
               </div>
             )}
@@ -658,7 +649,7 @@ function PricingSection() {
             </tr>
           </thead>
           <tbody>
-            {MODEL_PRICING.map((m, i) => (
+            {MODEL_PRICING_ROWS.map((m, i) => (
               <tr key={m.id} className={`border-b border-border/50 ${i % 2 === 1 ? 'bg-surface/30' : ''}`}>
                 <td className="px-4 py-3 font-medium text-text">{m.name}</td>
                 <td className="px-4 py-3 text-right font-mono text-accent">{fmt(m.input)}</td>
@@ -693,38 +684,44 @@ function PricingSection() {
 }
 
 function X402Section() {
-  const flowCode = `# 1. Request without credits - get 402
+  const flowCode = `# 1. Request without credits — API returns 402
 curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Response: 402 Payment Required
-# x-payment: {"address": "0x...", "chain": "base", "amount": "0.00025", "symbol": "USDC"}
+# Pay-Req: {"x402Version":"1","scheme":"evm","networkId":"base","asset":"0x8335...","amount":"0.00025","payee":"0x..."}
 
-# 2. Pay via x402 (agent pays gasless)
-# SDK handles the payment flow automatically
+# 2. Sign and pay via x402 (gasless on Base/Solana)
+# Use the @oma-ai/x402 SDK or any EIP-3009 compatible signer
 
-# 3. Request with payment proof - SUCCESS
+# 3. Retry with PAYMENT-SIGNATURE header — SUCCESS
 curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
-  -H "x-payment-proof: base64-proof-from-facilitator" \\
+  -H "PAYMENT-SIGNATURE: <base64-json-signature>" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`
 
-  const agentCode = `# Agent-native payments with x402
-import { OpenAI } from 'openai';
+  const agentCode = `import { x402Fetch } from '@oma-ai/x402';
+import { privateKeyToAccount } from 'viem/accounts';
 
-const client = new OpenAI({
-  apiKey: process.env.OMA_AGENT_KEY,
-  baseURL: 'https://api.oma-ai.com/v1',
-  x402: true, // Enable auto-pay per request
-});
+const account = privateKeyToAccount(process.env.AGENT_KEY);
 
-const response = await client.chat.completions.create({
-  model: 'llama-3.3-70b',
-  messages: [{ role: 'user', content: 'Write a smart contract' }],
-});
+const res = await x402Fetch(
+  'https://api.oma-ai.com/v1/chat/completions',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b',
+      messages: [{ role: 'user', content: 'Write a smart contract' }],
+    }),
+  },
+  { account, network: 'base' }
+);
+
+const json = await res.json();
 
 // Payment is handled automatically per-request
 // No credit pre-funding required`
@@ -749,16 +746,16 @@ const response = await client.chat.completions.create({
 
       <div className="mb-6">
         <h4 className="mb-3 text-sm font-semibold text-text">402 Payment Flow</h4>
-        <CodeBlock code={flowCode} />
+        <CodeBlock code={flowCode} lang="bash" />
       </div>
 
       <div className="rounded-xl border border-border bg-surface/50 p-5">
         <h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
         <p className="text-sm text-text-muted mb-4">
-          Enable <code className="text-accent font-mono">x402: true</code> in the SDK to pay per request automatically.
+          Use the <code className="text-accent font-mono">@oma-ai/x402</code> SDK to sign payments gaslessly.
           Ideal for agents that make sporadic API calls and do not want to manage credit balances.
         </p>
-        <CodeBlock code={agentCode} />
+        <CodeBlock code={agentCode} lang="javascript" />
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -854,7 +851,7 @@ print(response.json())`
         <CodeBlock code={`import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 const oma = createOpenAI({ baseURL: 'https://api.oma-ai.com/v1', apiKey: 'oma_sk_...' });
-const { text } = await generateText({ model: oma('llama-3.2-3b'), prompt: 'Hello!' });`} />
+const { text } = await generateText({ model: oma('llama-3.2-3b'), prompt: 'Hello!' });`} lang="javascript" />
       </div>
     </AnimatedSection>
   )
@@ -902,8 +899,7 @@ for attempt in range(5):
 
       <div className="relative rounded-xl border border-border bg-panel p-5">
         <h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
-        <CopyButton text={retryCode} id="retry-code" />
-        <pre id="retry-code" tabIndex={0} className="overflow-x-auto text-sm font-mono text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{retryCode}</code></pre>
+        <CodeBlock code={retryCode} lang="python" />
       </div>
     </AnimatedSection>
   )
@@ -917,7 +913,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 
   return (
     <>
-      <button
+      <button type="button"
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
         aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
@@ -928,7 +924,7 @@ function Sidebar({ activeId }: { activeId: string }) {
       </button>
 
       {mobileOpen && (
-        <button className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
+        <button type="button" className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu" />
       )}
 
       <aside id={mobileNavId} aria-label="Mobile navigation" className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
@@ -1015,6 +1011,7 @@ function DocsContent() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <DocsSearch />
               <Link
                 href="/playground"
                 className="btn-primary hidden sm:inline-flex items-center gap-2"
@@ -1026,7 +1023,7 @@ function DocsContent() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-12">
             <h2 className="text-4xl font-bold tracking-tight text-text font-display mb-3">
               OMA API Documentation
@@ -1047,7 +1044,7 @@ function DocsContent() {
             <ErrorsSection />
           </div>
 
-          </main>
+          </div>
       </div>
     </div>
   )

@@ -6,7 +6,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth (no account required), multi-provider routing, cross-chain deposits, and native crypto payments.
 
-> **Audit status (2026-06-17):** See [docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md](docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md) — all validation gates green (0 typecheck/lint errors, 865 server tests + 90 app tests passing, 0 skipped). The 5 critical + 2 quick-win findings from this audit pass were shipped in commits `97df14d`–`cb9af95`; the 2 pre-existing typecheck errors and 6 navbar test failures it called out are also resolved on `master` as of `cb9af95`. Prior 2026-06-13/14 audit notes are preserved in git history.
+> **Audit status (2026-06-30):** All validation gates green — 0 typecheck/lint errors, tests passing. Dead code removed (8 inference providers, 4 jobs, MiniChat). Docs consolidated.
 
 ---
 
@@ -19,7 +19,7 @@ Self-hosted AI inference gateway with wallet-based auth (no account required), m
 - **x402 Payments** - On-demand payment receipts for AI agents
 
 ### Developer Features
-- **OpenAI-Compatible API** - Drop-in replacement, just change base URL
+- **OpenAI-Compatible API** - Drop-in replacement, change base URL
 - **Streaming Support** - Real-time responses
 - **Rate Limiting** - Per-key and per-model limits
 - **API Key Management** - Create, revoke, track usage
@@ -77,7 +77,7 @@ cd server && npm run dev # Backend :3001
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Next.js Frontend (:3000)                  │
-│    Landing │ Dashboard │ Pricing │ Playground │ Docs        │
+│    Landing │ Dashboard │ Pricing │ Chat │ Docs        │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -90,12 +90,12 @@ cd server && npm run dev # Backend :3001
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
 └─────────────────────────────────────────────────────────────┘
          │              │              │              │
-         ▼              ▼              ▼              ▼
-    ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐
-    │  Redis  │   │  Venice  │   │ Houdini  │   │On-chain │
-    │ (Rate    │   │  AntSeed │   │  Swap   │   │(Base)   │
-    │ Limits) │   │  LiteLLM │   │  CCTP   │   │         │
-    └─────────┘   └──────────┘   └──────────┘   └─────────┘
+          ▼              ▼              ▼              ▼
+     ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐
+     │  Redis  │   │  Venice  │   │ Houdini  │   │On-chain │
+     │ (Rate    │   │  TinyFish│   │  Swap   │   │(Base)   │
+     │ Limits) │   │ CheapTok │   │  CCTP   │   │         │
+     └─────────┘   └──────────┘   └──────────┘   └─────────┘
 ```
 
 ---
@@ -155,14 +155,14 @@ cd server && npm run dev # Backend :3001
 |-------|----------|-------|--------|---------|
 | claude-sonnet-4-6 | Venice | $3.00 | $15.00 | 200K |
 | gpt-4o | Venice | $2.50 | $10.00 | 128K |
-| deepseek-v4-pro | AntSeed | $0.18 | $1.00 | 128K |
-| llama-3.3-70b | Both | $0.30 | $0.48 | 128K |
+| deepseek-v4-pro | Venice | $0.18 | $1.00 | 128K |
+| llama-3.3-70b | Venice | $0.30 | $0.48 | 128K |
 
 ### Budget (Fast/Cheap)
 | Model | Provider | Input | Output | Context |
 |-------|----------|-------|--------|---------|
-| deepseek-v4-flash | AntSeed | $0.05 | $0.19 | 128K |
-| qwen3-8b | AntSeed | $0.01 | $0.01 | 32K |
+| deepseek-v4-flash | Venice | $0.05 | $0.19 | 128K |
+| qwen3-8b | Venice | $0.01 | $0.01 | 32K |
 | gemini-2.5-flash | Venice | $0.15 | $0.60 | 1M |
 
 ### Video Models
@@ -202,16 +202,50 @@ cd server && npm run dev # Backend :3001
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [AGENTS.md](AGENTS.md) | Dev operations, commands, validation gates, gotchas |
-| [DEPLOY.md](DEPLOY.md) | Deployment guide (Docker, Coolify, env vars, TLS) |
-| [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Full technical guide |
-| [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) | REST + x402 API reference |
-| [docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md](docs/CRITICAL-1-DEPLOYMENT-RUNBOOK.md) | Production deploy runbook |
-| [docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md](docs/IMPLEMENTATION-VERIFICATION-2026-06-17.md) | **Latest audit (all gates green, 2026-06-17)** |
-| [docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md](docs/OMA-X402-CROSSCHAIN-ARCHITECTURE.md) | x402 payment flow |
-| [app/docs/AGENT-PROTOCOLS.md](app/docs/AGENT-PROTOCOLS.md) | A2A / MCP / x402 / A2UI protocols |
+This README is the primary documentation. For env vars and config, see `server/.env.example` and `app/.env.example`.
+
+---
+
+## Brand & Voice
+
+**Brand:** OMA AI = **Open Model Access**. Domain: `oma-ai.com`.
+
+**Slogan:** *"One gateway. Every model. No lock-in."*
+**Dev tagline:** *"OpenAI-compatible inference for builders."*
+
+### Core Messages
+
+- **Primary (homepage / hero):** *"Open Model Access for AI builders."* Route prompts across private, open, and commercial models through one OpenAI-compatible API.
+- **Privacy angle:** *"Private AI inference powered by Venice. Zero data retention on prompt content."* Self-hosted deployment option for maximum data control; wallet-based auth (no account required).
+- **Payment angle:** *"Crypto-friendly credits. Pay with crypto, build with one API."* USDC on Base, SOL on Solana, 20+ chains via HoudiniSwap, x402 for agent-native billing.
+
+### What OMA IS vs. IS NOT
+
+**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with AntSeed backup · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, HoudiniSwap 20+ chains) · wallet-based auth (SIWE) · OpenAI-compatible API.
+
+**Not designed for:** illicit use. OMA is a professional tool for developers who value privacy, control, and crypto-native payments. Position as "low-friction signup", not "no KYC"; "private inference", not "anonymous"; "privacy-focused", not "untraceable".
+
+### Words to USE
+
+| Category | Preferred terms |
+|----------|-----------------|
+| Auth & signup | Low-friction signup · instant API access · wallet-based auth · SIWE sign-in |
+| Privacy | Privacy-first · private inference · zero data retention · self-hosted control |
+| Developer experience | Developer-first · OpenAI-compatible · comprehensive API · extensive model support |
+| Payments | Crypto-friendly · pay-as-you-go · credit-based billing · cross-chain deposits |
+| Technical | Self-hosted · multi-provider routing · circuit breaker · failover ready |
+| Value | Cost-effective · competitive pricing · no lock-in · full control |
+
+### Words to AVOID
+
+| Avoid | Why | Use instead |
+|-------|-----|-------------|
+| No KYC | Regulatory red flag | "Low-friction signup" / "Wallet-based auth" |
+| Anonymous | Implies untraceable | "Private" / "Privacy-first" |
+| Untraceable | Absolute claim / legal exposure | "No data retention" / "Self-hosted option" |
+| Dark / Underground | Illicit association | "Self-hosted" / "Crypto-native" |
+| Cheap | Devalues offering | "Cost-effective" / "Competitive pricing" |
+| Bypass | Implies circumventing | "Skip" / "Avoid friction" |
 
 ---
 

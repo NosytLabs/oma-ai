@@ -183,7 +183,7 @@ export default function ImageGenerationPage() {
                 <label className="mb-2 block text-sm font-semibold text-text">Count</label>
                 <div className="flex items-center gap-2" role="radiogroup" aria-label="Number of images to generate">
                   {[1, 2, 3, 4].map((n) => (
-                    <button
+                    <button type="button"
                       key={n}
                       onClick={() => setCount(n)}
                       disabled={loading}
@@ -204,7 +204,7 @@ export default function ImageGenerationPage() {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
+            <button type="button"
               onClick={generate}
               disabled={!prompt.trim() || loading}
               className="btn-primary w-full sm:w-auto justify-center"
@@ -217,7 +217,7 @@ export default function ImageGenerationPage() {
               )}
             </button>
             {images.length > 0 && (
-              <button
+              <button type="button"
                 onClick={() => { setImages([]); setPrompt(''); setError(null) }}
                 className="btn-secondary w-full sm:w-auto justify-center"
                 aria-label="Create new image generation"
@@ -250,7 +250,7 @@ export default function ImageGenerationPage() {
                 <div key={i} className="group relative rounded-2xl overflow-hidden border border-border bg-surface shadow-sm aspect-square">
                   <Image src={url} alt={`Generated image ${i + 1} of ${images.length}`} fill className="object-cover" unoptimized />
                   <div className="absolute inset-0 bg-transparent group-hover:bg-overlay transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-                    <button
+                    <button type="button"
                       onClick={() => downloadImage(url, i)}
                       className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-text shadow-lg hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-all"
                       aria-label={`Download generated image ${i + 1}`}
@@ -259,7 +259,7 @@ export default function ImageGenerationPage() {
                     </button>
                   </div>
                   <div className="absolute bottom-3 right-3 opacity-100 group-hover:opacity-100">
-                    <button
+                    <button type="button"
                       onClick={() => downloadImage(url, i)}
                       className="flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
                       aria-label={`Download generated image ${i + 1}`}

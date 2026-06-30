@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { SESSION_COOKIE_NAME } from '@/lib/cookies'
 
 const PROTECTED_PATHS = ['/dashboard', '/admin', '/settings', '/deposit', '/playground']
-const SESSION_COOKIE_NAME = 'oma_session'
 // C-C1: when this cookie is present, the user has opted into a 24h demo
 // session. The middleware lets them through the protected-route gate so
 // they can browse the dashboard with mock data. Demo mode is read-only.
@@ -38,13 +38,15 @@ export async function middleware(request: NextRequest) {
   const wantsDemo = request.nextUrl.searchParams.get('demo') === '1'
   if (wantsDemo) {
     const res = NextResponse.next()
-    res.cookies.set({
-      name: DEMO_COOKIE_NAME,
-      value: '1',
-      maxAge: 60 * 60 * 24, // 24h
-      path: '/',
-      sameSite: 'lax',
-    })
+     res.cookies.set({
+       name: DEMO_COOKIE_NAME,
+       value: '1',
+       maxAge: 60 * 60 * 24, // 24h
+       path: '/',
+       sameSite: 'lax',
+       httpOnly: true,
+       secure: process.env.NODE_ENV === 'production',
+     })
     return res
   }
 
@@ -76,7 +78,15 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(session, secret, { issuer: ISSUER, audience: AUDIENCE })
+    // ponytail: H1 — pin HS256 explicitly + 5s clock skew. Without `algorithms`,
+    // jose accepts any algorithm the token claims, which lets a token forged
+    // with `alg: "none"` or `alg: "RS256"` slip past verification (CVE-class).
+    await jwtVerify(session, secret, {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+      algorithms: ['HS256'],
+      clockTolerance: 5,
+    })
     return NextResponse.next()
   } catch {
     // Expired / invalid token — send the user to /login?next=<path> as well

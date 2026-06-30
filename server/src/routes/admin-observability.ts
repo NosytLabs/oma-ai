@@ -9,13 +9,16 @@ import { sessionAuth, requireAdmin } from "../auth/middleware.js";
 
 export const adminObservabilityRoutes = new Hono<OmaEnv>();
 
-adminObservabilityRoutes.use("/admin/*", sessionAuth);
+// Note: Only /v1/admin/* paths defined here. The /admin/* prefix is served by
+// routes/admin/*.ts (mounted earlier at app.route("/", adminRoutes)) which has
+// the correct response shape for the frontend admin page. Duplicating /admin/*
+// here would shadow those routes and return a different shape (e.g. /admin/usage
+// returns { window, totals } instead of { period, summary }).
 adminObservabilityRoutes.use("/v1/admin/*", sessionAuth);
-adminObservabilityRoutes.use("/admin/*", requireAdmin());
 adminObservabilityRoutes.use("/v1/admin/*", requireAdmin());
 
 // GET /v1/admin/usage?days=30
-adminObservabilityRoutes.on("GET", ["/admin/usage", "/v1/admin/usage"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/usage", async (c) => {
   const days = Math.min(parseInt(c.req.query("days") ?? "30"), 365);
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   try {
@@ -63,7 +66,7 @@ adminObservabilityRoutes.on("GET", ["/admin/usage", "/v1/admin/usage"], async (c
 });
 
 // GET /v1/admin/deposits?limit=50&status=confirmed
-adminObservabilityRoutes.on("GET", ["/admin/deposits", "/v1/admin/deposits"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/deposits", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 500);
   const status = c.req.query("status");
   try {
@@ -80,7 +83,7 @@ adminObservabilityRoutes.on("GET", ["/admin/deposits", "/v1/admin/deposits"], as
 });
 
 // GET /v1/admin/deposits/stats
-adminObservabilityRoutes.on("GET", ["/admin/deposits/stats", "/v1/admin/deposits/stats"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/deposits/stats", async (c) => {
   try {
     const r = await db.execute(sql`SELECT
         status, type,
@@ -94,7 +97,7 @@ adminObservabilityRoutes.on("GET", ["/admin/deposits/stats", "/v1/admin/deposits
 });
 
 // GET /v1/admin/credit-balances?limit=50
-adminObservabilityRoutes.on("GET", ["/admin/credit-balances", "/v1/admin/credit-balances"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/credit-balances", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 500);
   try {
     const r = await db.execute(sql`SELECT cb.user_id, u.address, cb.credits, cb.lifetime_credits, cb.last_credited_at, cb.created_at
@@ -110,7 +113,7 @@ adminObservabilityRoutes.on("GET", ["/admin/credit-balances", "/v1/admin/credit-
 });
 
 // GET /v1/admin/subscriptions?limit=50
-adminObservabilityRoutes.on("GET", ["/admin/subscriptions", "/v1/admin/subscriptions"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/subscriptions", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 500);
   try {
     const r = await db.execute(sql`SELECT s.id, s.user_id, u.address, s.plan_id, p.name AS plan_name, s.status, s.current_period_start, s.current_period_end, s.created_at
@@ -127,23 +130,8 @@ adminObservabilityRoutes.on("GET", ["/admin/subscriptions", "/v1/admin/subscript
   }
 });
 
-// GET /v1/admin/queue
-adminObservabilityRoutes.on("GET", ["/admin/queue", "/v1/admin/queue"], async (c) => {
-  try {
-    const { getQueueStats, getQueueDepth, peekQueue } = await import("../lib/request-queue.js");
-    const [stats, depth, peek] = await Promise.all([
-      getQueueStats().catch(() => null),
-      getQueueDepth().catch(() => 0),
-      peekQueue(10).catch(() => []),
-    ]);
-    return c.json({ stats, depth, peek });
-  } catch (err) {
-    return c.json({ error: { message: (err as Error).message, type: "server_error" } }, 500);
-  }
-});
-
 // GET /v1/admin/circuit-breaker
-adminObservabilityRoutes.on("GET", ["/admin/circuit-breaker", "/v1/admin/circuit-breaker"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/circuit-breaker", async (c) => {
   try {
     const r = await db.execute(sql`SELECT provider, is_up, consecutive_failures, avg_latency_ms, last_success_at, last_failure_at, updated_at FROM provider_health ORDER BY provider`);
     return c.json({
@@ -156,7 +144,7 @@ adminObservabilityRoutes.on("GET", ["/admin/circuit-breaker", "/v1/admin/circuit
 });
 
 // GET /v1/admin/dlq
-adminObservabilityRoutes.on("GET", ["/admin/dlq", "/v1/admin/dlq"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/dlq", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 200);
   try {
     const { getDlqEntries, getSettlementDlqEntries, getSettlementDlqLength } = await import("../lib/dlq.js");
@@ -175,7 +163,7 @@ adminObservabilityRoutes.on("GET", ["/admin/dlq", "/v1/admin/dlq"], async (c) =>
 });
 
 // GET /v1/admin/oracle-prices
-adminObservabilityRoutes.on("GET", ["/admin/oracle-prices", "/v1/admin/oracle-prices"], async (c) => {
+adminObservabilityRoutes.on("GET", "/v1/admin/oracle-prices", async (c) => {
   try {
     const r = await db.execute(sql`SELECT token_symbol, price_usd, source, fetched_at FROM oracle_prices ORDER BY fetched_at DESC LIMIT 50`);
     return c.json({

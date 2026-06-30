@@ -40,13 +40,6 @@ export function initProviderResultReporter(): void {
   flushInterval = setInterval(flushResultBuffer, BUFFER_FLUSH_INTERVAL_MS);
 }
 
-export function stopProviderResultReporter(): void {
-  if (flushInterval) {
-    clearInterval(flushInterval);
-    flushInterval = null;
-  }
-}
-
 export async function reportProviderResult(provider: Provider, success: boolean, latencyMs: number): Promise<void> {
   resultBuffer.push({ provider, success, latencyMs, timestamp: Date.now() });
 

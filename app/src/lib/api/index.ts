@@ -9,14 +9,22 @@
  * the two error classes. Adding a new endpoint means: add it to the relevant
  * `api/*.ts` module, then add the namespace here.
  */
-import { auth } from './auth.js';
-import { deposit } from './deposit.js';
-import { balance, models, usage } from './resources.js';
-import { health, inference, x402 } from './inference.js';
 import { admin } from './admin.js';
-import { creditHistory } from './credits.js';
+import { auth } from './auth.js';
+import { balance, models, usage } from './resources.js';
+import { deposit } from './deposit.js';
+import { health } from './inference.js';
+import { creditHistory, credits } from './credits.js';
+import type {
+  ApiKeyWithSecret,
+  AutoReloadSettings,
+  CreditBatch,
+  HoudiniDepositResult,
+  PurchaseCreditsResponse,
+} from './types.js';
+import { request } from './client.js';
 
-export { ApiError, BackendUnavailableError, DEFAULT_TTL, STALE_TTL } from './client.js';
+export { ApiError, BackendUnavailableError, STALE_TTL } from './client.js';
 export {
   getCached,
   invalidateCache,
@@ -27,30 +35,32 @@ export * from './types.js';
 export type { CreditTransaction, CreditTransactionsResponse } from './credits.js';
 
 /**
+ * Export namespace — CSV/JSON downloads of usage, keys, and transactions.
+ * The dashboard's export button streams the file via the request helper.
+ */
+export const exportData = {
+  usage(format: 'csv' | 'json' = 'csv') {
+    return request<Blob>(`/v1/usage/export?format=${format}`, {
+      method: 'GET',
+    }) as unknown as Promise<Blob>;
+  },
+};
+
+/**
  * Composite API object. Mirrors the old monolith shape so existing
  * `api.auth.foo()`, `api.deposit.bar()` call sites keep working.
- *
- * The `oma.*` namespace is a legacy alias surface (used by older components
- * that predate the v2 endpoint split). Keep it for backward compatibility.
  */
-import type {
-  ApiKeyWithSecret,
-  AutoReloadSettings,
-  CreditBatch,
-  HoudiniDepositResult,
-  PurchaseCreditsResponse,
-} from './types.js';
-import { request } from './client.js';
-
 export const api = {
+  admin,
   auth,
   balance: balance.get,
   usage: usage.get,
   models: models.list,
   deposit,
-  inference,
-  x402,
   health: health.get,
+  creditHistory,
+  credits,
+  exportData,
 
   // Legacy aliases — prefer the namespaced versions above
   oma: {
@@ -74,7 +84,7 @@ export const api = {
       swapType?: string,
     ) => deposit.houdini(fromCoin, amount, quoteId, swapType) as Promise<HoudiniDepositResult>,
     getDepositStatus: (id: string) => deposit.status(id),
-    getSupportedCoins: (blockchain?: string) => deposit.houdiniTokens(blockchain),
+    getSupportedCoins: (blockchain?: string) => deposit.houdiniTokens(blockchain ?? 'base'),
     purchaseCredits: (
       amountCents: number,
       paymentMethod: 'usdc' | 'sol' | 'oma' = 'usdc',
@@ -91,7 +101,4 @@ export const api = {
         body: JSON.stringify(settings),
       }),
   },
-
-  admin,
-  creditHistory,
 };

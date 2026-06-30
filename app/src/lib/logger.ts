@@ -34,7 +34,6 @@ type LogCtx = Record<string, unknown> | Error | unknown;
 
 function format(prefix: string, msg: string, ctx?: LogCtx): unknown[] {
   if (ctx === undefined) return [`${prefix} ${msg}`];
-  if (ctx instanceof Error) return [`${prefix} ${msg}`, ctx];
   return [`${prefix} ${msg}`, ctx];
 }
 

@@ -34,14 +34,6 @@ function estimateTokensCached(text: string): number {
   return result;
 }
 
-export function getStreamMetrics() {
-  return { parseErrors: streamParseErrors };
-}
-
-export function resetStreamMetrics(): void {
-  streamParseErrors = 0;
-}
-
 function logStreamDebug(message: string, data?: Record<string, unknown>) {
   if (DEBUG_STREAM) {
     logger.debug(data ?? {}, `[router:stream] ${message}`);
@@ -271,16 +263,4 @@ export function createTrackingStream(
       try { await upstream.cancel(); } catch { /* empty */ }
     },
   });
-}
-
-// Test-only hooks for the M10.7 stream-tracker perf test. The estimate
-// cache is a Map keyed by content string; the perf test wants a clean
-// slate in beforeEach and visibility into cache size to assert LRU
-// short-circuit behavior. Production code does not call these.
-export function clearEstimateCache(): void {
-  estimateCache.clear();
-}
-
-export function getEstimateCacheSize(): number {
-  return estimateCache.size;
 }

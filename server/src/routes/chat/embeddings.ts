@@ -5,12 +5,11 @@ import * as venice from "../../inference/venice.js";
 import { getBalance, deductCredits } from "../../credits/index.js";
 import { tokenBucket } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
-import { trackSpend } from "../../middleware/spend-limit.js";
 import { validationError } from "../../lib/validation.js";
 import type { OmaEnv } from "../../types.js";
 import { embeddingsSchema } from "./validation.js";
 import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
-import { logger } from "../../lib/logger.js";
+import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 export const embeddingsRouter = new Hono<OmaEnv>();
 
@@ -78,19 +77,11 @@ embeddingsRouter.post("/v1/embeddings", async (c) => {
         0,
         requestId,
       );
-      if (apiKey) {
-        trackSpend(apiKey.keyHash, totalCents).catch(() => {});
-      }
+      trackApiKeySpend(apiKey?.keyHash, totalCents);
     }
 
     return c.json(json);
   } catch (err) {
-    const status = (err as { status?: number }).status ?? 500;
-    const errType = (err as { type?: string }).type ?? "inference_error";
-    logger.error({ err }, "[chat] /v1/embeddings error:");
-    return c.json(
-      { error: { message: "An internal error occurred", type: errType } },
-      status as Parameters<typeof c.json>[1],
-    );
+    return inferenceErrorHandler(c, err, "/v1/embeddings");
   }
 });

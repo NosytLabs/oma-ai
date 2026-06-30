@@ -14,10 +14,10 @@
  */
 
 export const SESSION_COOKIE_NAME = 'oma_session'
-export const SESSION_META_COOKIE_NAME = 'oma_session_meta'
-export const CSRF_COOKIE_NAME = 'csrf_token'
+const SESSION_META_COOKIE_NAME = 'oma_session_meta'
+const CSRF_COOKIE_NAME = 'csrf_token'
 
-export interface SessionMeta {
+interface SessionMeta {
   authMethod: string
 }
 
@@ -67,6 +67,7 @@ function getDeleteCookieString(name: string): string {
  */
 export function setSessionCookie(token: string, maxAgeDays = 7): void {
   if (!isBrowser()) return
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
   document.cookie = getClientCookieString(SESSION_COOKIE_NAME, token, maxAgeDays)
 }
 
@@ -78,6 +79,7 @@ export function setSessionCookie(token: string, maxAgeDays = 7): void {
  */
 export function setSessionMetaCookie(meta: SessionMeta, maxAgeDays = 7): void {
   if (!isBrowser()) return
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
   document.cookie = getClientCookieString(
     SESSION_META_COOKIE_NAME,
     JSON.stringify(meta),
@@ -98,31 +100,18 @@ export function getSessionToken(): string | null {
   return null
 }
 
-export function getSessionMeta(): SessionMeta | null {
-  if (!isBrowser()) return null
-
-  const cookies = document.cookie.split(';')
-  for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=')
-    if (name === SESSION_META_COOKIE_NAME) {
-      try {
-        return JSON.parse(decodeURIComponent(valueParts.join('='))) as SessionMeta
-      } catch {
-        return null
-      }
-    }
-  }
-  return null
-}
 
 export function deleteSessionCookie(): void {
   if (!isBrowser()) return
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
   document.cookie = getDeleteCookieString(SESSION_COOKIE_NAME)
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
   document.cookie = getDeleteCookieString(SESSION_META_COOKIE_NAME)
 }
 
 export function setCsrfTokenCookie(token: string): void {
   if (!isBrowser()) return
+  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
   document.cookie = getClientCookieString(CSRF_COOKIE_NAME, token, 1)
 }
 
@@ -139,13 +128,15 @@ export function getCsrfToken(): string | null {
   return null
 }
 
-export function clearAllSessionCookies(): void {
-  deleteSessionCookie()
-  if (isBrowser()) {
-    document.cookie = getDeleteCookieString(CSRF_COOKIE_NAME)
+/**
+ * Build authorization headers for API requests.
+ * Returns an object with Authorization header if a session token exists.
+ */
+export function buildAuthHeaders(additional?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...additional }
+  const token = getSessionToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
   }
-}
-
-export function hasStoredSession(): boolean {
-  return getSessionToken() !== null
+  return headers
 }

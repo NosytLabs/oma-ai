@@ -1,4 +1,6 @@
-export type AuthMethod = "siwe" | "solana" | "account-number" | "sso" | "neon-auth";
+// "sso" is reserved, not yet implemented. The sso_connections table is in
+// the schema but no auth path produces an "sso" session token today.
+export type AuthMethod = "siwe" | "account-number" | "sso" | "neon-auth";
 
 export type OmaEnv = {
   Variables: {

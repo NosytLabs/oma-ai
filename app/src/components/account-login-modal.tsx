@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { X, Key, Loader2, AlertTriangle, Copy, Check } from 'lucide-react'
+import { X, Key, Loader2, AlertTriangle, Copy, Check, Wallet } from 'lucide-react'
 import {
   getSessionToken,
   setSessionCookie,
@@ -41,42 +41,41 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
   const modalRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
 
+  // L-A3: the host page passes an inline arrow `() => {}` for `onClose`,
+  // which is a new function reference on every parent render. Listing it in
+  // a useEffect dependency caused the effect to re-run on every parent
+  // re-render (e.g. when the CSRF pre-fetch resolves), which removed+re-added
+  // the keydown listener and stole focus from the input the user was typing
+  // into. We capture the latest `onClose` in a ref so the keydown handler
+  // always sees the latest callback without forcing the mount effect to
+  // re-run.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  // L-A3 (mount-only): keydown listener + initial focus + trigger capture.
+  // Runs exactly once when the modal mounts, never on parent re-renders.
   useEffect(() => {
     triggerRef.current = document.activeElement as HTMLElement
 
-    // If the host page did not pre-fetch the CSRF token, fall back to
-    // fetching it here. The race is still possible in this branch but the
-    // /login page now always provides `initialCsrfToken` so the common
-    // path is race-free (A-C1).
-    if (!initialCsrfToken) {
-      async function fetchCsrfToken() {
-        try {
-          const response = await api.auth.getCsrfToken()
-          if (response.token) {
-            setCsrfTokenCookie(response.token)
-            setCsrfToken(response.token)
-          }
-        } catch (err) {
-          console.error('Failed to fetch CSRF token:', err)
-        }
-      }
-
-      fetchCsrfToken()
-    }
-
     const handleKeyDown = (e: KeyboardEvent) => {
+      // L-A3 (inline): in inline mode there is no backdrop to dismiss, so
+      // Escape falls back to blurring the active input — avoids stealing
+      // focus via a no-op onClose and matches the WAI-ARIA dialog pattern.
       if (e.key === 'Escape') {
-        onClose()
+        if (!inline) onCloseRef.current()
+        else (document.activeElement as HTMLElement | null)?.blur?.()
         return
       }
-      
+
       if (e.key === 'Tab' && modalRef.current) {
         const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         )
         const firstElement = focusableElements[0]
         const lastElement = focusableElements[focusableElements.length - 1]
-        
+
         if (e.shiftKey) {
           if (document.activeElement === firstElement) {
             e.preventDefault()
@@ -90,18 +89,49 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
         }
       }
     }
-    
+
     document.addEventListener('keydown', handleKeyDown)
     const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
     firstFocusable?.focus()
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      triggerRef.current?.focus()
+      // Only restore focus to the trigger if it's still attached to the DOM.
+      // Otherwise focus() on a detached node is a silent no-op and we've
+      // already moved on (e.g. the host page navigated away).
+      const trigger = triggerRef.current
+      if (trigger?.isConnected) trigger.focus()
     }
-  }, [onClose, initialCsrfToken])
+  }, [inline])
+
+  // L-A3 (CSRF fetch only): runs when the host-provided CSRF token changes
+  // from null to a real value (or vice versa). On the /login page the host
+  // pre-fetches the token on mount, so the modal typically never has to
+  // fetch its own. When embedded elsewhere (e.g. the global header modal)
+  // without `initialCsrfToken`, we fall back to fetching here. Critically,
+  // this effect does NOT touch focus or the keydown listener.
+  useEffect(() => {
+    if (initialCsrfToken) {
+      setCsrfToken(initialCsrfToken)
+      return
+    }
+    let cancelled = false
+    async function fetchCsrfToken() {
+      try {
+        const response = await api.auth.getCsrfToken()
+        if (!cancelled && response.token) {
+          setCsrfTokenCookie(response.token)
+          setCsrfToken(response.token)
+        }
+      } catch (err) {
+        if (!cancelled) console.error('Failed to fetch CSRF token:', err)
+      }
+    }
+    fetchCsrfToken()
+    return () => { cancelled = true }
+  }, [initialCsrfToken])
 
   const handleLogin = useCallback(async () => {
     if (!accountNumber.trim()) return
@@ -158,7 +188,7 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const token = getSessionToken()
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`
+        headers.Authorization = `Bearer ${token}`
       }
 
       const res = await fetch(`${typeof window !== 'undefined' ? '/api' : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/account/create`, {
@@ -235,15 +265,15 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
             </div>
             <div>
               <h3 id="modal-title" className="text-lg font-bold text-text">
-                {mode === 'login' ? 'Account Login' : mode === 'create' ? 'Create Account Number' : 'Account Created'}
+                {mode === 'login' ? 'Account Login' : mode === 'create' ? 'Anonymous Account' : 'Account Created'}
               </h3>
               <p className="text-xs text-text-muted">
-                {mode === 'login' ? 'Sign in with your account number' : mode === 'create' ? 'Generate a Mullvad-style account number' : 'Save your account number below'}
+                {mode === 'login' ? 'Sign in with your anonymous account number' : mode === 'create' ? 'No KYC, no email, no PII required' : 'Save your account number'}
               </p>
             </div>
           </div>
           {!inline && (
-            <button
+            <button type="button"
               onClick={onClose}
               aria-label="Close modal"
               className="rounded-lg p-2.5 text-text-muted hover:bg-surface hover:text-text transition-colors cursor-pointer"
@@ -263,10 +293,12 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
         {mode === 'login' && (
           <>
             <div className="mb-4">
-              <label className="mb-2 block text-xs font-medium uppercase tracking-widest text-text-muted">
+              <label htmlFor="account-number-input" className="mb-2 block text-xs font-medium uppercase tracking-widest text-text-muted">
                 Account Number
               </label>
               <input
+                id="account-number-input"
+                name="accountNumber"
                 type="text"
                 value={accountNumber}
                 onChange={e => setAccountNumber(e.target.value.toUpperCase())}
@@ -276,11 +308,10 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
                 aria-invalid={!!error}
                 aria-describedby={error ? "account-error" : undefined}
                 className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
-                autoFocus
                 disabled={loading}
               />
             </div>
-            <button
+            <button type="button"
               onClick={handleLogin}
               disabled={loading || !accountNumber.trim()}
               className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -296,7 +327,7 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
             </button>
             <p className="mt-4 text-center text-xs text-text-muted">
               No account number yet?{' '}
-              <button
+              <button type="button"
                 onClick={() => { setMode('create'); setError(null) }}
                 className="text-accent hover:text-accent-bright cursor-pointer"
               >
@@ -304,7 +335,7 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
               </button>
             </p>
             <p className="mt-2 text-center text-[11px] text-text-muted/80">
-              Mullvad-style: no email, no PII, just a number to write down.
+              Mullvad-style: no email, no KYC, no PII. Just a number to write down.
             </p>
           </>
         )}
@@ -312,11 +343,20 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
         {mode === 'create' && (
           <>
             <div className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
-              <p className="text-sm text-text-secondary">
-                This will generate a unique account number linked to your connected wallet. You can use this number to sign in on any device without a wallet.
-              </p>
+              <div className="flex items-start gap-3">
+                <Key className="h-5 w-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-text-bright mb-1">
+                    Anonymous account number
+                  </p>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    No email. No KYC. No PII. Generates a Mullvad-style account number —
+                    write it down and use it to sign in on any device. Completely anonymous.
+                  </p>
+                </div>
+              </div>
             </div>
-            <button
+            <button type="button"
               onClick={handleCreate}
               disabled={loading}
               className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -327,12 +367,12 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
                   Creating...
                 </span>
               ) : (
-                'Generate Account Number'
+                'Generate Anonymous Number'
               )}
             </button>
             <p className="mt-4 text-center text-xs text-text-muted">
               Already have an account number?{' '}
-              <button
+              <button type="button"
                 onClick={() => { setMode('login'); setError(null) }}
                 className="text-accent hover:text-accent-bright cursor-pointer"
               >
@@ -345,16 +385,22 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
         {mode === 'success' && createdAccount && (
           <>
             <div className="mb-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
-              <p className="text-sm text-success font-medium mb-1">Write this down!</p>
-              <p className="text-xs text-text-muted">
-                This number will only be shown once. If you lose it, you&apos;ll need to create a new account.
-              </p>
+              <div className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-success shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-sm text-success font-medium mb-1">Account created</p>
+                  <p className="text-xs text-text-muted">
+                    This number is shown once. Save it somewhere safe — there&apos;s no
+                    password reset, no email recovery, no support ticket.
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-surface p-4">
-              <code className="flex-1 break-all text-lg font-mono text-accent tracking-wider">
+              <code className="flex-1 break-all text-base sm:text-lg font-mono text-accent tracking-wider select-all">
                 {createdAccount}
               </code>
-              <button
+              <button type="button"
                 onClick={handleCopy}
                 aria-label={copied ? 'Copied' : 'Copy to clipboard'}
                 className="shrink-0 rounded-lg p-2 transition-colors hover:bg-accent/10 hover:text-accent cursor-pointer"
@@ -366,12 +412,46 @@ export function AccountLoginModal({ onClose, inline = false, initialCsrfToken = 
                 )}
               </button>
             </div>
-            <button
-              onClick={handleDone}
-              className="btn-primary w-full py-3"
-            >
-              Done
-            </button>
+
+            {/* Optional: Link a wallet */}
+            <div className="mb-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text-bright mb-1">
+                    Link a wallet (optional)
+                  </p>
+                  <p className="text-xs text-text-secondary leading-relaxed mb-3">
+                    Connect an EVM wallet to enable SIWE sign-in and USDC deposits on Base.
+                  </p>
+                  <a
+                    href="/settings?tab=wallets"
+                    className="text-xs font-semibold text-accent hover:underline underline-offset-2"
+                  >
+                    Set up in Settings →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button type="button"
+                onClick={handleCopy}
+                className="btn-secondary flex-1 py-3 text-sm inline-flex items-center justify-center gap-2"
+              >
+                {copied ? (
+                  <><Check className="h-4 w-4 text-success" /> Copied</>
+                ) : (
+                  <><Copy className="h-4 w-4" /> Copy number</>
+                )}
+              </button>
+              <button type="button"
+                onClick={handleDone}
+                className="btn-primary flex-1 py-3 text-sm"
+              >
+                Go to dashboard
+              </button>
+            </div>
           </>
         )}
       </div>

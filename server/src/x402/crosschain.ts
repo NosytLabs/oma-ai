@@ -313,6 +313,11 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
               maxAmountRequired: order.toAmount,
               validBefore: Math.floor(Date.now() / 1000) + 3600,
               validAfter: Math.floor(Date.now() / 1000) - 3600,
+              // AUDIT-2: nonce is required by verifyEvmPayment's
+              // consumeNonce (16-128 char gate). Without a nonce, real-mode
+              // verify would always fail with "Replay protection: invalid_nonce".
+              // Use order.id + tx hash as a deterministic, single-use nonce.
+              nonce: `houdini:${order.id}:${order.transactionHash}`.padEnd(32, "0").slice(0, 64),
             },
           };
 
@@ -415,6 +420,9 @@ crosschainRoutes.post("/v1/x402/proxy/chat/completions", async (c) => {
       maxAmountRequired: order.toAmount ?? "0",
       validBefore: Math.floor(Date.now() / 1000) + 3600,
       validAfter: Math.floor(Date.now() / 1000) - 3600,
+      // AUDIT-2: see status handler. Order-id+tx-derived nonce satisfies
+      // the 16-128 char gate in consumeNonce so real-mode verify succeeds.
+      nonce: `houdini:${order.id}:${order.transactionHash ?? orderId}`.padEnd(32, "0").slice(0, 64),
     },
   };
 
@@ -471,8 +479,8 @@ crosschainRoutes.post("/v1/x402/proxy/chat/completions", async (c) => {
   }
 });
 
-function settlementReceipt(orderId: string): string | null {
-  return getSettlementReceipt(orderId, "base");
+function settlementReceipt(txHash: string): string | null {
+  return getSettlementReceipt(txHash, "base");
 }
 
 function mapHoudiniStatus(status: string, order?: { refundTxHash?: string; refundAddress?: string }): { status: string; refundTxHash?: string; refundAddress?: string } {
