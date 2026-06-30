@@ -1,13 +1,29 @@
 "use client";
 
-import { m } from "framer-motion";
-import { KeyRound, Shield, Wallet, Zap } from "lucide-react";
+import { m, useReducedMotion } from "framer-motion";
+import {
+	AlertTriangle,
+	KeyRound,
+	Loader2,
+	RefreshCw,
+	Shield,
+	Wallet,
+	Zap,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import {
+	Suspense,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { AccountLoginModal } from "@/components/account-login-modal";
+import { useApiHealth } from "@/components/api-status";
 import { useWallet } from "@/components/wallet-provider";
 import { api } from "@/lib/api";
 import { fadeUpProps } from "@/lib/motion";
+import { safeNextPath } from "@/lib/safe-next-path";
 
 /**
  * /login — wallet OR account-number authentication entry point.
@@ -31,26 +47,20 @@ import { fadeUpProps } from "@/lib/motion";
  */
 type AuthTab = "wallet" | "account";
 
-/**
- * H-LOGIN-1: ensure `next` is a same-origin, single-leading-slash path.
- * Anything else falls back to /dashboard. Defends against open-redirect
- * phishing (e.g. `?next=//evil.com` or `?next=/\evil.com`).
- */
-function safeNextPath(raw: string | null | undefined): string {
-	const fallback = "/dashboard";
-	if (!raw) return fallback;
-	if (!raw.startsWith("/")) return fallback;
-	if (raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
-	return raw;
-}
-
 function LoginInner() {
 	const router = useRouter();
 	const params = useSearchParams();
-	const { isReady, isConnected, isAuthenticated, connectEvm } = useWallet();
+	const {
+		isReady,
+		isConnected,
+		isAuthenticated,
+		isAuthenticating,
+		connectEvm,
+	} = useWallet();
 	// H-LOGIN-1: validate `next` so an attacker can't redirect a freshly-signed-in
 	// user off-site. Must be a same-origin single-leading-slash path; reject
-	// protocol-relative `//evil.com` and backslash tricks.
+	// protocol-relative `//evil.com`, backslash tricks, and double-encoded
+	// variants. Implementation + tests in `lib/safe-next-path.ts`.
 	const rawNext = params.get("next") || "/dashboard";
 	const next = safeNextPath(rawNext);
 	const initialTab = (
@@ -58,6 +68,17 @@ function LoginInner() {
 	) as AuthTab;
 	const [tab, setTab] = useState<AuthTab>(initialTab);
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
+	const [csrfError, setCsrfError] = useState(false);
+	const [walletError, setWalletError] = useState<string | null>(null);
+	const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+	const walletTabRef = useRef<HTMLButtonElement>(null);
+	const accountTabRef = useRef<HTMLButtonElement>(null);
+	const prefersReducedMotion = useReducedMotion();
+
+	// Backend health: shows an "API is offline" banner if the API is
+	// unreachable. Disabled auth methods in that case so the user doesn't
+	// burn through wallet popups on a network that's not responding.
+	const { status: apiStatus, refresh: refreshApiHealth } = useApiHealth();
 
 	// Bounce to `next` once authenticated.
 	useEffect(() => {
@@ -65,37 +86,114 @@ function LoginInner() {
 	}, [isAuthenticated, next, router]);
 
 	// A-C1: pre-fetch CSRF token on mount so the modal has it synchronously.
+	// If the pre-fetch fails, surface a warning so the user isn't left
+	// wondering why the form is broken — the modal will fall back to its
+	// own fetch, which may also fail.
 	useEffect(() => {
 		let cancelled = false;
 		api.auth
 			.getCsrfToken()
 			.then((res) => {
-				if (!cancelled && res.token) setCsrfToken(res.token);
+				if (!cancelled && res.token) {
+					setCsrfToken(res.token);
+					setCsrfError(false);
+				}
 			})
-			.catch(() => {
-				// Silent: modal will fall back to fetching on its own if needed.
+			.catch((err) => {
+				if (cancelled) return;
+				console.warn("CSRF pre-fetch failed:", err);
+				setCsrfError(true);
 			});
 		return () => {
 			cancelled = true;
 		};
 	}, []);
 
+	// WAI-ARIA tab pattern: arrow keys move between tabs, Home/End jump to
+	// the first/last tab. The browser's default Tab key already moves focus
+	// out of the tablist, so we only need to handle the in-list navigation.
+	const onTabKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLButtonElement>) => {
+			if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+				return;
+			}
+			e.preventDefault();
+			const tabs: Array<{ ref: React.RefObject<HTMLButtonElement | null>; value: AuthTab }> = [
+				{ ref: walletTabRef, value: "wallet" },
+				{ ref: accountTabRef, value: "account" },
+			];
+			const currentIndex = tabs.findIndex(
+				(t) => t.ref.current === e.currentTarget,
+			);
+			if (currentIndex === -1) return;
+			let nextIndex = currentIndex;
+			if (e.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+			else if (e.key === "ArrowLeft")
+				nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+			else if (e.key === "Home") nextIndex = 0;
+			else if (e.key === "End") nextIndex = tabs.length - 1;
+			const target = tabs[nextIndex];
+			setTab(target.value);
+			// Move focus to the newly-selected tab. Per WAI-ARIA APG, focus
+			// follows selection on tablist navigation.
+			target.ref.current?.focus();
+		},
+		[],
+	);
+
 	const handleConnect = async () => {
+		setWalletError(null);
+		setIsConnectingWallet(true);
 		try {
 			await connectEvm();
 		} catch (e) {
-			console.error("wallet connect failed", e);
+			// wagmi rejects when the user dismisses the wallet picker, the
+			// extension is locked, or the chain is wrong. Surface a clear,
+			// actionable message — silently `console.error`-ing and bouncing
+			// the user back is a real UX failure mode.
+			const err = e as { code?: number; shortMessage?: string; message?: string };
+			if (
+				err.code === 4001 ||
+				err.message?.toLowerCase().includes("user rejected") ||
+				err.message?.toLowerCase().includes("user denied")
+			) {
+				setWalletError("Connection cancelled. Click again to retry.");
+			} else if (
+				err.message?.toLowerCase().includes("wallet") &&
+				!err.message?.toLowerCase().includes("chain")
+			) {
+				setWalletError(
+					"No wallet detected. Install MetaMask or Coinbase Wallet, then refresh.",
+				);
+			} else {
+				setWalletError(
+					err.shortMessage ||
+						err.message ||
+						"Couldn't connect to wallet. Please try again.",
+				);
+			}
+		} finally {
+			setIsConnectingWallet(false);
 		}
 	};
+
+	const offline = apiStatus === "offline";
 
 	return (
 		<div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-10 sm:py-16">
 			<m.div {...fadeUpProps(0)} className="w-full max-w-md">
 				<div className="text-center mb-8">
 					<m.div
-						initial={{ scale: 0.8, opacity: 0 }}
-						animate={{ scale: 1, opacity: 1 }}
-						transition={{ type: "spring", stiffness: 260, damping: 20 }}
+						// Respect prefers-reduced-motion: the spring animation on
+						// the shield icon is decorative; honor the OS-level
+						// accessibility setting and skip it.
+						initial={prefersReducedMotion ? false : { scale: 0.8, opacity: 0 }}
+						animate={prefersReducedMotion ? false : { scale: 1, opacity: 1 }}
+						transition={
+							prefersReducedMotion
+								? { duration: 0 }
+								: { type: "spring", stiffness: 260, damping: 20 }
+						}
 						className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20 mb-4 glow-accent-sm"
 					>
 						<Shield className="h-6 w-6" aria-hidden="true" />
@@ -108,6 +206,47 @@ function LoginInner() {
 					</p>
 				</div>
 
+				{offline && (
+					<div
+						role="alert"
+						aria-live="assertive"
+						className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
+					>
+						<AlertTriangle
+							className="h-4 w-4 shrink-0 text-warning mt-0.5"
+							aria-hidden="true"
+						/>
+						<div className="flex-1 text-xs text-text leading-relaxed">
+							<p className="font-semibold mb-1">API is offline</p>
+							<p className="text-text-muted">
+								Sign-in is temporarily unavailable. Auto-retrying every
+								30s, or click below to retry now.
+							</p>
+							<button
+								type="button"
+								onClick={refreshApiHealth}
+								className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-warning hover:underline underline-offset-2"
+							>
+								<RefreshCw className="h-3 w-3" aria-hidden="true" />
+								Retry connection
+							</button>
+						</div>
+					</div>
+				)}
+
+				{csrfError && !offline && (
+					<div
+						role="status"
+						aria-live="polite"
+						className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface px-4 py-2.5"
+					>
+						<p className="text-[11px] text-text-muted">
+							CSRF token pre-fetch failed — sign-in via account number may not
+							work. Try the wallet tab or refresh the page.
+						</p>
+					</div>
+				)}
+
 				{/* Tabs */}
 				<div
 					role="tablist"
@@ -118,9 +257,12 @@ function LoginInner() {
 						type="button"
 						id="tab-wallet"
 						role="tab"
+						ref={walletTabRef}
 						aria-selected={tab === "wallet"}
 						aria-controls="panel-wallet"
+						tabIndex={tab === "wallet" ? 0 : -1}
 						onClick={() => setTab("wallet")}
+						onKeyDown={onTabKeyDown}
 						className={
 							"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors cursor-pointer " +
 							(tab === "wallet"
@@ -135,9 +277,12 @@ function LoginInner() {
 						type="button"
 						id="tab-account"
 						role="tab"
+						ref={accountTabRef}
 						aria-selected={tab === "account"}
 						aria-controls="panel-account"
+						tabIndex={tab === "account" ? 0 : -1}
 						onClick={() => setTab("account")}
+						onKeyDown={onTabKeyDown}
 						className={
 							"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors cursor-pointer " +
 							(tab === "account"
@@ -150,43 +295,77 @@ function LoginInner() {
 					</button>
 				</div>
 
-				{/* Tab panels */}
-				{tab === "wallet" && (
-					<div
-						id="panel-wallet"
-						role="tabpanel"
-						aria-labelledby="tab-wallet"
-						className="border border-border bg-surface p-6 space-y-3"
+				{/* Tab panels — both rendered, hidden via the `hidden` attribute
+            on the inactive one. WAI-ARIA APG prefers this over conditional
+            rendering so `aria-controls` always resolves to a live element
+            and tab switches don't re-mount the panel (preserves form
+            state, focus history, and animation continuity). */}
+				<div
+					id="panel-wallet"
+					role="tabpanel"
+					aria-labelledby="tab-wallet"
+					hidden={tab !== "wallet"}
+					className="border border-border bg-surface p-6 space-y-3"
+				>
+					<button
+						type="button"
+						onClick={handleConnect}
+						disabled={!isReady || offline || isConnectingWallet || isAuthenticating}
+						aria-busy={isConnectingWallet || isAuthenticating}
+						title={
+							offline
+								? "API is offline — sign-in is temporarily unavailable"
+								: undefined
+						}
+						className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						<button
-							type="button"
-							onClick={handleConnect}
-							disabled={!isReady}
-							className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+						{isConnectingWallet || isAuthenticating ? (
+							<>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								{isAuthenticating ? "Signing message..." : "Connecting..."}
+							</>
+						) : (
+							<>
+								<Wallet className="h-4 w-4" aria-hidden="true" />
+								{isConnected ? "Sign in with Ethereum" : "Connect Wallet"}
+							</>
+						)}
+					</button>
+
+					{walletError && (
+						<p
+							role="alert"
+							aria-live="assertive"
+							className="text-[11px] text-red text-center"
 						>
-							<Wallet className="h-4 w-4" aria-hidden="true" />
-							{isConnected ? "Sign in with Ethereum" : "Connect Wallet"}
-						</button>
-
-						<p className="text-[11px] text-text-muted text-center pt-2">
-							A SIWE signature proves wallet ownership. No transaction is sent.
+							{walletError}
 						</p>
-					</div>
-				)}
+					)}
 
-				{tab === "account" && (
-					<div id="panel-account" role="tabpanel" aria-labelledby="tab-account">
-						{/* AccountLoginModal in `inline` mode: same login/create/success flow
-                as the global modal, but rendered without the fixed backdrop so it
-                fits naturally inside the tab panel. `onClose` is a no-op in
-                inline mode — the user switches tabs via the tab buttons above. */}
-						<AccountLoginModal
-							onClose={() => {}}
-							inline
-							initialCsrfToken={csrfToken}
-						/>
-					</div>
-				)}
+					<p className="text-[11px] text-text-muted text-center pt-2">
+						A SIWE signature proves wallet ownership. No transaction is sent.
+					</p>
+				</div>
+
+				<div
+					id="panel-account"
+					role="tabpanel"
+					aria-labelledby="tab-account"
+					hidden={tab !== "account"}
+				>
+					{/* AccountLoginModal in `inline` mode: same login/create/success flow
+              as the global modal, but rendered without the fixed backdrop so it
+              fits naturally inside the tab panel. `onClose` is a no-op in
+              inline mode — the user switches tabs via the tab buttons above.
+              `skipCsrfFetch` suppresses the modal's own CSRF fetch because the
+              page already pre-fetches on mount (avoids a duplicate request). */}
+					<AccountLoginModal
+						onClose={() => {}}
+						inline
+						initialCsrfToken={csrfToken}
+						skipCsrfFetch
+					/>
+				</div>
 
 				<p className="mt-6 text-xs text-text-muted text-center">
 					New here?{" "}
