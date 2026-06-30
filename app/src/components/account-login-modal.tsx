@@ -18,6 +18,33 @@ import {
 	setSessionMetaCookie,
 } from "@/lib/cookies";
 
+/**
+ * Account-number formats accepted by the server (`server/src/auth/account-number.ts`):
+ *   - Current: 16 random digits, e.g. "1234567890123456" (with optional
+ *     spaces/dashes stripped on the server). This is what `/auth/account/create`
+ *     returns and what newly-issued accounts use.
+ *   - Legacy:  "OMA-XXXX-XXXX-XXXX" in Crockford base32 (2-9, A-H, J-N, P-Z,
+ *     case-insensitive). Kept for backwards-compatible login of pre-existing
+ *     accounts; the server still hashes the normalized form so login keeps
+ *     working.
+ *
+ * This client-side check is purely a usability hint — it surfaces typos
+ * immediately instead of waiting for a round-trip + 401. The server is
+ * the source of truth.
+ */
+const ACCOUNT_NUMBER_DIGITS_ONLY = /^[0-9]{16}$/;
+const ACCOUNT_NUMBER_LEGACY = /^OMA-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/i;
+
+function isValidAccountNumberShape(value: string): boolean {
+	const trimmed = value.trim();
+	if (trimmed.length === 0) return true; // empty input — don't show a hint yet
+	const upper = trimmed.toUpperCase();
+	if (ACCOUNT_NUMBER_LEGACY.test(upper)) return true;
+	// For the digits-only form, strip separators before testing.
+	const digits = trimmed.replace(/[\s-]/g, "");
+	return ACCOUNT_NUMBER_DIGITS_ONLY.test(digits);
+}
+
 interface AccountLoginModalProps {
 	onClose: () => void;
 	/**
@@ -34,6 +61,13 @@ interface AccountLoginModalProps {
 	 * its own token on mount — the original (racey) behavior.
 	 */
 	initialCsrfToken?: string | null;
+	/**
+	 * When the host page is already managing the CSRF token fetch (e.g.
+	 * pre-fetching on mount), set this to `true` to suppress the modal's
+	 * own fallback fetch. Avoids the duplicate `/auth/csrf-token` request
+	 * and the `cancelled`-flag dance when both fire on first mount.
+	 */
+	skipCsrfFetch?: boolean;
 }
 
 type Mode = "login" | "create" | "success";
@@ -42,6 +76,7 @@ export function AccountLoginModal({
 	onClose,
 	inline = false,
 	initialCsrfToken = null,
+	skipCsrfFetch = false,
 }: AccountLoginModalProps) {
 	const [mode, setMode] = useState<Mode>("login");
 	const [accountNumber, setAccountNumber] = useState("");
@@ -49,9 +84,15 @@ export function AccountLoginModal({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [copied, setCopied] = useState(false);
+	const [copyError, setCopyError] = useState<string | null>(null);
 	const [csrfToken, setCsrfToken] = useState<string | null>(initialCsrfToken);
 	const modalRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLElement | null>(null);
+	// Pending "copied" indicator timer. Held in a ref so we can clear it on
+	// unmount and on subsequent copy attempts — without this, the indicator
+	// can fire setCopied(false) on an unmounted component, and rapid
+	// double-clicks leak timers.
+	const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// L-A3: the host page passes an inline arrow `() => {}` for `onClose`,
 	// which is a new function reference on every parent render. Listing it in
@@ -72,16 +113,25 @@ export function AccountLoginModal({
 		triggerRef.current = document.activeElement as HTMLElement;
 
 		const handleKeyDown = (e: KeyboardEvent) => {
-			// L-A3 (inline): in inline mode there is no backdrop to dismiss, so
-			// Escape falls back to blurring the active input — avoids stealing
-			// focus via a no-op onClose and matches the WAI-ARIA dialog pattern.
+			// Escape in dialog mode: close the modal. The WAI-ARIA dialog
+			// pattern says Escape is the canonical dismiss action.
+			// Escape in inline mode: do nothing. Stealing focus or blurring
+			// the active input is non-standard and surprising — users
+			// typing in the account number field expect Escape to do
+			// nothing (or, in `<input type="search">`, clear the value,
+			// which the browser handles on its own).
 			if (e.key === "Escape") {
 				if (!inline) onCloseRef.current();
-				else (document.activeElement as HTMLElement | null)?.blur?.();
 				return;
 			}
 
-			if (e.key === "Tab" && modalRef.current) {
+			// Focus trap ONLY applies in dialog mode (non-inline). In inline
+			// mode the modal lives inside a tab panel alongside the tabs
+			// above; trapping focus here would block keyboard users from
+			// switching to the wallet tab, which is the whole point of the
+			// tab UI. The WAI-ARIA dialog pattern explicitly says focus
+			// traps belong to modal dialogs, not embedded panels.
+			if (e.key === "Tab" && !inline && modalRef.current) {
 				const focusableElements =
 					modalRef.current.querySelectorAll<HTMLElement>(
 						'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -104,10 +154,16 @@ export function AccountLoginModal({
 		};
 
 		document.addEventListener("keydown", handleKeyDown);
-		const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
-			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-		);
-		firstFocusable?.focus();
+		// In dialog mode, auto-focus the first focusable element (input).
+		// In inline mode, do NOT steal focus — the user just clicked the
+		// tab and is already reading the panel. Snatching focus on every
+		// tab switch is a screen-reader antipattern.
+		if (!inline) {
+			const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+			);
+			firstFocusable?.focus();
+		}
 
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown);
@@ -130,6 +186,11 @@ export function AccountLoginModal({
 			setCsrfToken(initialCsrfToken);
 			return;
 		}
+		// Host is managing the fetch (e.g. /login pre-fetches on mount). Do
+		// not fire a duplicate `/auth/csrf-token` request — the host's
+		// token will arrive via the `initialCsrfToken` prop as soon as it
+		// resolves, re-running this effect.
+		if (skipCsrfFetch) return;
 		let cancelled = false;
 		async function fetchCsrfToken() {
 			try {
@@ -146,7 +207,7 @@ export function AccountLoginModal({
 		return () => {
 			cancelled = true;
 		};
-	}, [initialCsrfToken]);
+	}, [initialCsrfToken, skipCsrfFetch]);
 
 	const handleLogin = useCallback(async () => {
 		if (!accountNumber.trim()) return;
@@ -255,12 +316,62 @@ export function AccountLoginModal({
 	}, []);
 
 	const handleCopy = useCallback(() => {
-		if (createdAccount) {
-			navigator.clipboard.writeText(createdAccount);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
+		if (!createdAccount) return;
+		// Clear any in-flight "copied" reset so a rapid second click resets
+		// the 2s window from now, not from the first click.
+		if (copyResetTimerRef.current) {
+			clearTimeout(copyResetTimerRef.current);
+			copyResetTimerRef.current = null;
 		}
+		// `navigator.clipboard` is async and can reject (permission denied,
+		// insecure context, browser doesn't support it). Catch and surface
+		// the failure so the user knows nothing was copied — silent failure
+		// here is a real footgun because the account number is shown ONCE
+		// and the user has no recovery path.
+		const copyPromise = navigator.clipboard
+			? navigator.clipboard.writeText(createdAccount)
+			: Promise.reject(new Error("Clipboard API unavailable"));
+		copyPromise
+			.then(() => {
+				setCopied(true);
+				setCopyError(null);
+				copyResetTimerRef.current = setTimeout(() => {
+					setCopied(false);
+					copyResetTimerRef.current = null;
+				}, 2000);
+			})
+			.catch((err) => {
+				console.error("Clipboard write failed:", err);
+				setCopyError(
+					"Couldn't copy automatically — select the number and copy manually.",
+				);
+			});
 	}, [createdAccount]);
+
+	// Clear any pending "copied" reset timer on unmount so we don't call
+	// setCopied on an unmounted component.
+	useEffect(() => {
+		return () => {
+			if (copyResetTimerRef.current) {
+				clearTimeout(copyResetTimerRef.current);
+				copyResetTimerRef.current = null;
+			}
+		};
+	}, []);
+
+	// Reset the copy indicator + error whenever the user leaves the success
+	// view. Without this, switching back to "create" and creating a NEW
+	// account could surface a stale "Copied" tick from the previous one.
+	useEffect(() => {
+		if (mode !== "success") {
+			setCopied(false);
+			setCopyError(null);
+			if (copyResetTimerRef.current) {
+				clearTimeout(copyResetTimerRef.current);
+				copyResetTimerRef.current = null;
+			}
+		}
+	}, [mode]);
 
 	const handleDone = useCallback(() => {
 		// After a successful account-number creation, we just stored a new
@@ -355,13 +466,33 @@ export function AccountLoginModal({
 								value={accountNumber}
 								onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
 								onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-								placeholder="OMA-XXXX-XXXX-XXXX"
+								placeholder="1234 5678 9012 3456 or OMA-XXXX-XXXX-XXXX"
 								aria-label="Account number"
 								aria-invalid={!!error}
-								aria-describedby={error ? "account-error" : undefined}
+								aria-errormessage={error ? "account-error" : undefined}
+								aria-describedby={
+									accountNumber && !isValidAccountNumberShape(accountNumber)
+										? "account-number-format-hint"
+										: error
+											? "account-error"
+											: undefined
+								}
+								autoComplete="off"
+								spellCheck={false}
+								inputMode="numeric"
 								className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
 								disabled={loading}
 							/>
+							{accountNumber &&
+								!isValidAccountNumberShape(accountNumber) && (
+									<p
+										id="account-number-format-hint"
+										className="mt-2 text-[11px] text-text-muted"
+									>
+										Expected: 16 digits (new accounts) or OMA-XXXX-XXXX-XXXX
+										(legacy)
+									</p>
+								)}
 						</div>
 						<button
 							type="button"
@@ -486,6 +617,15 @@ export function AccountLoginModal({
 								)}
 							</button>
 						</div>
+						{copyError && (
+							<p
+								role="status"
+								aria-live="polite"
+								className="mb-4 text-[11px] text-warning"
+							>
+								{copyError}
+							</p>
+						)}
 
 						{/* Optional: Link a wallet */}
 						<div className="mb-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
