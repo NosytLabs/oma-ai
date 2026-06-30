@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import dynamic from 'next/dynamic'
-import type { ReactNode } from 'react'
+import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 
 // `next/dynamic` with `ssr: false` cannot be used in a Server Component
 // (Next.js restriction). layout.tsx is a Server Component, so we wrap the
@@ -19,10 +19,10 @@ import type { ReactNode } from 'react'
 // provider hydrates on the client and the real context takes over
 // before any user interaction.
 const ToastProvider = dynamic(
-  () => import('./Toast').then(m => m.ToastProvider),
-  { ssr: false }
-)
+	() => import("./Toast").then((m) => m.ToastProvider),
+	{ ssr: false },
+);
 
 export function ToastProviderClient({ children }: { children: ReactNode }) {
-  return <ToastProvider>{children}</ToastProvider>
+	return <ToastProvider>{children}</ToastProvider>;
 }

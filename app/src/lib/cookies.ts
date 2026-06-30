@@ -13,20 +13,20 @@
  * keep the JWT short-lived and rely on standard CSP headers.
  */
 
-export const SESSION_COOKIE_NAME = 'oma_session'
-const SESSION_META_COOKIE_NAME = 'oma_session_meta'
-const CSRF_COOKIE_NAME = 'csrf_token'
+export const SESSION_COOKIE_NAME = "oma_session";
+const SESSION_META_COOKIE_NAME = "oma_session_meta";
+const CSRF_COOKIE_NAME = "csrf_token";
 
 interface SessionMeta {
-  authMethod: string
+	authMethod: string;
 }
 
 function isBrowser(): boolean {
-  return typeof window !== 'undefined'
+	return typeof window !== "undefined";
 }
 
 function isSecureEnv(): boolean {
-  return process.env.NODE_ENV === 'production'
+	return process.env.NODE_ENV === "production";
 }
 
 /**
@@ -36,22 +36,26 @@ function isSecureEnv(): boolean {
  * `document.cookie` and the entire cookie is dropped. `Secure` is only set in
  * production (HTTPS) because dev runs on http://localhost.
  */
-function getClientCookieString(name: string, value: string, maxAgeDays: number): string {
-  const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString()
-  const maxAge = Math.floor(maxAgeDays * 86400)
-  const parts = [
-    `${name}=${encodeURIComponent(value)}`,
-    `expires=${expires}`,
-    'path=/',
-    `max-age=${maxAge}`,
-    isSecureEnv() ? 'Secure' : '',
-    'SameSite=Strict',
-  ].filter(Boolean)
-  return parts.join('; ')
+function getClientCookieString(
+	name: string,
+	value: string,
+	maxAgeDays: number,
+): string {
+	const expires = new Date(Date.now() + maxAgeDays * 86400000).toUTCString();
+	const maxAge = Math.floor(maxAgeDays * 86400);
+	const parts = [
+		`${name}=${encodeURIComponent(value)}`,
+		`expires=${expires}`,
+		"path=/",
+		`max-age=${maxAge}`,
+		isSecureEnv() ? "Secure" : "",
+		"SameSite=Strict",
+	].filter(Boolean);
+	return parts.join("; ");
 }
 
 function getDeleteCookieString(name: string): string {
-  return `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`
+	return `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
 }
 
 /**
@@ -66,9 +70,13 @@ function getDeleteCookieString(name: string): string {
  * client must persist the token itself.
  */
 export function setSessionCookie(token: string, maxAgeDays = 7): void {
-  if (!isBrowser()) return
-  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
-  document.cookie = getClientCookieString(SESSION_COOKIE_NAME, token, maxAgeDays)
+	if (!isBrowser()) return;
+	// biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+	document.cookie = getClientCookieString(
+		SESSION_COOKIE_NAME,
+		token,
+		maxAgeDays,
+	);
 }
 
 /**
@@ -78,65 +86,66 @@ export function setSessionCookie(token: string, maxAgeDays = 7): void {
  * hint used by the UI.
  */
 export function setSessionMetaCookie(meta: SessionMeta, maxAgeDays = 7): void {
-  if (!isBrowser()) return
-  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
-  document.cookie = getClientCookieString(
-    SESSION_META_COOKIE_NAME,
-    JSON.stringify(meta),
-    maxAgeDays,
-  )
+	if (!isBrowser()) return;
+	// biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+	document.cookie = getClientCookieString(
+		SESSION_META_COOKIE_NAME,
+		JSON.stringify(meta),
+		maxAgeDays,
+	);
 }
 
 export function getSessionToken(): string | null {
-  if (!isBrowser()) return null
+	if (!isBrowser()) return null;
 
-  const cookies = document.cookie.split(';')
-  for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=')
-    if (name === SESSION_COOKIE_NAME) {
-      return decodeURIComponent(valueParts.join('='))
-    }
-  }
-  return null
+	const cookies = document.cookie.split(";");
+	for (const cookie of cookies) {
+		const [name, ...valueParts] = cookie.trim().split("=");
+		if (name === SESSION_COOKIE_NAME) {
+			return decodeURIComponent(valueParts.join("="));
+		}
+	}
+	return null;
 }
 
-
 export function deleteSessionCookie(): void {
-  if (!isBrowser()) return
-  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
-  document.cookie = getDeleteCookieString(SESSION_COOKIE_NAME)
-  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
-  document.cookie = getDeleteCookieString(SESSION_META_COOKIE_NAME)
+	if (!isBrowser()) return;
+	// biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+	document.cookie = getDeleteCookieString(SESSION_COOKIE_NAME);
+	// biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+	document.cookie = getDeleteCookieString(SESSION_META_COOKIE_NAME);
 }
 
 export function setCsrfTokenCookie(token: string): void {
-  if (!isBrowser()) return
-  // biome-ignore lint/suspicious/noDocumentCookie: cookie utility
-  document.cookie = getClientCookieString(CSRF_COOKIE_NAME, token, 1)
+	if (!isBrowser()) return;
+	// biome-ignore lint/suspicious/noDocumentCookie: cookie utility
+	document.cookie = getClientCookieString(CSRF_COOKIE_NAME, token, 1);
 }
 
 export function getCsrfToken(): string | null {
-  if (!isBrowser()) return null
+	if (!isBrowser()) return null;
 
-  const cookies = document.cookie.split(';')
-  for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=')
-    if (name === CSRF_COOKIE_NAME) {
-      return decodeURIComponent(valueParts.join('='))
-    }
-  }
-  return null
+	const cookies = document.cookie.split(";");
+	for (const cookie of cookies) {
+		const [name, ...valueParts] = cookie.trim().split("=");
+		if (name === CSRF_COOKIE_NAME) {
+			return decodeURIComponent(valueParts.join("="));
+		}
+	}
+	return null;
 }
 
 /**
  * Build authorization headers for API requests.
  * Returns an object with Authorization header if a session token exists.
  */
-export function buildAuthHeaders(additional?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...additional }
-  const token = getSessionToken()
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
-  return headers
+export function buildAuthHeaders(
+	additional?: Record<string, string>,
+): Record<string, string> {
+	const headers: Record<string, string> = { ...additional };
+	const token = getSessionToken();
+	if (token) {
+		headers.Authorization = `Bearer ${token}`;
+	}
+	return headers;
 }

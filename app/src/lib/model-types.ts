@@ -6,13 +6,28 @@
  */
 
 export interface ModelOption {
-  id: string
-  name: string
-  category: 'frontier' | 'premium' | 'mid' | 'budget' | 'reasoning' | 'coding' | 'uncensored'
-  provider: 'Venice'
-  inputPer1M: number
-  outputPer1M: number
-  ctx: string
+	id: string;
+	name: string;
+	category:
+		| "frontier"
+		| "premium"
+		| "mid"
+		| "budget"
+		| "reasoning"
+		| "coding"
+		| "uncensored";
+	provider: "Venice";
+	inputPer1M: number;
+	outputPer1M: number;
+	ctx: string;
 }
 
-export type TierFilter = 'all' | 'frontier' | 'premium' | 'mid' | 'budget' | 'reasoning' | 'coding' | 'uncensored'
+export type TierFilter =
+	| "all"
+	| "frontier"
+	| "premium"
+	| "mid"
+	| "budget"
+	| "reasoning"
+	| "coding"
+	| "uncensored";

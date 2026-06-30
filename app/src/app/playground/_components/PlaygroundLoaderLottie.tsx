@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * PlaygroundLoaderLottie — pure-CSS loader (three bouncing dots).
@@ -9,11 +9,17 @@
  */
 
 export function PlaygroundLoaderLottie() {
-  return (
-    <div className="flex items-center justify-center gap-2">
-      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" />
-      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0.15s' }} />
-      <div className="h-3 w-3 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0.3s' }} />
-    </div>
-  )
+	return (
+		<div className="flex items-center justify-center gap-2">
+			<div className="h-3 w-3 rounded-full bg-accent animate-bounce" />
+			<div
+				className="h-3 w-3 rounded-full bg-accent animate-bounce"
+				style={{ animationDelay: "0.15s" }}
+			/>
+			<div
+				className="h-3 w-3 rounded-full bg-accent animate-bounce"
+				style={{ animationDelay: "0.3s" }}
+			/>
+		</div>
+	);
 }

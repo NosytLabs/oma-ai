@@ -3,23 +3,61 @@
    Matches the OMA dark theme with subtle token colors
    ============================================================ */
 
-.sh-keyword   { color: #c792ea; } /* purple — control flow */
-.sh-string    { color: #c3e88d; } /* soft green — literals */
-.sh-number    { color: #f78c6c; } /* orange — numbers */
-.sh-comment   { color: #676e95; font-style: italic; } /* muted blue-grey */
-.sh-function  { color: #82aaff; } /* blue — function calls */
-.sh-operator  { color: #89ddff; } /* cyan — operators */
-.sh-punctuation { color: #a6accd; } /* light grey — brackets, commas */
-.sh-property  { color: #f07178; } /* salmon — JSON keys */
-.sh-builtin   { color: #ffcb6b; } /* yellow — builtins */
+.sh-keyword {
+	color: #c792ea;
+} /* purple — control flow */
+.sh-string {
+	color: #c3e88d;
+} /* soft green — literals */
+.sh-number {
+	color: #f78c6c;
+} /* orange — numbers */
+.sh-comment {
+	color: #676e95;
+	font-style: italic;
+} /* muted blue-grey */
+.sh-function {
+	color: #82aaff;
+} /* blue — function calls */
+.sh-operator {
+	color: #89ddff;
+} /* cyan — operators */
+.sh-punctuation {
+	color: #a6accd;
+} /* light grey — brackets, commas */
+.sh-property {
+	color: #f07178;
+} /* salmon — JSON keys */
+.sh-builtin {
+	color: #ffcb6b;
+} /* yellow — builtins */
 
 /* Light theme overrides */
-[data-theme="light"] .sh-keyword   { color: #7c4dff; }
-[data-theme="light"] .sh-string    { color: #2e7d32; }
-[data-theme="light"] .sh-number    { color: #e65100; }
-[data-theme="light"] .sh-comment   { color: #9e9e9e; font-style: italic; }
-[data-theme="light"] .sh-function  { color: #1565c0; }
-[data-theme="light"] .sh-operator  { color: #00838f; }
-[data-theme="light"] .sh-punctuation { color: #546e7a; }
-[data-theme="light"] .sh-property  { color: #c62828; }
-[data-theme="light"] .sh-builtin   { color: #f9a825; }
+[data-theme="light"] .sh-keyword {
+	color: #7c4dff;
+}
+[data-theme="light"] .sh-string {
+	color: #2e7d32;
+}
+[data-theme="light"] .sh-number {
+	color: #e65100;
+}
+[data-theme="light"] .sh-comment {
+	color: #9e9e9e;
+	font-style: italic;
+}
+[data-theme="light"] .sh-function {
+	color: #1565c0;
+}
+[data-theme="light"] .sh-operator {
+	color: #00838f;
+}
+[data-theme="light"] .sh-punctuation {
+	color: #546e7a;
+}
+[data-theme="light"] .sh-property {
+	color: #c62828;
+}
+[data-theme="light"] .sh-builtin {
+	color: #f9a825;
+}

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { useEffect, useRef } from "react";
 
@@ -17,44 +17,44 @@ import { useEffect, useRef } from "react";
  *  - Restores focus to the previously active element.
  */
 export function useFocusTrap(active: boolean) {
-  const ref = useRef<HTMLDivElement>(null);
+	const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!active || !ref.current) return;
+	useEffect(() => {
+		if (!active || !ref.current) return;
 
-    const previouslyFocused = document.activeElement as HTMLElement;
-    const focusableSelector =
-      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+		const previouslyFocused = document.activeElement as HTMLElement;
+		const focusableSelector =
+			'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-    const getFocusable = () =>
-      ref.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [];
+		const getFocusable = () =>
+			ref.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [];
 
-    // Focus first focusable element
-    const focusables = getFocusable();
-    if (focusables.length > 0) focusables[0]?.focus();
+		// Focus first focusable element
+		const focusables = getFocusable();
+		if (focusables.length > 0) focusables[0]?.focus();
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const items = getFocusable();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key !== "Tab") return;
+			const items = getFocusable();
+			if (items.length === 0) return;
+			const first = items[0];
+			const last = items[items.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		};
 
-    document.addEventListener("keydown", handleKeyDown);
+		document.addEventListener("keydown", handleKeyDown);
 
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [active]);
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			previouslyFocused?.focus();
+		};
+	}, [active]);
 
-  return ref;
+	return ref;
 }

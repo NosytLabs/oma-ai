@@ -5,21 +5,28 @@
  * dependency that previously existed.
  */
 export interface ModelOption {
-  id: string
-  name: string
-  category: 'frontier' | 'premium' | 'mid' | 'budget' | 'reasoning' | 'coding' | 'uncensored'
-  provider: 'Venice' | 'AntSeed' | 'Both'
-  inputPer1M: number
-  outputPer1M: number
-  ctx: string
+	id: string;
+	name: string;
+	category:
+		| "frontier"
+		| "premium"
+		| "mid"
+		| "budget"
+		| "reasoning"
+		| "coding"
+		| "uncensored";
+	provider: "Venice" | "AntSeed" | "Both";
+	inputPer1M: number;
+	outputPer1M: number;
+	ctx: string;
 }
 
 export type TierFilter =
-  | 'all'
-  | 'frontier'
-  | 'premium'
-  | 'mid'
-  | 'budget'
-  | 'reasoning'
-  | 'coding'
-  | 'uncensored'
+	| "all"
+	| "frontier"
+	| "premium"
+	| "mid"
+	| "budget"
+	| "reasoning"
+	| "coding"
+	| "uncensored";

@@ -1,26 +1,37 @@
 {
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "linter": {
-    "rules": {
-      "suspicious": {
-        "noCommentText": "off"
-      },
-      "a11y": {
-        "noLabelWithoutControl": "off",
-        "useSemanticElements": "off",
-        "noStaticElementInteractions": "off",
-        "useKeyWithClickEvents": "off",
-        "useAriaPropsSupportedByRole": "off",
-        "noNoninteractiveTabindex": "off",
-        "useMediaCaption": "off"
-      },
-      "performance": {
-        "noImgElement": "off"
-      }
-    }
-  }
+	"$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+	"files": {
+		"includes": [
+			"**",
+			"!**/.next",
+			"!**/.next/standalone",
+			"!**/node_modules",
+			"!**/public"
+		]
+	},
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noCommentText": "off"
+			},
+			"a11y": {
+				"noLabelWithoutControl": "off",
+				"useSemanticElements": "off",
+				"noStaticElementInteractions": "off",
+				"useKeyWithClickEvents": "off",
+				"useAriaPropsSupportedByRole": "off",
+				"noNoninteractiveTabindex": "off",
+				"useMediaCaption": "off"
+			},
+			"performance": {
+				"noImgElement": "off"
+			}
+		}
+	}
 }

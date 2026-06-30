@@ -195,7 +195,7 @@ export const ChatMessage = memo(function ChatMessage({
 				{/* Reasoning Section */}
 				{hasReasoning && (
 					<ReasoningBlock
-      // biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
+						// biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
 						reasoning={msg.reasoning!}
 						expanded={showReasoningExpanded}
 						onToggle={() => setReasoningExpanded(!reasoningExpanded)}
@@ -304,7 +304,8 @@ export const ChatMessage = memo(function ChatMessage({
 						</span>
 					)}
 					{!isUser && msg.content && !loading && (
-						<button type="button"
+						<button
+							type="button"
 							onClick={handleCopy}
 							aria-label={copied ? "Copied to clipboard" : "Copy message"}
 							className="
@@ -376,7 +377,8 @@ function ReasoningBlock({
 }) {
 	return (
 		<div className="mb-2 w-full border border-border/40 bg-surface/20 overflow-hidden">
-			<button type="button"
+			<button
+				type="button"
 				onClick={onToggle}
 				aria-expanded={expanded}
 				className="
@@ -463,7 +465,8 @@ function CodeBlock({
 			>
 				<code className={className}>{code}</code>
 			</pre>
-			<button type="button"
+			<button
+				type="button"
 				onClick={handleCopy}
 				aria-label={copied ? "Copied" : "Copy code"}
 				className="
@@ -518,7 +521,8 @@ const SearchSources = memo(function SearchSources({
 
 	return (
 		<div className="my-4 border border-border/50 overflow-hidden">
-			<button type="button"
+			<button
+				type="button"
 				onClick={onToggle}
 				aria-expanded={expanded}
 				className="

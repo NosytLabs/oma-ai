@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, type RefObject } from 'react'
+import { type RefObject, useEffect, useRef } from "react";
 
 /**
  * Calls `onOutside` when a `mousedown` occurs outside the given `ref`.
@@ -14,27 +14,27 @@ import { useEffect, useRef, type RefObject } from 'react'
  * forcing the effect to re-subscribe on every render.
  */
 export function useClickOutside(
-  ref: RefObject<HTMLElement | null>,
-  active: boolean,
-  onOutside: () => void
+	ref: RefObject<HTMLElement | null>,
+	active: boolean,
+	onOutside: () => void,
 ): void {
-  const handlerRef = useRef(onOutside)
-  useEffect(() => {
-    handlerRef.current = onOutside
-  }, [onOutside])
+	const handlerRef = useRef(onOutside);
+	useEffect(() => {
+		handlerRef.current = onOutside;
+	}, [onOutside]);
 
-  useEffect(() => {
-    if (!active) return
+	useEffect(() => {
+		if (!active) return;
 
-    function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        handlerRef.current()
-      }
-    }
+		function onDocClick(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node)) {
+				handlerRef.current();
+			}
+		}
 
-    document.addEventListener('mousedown', onDocClick)
-    return () => {
-      document.removeEventListener('mousedown', onDocClick)
-    }
-  }, [active, ref])
+		document.addEventListener("mousedown", onDocClick);
+		return () => {
+			document.removeEventListener("mousedown", onDocClick);
+		};
+	}, [active, ref]);
 }

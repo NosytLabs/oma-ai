@@ -1,58 +1,60 @@
 {
-  "name": "app",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "next build",
-    "dev": "next dev",
-    "lint": "eslint",
-    "start": "next start",
-    "test": "vitest run",
-    "typecheck": "next typegen && tsc --noEmit"
-  },
-  "dependencies": {
-    "@coinbase/wallet-sdk": "^4.3.7",
-    "@sentry/nextjs": "^10.62.0",
-    "@tanstack/react-query": "^5.101.1",
-    "@walletconnect/ethereum-provider": "^2.23.10",
-    "date-fns": "^4.4.0",
-    "framer-motion": "^12.41.0",
-    "jose": "^5.10.0",
-    "lucide-react": "^0.469.0",
-    "next": "^15.5.19",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-markdown": "^9.1.0",
-    "recharts": "^3.9.0",
-    "remark-gfm": "^4.0.1",
-    "siwe": "^3.0.0",
-    "viem": "^2.53.1",
-    "wagmi": "^3.6.18"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["@sentry/cli"]
-  },
-  "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
-    "@eslint/eslintrc": "^3.3.5",
-    "@playwright/test": "^1.61.1",
-    "@tailwindcss/postcss": "^4.3.1",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/node": "^20.19.43",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.7",
-    "@vitest/ui": "^4.1.7",
-    "axe-core": "^4.12.1",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^15.5.19",
-    "jsdom": "^29.1.1",
-    "tailwindcss": "^4",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.7"
-  }
+	"name": "app",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"build": "next build",
+		"dev": "next dev",
+		"lint": "eslint",
+		"start": "next start",
+		"test": "vitest run",
+		"typecheck": "next typegen && tsc --noEmit"
+	},
+	"dependencies": {
+		"@coinbase/wallet-sdk": "^4.3.7",
+		"@sentry/nextjs": "^10.62.0",
+		"@tanstack/react-query": "^5.101.1",
+		"@walletconnect/ethereum-provider": "^2.23.10",
+		"date-fns": "^4.4.0",
+		"framer-motion": "^12.41.0",
+		"jose": "^5.10.0",
+		"lucide-react": "^0.469.0",
+		"next": "^15.5.19",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"react-markdown": "^9.1.0",
+		"recharts": "^3.9.0",
+		"remark-gfm": "^4.0.1",
+		"siwe": "^3.0.0",
+		"viem": "^2.53.1",
+		"wagmi": "^3.6.18"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@sentry/cli"
+		]
+	},
+	"devDependencies": {
+		"@axe-core/playwright": "^4.12.1",
+		"@eslint/eslintrc": "^3.3.5",
+		"@playwright/test": "^1.61.1",
+		"@tailwindcss/postcss": "^4.3.1",
+		"@testing-library/dom": "^10.4.1",
+		"@testing-library/jest-dom": "^6.9.1",
+		"@testing-library/react": "^16.3.2",
+		"@types/node": "^20.19.43",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"@vitest/coverage-v8": "^4.1.7",
+		"@vitest/ui": "^4.1.7",
+		"axe-core": "^4.12.1",
+		"babel-plugin-react-compiler": "^1.0.0",
+		"eslint": "^9.39.4",
+		"eslint-config-next": "^15.5.19",
+		"jsdom": "^29.1.1",
+		"tailwindcss": "^4",
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.7"
+	}
 }

@@ -8,15 +8,15 @@
 
 /** A single provider row from the usage stats byProvider array. */
 export interface ProviderRow {
-  provider: string
-  totalRevenue: number
-  totalCost: number
-  profit: number
+	provider: string;
+	totalRevenue: number;
+	totalCost: number;
+	profit: number;
 }
 
 /** Minimal user shape needed for active-user counting. */
 export interface AdminUserStub {
-  lastActivityAt: string | null
+	lastActivityAt: string | null;
 }
 
 // ─── Core Revenue Calculations ────────────────────────────────────────────────
@@ -25,8 +25,11 @@ export interface AdminUserStub {
  * Compute gross profit: totalRevenue - totalCost.
  * A negative value means cost exceeded revenue (net loss).
  */
-export function computeGrossProfit(totalRevenue: number, totalCost: number): number {
-  return totalRevenue - totalCost
+export function computeGrossProfit(
+	totalRevenue: number,
+	totalCost: number,
+): number {
+	return totalRevenue - totalCost;
 }
 
 /**
@@ -35,9 +38,9 @@ export function computeGrossProfit(totalRevenue: number, totalCost: number): num
  * Returns formatted negative percentage when cost exceeds revenue.
  */
 export function computeMargin(totalRevenue: number, totalCost: number): string {
-  if (totalRevenue === 0) return '0.0%'
-  const margin = ((totalRevenue - totalCost) / totalRevenue) * 100
-  return `${margin.toFixed(1)}%`
+	if (totalRevenue === 0) return "0.0%";
+	const margin = ((totalRevenue - totalCost) / totalRevenue) * 100;
+	return `${margin.toFixed(1)}%`;
 }
 
 /**
@@ -45,10 +48,10 @@ export function computeMargin(totalRevenue: number, totalCost: number): string {
  * Case-sensitive match on `provider` field. Returns 0 if not found.
  */
 export function findProviderCost(
-  byProvider: ProviderRow[],
-  providerName: string,
+	byProvider: ProviderRow[],
+	providerName: string,
 ): number {
-  return byProvider.find((p) => p.provider === providerName)?.totalCost ?? 0
+	return byProvider.find((p) => p.provider === providerName)?.totalCost ?? 0;
 }
 
 /**
@@ -56,10 +59,10 @@ export function findProviderCost(
  * Returns 0 if not found.
  */
 export function findProviderRevenue(
-  byProvider: ProviderRow[],
-  providerName: string,
+	byProvider: ProviderRow[],
+	providerName: string,
 ): number {
-  return byProvider.find((p) => p.provider === providerName)?.totalRevenue ?? 0
+	return byProvider.find((p) => p.provider === providerName)?.totalRevenue ?? 0;
 }
 
 /**
@@ -67,44 +70,46 @@ export function findProviderRevenue(
  * Returns 0 if not found.
  */
 export function findProviderProfit(
-  byProvider: ProviderRow[],
-  providerName: string,
+	byProvider: ProviderRow[],
+	providerName: string,
 ): number {
-  return byProvider.find((p) => p.provider === providerName)?.profit ?? 0
+	return byProvider.find((p) => p.provider === providerName)?.profit ?? 0;
 }
 
 // ─── Active User Counting ─────────────────────────────────────────────────────
 
-const MS_24H = 24 * 60 * 60 * 1000
+const MS_24H = 24 * 60 * 60 * 1000;
 
 /**
  * Count users whose `lastActivityAt` falls within the last 24 hours.
  * Accepts an explicit `now` parameter for deterministic testing.
  */
 export function countActiveUsersLast24h(
-  users: AdminUserStub[],
-  now: Date = new Date(),
+	users: AdminUserStub[],
+	now: Date = new Date(),
 ): number {
-  const last24h = new Date(now.getTime() - MS_24H)
-  return users.filter(
-    (u) => u.lastActivityAt && new Date(u.lastActivityAt) > last24h,
-  ).length
+	const last24h = new Date(now.getTime() - MS_24H);
+	return users.filter(
+		(u) => u.lastActivityAt && new Date(u.lastActivityAt) > last24h,
+	).length;
 }
 
 // ─── Provider Cost Summary ────────────────────────────────────────────────────
 
 interface ProviderCostBreakdown {
-  venice: number
-  total: number
+	venice: number;
+	total: number;
 }
 
 /**
  * Compute the Venice provider cost breakdown from a byProvider array.
  * The `total` field is the Venice cost (single provider).
  */
-export function computeProviderCosts(byProvider: ProviderRow[]): ProviderCostBreakdown {
-  const venice = findProviderCost(byProvider, 'venice')
-  return { venice, total: venice }
+export function computeProviderCosts(
+	byProvider: ProviderRow[],
+): ProviderCostBreakdown {
+	const venice = findProviderCost(byProvider, "venice");
+	return { venice, total: venice };
 }
 
 /**
@@ -118,22 +123,22 @@ export function computeProviderCosts(byProvider: ProviderRow[]): ProviderCostBre
  * labelled "Revenue" shows overall platform profit.
  */
 export function computeAdminStats(
-  byProvider: ProviderRow[],
-  users: AdminUserStub[],
-  totalUsers: number,
-  totalApiKeys: number,
-  totalDeposits: number,
-  usageRevenue: number,
-  revenueGrossProfit: number,
-  now: Date = new Date(),
+	byProvider: ProviderRow[],
+	users: AdminUserStub[],
+	totalUsers: number,
+	totalApiKeys: number,
+	totalDeposits: number,
+	usageRevenue: number,
+	revenueGrossProfit: number,
+	now: Date = new Date(),
 ) {
-  return {
-    totalUsers,
-    totalApiKeys,
-    totalDollarsPurchased: totalDeposits,
-    totalUsageThisMonth: usageRevenue,
-    revenue: revenueGrossProfit,
-    activeUsersLast24h: countActiveUsersLast24h(users, now),
-    providerCosts: computeProviderCosts(byProvider),
-  }
+	return {
+		totalUsers,
+		totalApiKeys,
+		totalDollarsPurchased: totalDeposits,
+		totalUsageThisMonth: usageRevenue,
+		revenue: revenueGrossProfit,
+		activeUsersLast24h: countActiveUsersLast24h(users, now),
+		providerCosts: computeProviderCosts(byProvider),
+	};
 }

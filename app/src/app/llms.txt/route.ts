@@ -1,7 +1,7 @@
 // Production API base (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed.
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
-export const dynamic = 'force-static'
+export const dynamic = "force-static";
 
 const BODY = `# OMA AI Gateway
 
@@ -63,13 +63,13 @@ OMA supports multiple deposit methods:
 | 429 | Rate limit exceeded |
 | 500 | Server error |
 | 502 | External provider error |
-`
+`;
 
 export function GET() {
-  return new NextResponse(BODY, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600, must-revalidate',
-    },
-  })
+	return new NextResponse(BODY, {
+		headers: {
+			"Content-Type": "text/plain; charset=utf-8",
+			"Cache-Control": "public, max-age=3600, must-revalidate",
+		},
+	});
 }

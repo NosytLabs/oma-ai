@@ -7,6 +7,6 @@
  * types for a .mjs file directly, so we redirect the module
  * declaration to framer-motion's published types.
  */
-declare module '*/node_modules/framer-motion/dist/es/index.mjs' {
-  export * from 'framer-motion'
+declare module "*/node_modules/framer-motion/dist/es/index.mjs" {
+	export * from "framer-motion";
 }

@@ -1,6 +1,6 @@
 export function formatCents(cents: string | number): string {
-  const n = typeof cents === 'string' ? parseFloat(cents) : cents
-  return (n / 100).toFixed(2)
+	const n = typeof cents === "string" ? parseFloat(cents) : cents;
+	return (n / 100).toFixed(2);
 }
 
 /**
@@ -9,10 +9,10 @@ export function formatCents(cents: string | number): string {
  * across 9+ components. Returns 0 for null/undefined/non-finite input.
  */
 export function toDollars(cents: string | number | null | undefined): number {
-  if (cents == null) return 0
-  const n = typeof cents === 'string' ? parseFloat(cents) : cents
-  if (!Number.isFinite(n)) return 0
-  return n / 100
+	if (cents == null) return 0;
+	const n = typeof cents === "string" ? parseFloat(cents) : cents;
+	if (!Number.isFinite(n)) return 0;
+	return n / 100;
 }
 
 /**
@@ -23,29 +23,29 @@ export function toDollars(cents: string | number | null | undefined): number {
  * than 30 days.
  */
 export function formatTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  if (diffMin < 1) return 'just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHr = Math.floor(diffMin / 60)
-  if (diffHr < 24) return `${diffHr}h ago`
-  const diffDay = Math.floor(diffHr / 24)
-  if (diffDay < 30) return `${diffDay}d ago`
-  return d.toLocaleDateString()
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return "—";
+	const now = new Date();
+	const diffMs = now.getTime() - d.getTime();
+	const diffMin = Math.floor(diffMs / 60000);
+	if (diffMin < 1) return "just now";
+	if (diffMin < 60) return `${diffMin}m ago`;
+	const diffHr = Math.floor(diffMin / 60);
+	if (diffHr < 24) return `${diffHr}h ago`;
+	const diffDay = Math.floor(diffHr / 24);
+	if (diffDay < 30) return `${diffDay}d ago`;
+	return d.toLocaleDateString();
 }
 
 export function maskKey(prefix: string): string {
-  return `${prefix}****`
+	return `${prefix}****`;
 }
 
 /**
  * Format a USD amount with a `$` prefix and fixed decimals.
  */
 export function formatUsd(amount: number, decimals = 2): string {
-  return `$${amount.toFixed(decimals)}`
+	return `$${amount.toFixed(decimals)}`;
 }
 
 /**
@@ -58,9 +58,9 @@ export function formatUsd(amount: number, decimals = 2): string {
  * don't mangle short identifiers.
  */
 export function formatAddress(addr: string | null | undefined): string {
-  if (!addr) return '—'
-  if (addr.length <= 14) return addr
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+	if (!addr) return "—";
+	if (addr.length <= 14) return addr;
+	return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 /**
@@ -68,13 +68,13 @@ export function formatAddress(addr: string | null | undefined): string {
  * "2026-01-15T10:30:00Z" → "Jan 15, 2026, 10:30 AM"
  */
 export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+	return new Date(iso).toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 
 /**
@@ -82,11 +82,11 @@ export function formatDateTime(iso: string): string {
  * "2026-01-15T10:30:00Z" → "Jan 15, 2026"
  */
 export function formatDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+	return new Date(iso).toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
 }
 
 /**
@@ -94,6 +94,6 @@ export function formatDateShort(iso: string): string {
  * 0.50 → "$0.50"   0 → "Free"
  */
 export function formatPricePerMillion(pricePer1M: number): string {
-  if (pricePer1M === 0) return 'Free'
-  return `$${pricePer1M.toFixed(2)}`
+	if (pricePer1M === 0) return "Free";
+	return `$${pricePer1M.toFixed(2)}`;
 }

@@ -1,3 +1,3 @@
 export function estimateTokens(text: string): number {
-  return Math.max(1, Math.ceil(text.length / 4))
+	return Math.max(1, Math.ceil(text.length / 4));
 }

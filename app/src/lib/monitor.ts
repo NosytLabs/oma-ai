@@ -12,19 +12,19 @@
  * `captureException` in API routes is the primary intended use-case.
  */
 
-import * as Sentry from '@sentry/nextjs'
-import { serverLog } from './server-logger'
+import * as Sentry from "@sentry/nextjs";
+import { serverLog } from "./server-logger";
 
 const SENTRY_ENABLED =
-  !!process.env.NEXT_PUBLIC_SENTRY_DSN && process.env.NODE_ENV === 'production'
+	!!process.env.NEXT_PUBLIC_SENTRY_DSN && process.env.NODE_ENV === "production";
 
 interface CaptureContext {
-  /** Human-readable message describing what was happening when the error occurred. */
-  msg?: string
-  /** Additional structured data to attach to the error event. */
-  extra?: Record<string, unknown>
-  /** Route or module name for tagging. */
-  tag?: string
+	/** Human-readable message describing what was happening when the error occurred. */
+	msg?: string;
+	/** Additional structured data to attach to the error event. */
+	extra?: Record<string, unknown>;
+	/** Route or module name for tagging. */
+	tag?: string;
 }
 
 /**
@@ -34,13 +34,16 @@ interface CaptureContext {
  * trace) to Sentry. Otherwise it forwards to the backend log sink via
  * `serverLog.error`.
  */
-export function captureException(error: unknown, context?: CaptureContext): void {
-  if (SENTRY_ENABLED) {
-    Sentry.captureException(error, {
-      tags: context?.tag ? { route: context.tag } : undefined,
-      extra: context?.extra,
-    })
-  } else {
-    serverLog.error(context?.msg || 'Unhandled exception', error)
-  }
+export function captureException(
+	error: unknown,
+	context?: CaptureContext,
+): void {
+	if (SENTRY_ENABLED) {
+		Sentry.captureException(error, {
+			tags: context?.tag ? { route: context.tag } : undefined,
+			extra: context?.extra,
+		});
+	} else {
+		serverLog.error(context?.msg || "Unhandled exception", error);
+	}
 }

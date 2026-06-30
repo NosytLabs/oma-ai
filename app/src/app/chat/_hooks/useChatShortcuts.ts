@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import type { Dispatch, RefObject, SetStateAction } from 'react'
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import { useEffect } from "react";
 
 export interface UseChatShortcutsOptions {
-  sendMessageRef: RefObject<(prompt?: string) => Promise<void>>
-  input: string
-  loading: boolean
-  shortcutsOpen: boolean
-  setShortcutsOpen: Dispatch<SetStateAction<boolean>>
-  paramsOpen: boolean
-  setParamsOpen: Dispatch<SetStateAction<boolean>>
-  compareMode: boolean
-  setCompareMode: Dispatch<SetStateAction<boolean>>
+	sendMessageRef: RefObject<(prompt?: string) => Promise<void>>;
+	input: string;
+	loading: boolean;
+	shortcutsOpen: boolean;
+	setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
+	paramsOpen: boolean;
+	setParamsOpen: Dispatch<SetStateAction<boolean>>;
+	compareMode: boolean;
+	setCompareMode: Dispatch<SetStateAction<boolean>>;
 }
 
 /**
@@ -31,66 +31,80 @@ export interface UseChatShortcutsOptions {
  * useEffect — see page.tsx for the P1 #10 fix.
  */
 export function useChatShortcuts({
-  sendMessageRef,
-  input,
-  loading,
-  shortcutsOpen,
-  setShortcutsOpen,
-  paramsOpen,
-  setParamsOpen,
-  compareMode,
-  setCompareMode,
+	sendMessageRef,
+	input,
+	loading,
+	shortcutsOpen,
+	setShortcutsOpen,
+	paramsOpen,
+	setParamsOpen,
+	compareMode,
+	setCompareMode,
 }: UseChatShortcutsOptions): void {
-  useEffect(() => {
-    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
-    const modKey = isMac ? 'metaKey' : 'ctrlKey'
+	useEffect(() => {
+		const isMac =
+			typeof navigator !== "undefined" &&
+			/Mac|iPhone|iPad/.test(navigator.platform);
+		const modKey = isMac ? "metaKey" : "ctrlKey";
 
-    const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null
-      const inTextField = !!target && (
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'INPUT' ||
-        target.isContentEditable
-      )
+		const handler = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const inTextField =
+				!!target &&
+				(target.tagName === "TEXTAREA" ||
+					target.tagName === "INPUT" ||
+					target.isContentEditable);
 
-      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !inTextField) {
-        e.preventDefault()
-        setShortcutsOpen(true)
-        return
-      }
+			if ((e.key === "?" || (e.key === "/" && e.shiftKey)) && !inTextField) {
+				e.preventDefault();
+				setShortcutsOpen(true);
+				return;
+			}
 
-      if (e.key === 'Escape') {
-        if (shortcutsOpen) setShortcutsOpen(false)
-        else if (paramsOpen) setParamsOpen(false)
-        else if (compareMode) setCompareMode(false)
-        return
-      }
+			if (e.key === "Escape") {
+				if (shortcutsOpen) setShortcutsOpen(false);
+				else if (paramsOpen) setParamsOpen(false);
+				else if (compareMode) setCompareMode(false);
+				return;
+			}
 
-      if (e[modKey as 'metaKey' | 'ctrlKey'] && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        // Focus the model selector by clicking it. We dispatch a custom event
-        // that the ModelSelector listens to (or we just click the toolbar's
-        // model selector button). For now, focus the first toolbar button.
-        const buttons = document.querySelectorAll<HTMLButtonElement>('header[aria-label="Playground toolbar"] button[aria-label="Select AI model"]')
-        buttons[0]?.click()
-        return
-      }
+			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				// Focus the model selector by clicking it. We dispatch a custom event
+				// that the ModelSelector listens to (or we just click the toolbar's
+				// model selector button). For now, focus the first toolbar button.
+				const buttons = document.querySelectorAll<HTMLButtonElement>(
+					'header[aria-label="Playground toolbar"] button[aria-label="Select AI model"]',
+				);
+				buttons[0]?.click();
+				return;
+			}
 
-      if (e[modKey as 'metaKey' | 'ctrlKey'] && e.key === '/') {
-        e.preventDefault()
-        setParamsOpen((v) => !v)
-        return
-      }
+			if (e[modKey as "metaKey" | "ctrlKey"] && e.key === "/") {
+				e.preventDefault();
+				setParamsOpen((v) => !v);
+				return;
+			}
 
-      if (e[modKey as 'metaKey' | 'ctrlKey'] && e.key === 'Enter') {
-        e.preventDefault()
-        if (input.trim() && !loading) {
-          void sendMessageRef.current()
-        }
-        return
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [input, loading, paramsOpen, compareMode, shortcutsOpen, sendMessageRef, setShortcutsOpen, setParamsOpen, setCompareMode])
+			if (e[modKey as "metaKey" | "ctrlKey"] && e.key === "Enter") {
+				e.preventDefault();
+				if (input.trim() && !loading) {
+					void sendMessageRef.current();
+				}
+				return;
+			}
+		};
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	}, [
+		input,
+		loading,
+		paramsOpen,
+		compareMode,
+		shortcutsOpen,
+		sendMessageRef,
+		setShortcutsOpen,
+		setParamsOpen,
+		setCompareMode,
+	]);
 }

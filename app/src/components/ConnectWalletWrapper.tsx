@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useState, useEffect, Suspense } from 'react'
-import { WalletProvider } from './wallet-provider'
+import { Suspense, useEffect, useState } from "react";
+import { WalletProvider } from "./wallet-provider";
 
 /**
  * ConnectWalletWrapper
@@ -21,26 +21,29 @@ import { WalletProvider } from './wallet-provider'
  * bailout. InnerProvider already gates on `isMounted` itself.
  */
 const WalletSkeleton = () => (
-  <div className="animate-pulse flex items-center gap-2 px-4 py-2.5" aria-hidden="true">
-    <div className="h-2 w-2 rounded-full bg-text-muted/30" />
-    <div className="h-4 w-20 rounded bg-text-muted/30" />
-  </div>
-)
+	<div
+		className="animate-pulse flex items-center gap-2 px-4 py-2.5"
+		aria-hidden="true"
+	>
+		<div className="h-2 w-2 rounded-full bg-text-muted/30" />
+		<div className="h-4 w-20 rounded bg-text-muted/30" />
+	</div>
+);
 
 interface ConnectWalletWrapperProps {
-  children: React.ReactNode
+	children: React.ReactNode;
 }
 
 export function ConnectWalletWrapper({ children }: ConnectWalletWrapperProps) {
-  const [mounted, setMounted] = useState(false)
+	const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
-  return (
-    <Suspense fallback={<WalletSkeleton />}>
-      <WalletProvider mounted={mounted}>{children}</WalletProvider>
-    </Suspense>
-  )
+	return (
+		<Suspense fallback={<WalletSkeleton />}>
+			<WalletProvider mounted={mounted}>{children}</WalletProvider>
+		</Suspense>
+	);
 }

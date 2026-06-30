@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * OMA AI — Playwright config
@@ -22,40 +22,40 @@ import { defineConfig, devices } from '@playwright/test'
  * Skip:  OMA_SKIP_E2E=1
  */
 
-const PORT = Number(process.env.PORT ?? 3000)
-const BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`
+const PORT = Number(process.env.PORT ?? 3000);
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
-  // Use a single testDir + testMatch regex so we can scan both
-  // directories in one config. `testDir` is the root the regex
-  // resolves against. The `(?:^|\/)` anchors prevent accidentally
-  // matching `e2e/` inside an unrelated path segment.
-  testDir: '.',
-  testMatch: /(?:^|\/)(?:e2e\/[^/]+\.spec\.ts|tests\/e2e\/[^/]+\.e2e\.spec\.ts)$/,
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [['list'], ['html', { open: 'never' }]],
-  use: {
-    baseURL: BASE_URL,
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-  webServer: {
-    // `npm run dev` runs from the same directory this config lives in (the
-    // Next.js app root). reuseExistingServer lets a developer already running
-    // `npm run dev` skip the boot.
-    command: 'npm run dev',
-    url: BASE_URL,
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
-})
+	// Use a single testDir + testMatch regex so we can scan both
+	// directories in one config. `testDir` is the root the regex
+	// resolves against. The `(?:^|\/)` anchors prevent accidentally
+	// matching `e2e/` inside an unrelated path segment.
+	testDir: ".",
+	testMatch:
+		/(?:^|\/)(?:e2e\/[^/]+\.spec\.ts|tests\/e2e\/[^/]+\.e2e\.spec\.ts)$/,
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	workers: process.env.CI ? 1 : undefined,
+	reporter: [["list"], ["html", { open: "never" }]],
+	use: {
+		baseURL: BASE_URL,
+		trace: "on-first-retry",
+		screenshot: "only-on-failure",
+	},
+	projects: [
+		{
+			name: "chromium",
+			use: { ...devices["Desktop Chrome"] },
+		},
+	],
+	webServer: {
+		// `npm run dev` runs from the same directory this config lives in (the
+		// Next.js app root). reuseExistingServer lets a developer already running
+		// `npm run dev` skip the boot.
+		command: "npm run dev",
+		url: BASE_URL,
+		reuseExistingServer: true,
+		timeout: 120_000,
+	},
+});

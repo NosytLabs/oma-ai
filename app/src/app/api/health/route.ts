@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-import { withRateLimit } from '@/lib/rate-limit-middleware'
-import { generalLimiter } from '@/lib/rate-limiter'
+import { NextResponse } from "next/server";
+import { withRateLimit } from "@/lib/rate-limit-middleware";
+import { generalLimiter } from "@/lib/rate-limiter";
 
-export const runtime = 'nodejs'
+export const runtime = "nodejs";
 
 /**
  * Frontend liveness check.
@@ -18,17 +18,20 @@ export const runtime = 'nodejs'
  *
  * Always 200. No auth. No upstream call. Cheap & cacheable.
  */
-export const GET = withRateLimit(async () => {
-  return NextResponse.json(
-    {
-      status: 'ok',
-      service: 'oma-ai-web',
-      timestamp: new Date().toISOString(),
-    },
-    {
-      headers: {
-        'Cache-Control': 'no-store, must-revalidate',
-      },
-    }
-  )
-}, { limiter: generalLimiter, route: '/api/health' })
+export const GET = withRateLimit(
+	async () => {
+		return NextResponse.json(
+			{
+				status: "ok",
+				service: "oma-ai-web",
+				timestamp: new Date().toISOString(),
+			},
+			{
+				headers: {
+					"Cache-Control": "no-store, must-revalidate",
+				},
+			},
+		);
+	},
+	{ limiter: generalLimiter, route: "/api/health" },
+);

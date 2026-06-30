@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, type RefObject } from 'react'
+import { type RefObject, useEffect, useRef } from "react";
 
 interface UseFocusTrapOptions {
-  active: boolean
-  containerRef: RefObject<HTMLElement | null>
-  /**
-   * Element to restore focus to when the trap closes. Required to preserve
-   * WCAG 2.4.3 (focus order) when the trap was opened from a toggle button.
-   */
-  restoreFocusRef?: RefObject<HTMLElement | null>
-  /**
-   * Called on Escape. The hook has no internal "open" state of its own, so the
-   * parent must drive the close (e.g. by calling its `setOpen(false)` setter).
-   * Without this, Escape cannot be handled inside the trap.
-   *
-   * Read via a ref so callers can pass an inline arrow without forcing the
-   * effect to re-subscribe on every render.
-   */
-  onClose?: () => void
+	active: boolean;
+	containerRef: RefObject<HTMLElement | null>;
+	/**
+	 * Element to restore focus to when the trap closes. Required to preserve
+	 * WCAG 2.4.3 (focus order) when the trap was opened from a toggle button.
+	 */
+	restoreFocusRef?: RefObject<HTMLElement | null>;
+	/**
+	 * Called on Escape. The hook has no internal "open" state of its own, so the
+	 * parent must drive the close (e.g. by calling its `setOpen(false)` setter).
+	 * Without this, Escape cannot be handled inside the trap.
+	 *
+	 * Read via a ref so callers can pass an inline arrow without forcing the
+	 * effect to re-subscribe on every render.
+	 */
+	onClose?: () => void;
 }
 
 /**
@@ -33,59 +33,59 @@ interface UseFocusTrapOptions {
  * of how often `onClose` changes between renders.
  */
 export function useFocusTrap({
-  active,
-  containerRef,
-  restoreFocusRef,
-  onClose,
+	active,
+	containerRef,
+	restoreFocusRef,
+	onClose,
 }: UseFocusTrapOptions): void {
-  const onCloseRef = useRef(onClose)
-  useEffect(() => {
-    onCloseRef.current = onClose
-  }, [onClose])
+	const onCloseRef = useRef(onClose);
+	useEffect(() => {
+		onCloseRef.current = onClose;
+	}, [onClose]);
 
-  useEffect(() => {
-    if (!active) return
+	useEffect(() => {
+		if (!active) return;
 
-    const container = containerRef.current
-    if (!container) return
+		const container = containerRef.current;
+		if (!container) return;
 
-    const getFocusables = () =>
-      container.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
+		const getFocusables = () =>
+			container.querySelectorAll<HTMLElement>(
+				'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+			);
 
-    getFocusables()[0]?.focus()
+		getFocusables()[0]?.focus();
 
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        onCloseRef.current?.()
-        return
-      }
-      if (e.key !== 'Tab') return
-      const all = getFocusables()
-      if (all.length === 0) {
-        e.preventDefault()
-        return
-      }
-      const first = all[0]
-      const last = all[all.length - 1]
-      const activeEl = document.activeElement
-      if (e.shiftKey && activeEl === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && activeEl === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onCloseRef.current?.();
+				return;
+			}
+			if (e.key !== "Tab") return;
+			const all = getFocusables();
+			if (all.length === 0) {
+				e.preventDefault();
+				return;
+			}
+			const first = all[0];
+			const last = all[all.length - 1];
+			const activeEl = document.activeElement;
+			if (e.shiftKey && activeEl === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && activeEl === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
 
-    document.addEventListener('keydown', handleKeyDown)
+		document.addEventListener("keydown", handleKeyDown);
 
-    const savedFocusEl = restoreFocusRef?.current ?? null
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      savedFocusEl?.focus()
-    }
-  }, [active, containerRef, restoreFocusRef])
+		const savedFocusEl = restoreFocusRef?.current ?? null;
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			savedFocusEl?.focus();
+		};
+	}, [active, containerRef, restoreFocusRef]);
 }

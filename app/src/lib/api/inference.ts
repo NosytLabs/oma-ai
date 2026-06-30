@@ -1,11 +1,12 @@
 /**
  * Health namespace: server health probe.
  */
-import type { HealthResponse } from './types.js';
-import { request } from './client.js';
+
+import { request } from "./client.js";
+import type { HealthResponse } from "./types.js";
 
 export const health = {
-  get() {
-    return request<HealthResponse>('/health');
-  },
+	get() {
+		return request<HealthResponse>("/health");
+	},
 };

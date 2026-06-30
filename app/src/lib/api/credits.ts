@@ -6,29 +6,29 @@
  * a bearer session token; the request helper injects it from the
  * `oma_session` cookie automatically.
  */
-import { request } from './client.js';
+import { request } from "./client.js";
 
 export interface CreditTransaction {
-  id: string;
-  type: 'deposit' | 'usage' | 'refund';
-  amountCents: number;
-  creditsIssued?: number;
-  status: string;
-  createdAt: string;
-  txHash?: string | null;
-  model?: string;
+	id: string;
+	type: "deposit" | "usage" | "refund";
+	amountCents: number;
+	creditsIssued?: number;
+	status: string;
+	createdAt: string;
+	txHash?: string | null;
+	model?: string;
 }
 
 export interface CreditTransactionsResponse {
-  transactions: CreditTransaction[];
+	transactions: CreditTransaction[];
 }
 
 export const creditHistory = {
-  list(limit = 50) {
-    return request<CreditTransactionsResponse>(
-      `/v1/credits/transactions?limit=${limit}`,
-    );
-  },
+	list(limit = 50) {
+		return request<CreditTransactionsResponse>(
+			`/v1/credits/transactions?limit=${limit}`,
+		);
+	},
 };
 
 /**
@@ -37,9 +37,15 @@ export const creditHistory = {
  * composite `api` object in `./index.ts`.
  */
 export const credits = {
-  getBatches() {
-    return request<{ activeBatches: Array<{ id: string; amountCents: string; remainingCents: string; expiresAt: string; paymentMethod: string | null }> }>(
-      '/v1/credits/balance',
-    );
-  },
+	getBatches() {
+		return request<{
+			activeBatches: Array<{
+				id: string;
+				amountCents: string;
+				remainingCents: string;
+				expiresAt: string;
+				paymentMethod: string | null;
+			}>;
+		}>("/v1/credits/balance");
+	},
 };

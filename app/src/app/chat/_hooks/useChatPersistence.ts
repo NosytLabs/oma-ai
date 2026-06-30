@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo } from 'react'
-import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { log } from '@/lib/logger'
-import type { Message } from '@/components/chat'
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import { useEffect, useMemo } from "react";
+import type { Message } from "@/components/chat";
+import { log } from "@/lib/logger";
 
-export const STORAGE_KEY = 'oma_chat_conversation'
-const DEFAULT_SYSTEM_PROMPT_KEY = 'oma_chat_system_prompt'
+export const STORAGE_KEY = "oma_chat_conversation";
+const DEFAULT_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
 
 export interface UseChatPersistenceOptions {
-  messages: Message[]
-  setMessages: Dispatch<SetStateAction<Message[]>>
-  systemPrompt: string
-  setSystemPrompt: Dispatch<SetStateAction<string>>
-  setSystemPromptOpen: Dispatch<SetStateAction<boolean>>
-  messagesRef: RefObject<Message[]>
-  /** Override the conversation localStorage key. Defaults to `oma_chat_conversation`. */
-  storageKey?: string
-  /** Override the system-prompt localStorage key. Defaults to `oma_chat_system_prompt`. */
-  systemPromptKey?: string
+	messages: Message[];
+	setMessages: Dispatch<SetStateAction<Message[]>>;
+	systemPrompt: string;
+	setSystemPrompt: Dispatch<SetStateAction<string>>;
+	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
+	messagesRef: RefObject<Message[]>;
+	/** Override the conversation localStorage key. Defaults to `oma_chat_conversation`. */
+	storageKey?: string;
+	/** Override the system-prompt localStorage key. Defaults to `oma_chat_system_prompt`. */
+	systemPromptKey?: string;
 }
 
 /**
@@ -37,109 +37,119 @@ export interface UseChatPersistenceOptions {
  * loop inside `useStreamingChat`) see the latest list without re-binding.
  */
 export function useChatPersistence({
-  messages,
-  setMessages,
-  systemPrompt,
-  setSystemPrompt,
-  setSystemPromptOpen,
-  messagesRef,
-  storageKey = STORAGE_KEY,
-  systemPromptKey = DEFAULT_SYSTEM_PROMPT_KEY,
+	messages,
+	setMessages,
+	systemPrompt,
+	setSystemPrompt,
+	setSystemPromptOpen,
+	messagesRef,
+	storageKey = STORAGE_KEY,
+	systemPromptKey = DEFAULT_SYSTEM_PROMPT_KEY,
 }: UseChatPersistenceOptions): void {
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Validate each message conforms to the Message interface.
-          // Strip malformed entries so corrupted localStorage doesn't crash the app.
-          const valid = (parsed as unknown[]).filter((m): m is Message => {
-            if (!m || typeof m !== 'object') return false
-            const obj = m as Record<string, unknown>
-            return (
-              typeof obj.role === 'string' &&
-              (obj.role === 'user' || obj.role === 'assistant' || obj.role === 'system') &&
-              typeof obj.content === 'string' &&
-              typeof obj.timestamp === 'number'
-            )
-          })
-          if (valid.length > 0) {
-            setMessages(valid)
-          }
-        }
-      } catch {}
-    }
-    const storedPrompt = localStorage.getItem(systemPromptKey)
-    if (storedPrompt) {
-      setSystemPrompt(storedPrompt)
-      setSystemPromptOpen(true)
-    }
-  }, [setSystemPrompt, systemPromptKey, storageKey, setSystemPromptOpen, setMessages])
+	useEffect(() => {
+		const stored = localStorage.getItem(storageKey);
+		if (stored) {
+			try {
+				const parsed = JSON.parse(stored);
+				if (Array.isArray(parsed) && parsed.length > 0) {
+					// Validate each message conforms to the Message interface.
+					// Strip malformed entries so corrupted localStorage doesn't crash the app.
+					const valid = (parsed as unknown[]).filter((m): m is Message => {
+						if (!m || typeof m !== "object") return false;
+						const obj = m as Record<string, unknown>;
+						return (
+							typeof obj.role === "string" &&
+							(obj.role === "user" ||
+								obj.role === "assistant" ||
+								obj.role === "system") &&
+							typeof obj.content === "string" &&
+							typeof obj.timestamp === "number"
+						);
+					});
+					if (valid.length > 0) {
+						setMessages(valid);
+					}
+				}
+			} catch {}
+		}
+		const storedPrompt = localStorage.getItem(systemPromptKey);
+		if (storedPrompt) {
+			setSystemPrompt(storedPrompt);
+			setSystemPromptOpen(true);
+		}
+	}, [
+		setSystemPrompt,
+		systemPromptKey,
+		storageKey,
+		setSystemPromptOpen,
+		setMessages,
+	]);
 
-  useEffect(() => {
-    try {
-      if (systemPrompt) {
-        localStorage.setItem(systemPromptKey, systemPrompt)
-      } else {
-        localStorage.removeItem(systemPromptKey)
-      }
-    } catch {}
-    // systemPromptKey is a module constant for chat; for playground it can vary
-    // per-mount but only on first render (when initial localStorage hydrates),
-    // so we intentionally don't re-fire on every change to avoid write loops.
-  }, [systemPrompt, systemPromptKey])
+	useEffect(() => {
+		try {
+			if (systemPrompt) {
+				localStorage.setItem(systemPromptKey, systemPrompt);
+			} else {
+				localStorage.removeItem(systemPromptKey);
+			}
+		} catch {}
+		// systemPromptKey is a module constant for chat; for playground it can vary
+		// per-mount but only on first render (when initial localStorage hydrates),
+		// so we intentionally don't re-fire on every change to avoid write loops.
+	}, [systemPrompt, systemPromptKey]);
 
-  useEffect(() => {
-    messagesRef.current = messages
-  }, [messages, messagesRef])
+	useEffect(() => {
+		messagesRef.current = messages;
+	}, [messages, messagesRef]);
 
-  const debouncedSave = useMemo(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    let lastMessages: Message[] = []
-    const save = (msgs: Message[]) => {
-      lastMessages = msgs
-      if (timeoutId) clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(msgs))
-        } catch (err) {
-          log.warn('Failed to save conversation to storage', err)
-        }
-      }, 2000)
-    }
-    save.flush = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
-      }
-      if (lastMessages.length > 0) {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(lastMessages))
-        } catch (err) {
-          log.warn('Failed to flush conversation to storage', err)
-        }
-      }
-    }
-    save.cancel = () => {
-      if (timeoutId) clearTimeout(timeoutId)
-    }
-    return save
-  }, [storageKey])
+	const debouncedSave = useMemo(() => {
+		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		let lastMessages: Message[] = [];
+		const save = (msgs: Message[]) => {
+			lastMessages = msgs;
+			if (timeoutId) clearTimeout(timeoutId);
+			timeoutId = setTimeout(() => {
+				try {
+					localStorage.setItem(storageKey, JSON.stringify(msgs));
+				} catch (err) {
+					log.warn("Failed to save conversation to storage", err);
+				}
+			}, 2000);
+		};
+		save.flush = () => {
+			if (timeoutId) {
+				clearTimeout(timeoutId);
+				timeoutId = null;
+			}
+			if (lastMessages.length > 0) {
+				try {
+					localStorage.setItem(storageKey, JSON.stringify(lastMessages));
+				} catch (err) {
+					log.warn("Failed to flush conversation to storage", err);
+				}
+			}
+		};
+		save.cancel = () => {
+			if (timeoutId) clearTimeout(timeoutId);
+		};
+		return save;
+	}, [storageKey]);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      debouncedSave(messages)
-    }
-    return () => { debouncedSave.cancel() }
-  }, [messages, debouncedSave])
+	useEffect(() => {
+		if (messages.length > 0) {
+			debouncedSave(messages);
+		}
+		return () => {
+			debouncedSave.cancel();
+		};
+	}, [messages, debouncedSave]);
 
-  // Flush pending debounced save on tab close / navigation
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      debouncedSave.flush()
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [debouncedSave])
+	// Flush pending debounced save on tab close / navigation
+	useEffect(() => {
+		const handleBeforeUnload = () => {
+			debouncedSave.flush();
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [debouncedSave]);
 }

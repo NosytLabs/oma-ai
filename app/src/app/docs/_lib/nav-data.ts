@@ -1,104 +1,189 @@
-import type { LucideIcon } from 'lucide-react'
-import { Play, Key, Terminal, Gauge, DollarSign, Zap, Package, AlertCircle } from 'lucide-react'
+import type { LucideIcon } from "lucide-react";
+import {
+	AlertCircle,
+	DollarSign,
+	Gauge,
+	Key,
+	Package,
+	Play,
+	Terminal,
+	Zap,
+} from "lucide-react";
 
 export type NavItem = {
-  id: string
-  label: string
-  icon: LucideIcon
-  keywords: string[]
-  headings: { id: string; label: string }[]
-}
+	id: string;
+	label: string;
+	icon: LucideIcon;
+	keywords: string[];
+	headings: { id: string; label: string }[];
+};
 
 export const NAV_ITEMS: NavItem[] = [
-  {
-    id: 'quickstart',
-    label: 'Quick Start',
-    icon: Play,
-    keywords: ['get started', 'first', 'install', 'hello world', 'setup', 'introduction'],
-    headings: [
-      { id: 'qs-step-key', label: '1. Get a key' },
-      { id: 'qs-step-request', label: '2. Make a request' },
-      { id: 'qs-step-response', label: '3. Read the response' },
-    ],
-  },
-  {
-    id: 'authentication',
-    label: 'Authentication',
-    icon: Key,
-    keywords: ['auth', 'api key', 'bearer', 'token', 'x402', 'wallet', 'sign in', 'login'],
-    headings: [
-      { id: 'auth-key', label: 'API key' },
-      { id: 'auth-wallet', label: 'Wallet (x402)' },
-      { id: 'auth-account', label: 'Account number' },
-      { id: 'auth-errors', label: 'Auth errors' },
-    ],
-  },
-  {
-    id: 'endpoints',
-    label: 'Endpoints Reference',
-    icon: Terminal,
-    keywords: ['rest', 'api', 'http', 'route', 'path', 'request', 'response', 'reference'],
-    headings: [
-      { id: 'ep-chat', label: 'Chat completions' },
-      { id: 'ep-models', label: 'List models' },
-      { id: 'ep-embeddings', label: 'Embeddings' },
-      { id: 'ep-images', label: 'Image generation' },
-    ],
-  },
-  {
-    id: 'rate-limits',
-    label: 'Rate Limits',
-    icon: Gauge,
-    keywords: ['rpm', 'tpm', 'rpd', 'throttle', 'quota', 'limit', 'reset', 'backoff', '429'],
-    headings: [
-      { id: 'rl-plans', label: 'Plan limits' },
-      { id: 'rl-headers', label: 'Response headers' },
-      { id: 'rl-when', label: 'When you hit the ceiling' },
-    ],
-  },
-  {
-    id: 'pricing',
-    label: 'Pricing',
-    icon: DollarSign,
-    keywords: ['catalog', 'llm', 'llama', 'deepseek', 'qwen', 'flux', 'gpt', 'claude', 'pricing', 'cost'],
-    headings: [
-      { id: 'models-overview', label: 'Overview' },
-      { id: 'models-table', label: 'Full catalog' },
-    ],
-  },
-  {
-    id: 'x402',
-    label: 'x402 Payments',
-    icon: Zap,
-    keywords: ['crypto', 'usdc', 'base', 'pay per request', 'no account', 'agent', '402', 'eip-3009'],
-    headings: [
-      { id: 'x402-what', label: 'What is x402?' },
-      { id: 'x402-flow', label: 'How a payment works' },
-      { id: 'x402-code', label: 'Code examples' },
-      { id: 'x402-where', label: 'Where it runs' },
-    ],
-  },
-  {
-    id: 'sdks',
-    label: 'SDK Installation',
-    icon: Package,
-    keywords: ['openai', 'vercel', 'langchain', 'sdk', 'client', 'library', 'install', 'npm', 'pip'],
-    headings: [
-      { id: 'sdk-openai', label: 'OpenAI SDK' },
-      { id: 'sdk-vercel', label: 'Vercel AI SDK' },
-      { id: 'sdk-langchain', label: 'LangChain' },
-      { id: 'sdk-direct', label: 'Direct HTTP' },
-    ],
-  },
-  {
-    id: 'errors',
-    label: 'Error Codes',
-    icon: AlertCircle,
-    keywords: ['400', '401', '402', '429', '500', '503', 'status code', 'http code', 'debug', 'failure'],
-    headings: [
-      { id: 'err-format', label: 'Response format' },
-      { id: 'err-common', label: 'Common errors' },
-      { id: 'err-retry', label: 'Retry pattern' },
-    ],
-  },
-]
+	{
+		id: "quickstart",
+		label: "Quick Start",
+		icon: Play,
+		keywords: [
+			"get started",
+			"first",
+			"install",
+			"hello world",
+			"setup",
+			"introduction",
+		],
+		headings: [
+			{ id: "qs-step-key", label: "1. Get a key" },
+			{ id: "qs-step-request", label: "2. Make a request" },
+			{ id: "qs-step-response", label: "3. Read the response" },
+		],
+	},
+	{
+		id: "authentication",
+		label: "Authentication",
+		icon: Key,
+		keywords: [
+			"auth",
+			"api key",
+			"bearer",
+			"token",
+			"x402",
+			"wallet",
+			"sign in",
+			"login",
+		],
+		headings: [
+			{ id: "auth-key", label: "API key" },
+			{ id: "auth-wallet", label: "Wallet (x402)" },
+			{ id: "auth-account", label: "Account number" },
+			{ id: "auth-errors", label: "Auth errors" },
+		],
+	},
+	{
+		id: "endpoints",
+		label: "Endpoints Reference",
+		icon: Terminal,
+		keywords: [
+			"rest",
+			"api",
+			"http",
+			"route",
+			"path",
+			"request",
+			"response",
+			"reference",
+		],
+		headings: [
+			{ id: "ep-chat", label: "Chat completions" },
+			{ id: "ep-models", label: "List models" },
+			{ id: "ep-embeddings", label: "Embeddings" },
+			{ id: "ep-images", label: "Image generation" },
+		],
+	},
+	{
+		id: "rate-limits",
+		label: "Rate Limits",
+		icon: Gauge,
+		keywords: [
+			"rpm",
+			"tpm",
+			"rpd",
+			"throttle",
+			"quota",
+			"limit",
+			"reset",
+			"backoff",
+			"429",
+		],
+		headings: [
+			{ id: "rl-plans", label: "Plan limits" },
+			{ id: "rl-headers", label: "Response headers" },
+			{ id: "rl-when", label: "When you hit the ceiling" },
+		],
+	},
+	{
+		id: "pricing",
+		label: "Pricing",
+		icon: DollarSign,
+		keywords: [
+			"catalog",
+			"llm",
+			"llama",
+			"deepseek",
+			"qwen",
+			"flux",
+			"gpt",
+			"claude",
+			"pricing",
+			"cost",
+		],
+		headings: [
+			{ id: "models-overview", label: "Overview" },
+			{ id: "models-table", label: "Full catalog" },
+		],
+	},
+	{
+		id: "x402",
+		label: "x402 Payments",
+		icon: Zap,
+		keywords: [
+			"crypto",
+			"usdc",
+			"base",
+			"pay per request",
+			"no account",
+			"agent",
+			"402",
+			"eip-3009",
+		],
+		headings: [
+			{ id: "x402-what", label: "What is x402?" },
+			{ id: "x402-flow", label: "How a payment works" },
+			{ id: "x402-code", label: "Code examples" },
+			{ id: "x402-where", label: "Where it runs" },
+		],
+	},
+	{
+		id: "sdks",
+		label: "SDK Installation",
+		icon: Package,
+		keywords: [
+			"openai",
+			"vercel",
+			"langchain",
+			"sdk",
+			"client",
+			"library",
+			"install",
+			"npm",
+			"pip",
+		],
+		headings: [
+			{ id: "sdk-openai", label: "OpenAI SDK" },
+			{ id: "sdk-vercel", label: "Vercel AI SDK" },
+			{ id: "sdk-langchain", label: "LangChain" },
+			{ id: "sdk-direct", label: "Direct HTTP" },
+		],
+	},
+	{
+		id: "errors",
+		label: "Error Codes",
+		icon: AlertCircle,
+		keywords: [
+			"400",
+			"401",
+			"402",
+			"429",
+			"500",
+			"503",
+			"status code",
+			"http code",
+			"debug",
+			"failure",
+		],
+		headings: [
+			{ id: "err-format", label: "Response format" },
+			{ id: "err-common", label: "Common errors" },
+			{ id: "err-retry", label: "Retry pattern" },
+		],
+	},
+];

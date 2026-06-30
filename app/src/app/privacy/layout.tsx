@@ -1,11 +1,10 @@
-
 // Privacy page exports its own metadata in page.tsx (more detailed).
 // This layout intentionally has no metadata export to avoid duplication.
 
 export default function PrivacyLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  return children;
+	return children;
 }

@@ -1,6 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
-import type { Result as AxeResult, NodeResult } from 'axe-core'
+import AxeBuilder from "@axe-core/playwright";
+import { expect, type Page, test } from "@playwright/test";
+import type { Result as AxeResult, NodeResult } from "axe-core";
 
 /**
  * OMA AI — WCAG 2.1 AA accessibility audit
@@ -12,83 +12,83 @@ import type { Result as AxeResult, NodeResult } from 'axe-core'
  * Skip:  OMA_SKIP_WCAG=1
  */
 
-const SKIP = !!process.env.OMA_SKIP_WCAG
-const SEVERITY_THRESHOLD = (process.env.WCAG_SEVERITY ?? 'minor') as
-  | 'critical'
-  | 'serious'
-  | 'moderate'
-  | 'minor'
+const SKIP = !!process.env.OMA_SKIP_WCAG;
+const SEVERITY_THRESHOLD = (process.env.WCAG_SEVERITY ?? "minor") as
+	| "critical"
+	| "serious"
+	| "moderate"
+	| "minor";
 
 const SEVERITY_RANK: Record<string, number> = {
-  critical: 4,
-  serious: 3,
-  moderate: 2,
-  minor: 1,
-}
-const THRESHOLD_RANK = SEVERITY_RANK[SEVERITY_THRESHOLD] ?? 1
+	critical: 4,
+	serious: 3,
+	moderate: 2,
+	minor: 1,
+};
+const THRESHOLD_RANK = SEVERITY_RANK[SEVERITY_THRESHOLD] ?? 1;
 
 const PUBLIC_PAGES = [
-  { name: 'home', path: '/' },
-  { name: 'about', path: '/about' },
-  { name: 'pricing', path: '/pricing' },
-  { name: 'models', path: '/models' },
-  { name: 'docs', path: '/docs' },
-  { name: 'faq', path: '/faq' },
-  { name: 'chat', path: '/chat' },
-  { name: 'login', path: '/login' },
-]
+	{ name: "home", path: "/" },
+	{ name: "about", path: "/about" },
+	{ name: "pricing", path: "/pricing" },
+	{ name: "models", path: "/models" },
+	{ name: "docs", path: "/docs" },
+	{ name: "faq", path: "/faq" },
+	{ name: "chat", path: "/chat" },
+	{ name: "login", path: "/login" },
+];
 
-test.describe('WCAG 2.1 AA audit (axe-core)', () => {
-  test.skip(SKIP, 'Set OMA_SKIP_WCAG=0 to enable')
+test.describe("WCAG 2.1 AA audit (axe-core)", () => {
+	test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
 
-  for (const { name, path } of PUBLIC_PAGES) {
-    test(`dark theme: ${name} (${path})`, async ({ page }) => {
-      await page.goto(path, { waitUntil: 'domcontentloaded' })
-      // Wait for client-side hydration on dynamic pages.
-      await page.waitForSelector('main h1, main h2', { timeout: 25_000 })
-      await runAxe(page, `dark:${name}`)
-    })
+	for (const { name, path } of PUBLIC_PAGES) {
+		test(`dark theme: ${name} (${path})`, async ({ page }) => {
+			await page.goto(path, { waitUntil: "domcontentloaded" });
+			// Wait for client-side hydration on dynamic pages.
+			await page.waitForSelector("main h1, main h2", { timeout: 25_000 });
+			await runAxe(page, `dark:${name}`);
+		});
 
-    test(`light theme: ${name} (${path})`, async ({ page }) => {
-      await page.goto(path, { waitUntil: 'domcontentloaded' })
-      await page.evaluate(() => {
-        document.documentElement.setAttribute('data-theme', 'light')
-        localStorage.setItem('oma-theme', 'light')
-      })
-      await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.waitForSelector('main h1, main h2', { timeout: 25_000 })
-      await runAxe(page, `light:${name}`)
-    })
-  }
-})
+		test(`light theme: ${name} (${path})`, async ({ page }) => {
+			await page.goto(path, { waitUntil: "domcontentloaded" });
+			await page.evaluate(() => {
+				document.documentElement.setAttribute("data-theme", "light");
+				localStorage.setItem("oma-theme", "light");
+			});
+			await page.reload({ waitUntil: "domcontentloaded" });
+			await page.waitForSelector("main h1, main h2", { timeout: 25_000 });
+			await runAxe(page, `light:${name}`);
+		});
+	}
+});
 
 async function runAxe(page: Page, label: string) {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze()
+	const results = await new AxeBuilder({ page })
+		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+		.analyze();
 
-  const violations = (results.violations as AxeResult[]).filter((v) => {
-    const rank = SEVERITY_RANK[v.impact ?? 'minor'] ?? 1
-    return rank >= THRESHOLD_RANK
-  })
+	const violations = (results.violations as AxeResult[]).filter((v) => {
+		const rank = SEVERITY_RANK[v.impact ?? "minor"] ?? 1;
+		return rank >= THRESHOLD_RANK;
+	});
 
-  if (violations.length > 0) {
-    const summary = violations
-      .map(
-        (v) =>
-          `  - [${v.impact}] ${v.id} (${v.nodes.length} node${v.nodes.length === 1 ? '' : 's'})\n` +
-          `      ${v.help}\n` +
-          `      ${v.helpUrl}\n` +
-          v.nodes
-            .slice(0, 2)
-            .map((n: NodeResult) => `      > ${n.target.join(' ')}`)
-            .join('\n'),
-      )
-      .join('\n\n')
-    throw new Error(
-      `[${label}] ${violations.length} WCAG violation(s) at ${SEVERITY_THRESHOLD}+ severity:\n\n${summary}`,
-    )
-  }
+	if (violations.length > 0) {
+		const summary = violations
+			.map(
+				(v) =>
+					`  - [${v.impact}] ${v.id} (${v.nodes.length} node${v.nodes.length === 1 ? "" : "s"})\n` +
+					`      ${v.help}\n` +
+					`      ${v.helpUrl}\n` +
+					v.nodes
+						.slice(0, 2)
+						.map((n: NodeResult) => `      > ${n.target.join(" ")}`)
+						.join("\n"),
+			)
+			.join("\n\n");
+		throw new Error(
+			`[${label}] ${violations.length} WCAG violation(s) at ${SEVERITY_THRESHOLD}+ severity:\n\n${summary}`,
+		);
+	}
 
-  expect(violations).toHaveLength(0)
+	expect(violations).toHaveLength(0);
 }

@@ -1,22 +1,22 @@
 interface BlogPost {
-  slug: string
-  title: string
-  excerpt: string
-  content: string
-  author: string
-  publishedAt: string
-  readingTime: number
-  tags: string[]
-  featured?: boolean
+	slug: string;
+	title: string;
+	excerpt: string;
+	content: string;
+	author: string;
+	publishedAt: string;
+	readingTime: number;
+	tags: string[];
+	featured?: boolean;
 }
 
 export const BLOG_POSTS: BlogPost[] = [
-  {
-    slug: 'introducing-oma-ai',
-    title: 'Introducing OMA AI: Permissionless Inference on Base',
-    excerpt:
-      'Why we built a thin gateway over upstream model providers, how wallet auth and USDC settlement work, and what permissionless AI means for developers.',
-    content: `## The Problem
+	{
+		slug: "introducing-oma-ai",
+		title: "Introducing OMA AI: Permissionless Inference on Base",
+		excerpt:
+			"Why we built a thin gateway over upstream model providers, how wallet auth and USDC settlement work, and what permissionless AI means for developers.",
+		content: `## The Problem
 
 Every AI API forces you through the same funnel: sign up, verify email, add a card, wait for approval, then pray your rate limits are enough. For developers building agents, automation, or anything that needs to run headless, this is friction you do not need.
 
@@ -41,18 +41,18 @@ OMA is a thin inference gateway. We do not train models. We do not host them. We
 ## What's Next
 
 We are expanding model coverage, adding image and video generation endpoints, and open-sourcing the gateway code. If you want to run your own instance, the Dockerfile is already in the repo.`,
-    author: 'OMA Team',
-    publishedAt: '2026-06-15',
-    readingTime: 4,
-    tags: ['announcement', 'inference', 'base', 'usdc'],
-    featured: true,
-  },
-  {
-    slug: 'x402-payments-guide',
-    title: 'Using x402 for Per-Request AI Payments',
-    excerpt:
-      'A practical guide to integrating x402 payments into your AI agents. Pay per request with USDC on Base or Solana, no credit pre-funding required.',
-    content: `## What is x402?
+		author: "OMA Team",
+		publishedAt: "2026-06-15",
+		readingTime: 4,
+		tags: ["announcement", "inference", "base", "usdc"],
+		featured: true,
+	},
+	{
+		slug: "x402-payments-guide",
+		title: "Using x402 for Per-Request AI Payments",
+		excerpt:
+			"A practical guide to integrating x402 payments into your AI agents. Pay per request with USDC on Base or Solana, no credit pre-funding required.",
+		content: `## What is x402?
 
 x402 is a protocol that turns HTTP 402 Payment Required into a first-class payment mechanism. Instead of pre-funding credits, your agent pays per request using EIP-3009 gasless transfers on Base or Solana.
 
@@ -87,18 +87,18 @@ const res = await x402Fetch(
 
 - **x402**: Best for agents, sporadic usage, or when you want to avoid managing balances.
 - **Credits**: Best for predictable workloads, higher rate limits, and bulk discounts.`,
-    author: 'OMA Team',
-    publishedAt: '2026-06-20',
-    readingTime: 6,
-    tags: ['x402', 'payments', 'agents', 'tutorial'],
-    featured: true,
-  },
-  {
-    slug: 'model-routing-deep-dive',
-    title: 'How OMA Routes Between Model Providers',
-    excerpt:
-      'A technical deep dive into our circuit-breaker-based provider selection, health monitoring, and failover logic that keeps inference available.',
-    content: `## The Routing Problem
+		author: "OMA Team",
+		publishedAt: "2026-06-20",
+		readingTime: 6,
+		tags: ["x402", "payments", "agents", "tutorial"],
+		featured: true,
+	},
+	{
+		slug: "model-routing-deep-dive",
+		title: "How OMA Routes Between Model Providers",
+		excerpt:
+			"A technical deep dive into our circuit-breaker-based provider selection, health monitoring, and failover logic that keeps inference available.",
+		content: `## The Routing Problem
 
 Upstream providers go down. Models get deprecated. Latency spikes. A naive round-robin is not enough when you are forwarding production traffic.
 
@@ -133,17 +133,17 @@ When Venice is at capacity, we automatically fail over to backup providers. The 
 ## What's Next
 
 We are building provider-agnostic streaming aggregation, where multiple providers serve the same request and the fastest response wins.`,
-    author: 'OMA Team',
-    publishedAt: '2026-06-25',
-    readingTime: 8,
-    tags: ['engineering', 'routing', 'reliability', 'deep-dive'],
-  },
-  {
-    slug: 'crypto-payments-explained',
-    title: 'Crypto Payments for AI: A Developer Guide',
-    excerpt:
-      'Everything you need to know about paying for AI inference with crypto. USDC on Base, wallet auth, and why we chose this path.',
-    content: `## Why Crypto?
+		author: "OMA Team",
+		publishedAt: "2026-06-25",
+		readingTime: 8,
+		tags: ["engineering", "routing", "reliability", "deep-dive"],
+	},
+	{
+		slug: "crypto-payments-explained",
+		title: "Crypto Payments for AI: A Developer Guide",
+		excerpt:
+			"Everything you need to know about paying for AI inference with crypto. USDC on Base, wallet auth, and why we chose this path.",
+		content: `## Why Crypto?
 
 Traditional payment rails are slow, expensive, and exclude most of the world. A developer in Nigeria should be able to call an AI API as easily as one in San Francisco.
 
@@ -174,23 +174,23 @@ Withdrawals are processed on-chain with a 24-hour security window.
 ## The Future
 
 We are exploring Solana USDC, cross-chain deposits via Houdini Swap, and programmatic x402 payments for autonomous agents.`,
-    author: 'OMA Team',
-    publishedAt: '2026-06-22',
-    readingTime: 5,
-    tags: ['crypto', 'payments', 'usdc', 'base', 'guide'],
-  },
-]
+		author: "OMA Team",
+		publishedAt: "2026-06-22",
+		readingTime: 5,
+		tags: ["crypto", "payments", "usdc", "base", "guide"],
+	},
+];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
-  return BLOG_POSTS.find((p) => p.slug === slug)
+	return BLOG_POSTS.find((p) => p.slug === slug);
 }
 
 export function getAllTags(): string[] {
-  const tags = new Set<string>()
-  for (const post of BLOG_POSTS) {
-    for (const tag of post.tags) {
-      tags.add(tag)
-    }
-  }
-  return Array.from(tags).sort()
+	const tags = new Set<string>();
+	for (const post of BLOG_POSTS) {
+		for (const tag of post.tags) {
+			tags.add(tag);
+		}
+	}
+	return Array.from(tags).sort();
 }

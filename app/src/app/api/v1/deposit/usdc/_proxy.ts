@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers'
-import { DEFAULT_API_URL } from '@/lib/config'
+import { cookies } from "next/headers";
+import { DEFAULT_API_URL } from "@/lib/config";
 
 /**
  * Server-side proxy helpers for /api/v1/deposit/usdc/*.
@@ -10,47 +10,56 @@ import { DEFAULT_API_URL } from '@/lib/config'
  * Authorization header attached.
  */
 
-const UPSTREAM = DEFAULT_API_URL
+const UPSTREAM = DEFAULT_API_URL;
 
 export async function readSessionOrReject(): Promise<string | null> {
-  const cookieStore = await cookies()
-  return cookieStore.get('oma_session')?.value ?? null
+	const cookieStore = await cookies();
+	return cookieStore.get("oma_session")?.value ?? null;
 }
 
-export async function proxyPost(path: string, body: unknown, session: string): Promise<Response> {
-  const upstream = await fetch(`${UPSTREAM}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session}`,
-    },
-    body: JSON.stringify(body),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(60_000),
-  })
-  const text = await upstream.text()
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      'Content-Type': upstream.headers.get('content-type') ?? 'application/json',
-    },
-  })
+export async function proxyPost(
+	path: string,
+	body: unknown,
+	session: string,
+): Promise<Response> {
+	const upstream = await fetch(`${UPSTREAM}${path}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${session}`,
+		},
+		body: JSON.stringify(body),
+		cache: "no-store",
+		signal: AbortSignal.timeout(60_000),
+	});
+	const text = await upstream.text();
+	return new Response(text, {
+		status: upstream.status,
+		headers: {
+			"Content-Type":
+				upstream.headers.get("content-type") ?? "application/json",
+		},
+	});
 }
 
-export async function proxyGet(path: string, session: string): Promise<Response> {
-  const upstream = await fetch(`${UPSTREAM}${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${session}`,
-    },
-    cache: 'no-store',
-    signal: AbortSignal.timeout(60_000),
-  })
-  const text = await upstream.text()
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      'Content-Type': upstream.headers.get('content-type') ?? 'application/json',
-    },
-  })
+export async function proxyGet(
+	path: string,
+	session: string,
+): Promise<Response> {
+	const upstream = await fetch(`${UPSTREAM}${path}`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${session}`,
+		},
+		cache: "no-store",
+		signal: AbortSignal.timeout(60_000),
+	});
+	const text = await upstream.text();
+	return new Response(text, {
+		status: upstream.status,
+		headers: {
+			"Content-Type":
+				upstream.headers.get("content-type") ?? "application/json",
+		},
+	});
 }
