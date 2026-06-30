@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HUSKY: 0
 
 jobs:
   lint-typecheck:
@@ -12,31 +19,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: |
-            server/package-lock.json
-            app/package-lock.json
+          cache: 'pnpm'
 
       - name: Install server dependencies
-        run: cd server && npm ci
+        working-directory: server
+        run: pnpm install --frozen-lockfile
 
       - name: Server typecheck
-        run: cd server && npm run typecheck
+        working-directory: server
+        run: pnpm run typecheck
 
       - name: Server lint
-        run: cd server && npm run lint
+        working-directory: server
+        run: pnpm run lint
 
       - name: Install app dependencies
-        run: cd app && npm ci
+        working-directory: app
+        run: pnpm install --frozen-lockfile
 
       - name: App typecheck
-        run: cd app && npm run typecheck
+        working-directory: app
+        run: pnpm run typecheck
 
       - name: App lint
-        run: cd app && npm run lint
+        working-directory: app
+        run: pnpm run lint
 
   test:
     runs-on: ubuntu-latest
@@ -44,41 +58,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: |
-            server/package-lock.json
-            app/package-lock.json
+          cache: 'pnpm'
 
       - name: Install server dependencies
-        run: cd server && npm ci
+        working-directory: server
+        run: pnpm install --frozen-lockfile
 
       - name: Server tests
-        run: cd server && npm test
+        working-directory: server
+        run: pnpm test
 
       - name: Install app dependencies
-        run: cd app && npm ci
+        working-directory: app
+        run: pnpm install --frozen-lockfile
 
       - name: App tests
-        run: cd app && npm test
+        working-directory: app
+        run: pnpm test
 
   security-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
+          cache: 'pnpm'
 
       - name: Audit server dependencies
-        run: cd server && npm audit --audit-level=high
+        working-directory: server
+        run: pnpm audit --audit-level=high
         continue-on-error: true
 
       - name: Audit app dependencies
-        run: cd app && npm audit --audit-level=high
+        working-directory: app
+        run: pnpm audit --audit-level=high
         continue-on-error: true
 
   build:
@@ -87,16 +113,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: |
-            server/package-lock.json
-            app/package-lock.json
+          cache: 'pnpm'
 
       - name: Install and build server
-        run: cd server && npm ci && npm run build
+        working-directory: server
+        run: pnpm install --frozen-lockfile && pnpm run build
 
       - name: Install and build app
-        run: cd app && npm ci && npm run build
+        working-directory: app
+        run: pnpm install --frozen-lockfile && pnpm run build

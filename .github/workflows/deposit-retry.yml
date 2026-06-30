@@ -22,15 +22,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
+          node-version-file: ../../.nvmrc
+          cache: pnpm
+          
 
       - name: Install dependencies
         working-directory: server
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Site is in refactor/revamp phase (not live). Skip with a clear
       # warning instead of failing at server/src/config.ts:240 (envSchema
@@ -71,4 +76,4 @@ jobs:
           HOUDINI_API_SECRET: ${{ secrets.HOUDINI_API_SECRET }}
           HOUDINI_PARTNER_ID: ${{ secrets.HOUDINI_PARTNER_ID }}
           HOUDINI_API_URL: ${{ secrets.HOUDINI_API_URL }}
-        run: npx tsx src/jobs/cli-runner.ts deposit-retry
+        run: pnpm tsx src/jobs/cli-runner.ts deposit-retry

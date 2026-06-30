@@ -20,15 +20,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
+          node-version-file: ../../.nvmrc
+          cache: pnpm
+          
 
       - name: Install dependencies
         working-directory: server
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Site is in refactor/revamp phase (not live). Workflows that need
       # production secrets would otherwise fail at server/src/config.ts:240
@@ -59,4 +64,4 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: npx tsx src/jobs/cli-runner.ts credit-expiry
+        run: pnpm tsx src/jobs/cli-runner.ts credit-expiry

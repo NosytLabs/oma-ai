@@ -11,49 +11,23 @@ on:
         options:
           - production
           - preview
-  push:
-    branches: [master]
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  HUSKY: 0
+
 jobs:
   ci-status-gate:
     name: CI status gate
     runs-on: ubuntu-latest
-    if: ${{ always() && (github.event_name == 'workflow_run' || github.event_name == 'push') }}
     steps:
-      - name: Check CI result for current SHA
-        if: ${{ github.event_name == 'workflow_run' }}
+      - name: Manual deploy invoked
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
-            echo "CI did not pass: ${{ github.event.workflow_run.conclusion }}"
-            exit 1
-          fi
-          echo "CI passed for ${{ github.event.workflow_run.head_sha }}"
-      - name: Check CI status on direct push
-        if: ${{ github.event_name == 'push' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SHA: ${{ github.sha }}
-        run: |
-          # Query the CI workflow run for this exact SHA and refuse to deploy if it's not green.
-          STATUS=$(gh api repos/${{ github.repository }}/commits/${SHA}/check-runs \
-            --jq '[.check_runs[] | select(.name == "Server tests" or .name == "App tests" or .name == "Server typecheck" or .name == "App typecheck")] | map(.conclusion) | unique')
-          echo "CI check-run conclusions for ${SHA}: ${STATUS}"
-          if echo "${STATUS}" | grep -q '"failure"\|"cancelled"\|"timed_out"'; then
-            echo "CI has failing checks; refusing to deploy."
-            exit 1
-          fi
-          # If no CI run has reported yet (e.g. CI workflow still in progress), fail closed.
-          if [ "${STATUS}" = "[]" ]; then
-            echo "No CI results found for ${SHA}; refusing to deploy."
-            exit 1
-          fi
+          echo "Manual deploy triggered for ${{ github.ref_name }} → ${{ inputs.environment }}"
+          echo "Ensure CI is green on this branch before proceeding."
 
   deploy-app:
     name: Deploy app to Vercel
@@ -67,27 +41,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck
         working-directory: app
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
         working-directory: app
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Test
         working-directory: app
-        run: npm test
+        run: pnpm test
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -140,27 +117,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: server/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
         working-directory: server
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck
         working-directory: server
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
         working-directory: server
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Test
         working-directory: server
-        run: npm test
+        run: pnpm test
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -214,4 +194,4 @@ jobs:
           echo "  1. Vercel secrets not configured (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_APP_PROJECT_ID, VERCEL_API_PROJECT_ID)"
           echo "  2. Production environment not configured in GitHub repo settings"
           echo "  3. Build failure (typecheck/lint/test) - run them locally first"
-          echo "  4. DNS or domain not pointed to the right Vercel project (see CRITICAL-1-DEPLOYMENT-RUNBOOK.md)"
+          echo "  4. DNS or domain not pointed to the right Vercel project"
