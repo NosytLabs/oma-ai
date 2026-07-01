@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
 	AlertCircle,
+	BookOpen,
 	DollarSign,
 	Gauge,
 	Key,
@@ -74,9 +75,55 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "ep-chat", label: "Chat completions" },
+			{ id: "ep-completions", label: "Completions (legacy)" },
 			{ id: "ep-models", label: "List models" },
+			{ id: "ep-model", label: "Get model" },
 			{ id: "ep-embeddings", label: "Embeddings" },
 			{ id: "ep-images", label: "Image generation" },
+			{ id: "ep-audio-tts", label: "Audio speech (TTS)" },
+			{ id: "ep-audio-stt", label: "Audio transcriptions" },
+			{ id: "ep-video", label: "Video generation" },
+		],
+	},
+	{
+		id: "models",
+		label: "Available Models",
+		icon: BookOpen,
+		keywords: [
+			"models",
+			"catalog",
+			"llama",
+			"claude",
+			"gemini",
+			"deepseek",
+			"gpt",
+			"budget",
+			"premium",
+			"frontier",
+		],
+		headings: [
+			{ id: "models-budget", label: "Budget models" },
+			{ id: "models-mid", label: "Mid-tier models" },
+			{ id: "models-premium", label: "Premium models" },
+			{ id: "models-frontier", label: "Frontier models" },
+		],
+	},
+	{
+		id: "streaming",
+		label: "Streaming",
+		icon: Zap,
+		keywords: [
+			"stream",
+			"sse",
+			"server-sent events",
+			"real-time",
+			"chunk",
+			"delta",
+		],
+		headings: [
+			{ id: "stream-how", label: "How streaming works" },
+			{ id: "stream-example", label: "Example" },
+			{ id: "stream-handling", label: "Handling streams" },
 		],
 	},
 	{
@@ -117,8 +164,8 @@ export const NAV_ITEMS: NavItem[] = [
 			"cost",
 		],
 		headings: [
-			{ id: "models-overview", label: "Overview" },
-			{ id: "models-table", label: "Full catalog" },
+			{ id: "pricing-overview", label: "Overview" },
+			{ id: "pricing-table", label: "Full catalog" },
 		],
 	},
 	{

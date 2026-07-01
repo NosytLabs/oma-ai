@@ -266,27 +266,32 @@ creditRoutes.post("/v1/credits/auto-reload", bearerAuth, async (c) => {
 });
 
 creditRoutes.get("/v1/credits/auto-reload", bearerAuth, async (c) => {
-  const userId = c.get("userId");
+  try {
+    const userId = c.get("userId");
 
-  const settings = await db.select().from(autoReloadSettings).where(eq(autoReloadSettings.userId, userId)).limit(1);
+    const settings = await db.select().from(autoReloadSettings).where(eq(autoReloadSettings.userId, userId)).limit(1);
 
-  if (!settings.length) {
+    if (!settings.length) {
+      return c.json({
+        enabled: false,
+        thresholdCents: config.AUTO_RELOAD_THRESHOLD,
+        reloadAmountCents: config.AUTO_RELOAD_AMOUNT,
+        spendLimitCents: config.AUTO_RELOAD_SPEND_LIMIT,
+        paymentMethod: "usdc",
+      });
+    }
+
     return c.json({
-      enabled: false,
-      thresholdCents: config.AUTO_RELOAD_THRESHOLD,
-      reloadAmountCents: config.AUTO_RELOAD_AMOUNT,
-      spendLimitCents: config.AUTO_RELOAD_SPEND_LIMIT,
-      paymentMethod: "usdc",
+      enabled: settings[0].enabled,
+      thresholdCents: Number(settings[0].thresholdCents),
+      reloadAmountCents: Number(settings[0].reloadAmountCents),
+      spendLimitCents: Number(settings[0].spendLimitCents),
+      paymentMethod: settings[0].paymentMethod,
     });
+  } catch (err) {
+    logger.error({ err }, "[credits] Auto-reload get error:");
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
-
-  return c.json({
-    enabled: settings[0].enabled,
-    thresholdCents: Number(settings[0].thresholdCents),
-    reloadAmountCents: Number(settings[0].reloadAmountCents),
-    spendLimitCents: Number(settings[0].spendLimitCents),
-    paymentMethod: settings[0].paymentMethod,
-  });
 });
 
 creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
@@ -389,9 +394,9 @@ creditRoutes.post("/v1/credits/budget-alerts", bearerAuth, async (c) => {
 
 creditRoutes.get("/v1/credits/budget-alerts", bearerAuth, async (c) => {
   const userId = c.get("userId");
-  const config = await getBudgetAlertConfig(userId);
+  const alertConfig = await getBudgetAlertConfig(userId);
 
-  if (!config) {
+  if (!alertConfig) {
     return c.json({
       budgetLimitCents: 0,
       alertThresholds: DEFAULT_THRESHOLDS,
@@ -402,11 +407,11 @@ creditRoutes.get("/v1/credits/budget-alerts", bearerAuth, async (c) => {
   }
 
   return c.json({
-    budgetLimitCents: config.budgetLimitCents,
-    alertThresholds: config.alertThresholds,
-    emailEnabled: config.emailEnabled,
-    webhookEnabled: config.webhookEnabled,
-    webhookUrl: config.webhookUrl,
+    budgetLimitCents: alertConfig.budgetLimitCents,
+    alertThresholds: alertConfig.alertThresholds,
+    emailEnabled: alertConfig.emailEnabled,
+    webhookEnabled: alertConfig.webhookEnabled,
+    webhookUrl: alertConfig.webhookUrl,
   });
 });
 

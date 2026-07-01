@@ -47,9 +47,7 @@ async function callProviderWithRefund(
   signal?: AbortSignal,
 ): Promise<Response> {
   try {
-    return signal !== undefined
-      ? await callProvider(provider, providerModelId, body, undefined, signal)
-      : await callProvider(provider, providerModelId, body);
+    return await callProvider(provider, providerModelId, body, undefined, signal);
   } catch (err) {
     await refundCreditsWithRetry(userId, estimatedCostCents);
     const errorType = (err as { status?: number }).status
@@ -147,9 +145,7 @@ export async function handleChatCompletion(
         const provider = providersToTry[i];
         const providerModelId = getModelIdForProvider(model, provider, modelId);
         try {
-          const resp = signal !== undefined
-            ? await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal)
-            : await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents);
+          const resp = await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal);
 
           span.setAttribute(LLM_ATTRS.PROVIDER, provider);
           span.setAttribute("llm.provider_model_id", providerModelId);

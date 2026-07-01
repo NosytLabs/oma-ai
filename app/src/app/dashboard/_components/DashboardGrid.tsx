@@ -13,6 +13,7 @@ import {
 import dynamic from "next/dynamic";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type {
 	ApiKey,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/api/usage-chart";
 import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
+import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
 
 const tabContentVariants = {
@@ -241,6 +243,9 @@ interface DashboardGridProps {
 
 	// Time range for analytics charts.
 	timeRange?: TimeRangeId;
+
+	// Onboarding callback: navigate to API Keys tab.
+	onNavigateToApiKeys?: () => void;
 }
 
 /**
@@ -285,6 +290,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 		onRefresh,
 		activeTab = "overview",
 		timeRange = "7d",
+		onNavigateToApiKeys,
 	} = props;
 
 	const [errorDismissed, setErrorDismissed] = useState(false);
@@ -379,6 +385,14 @@ export function DashboardGrid(props: DashboardGridProps) {
 							/>
 						) : (
 							<>
+								{/* Onboarding checklist for new users */}
+								<OnboardingChecklist
+									walletConnected={true}
+									hasApiKey={apiKeys.length > 0}
+									hasUsage={usage.length > 0}
+									onNavigateToApiKeys={onNavigateToApiKeys}
+								/>
+
 								{creditBatches && creditBatches.length > 0 && (
 									<div className="mb-4">
 										<WidgetErrorBoundary title="Expiring credits">
@@ -397,81 +411,17 @@ export function DashboardGrid(props: DashboardGridProps) {
 											recentUsage={usage}
 										/>
 									</WidgetErrorBoundary>
-									{/* Quick Stats inline card */}
-									<div className="flex flex-col p-6 bg-void">
-										<div className="mb-4">
-											<h2 className="text-sm font-semibold text-text-bright">
-												Today
-											</h2>
-											<p className="mt-0.5 text-[11px] text-text-muted">
-												Last 24 hours
-											</p>
-										</div>
-										<div className="flex-1 space-y-0 border border-border">
-											<div className="flex items-center justify-between p-3 border-b border-border">
-												<span className="text-xs text-text-secondary">
-													Requests
-												</span>
-												<span className="text-sm font-medium text-text">
-													{loading ? "\u2026" : todayRequests.toLocaleString()}
-												</span>
-											</div>
-											<div className="flex items-center justify-between p-3 border-b border-border">
-												<span className="text-xs text-text-secondary">
-													Spend
-												</span>
-												<span className="text-sm font-medium text-accent">
-													{loading ? "\u2026" : `$${todayCost.toFixed(2)}`}
-												</span>
-											</div>
-											<div className="flex items-center justify-between p-3 border-b border-border">
-												<span className="text-xs text-text-secondary">
-													Tokens
-												</span>
-												<span className="text-sm font-medium text-text font-mono">
-													{loading
-														? "\u2026"
-														: totalTokens >= 1_000_000
-															? `${(totalTokens / 1_000_000).toFixed(1)}M`
-															: totalTokens >= 1_000
-																? `${(totalTokens / 1_000).toFixed(1)}k`
-																: String(totalTokens)}
-												</span>
-											</div>
-											<div className="flex items-center justify-between p-3 border-b border-border">
-												<span className="text-xs text-text-secondary">
-													Avg latency
-												</span>
-												<span className="text-sm font-medium text-text font-mono">
-													{loading
-														? "\u2026"
-														: avgLatencyMs <= 0
-															? "\u2014"
-															: avgLatencyMs < 1000
-																? `${Math.round(avgLatencyMs)}ms`
-																: `${(avgLatencyMs / 1000).toFixed(2)}s`}
-												</span>
-											</div>
-											<div className="flex items-center justify-between p-3">
-												<span className="text-xs text-text-secondary">
-													Active models
-												</span>
-												<span className="text-sm font-medium text-text">
-													{loading ? "\u2026" : activeModels}
-												</span>
-											</div>
-											{!loading && errorCount > 0 && (
-												<div className="flex items-center justify-between p-3 border-t border-border bg-error/5">
-													<span className="text-xs text-text-secondary">
-														Errors
-													</span>
-													<span className="text-sm font-medium text-error">
-														{errorCount}
-													</span>
-												</div>
-											)}
-										</div>
-									</div>
+									<WidgetErrorBoundary title="Today's stats">
+										<QuickStatsCard
+											loading={loading}
+											todayRequests={todayRequests}
+											todayCost={todayCost}
+											totalTokens={totalTokens}
+											avgLatencyMs={avgLatencyMs}
+											errorCount={errorCount}
+											activeModels={activeModels}
+										/>
+									</WidgetErrorBoundary>
 									<WidgetErrorBoundary title="Provider health">
 										<LazyProviderHealthSummary />
 									</WidgetErrorBoundary>

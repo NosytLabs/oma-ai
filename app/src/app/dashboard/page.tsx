@@ -154,6 +154,11 @@ export default function DashboardPage() {
 
 	const hasAnyData = Boolean(balance) || apiKeys.length > 0 || usage.length > 0;
 
+	const handleNavigateToApiKeys = useCallback(() => {
+		setActiveTab("api-keys");
+		setShowCreateForm(true);
+	}, []);
+
 	const content = !isAuthenticated ? (
 		<>
 			<h1 className="sr-only">Dashboard</h1>
@@ -212,6 +217,7 @@ export default function DashboardPage() {
 						onRefresh={handleRefresh}
 						activeTab={activeTab}
 						timeRange={timeRange}
+						onNavigateToApiKeys={handleNavigateToApiKeys}
 					/>
 				</div>
 			</div>

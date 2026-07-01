@@ -14,13 +14,13 @@ import {
 	Wallet,
 	Zap,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useId, useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { formatTime, maskKey } from "@/lib/utils";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
 interface RateLimit {
 	rpm: number;
@@ -193,16 +193,12 @@ export default function ApiKeysPage() {
 				animate={{ opacity: 1, y: 0 }}
 			>
 				<div>
-					<div className="flex items-center gap-3 mb-1">
-						<Link
-							href="/dashboard"
-							className="text-sm text-text-muted hover:text-accent"
-						>
-							Dashboard
-						</Link>
-						<span className="text-text-muted">/</span>
-						<span className="text-sm text-text-bright">API Keys</span>
-					</div>
+					<Breadcrumb
+						items={[
+							{ label: "Dashboard", href: "/dashboard" },
+							{ label: "API Keys" },
+						]}
+					/>
 					<h1 className="h1-utility text-text-bright">API Keys</h1>
 					<p className="mt-1 text-sm text-text-muted">
 						Manage your API keys and rate limits

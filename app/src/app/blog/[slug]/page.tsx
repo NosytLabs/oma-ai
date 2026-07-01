@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BLOG_POSTS, getPostBySlug } from "@/lib/blog-data";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
 interface Props {
 	params: Promise<{ slug: string }>;
@@ -224,14 +225,13 @@ export default async function BlogPostPage({ params }: Props) {
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono">
 			<div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-24 sm:pb-32">
-				{/* Back link */}
-				<Link
-					href="/blog"
-					className="mb-8 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
-				>
-					<ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-					All posts
-				</Link>
+				{/* Breadcrumb */}
+				<Breadcrumb
+					items={[
+						{ label: "Blog", href: "/blog" },
+						{ label: post.title },
+					]}
+				/>
 
 				{/* Header */}
 				<header className="mb-10">
