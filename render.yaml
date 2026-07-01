@@ -11,8 +11,8 @@ services:
     runtime: node
     plan: free  # Change to "starter" ($7/mo) for always-on
     rootDir: app
-    buildCommand: npm install --no-audit --no-fund && npm run build
-    startCommand: npm run start
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm run start
     healthCheckPath: /        # App has no /health route; landing returns 200
     autoDeploy: false  # Manual deploys to control costs
     envVars:
@@ -34,8 +34,8 @@ services:
     runtime: node
     plan: starter  # Server needs always-on for WebSocket + cron jobs
     rootDir: server
-    buildCommand: npm install --no-audit --no-fund && npm run build
-    startCommand: npm run start
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm run start
     healthCheckPath: /health
     autoDeploy: false
     envVars:
