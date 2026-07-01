@@ -10,8 +10,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   HUSKY: 0
+  # Belt-and-suspenders: pin to secure Node majors only. Bump when GitHub
+  # Actions drops support for the current Node version.
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
 
 jobs:
   lint-typecheck:
@@ -25,8 +31,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
+          node-version: '22'
+          cache: false
 
       - name: Install server dependencies
         working-directory: server
@@ -64,8 +70,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
+          node-version: '22'
+          cache: false
 
       - name: Install server dependencies
         working-directory: server
@@ -94,8 +100,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
+          node-version: '22'
+          # Disable node_modules caching entirely to prevent Post step
+          # "Path Validation Error" when cache path is absent.
+          cache: 'none'
+
+      - name: Install server dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Install app dependencies
+        working-directory: app
+        run: pnpm install --frozen-lockfile --prod=false
 
       - name: Audit server dependencies
         working-directory: server
@@ -119,8 +135,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
+          node-version: '22'
+          cache: false
 
       - name: Install and build server
         working-directory: server

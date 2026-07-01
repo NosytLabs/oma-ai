@@ -1,5 +1,6 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer";
 import HomePage from "./page";
@@ -11,6 +12,34 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 	usePathname: () => "/",
 }));
+
+// Mock framer-motion to disable all animations so content is always visible in tests.
+// The new HomeView uses Reveal/RevealStagger which require viewport triggers.
+vi.mock("@/lib/framer-motion-client", () => {
+	// Map of motion tags to their HTML equivalents
+	const TAG_MAP: Record<string, string> = {
+		div: "div", section: "section", article: "article", span: "span",
+		p: "p", ul: "ul", ol: "ol", li: "li", h1: "h1", h2: "h2",
+		h3: "h3", button: "button", a: "a",
+	};
+	// Return an object whose properties return motion components that render real HTML elements
+	// This preserves semantic elements (h1, etc.) for accessibility tests
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const m = new Proxy({} as Record<string, (props: { children?: React.ReactNode; className?: string }) => React.ReactElement>, {
+		get: (_target, tag: string) => {
+			const htmlTag = TAG_MAP[tag] ?? "div";
+			// eslint-disable-next-line react/display-name
+			return ({ children, className, ..._props }: { children?: React.ReactNode; className?: string }) =>
+				React.createElement(htmlTag, { className }, children);
+		},
+	});
+	return {
+		m: m as unknown as typeof import("@/lib/framer-motion-client").m,
+		useMotionValue: () => ({ get: () => 0 }),
+		useReducedMotion: () => true,
+		useSpring: () => ({ get: () => 0 }),
+	};
+});
 
 const renderWithQueryClient = (ui: React.ReactElement) => {
 	const queryClient = new QueryClient({
@@ -26,22 +55,23 @@ describe("HomePage (revamped 2026-06-30)", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		// Hero headline contains the signature phrase
+		// Hero headline: "Run any model.\nPay per request."
 		expect(screen.getByText(/pay per request/i)).toBeInTheDocument();
 	});
 
 	it("renders the primary CTA", async () => {
 		renderWithQueryClient(<HomePage />);
+		// New Hero CTA: "Get API Key" → /chat
 		const ctaLinks = await screen.findAllByRole("link", {
-			name: /get api key|get your api key/i,
+			name: /get api key/i,
 		});
 		expect(ctaLinks.length).toBeGreaterThan(0);
-		// Hero CTA points to /chat (the product entry point)
 		expect(ctaLinks[0]).toHaveAttribute("href", "/chat");
 	});
 
 	it("renders the docs CTA in the hero", async () => {
 		renderWithQueryClient(<HomePage />);
+		// New Hero secondary CTA: "View Docs" → /docs
 		const docsLinks = await screen.findAllByRole("link", {
 			name: /view docs/i,
 		});
@@ -52,6 +82,7 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the trust strip with partner logos", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
+			// New TrustStrip: "Works with the tools you ship on"
 			expect(
 				screen.getByText(/works with the tools you ship on/i),
 			).toBeInTheDocument();
@@ -61,28 +92,37 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the capabilities section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/llm chat/i)).toBeInTheDocument();
-			expect(screen.getByText(/image generation/i)).toBeInTheDocument();
-			expect(screen.getByText(/video generation/i)).toBeInTheDocument();
-			expect(screen.getByText(/model routing/i)).toBeInTheDocument();
-			expect(screen.getByText(/crypto-native billing/i)).toBeInTheDocument();
+			// New CapabilitiesGrid titles
+			expect(screen.getByText("LLM Chat")).toBeInTheDocument();
+			expect(screen.getByText("Image Generation")).toBeInTheDocument();
+			expect(screen.getByText("Video Generation")).toBeInTheDocument();
+			expect(screen.getByText("Model Routing")).toBeInTheDocument();
+			expect(screen.getByText("Crypto-Native Billing")).toBeInTheDocument();
 		});
 	});
 
 	it("renders the how-it-works steps", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
+			// All 3 step titles should appear somewhere on the page
 			expect(screen.getByText(/sign in with wallet/i)).toBeInTheDocument();
-			expect(screen.getByText(/get your api key/i)).toBeInTheDocument();
 			expect(screen.getByText(/pay per call with usdc/i)).toBeInTheDocument();
 		});
+		// "Get your API key" appears in both HowItWorks step 2 AND FinalCTA — just confirm at least 2 exist
+		const apiKeyEls = screen.getAllByText(/get your api key/i);
+		expect(apiKeyEls.length).toBeGreaterThanOrEqual(2);
 	});
 
 	it("renders the stats section with live signal", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/live network signal/i)).toBeInTheDocument();
-			expect(screen.getByText(/per 1m tokens/i)).toBeInTheDocument();
+			// Stats section has the live signal headline and per-1M-tokens metric
+			const signalEl = screen.getByText(/live network signal/i);
+			expect(signalEl).toBeInTheDocument();
+			// Find the parent section and scope the per-1M query to it
+			const section = signalEl.closest("section");
+			expect(section).toBeInTheDocument();
+			expect(within(section!).getByText(/1m tokens/i)).toBeInTheDocument();
 		});
 	});
 
