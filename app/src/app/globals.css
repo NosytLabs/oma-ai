@@ -25,13 +25,13 @@
 	--color-border: #2a2a35;
 	--color-border-bright: #3d3d4d;
 
-	/* PRIMARY ACCENT - Orange (Brand Identity) */
-	--color-accent: #f97316;
-	--color-accent-dim: rgba(249, 115, 22, 0.18);
-	--color-accent-glow: rgba(249, 115, 22, 0.25);
-	--color-accent-hover: #fb923c;
-	--color-accent-bright: #fdba74;
-	--color-accent-muted: #ea580c;
+	/* PRIMARY ACCENT - Emerald (2026-06-30 revamp — crypto/USDC = money semantics) */
+	--color-accent: #10b981;
+	--color-accent-dim: rgba(16, 185, 129, 0.18);
+	--color-accent-glow: rgba(16, 185, 129, 0.25);
+	--color-accent-hover: #34d399;
+	--color-accent-bright: #6ee7b7;
+	--color-accent-muted: #047857;
 
 	/* SECONDARY ACCENT - Amber/Gold */
 	--color-secondary: #ffb800;
@@ -42,18 +42,18 @@
 	--color-tertiary: #a78bfa;
 	--color-tertiary-dim: rgba(167, 139, 250, 0.12);
 
-	/* Semantic colors - Brand-aligned (split: success=emerald, info=blue, distinct from accent) */
-	--color-success: #34d399;
-	--color-success-dim: rgba(52, 211, 153, 0.12);
-	--color-success-soft: rgba(52, 211, 153, 0.08);
-	--color-warning: #ffb800;
-	--color-warning-dim: rgba(255, 184, 0, 0.12);
-	--color-warning-soft: rgba(255, 184, 0, 0.08);
-	--color-error: #ff3366;
+	/* Semantic colors — success mirrors accent (emerald), info=blue, error=pink-red, warning=amber (separate from brand) */
+	--color-success: #10b981;
+	--color-success-dim: rgba(16, 185, 129, 0.12);
+	--color-success-soft: rgba(16, 185, 129, 0.08);
+	--color-warning: #f59e0b;
+	--color-warning-dim: rgba(245, 158, 11, 0.12);
+	--color-warning-soft: rgba(245, 158, 11, 0.08);
+	--color-error: #f43f5e;
 	--color-pink: #ec4899;
 	--color-red: #ef4444;
-	--color-error-dim: rgba(255, 51, 102, 0.12);
-	--color-error-soft: rgba(255, 51, 102, 0.08);
+	--color-error-dim: rgba(244, 63, 94, 0.12);
+	--color-error-soft: rgba(244, 63, 94, 0.08);
 	--color-info: #60a5fa;
 	--color-info-dim: rgba(96, 165, 250, 0.12);
 	--color-info-soft: rgba(96, 165, 250, 0.08);
@@ -89,11 +89,11 @@
      ================================================ */
 	--color-tier-frontier: #a78bfa; /* Violet - highest tier */
 	--color-tier-frontier-dim: rgba(167, 139, 250, 0.15);
-	--color-tier-premium: #f97316; /* Orange - premium models */
-	--color-tier-premium-dim: rgba(249, 115, 22, 0.15);
-	--color-tier-mid: #ffb800; /* Amber - mid-range models */
-	--color-tier-mid-dim: rgba(255, 184, 0, 0.15);
-	--color-tier-budget: #34d399; /* Emerald - budget options */
+	--color-tier-premium: #10b981; /* Emerald - premium models (revamped 2026-06-30) */
+	--color-tier-premium-dim: rgba(16, 185, 129, 0.15);
+	--color-tier-mid: #f5a623; /* Amber - mid-range models */
+	--color-tier-mid-dim: rgba(245, 166, 35, 0.15);
+	--color-tier-budget: #34d399; /* Emerald-400 - budget options */
 	--color-tier-budget-dim: rgba(52, 211, 153, 0.15);
 	--color-tier-reasoning: #f472b6; /* Pink - reasoning models */
 	--color-tier-reasoning-dim: rgba(244, 114, 182, 0.15);
@@ -109,32 +109,49 @@
 	--color-amber: #ffb800;
 	--color-violet: #a78bfa;
 	--color-purple: #a78bfa;
-	--color-emerald: #34d399;
+	--color-emerald: #10b981;
 	--color-blue: #60a5fa;
 	/* Backwards-compat alias — multiple components still reference
      bg-orange / text-orange / border-orange. Map to the brand accent
-     so they render with the canonical orange instead of Tailwind's
-     default palette. New code should use var(--color-accent). */
-	--color-orange: #f97316;
-	--color-orange-dim: rgba(249, 115, 22, 0.18);
+     (revamped 2026-06-30: emerald replaces orange). New code should
+     use var(--color-accent). */
+	--color-orange: #10b981;
+	--color-orange-dim: rgba(16, 185, 129, 0.18);
 
 	/* Shadow tokens */
 	--shadow-accent-sm: 0 0 8px var(--color-accent-glow);
 
 	/* Utility colors */
-	--color-accent-soft: rgba(249, 115, 22, 0.08);
+	--color-accent-soft: rgba(16, 185, 129, 0.08);
 
-	/* Typography — distinctive pairing: Space Grotesk (body + heading), Syne (display), JetBrains Mono (code), Inter (fallback) */
+	/* Typography — distinctive sans pairing (revamped 2026-06-30):
+     Space Grotesk (body + heading), Syne (display accents only),
+     JetBrains Mono (code). Inter dropped per design system rules. */
 	--font-sans:
-		var(--font-space-grotesk), "Space Grotesk", var(--font-inter), system-ui,
-		sans-serif;
+		var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
 	--font-heading:
-		var(--font-space-grotesk), "Space Grotesk", var(--font-inter), sans-serif;
+		var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
 	--font-display:
 		var(--font-syne), "Syne", var(--font-space-grotesk), system-ui, sans-serif;
 	--font-mono:
 		var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular,
 		Consolas, Monaco, monospace;
+
+	/* ========================================================================
+     NEW DESIGN SYSTEM TOKENS (2026-06-30 revamp)
+     Semantic aliases that map directly to the canonical palette above.
+     ======================================================================== */
+	--bg-base: #0a0a0f;
+	--bg-elevated: #121218;
+	--bg-overlay: #18181f;
+	--bg-inverted: #fafafa;
+	--text-primary: #e4e4e7;
+	--text-secondary: #a1a1aa;
+	--text-muted: #71717a;
+	--border-subtle: #1e1e26;
+	--radius-sm: 6px;
+	--radius-md: 12px;
+	--radius-lg: 20px;
 }
 
 [data-theme="light"] {
@@ -151,12 +168,13 @@
 	--color-text-muted: #6b7280;
 	--color-text-inverse: #fafafa;
 	--color-text-tertiary: #71717a;
-	--color-accent: #ea580c;
-	--color-accent-dim: rgba(234, 88, 12, 0.18);
-	--color-accent-glow: rgba(234, 88, 12, 0.25);
-	--color-accent-hover: #c2410c;
-	--color-accent-bright: #f97316;
-	--color-accent-muted: #7c2d12;
+	/* Light-mode accent — darker emerald for AA contrast on light surfaces */
+	--color-accent: #059669;
+	--color-accent-dim: rgba(5, 150, 105, 0.18);
+	--color-accent-glow: rgba(5, 150, 105, 0.25);
+	--color-accent-hover: #047857;
+	--color-accent-bright: #10b981;
+	--color-accent-muted: #064e3b;
 	--color-secondary: #d97706;
 	--color-secondary-dim: rgba(217, 119, 6, 0.12);
 	--color-secondary-hover: #b45309;
@@ -184,8 +202,8 @@
 	--color-provider-together-dim: rgba(219, 39, 119, 0.15);
 	--color-tier-frontier: #7c3aed;
 	--color-tier-frontier-dim: rgba(124, 58, 237, 0.15);
-	--color-tier-premium: #ea580c;
-	--color-tier-premium-dim: rgba(234, 88, 12, 0.15);
+	--color-tier-premium: #059669;
+	--color-tier-premium-dim: rgba(5, 150, 105, 0.15);
 	--color-tier-mid: #d97706;
 	--color-tier-mid-dim: rgba(217, 119, 6, 0.15);
 	--color-tier-budget: #059669;
@@ -203,9 +221,19 @@
 	--color-emerald: #059669;
 	--color-red: #dc2626;
 	--color-blue: #2563eb;
-	--color-accent-soft: rgba(234, 88, 12, 0.08);
-	--color-orange: #ea580c;
-	--color-orange-dim: rgba(234, 88, 12, 0.18);
+	--color-accent-soft: rgba(5, 150, 105, 0.08);
+	--color-orange: #059669;
+	--color-orange-dim: rgba(5, 150, 105, 0.18);
+
+	/* New token overrides for light mode */
+	--bg-base: #fafafa;
+	--bg-elevated: #ffffff;
+	--bg-overlay: #f4f4f5;
+	--bg-inverted: #0a0a0f;
+	--text-primary: #09090b;
+	--text-secondary: #52525b;
+	--text-muted: #71717a;
+	--border-subtle: #f4f4f5;
 }
 
 *,
@@ -1274,3 +1302,311 @@ input[type="range"]::-moz-range-thumb {
  *   - Looks flat: missing secondary + ambient layers
  *   - Too distracting: apply stagger, reduce amplitude
  * ========================================================================== */
+
+/* ============================================================
+   DESIGN SYSTEM v2 — UTILITIES (2026-06-30 revamp)
+   High-level layout primitives that compose the revamped design
+   system. Lock one accent (emerald) page-wide; rely on semantic
+   type and spacing tokens, not ad-hoc classes.
+   ============================================================ */
+
+/* --- Page container with consistent max-width --- */
+.container-page {
+	width: 100%;
+	max-width: 1200px;
+	margin-inline: auto;
+	padding-inline: 1.25rem;
+}
+
+@media (min-width: 768px) {
+	.container-page {
+		padding-inline: 2rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.container-page {
+		padding-inline: 2.5rem;
+	}
+}
+
+/* --- Wide container for hero / banners --- */
+.container-wide {
+	width: 100%;
+	max-width: 1440px;
+	margin-inline: auto;
+	padding-inline: 1.25rem;
+}
+
+@media (min-width: 768px) {
+	.container-wide {
+		padding-inline: 2rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.container-wide {
+		padding-inline: 2.5rem;
+	}
+}
+
+/* --- Balanced text wrap for headings --- */
+.text-balance {
+	text-wrap: balance;
+}
+
+.text-pretty {
+	text-wrap: pretty;
+}
+
+/* --- Accent gradient text (subtle, not garish) --- */
+.gradient-text-accent {
+	background: linear-gradient(
+		135deg,
+		var(--color-accent) 0%,
+		var(--color-accent-bright) 50%,
+		var(--color-accent) 100%
+	);
+	background-size: 200% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-fill-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.gradient-text-accent {
+		animation: oma-gradient-rotate 6s ease infinite;
+	}
+}
+
+/* --- Display headline — used for hero only --- */
+.display-headline {
+	font-family: var(--font-display);
+	font-weight: 800;
+	letter-spacing: -0.035em;
+	line-height: 0.98;
+	font-size: clamp(2.5rem, 6vw + 0.5rem, 5rem);
+}
+
+@media (min-width: 768px) {
+	.display-headline {
+		letter-spacing: -0.04em;
+	}
+}
+
+/* --- Section headline — used for h2 across sections --- */
+.section-headline {
+	font-family: var(--font-heading);
+	font-weight: 700;
+	letter-spacing: -0.025em;
+	line-height: 1.05;
+	font-size: clamp(1.875rem, 3.5vw, 2.75rem);
+}
+
+/* --- Eyebrow label — mono micro-caps, used sparingly (max 1 per 3 sections) --- */
+.eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-accent);
+	font-weight: 500;
+}
+
+.eyebrow::before {
+	content: "";
+	display: inline-block;
+	width: 1.25rem;
+	height: 1px;
+	background: var(--color-accent);
+}
+
+/* --- Subtle dotted divider --- */
+.divider-dot {
+	background-image: radial-gradient(
+		circle,
+		var(--color-border-bright) 1px,
+		transparent 1px
+	);
+	background-size: 16px 1px;
+	background-repeat: repeat-x;
+	background-position: center;
+	height: 1px;
+	width: 100%;
+}
+
+/* --- Asymmetric grid template for bento sections --- */
+.bento-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+}
+
+@media (min-width: 768px) {
+	.bento-grid {
+		grid-template-columns: repeat(3, 1fr);
+		grid-auto-rows: minmax(180px, auto);
+		gap: 1.25rem;
+	}
+
+	.bento-grid > .bento-span-2 {
+		grid-column: span 2;
+	}
+
+	.bento-grid > .bento-span-row-2 {
+		grid-row: span 2;
+	}
+}
+
+/* --- Vertical accent rule (for step indicators) --- */
+.rule-accent {
+	width: 2px;
+	background: linear-gradient(
+		to bottom,
+		var(--color-accent) 0%,
+		transparent 100%
+	);
+}
+
+/* --- Inverted surface — for accent sections (x402 banner, etc.) --- */
+.surface-accent {
+	background:
+		radial-gradient(
+			ellipse at 20% 0%,
+			color-mix(in srgb, var(--color-accent) 22%, transparent) 0%,
+			transparent 60%
+		),
+		radial-gradient(
+			ellipse at 80% 100%,
+			color-mix(in srgb, var(--color-accent-hover) 18%, transparent) 0%,
+			transparent 60%
+		),
+		var(--color-surface);
+	border: 1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border));
+}
+
+/* --- Mono numeric — used for stat values and step numbers --- */
+.numeric-mono {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.02em;
+}
+
+/* --- Hairline border on dark (subtle separator) --- */
+.hairline {
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+/* --- Refined card surface --- */
+.surface-card {
+	background: var(--color-panel);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	transition:
+		border-color 0.3s ease,
+		box-shadow 0.3s ease,
+		transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+	border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+	box-shadow: 0 8px 30px -12px var(--color-accent-glow);
+}
+
+/* --- Code block surface --- */
+.surface-code {
+	background: var(--color-surface-elevated);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+	line-height: 1.65;
+}
+
+/* --- Mini badge chip for tags inside cards --- */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.625rem;
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	font-weight: 500;
+	color: var(--color-accent);
+	background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+	border-radius: 999px;
+}
+
+/* --- Active focus ring (matches design system accent) --- */
+.focus-accent:focus-visible {
+	outline: none;
+	box-shadow:
+		0 0 0 2px var(--color-bg-base, var(--color-void)),
+		0 0 0 4px var(--color-accent);
+}
+
+/* --- Modern reset extras --- */
+* {
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+html {
+	scroll-behavior: smooth;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Selection color matches accent */
+::selection {
+	background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+	color: var(--color-text-bright);
+}
+
+/* Ensure inputs use the font-mono fallback */
+input,
+textarea {
+	font-feature-settings: "ss01", "cv11";
+}
+
+/* --- Mobile-collapse helper: stack horizontal content on small screens --- */
+.stack-on-mobile {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+@media (min-width: 768px) {
+	.stack-on-mobile {
+		flex-direction: row;
+		align-items: center;
+		gap: 1.5rem;
+	}
+}
+
+/* --- Inline link with subtle accent underline --- */
+.link-accent {
+	color: var(--color-text-primary);
+	text-decoration: none;
+	background-image: linear-gradient(
+		90deg,
+		var(--color-accent) 0%,
+		var(--color-accent) 100%
+	);
+	background-size: 0% 1px;
+	background-repeat: no-repeat;
+	background-position: 0 100%;
+	transition: background-size 0.3s ease;
+}
+
+.link-accent:hover {
+	color: var(--color-accent);
+	background-size: 100% 1px;
+}

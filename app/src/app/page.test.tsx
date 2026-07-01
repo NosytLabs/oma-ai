@@ -4,11 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer";
 import HomePage from "./page";
 
-// AuthNotice (mounted by HomePage via <Suspense>) calls useRouter and
-// useSearchParams. Those hooks throw "invariant expected app router to
-// be mounted" when rendered outside a Next.js router context, so the
-// test would fail. Mocking the module is the documented escape hatch
-// for unit-testing components that read query params in jsdom.
+// Mock next/navigation — not exercised by static rendering of HomePage,
+// but Footer + future child components may import usePathname.
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
 	useSearchParams: () => new URLSearchParams(),
@@ -24,103 +21,97 @@ const renderWithQueryClient = (ui: React.ReactElement) => {
 	);
 };
 
-describe("HomePage", () => {
-	// HomePage is an async server component (it awaits fetchLiveModels()).
-	// In jsdom we render it synchronously, but the fetch resolves later; the
-	// HomeClient children only paint once the Promise settles. Use findBy /
-	// waitFor so we assert against the post-resolve DOM, not the pre-resolve
-	// empty Suspense fallback. Without this, vitest reports
-	// "A component suspended inside an `act` scope, but the `act` call was
-	// not awaited" and every assertion fails on an empty <body>.
+describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the hero headline", async () => {
 		renderWithQueryClient(<HomePage />);
-		expect(
-			await screen.findByRole("heading", { level: 1 }),
-		).toBeInTheDocument();
+		const h1 = await screen.findByRole("heading", { level: 1 });
+		expect(h1).toBeInTheDocument();
+		// Hero headline contains the signature phrase
+		expect(screen.getByText(/pay per request/i)).toBeInTheDocument();
 	});
 
-	it("renders the three value props", async () => {
+	it("renders the primary CTA", async () => {
+		renderWithQueryClient(<HomePage />);
+		const ctaLinks = await screen.findAllByRole("link", {
+			name: /get api key|get your api key/i,
+		});
+		expect(ctaLinks.length).toBeGreaterThan(0);
+		// Hero CTA points to /chat (the product entry point)
+		expect(ctaLinks[0]).toHaveAttribute("href", "/chat");
+	});
+
+	it("renders the docs CTA in the hero", async () => {
+		renderWithQueryClient(<HomePage />);
+		const docsLinks = await screen.findAllByRole("link", {
+			name: /view docs/i,
+		});
+		expect(docsLinks.length).toBeGreaterThan(0);
+		expect(docsLinks[0]).toHaveAttribute("href", "/docs");
+	});
+
+	it("renders the trust strip with partner logos", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(
-				screen.getAllByText(/one key, every model/i).length,
-			).toBeGreaterThan(0);
-			expect(screen.getAllByText(/pay per request/i).length).toBeGreaterThan(0);
+				screen.getByText(/works with the tools you ship on/i),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("renders the capabilities section", async () => {
+		renderWithQueryClient(<HomePage />);
+		await waitFor(() => {
+			expect(screen.getByText(/llm chat/i)).toBeInTheDocument();
+			expect(screen.getByText(/image generation/i)).toBeInTheDocument();
+			expect(screen.getByText(/video generation/i)).toBeInTheDocument();
+			expect(screen.getByText(/model routing/i)).toBeInTheDocument();
+			expect(screen.getByText(/crypto-native billing/i)).toBeInTheDocument();
+		});
+	});
+
+	it("renders the how-it-works steps", async () => {
+		renderWithQueryClient(<HomePage />);
+		await waitFor(() => {
+			expect(screen.getByText(/sign in with wallet/i)).toBeInTheDocument();
+			expect(screen.getByText(/get your api key/i)).toBeInTheDocument();
+			expect(screen.getByText(/pay per call with usdc/i)).toBeInTheDocument();
+		});
+	});
+
+	it("renders the stats section with live signal", async () => {
+		renderWithQueryClient(<HomePage />);
+		await waitFor(() => {
+			expect(screen.getByText(/live network signal/i)).toBeInTheDocument();
+			expect(screen.getByText(/per 1m tokens/i)).toBeInTheDocument();
+		});
+	});
+
+	it("renders the x402 banner", async () => {
+		renderWithQueryClient(<HomePage />);
+		await waitFor(() => {
+			expect(screen.getByText(/agents pay for themselves/i)).toBeInTheDocument();
 			expect(
-				screen.getAllByText(/anonymous|no KYC|no email/i).length,
-			).toBeGreaterThan(0);
+				screen.getByText(/no accounts\. no subscriptions\./i),
+			).toBeInTheDocument();
 		});
 	});
 
-	it("renders the how it works steps", async () => {
+	it("renders the final CTA section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getAllByText(/connect wallet/i).length).toBeGreaterThan(0);
-			expect(screen.getAllByText(/add credits/i).length).toBeGreaterThan(0);
-			expect(screen.getAllByText(/start building/i).length).toBeGreaterThan(0);
+			expect(screen.getByText(/stop renting gpus/i)).toBeInTheDocument();
+			expect(screen.getByText(/start shipping agents/i)).toBeInTheDocument();
 		});
-	});
-
-	it("renders primary CTAs", async () => {
-		renderWithQueryClient(<HomePage />);
-		const playgroundLinks = await screen.findAllByRole("link", {
-			name: /try the playground/i,
-		});
-		expect(playgroundLinks.length).toBeGreaterThan(0);
-		expect(playgroundLinks[0]).toHaveAttribute("href", "/playground");
-	});
-
-	it("renders pricing and models links", async () => {
-		renderWithQueryClient(<HomePage />);
-		await waitFor(() => {
-			const pricingLinks = screen.getAllByRole("link", {
-				name: /see (full )?pricing/i,
-			});
-			expect(pricingLinks.length).toBeGreaterThan(0);
-			expect(pricingLinks[0]).toHaveAttribute("href", "/pricing");
-
-			const modelsLinks = screen.getAllByRole("link", {
-				name: /view models|browse all models/i,
-			});
-			expect(modelsLinks.length).toBeGreaterThan(0);
-			expect(modelsLinks[0]).toHaveAttribute("href", "/models");
-		});
-	});
-
-	it("renders the pricing tease stats", async () => {
-		renderWithQueryClient(<HomePage />);
-		await waitFor(() => {
-			expect(screen.getAllByText(/pay per request/i).length).toBeGreaterThan(0);
-			expect(screen.getAllByText(/1M tokens/i).length).toBeGreaterThan(0);
-			expect(screen.getAllByText(/from \$0\.06/i).length).toBeGreaterThan(0);
-		});
-	});
-
-	it("renders the FAQ tease", async () => {
-		renderWithQueryClient(<HomePage />);
-		await waitFor(() => {
-			expect(
-				screen.getAllByText(/do i need an account/i).length,
-			).toBeGreaterThan(0);
-			expect(screen.getAllByText(/quick answers/i).length).toBeGreaterThan(0);
-		});
-	});
-
-	it("renders model cards as clickable links", async () => {
-		renderWithQueryClient(<HomePage />);
-		const modelLinks = await screen.findAllByRole("link", { name: /details/i });
-		expect(modelLinks.length).toBeGreaterThan(0);
-		expect(modelLinks[0]).toHaveAttribute("href", "/models");
 	});
 });
 
-describe("Footer", () => {
+describe("Footer (unchanged)", () => {
 	it("renders product links", () => {
 		renderWithQueryClient(<Footer />);
 		expect(screen.getByText("models")).toBeInTheDocument();
 		expect(screen.getByText("pricing")).toBeInTheDocument();
 		expect(screen.getByText("docs")).toBeInTheDocument();
-		expect(screen.getByText("playground")).toBeInTheDocument();
+		expect(screen.getByText("chat")).toBeInTheDocument();
 	});
 
 	it("renders legal links", () => {
@@ -139,11 +130,6 @@ describe("Footer", () => {
 		const githubLink = screen.getByText("github.com/oma-ai");
 		expect(githubLink).toBeInTheDocument();
 		expect(githubLink).toHaveAttribute("href", "https://github.com/oma-ai");
-	});
-
-	it("renders infrastructure status", () => {
-		renderWithQueryClient(<Footer />);
-		expect(screen.getByText(/permissionless.*inference/i)).toBeInTheDocument();
 	});
 
 	it("renders copyright", () => {

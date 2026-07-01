@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
+import { JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
 import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Footer } from "@/components/footer";
@@ -11,14 +11,6 @@ import { THEME_HEAD_SCRIPT, ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
 import { MODEL_COUNT } from "@/lib/models-data";
 import "./globals.css";
-
-const inter = Inter({
-	subsets: ["latin"],
-	variable: "--font-inter",
-	display: "swap",
-	preload: true,
-	fallback: ["system-ui", "sans-serif"],
-});
 
 const spaceGrotesk = Space_Grotesk({
 	subsets: ["latin"],
@@ -34,7 +26,7 @@ const syne = Syne({
 	variable: "--font-syne",
 	display: "swap",
 	preload: true,
-	weight: ["400", "500", "600", "700", "800"],
+	weight: ["500", "600", "700", "800"],
 	fallback: ["system-ui", "sans-serif"],
 });
 
@@ -62,10 +54,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
 	metadataBase: new URL(BASE_URL),
 	title: {
-		default: "OMA AI - One Man Army // Open Model Access",
-		template: "%s | OMA AI",
+		default: "OMA-AI — AI Compute for Builders",
+		template: "%s | OMA-AI",
 	},
-	description: `Access ${MODEL_COUNT} models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.`,
+	description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions, no monthly bills.`,
 	keywords: [
 		"AI",
 		"inference",
@@ -73,9 +65,12 @@ export const metadata: Metadata = {
 		"OpenAI",
 		"Anthropic",
 		"crypto",
-		"payments",
+		"USDC",
+		"x402",
 		"API",
 		"developers",
+		"image generation",
+		"video generation",
 	],
 	authors: [{ name: "OMA AI" }],
 	creator: "OMA AI",
@@ -93,8 +88,8 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "OMA AI - One Man Army // Open Model Access",
-		description: `Permissionless AI inference gateway. Access ${MODEL_COUNT} models with crypto payments. No sign-up required.`,
+		title: "OMA-AI — AI Compute for Builders",
+		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native.`,
 		site: "@oma_ai",
 		creator: "@oma_ai",
 		images: ["/og-image.png"],
@@ -104,14 +99,14 @@ export const metadata: Metadata = {
 		locale: "en_US",
 		url: "https://oma-ai.com",
 		siteName: "OMA AI",
-		title: "OMA AI - One Man Army // Open Model Access",
-		description: `Permissionless AI inference gateway. Access ${MODEL_COUNT} models with crypto payments. No sign-up required. Route inference across multiple providers with automatic failover.`,
+		title: "OMA-AI — AI Compute for Builders",
+		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions.`,
 		images: [
 			{
 				url: "/og-image.png",
 				width: 1200,
 				height: 630,
-				alt: "OMA AI - One Man Army // Open Model Access",
+				alt: "OMA-AI — AI Compute for Builders",
 			},
 		],
 	},
@@ -128,7 +123,8 @@ export default function RootLayout({
 	return (
 		<html
 			lang="en"
-			className={`${inter.variable} ${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable}`}
+			suppressHydrationWarning
+			className={`${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable}`}
 		>
 			<head>
 				{/* Pre-hydration theme script — runs synchronously before first paint
