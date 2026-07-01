@@ -324,7 +324,7 @@ function ShellContent({
 				} catch {}
 			}
 			const userMessageCount = messages.filter((m) => m.role === "user").length;
-			const url = `${origin}/playground?cid=${encodeURIComponent(cid ?? "")}&msgs=${userMessageCount}&model=${encodeURIComponent(model)}`;
+			const url = `${origin}/chat?cid=${encodeURIComponent(cid ?? "")}&msgs=${userMessageCount}&model=${encodeURIComponent(model)}`;
 			setShareStatus("default");
 			try {
 				await navigator.clipboard.writeText(url);

@@ -1,13 +1,8 @@
 name: Deposit Retry
 
 on:
-  schedule:
-    # Every 5 minutes. Was 60s setInterval in server/src/jobs/deposit-retry.ts.
-    # GitHub Actions scheduled events have a 5-minute minimum cadence. The
-    # retry job is best-effort: pending deposits that don't get confirmed
-    # by 30 minutes are expired by the same job. Worst case users see a
-    # 5-minute confirmation delay instead of 60s.
-    - cron: '*/5 * * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -29,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

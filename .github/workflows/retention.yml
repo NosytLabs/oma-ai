@@ -1,14 +1,8 @@
 name: Retention
 
 on:
-  schedule:
-    # Daily at 03:00 UTC. Runs the bounded-retention sweep against four
-    # previously-unbounded tables (see server/src/jobs/retention.ts):
-    #   usage_records         — keep  90d
-    #   audit_logs            — keep 365d
-    #   oracle_prices         — keep  30d
-    #   deposit_notifications — keep  90d
-    - cron: '0 3 * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -30,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

@@ -1,11 +1,8 @@
 name: Credit Expiry
 
 on:
-  schedule:
-    # Daily at 02:00 UTC (was 24h setInterval in server/src/jobs/credit-expiry.ts).
-    # M10.3 schedule alignment — runs before retention (03:00 UTC) so any
-    # just-expired batches get zeroed out before audit logs are pruned.
-    - cron: '0 2 * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -27,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

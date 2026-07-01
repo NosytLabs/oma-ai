@@ -9,7 +9,7 @@ const BODY = `# OMA AI Gateway
 
 ## Getting Started
 - [API Documentation](https://oma-ai.com/docs) - Complete API reference
-- [Playground](https://oma-ai.com/playground) - Interactive API testing
+- [Chat](https://oma-ai.com/chat) - Interactive API testing
 - [Pricing](https://oma-ai.com/pricing) - Model pricing and tiers
 - [Model Catalog](https://oma-ai.com/models) - AI models catalog
 - [Deposits](https://oma-ai.com/deposit) - Add credits via crypto (USDC, HoudiniSwap, CCTP, LiFi)
@@ -50,7 +50,7 @@ OMA supports multiple deposit methods:
 ## SDKs
 - Python: \`pip install openai\` with base_url="https://api.oma-ai.com/v1"
 - JavaScript: \`npm i openai\` with baseURL: 'https://api.oma-ai.com/v1'
-- cURL: see /playground for one-click copy
+- cURL: see /chat for one-click copy
 
 ## Error Codes
 | Code | Meaning |

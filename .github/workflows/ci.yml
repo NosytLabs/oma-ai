@@ -32,7 +32,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: false
 
       - name: Install server dependencies
         working-directory: server
@@ -71,7 +70,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: false
 
       - name: Install server dependencies
         working-directory: server
@@ -101,9 +99,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # Disable node_modules caching entirely to prevent Post step
-          # "Path Validation Error" when cache path is absent.
-          cache: 'none'
 
       - name: Install server dependencies
         working-directory: server
@@ -136,7 +131,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: false
 
       - name: Install and build server
         working-directory: server

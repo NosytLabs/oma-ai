@@ -329,7 +329,7 @@ export default function CreditsPage() {
 					<div className="mb-6">
 						<div className="text-5xl font-bold tracking-tight text-text-bright mb-1">
 							{loading && !balance ? (
-								<Skeleton variant="text" width={160} height={48} />
+								<Skeleton className="h-12 w-40" />
 							) : (
 								<AnimatedNumber
 									value={parseFloat(formatCents(balance?.balanceCents ?? "0"))}

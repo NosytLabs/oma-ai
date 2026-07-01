@@ -259,7 +259,7 @@ function LiveModelDetail({
 				<header className="mb-10">
 					<h1 className="h1-page text-text-bright mb-3">{name}</h1>
 					<p className="text-lg text-text-secondary max-w-3xl">
-						Live catalog entry. Open it in the playground to try it, or call it
+						Live catalog entry. Open it in the chat to try it, or call it
 						directly via <code className="font-mono">/v1/chat/completions</code>
 						.
 					</p>

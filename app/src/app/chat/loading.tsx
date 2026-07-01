@@ -1,4 +1,4 @@
-import { PlaygroundLoaderLottie } from "../playground/_components/PlaygroundLoaderLottie";
+import { PlaygroundLoaderLottie } from "./_components/PlaygroundLoaderLottie";
 
 export default function Loading() {
 	return (

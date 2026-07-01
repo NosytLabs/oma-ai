@@ -50,6 +50,7 @@
 		"@vitest/ui": "^4.1.7",
 		"axe-core": "^4.12.1",
 		"babel-plugin-react-compiler": "^1.0.0",
+		"clsx": "^2.1.1",
 		"eslint": "^9.39.4",
 		"eslint-config-next": "^15.5.19",
 		"jsdom": "^29.1.1",

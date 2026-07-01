@@ -1,11 +1,8 @@
 name: Subscription Check
 
 on:
-  schedule:
-    # Hourly. Was 1h setInterval in server/src/jobs/subscription-cron.ts.
-    # Subscription periods are monthly so hourly is sufficient — most
-    # ticks are no-ops.
-    - cron: '17 * * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -27,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

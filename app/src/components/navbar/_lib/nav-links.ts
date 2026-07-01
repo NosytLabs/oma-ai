@@ -52,12 +52,6 @@ export const miscLinks: NavItem[] = [
 	},
 	{ href: "/terms", label: "terms", icon: FileText, desc: "terms of service" },
 	{
-		href: "/playground",
-		label: "playground",
-		icon: Terminal,
-		desc: "api playground",
-	},
-	{
 		href: "/image-generation",
 		label: "image-gen",
 		icon: Box,

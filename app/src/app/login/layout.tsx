@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Login",
+	title: "Sign in | OMA AI",
 	description:
-		"Sign in to OMA AI with your wallet or account number for permissionless AI inference.",
+		"Sign in to OMA AI with your wallet (SIWE on Base) or a 16-digit anonymous account number. No email, no password, no KYC — crypto-native AI inference.",
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 	openGraph: {
-		title: "Login | OMA AI",
+		title: "Sign in | OMA AI",
 		description:
-			"Sign in to OMA AI with your wallet or account number for permissionless AI inference.",
+			"Sign in to OMA AI with your wallet or anonymous account number. SIWE on Base mainnet. No PII collected.",
 		url: "https://oma-ai.com/login",
 		images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Login | OMA AI",
+		title: "Sign in | OMA AI",
 		description:
-			"Sign in to OMA AI with your wallet or account number for permissionless AI inference.",
+			"Sign in to OMA AI with your wallet or anonymous account number. SIWE on Base mainnet. No PII collected.",
 		images: ["/opengraph-image"],
 	},
 };

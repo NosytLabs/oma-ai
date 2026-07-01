@@ -1329,11 +1329,11 @@ function DocsContent() {
 						<div className="flex items-center gap-2">
 							<DocsSearch />
 							<Link
-								href="/playground"
+								href="/chat"
 								className="btn-primary hidden sm:inline-flex items-center gap-2"
 							>
 								<Play className="h-4 w-4" />
-								Playground
+								Chat
 							</Link>
 						</div>
 					</div>

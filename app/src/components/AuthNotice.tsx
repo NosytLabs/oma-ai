@@ -28,8 +28,8 @@ export function AuthNotice() {
 	const targetLabel =
 		next === "/dashboard"
 			? "dashboard"
-			: next === "/playground"
-				? "playground"
+			: next === "/chat"
+				? "chat"
 				: next === "/deposit"
 					? "deposit"
 					: next === "/settings"

@@ -1,10 +1,8 @@
 name: Nonce Cleanup
 
 on:
-  schedule:
-    # Every 15 minutes. Was 15m setInterval in server/src/jobs/nonce-cleanup.ts.
-    # Nonces expire after 10 minutes of inactivity, so 15m is the natural cadence.
-    - cron: '*/15 * * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -26,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

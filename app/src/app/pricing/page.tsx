@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	ArrowRight,
 	ChevronDown,
@@ -23,7 +23,6 @@ import {
 	Reveal,
 	StaggerReveal,
 	scaleIn,
-	staggerContainer,
 } from "@/lib/motion";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
@@ -393,16 +392,13 @@ export default function PricingPage() {
 										</tr>
 									</thead>
 									{/* key=category re-triggers stagger on filter change */}
-									<m.tbody
-										key={category}
-										variants={staggerContainer(0.035)}
-										initial="hidden"
-										animate="show"
-									>
+									<tbody key={category}>
 										{filtered.map((mm, i) => (
-											<m.tr
+											<tr
 												key={mm.id}
-												variants={fadeUp}
+												style={{
+													animation: `fadeInUp 0.3s ease-out ${i * 0.035}s both`,
+												}}
 												className={`border-b border-border/50 transition-colors hover:bg-surface-elevated/50 ${i % 2 === 1 ? "bg-surface-elevated/30" : ""}`}
 											>
 												<td className="px-4 py-3">
@@ -435,9 +431,9 @@ export default function PricingPage() {
 												<td className="px-4 py-3 text-right text-xs text-text-secondary font-mono">
 													{mm.ctx}
 												</td>
-											</m.tr>
+											</tr>
 										))}
-									</m.tbody>
+									</tbody>
 								</table>
 							</div>
 

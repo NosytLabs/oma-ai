@@ -21,8 +21,8 @@ interface QuickAction {
 
 const ACTIONS: QuickAction[] = [
 	{
-		href: "/playground",
-		label: "Open playground",
+		href: "/chat",
+		label: "Open chat",
 		description: "Test prompts in the browser",
 		icon: Terminal,
 	},

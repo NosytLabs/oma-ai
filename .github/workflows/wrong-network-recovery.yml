@@ -1,11 +1,8 @@
 name: Wrong Network Recovery
 
 on:
-  schedule:
-    # Every 5 minutes. Was 5m setInterval in server/src/jobs/deposit-recovery.ts.
-    # Auto-expires pending wrong-network recoveries that admins didn't
-    # action within 1 hour of creation.
-    - cron: '*/5 * * * *'
+  # Site not live yet — schedule disabled to prevent CI spam.
+  # Re-enable the schedule block (below) when the site goes live.
   workflow_dispatch:
 
 concurrency:
@@ -27,8 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ../../.nvmrc
-          cache: pnpm
+          node-version: '20'
           
 
       - name: Install dependencies

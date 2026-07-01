@@ -1,4 +1,3 @@
-import path from "node:path";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
@@ -55,17 +54,21 @@ const nextConfig: NextConfig = {
 		optimizePackageImports: ["lucide-react"],
 	},
 
-	// FIX: framer-motion 12.x ESM entry lacks 'use client'. SWC will inject
-	// it during transpilation, fixing the RSC module-resolution crash.
+	// FIX: The old alias redirect is REMOVED. It caused dual module registration
+	// when paired with transpilePackages (both the alias and the transpiler created
+	// separate identity copies of framer-motion internals → "options.factory"
+	// undefined errors on hydration).
 	//
-	// 2026-06-29: BOTH transpilePackages AND the alias are needed. SWC
-	// injects 'use client' into framer-motion's exports via
-	// transpilePackages; the alias redirects all 'framer-motion'
-	// imports through the wrapper file which adds an additional
-	// 'use client' boundary and prevents framer-motion from being
-	// referenced directly in the RSC module graph (which would
-	// otherwise crash with "Cannot read properties of undefined").
-	transpilePackages: ["framer-motion"],
+	// framer-motion 12.x ships 'use client' on its entry points, so direct imports
+	// work correctly in RSC. The app's 'use client' wrapper at
+	// src/lib/framer-motion-client.tsx still provides a single-entry boundary:
+	// it imports from the bare 'framer-motion' specifier (no alias, so no
+	// recursion) and re-exports each binding as an independent client reference
+	// to preserve Proxy behavior through RSC serialization.
+	//
+	// transpilePackages is intentionally empty — compiling framer-motion as
+	// local source alongside the alias was what caused the dual registration.
+	transpilePackages: [],
 
 	// Server-only packages (Node-only modules that break static prerendering).
 	// Do NOT add ESM client packages here — they get the hookless react-server export.
@@ -84,19 +87,11 @@ const nextConfig: NextConfig = {
 			".js": [".ts", ".tsx", ".js", ".jsx"],
 		};
 
-		// FIX: framer-motion 12.x ESM entry lacks 'use client'. Next.js 15 RSC
-		// treats it as a shared module → webpack module factory undefined during
-		// flight hydration → "Cannot read properties of undefined (reading 'call')".
-		// Alias bare 'framer-motion' to our 'use client' wrapper. The wrapper
-		// itself imports from a RELATIVE path (../../node_modules/...) so the
-		// alias doesn't loop back to it.
-		config.resolve.alias = {
-			...config.resolve.alias,
-			"framer-motion": path.resolve(
-				__dirname,
-				"src/lib/framer-motion-client.tsx",
-			),
-		};
+		// REMOVED: framer-motion alias — caused dual module registration with
+		// transpilePackages ("options.factory" undefined on hydration). All
+		// 'framer-motion' imports now resolve normally through the package.
+		// Components that need a 'use client' boundary import from the wrapper
+		// at src/lib/framer-motion-client.tsx explicitly.
 
 		// Suppress "Critical dependency" warnings from third-party libs that
 		// use dynamic require() (mppx/ox/tempo via wagmi connectors). The lib

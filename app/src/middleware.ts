@@ -8,7 +8,7 @@ const PROTECTED_PATHS = [
 	"/admin",
 	"/settings",
 	"/deposit",
-	"/playground",
+	"/chat",
 ];
 // C-C1: when this cookie is present, the user has opted into a 24h demo
 // session. The middleware lets them through the protected-route gate so
@@ -28,6 +28,17 @@ function getSecret(): Uint8Array | null {
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
+
+	// /playground was consolidated into /chat. Redirect old URLs so
+	// existing links and bookmarks keep working.
+	if (pathname === "/playground" || pathname.startsWith("/playground/")) {
+		const target = pathname.replace(/^\/playground/, "/chat") || "/chat";
+		const redirectUrl = new URL(target, request.url);
+		request.nextUrl.searchParams.forEach((value, key) => {
+			redirectUrl.searchParams.set(key, value);
+		});
+		return NextResponse.redirect(redirectUrl);
+	}
 
 	const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 	if (!isProtected) return NextResponse.next();
@@ -111,6 +122,7 @@ export const config = {
 		"/admin/:path*",
 		"/settings/:path*",
 		"/deposit/:path*",
+		"/chat/:path*",
 		"/playground/:path*",
 	],
 };

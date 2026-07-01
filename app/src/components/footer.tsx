@@ -21,7 +21,7 @@ const FOOTER_SECTIONS: FooterSection[] = [
 		title: "Product",
 		links: [
 			{ label: "models", href: "/models" },
-			{ label: "playground", href: "/playground" },
+			{ label: "chat", href: "/chat" },
 			{ label: "pricing", href: "/pricing" },
 			{ label: "image gen", href: "/image-generation" },
 			{ label: "video gen", href: "/video-generation" },

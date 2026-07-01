@@ -375,7 +375,7 @@ export default function DisclosuresPage() {
 								{[
 									{ href: "/terms", label: "Terms" },
 									{ href: "/privacy", label: "Privacy" },
-									{ href: "/about-us", label: "About" },
+									{ href: "/about", label: "About" },
 									{ href: "/pricing", label: "Pricing" },
 									{ href: "/docs", label: "API docs" },
 								].map((l) => (

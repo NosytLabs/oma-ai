@@ -86,10 +86,10 @@ export function RecentRequestsTable({
 								>
 									No inference calls yet.{" "}
 									<Link
-										href="/playground"
+										href="/chat"
 										className="text-accent hover:underline"
 									>
-										Try the playground →
+										Try the chat →
 									</Link>
 								</td>
 							</tr>

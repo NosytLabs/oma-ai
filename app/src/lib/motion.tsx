@@ -21,8 +21,8 @@ import {
 	useMotionValue,
 	useReducedMotion,
 	useSpring,
-	type Variants,
-} from "framer-motion";
+} from "@/lib/framer-motion-client";
+import type { Variants } from "@/lib/framer-motion-client";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 

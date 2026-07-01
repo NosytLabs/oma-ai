@@ -8,32 +8,21 @@
  * The 'use client' directive is at the top of this file. That makes
  * every export a client reference when imported from a server component.
  *
- * The previous version of this file used a *static re-export* of framer-motion's
- * dist entry (`export { m, motion } from '.../framer-motion/dist/es/index.mjs'`).
- * That approach loses the Proxy behavior of `m` and `motion` during RSC
- * serialization — the spans that use these proxies get their initial `hidden`
- * variant applied on the server, but the client never receives the trigger
- * to transition to `show`, leaving the content invisible (opacity: 0) until
- * the user manually removes the inline style. This was the source of the
- * "1 Error — BailoutToCSR" symptom plus visually empty home/login/pricing
- * pages even when SSR succeeded.
+ * Each binding is imported and re-exported explicitly so that every export
+ * becomes an independent client reference that the React flight protocol
+ * can resolve separately. Static `export { m } from 'framer-motion'`
+ * forwards the value reference, which loses the Proxy through RSC.
  *
- * Fix: import each binding and re-export it as a *named* client export.
- * Static re-exports of proxies through a 'use client' module are treated as
- * a single value reference; named re-exports through `export const` are
- * treated as separate client references that the React flight protocol can
- * resolve independently. Each motion component then gets a real
- * serialization round-trip.
- *
- * The wrapper cannot import from the bare specifier `'framer-motion'`
- * (webpack re-routes that back to this file → infinite recursion). We
- * import from a *relative path* which bypasses the alias and the package's
- * `exports` field restriction.
- *
- * If this file is moved, update the relative path accordingly.
+ * Bug history:
+ *   - Version 1: Static re-export from a relative path to framer-motion/dist
+ *     → Proxy behavior lost during RSC serialization → invisible content.
+ *   - Version 2: Named re-export from relative path + webpack alias
+ *     → alias caused dual module registration → `options.factory` undefined.
+ *   - Version 3 (current): Named re-export from bare 'framer-motion' specifier.
+ *     No alias, no transpilePackages. All app imports go through this wrapper.
  */
 
-import * as FM from "../../node_modules/framer-motion/dist/es/index.mjs";
+import * as FM from "framer-motion";
 
 // Re-export motion components explicitly so each becomes an independent
 // client reference. Static `export { m }` does not do this — it forwards
@@ -63,6 +52,7 @@ export const useMotionValueEvent = FM.useMotionValueEvent;
 // Animation utilities
 export const animate = FM.animate;
 export const animations = FM.animations;
+export const motionValue = FM.motionValue;
 
 // Internal utilities (re-exported for compatibility)
 export const isBrowser = FM.isBrowser;
@@ -77,4 +67,4 @@ export type {
 	MotionProps,
 	Transition,
 	Variants,
-} from "../../node_modules/framer-motion/dist/es/index.mjs";
+} from "framer-motion";

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useId, useState } from "react";
-import { SkeletonKeyList } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
@@ -289,7 +289,24 @@ export default function ApiKeysPage() {
 			</AnimatePresence>
 
 			{loading && keys.length === 0 ? (
-				<SkeletonKeyList count={3} />
+				<div className="space-y-3">
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							className="card flex items-center gap-4 py-4"
+						>
+							<Skeleton className="h-10 w-10 rounded-lg" />
+							<div className="flex-1 space-y-2">
+								<Skeleton className="h-4 w-32" />
+								<Skeleton className="h-3 w-24" />
+							</div>
+							<div className="flex gap-2">
+								<Skeleton className="h-8 w-8 rounded-lg" />
+								<Skeleton className="h-8 w-8 rounded-lg" />
+							</div>
+						</div>
+					))}
+				</div>
 			) : keys.length === 0 ? (
 				<m.div
 					className="rounded-xl border border-border/50 bg-surface flex items-center justify-center py-16"
