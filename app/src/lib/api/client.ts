@@ -17,6 +17,43 @@ function getBaseUrl(path: string): string {
 }
 
 /**
+ * B1 fix: in-memory JWT cache.
+ *
+ * The canonical session cookie is HttpOnly (`__Host-oma_session` in production,
+ * `oma_session` in dev), so `document.cookie` no longer exposes the JWT.
+ * Without an `Authorization` header, every browser→backend call would 401
+ * because the Next.js catch-all and dedicated route proxies both rely on
+ * reading the cookie server-side and forwarding it as `Authorization: Bearer
+ * <jwt>` (the Hono backend's `sessionAuth` middleware only inspects that
+ * header).
+ *
+ * To keep the client-side API helper working for the brief window between
+ * receiving a fresh JWT and the next page reload (and for any non-`/api`
+ * direct call), we mirror the token into a module-level cache that callers
+ * populate via `setAuthToken(token)` whenever they get a fresh JWT in a
+ * response body. `clearSession()` / logout handlers call `setAuthToken(null)`
+ * to drop the cached copy.
+ *
+ * The HttpOnly cookie remains the authoritative copy for hard-reloads and
+ * server-side middleware checks; this cache is a fast-path convenience, not
+ * a security boundary. XSS exfiltration risk is unchanged because the token
+ * already lives in JS-readable memory by the time the SPA holds it — the
+ * HttpOnly cookie is what made it unreadable to other-page JS, not in-memory
+ * state owned by the app itself.
+ */
+let cachedToken: string | null = null;
+
+/** Set or clear the in-memory JWT used to populate `Authorization` headers. */
+export function setAuthToken(token: string | null): void {
+	cachedToken = token;
+}
+
+/** Read the currently cached JWT, if any. Returns null when no session. */
+export function getAuthToken(): string | null {
+	return cachedToken;
+}
+
+/**
  * Request deduplication — prevents duplicate concurrent requests.
  * Keyed by method + path + first 64 chars of body JSON.
  */
@@ -135,7 +172,11 @@ export interface RequestOptions extends RequestInit {
  * Core request function.
  * - Deduplicates in-flight requests
  * - 30s timeout via AbortController
- * - Injects `Authorization: Bearer <sessionToken>` from cookies (browser only)
+ * - Injects `Authorization: Bearer <token>` from the in-memory cache populated
+ *   by `setAuthToken()` (browser only). The HttpOnly session cookie is the
+ *   authoritative copy; this cache is the client-side fast-path so non-`/api`
+ *   direct calls and the in-page request helper can attach the header without
+ *   re-reading the cookie.
  * - Throws `ApiError` on non-2xx, `BackendUnavailableError` on network failure
  */
 export async function request<T>(
@@ -160,16 +201,15 @@ export async function request<T>(
 	};
 
 	if (typeof window !== "undefined") {
-		try {
-			const sessionCookie = document.cookie
-				.split("; ")
-				.find((c) => c.startsWith("oma_session="));
-			if (sessionCookie) {
-				const token = sessionCookie.slice("oma_session=".length);
-				if (token) headers.Authorization = `Bearer ${token}`;
-			}
-		} catch {
-			// SSR or cookie access denied — skip auth header
+		// B1 fix: source the bearer token from the in-memory cache populated
+		// by wallet-provider.tsx / account-login-modal.tsx when they receive a
+		// fresh JWT in a /v1/auth/* response body. document.cookie no longer
+		// exposes the JWT because the canonical cookie is HttpOnly — using
+		// the cache avoids a cookie round-trip on every request and keeps
+		// direct-to-backend calls (non-/api paths) authenticated.
+		const cached = getAuthToken();
+		if (cached) {
+			headers.Authorization = `Bearer ${cached}`;
 		}
 
 		// Inject x-csrf-token for state-changing requests. The server sets the

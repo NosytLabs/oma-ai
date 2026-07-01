@@ -67,14 +67,23 @@ function createCsrfCookieHeader(token: string): string {
   const ttlMs = config.SESSION_COOKIE_TTL_MS;
   const expires = new Date(Date.now() + ttlMs).toUTCString();
   const maxAge = Math.floor(ttlMs / 1000);
+  // H6 fix: use the `__Host-csrf_token` cookie name in production to match
+  // the API-key pattern (`__Host-oma_api_key`). The `__Host-` prefix pins
+  // the cookie to a specific host + path + Secure flag, preventing an
+  // attacker who controls a subdomain (e.g. `evil.oma-ai.com`) from
+  // forging a `csrf_token` cookie that the browser would attach to
+  // requests on `oma-ai.com`. The matching client-side change is in
+  // `app/src/lib/cookies.ts#CSRF_COOKIE_NAME`.
+  const isProd = config.NODE_ENV === "production";
+  const name = isProd ? "__Host-csrf_token" : "csrf_token";
   // Secure flag only on HTTPS / production. HTTP localhost dev needs the cookie
   // to be readable by the page so the login round-trip works in the browser.
-  const secure = config.NODE_ENV === 'production' ? ' Secure;' : '';
+  const secure = isProd ? " Secure;" : "";
   // ponytail: C1 — NO HttpOnly. Double-submit CSRF requires the browser to read
   // the cookie and echo it in the `x-csrf-token` header on state-changing
   // requests. HttpOnly blocks JS reads, which 403s every state change. Defense
   // in depth: SameSite=Strict + Secure (prod) + HMAC-signed body.
-  return `csrf_token=${token}; expires=${expires}; path=/; max-age=${maxAge};${secure} SameSite=Strict`;
+  return `${name}=${token}; expires=${expires}; path=/; max-age=${maxAge};${secure} SameSite=Strict`;
 }
 
 export const authRoutes = new Hono<OmaEnv>();
@@ -283,13 +292,16 @@ authRoutes.delete("/account", sessionAuth, async (c) => {
 });
 
 authRoutes.post("/auth/logout", sessionAuth, async (c) => {
-  // L-A4: clear the oma_session cookie (set client-side via document.cookie
-  // by wallet-provider.storeSession after SIWE verify) so a logged-out user
-  // can't keep using the JWT. Without this, the JWT cookie lingers on the
-  // browser until its 7-day max-age expires — long after the user thought
-  // they were logged out. The JWT itself expires server-side in 24h but the
-  // browser cookie persists longer; clearing the cookie on logout closes
-  // that gap immediately.
+  // L-A4 + C1 fix: clear the canonical session cookie so a logged-out
+  // user can't keep using the JWT. After C1 the cookie is HttpOnly
+  // (set server-side by /api/auth/session/cookie, no longer written
+  // via document.cookie), so JS cannot delete it client-side — this
+  // server-side Set-Cookie is the only way to expire it. The name
+  // matches the new env-dependent SESSION_COOKIE_NAME in
+  // `app/src/lib/cookies.ts` so logout actually clears the cookie
+  // the login flow set (C2 fix for the previous prod/dev name
+  // mismatch where the user thought they were logged out but the
+  // HttpOnly __Host-oma_session cookie survived).
   const isDev = config.NODE_ENV === "development";
   const name = isDev ? "oma_session" : "__Host-oma_session";
   let clearCookie = `${name}=; Path=/; SameSite=Strict; Max-Age=0`;
@@ -405,6 +417,26 @@ authRoutes.get("/auth/2fa/status", sessionAuth, async (c) => {
 
 // Account-number auth (16-digit)
 authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
+  // H3 fix: enforce the same double-submit CSRF pattern as
+  // /auth/account/login. Previously this endpoint only had rate limiting
+  // and an optional Bearer session — a cross-site form submission could
+  // hit the unauthenticated path (allocateAccountNumber + insert user
+  // row) and mint a fresh JWT for the attacker's chosen account number.
+  // Now we require the same csrf_token cookie + x-csrf-token header +
+  // HMAC-validated token that login already uses. The session-mode path
+  // is also gated so a cross-site request that piggybacks on an existing
+  // session cookie still fails the CSRF check.
+  const csrfToken = c.req.header("x-csrf-token");
+  const cookieHeader = c.req.header("Cookie") || "";
+  const csrfCookieMatch = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?csrf_token=([^;]+)/);
+  const csrfCookie = csrfCookieMatch ? csrfCookieMatch[1] : null;
+  const csrfValid = csrfToken && csrfCookie &&
+    csrfToken.length === csrfCookie.length &&
+    timingSafeEqual(Buffer.from(csrfToken), Buffer.from(csrfCookie));
+  if (!csrfValid || !validateCsrfToken(csrfToken ?? "")) {
+    return c.json({ error: { message: "Invalid CSRF token", type: "csrf_error", code: "csrf_validation_failed" } }, 403);
+  }
+
   const authHeader = c.req.header("Authorization");
   const session = authHeader?.startsWith("Bearer ")
     ? await verifySessionToken(authHeader.slice(7))
@@ -516,7 +548,12 @@ authRoutes.post("/auth/account/login", async (c) => {
 
   const csrfToken = c.req.header("x-csrf-token");
   const cookieHeader = c.req.header("Cookie") || "";
-  const csrfCookieMatch = cookieHeader.match(/csrf_token=([^;]+)/);
+  // H6 fix: cookie name is `__Host-csrf_token` in production (set by
+  // createCsrfCookieHeader above) and `csrf_token` in dev. The optional
+  // prefix in the regex matches both without forcing a per-env branch
+  // here. The same regex is used by the new CSRF check in
+  // /auth/account/create below.
+  const csrfCookieMatch = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?csrf_token=([^;]+)/);
   const csrfCookie = csrfCookieMatch ? csrfCookieMatch[1] : null;
   
   // C6: Use timing-safe comparison for CSRF cookie vs header match

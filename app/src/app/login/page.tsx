@@ -9,7 +9,12 @@
  * card on the right. Mobile stacks brand-first so the value prop reads
  * immediately on small screens.
  *
- * Auth methods (both real, both verified against the backend routes):
+ * Above the auth card (both viewports) sits the x402 callout so the
+ * "skip login" path reads as a peer of the Wallet / Account tabs rather
+ * than a footer footnote.
+ *
+ * Auth methods (all three routes are real, all verified against the
+ * backend):
  *
  *   1. Wallet (default) — SIWE on Base mainnet via wagmi. User picks a
  *      connector, approves the wallet popup, then signs an EIP-4361
@@ -19,10 +24,14 @@
  *      identifier. Server stores a SHA-256 hash, no PII. Reuses the
  *      existing `AccountLoginModal` in `inline` mode.
  *
+ *   3. x402 (no account) — any OMA endpoint accepts an `X-PAYMENT`
+ *      header on Base. Linked from the callout; not a form on this page.
+ *
  * Cross-cutting concerns
  * ----------------------
  *   - CSRF token is pre-fetched on mount so the account-number login has
- *     no first-click latency (A-C1).
+ *     no first-click latency (A-C1). Failures surface a warning banner
+ *     with a Retry button; while in-flight, a tiny "Preparing…" line.
  *   - The SIWE message preview is built locally using the same
  *     EIP-4361 structure the wallet-provider signs. We never see the
  *     server-issued nonce before the actual sign — we show a structurally
@@ -30,6 +39,21 @@
  *   - Specific error shapes for user-rejected / wrong-network /
  *     rate-limit / network-down come from `shapeAuthError`.
  *   - `useReducedMotion` honored globally; all entry animations gated.
+ *
+ * TODO(2FA)
+ * ---------
+ * Account-number login doesn't currently expose a TOTP step. When the
+ * server-side flag (`users.two_factor_enabled`) lands and the
+ * `/api/auth/account/login` endpoint starts returning
+ * `{ requiresTwoFactor: true }` instead of issuing a session, this page
+ * needs to:
+ *   1. Catch that response shape in `AccountLoginModal.handleLogin`
+ *      and surface a 6-digit TOTP input below the account-number field.
+ *   2. Auto-advance each digit, paste-fill, and resubmit with
+ *      `{ accountNumber, totpCode }`.
+ *   3. On success, fall through to the existing cookie-set path.
+ * Until the server supports it, leaving a hook here is wasteful — the
+ * audit log is the source of truth.
  *
  * See `app/src/components/auth/` for the shared primitives this page
  * composes.
@@ -138,6 +162,39 @@ function LoginInner() {
 
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
 	const [csrfError, setCsrfError] = useState(false);
+	const [csrfPreparing, setCsrfPreparing] = useState(true);
+
+	// A-C1: pre-fetch CSRF token on mount (race-free account-number flow).
+	// Hoisted into a stable callback so the inline "Retry" button on the
+	// CSRF error banner can re-run it without rebuilding the page.
+	const fetchCsrf = useCallback(() => {
+		setCsrfPreparing(true);
+		setCsrfError(false);
+		let cancelled = false;
+		api.auth
+			.getCsrfToken()
+			.then((res) => {
+				if (!cancelled && res.token) {
+					setCsrfToken(res.token);
+					setCsrfError(false);
+				}
+			})
+			.catch((err) => {
+				if (cancelled) return;
+				console.warn("CSRF pre-fetch failed:", err);
+				setCsrfError(true);
+			})
+			.finally(() => {
+				if (!cancelled) setCsrfPreparing(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		return fetchCsrf();
+	}, [fetchCsrf]);
 
 	const [walletError, setWalletError] = useState<unknown>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
@@ -183,27 +240,6 @@ function LoginInner() {
 	useEffect(() => {
 		if (isAuthenticated) router.replace(next);
 	}, [isAuthenticated, next, router]);
-
-	// A-C1: pre-fetch CSRF token on mount (race-free account-number flow).
-	useEffect(() => {
-		let cancelled = false;
-		api.auth
-			.getCsrfToken()
-			.then((res) => {
-				if (!cancelled && res.token) {
-					setCsrfToken(res.token);
-					setCsrfError(false);
-				}
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				console.warn("CSRF pre-fetch failed:", err);
-				setCsrfError(true);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
 
 	const handleConnectorSelect = useCallback(
 		async (id: string) => {
@@ -270,13 +306,19 @@ function LoginInner() {
 
 			<div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl grid-cols-1 items-center gap-12 px-4 py-10 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-16 md:px-8">
 				<BrandPitch />
-				<m.div {...fadeUpProps(0)} className="mx-auto w-full max-w-md">
+				<m.div
+					{...fadeUpProps(0)}
+					className="mx-auto w-full max-w-md space-y-4"
+				>
+					<X402Callout />
 					<LoginCard
 						tab={tab}
 						setTab={setTab}
 						offline={offline}
 						refreshApiHealth={refreshApiHealth}
 						csrfError={csrfError}
+						csrfPreparing={csrfPreparing}
+						retryCsrf={fetchCsrf}
 						csrfToken={csrfToken}
 						onTabKeyDown={onTabKeyDown}
 						walletTabRef={walletTabRef}
@@ -311,6 +353,50 @@ function LoginInner() {
 				}}
 			/>
 		</div>
+	);
+}
+
+/* =====================================================================
+   X402Callout — third sign-in path, lifted above the auth card so it
+   reads as a peer of the Wallet / Account tabs rather than a footer
+   footnote. Documented at /docs#x402.
+   ===================================================================== */
+
+function X402Callout() {
+	return (
+		<m.div
+			{...fadeUpProps(0)}
+			className="rounded-2xl border border-accent/30 bg-accent/5 p-5 shadow-sm"
+		>
+			<div className="flex items-start gap-3">
+				<span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
+					<Sparkles className="h-4 w-4" aria-hidden="true" />
+				</span>
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-2">
+						<p className="text-sm font-semibold text-text-bright">
+							Skip login — pay per request with x402
+						</p>
+						<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-accent">
+							No account
+						</span>
+					</div>
+					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
+						Hit any OMA endpoint with an{" "}
+						<code className="font-mono text-text-secondary">X-PAYMENT</code>{" "}
+						header on Base. No signup, no JWT, no cookies. Best for AI agents
+						and one-off requests.
+					</p>
+					<a
+						href="/docs#x402"
+						className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline underline-offset-2"
+					>
+						How x402 works
+						<ArrowRight className="h-3 w-3" aria-hidden="true" />
+					</a>
+				</div>
+			</div>
+		</m.div>
 	);
 }
 
@@ -407,6 +493,8 @@ interface LoginCardProps {
 	offline: boolean;
 	refreshApiHealth: () => void;
 	csrfError: boolean;
+	csrfPreparing: boolean;
+	retryCsrf: () => void;
 	csrfToken: string | null;
 	onTabKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
 	walletTabRef: React.RefObject<HTMLButtonElement | null>;
@@ -435,6 +523,8 @@ function LoginCard(p: LoginCardProps) {
 		offline,
 		refreshApiHealth,
 		csrfError,
+		csrfPreparing,
+		retryCsrf,
 		onTabKeyDown,
 		walletTabRef,
 		accountTabRef,
@@ -515,13 +605,43 @@ function LoginCard(p: LoginCardProps) {
 
 			{csrfError && !offline && (
 				<div
+					role="alert"
+					aria-live="assertive"
+					className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
+				>
+					<AlertTriangle
+						className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+						aria-hidden="true"
+					/>
+					<div className="flex-1 text-xs text-text leading-relaxed">
+						<p className="font-semibold mb-1">
+							Account-number sign-in is unavailable
+						</p>
+						<p className="text-text-muted">
+							We couldn&apos;t prepare a CSRF token. The wallet tab still works.
+							You can retry below or switch tabs.
+						</p>
+						<button
+							type="button"
+							onClick={retryCsrf}
+							className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-warning hover:underline underline-offset-2"
+						>
+							<RefreshCw className="h-3 w-3" aria-hidden="true" />
+							Retry CSRF pre-fetch
+						</button>
+					</div>
+				</div>
+			)}
+
+			{csrfPreparing && !csrfError && !offline && (
+				<p
 					role="status"
 					aria-live="polite"
-					className="mb-4 rounded-lg border border-border bg-surface px-4 py-2.5 text-[11px] text-text-muted"
+					className="mb-3 flex items-center gap-1.5 text-[10px] text-text-muted"
 				>
-					CSRF token pre-fetch failed — account-number sign-in may not work. Try
-					the wallet tab or refresh the page.
-				</div>
+					<Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
+					Preparing account-number sign-in…
+				</p>
 			)}
 
 			<div
@@ -716,32 +836,6 @@ function LoginCard(p: LoginCardProps) {
 				</Link>
 				.
 			</p>
-
-			<div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-4">
-				<div className="flex items-start gap-3">
-					<Sparkles
-						className="mt-0.5 h-4 w-4 shrink-0 text-accent"
-						aria-hidden="true"
-					/>
-					<div className="min-w-0 flex-1">
-						<p className="text-xs font-semibold text-text-bright">
-							Skip login — pay per request with x402
-						</p>
-						<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-							Hit any OMA endpoint with an{" "}
-							<code className="font-mono text-text-secondary">X-PAYMENT</code>{" "}
-							header on Base. No signup, no JWT. Best for AI agents.
-						</p>
-						<a
-							href="/docs#x402"
-							className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline underline-offset-2"
-						>
-							How x402 works
-							<ArrowRight className="h-3 w-3" aria-hidden="true" />
-						</a>
-					</div>
-				</div>
-			</div>
 		</div>
 	);
 }

@@ -2,39 +2,48 @@
 
 /**
  * TrustStrip — section 2 of the homepage.
- * Compact logo row BELOW the hero. Monochrome icons inherit color from
- * parent text class so we tint via utility classes.
+ *
+ * Plain-text wordmarks for upstream providers, separated by middle dots.
+ * No SVG marks (replicas of trademarked logos are unsafe and obviously
+ * fake to a trained eye). A footnote clarifies that OMA routes to these
+ * providers behind one OpenAI-compatible API.
  */
 
-import { Reveal, RevealStagger } from "@/app/_components/home/reveal";
-import { TRUST_LOGOS } from "@/app/_components/home/_icons";
+import { Reveal } from "@/app/_components/home/reveal";
+import { TRUST_NAMES } from "@/app/_components/home/_icons";
 
 export function TrustStrip() {
 	return (
 		<section
-			aria-label="Ecosystem integrations"
+			aria-label="Routing through upstream providers"
 			className="relative border-y border-border-subtle bg-[var(--color-surface)]/40 py-10 sm:py-12"
 		>
 			<div className="container-page">
 				<Reveal>
-					<p className="text-center text-xs uppercase tracking-[0.18em] font-mono text-text-muted mb-8">
-						Works with the tools you ship on
+					<p className="text-center text-xs uppercase tracking-[0.18em] font-mono text-text-muted mb-6">
+						Routing through
 					</p>
 				</Reveal>
-				<RevealStagger
-					className="grid grid-cols-3 sm:grid-cols-6 gap-x-4 gap-y-6 items-center justify-items-center text-text-muted"
-					amount={0.3}
-				>
-					{TRUST_LOGOS.map(({ name, Component }) => (
-						<div
-							key={name}
-							className="flex items-center justify-center hover:text-text-secondary transition-colors duration-200"
-						>
-							<Component title={name} className="h-6 w-6 sm:h-7 sm:w-7" />
-							<span className="sr-only">{name}</span>
-						</div>
-					))}
-				</RevealStagger>
+				<Reveal>
+					<p className="text-center text-text-secondary font-medium text-base sm:text-lg tracking-tight">
+						{TRUST_NAMES.map((name, i) => (
+							<span key={name}>
+								<span className="text-text-primary">{name}</span>
+								{i < TRUST_NAMES.length - 1 && (
+									<span className="mx-3 text-border-bright" aria-hidden="true">
+										·
+									</span>
+								)}
+							</span>
+						))}
+					</p>
+				</Reveal>
+				<Reveal>
+					<p className="mt-4 text-center text-xs text-text-muted font-mono">
+						OMA routes requests to these providers via one
+						OpenAI-compatible API.
+					</p>
+				</Reveal>
 			</div>
 		</section>
 	);

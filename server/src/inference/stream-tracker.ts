@@ -100,7 +100,26 @@ async function handleStreamEnd(
     await onStreamingMetrics(firstTokenTime, finalOutputTokens, streamDuration);
   }
   try {
-    const cost = await calculateActualCost(modelId, _inputTokens, finalOutputTokens, discountPercent);
+    // Fix B6: a user cancel / EOF before any tokens should not trigger the
+    // 1-cent floor in calculateActualCost. Charge 0 and log so legitimate
+    // disconnections are observable in monitoring without over-billing.
+    const isEmptyStream =
+      finalOutputTokens === 0 &&
+      (!accumulatedContent || accumulatedContent.length === 0);
+    let cost: { costCents: string; markupCents: string; totalCents: string };
+    if (isEmptyStream) {
+      logger.info(
+        {
+          requestId, modelId, provider, userId,
+          accumulatedLength: accumulatedContent.length,
+          type: "empty_stream_no_charge",
+        },
+        "[stream-tracker] empty stream (no tokens produced), charging 0",
+      );
+      cost = { costCents: "0", markupCents: "0", totalCents: "0" };
+    } else {
+      cost = await calculateActualCost(modelId, _inputTokens, finalOutputTokens, discountPercent);
+    }
     await recordUsage({
       requestId, userId, apiKeyId, modelId, provider,
       inputTokens: _inputTokens, outputTokens: finalOutputTokens,

@@ -6,8 +6,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: cron-subscription-check
+  # Renamed from `cron-*` so this manual run is NOT grouped with any leftover
+  # scheduled-run history (which would cancel/displace the manual run).
+  group: ci-subscription-check
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   run:

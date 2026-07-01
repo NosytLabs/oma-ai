@@ -207,8 +207,7 @@ export default function PricingPage() {
 		<div className="relative min-h-screen overflow-hidden bg-void">
 			{/* ── Ambient background ── */}
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute inset-0 bg-grid-animated opacity-[0.35] mask-radial" />
-				<div className="aurora opacity-30" />
+				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 			</div>
 
 			<div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -256,7 +255,7 @@ export default function PricingPage() {
 									className="relative group"
 								>
 									<div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-									<div className="relative tilt-card sheen glass p-5 rounded-xl border border-border hover:border-accent/40 hover:glow-accent-sm transition-colors">
+									<div className="relative p-5 rounded-xl border border-border hover:border-accent/40 transition-colors duration-150">
 										<div className="flex items-start gap-3">
 											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated">
 												<Icon className="h-5 w-5 text-accent" />
@@ -286,7 +285,7 @@ export default function PricingPage() {
 
 				{/* ── x402 Banner (recommended highlight) ── */}
 				<Reveal className="mb-12" y={20}>
-					<div className="relative border-gradient float p-4 rounded-xl bg-accent-dim">
+					<div className="relative p-4 rounded-xl bg-accent-dim border border-accent/30">
 						<div className="flex items-start gap-3">
 							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
 							<div>
@@ -468,12 +467,6 @@ export default function PricingPage() {
 
 				{/* ── CTA ── */}
 				<div className="relative mb-12 overflow-hidden rounded-2xl py-10">
-					<div
-						aria-hidden
-						className="pointer-events-none absolute inset-0 -z-10"
-					>
-						<div className="aurora opacity-40" />
-					</div>
 					<Reveal className="flex flex-col items-center gap-4" y={20}>
 						<m.h2
 							initial={{ opacity: 0, filter: "blur(8px)", y: 16 }}

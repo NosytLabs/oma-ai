@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 const EXAMPLE_CODE = `import OpenAI from "openai";
 
@@ -19,7 +20,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "llama-3.3-70b",            // or any of 17+ models
+  model: "llama-3.3-70b",            // or any of ${MODEL_COUNT}+ models
   messages: [
     { role: "system", content: "You are concise." },
     { role: "user",   content: "Ship a minimal RAG agent in 3 lines." }

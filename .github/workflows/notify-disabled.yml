@@ -1,0 +1,45 @@
+name: Notify Disabled Workflows
+
+# Maintenance-only workflow. Prints a reminder that all scheduled jobs are
+# disabled during the pre-launch phase, and links to the re-enable procedure.
+# Trigger manually from the Actions tab if you're wondering why nothing runs
+# on a schedule. See .github/WORKFLOWS.md.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-notify-disabled
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  explain:
+    name: Show maintenance notice
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print pre-launch notice
+        run: |
+          {
+            echo "============================================================"
+            echo "  PRE-LAUNCH PHASE: scheduled jobs are intentionally disabled"
+            echo "============================================================"
+            echo
+            echo "  All scheduled (cron) workflows are commented out while the"
+            echo "  site is in the refactor/revamp phase. Running them would fail"
+            echo "  at server/src/config.ts:240 (envSchema) and email the owner."
+            echo
+            echo "  Disabled workflows:"
+            echo "    - credit-expiry.yml"
+            echo "    - deposit-notifications.yml"
+            echo "    - deposit-retry.yml"
+            echo "    - nonce-cleanup.yml"
+            echo "    - retention.yml"
+            echo "    - subscription-check.yml"
+            echo "    - wrong-network-recovery.yml"
+            echo
+            echo "  Re-enable procedure: see .github/WORKFLOWS.md"
+            echo "============================================================"
+          }

@@ -3,9 +3,17 @@ import { MODEL_COUNT } from "@/lib/models-data";
 
 export const runtime = "edge";
 export const alt =
-	"OMA AI - Permissionless AI inference gateway. Pay per request in USDC.";
+	"Open Model Access — One API for every model. Pay per request in USDC.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+// Emerald palette — chosen as the "fresh" accent for the 2026 marketing
+// refresh. (Note: the in-app --color-accent token is still orange;
+// the OG image is a standalone marketing asset and intentionally uses
+// emerald to feel distinct from generic AI-app orange gradients.)
+const EMERALD_400 = "#34d399";
+const EMERALD_500 = "#10b981";
+const EMERALD_300 = "#6ee7b7";
 
 export default async function OpengraphImage() {
 	return new ImageResponse(
@@ -18,7 +26,7 @@ export default async function OpengraphImage() {
 				justifyContent: "space-between",
 				padding: 72,
 				background:
-					"linear-gradient(135deg, #0a0a0f 0%, #18181f 60%, #3d1505 100%)",
+					"linear-gradient(135deg, #0a0a0f 0%, #0f1a17 55%, #042f24 100%)",
 				color: "#f5f5f4",
 				fontFamily: "system-ui, sans-serif",
 			}}
@@ -29,13 +37,13 @@ export default async function OpengraphImage() {
 						width: 56,
 						height: 56,
 						borderRadius: 14,
-						background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+						background: `linear-gradient(135deg, ${EMERALD_400} 0%, ${EMERALD_500} 100%)`,
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
 						fontSize: 32,
 						fontWeight: 800,
-						color: "#0a0a0f",
+						color: "#042f24",
 					}}
 				>
 					O
@@ -57,17 +65,18 @@ export default async function OpengraphImage() {
 						maxWidth: 1000,
 					}}
 				>
-					Permissionless AI inference
+					Open Model Access
 				</div>
 				<div
 					style={{
 						fontSize: 30,
 						lineHeight: 1.3,
-						color: "#fdba74",
+						color: EMERALD_300,
 						maxWidth: 900,
 					}}
 				>
-					Pay per request in USDC. ${MODEL_COUNT} models. No account required.
+					One API for every model. Pay per request in USDC. ${MODEL_COUNT}+
+					models, no account required.
 				</div>
 			</div>
 

@@ -5,13 +5,13 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { HomeView } from "./_components/home";
 
 export const metadata: Metadata = {
-	title: "OMA · One key for every model",
-	description:
-		"Anonymous AI inference. No KYC, no email, no subscriptions. Pay per request in USDC. Mullvad-style account numbers and private inference through Venice. 17+ AI models, one OpenAI-compatible API.",
+	// absolute: bypasses layout.tsx template ("%s | OMA-AI") so the browser
+	// tab shows exactly this string instead of "Title | OMA-AI" doubled.
+	title: { absolute: "Open Model Access · One API for every model" },
+	description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions, no monthly bills.`,
 	openGraph: {
-		title: "OMA · One key for every model",
-		description:
-			"Anonymous AI inference. No KYC, no email, no subscriptions. Mullvad-style account numbers and private inference through Venice. Pay per request in USDC.",
+		title: "Open Model Access · One API for every model",
+		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions.`,
 		images: [{ url: "/og-image.png", width: 1200, height: 630 }],
 	},
 };

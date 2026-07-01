@@ -26,7 +26,7 @@ import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
-import { api, type DepositStatus } from "@/lib/api";
+import { api, type DepositStatus, getAuthToken } from "@/lib/api";
 import { Magnetic, StaggerReveal, scaleIn, scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/prices";
 import {
@@ -151,8 +151,10 @@ export function UnifiedDepositInterface({
 
 		setStep("processing");
 
-		const sessionToken =
-			document.cookie.match(/oma_session=([^;]+)/)?.[1] || "";
+		// B2 fix: session cookie is HttpOnly so `document.cookie` returns
+		// null in production. `getAuthToken()` reads it via the `/api/csrf`
+		// round-trip (or cache) and returns the JWT, falling back to "".
+		const sessionToken = getAuthToken() ?? "";
 
 		try {
 			if (selectedCoin?.id === "usdc-base") {

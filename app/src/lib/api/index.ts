@@ -27,9 +27,11 @@ import type {
 export {
 	ApiError,
 	BackendUnavailableError,
+	getAuthToken,
 	getCached,
 	invalidateCache,
 	request,
+	setAuthToken,
 	STALE_TTL,
 	setCache,
 } from "./client.js";

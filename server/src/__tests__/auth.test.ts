@@ -231,18 +231,16 @@ describe('Auth Endpoints', () => {
   })
 
   describe('POST /auth/account/create', () => {
-    it('creates a standalone account-number account without a wallet session', async () => {
+    it('rejects requests without a CSRF token (H3 fix)', async () => {
       const res = await app.request('/auth/account/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       })
 
-      expect(res.status).toBe(201)
-      const body = await res.json()
-      expect(body).toHaveProperty('token')
-      expect(body).toHaveProperty('accountNumber')
-      expect(body).toHaveProperty('authMethod', 'account-number')
+      // H3 fix: CSRF protection was added to /auth/account/create in 2026-07-01
+      // to prevent cross-site silent account creation.
+      expect(res.status).toBe(403)
     })
   })
 

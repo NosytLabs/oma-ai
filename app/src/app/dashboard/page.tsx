@@ -1,25 +1,18 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { ConnectWalletView } from "@/components/dashboard/ConnectWalletView";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
+import { type TabId, type TimeRangeId } from "./_constants";
 import { DashboardGrid } from "./_components/DashboardGrid";
 import { DashboardHeader } from "./_components/DashboardHeader";
 import { useDashboardData } from "./_hooks/useDashboardData";
+import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
 import { useDashboardStats } from "./_hooks/useDashboardStats";
-
-const LazyConnectWalletView = dynamic(
-	() =>
-		import("@/components/dashboard/ConnectWalletView").then(
-			(mod) => mod.ConnectWalletView,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
-);
 
 const RECENT_REQUESTS_LIMIT = 20;
 
@@ -49,13 +42,8 @@ export default function DashboardPage() {
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 	const [copied, setCopied] = useState<string | null>(null);
 	const [refreshTick, setRefreshTick] = useState(0);
-	const [activeTab, setActiveTab] = useState("overview");
-	const [timeRange, setTimeRange] = useState("7d");
-
-	// Stable ref to handleRefresh so the keyboard handler (defined below the
-	// callback) can call it without re-binding the effect on every render.
-	// The ref is reassigned in a useEffect once the callback exists.
-	const handleRefreshRef = useRef<() => Promise<void>>(async () => {});
+	const [activeTab, setActiveTab] = useState<TabId>("overview");
+	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
 
 	// All dashboard aggregates (today/month deltas, filtered ranges, error
 	// counts, latency avg, etc.) are derived in this hook so the page can
@@ -70,67 +58,19 @@ export default function DashboardPage() {
 		activeModels,
 	} = useDashboardStats(usage, timeRange);
 
-	useEffect(() => {
-		// Keyboard shortcuts. Active on all tabs but only when the user isn't
-		// typing in an input/textarea/contenteditable. Shortcuts:
-		//   R         — refresh dashboard
-		//   1 / 2 / 3 / 4 — switch to Overview / Usage / API keys / Health
-		//   ArrowLeft / ArrowRight (Usage tab only) — paginate recent-requests
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement | null;
-			if (target) {
-				const tag = target.tagName;
-				if (
-					tag === "INPUT" ||
-					tag === "TEXTAREA" ||
-					tag === "SELECT" ||
-					target.isContentEditable
-				) {
-					return;
-				}
-			}
-			// Modifier-bearing keys are reserved for the browser (Cmd+R, etc.)
-			if (e.metaKey || e.ctrlKey || e.altKey) return;
+	const handleRefresh = useCallback(async () => {
+		setRefreshTick((n) => n + 1);
+		await refresh();
+	}, [refresh]);
 
-			if (e.key === "r" || e.key === "R") {
-				e.preventDefault();
-				handleRefreshRef.current();
-				return;
-			}
-			if (e.key === "1") {
-				e.preventDefault();
-				setActiveTab("overview");
-				return;
-			}
-			if (e.key === "2") {
-				e.preventDefault();
-				setActiveTab("usage");
-				return;
-			}
-			if (e.key === "3") {
-				e.preventDefault();
-				setActiveTab("api-keys");
-				return;
-			}
-			if (e.key === "4") {
-				e.preventDefault();
-				setActiveTab("health");
-				return;
-			}
-			if (activeTab === "usage") {
-				if (e.key === "ArrowLeft" && page > 1) {
-					setPage((p) => p - 1);
-				} else if (
-					e.key === "ArrowRight" &&
-					usage.length > page * RECENT_REQUESTS_LIMIT
-				) {
-					setPage((p) => p + 1);
-				}
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [page, usage.length, activeTab]);
+	useDashboardKeyboard({
+		setActiveTab,
+		setPage,
+		activeTab,
+		page,
+		hasMorePages: usage.length > page * RECENT_REQUESTS_LIMIT,
+		onRefresh: handleRefresh,
+	});
 
 	const handleCopy = useCallback(
 		(text: string, id: string) => {
@@ -150,18 +90,6 @@ export default function DashboardPage() {
 		},
 		[toast],
 	);
-
-	const handleRefresh = useCallback(async () => {
-		setRefreshTick((n) => n + 1);
-		await refresh();
-	}, [refresh]);
-
-	// Keep the ref pointing at the latest callback so the keyboard handler
-	// (defined above) can invoke it. Runs on every render where the callback
-	// identity changes.
-	useEffect(() => {
-		handleRefreshRef.current = handleRefresh;
-	}, [handleRefresh]);
 
 	const handleExport = useCallback(async () => {
 		try {
@@ -229,7 +157,7 @@ export default function DashboardPage() {
 	const content = !isAuthenticated ? (
 		<>
 			<h1 className="sr-only">Dashboard</h1>
-			<LazyConnectWalletView onConnect={connectEvm} />
+			<ConnectWalletView onConnect={connectEvm} />
 		</>
 	) : (
 		<div>

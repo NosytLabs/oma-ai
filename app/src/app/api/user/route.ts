@@ -1,16 +1,35 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { DEFAULT_API_URL } from "@/lib/config";
+import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { generalLimiter } from "@/lib/rate-limiter";
 
 export const runtime = "nodejs";
 
 /**
+ * Resolve the JWT from the HttpOnly session cookie server-side. The browser
+ * cannot read it via `document.cookie`, so this proxy must read it via
+ * `cookies()` from `next/headers` and forward it as `Authorization: Bearer
+ * <jwt>` — the Hono backend's `sessionAuth` middleware only inspects
+ * `Authorization`, not raw cookies.
+ *
+ * The env-dependent name (`__Host-oma_session` in production, `oma_session`
+ * in dev) is sourced from `lib/cookies.ts` so logout, the session-cookie
+ * endpoint, and this proxy all agree on the same key.
+ */
+async function readSessionToken(): Promise<string | null> {
+	const cookieStore = await cookies();
+	return cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
+}
+
+/**
  * /api/user — fetches the current session user (account number + linked wallets).
  *
- * Forwarded to the backend `/auth/user` endpoint. The session can come from
- * either the `Authorization: Bearer <jwt>` header OR the `oma_session` /
- * `oma_session_meta` cookies. We pass through everything the browser sent.
+ * Forwarded to the backend `/user` endpoint. The session can come from
+ * either a caller-supplied `Authorization: Bearer <jwt>` header OR the
+ * HttpOnly session cookie (which this proxy resolves server-side and
+ * re-attaches as a Bearer token).
  */
 export const GET = withRateLimit(
 	async (req: NextRequest) => {
@@ -22,7 +41,20 @@ export const GET = withRateLimit(
 			cookie: cookieHeader,
 			accept: "application/json",
 		};
-		if (authHeader) headers.authorization = authHeader;
+		if (authHeader) {
+			headers.authorization = authHeader;
+		} else {
+			// B1 fix: forward the HttpOnly session cookie as
+			// `Authorization: Bearer <jwt>`. The browser cannot read the
+			// cookie directly (HttpOnly), and the backend's `sessionAuth`
+			// middleware only honors the Authorization header — without
+			// this fallback, every `api.auth.getUser()` call 401s in
+			// production.
+			const sessionToken = await readSessionToken();
+			if (sessionToken) {
+				headers.authorization = `Bearer ${sessionToken}`;
+			}
+		}
 
 		try {
 			const upstream = await fetch(`${backend}/user`, {

@@ -89,12 +89,18 @@ export function buildVeniceChatCompletion(body: {
   };
 }
 
-function veniceHeaders(): Record<string, string> {
+function veniceHeaders(options?: { skipContentType?: boolean }): Record<string, string> {
+  // Resolves the active CheapTokens reseller key, falling back to the static
+  // VENICE_API_KEY. All Venice endpoints should go through this so a cached
+  // CheapTokens key (which may have a different spend quota) takes priority.
   const activeKey = getActiveVeniceKey() || config.VENICE_API_KEY;
-  return {
-    "Content-Type": "application/json",
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${activeKey}`,
   };
+  if (!options?.skipContentType) {
+    headers["Content-Type"] = "application/json";
+  }
+  return headers;
 }
 
 /**
@@ -500,7 +506,9 @@ export async function veniceModels(): Promise<unknown[]> {
   }
 
   const resp = await fetch(veniceUrl("/api/v1/models"), {
-    headers: { Authorization: `Bearer ${config.VENICE_API_KEY}` },
+    // Fix B1: route through veniceHeaders() so a cached CheapTokens key
+    // (when present) is used instead of the static VENICE_API_KEY.
+    headers: veniceHeaders(),
     signal: AbortSignal.timeout(10_000),
   });
 
@@ -535,7 +543,10 @@ export async function transcription(body: {
 
   const resp = await fetch(veniceUrl("/api/v1/audio/transcriptions"), {
     method: "POST",
-    headers: { Authorization: `Bearer ${config.VENICE_API_KEY}` },
+    // Fix B1: route through veniceHeaders() to honor the CheapTokens reseller
+    // key. skipContentType is required because FormData sets its own
+    // multipart Content-Type (with boundary).
+    headers: veniceHeaders({ skipContentType: true }),
     body: formData,
     signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
   });

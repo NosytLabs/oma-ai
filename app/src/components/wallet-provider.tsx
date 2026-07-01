@@ -17,7 +17,7 @@ import {
 	WagmiProvider,
 } from "wagmi";
 import { base } from "wagmi/chains";
-import { api, type User } from "@/lib/api/index";
+import { api, setAuthToken, type User } from "@/lib/api/index";
 import { deleteSessionCookie, setSessionCookie } from "@/lib/cookies";
 import { getWagmiConfigSingleton } from "@/lib/wagmi";
 import {
@@ -104,36 +104,59 @@ function getCookieValue(name: string): string | null {
 }
 
 function storeSession(token: string, authMethod: AuthMethod) {
-	// L-A2: server-side /auth/verify returns the JWT in the response body and
-	// does NOT set an HttpOnly session cookie (verified in
-	// server/src/routes/auth.ts:163-180 — only /auth/csrf-token and /auth/demo
-	// emit Set-Cookie). The JWT must therefore be persisted client-side, or
-	// the next page reload will treat the user as anonymous:
-	//   - getStoredSession() reads oma_session_meta → sees authMethod → sets
-	//     session state → isAuthenticated becomes true
-	//   - api.auth.getUser() reads oma_session (set below) → attaches
-	//     Authorization: Bearer <jwt> → server returns the user row
+	// C1 fix: the canonical session cookie is now HttpOnly, set server-side
+	// by POST /api/auth/session/cookie. `setSessionCookie()` no longer writes
+	// to `document.cookie` (JS can't carry HttpOnly via document.cookie
+	// anyway — the browser silently drops the whole Set-Cookie value).
+	// Instead it POSTs the JWT to the dedicated route, which emits
+	// `Set-Cookie: __Host-oma_session=<jwt>; HttpOnly; Secure; SameSite=Strict`
+	// in production. XSS can no longer trivially read the JWT out of
+	// document.cookie. The JWT is still returned in the response body of
+	// /v1/auth/verify so the React state below can keep an in-memory copy
+	// (kept in `session.token`) for any client code that needs the raw
+	// value (Authorization header on outbound API calls).
 	//
-	// Before this fix, storeSession only wrote the meta cookie; getUser() was
-	// called with no Authorization header → 401 → clearSession() → the SIWE
-	// login appeared to "succeed" but did not survive a page reload.
+	// B1 fix: the API client (`lib/api/client.ts`) now sources its bearer
+	// token from a module-level in-memory cache (`getAuthToken()`) instead
+	// of `document.cookie`. Mirror the freshly-received JWT into that cache
+	// so the very next outbound request (e.g. `api.auth.getUser()` right
+	// below) attaches `Authorization: Bearer <jwt>`. The HttpOnly cookie
+	// set via `setSessionCookie` is what the proxy uses for the auth gate;
+	// this cache is the fast-path for client-side `fetch` calls in the
+	// window between login and the next page reload.
 	//
-	// The JWT is intentionally NOT HttpOnly (see lib/cookies.ts header — JS
-	// writes via document.cookie cannot carry HttpOnly). XSS hardening is
-	// via the short 24h JWT lifetime and CSP headers, not via the cookie flag.
+	// Why both cookies (in addition to in-memory)?
+	//   - HttpOnly oma_session  → authoritative copy, used by the Next.js
+	//                             middleware to gate protected routes on
+	//                             hard navigation / page reload. JS can't
+	//                             read it; the browser auto-attaches it to
+	//                             same-origin requests.
+	//   - oma_session_meta (JS-readable) → carries the non-sensitive
+	//                             authMethod hint so getStoredSession() can
+	//     flip `isAuthenticated` to true on a hard reload BEFORE the
+	//     /api/user round-trip completes. Without this, the dashboard
+	//     would flash the "Connect Wallet" empty state.
 	setSessionCookie(token, 7);
 	setCookie("oma_session_meta", JSON.stringify({ authMethod }), 7);
+	setAuthToken(token);
 }
 
 function clearSession() {
-	// L-A2: clear both the meta cookie AND the JWT cookie client-side so
-	// subsequent api.auth.* calls (e.g. getUser) don't keep sending a stale
-	// Authorization header before the server's Set-Cookie takes effect. The
-	// server also emits a Set-Cookie clearing oma_session on /auth/logout
-	// (defense in depth), but doing it here means the client UI updates
-	// immediately and no race window exists where the user is "logged out"
-	// server-side but still has a valid cookie locally.
+	// C1 fix: the JWT cookie is HttpOnly — JS CANNOT clear it. Only the
+	// canonical /api/auth/logout server endpoint can expire the cookie
+	// via a real Set-Cookie response. This helper clears the JS-readable
+	// meta cookie and any legacy non-HttpOnly token (defensive), but the
+	// authoritative JWT cookie is cleared by the logout flow above
+	// (api.auth.logout → /api/auth/logout → server-side Set-Cookie with
+	// Max-Age=0). L-A2 race window is closed: by the time clearSession()
+	// runs, the server has already committed the cookie expiry, so no
+	// in-flight request will see a stale Authorization header.
+	//
+	// B1 fix: also drop the in-memory bearer-token cache so the API
+	// client doesn't keep attaching a stale Authorization header to
+	// requests made after logout (e.g. polling, retry, optimistic UI).
 	deleteSessionCookie();
+	setAuthToken(null);
 }
 
 function buildSiweMessage(address: string, nonce: string): string {

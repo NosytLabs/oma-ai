@@ -19,7 +19,10 @@
 @theme {
 	/* ================================================
      OMA AI - Refined Color Palette
-     Brand: Terminal-inspired with Orange anchor
+     Brand: Terminal-inspired with Emerald anchor
+     (revamped 2026-06-30: emerald replaces orange —
+     crypto/USDC = money semantics; aligns with
+     the OG image and globals.css)
      ================================================ */
 
 	/* Core palette - Terminal dark theme */
@@ -30,13 +33,13 @@
 	--color-border: #2a2a35;
 	--color-border-bright: #3d3d4d;
 
-	/* PRIMARY ACCENT - Orange (Brand Identity) */
-	--color-accent: #f97316;
-	--color-accent-dim: rgba(249, 115, 22, 0.18);
-	--color-accent-glow: rgba(249, 115, 22, 0.25);
-	--color-accent-hover: #fb923c;
-	--color-accent-bright: #fdba74;
-	--color-accent-muted: #ea580c;
+	/* PRIMARY ACCENT - Emerald (Brand Identity) */
+	--color-accent: #10b981;
+	--color-accent-dim: #064e3b;
+	--color-accent-glow: rgba(16, 185, 129, 0.5);
+	--color-accent-hover: #34d399;
+	--color-accent-bright: #34d399;
+	--color-accent-muted: #047857;
 
 	/* SECONDARY ACCENT - Gold (distinct from --color-warning; used for the
      hero/gradient gold accent, not for cautionary UI). */
@@ -98,8 +101,8 @@
      ================================================ */
 	--color-tier-frontier: #a78bfa; /* Violet - highest tier */
 	--color-tier-frontier-dim: rgba(167, 139, 250, 0.15);
-	--color-tier-premium: #f97316; /* Orange - premium models */
-	--color-tier-premium-dim: rgba(249, 115, 22, 0.15);
+	--color-tier-premium: #10b981; /* Emerald - premium models (revamped 2026-06-30) */
+	--color-tier-premium-dim: rgba(16, 185, 129, 0.15);
 	--color-tier-mid: #ffb800; /* Amber - mid-range models */
 	--color-tier-mid-dim: rgba(255, 184, 0, 0.15);
 	--color-tier-budget: #34d399; /* Emerald - budget options */
@@ -120,10 +123,11 @@
 	--color-blue: #60a5fa;
 	/* Backwards-compat alias — multiple components still reference
      bg-orange / text-orange / border-orange. Map to the brand accent
-     so they render with the canonical orange instead of Tailwind's
-     default palette. New code should use var(--color-accent). */
-	--color-orange: #f97316;
-	--color-orange-dim: rgba(249, 115, 22, 0.18);
+     (revamped 2026-06-30: emerald replaces orange) so they render
+     with the canonical emerald instead of Tailwind's default orange
+     palette. New code should use var(--color-accent). */
+	--color-orange: #10b981;
+	--color-orange-dim: rgba(16, 185, 129, 0.18);
 
 	/* Shadow tokens */
 	--shadow-accent-sm: 0 0 8px var(--color-accent-glow);
@@ -171,7 +175,7 @@
 	--z-tooltip: 110;
 
 	/* Utility colors */
-	--color-accent-soft: rgba(249, 115, 22, 0.08);
+	--color-accent-soft: rgba(16, 185, 129, 0.08);
 
 	/* Typography — distinctive pairing: Space Grotesk (body + heading), Syne (display), JetBrains Mono (code) */
 	--font-sans:
@@ -216,12 +220,13 @@
 	--color-text-muted: #6b7280;
 	--color-text-inverse: #fafafa;
 	--color-text-tertiary: #5b5b66;
-	--color-accent: #ea580c;
-	--color-accent-dim: rgba(234, 88, 12, 0.18);
-	--color-accent-glow: rgba(234, 88, 12, 0.25);
-	--color-accent-hover: #c2410c;
-	--color-accent-bright: #f97316;
-	--color-accent-muted: #7c2d12;
+	/* Light-mode accent — darker emerald for AA contrast on light surfaces */
+	--color-accent: #059669;
+	--color-accent-dim: rgba(5, 150, 105, 0.18);
+	--color-accent-glow: rgba(5, 150, 105, 0.5);
+	--color-accent-hover: #047857;
+	--color-accent-bright: #10b981;
+	--color-accent-muted: #064e3b;
 	--color-secondary: #b45309;
 	--color-secondary-dim: rgba(180, 83, 9, 0.12);
 	--color-secondary-hover: #92450a;
@@ -249,8 +254,8 @@
 	--color-provider-together-dim: rgba(219, 39, 119, 0.15);
 	--color-tier-frontier: #7c3aed;
 	--color-tier-frontier-dim: rgba(124, 58, 237, 0.15);
-	--color-tier-premium: #ea580c;
-	--color-tier-premium-dim: rgba(234, 88, 12, 0.15);
+	--color-tier-premium: #059669;
+	--color-tier-premium-dim: rgba(5, 150, 105, 0.15);
 	--color-tier-mid: #d97706;
 	--color-tier-mid-dim: rgba(217, 119, 6, 0.15);
 	--color-tier-budget: #059669;
@@ -266,9 +271,9 @@
 	--color-violet: #7c3aed;
 	--color-red: #dc2626;
 	--color-blue: #2563eb;
-	--color-accent-soft: rgba(234, 88, 12, 0.08);
-	--color-orange: #ea580c;
-	--color-orange-dim: rgba(234, 88, 12, 0.18);
+	--color-accent-soft: rgba(5, 150, 105, 0.08);
+	--color-orange: #059669;
+	--color-orange-dim: rgba(5, 150, 105, 0.18);
 }
 
 /* ============================================================================

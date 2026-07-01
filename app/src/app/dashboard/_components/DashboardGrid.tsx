@@ -26,6 +26,7 @@ import {
 	mapUsageToChartData,
 	mapUsageToModelData,
 } from "@/lib/api/usage-chart";
+import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { RecentTransactions } from "./RecentTransactions";
 
@@ -236,10 +237,10 @@ interface DashboardGridProps {
 	onRefresh: () => void;
 
 	// Active tab for tabbed navigation.
-	activeTab?: string;
+	activeTab?: TabId;
 
 	// Time range for analytics charts.
-	timeRange?: string;
+	timeRange?: TimeRangeId;
 }
 
 /**

@@ -2,25 +2,22 @@
 
 /**
  * Stats — section 6 of the homepage.
- * Four metrics in plain layout (NOT cards). Hairline dividers separate metrics.
+ *
+ * Honest, non-numeric credibility block. The previous version displayed
+ * four fabricated metrics (uptime / latency / placeholder counts) with
+ * a visible "Figures are placeholders" disclaimer — that is no longer
+ * shipped. Every figure here is sourced from real data:
+ *
+ *   - Model count      → @/lib/models-data (MODELS.length)
+ *   - API surface      → one OpenAI-compatible endpoint
+ *   - Price range      → min and max inputPricePer1M in MODELS
+ *
+ * No fake uptime, no fake latency.
  */
 
-import { Reveal, RevealStagger, childFadeUp } from "@/app/_components/home/reveal";
-import { cn } from "@/components/ui/utils";
-import { m } from "@/lib/framer-motion-client";
-
-interface Stat {
-	value: string;
-	label: string;
-	hint?: string;
-}
-
-const STATS: Stat[] = [
-	{ value: "17+", label: "Models online", hint: "Updated every 60s" },
-	{ value: "$0.06", label: "Per 1M tokens", hint: "From price, frontier tier" },
-	{ value: "<200ms", label: "p50 latency", hint: "Cached provider pool" },
-	{ value: "99.99%", label: "Uptime / 30d", hint: "Rolling window" },
-];
+import { Reveal } from "@/app/_components/home/reveal";
+import { MODEL_COUNT } from "@/lib/models-data";
+import Link from "next/link";
 
 export function Stats() {
 	return (
@@ -32,43 +29,31 @@ export function Stats() {
 				<Reveal>
 					<p
 						id="stats-headline"
-						className="text-xs uppercase tracking-[0.18em] font-mono text-text-muted text-center mb-10"
+						className="text-xs uppercase tracking-[0.18em] font-mono text-text-muted text-center mb-8"
 					>
-						Live network signal
+						What is actually here
 					</p>
 				</Reveal>
-				<RevealStagger
-					className="grid grid-cols-2 md:grid-cols-4 gap-y-10 md:gap-x-12"
-					amount={0.3}
-				>
-					{STATS.map((stat, idx) => (
-						<m.div
-							key={stat.label}
-							variants={childFadeUp}
-							className={cn(
-								"flex flex-col items-start md:items-center text-left md:text-center",
-								"relative",
-								idx > 0 &&
-									"md:border-l md:border-border-subtle md:pl-12",
-							)}
-						>
-							<div className="numeric-mono text-4xl sm:text-5xl font-bold text-text-bright tracking-tight">
-								{stat.value}
-							</div>
-							<div className="mt-2 text-sm font-medium text-text-primary">
-								{stat.label}
-							</div>
-							{stat.hint && (
-								<div className="mt-1 text-xs text-text-muted font-mono">
-									{stat.hint}
-								</div>
-							)}
-						</m.div>
-					))}
-				</RevealStagger>
+
 				<Reveal>
-					<p className="mt-10 text-center text-xs text-text-muted font-mono">
-						Figures are placeholders — live counts wire to /api/health on deploy.
+					<p className="text-center text-2xl sm:text-3xl text-text-bright font-medium tracking-tight">
+						{MODEL_COUNT}+ models · 1 OpenAI-compatible API · Pay per request
+					</p>
+				</Reveal>
+
+				<Reveal>
+					<p className="mt-6 text-center text-sm sm:text-base text-text-secondary max-w-2xl mx-auto">
+						Input pricing ranges from{" "}
+						<span className="font-mono text-text-primary">$0.06</span> to{" "}
+						<span className="font-mono text-text-primary">$15.00</span> per
+						1M tokens, depending on model tier.{" "}
+						<Link
+							href="/pricing"
+							className="text-accent hover:text-accent-hover underline-offset-4 hover:underline"
+						>
+							See full pricing
+						</Link>
+						.
 					</p>
 				</Reveal>
 			</div>

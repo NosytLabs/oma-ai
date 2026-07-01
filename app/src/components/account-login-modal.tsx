@@ -4,14 +4,16 @@ import {
 	AlertTriangle,
 	Check,
 	Copy,
+	HelpCircle,
 	Key,
 	Loader2,
 	Wallet,
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { api, setAuthToken } from "@/lib/api";
 import {
+	getCsrfToken,
 	getSessionToken,
 	setCsrfTokenCookie,
 	setSessionCookie,
@@ -220,12 +222,10 @@ export function AccountLoginModal({
 			// Fall back to reading the CSRF token directly from the cookie if the
 			// React state hasn't been populated yet (race between pre-fetch and
 			// user clicking Sign In). The cookie is set by /api/auth/csrf-token
-			// on the same origin, so it's always available.
-			let csrf = csrfToken;
-			if (!csrf) {
-				const m = document.cookie.match(/csrf_token=([^;]+)/);
-				if (m) csrf = decodeURIComponent(m[1]);
-			}
+			// on the same origin, so it's always available. H6 fix: the cookie
+			// is now `__Host-csrf_token` in production, so we use the helper
+			// (which knows the env-dependent name) instead of a hardcoded regex.
+			const csrf = csrfToken ?? getCsrfToken();
 			if (csrf) {
 				headers["x-csrf-token"] = csrf;
 			}
@@ -237,18 +237,40 @@ export function AccountLoginModal({
 					headers,
 					body: JSON.stringify({
 						accountNumber: accountNumber.trim().toUpperCase(),
+						// TODO(2FA): when the server supports it, append
+						// `totpCode` here from a 6-digit input rendered below
+						// the account-number field on the
+						// `{ requiresTwoFactor: true }` response below.
 					}),
 				},
 			);
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}));
+				// TODO(2FA): branch on
+				//   body.requiresTwoFactor === true
+				// here and surface a TOTP input instead of throwing the
+				// generic "Login failed". Until the server returns that
+				// shape, fall through to the standard error path.
 				const msg =
 					(body as { error?: { message?: string } })?.error?.message ||
 					"Login failed";
 				throw new Error(msg);
 			}
 			const data = (await res.json()) as { token: string };
+			// C1 fix: setSessionCookie() now POSTs to /api/auth/session/cookie,
+			// which sets the canonical HttpOnly __Host-oma_session cookie on
+			// the page origin. JS no longer writes the JWT to document.cookie,
+			// so XSS can't trivially read it. The JWT is still in the response
+			// body (data.token) so the in-memory / localStorage copy used by
+			// the SPA client can be populated separately if needed.
 			setSessionCookie(data.token, 7);
+			// B1 fix: mirror the JWT into the API client's in-memory bearer
+			// token cache so any outbound request fired before the reload
+			// (the modal's own follow-up, optimistic UI, etc.) attaches
+			// `Authorization: Bearer <jwt>`. The HttpOnly cookie alone is
+			// insufficient because the API client reads `getAuthToken()`,
+			// not document.cookie.
+			setAuthToken(data.token);
 			// Populate the client-readable meta cookie so wallet-provider's
 			// getStoredSession() sees authMethod='account-number' and flips
 			// isAuthenticated to true. Without this, the dashboard renders the
@@ -277,6 +299,16 @@ export function AccountLoginModal({
 			if (token) {
 				headers.Authorization = `Bearer ${token}`;
 			}
+			// H3 fix: /auth/account/create now enforces the same double-submit
+			// CSRF check as /auth/account/login. Attach the CSRF token to
+			// every state-changing request. Same race-tolerant fallback as
+			// handleLogin: prefer React state, fall back to the cookie helper
+			// (which knows the env-dependent `csrf_token` / `__Host-csrf_token`
+			// name from H6).
+			const csrf = csrfToken ?? getCsrfToken();
+			if (csrf) {
+				headers["x-csrf-token"] = csrf;
+			}
 
 			const res = await fetch(
 				`${typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/account/create`,
@@ -298,7 +330,15 @@ export function AccountLoginModal({
 			};
 			setCreatedAccount(data.accountNumber);
 			if (data.token) {
+				// C1 fix: setSessionCookie() now POSTs to /api/auth/session/cookie
+				// to set the HttpOnly canonical cookie. The JWT is no longer
+				// written to document.cookie, so XSS can't read it.
 				setSessionCookie(data.token, 7);
+				// B1 fix: mirror the JWT into the API client's in-memory
+				// bearer-token cache so the "Go to dashboard" follow-up (and
+				// any subsequent API call before page reload) carries the
+				// Authorization header. Same rationale as handleLogin.
+				setAuthToken(data.token);
 				// Populate the client-readable meta cookie so wallet-provider's
 				// getStoredSession() sees authMethod='account-number' and flips
 				// isAuthenticated to true. Without this, the dashboard renders the
@@ -313,7 +353,7 @@ export function AccountLoginModal({
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [csrfToken]);
 
 	const handleCopy = useCallback(() => {
 		if (!createdAccount) return;
@@ -452,48 +492,60 @@ export function AccountLoginModal({
 
 				{mode === "login" && (
 					<>
-						<div className="mb-4">
+<div className="mb-4">
+						<div className="mb-2 flex items-center justify-between gap-2">
 							<label
 								htmlFor="account-number-input"
-								className="mb-2 block text-xs font-medium uppercase tracking-widest text-text-muted"
+								className="block text-xs font-medium uppercase tracking-widest text-text-muted"
 							>
 								Account Number
 							</label>
-							<input
-								id="account-number-input"
-								name="accountNumber"
-								type="text"
-								value={accountNumber}
-								onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-								onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-								placeholder="1234 5678 9012 3456 or OMA-XXXX-XXXX-XXXX"
-								aria-label="Account number"
-								aria-invalid={!!error}
-								aria-errormessage={error ? "account-error" : undefined}
-								aria-describedby={
-									accountNumber && !isValidAccountNumberShape(accountNumber)
-										? "account-number-format-hint"
-										: error
-											? "account-error"
-											: undefined
-								}
-								autoComplete="off"
-								spellCheck={false}
-								inputMode="numeric"
-								className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
-								disabled={loading}
-							/>
-							{accountNumber &&
-								!isValidAccountNumberShape(accountNumber) && (
-									<p
-										id="account-number-format-hint"
-										className="mt-2 text-[11px] text-text-muted"
-									>
-										Expected: 16 digits (new accounts) or OMA-XXXX-XXXX-XXXX
-										(legacy)
-									</p>
-								)}
+							<a
+								href="/docs#account-number"
+								className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-accent"
+							>
+								<HelpCircle
+									className="h-3 w-3"
+									aria-hidden="true"
+								/>
+								What&apos;s this?
+							</a>
 						</div>
+						<input
+							id="account-number-input"
+							name="accountNumber"
+							type="text"
+							value={accountNumber}
+							onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
+							onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+							placeholder="1234 5678 9012 3456 or OMA-XXXX-XXXX-XXXX"
+							aria-label="Account number"
+							aria-invalid={!!error}
+							aria-errormessage={error ? "account-error" : undefined}
+							aria-describedby={
+								accountNumber && !isValidAccountNumberShape(accountNumber)
+									? "account-number-format-hint"
+									: error
+										? "account-error"
+										: undefined
+							}
+							autoComplete="off"
+							spellCheck={false}
+							inputMode="numeric"
+							className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
+							disabled={loading}
+						/>
+						{accountNumber &&
+							!isValidAccountNumberShape(accountNumber) && (
+								<p
+									id="account-number-format-hint"
+									className="mt-2 text-[11px] text-text-muted"
+								>
+									Expected: 16 digits (new accounts) or OMA-XXXX-XXXX-XXXX
+									(legacy)
+								</p>
+							)}
+					</div>
 						<button
 							type="button"
 							onClick={handleLogin}

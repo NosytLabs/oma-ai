@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL as API_URL } from "@/lib/config";
+import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { generationLimiter } from "@/lib/rate-limiter";
 
@@ -23,7 +24,7 @@ export const POST = withRateLimit(
 		// --- Auth gate (runs on the server, cookies are HttpOnly) ---
 		const authHeader = request.headers.get("authorization");
 		const cookieStore = await cookies();
-		const sessionCookie = cookieStore.get("oma_session")?.value;
+		const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 		if (!authHeader && !sessionCookie) {
 			return NextResponse.json(
 				{ error: { message: "Unauthorized", type: "auth_required" } },
@@ -49,6 +50,14 @@ export const POST = withRateLimit(
 		for (const name of PASSTHROUGH_REQUEST_HEADERS) {
 			const value = request.headers.get(name);
 			if (value) requestHeaders.set(name, value);
+		}
+
+		// B4 fix: forward the JWT as Authorization. The session cookie is
+		// HttpOnly, so the browser does not include the token in any
+		// client-side Authorization header. Resolve the cookie server-side
+		// and attach it as a Bearer token on the upstream request.
+		if (!requestHeaders.has("authorization") && sessionCookie) {
+			requestHeaders.set("authorization", `Bearer ${sessionCookie}`);
 		}
 
 		// Read body but enforce size while streaming into memory

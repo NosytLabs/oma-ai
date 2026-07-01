@@ -13,7 +13,7 @@ import {
   PROVIDER_ERROR_TYPES,
   setErrorAttributes,
 } from "../tracing.js";
-import { findProvidersForModel, getCandidateProviders, recordFailover } from "./cross-provider-router.js";
+import { getCandidateProviders, recordFailover } from "./cross-provider-router.js";
 import { getModelIdForProvider } from "./provider-selector.js";
 
 export { getModelPricing } from "./billing-service.js";
@@ -141,9 +141,6 @@ export async function handleChatCompletion(
       if (providersToTry.length === 0) {
         throw Object.assign(new Error("No inference providers available for this model"), { status: 503 });
       }
-      // Touch findProvidersForModel so unused-import doesn't fire when the
-      // call site (test) pre-resolves it for inspection.
-      void findProvidersForModel;
 
       let lastError: unknown = null;
       for (let i = 0; i < providersToTry.length; i++) {

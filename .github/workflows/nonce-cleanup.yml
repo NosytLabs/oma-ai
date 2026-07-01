@@ -6,8 +6,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: cron-nonce-cleanup
+  # Renamed from `cron-*` so this manual run is NOT grouped with any leftover
+  # scheduled-run history (which would cancel/displace the manual run).
+  group: ci-nonce-cleanup
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   run:

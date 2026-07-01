@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";
+import type { TimeRangeId } from "../_constants";
 
 interface UseDashboardStatsResult {
 	todayUsage: UsageRecord[];
@@ -23,7 +24,7 @@ interface UseDashboardStatsResult {
  */
 export function useDashboardStats(
 	usage: UsageRecord[],
-	timeRange: string,
+	timeRange: TimeRangeId,
 ): UseDashboardStatsResult {
 	// Aggregates that drive the QuickStatsCard and the recent-requests table.
 	const todayUsage = useMemo(() => {

@@ -55,37 +55,38 @@ describe("HomePage (revamped 2026-06-30)", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		// Hero headline: "Run any model.\nPay per request."
-		expect(screen.getByText(/pay per request/i)).toBeInTheDocument();
+		// "Pay per request" appears in hero AND stats — just confirm at least one exists
+		expect(screen.getAllByText(/pay per request/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders the primary CTA", async () => {
 		renderWithQueryClient(<HomePage />);
-		// New Hero CTA: "Get API Key" → /chat
+		// Primary CTA: "Get API Key" → /login (where API keys are actually issued)
 		const ctaLinks = await screen.findAllByRole("link", {
 			name: /get api key/i,
 		});
 		expect(ctaLinks.length).toBeGreaterThan(0);
-		expect(ctaLinks[0]).toHaveAttribute("href", "/chat");
+		expect(ctaLinks[0]).toHaveAttribute("href", "/login");
 	});
 
-	it("renders the docs CTA in the hero", async () => {
+	it("renders the x402 / no-signup CTA in the hero", async () => {
 		renderWithQueryClient(<HomePage />);
-		// New Hero secondary CTA: "View Docs" → /docs
+		// Secondary CTA: "Try without signup" → /docs#x402
 		const docsLinks = await screen.findAllByRole("link", {
-			name: /view docs/i,
+			name: /try without signup/i,
 		});
 		expect(docsLinks.length).toBeGreaterThan(0);
-		expect(docsLinks[0]).toHaveAttribute("href", "/docs");
+		expect(docsLinks[0]).toHaveAttribute("href", "/docs#x402");
 	});
 
-	it("renders the trust strip with partner logos", async () => {
+	it("renders the trust strip with provider wordmarks", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// New TrustStrip: "Works with the tools you ship on"
-			expect(
-				screen.getByText(/works with the tools you ship on/i),
-			).toBeInTheDocument();
+			// New TrustStrip: "Routing through" with plain-text provider names
+			expect(screen.getByText(/routing through/i)).toBeInTheDocument();
+			// OpenAI/Venice appear in the trust strip — getAllByText is safe
+			expect(screen.getAllByText("OpenAI").length).toBeGreaterThan(0);
+			expect(screen.getAllByText("Venice").length).toBeGreaterThan(0);
 		});
 	});
 
@@ -108,21 +109,20 @@ describe("HomePage (revamped 2026-06-30)", () => {
 			expect(screen.getByText(/sign in with wallet/i)).toBeInTheDocument();
 			expect(screen.getByText(/pay per call with usdc/i)).toBeInTheDocument();
 		});
-		// "Get your API key" appears in both HowItWorks step 2 AND FinalCTA — just confirm at least 2 exist
-		const apiKeyEls = screen.getAllByText(/get your api key/i);
-		expect(apiKeyEls.length).toBeGreaterThanOrEqual(2);
+		// "Get your API key" appears in both FinalCTA and possibly the how-it-works step
+		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});
 
-	it("renders the stats section with live signal", async () => {
+	it("renders the stats section with honest metrics", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// Stats section has the live signal headline and per-1M-tokens metric
-			const signalEl = screen.getByText(/live network signal/i);
+			// Stats section now uses "What is actually here" as the eyebrow
+			const signalEl = screen.getByText(/what is actually here/i);
 			expect(signalEl).toBeInTheDocument();
 			// Find the parent section and scope the per-1M query to it
 			const section = signalEl.closest("section");
 			expect(section).toBeInTheDocument();
-			expect(within(section!).getByText(/1m tokens/i)).toBeInTheDocument();
+			expect(within(section!).getByText(/1M tokens/i)).toBeInTheDocument();
 		});
 	});
 

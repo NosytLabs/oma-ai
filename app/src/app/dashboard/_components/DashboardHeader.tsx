@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { formatTime } from "@/lib/utils";
+import { TABS, TIME_RANGES, type TabId, type TimeRangeId } from "../_constants";
 
 interface DashboardHeaderProps {
 	loading: boolean;
@@ -29,21 +30,14 @@ interface DashboardHeaderProps {
 	/** Export callback. */
 	onExport?: () => void;
 	/** Active tab for tab navigation. */
-	activeTab?: string;
+	activeTab?: TabId;
 	/** Tab change callback. */
-	onTabChange?: (tab: string) => void;
+	onTabChange?: (tab: TabId) => void;
 	/** Selected time range for analytics. */
-	timeRange?: string;
+	timeRange?: TimeRangeId;
 	/** Time range change callback. */
-	onTimeRangeChange?: (range: string) => void;
+	onTimeRangeChange?: (range: TimeRangeId) => void;
 }
-
-const TABS = [
-	{ id: "overview", label: "Overview", icon: Zap },
-	{ id: "usage", label: "Usage", icon: Clock },
-	{ id: "api-keys", label: "API Keys", icon: null },
-	{ id: "health", label: "Health", icon: null },
-];
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
  *  but high enough that an idle tab doesn't hammer the API. */
@@ -53,12 +47,6 @@ const POLL_INTERVAL_MS = 120_000;
  * Dashboard page heading + status line + refresh button + tab navigation.
  * Auto-polls every 120 seconds. Shows live status with relative time.
  */
-const TIME_RANGES = [
-	{ id: "24h", label: "24h" },
-	{ id: "7d", label: "7d" },
-	{ id: "30d", label: "30d" },
-	{ id: "all", label: "All" },
-];
 
 export function DashboardHeader({
 	loading,

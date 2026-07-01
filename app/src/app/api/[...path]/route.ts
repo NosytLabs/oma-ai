@@ -13,7 +13,9 @@
  * specific routes before catch-alls.
  */
 import { type NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { DEFAULT_API_URL } from "@/lib/config";
+import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { generalLimiter } from "@/lib/rate-limiter";
 
@@ -62,11 +64,30 @@ export const DELETE = withRateLimit(
 	{ limiter: generalLimiter, route: "/api/*" },
 );
 
+/**
+ * Resolve the JWT from the HttpOnly session cookie server-side.
+ *
+ * The browser cannot read the HttpOnly cookie, so the dedicated routes
+ * below and this catch-all each have to read it via `cookies()` from
+ * `next/headers` and forward it as `Authorization: Bearer <jwt>` — the
+ * Hono backend's `sessionAuth` middleware only inspects the Authorization
+ * header, not raw cookies.
+ *
+ * The env-dependent name (`__Host-oma_session` in production, `oma_session`
+ * in dev) is sourced from `lib/cookies.ts` so logout, the session-cookie
+ * endpoint, and this proxy all agree on the same key.
+ */
+async function readSessionToken(): Promise<string | null> {
+	const cookieStore = await cookies();
+	return cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
+}
+
 async function isAuthenticated(req: NextRequest): Promise<boolean> {
 	const authHeader = req.headers.get("authorization");
 	if (authHeader?.startsWith("Bearer ")) return true;
-	// Fall back to session cookie (browser requests through the catch-all carry it)
-	const session = req.cookies.get("oma_session")?.value;
+	// Fall back to the HttpOnly session cookie (browser requests through the
+	// catch-all carry it; this resolver reads it server-side).
+	const session = await readSessionToken();
 	return Boolean(session);
 }
 
@@ -85,16 +106,31 @@ async function proxy(request: NextRequest) {
 		);
 	}
 
-	// Build upstream headers — forward cookies + auth headers
+	// Build upstream headers — forward cookies + auth headers.
 	const headers: Record<string, string> = {
 		accept: "application/json",
 	};
 	const cookie = request.headers.get("cookie");
 	if (cookie) headers.cookie = cookie;
+	// Prefer an Authorization header the caller already provided (e.g. a
+	// service-to-service call using an API key). Fall back to the session
+	// cookie below.
 	const auth = request.headers.get("authorization");
 	if (auth) headers.authorization = auth;
 	const ctype = request.headers.get("content-type");
 	if (ctype) headers["content-type"] = ctype;
+
+	// B3 fix: forward the HttpOnly session cookie as `Authorization: Bearer
+	// <jwt>`. The browser already sent the cookie with this request, but the
+	// backend's `sessionAuth` middleware only honors the Authorization
+	// header. Resolving the cookie here and re-attaching it as a Bearer token
+	// is the canonical auth path for proxied calls.
+	if (!headers.authorization) {
+		const sessionToken = await readSessionToken();
+		if (sessionToken) {
+			headers.authorization = `Bearer ${sessionToken}`;
+		}
+	}
 
 	// Read body for mutating methods
 	let body: BodyInit | null = null;

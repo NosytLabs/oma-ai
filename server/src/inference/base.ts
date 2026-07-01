@@ -84,9 +84,11 @@ export abstract class BaseInferenceProvider {
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
           const message = err instanceof Error ? err.message : String(err);
+          // Fix B3: mark network/connection errors as retryable so withRetry
+          // can attempt a fresh fetch on transient failures.
           throw Object.assign(
             new Error(`${this.config.name} connection failed: ${message}`),
-            { status: 502, type: "connection_error" }
+            { status: 502, type: "connection_error", retryable: true }
           ) as InferenceError;
         }
 
@@ -94,11 +96,25 @@ export abstract class BaseInferenceProvider {
 
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
+          // Fix B3: capture Retry-After header so withRetry can honor it.
+          // Header is optional; clamp to non-negative finite numbers only.
+          const retryAfterHeader = resp.headers?.get?.("retry-after");
+          const retryAfterParsed = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+          const retryAfter = Number.isFinite(retryAfterParsed) && retryAfterParsed >= 0
+            ? retryAfterParsed
+            : undefined;
           if (resp.status >= 500 && this.config.reportHealth !== false) {
             await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
-          this.config.mapError(resp.status, text);
+          try {
+            this.config.mapError(resp.status, text);
+          } catch (err) {
+            if (retryAfter !== undefined) {
+              (err as { retryAfter?: number }).retryAfter = retryAfter;
+            }
+            throw err;
+          }
         }
 
         span.setStatus({ code: SpanStatusCode.OK });
@@ -158,9 +174,11 @@ export abstract class BaseInferenceProvider {
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
           const message = err instanceof Error ? err.message : String(err);
+          // Fix B3: mark network/connection errors as retryable so withRetry
+          // can attempt a fresh fetch on transient failures.
           throw Object.assign(
             new Error(`${this.config.name} connection failed: ${message}`),
-            { status: 502, type: "connection_error" }
+            { status: 502, type: "connection_error", retryable: true }
           ) as InferenceError;
         }
 
@@ -168,11 +186,25 @@ export abstract class BaseInferenceProvider {
 
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
+          // Fix B3: capture Retry-After header so withRetry can honor it.
+          // Header is optional; clamp to non-negative finite numbers only.
+          const retryAfterHeader = resp.headers?.get?.("retry-after");
+          const retryAfterParsed = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+          const retryAfter = Number.isFinite(retryAfterParsed) && retryAfterParsed >= 0
+            ? retryAfterParsed
+            : undefined;
           if (resp.status >= 500 && this.config.reportHealth !== false) {
             await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
           }
           span.setAttribute("error", true);
-          this.config.mapError(resp.status, text);
+          try {
+            this.config.mapError(resp.status, text);
+          } catch (err) {
+            if (retryAfter !== undefined) {
+              (err as { retryAfter?: number }).retryAfter = retryAfter;
+            }
+            throw err;
+          }
         }
 
         span.setStatus({ code: SpanStatusCode.OK });
@@ -285,8 +317,13 @@ export async function withRetry<T>(
     try {
       return await fn();
     } catch (err: unknown) {
-      const errorObj = err as { status?: number; retryAfter?: number };
-      const isRetryable = retryStatuses.includes(errorObj?.status ?? 0);
+      const errorObj = err as { status?: number; retryAfter?: number; retryable?: boolean };
+      // Fix B3: only retry when the error is explicitly marked retryable AND
+      // its status is in the configured retry list. Errors without a
+      // `retryable` flag are treated as non-retryable (legacy behavior) so
+      // test mocks and unmapped error paths don't accidentally retry.
+      const statusMatches = retryStatuses.includes(errorObj?.status ?? 0);
+      const isRetryable = errorObj?.retryable === true && statusMatches;
 
       if (attempt === maxRetries || !isRetryable) {
         throw err;

@@ -249,4 +249,4 @@ This README is the primary documentation. For env vars and config, see `server/.
 
 ---
 
-*Permissionless inference. Pay with crypto. No account required.*
+*Pay-as-you-go inference. Pay with crypto. Wallet-based auth.*

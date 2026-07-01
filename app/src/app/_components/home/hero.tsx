@@ -96,31 +96,10 @@ export function Hero({ modelCount }: HeroProps) {
 								size="lg"
 								rightIcon={<ArrowRight className="h-4 w-4" />}
 							>
-								<Link href="/chat">Get API Key</Link>
+								<Link href="/login">Get API Key</Link>
 							</Button>
-							<Button
-								asChild
-								size="lg"
-								variant="secondary"
-								rightIcon={
-									<svg
-										className="h-4 w-4"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth={1.5}
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										aria-hidden="true"
-									>
-										<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-										<polyline points="14 2 14 8 20 8" />
-										<line x1="9" y1="13" x2="15" y2="13" />
-										<line x1="9" y1="17" x2="15" y2="17" />
-									</svg>
-								}
-							>
-								<Link href="/docs">View Docs</Link>
+							<Button asChild size="lg" variant="secondary">
+								<Link href="/docs#x402">Try without signup</Link>
 							</Button>
 						</m.div>
 
@@ -134,7 +113,7 @@ export function Hero({ modelCount }: HeroProps) {
 								<span className="mx-2 text-border-bright">·</span>
 								<span className="text-text-secondary">x402 pay-per-request</span>
 								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">From $0.06/1M tokens</span>
+								<span className="text-text-secondary">From $0.06 – $3.00 / 1M tokens</span>
 							</span>
 						</m.div>
 					</m.div>
