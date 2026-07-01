@@ -11,10 +11,8 @@
 		"typecheck": "next typegen && tsc --noEmit"
 	},
 	"dependencies": {
-		"@coinbase/wallet-sdk": "^4.3.7",
 		"@sentry/nextjs": "^10.62.0",
 		"@tanstack/react-query": "^5.101.1",
-		"@walletconnect/ethereum-provider": "^2.23.10",
 		"date-fns": "^4.4.0",
 		"framer-motion": "^12.41.0",
 		"jose": "^5.10.0",
@@ -27,7 +25,8 @@
 		"remark-gfm": "^4.0.1",
 		"siwe": "^3.0.0",
 		"viem": "^2.53.1",
-		"wagmi": "^3.6.18"
+		"wagmi": "^3.6.18",
+		"zod": "^3.25.76"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
