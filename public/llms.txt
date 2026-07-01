@@ -1,0 +1,140 @@
+# OMA-AI API
+
+> Multi-provider AI gateway with 300+ models. OpenAI-compatible API. Pay-per-request with USDC stablecoin credits.
+
+## Overview
+
+OMA-AI routes requests to multiple upstream providers (Venice, Surplus). OpenAI-compatible chat completions API with per-token billing via USDC credits. Models span budget, mid, premium, and frontier categories.
+
+## Base URL
+
+```
+https://api.oma-ai.com/v1
+```
+
+## Authentication
+
+All requests require Bearer token (API key) or session cookie.
+
+```
+Authorization: Bearer sk-your-api-key
+```
+
+Or cookie: `oma_api_key=sk-your-api-key`. Keys can be scoped to specific models and IP allowlists. Keys older than 90 days trigger `X-Key-Rotation-Recommended` header.
+
+## Chat Completions
+
+```
+POST /v1/chat/completions
+```
+
+OpenAI-compatible endpoint. Supports streaming (SSE), tool/function calling, and structured responses.
+
+**Request body:**
+- `model` (string, required) — model ID (e.g. `deepseek-v3.2`, `llama-3.3-70b`)
+- `messages` (array, required) — 1-100 messages, roles: `system`, `user`, `assistant`, `tool`
+- `temperature` (number, 0-2, optional)
+- `max_tokens` (integer, optional)
+- `stream` (boolean, optional) — enables SSE streaming
+- `tools` (array, optional) — function/tool definitions
+- `response_format` (object, optional)
+
+**Limits:** 10 MB max request body, 1 MB total message content, 100 KB per message.
+
+**Streaming:** Set `"stream": true` to receive Server-Sent Events (SSE) with `Content-Type: text/event-stream`. Responses include `x-provider` header indicating the upstream provider.
+
+**Idempotency:** Pass `Idempotency-Key` header for safe retries.
+
+## Models
+
+```
+GET /v1/models          — list all available models
+GET /v1/models/:id      — get a single model
+```
+
+Models are categorized as `budget`, `mid`, `premium`, or `frontier`. Each model returns per-token pricing:
+- `pricing.prompt` — cost per input token
+- `pricing.completion` — cost per output token
+- `context_length` — max context window
+- `category` — budget | mid | premium | frontier
+- `supports_streaming` — whether streaming is supported
+
+## Embeddings
+
+```
+POST /v1/embeddings
+```
+
+- `model` (string, required) — embedding model ID
+- `input` (string | string[], required) — text to embed
+
+## Credits
+
+```
+GET  /v1/credits/balance          — current balance and active batches
+POST /v1/credits/purchase         — create a deposit (USDC, SOL)
+GET  /v1/credits/transactions     — recent deposits and usage
+GET  /v1/credits/usage            — aggregated usage by model
+GET  /v1/credits/price-estimate   — estimate cost for model + tokens
+POST /v1/credits/auto-reload      — configure auto-reload
+GET  /v1/credits/auto-reload      — get auto-reload settings
+POST /v1/credits/refund/:usageId  — refund a usage record
+POST /v1/credits/budget-alerts    — set budget alert thresholds
+GET  /v1/credits/budget-alerts    — get budget alert config
+```
+
+Credits = cents (1 credit = $0.01). Deposits accept USDC on Ethereum or Solana. Auto-reload tops up when balance drops below threshold.
+
+## Usage
+
+```
+GET /v1/usage?days=30       — aggregated usage (totals, by model, by provider)
+GET /v1/usage/recent?limit=20 — recent individual requests
+```
+
+Session authentication required for usage endpoints.
+
+## Pricing
+
+Per-token pricing varies by model. Prices are per 1M tokens:
+- **Budget** (e.g. Llama 3.2 3B): ~$0.06/M input, ~$0.12/M output
+- **Mid** (e.g. Llama 3.3 70B): ~$0.35/M input, ~$0.90/M output
+- **Premium** (e.g. DeepSeek V3.2): ~$0.50/M input, ~$1.50/M output
+- **Frontier**: variable
+
+A provider markup (default 10-25%) is included in displayed prices. Minimum charge: 1 credit per request.
+
+## Error Responses
+
+All errors follow this structure:
+```json
+{
+  "error": {
+    "message": "string",
+    "type": "invalid_request_error | authentication_error | server_error | forbidden",
+    "code": "model_not_found | expired_api_key | ip_not_allowed | request_too_large"
+  }
+}
+```
+
+**Common HTTP status codes:**
+- `400` — validation error, model not found, request too large
+- `401` — missing/invalid API key, expired key, invalid session
+- `403` — IP not allowed, model not allowed for this key, admin required
+- `404` — model not found
+- `413` — request body exceeds 10 MB limit
+- `429` — rate limit exceeded (token bucket: 60 RPM per user)
+- `500` — internal server error
+- `503` — authentication service unavailable
+
+**Insufficient credits:** Returns a payment request object to top up balance.
+
+## Rate Limits
+
+- Token bucket: 60 RPM, refill rate 20/sec, bucket size 60
+- Per-model rate limits enforced
+- Spend limits configurable per API key
+
+## Documentation
+
+Full documentation: https://oma-ai.com/docs

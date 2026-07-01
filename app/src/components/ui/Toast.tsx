@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 import {
 	createContext,
@@ -49,8 +48,6 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
 	const [toasts, setToasts] = useState<Toast[]>([]);
-	const prefersReducedMotion = useReducedMotion() ?? false;
-	// React 19 useId hook for unique ID generation
 	const uniqueId = useId();
 	// Track auto-dismiss timers so we can clear them on manual dismiss / unmount
 	const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -113,16 +110,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 				role="region"
 				aria-label="Notifications"
 			>
-				<AnimatePresence>
-					{toasts.map((t) => (
-						<ToastItem
-							key={t.id}
-							toast={t}
-							onDismiss={() => dismiss(t.id)}
-							prefersReducedMotion={prefersReducedMotion}
-						/>
-					))}
-				</AnimatePresence>
+				{toasts.map((t) => (
+					<ToastItem
+						key={t.id}
+						toast={t}
+						onDismiss={() => dismiss(t.id)}
+					/>
+				))}
 			</div>
 		</ToastContext.Provider>
 	);
@@ -131,13 +125,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastItem({
 	toast,
 	onDismiss,
-	prefersReducedMotion,
 }: {
 	toast: Toast;
 	onDismiss: () => void;
-	prefersReducedMotion?: boolean | null;
 }) {
-	const motionPrefersReducedMotion = prefersReducedMotion ?? false;
+	const [visible, setVisible] = useState(false);
+
+	// Trigger enter animation on mount
+	useEffect(() => {
+		requestAnimationFrame(() => setVisible(true));
+	}, []);
+
 	const icons = {
 		success: <CheckCircle2 className="h-5 w-5 text-success shrink-0" />,
 		error: <AlertTriangle className="h-5 w-5 text-error shrink-0" />,
@@ -150,25 +148,13 @@ function ToastItem({
 		info: "border-info/30 bg-info/10",
 	};
 
-	const animationVariants = {
-		initial: motionPrefersReducedMotion
-			? { opacity: 1, y: 0, scale: 1 }
-			: { opacity: 0, y: 20, scale: 0.95 },
-		animate: motionPrefersReducedMotion
-			? { opacity: 1, y: 0, scale: 1 }
-			: { opacity: 1, y: 0, scale: 1 },
-		exit: motionPrefersReducedMotion
-			? { opacity: 0, x: 0, scale: 1 }
-			: { opacity: 0, x: 100, scale: 0.95 },
-	};
-
 	return (
-		<m.div
-			initial={animationVariants.initial}
-			animate={animationVariants.animate}
-			exit={animationVariants.exit}
-			transition={motionPrefersReducedMotion ? { duration: 0 } : undefined}
-			className={`flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm min-w-[280px] max-w-[400px] ${styles[toast.type]}`}
+		<div
+			className={`flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm min-w-[280px] max-w-[400px] transition-all duration-200 ease-out ${styles[toast.type]} ${
+				visible
+					? "opacity-100 translate-y-0 scale-100"
+					: "opacity-0 translate-y-5 scale-95"
+			}`}
 		>
 			{icons[toast.type]}
 			<span className="flex-1 text-sm font-medium text-text">
@@ -182,6 +168,6 @@ function ToastItem({
 			>
 				<X className="h-4 w-4 text-text-secondary" />
 			</button>
-		</m.div>
+		</div>
 	);
 }

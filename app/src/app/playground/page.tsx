@@ -87,8 +87,7 @@ print(response.json())`,
   body: JSON.stringify(${payload.split("\n").map((l, i) => (i === 0 ? l : "    " + l)).join("\n")}),
 });
 
-const data = await response.json();
-console.log(data);`,
+const data = await response.json();`,
 		},
 	};
 }

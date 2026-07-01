@@ -17,12 +17,15 @@
  */
 
 import {
+	AnimatePresence as _AnimatePresence,
 	m,
 	useMotionValue,
 	useReducedMotion,
 	useSpring,
 } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
+
+export const AnimatePresence = _AnimatePresence;
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 

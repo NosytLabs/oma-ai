@@ -1,9 +1,8 @@
 /**
- * @deprecated Import from `@/lib/api` (the directory barrel) instead.
+ * Backward-compatible re-export shim.
  *
- * This file is a thin re-export shim that preserves the historical
- * `app/src/lib/api.ts` import path. The implementation has been split into
- * per-resource modules under `app/src/lib/api/`:
+ * The implementation has been split into per-resource modules under
+ * `app/src/lib/api/`:
  *
  *   - `./api/client.ts`   — `request()`, `ApiError`, `BackendUnavailableError`, cache helpers
  *   - `./api/types.ts`    — all response/request interfaces
@@ -14,7 +13,7 @@
  *   - `./api/admin.ts`    — `api.admin.*`
  *   - `./api/index.ts`    — composite `api` object + barrel re-exports
  *
- * All existing `import { api, type Foo } from '@/lib/api'` call sites
- * continue to work unchanged.
+ * All `import { api, type Foo } from '@/lib/api'` call sites continue to
+ * work unchanged via this re-export.
  */
 export * from "./api/index";

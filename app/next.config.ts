@@ -140,15 +140,11 @@ const nextConfig: NextConfig = {
 				: false,
 	},
 
-	// Redirect broken /about route to /about-us (bundler conflict workaround)
+	// Redirects — none currently.
+	// Previously had /about → /about-us but /about has a real page and
+	// /about-us doesn't exist, so the redirect was causing 404s.
 	async redirects() {
-		return [
-			{
-				source: "/about",
-				destination: "/about-us",
-				permanent: true,
-			},
-		];
+		return [];
 	},
 
 	// API rewrites for proxy to backend

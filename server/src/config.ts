@@ -39,7 +39,7 @@ const envSchema = z.object({
   // Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
   // production endpoint). Set to https://base-rpc.publicnode.com or another
   // provider for dev/test environments.
-  CHAIN_RPC_URL: z.string().min(1).optional().default("https://special-special-mound.base-mainnet.quiknode.pro/a1ac6d8d0cc41dbf51b475c28ff92995bf2bcc39/"),
+  CHAIN_RPC_URL: z.string().min(1).optional().default(""),
   CHAIN_RPC_URL_FALLBACK: z.string().optional(),
   // Explicit QuickNode overrides. Set in render.yaml via QUICKNODE_RPC_URL when
   // you want the URL to live in a single named env var (vs. CHAIN_RPC_URL).

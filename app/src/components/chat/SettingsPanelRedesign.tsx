@@ -285,7 +285,7 @@ export function SettingsPanel({
 		<div className="space-y-5 font-mono text-sm">
 			{/* ─── Core Parameters ─── */}
 			<Slider
-				label="TEMP"
+				label="Temperature"
 				value={temperature}
 				onChange={setTemperature}
 				min={0}

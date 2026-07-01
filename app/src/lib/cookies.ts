@@ -186,6 +186,21 @@ export function getCsrfToken(): string | null {
  * Build authorization headers for API requests.
  * Returns an object with Authorization header if a session token exists.
  */
+/**
+ * Server-side: resolve the JWT from the HttpOnly session cookie. The browser
+ * cannot read it via `document.cookie`, so API proxy routes must read it via
+ * `cookies()` from `next/headers` and forward it as `Authorization: Bearer <jwt>`.
+ *
+ * The env-dependent name (`__Host-oma_session` in production, `oma_session`
+ * in dev) is sourced from this module so logout, the session-cookie endpoint,
+ * and proxy routes all agree on the same key.
+ */
+export async function readSessionToken(): Promise<string | null> {
+	const { cookies } = await import("next/headers");
+	const cookieStore = await cookies();
+	return cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
+}
+
 export function buildAuthHeaders(
 	additional?: Record<string, string>,
 ): Record<string, string> {

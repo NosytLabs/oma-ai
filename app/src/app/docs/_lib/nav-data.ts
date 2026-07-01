@@ -191,7 +191,7 @@ export const NAV_ITEMS: NavItem[] = [
 	},
 	{
 		id: "sdks",
-		label: "SDK Installation",
+		label: "SDKs & Examples",
 		icon: Package,
 		keywords: [
 			"openai",
@@ -203,12 +203,18 @@ export const NAV_ITEMS: NavItem[] = [
 			"install",
 			"npm",
 			"pip",
+			"python",
+			"typescript",
+			"go",
+			"curl",
+			"streaming",
+			"examples",
 		],
 		headings: [
-			{ id: "sdk-openai", label: "OpenAI SDK" },
+			{ id: "sdk-chat", label: "Chat Completion" },
+			{ id: "sdk-stream", label: "Streaming" },
+			{ id: "sdk-models", label: "List Models" },
 			{ id: "sdk-vercel", label: "Vercel AI SDK" },
-			{ id: "sdk-langchain", label: "LangChain" },
-			{ id: "sdk-direct", label: "Direct HTTP" },
 		],
 	},
 	{

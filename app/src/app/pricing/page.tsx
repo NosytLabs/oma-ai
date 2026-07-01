@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	ArrowRight,
 	ChevronDown,
@@ -14,16 +13,6 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { MODELS } from "@/lib/models-data";
-import {
-	blurIn,
-	EASE_OUT,
-	EASE_SPRING_SOFT,
-	fadeUp,
-	Magnetic,
-	Reveal,
-	StaggerReveal,
-	scaleIn,
-} from "@/lib/motion";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
 
@@ -162,31 +151,25 @@ function AccordionItem({
 				aria-controls={panelId}
 			>
 				<span className="font-medium text-text">{item.q}</span>
-				<m.span
-					animate={{ rotate: isOpen ? 180 : 0 }}
-					transition={{ duration: 0.25, ease: EASE_OUT }}
-					className="shrink-0"
+				<span
+					className="shrink-0 transition-transform duration-200"
+					style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
 				>
 					<ChevronDown className="h-5 w-5 text-text-muted" />
-				</m.span>
+				</span>
 			</button>
-			<AnimatePresence initial={false}>
-				{isOpen && (
-					<m.div
-						id={panelId}
-						role="region"
-						aria-labelledby={buttonId}
-						key="content"
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: EASE_OUT }}
-						className="overflow-hidden"
-					>
-						<p className="pb-5 text-sm text-text-secondary">{item.a}</p>
-					</m.div>
-				)}
-			</AnimatePresence>
+			<div
+				id={panelId}
+				role="region"
+				aria-labelledby={buttonId}
+				className="overflow-hidden transition-all duration-300"
+				style={{
+					maxHeight: isOpen ? "500px" : "0px",
+					opacity: isOpen ? 1 : 0,
+				}}
+			>
+				<p className="pb-5 text-sm text-text-secondary">{item.a}</p>
+			</div>
 		</div>
 	);
 }
@@ -212,26 +195,20 @@ export default function PricingPage() {
 
 			<div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
 				{/* ── Header ── */}
-				<StaggerReveal className="mb-12" as="div" stagger={0.1}>
-					<m.div
-						variants={fadeUp}
-						className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent-dim mb-6"
-					>
+				<div className="mb-12 animate-[fadeInUp_0.6s_ease-out_both]">
+					<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent-dim mb-6">
 						<span className="text-xs font-mono text-accent uppercase tracking-widest">
 							{"// pricing"}
 						</span>
-					</m.div>
-					<m.h1 variants={blurIn} className="h1-page text-text-bright">
+					</div>
+					<h1 className="h1-page text-text-bright">
 						AI API Pricing
-					</m.h1>
-					<m.p
-						variants={fadeUp}
-						className="mt-4 text-base text-text-secondary max-w-2xl"
-					>
+					</h1>
+					<p className="mt-4 text-base text-text-secondary max-w-2xl">
 						Credit-based billing. No subscriptions. No minimums. Pay per token
 						across {MODELS.length} models via unified OpenAI-compatible API.
-					</m.p>
-				</StaggerReveal>
+					</p>
+				</div>
 
 				{/* ── Payment Methods ── */}
 				<div className="mb-12">
@@ -242,16 +219,12 @@ export default function PricingPage() {
 						</span>
 						<div className="h-px flex-1 bg-border" />
 					</div>
-					<StaggerReveal
-						className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
-						stagger={0.08}
-					>
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
 						{PAYMENT_METHODS.map((method) => {
 							const Icon = method.icon;
 							return (
-								<m.div
+								<div
 									key={method.title}
-									variants={scaleIn}
 									className="relative group"
 								>
 									<div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -277,14 +250,14 @@ export default function PricingPage() {
 											</div>
 										)}
 									</div>
-								</m.div>
+								</div>
 							);
 						})}
-					</StaggerReveal>
+					</div>
 				</div>
 
 				{/* ── x402 Banner (recommended highlight) ── */}
-				<Reveal className="mb-12" y={20}>
+				<div className="mb-12">
 					<div className="relative p-4 rounded-xl bg-accent-dim border border-accent/30">
 						<div className="flex items-start gap-3">
 							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
@@ -310,7 +283,7 @@ export default function PricingPage() {
 							</div>
 						</div>
 					</div>
-				</Reveal>
+				</div>
 
 				{/* ── Model Table - Mobile Responsive ── */}
 				<div className="mb-16">
@@ -320,27 +293,17 @@ export default function PricingPage() {
 								{CATEGORIES.map((cat) => {
 									const active = category === cat.key;
 									return (
-										<m.button
+										<button
 											key={cat.key}
 											onClick={() => setCategory(cat.key)}
-											whileTap={{ scale: 0.96 }}
-											transition={EASE_SPRING_SOFT}
 											className={`relative px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-colors duration-150 ${
 												active
 													? CATEGORY_STYLES[cat.key].active
 													: CATEGORY_STYLES[cat.key].inactive
 											}`}
 										>
-											{active && (
-												<m.span
-													layoutId="pricing-category-pill"
-													className="absolute inset-0 rounded-full"
-													transition={EASE_SPRING_SOFT}
-													style={{ zIndex: -1 }}
-												/>
-											)}
 											{cat.label}
-										</m.button>
+										</button>
 									);
 								})}
 							</div>
@@ -445,7 +408,7 @@ export default function PricingPage() {
 				</div>
 
 				{/* ── FAQ ── */}
-				<Reveal className="mb-12">
+				<div className="mb-12">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
 						<h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
@@ -463,39 +426,29 @@ export default function PricingPage() {
 							/>
 						))}
 					</div>
-				</Reveal>
+				</div>
 
 				{/* ── CTA ── */}
 				<div className="relative mb-12 overflow-hidden rounded-2xl py-10">
-					<Reveal className="flex flex-col items-center gap-4" y={20}>
-						<m.h2
-							initial={{ opacity: 0, filter: "blur(8px)", y: 16 }}
-							whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-							viewport={{ once: true, margin: "-60px 0px -60px 0px" }}
-							transition={{ duration: 0.7, ease: EASE_OUT }}
-							className="h2-page text-text-bright text-center"
-						>
+					<div className="flex flex-col items-center gap-4">
+						<h2 className="h2-page text-text-bright text-center">
 							Start building today
-						</m.h2>
-						<Magnetic strength={10}>
-							<Link
-								href="/dashboard"
-								className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center"
-							>
-								<Zap className="h-4 w-4 mr-2" />
-								Start AI Inference
-								<ArrowRight className="h-4 w-4 ml-2" />
-							</Link>
-						</Magnetic>
-						<Magnetic strength={10}>
-							<Link
-								href="/deposit"
-								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center"
-							>
-								<Coins className="h-4 w-4 mr-2" />
-								Deposit Crypto
-							</Link>
-						</Magnetic>
+						</h2>
+						<Link
+							href="/dashboard"
+							className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+						>
+							<Zap className="h-4 w-4 mr-2" />
+							Start AI Inference
+							<ArrowRight className="h-4 w-4 ml-2" />
+						</Link>
+						<Link
+							href="/deposit"
+							className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+						>
+							<Coins className="h-4 w-4 mr-2" />
+							Deposit Crypto
+						</Link>
 						<Link
 							href="/models"
 							className="text-sm text-text-secondary hover:text-accent transition-colors px-4 py-3 text-center"
@@ -503,11 +456,11 @@ export default function PricingPage() {
 							View All Models
 							<ArrowRight className="w-4 h-4 ml-1 inline-block" />
 						</Link>
-					</Reveal>
+					</div>
 				</div>
 
 				{/* ── Billing Notes ── */}
-				<Reveal className="p-4 rounded-xl border border-amber/20 bg-amber/5">
+				<div className="p-4 rounded-xl border border-amber/20 bg-amber/5">
 					<h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-3">
 						Billing
 					</h4>
@@ -524,7 +477,7 @@ export default function PricingPage() {
 							</div>
 						))}
 					</div>
-				</Reveal>
+				</div>
 			</div>
 		</div>
 	);
