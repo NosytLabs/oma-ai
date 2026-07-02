@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const MAX_MESSAGE_CONTENT_BYTES = 100_000;
-export const MAX_MESSAGES = 100;
-export const MAX_TOTAL_BYTES = 1_000_000;
-export const MAX_REQUEST_BODY_SIZE = 10_000_000;
+const MAX_MESSAGE_CONTENT_BYTES = 100_000;
+const MAX_MESSAGES = 100;
+const MAX_TOTAL_BYTES = 1_000_000;
+const MAX_REQUEST_BODY_SIZE = 10_000_000;
 
 export function checkRequestBodySizeLimit(
   c: import("hono").Context,

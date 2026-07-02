@@ -57,7 +57,7 @@ function _percentile(h: Histogram, p: number): number {
 }
 
 // Public helpers for other modules to record metrics.
-export const metrics = {
+const metrics = {
   recordHttpRequest(method: string, path: string, status: number, durationSec: number) {
     const k = `${method}|${path}|${status}`;
     metricsStore.httpRequestsTotal.set(k, (metricsStore.httpRequestsTotal.get(k) ?? 0) + 1);

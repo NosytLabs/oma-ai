@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 
-export const openapiSpec = {
+const openapiSpec = {
   openapi: "3.1.0",
   info: {
     title: "OMA AI API",
@@ -2176,7 +2176,7 @@ export const openapiSpec = {
 // ── Type narrowing ────────────────────────────────────────────
 // Cast the const spec to a mutable type so Hono's c.json() accepts it.
 type OpenApiSpec = Record<string, unknown>;
-export const openapiSpecMutable = openapiSpec as unknown as OpenApiSpec;
+const openapiSpecMutable = openapiSpec as unknown as OpenApiSpec;
 
 export const openapiRoutes = new Hono<OmaEnv>();
 
