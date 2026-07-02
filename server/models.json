@@ -144,8 +144,8 @@
       "veniceId": "zai-org-glm-4.6",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.85,
-      "outputPricePer1M": 2.75,
+      "inputPricePer1M": 0.54,
+      "outputPricePer1M": 2.19,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 16384,
@@ -159,8 +159,8 @@
         "function-calling"
       ],
       "description": "GLM-4.6 is a large language model developed by Zhiyuan AI, featuring strong reasoning capabilities and support for multiple languages. Supports the largest context window for processing extensive text",
-      "creditsPerMillionInput": 106,
-      "creditsPerMillionOutput": 344
+      "creditsPerMillionInput": 68,
+      "creditsPerMillionOutput": 274
     },
     "zai-org-glm-4.7": {
       "id": "zai-org-glm-4.7",
@@ -969,30 +969,6 @@
       "description": "Claude Opus 4.7 is Anthropic's most capable generally available model for complex reasoning and agentic coding. It features a 1M token context window, 128K max output tokens, adaptive thinking, and st",
       "creditsPerMillionInput": 750,
       "creditsPerMillionOutput": 3750
-    },
-    "claude-opus-4-7-fast": {
-      "id": "claude-opus-4-7-fast",
-      "veniceId": "claude-opus-4-7-fast",
-      "provider": "venice",
-      "primaryProvider": "venice",
-      "inputPricePer1M": 36,
-      "outputPricePer1M": 180,
-      "markupPercent": 25,
-      "category": "frontier",
-      "maxTokens": 128000,
-      "supportsStreaming": true,
-      "displayName": "Claude Opus 4.7 Fast",
-      "capabilities": [
-        "chat",
-        "tools",
-        "reasoning",
-        "vision",
-        "web-search",
-        "function-calling"
-      ],
-      "description": "Claude Opus 4.7 (Fast) is a speed-optimized variant of Anthropic's most capable generally available model, offering the same 1M token context window and strong performance across complex reasoning and",
-      "creditsPerMillionInput": 4500,
-      "creditsPerMillionOutput": 22500
     },
     "claude-opus-4-6": {
       "id": "claude-opus-4-6",
