@@ -1,5 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+	useSearchParams: () => new URLSearchParams(),
+	usePathname: () => "/models",
+}));
+
 import ModelsPage from "./page";
 
 const originalIntersectionObserver = global.IntersectionObserver;
@@ -32,8 +39,8 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		const buttons = screen.getAllByRole("button");
 		const buttonTexts = buttons.map((b) => b.textContent);
-		// Tier filter buttons: All, Budget, Mid-Range, Premium, Frontier
-		expect(buttonTexts.some((t) => t === "All")).toBe(true);
+		// Tier filter buttons: All Tiers, Budget, Mid-Range, Premium, Frontier
+		expect(buttonTexts.some((t) => t === "All Tiers")).toBe(true);
 		expect(buttonTexts.some((t) => t === "Budget")).toBe(true);
 		expect(buttonTexts.some((t) => t === "Mid-Range")).toBe(true);
 		expect(buttonTexts.some((t) => t === "Premium")).toBe(true);
