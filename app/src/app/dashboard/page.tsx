@@ -3,12 +3,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ConnectWalletView } from "@/components/dashboard/ConnectWalletView";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { type TabId, type TimeRangeId } from "./_constants";
+import { TABS } from "./_constants";
 import { DashboardHeader } from "./_components/DashboardHeader";
 import { useDashboardData } from "./_hooks/useDashboardData";
 import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
@@ -41,6 +43,17 @@ export default function DashboardPage() {
 	const { isAuthenticated, connectEvm } = useWallet();
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const searchParams = useSearchParams();
+
+	// Sync the active tab with ?tab=... in the URL. Validates against the
+	// TABS list so unknown values fall back to "overview" instead of
+	// showing a blank page. Allows deep-links like /dashboard?tab=health.
+	const validTabIds = TABS.map((t) => t.id);
+	const initialTab: TabId =
+		(searchParams.get("tab") &&
+		validTabIds.includes(searchParams.get("tab") as TabId))
+			? (searchParams.get("tab") as TabId)
+			: "overview";
 
 	const {
 		balance,
@@ -63,7 +76,7 @@ export default function DashboardPage() {
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 	const [copied, setCopied] = useState<string | null>(null);
 	const [refreshTick, setRefreshTick] = useState(0);
-	const [activeTab, setActiveTab] = useState<TabId>("overview");
+	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
 
 	// All dashboard aggregates (today/month deltas, filtered ranges, error
