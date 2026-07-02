@@ -8,16 +8,14 @@
  * tree-shakeable with the MotionProvider in layout.tsx.
  *
  * Usage:
- *   import { Reveal, staggerContainer, fadeUp } from '@/lib/motion'
+ *   import { staggerContainer, fadeUp } from '@/lib/motion'
  *   <m.ul variants={staggerContainer} initial="hidden" whileInView="show">
  *     <m.li variants={fadeUp}>…</m.li>
  *   </m.ul>
- *   <Reveal><Card /></Reveal>
  *   <Magnetic><CTA /></Magnetic>
  */
 
 import {
-	AnimatePresence as _AnimatePresence,
 	m,
 	useMotionValue,
 	useReducedMotion,
@@ -25,7 +23,6 @@ import {
 } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
 
-export const AnimatePresence = _AnimatePresence;
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
@@ -78,11 +75,6 @@ export const fadeUp: Variants = {
 	},
 };
 
-export const fadeRight: Variants = {
-	hidden: { opacity: 0, x: 28 },
-	show: { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE_OUT } },
-};
-
 export const scaleIn: Variants = {
 	hidden: { opacity: 0, scale: 0.94 },
 	show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: EASE_OUT } },
@@ -104,16 +96,6 @@ export const blurIn: Variants = {
 	},
 };
 
-/** "Safe" variant aliases — identical to the base variants but available
- *  under the *Safe name so existing imports resolve. The "Safe" name was
- *  introduced during an earlier refactor; the variants are functionally
- *  the same. */
-export const blurInSafe: Variants = blurIn;
-export const scaleInSafe: Variants = scaleIn;
-export const scaleInSpringSafe: Variants = scaleInSpring;
-export const fadeUpSafe: Variants = fadeUp;
-export const fadeRightSafe: Variants = fadeRight;
-
 /* ============================================================
    CONVENIENCE: legacy fadeUp props (drop-in replacement for
    the old `fadeUp(delay)` helper used across the codebase).
@@ -126,78 +108,6 @@ export function fadeUpProps(delay = 0) {
 		viewport: VIEWPORT_ONCE,
 		transition: { duration: 0.5, delay, ease: EASE_OUT },
 	};
-}
-
-/* ============================================================
-   FadeIn — convenience wrapper, works like Reveal
-   ============================================================ */
-
-interface FadeInProps {
-	children: ReactNode;
-	delay?: number;
-	y?: number;
-	className?: string;
-	as?: "div" | "section" | "li" | "span";
-	once?: boolean;
-}
-
-export function FadeIn({
-	children,
-	delay = 0,
-	y = 20,
-	className,
-	as = "div",
-	once = true,
-}: FadeInProps) {
-	return (
-		<Reveal delay={delay} y={y} className={className} as={as} once={once}>
-			{children}
-		</Reveal>
-	);
-}
-
-/* ============================================================
-   Reveal — scroll-triggered wrapper, respects reduced motion
-   ============================================================ */
-
-interface RevealProps {
-	children: ReactNode;
-	/** delay in seconds */
-	delay?: number;
-	/** y-offset to animate from (px) */
-	y?: number;
-	className?: string;
-	as?: "div" | "section" | "li" | "span";
-	once?: boolean;
-}
-
-export function Reveal({
-	children,
-	delay = 0,
-	y = 24,
-	className,
-	as = "div",
-	once = true,
-}: RevealProps) {
-	const prefersReduced = useReducedMotion();
-	const MotionTag = m[as];
-
-	if (prefersReduced) {
-		const Tag = as;
-		return <Tag className={className}>{children}</Tag>;
-	}
-
-	return (
-		<MotionTag
-			className={className}
-			initial={{ opacity: 0, y }}
-			whileInView={{ opacity: 1, y: 0 }}
-			viewport={{ once, margin: "-60px 0px -60px 0px" }}
-			transition={{ duration: 0.6, delay, ease: EASE_OUT }}
-		>
-			{children}
-		</MotionTag>
-	);
 }
 
 /* ============================================================

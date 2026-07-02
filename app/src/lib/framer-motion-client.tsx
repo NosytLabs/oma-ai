@@ -27,39 +27,18 @@ import * as FM from "framer-motion";
 // Re-export motion components explicitly so each becomes an independent
 // client reference. Static `export { m }` does not do this — it forwards
 // the value reference, which loses the Proxy through RSC.
-export const motion = FM.motion;
 export const m = FM.m;
-export const AnimatePresence = FM.AnimatePresence;
 export const LazyMotion = FM.LazyMotion;
 export const MotionConfig = FM.MotionConfig;
-export const LayoutGroup = FM.LayoutGroup;
-export const PopChild = FM.PopChild;
 
 // Features
 export const domAnimation = FM.domAnimation;
-export const domMax = FM.domMax;
-export const domMin = FM.domMin;
 
 // Hooks
 export const useMotionValue = FM.useMotionValue;
-export const useMotionTemplate = FM.useMotionTemplate;
-export const useTransform = FM.useTransform;
 export const useSpring = FM.useSpring;
 export const useScroll = FM.useScroll;
 export const useReducedMotion = FM.useReducedMotion;
-export const useMotionValueEvent = FM.useMotionValueEvent;
-
-// Animation utilities
-export const animate = FM.animate;
-export const animations = FM.animations;
-export const motionValue = FM.motionValue;
-
-// Internal utilities (re-exported for compatibility)
-export const isBrowser = FM.isBrowser;
-export const useIsomorphicLayoutEffect = FM.useIsomorphicLayoutEffect;
-export const useComposedRefs = FM.useComposedRefs;
-export const useUnmountEffect = FM.useUnmountEffect;
-export const useForceUpdate = FM.useForceUpdate;
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration
 export type {
