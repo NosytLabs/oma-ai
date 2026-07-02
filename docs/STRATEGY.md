@@ -1,11 +1,66 @@
-# OMA-AI → Profitable Venice-AI Gateway: Strategy & Implementation Plan
+# OMA-AI Strategy: Venice Gateway to Profitable Product
 
-**Author:** OMA-AI research subagent
-**Date:** 2026-07-01
-**Status:** Draft v1 (decision-ready)
+**Status:** v2 — consolidated  
+**Last updated:** 2026-07-02  
 **Scope:** Turn the existing OMA-AI codebase into the highest-quality, highest-margin third-party gateway for the Venice AI API.
 
-> **TL;DR.** OMA is already a working, audited, Venice-routed OpenAI-compatible gateway with x402 + USDC + wallet auth + credit accounting. It is not a greenfield product; it is a **monetization + go-to-market problem**. This document proposes three concrete, code-anchored phases to get to positive unit economics inside one month and $10k+ MRR inside one quarter, anchored to three defensible wedges: **(1) crypto-native payment UX**, **(2) privacy-first inference (no logs, USDC, x402)**, and **(3) Venice's VVV/DIEM token flywheel**.
+> **TL;DR.** OMA is already a working, audited, Venice-routed OpenAI-compatible gateway with x402 + USDC + wallet auth + credit accounting. It is not a greenfield product; it is a **monetization + go-to-market problem**. Three concrete, code-anchored phases get to positive unit economics inside one month and $10k+ MRR inside one quarter, anchored to three defensible wedges: **(1) crypto-native payment UX**, **(2) privacy-first inference (no logs, USDC, x402)**, and **(3) Venice's VVV/DIEM token flywheel**.
+
+---
+
+## 0. The One-Pager
+
+**OMA-AI: the crypto-native, privacy-first AI gateway.**
+
+> *"One gateway. Every model. No lock-in. Pay with USDC."*
+
+### The problem
+
+Every serious AI builder hits the same three walls:
+
+1. **Privacy.** OpenRouter, Together, and Replicate log your prompts by default. Sending customer data through them is a compliance problem waiting to happen.
+2. **Payment friction.** To use any major API you need a credit card, an account, an API key, and a pre-funded balance. AI agents can't do any of that.
+3. **Vendor lock-in.** Each provider has its own SDK, its own tool format, its own rate limits. Migrating costs weeks.
+
+### What OMA-AI is
+
+A single OpenAI-compatible API that routes every call through **private inference providers** — primarily Venice AI, with Surplus as a backup — so your prompts are never logged. You pay with USDC on Base, SOL on Solana, or any token via HoudiniSwap (100+ chains). And your AI agent can pay-per-call with x402 — no account, no API key exchange, no pre-funded balance.
+
+The codebase is already shipping: 88 models, 25+ route modules, 82 passing tests, deployed on Render at $7/mo. We're not building a product; we're growing one.
+
+### Why now
+
+Three forces converged in 2026:
+
+- **Venice AI's VVV token** lets us stake → mint DIEM ($1/day of inference per 1% stake share) and subsidize a real free tier with no balance-sheet cost.
+- **x402 (Coinbase CDP)** is becoming the standard for AI-agent-native payments. We already speak it.
+- **Privacy is the wedge.** OpenRouter charges 5.5% but logs everything. We're 25% over cost but don't. The buyers who care about this — healthtech, fintech, legaltech, defense — already pay 5–10× more for HIPAA/GDPR-aligned infrastructure.
+
+### Numbers (one-glance)
+
+| | Today | Phase 1 (1 wk) | Phase 2 (1 mo) | Phase 3 (1 qtr) |
+|---|---|---|---|---|
+| Models | 88 | 90 | 92 + cache | 100+ multi-provider |
+| Markup | 25% uniform | 25% uniform | 20–50% tiered | 15–50% + Ent |
+| Free tier | ❌ | $0.05 faucet | + VVV subsidy | + VVV pool |
+| SDKs | 0 | 2 | 3 | 6 |
+| MRR target | $0 | $1k | $15k | $50k+ |
+| Infra cost | $7/mo | $7/mo | $25/mo | $100/mo |
+
+Break-even on infra at **$2.5k MRR**. Every dollar above that is gross profit at >70% margin.
+
+### Why us
+
+1. **The product is built.** All primitives are wired: 25+ routes, x402 facilitator, USDC deposits, HoudiniSwap bridge, Jupiter swap, wallet auth, credit accounting, OpenAPI spec, admin dashboard. 82 tests green. Two-week shipping speed.
+2. **The moat is real.** Wallet-only auth + private-routing + crypto-native + x402 = no competitor has all four. OpenRouter has 1 (crypto). Portkey has 0.
+3. **The cost structure is insane.** Render $7/mo server + $25/mo DB + free app = $40/mo all-in. We can run at $0 MRR for 7 months on the existing $50 Render credit, then break-even at <$2.5k MRR.
+4. **The token flywheel.** VVV staking turns the free tier from a cost center into an arbitrage opportunity.
+
+### The ask
+
+We're not raising right now. We're shipping Phase 1 this week and aiming for $15k MRR by month-end. If you want early access, want to integrate, or want to stake VVV with us — reach out.
+
+**Live now:** https://oma-ai.com · **Docs:** https://oma-ai.com/docs · **Models:** https://oma-ai.com/models · **Pricing:** https://oma-ai.com/pricing
 
 ---
 
@@ -23,7 +78,7 @@
 | Payments | `server/src/routes/deposit/` — `usdc.ts` (Base), `houdini.ts` (100+ chains via HoudiniSwap), `cctp.ts` (Circle CCTP), `lifi.ts` (LiFi aggregator); plus `jupiter.ts` for SOL→USDC |
 | x402 facilitator | `server/src/x402/facilitator.ts` (1250 LOC) — Coinbase CDP default, QuickNode-hosted alternative; nonce/replay protection via Redis SET NX EX; nonce-stamped receipt HMAC |
 | Subscriptions + budgets | `routes/credits.ts` (441 LOC) — `/v1/credits/purchase`, `/balance`, `/transactions`, `/usage`, `/auto-reload`, `/budget-alerts` (50/75/90/100% thresholds, email + webhook), `/price-estimate` |
-| Admin surface | `routes/admin/*`, `admin-observability.ts`, `analytics-admin.ts`, `metrics.ts`, `admin-observability.ts`, `analytics.ts`, `log.ts`, `export.ts` |
+| Admin surface | `routes/admin/*`, `admin-observability.ts`, `analytics-admin.ts`, `metrics.ts`, `log.ts`, `export.ts` |
 | OpenAPI | `routes/openapi.ts` (80 KB — full spec generated) |
 | Configurable fee markup | `routes/config.ts` — `fee_config` admin endpoint, `markupPercent` per model in `models.json` (defaults to `OMA_MARKUP_PCT=25` in `config.ts:101`) |
 | Rate limits | `routes/config.ts:103–110` — tiers `free:60rpm/10k tpm`, `basic:120/50k`, `pro:300/200k`, `enterprise:1000/1M` |
@@ -34,7 +89,7 @@
 ### 1.2 Revenue model today
 
 - **Single revenue lever:** 25% markup over Venice base cost (uniform across all models), per `markupPercent` in `server/models.json`.
-- **Default rate-limit tiers exist in config** but I see no subscription/billing endpoints that enforce them in `routes/credits.ts` — the `purchase` route is for **credits**, not subscriptions. **Subscriptions are scaffolded but not wired to billing.** (Confirmed by absence of `/v1/subscriptions` routes in `index.ts:161–187`.)
+- **Default rate-limit tiers exist in config** but no subscription/billing endpoints enforce them in `routes/credits.ts` — the `purchase` route is for **credits**, not subscriptions. **Subscriptions are scaffolded but not wired to billing.** (Confirmed by absence of `/v1/subscriptions` routes in `index.ts:161–187`.)
 - **x402 default price:** `X402_PRICE_USD=0.01` in `render.yaml:81` — i.e., $0.01/request by default, hard-coded to per-call not per-token. This is mispriced for chat completions (a $0.05 chat call returns 500 tokens).
 - **No free tier.** The minimum purchase is $1 (`purchaseSchema.min(100)` cents in `credits.ts:26`). The "free" tier in `routes/config.ts:104` is **only a rate-limit tier**, not a credit-allocation tier — there is no entry point to use it without paying.
 - **No SDKs.** Direct HTTP only.
@@ -55,7 +110,7 @@
 ### 1.4 The good news
 
 - **All required primitives are built and audited.** No new infrastructure needed for Phase 1.
-- **The 25% uniform markup is closer to OpenRouter's effective take rate (5.5% × ~3 effective provider markup) than Portkey's $49/mo + overage.** You are already in the competitive band.
+- **The 25% uniform markup is closer to OpenRouter's effective take rate (5.5% × ~3 effective provider markup) than Portkey's $49/mo + overage.** Already in the competitive band.
 - **The provider cost is subsidized by Venice itself** if you qualify for Partner Tier (60 RPM / 1M TPM, 3× the default L tier — see §2.3).
 - **Render $50 credit buys ~7 months.** No need to monetize before the runway ends.
 
@@ -76,7 +131,7 @@ Venice is the **only major consumer + developer LLM provider that builds privacy
 | Plus | $68 | 7,500 credits/mo, 10% credit bonus, 2-mo banking |
 | Max | $200 | 22,500 credits/mo, 12.5% bonus, 3-mo banking |
 
-> Key fact: **100 Venice credits = $1.** Their math is identical to OMA's (`CREDIT_VALUE_PER_DOLLAR=1` in `config.ts:80`). This is a happy coincidence: OMA credits can be priced as Venice credits 1:1 and feel native.
+> Key fact: **100 Venice credits = $1.** Their math is identical to OMA's (`CREDIT_VALUE_PER_DOLLAR=1` in `config.ts:80`). OMA credits can be priced as Venice credits 1:1 and feel native.
 
 **API (`docs.venice.ai/overview/pricing`, scraped 2026-07-01):**
 
@@ -152,6 +207,7 @@ Venice is the **only major consumer + developer LLM provider that builds privacy
 | LiteLLM self-host | "Same models, no infra. We run the gateway; you run the agent." |
 
 **Word discipline** (lifted from README "Brand & Voice", reinforced):
+
 - USE: *private inference*, *zero data retention*, *wallet-based*, *x402*, *USDC-native*, *agent-native*, *pay-per-call*, *crypto-friendly*.
 - AVOID: *anonymous*, *no KYC*, *untraceable*, *bypass*, *cheap*, *dark*, *underground*.
 
@@ -244,8 +300,6 @@ Venice is the **only major consumer + developer LLM provider that builds privacy
 
 #### 1.1 Catalog hygiene (highest-leverage, ~3 hours)
 
-Apply the recommendations in `docs/venice-research-2026-07-01.md`:
-
 - [ ] **ADD** `claude-sonnet-5` (newest frontier, premium tier, 1M ctx) → `models.json` at `premium` tier, markup 35%
 - [ ] **ADD** `zai-org-glm-5-2` and `e2ee-glm-5-2-p` → `mid` tier, markup 25%
 - [ ] **ADD** `kimi-k2-7-code` → `mid` tier, markup 25%
@@ -266,6 +320,7 @@ Apply the recommendations in `docs/venice-research-2026-07-01.md`:
 **Revenue impact:** Negligible direct ($50/mo ceiling), but unlocks developer adoption funnel. Removes the $1 minimum signup friction.
 
 **Code locations:**
+
 - `server/src/routes/auth.ts` — already issues wallets
 - `server/src/credits/add-credits.ts` — already has batch-issuance logic
 
@@ -361,7 +416,7 @@ Apply the recommendations in `docs/venice-research-2026-07-01.md`:
   - Cache hit rate
   - Export to CSV
 - [ ] Add API endpoint at `server/src/routes/analytics.ts` (already exists, expand)
-- [ ] Match OpenRouter UX — this is the single biggest DX gap per `competitor-analysis.md`
+- [ ] Match OpenRouter UX — this is the single biggest DX gap per §8
 
 **Revenue impact:** Retention. Users with visibility don't churn.
 
@@ -510,12 +565,226 @@ Apply the recommendations in `docs/venice-research-2026-07-01.md`:
 
 ---
 
-## 8. References
+## 8. Competitive Landscape (deep dive)
 
-- **Internal docs:** `README.md`, `competitor-analysis.md`, `docs/venice-research-2026-07-01.md`, `quality-report.md`, `UI_UX_AUDIT_REPORT.md`
-- **Code anchors:** `server/src/index.ts` (route mounts), `server/src/config.ts:101` (`OMA_MARKUP_PCT`), `server/src/inference/billing-service.ts` (markup logic), `server/src/inference/models.ts:6–23` (`ModelDef` schema), `server/src/routes/credits.ts:25–29` (purchase schema, $1 minimum), `server/src/x402/facilitator.ts` (x402), `server/src/routes/deposit/index.ts` (deposit flow), `app/src/app/pricing/page.tsx` (pricing UI)
-- **External:** `docs.venice.ai/overview/pricing`, `docs.venice.ai/api-reference/rate-limiting`, `venice.ai/pricing`, `venice.ai/token`, `openrouter.ai/pricing`, `portkey.ai/pricing`, `unify.ai/pricing`, `docs.litellm.ai/docs/proxy/provider_margins` — all scraped 2026-07-01.
+Beyond the §2.2 benchmark, here is the qualitative gap analysis vs. OpenRouter, Together.ai, Replicate, and Groq (consolidated from the July 2026 audit; full content embedded in this section).
+
+### 8.1 OMA-AI's current strengths
+
+- **Crypto-native payments** (USDC) — unique differentiator.
+- **88+ models** — competitive catalog.
+- **OpenAI-compatible API** — low switching cost.
+- **x402 / wallet-only auth** — no competitor has both.
+
+### 8.2 OMA-AI's biggest gaps (in priority order)
+
+1. **No official SDKs** — developers must use raw HTTP.
+2. **Limited docs** — no AI assistant, no video, no interactive examples.
+3. **No free tier** — high barrier to entry (resolved in Phase 1).
+4. **No activity logs / usage dashboard** — no visibility into usage (resolved in Phase 2).
+5. **No prompt caching** — missing cost optimization (resolved in Phase 2).
+6. **No batch processing** — missing bulk use case (resolved in Phase 2).
+7. **No webhooks** — missing async workflows (resolved in Phase 2).
+8. **No model routing/fallbacks** — missing reliability features.
+
+### 8.3 UX patterns worth adopting (now)
+
+| From | Pattern | Why |
+|---|---|---|
+| OpenRouter | 3-step onboarding (Signup → Credits → API Key) | Clear, low-friction |
+| OpenRouter | "Ask AI" documentation assistant | Reduces support burden |
+| OpenRouter | Interactive Request Builder | Copy-paste ready code |
+| OpenRouter | llms.txt + App Attribution | Indexable by AI agents |
+| Replicate | Tabbed docs (Get Started / Guides / Topics / Reference) | Logical progression |
+| Replicate | Webhook lifecycle management | Async-first design |
+| Groq | Real-time TPS display | Performance transparency |
+| Groq | "OpenAI compatible in 2 lines" | Emphasizes simplicity |
+| Together.ai | Multi-product pricing tabs | Clear segmentation |
+
+### 8.4 Recommended docs structure
+
+```
+/docs
+├── Quickstart (5-min tutorial, auth, first call, errors)
+├── Guides (chat, streaming, vision, audio, image, tools)
+├── SDKs (Python, TypeScript, OpenAI compat)
+├── API Reference (chat, models, embeddings, OpenAPI)
+├── Features (routing, caching, batching, webhooks, USDC)
+└── Resources (llms.txt, status, changelog, "Ask AI")
+```
+
+### 8.5 DX features by priority
+
+| Priority | Feature | Effort | Impact |
+|---|---|---|---|
+| **P1** | Python SDK + TypeScript SDK | Med | High |
+| **P1** | Usage dashboard + activity logs | Med | High |
+| **P1** | Prompt caching | Med | High |
+| **P1** | llms.txt + interactive examples | Low | High |
+| **P2** | Batch API (50% discount) | Med | Med |
+| **P2** | Webhooks | Med | Med |
+| **P2** | MCP server | Med | Med |
+| **P2** | Model routing/fallbacks | High | High |
+| **P3** | SSO/SAML (Enterprise) | High | Med |
+| **P3** | Fine-tuning | V.High | Med |
+| **P3** | GPU access | V.High | Low (for gateway) |
+
+### 8.6 Tier-1 quick wins (≤2 weeks)
+
+1. Add `llms.txt` — enables AI-agent consumption (zero cost, high visibility).
+2. Add multi-language code examples (TS, Shell, Go).
+3. Add model trend indicators to `/models` (weekly usage +/-%).
+4. Add "Was this helpful?" feedback on docs.
+5. Expose `/openapi.json` schema endpoint.
+
+### 8.7 Recommended positioning
+
+> **"The Crypto-Native AI Gateway with Enterprise DX"**
+
+Combine: OMA's crypto payment advantage + OpenRouter's developer experience (SDKs, docs, routing) + Replicate's documentation quality + Groq's performance transparency. No competitor currently offers all of this.
 
 ---
 
-*Strategy v1. Ready for review. Open questions in §7 should be resolved before Phase 1 commits land.*
+## 9. Venice Catalog Audit (delta vs. OMA)
+
+Date of source data: **2026-07-01**. Research report method: Firecrawl scrapes of `docs.venice.ai` + targeted searches. OMA catalog has **88 text/inference + 5 video = 93 models**; Venice publishes **~90 text models**.
+
+### 9.1 Match status
+
+| Category | Count | Action |
+|---|---|---|
+| OMA text models verified live on Venice | 85 | Keep |
+| OMA models NOT on Venice (stale) | 3 | Verify then remove |
+| OMA models Deprecated on Venice | 1 | Remove before 2026-07-23 |
+| New Venice models missing from OMA | 5 | Add at 25% markup |
+| Pricing drift > 10% | 1 | Reduce `zai-org-glm-4.6` |
+| Pricing drift < 10% | 4 | Tolerable; verify next refresh |
+
+### 9.2 Stale OMA models (REMOVE)
+
+| OMA `id` | Status | Notes |
+|---|---|---|
+| `arcee-trinity-large-thinking` | Not in current Venice catalog | Verify via live call, then remove |
+| `tencent-hy3-preview` | Not in current Venice catalog | Verify via live call, then remove |
+| `minimax-m3` (non-preview) | Only `minimax-m3-preview` exists | Likely renamed; replace or remove |
+
+### 9.3 Deprecated OMA model (REMOVE)
+
+| OMA `id` | Sunset | Notes |
+|---|---|---|
+| `claude-opus-4-7-fast` | **2026-07-23** | Venice auto-routes after sunset; may return 410 Gone |
+
+### 9.4 New Venice models to ADD
+
+| Venice `id` | Tier | Context | Input $/M | Output $/M | Suggested OMA price (×1.25) |
+|---|---|---|---|---|---|
+| **`claude-sonnet-5`** | premium | 1.0M | $3.00 | $15.00 | $3.75 / $18.75 |
+| **`zai-org-glm-5-2`** | mid | 1.0M | $1.40 | $4.40 | $1.75 / $5.50 |
+| **`e2ee-glm-5-2-p`** | mid (E2EE) | 524K | $1.75 | $5.75 | $2.19 / $7.19 |
+| **`kimi-k2-7-code`** | mid | 256K | $0.90 | $4.30 | $1.13 / $5.38 |
+| `nvidia-nemotron-3-ultra-550b-a55b` | mid | 256K | $0.63 | $3.13 | $0.79 / $3.91 |
+
+All five are flagged **Beta** by Venice but shipping in production. Risk is low.
+
+### 9.5 Pricing discrepancy (FIX)
+
+**`zai-org-glm-4.6`:** Venice dropped input from ~$0.85 to $0.43 (cut ~36%), output $2.75 → $1.75 (~36%). OMA's effective markup is now **~98%**. Action: drop OMA price to **$0.54 / $2.19** (25% over Venice base) to stay competitive and reduce churn risk.
+
+### 9.6 Cache pricing (NEW Venice capability — OMA does not expose)
+
+Many Venice models now publish prompt-cache pricing (per 1M cached tokens), e.g.:
+
+| Model | Cache read $/M |
+|---|---|
+| `zai-org-glm-5-1` | $0.33 |
+| `zai-org-glm-5` | $0.20 |
+| `zai-org-glm-4.7` | $0.11 |
+| `qwen-3-7-max` | $0.27 (read) / $3.35 (write) |
+| `qwen-3-7-plus` | $0.05 / $0.63 |
+| `grok-4-3` | $0.23 |
+| `claude-opus-4-7` | $0.60 / $7.50 |
+| `openai-gpt-55` | $0.63 |
+
+Adding `cacheReadPricePer1M` / `cacheWritePricePer1M` to OMA's `ModelDef` schema and passing cached tokens through cuts long-context costs by 50–90% on supported models.
+
+### 9.7 Venice rate-limit tiers (defaults)
+
+| Tier | RPM | TPM | Examples |
+|---|---|---|---|
+| **XS** | 500 | 1M | `llama-3.2-3b`, `qwen3-4b` |
+| **S** | 75 | 750K | `mistral-small-3-2-24b-instruct`, `venice-uncensored-*` |
+| **M** | 50 | 750K | `zai-org-glm-5`, `qwen3-next-80b`, `google-gemma-3-27b-it` |
+| **L** | 20 | 500K | All frontier/premium models (most of OMA's catalog) |
+
+Partner tier (negotiated): XS 500/2M · S 150/1.5M · M 100/1.5M · **L 60/1M** (3× default).
+
+Implication for OMA: most OMA-routed models sit in tier L (20 RPM / 500K TPM). Aggregating multiple end-users behind one Venice key will hit tier-L ceilings fast → Partner tier is mandatory for Pro-tier rollout.
+
+### 9.8 Venice default model traits (aliases)
+
+| Trait | Routes to |
+|---|---|
+| `default` | `zai-org-glm-4.7` |
+| `function_calling_default` | `zai-org-glm-4.7` |
+| `default_vision` | `qwen3-vl-235b-a22b` |
+| `default_reasoning` | `qwen3-235b-a22b-thinking-2507` |
+| `default_code` | `qwen3-coder-480b-a35b-instruct-turbo` |
+| `most_uncensored` | `venice-uncensored-1-2` |
+| `most_intelligent` | `zai-org-glm-4.7` |
+
+OMA should consider exposing these symbolic aliases.
+
+### 9.9 Highest-leverage catalog moves (in order)
+
+1. Add `claude-sonnet-5` (newest frontier, premium margin).
+2. Add `zai-org-glm-5-2` and `e2ee-glm-5-2-p` (1M context, GLM flagship).
+3. Remove `claude-opus-4-7-fast` before 2026-07-23.
+4. Fix `zai-org-glm-4.6` price drift.
+5. Add `kimi-k2-7-code` for the agentic-coding niche.
+6. Verify/remove the 3 stale models via live API call.
+
+### 9.10 Notable API additions OMA should consider exposing
+
+- `prompt_cache_key` + `prompt_cache_retention` — large cost/latency win for repeated prefixes.
+- `venice_parameters.character_slug` — Venice's character personas.
+- `venice_parameters.strip_thinking_response` / `disable_thinking` — strip or disable reasoning blocks.
+- `include_search_results_in_stream` / `return_search_results_as_documents` — control web-search output.
+- `response_format.json_schema` — JSON-schema-validated structured outputs.
+
+---
+
+## 10. References
+
+### Internal docs
+
+- `README.md` — canonical project entry point (brand voice, feature list, model catalog).
+- `app/public/llms.txt` — production public doc for LLM ingestion.
+- `app/public/agents.md` — production public doc served at `/agents.md`.
+
+### Code anchors
+
+- `server/src/index.ts` — route mounts (25+ modules).
+- `server/src/config.ts:101` — `OMA_MARKUP_PCT` default.
+- `server/src/inference/billing-service.ts` — markup / cost calculation.
+- `server/src/inference/models.ts:6–23` — `ModelDef` schema.
+- `server/src/routes/credits.ts:25–29` — purchase schema ($1 minimum).
+- `server/src/x402/facilitator.ts` — x402 facilitator.
+- `server/src/routes/deposit/index.ts` — deposit flow (USDC, Houdini, CCTP, LiFi, Jupiter).
+- `server/models.json` — model catalog (88 text + 5 video).
+- `app/src/app/pricing/page.tsx` — pricing UI.
+
+### External (scraped 2026-07-01)
+
+- Venice: `docs.venice.ai/overview/pricing`, `docs.venice.ai/api-reference/rate-limiting`, `docs.venice.ai/overview/deprecations`, `venice.ai/pricing`, `venice.ai/token`, `docs.venice.ai/models/text`, `featurebase.venice.ai/changelog`.
+- Competitors: `openrouter.ai/pricing`, `portkey.ai/pricing`, `unify.ai/pricing`, `docs.litellm.ai/docs/proxy/provider_margins`, `together.ai`, `replicate.com`, `console.groq.com/docs`.
+
+### Source documents (consolidated into this file)
+
+- `docs/STRATEGY.md` (v1, 2026-07-01) — §1–§7.
+- `docs/PITCH.md` (2026-07-01) — §0.
+- `competitor-analysis.md` (2026-07-01) — §8.
+- `docs/venice-research-2026-07-01.md` (2026-07-01) — §9.
+
+---
+
+*Strategy v2 (consolidated). Last updated 2026-07-02. Open questions in §7 should be resolved before Phase 1 commits land.*
