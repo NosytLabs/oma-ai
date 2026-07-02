@@ -5,7 +5,7 @@ import { useEffect, useMemo } from "react";
 import type { Message } from "@/components/chat";
 import { log } from "@/lib/logger";
 
-export const STORAGE_KEY = "oma_chat_conversation";
+const STORAGE_KEY = "oma_chat_conversation";
 const DEFAULT_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
 
 export interface UseChatPersistenceOptions {
