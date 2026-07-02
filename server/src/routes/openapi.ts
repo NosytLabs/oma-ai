@@ -1958,36 +1958,6 @@ const openapiSpec = {
         responses: { "200": { description: "Deposit initiated" } },
       },
     },
-    "/v2/x402/pay-req-test": {
-      post: {
-        tags: ["X402"],
-        summary: "V2 Payment Required (base64 PAYMENT-REQUIRED header)",
-        security: [],
-        operationId: "x402v2PayReqTest",
-        responses: { "402": { description: "Payment required" } },
-      },
-    },
-    "/v2/x402/verify": {
-      post: {
-        tags: ["X402"],
-        summary: "V2 verify (protocol validation only)",
-        security: [],
-        operationId: "x402v2Verify",
-        responses: {
-          "400": { description: "Malformed signature" },
-          "501": { description: "EIP-3009 settlement not yet implemented" },
-        },
-      },
-    },
-    "/v2/x402/settle": {
-      post: {
-        tags: ["X402"],
-        summary: "V2 settle (not yet implemented)",
-        security: [],
-        operationId: "x402v2Settle",
-        responses: { "501": { description: "Not implemented" } },
-      },
-    },
 
     // ═══════════════════════════════════════════════════════════
     //  ADMIN

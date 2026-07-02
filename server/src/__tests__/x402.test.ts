@@ -346,33 +346,4 @@ describe('x402 Facilitator', () => {
       expect(payReq).toHaveProperty('payment-URL')
     })
   })
-
-  // AUDIT-4: /v2/x402/* routes must be mounted on the app (previously
-  // defined in v2.ts but never wired into src/index.ts). These tests
-  // exercise the routes through the full Hono app to catch future
-  // unmount regressions.
-  describe('x402 V2 routes mounted on app', () => {
-    it('GET /v2/x402/pay-req-test returns 402 with base64 PAYMENT-REQUIRED header', async () => {
-      const res = await app.request('/v2/x402/pay-req-test', { method: 'POST' })
-      expect(res.status).toBe(402)
-      const headerVal = res.headers.get('PAYMENT-REQUIRED')
-      expect(headerVal).toBeTruthy()
-      const decoded = JSON.parse(Buffer.from(headerVal!, 'base64').toString('utf8'))
-      expect(decoded.x402Version).toBe(2)
-      expect(decoded.accepts[0].scheme).toBe('exact')
-      expect(decoded.accepts[0].network).toBe('eip155:8453')
-    })
-
-    it('GET /v2/x402/verify returns 400 when PAYMENT-SIGNATURE missing', async () => {
-      const res = await app.request('/v2/x402/verify', { method: 'POST' })
-      expect(res.status).toBe(400)
-    })
-
-    it('GET /v2/x402/settle returns 501 (EIP-3009 pending)', async () => {
-      const res = await app.request('/v2/x402/settle', { method: 'POST' })
-      expect(res.status).toBe(501)
-      const body = await res.json() as { error: { code: string } }
-      expect(body.error.code).toBe('x402_v2_settlement_pending')
-    })
-  })
 })

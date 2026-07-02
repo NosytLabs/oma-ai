@@ -4,8 +4,8 @@
  *
  * Each describe block targets a specific issue from the audit. All fixes
  * are also independently covered by the original test files
- * (facilitator.test.ts, settle-amount-forgery.test.ts, v2.test.ts) where
- * the relevant behavior was already exercised.
+ * (facilitator.test.ts, settle-amount-forgery.test.ts) where the relevant
+ * behavior was already exercised.
  *
  * Audit findings covered:
  *   AUDIT-1 — parseUsdcAtomic accepts negative/non-numeric input
@@ -13,8 +13,11 @@
  *   AUDIT-2 — Houdini cross-chain flow fabricates payment sigs without
  *             a nonce; real-mode verify fails with "Replay protection: invalid_nonce"
  *   AUDIT-3 — /x402/pay-req-test had no rate limit (DoS vector)
- *   AUDIT-4 — /v2/x402/* routes defined in v2.ts were never mounted
- *             in src/index.ts (V2 surface unreachable in prod)
+ *
+ * AUDIT-4 (V2 route mounting) is no longer relevant: the V2 surface
+ * (server/src/x402/v2.ts) was removed in 2026-07-02 because V2 settlement
+ * requires EIP-3009 + facilitator private key, neither of which are
+ * available. See .audit/server-fixes-2026-07-02.md for the removal rationale.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -134,7 +137,6 @@ const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 // Import AFTER mocks so vi.mock hoisting + module resolution line up.
 import { Hono } from 'hono'
 import { x402Routes, parseUsdcAtomic } from '../facilitator.js'
-import { x402V2Routes } from '../v2.js'
 
 function makeV1PaymentSig(payee: string, amount: string, nonce: string, payFrom = '0x' + '12'.repeat(20)): unknown {
   const now = Math.floor(Date.now() / 1000)
@@ -322,46 +324,5 @@ describe('AUDIT-3: /x402/pay-req-test is rate-limited', () => {
     // Assert the route was actually wrapped — at least one rateLimit call
     // with maxRequests === 30 was registered before the handler ran.
     expect(rateLimitCalls).toContain(30)
-  })
-})
-
-// ============================================================================
-// AUDIT-4: /v2/x402/* routes are mounted and reachable on the Hono app
-// ============================================================================
-describe('AUDIT-4: v2 routes mounted and reachable', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    resetChain()
-  })
-
-  it('responds to /v2/x402/pay-req-test with 402 + base64 PAYMENT-REQUIRED header', async () => {
-    const app = new Hono()
-    app.route('/', x402V2Routes)
-
-    const res = await app.request('/v2/x402/pay-req-test', { method: 'POST' })
-    expect(res.status).toBe(402)
-    const headerVal = res.headers.get('PAYMENT-REQUIRED')
-    expect(headerVal).toBeTruthy()
-    const decoded = JSON.parse(Buffer.from(headerVal!, 'base64').toString('utf8'))
-    expect(decoded.x402Version).toBe(2)
-    expect(decoded.accepts[0].network).toBe('eip155:8453')
-  })
-
-  it('responds to /v2/x402/verify with 400 on missing header', async () => {
-    const app = new Hono()
-    app.route('/', x402V2Routes)
-
-    const res = await app.request('/v2/x402/verify', { method: 'POST' })
-    expect(res.status).toBe(400)
-  })
-
-  it('responds to /v2/x402/settle with 501 (EIP-3009 pending)', async () => {
-    const app = new Hono()
-    app.route('/', x402V2Routes)
-
-    const res = await app.request('/v2/x402/settle', { method: 'POST' })
-    expect(res.status).toBe(501)
-    const body = await res.json() as { error: { code: string } }
-    expect(body.error.code).toBe('x402_v2_settlement_pending')
   })
 })
