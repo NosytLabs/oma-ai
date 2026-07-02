@@ -91,7 +91,7 @@ export interface PaymentLink {
   status: "pending" | "completed" | "expired" | "cancelled";
 }
 
-export class HoudiniClient {
+class HoudiniClient {
   private apiKey: string;
   private apiSecret: string;
   private partnerId: string;

@@ -24,7 +24,7 @@ export interface ModelDef {
 
 export const WHISPER_MODEL = "whisper-1";
 
-export const WHISPER_MODEL_INFO: ModelDef = {
+const WHISPER_MODEL_INFO: ModelDef = {
   id: WHISPER_MODEL,
   veniceId: WHISPER_MODEL,
   provider: "venice",
@@ -55,7 +55,7 @@ export interface VideoModelDef {
   creditsPrice: number;
 }
 
-export let MODEL_CATALOG: Record<string, ModelDef> = {};
+let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
@@ -163,7 +163,7 @@ export async function reloadModelCatalog(): Promise<void> {
   }
 }
 
-export async function getModelCatalog(): Promise<Record<string, ModelDef>> {
+async function getModelCatalog(): Promise<Record<string, ModelDef>> {
   await ensureCatalogLoaded();
   return MODEL_CATALOG;
 }

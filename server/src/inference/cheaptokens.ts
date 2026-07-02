@@ -86,7 +86,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 /** Floor under which we never re-fetch (avoids thrashing if upstream is slow). */
 const CACHE_REFRESH_BACKOFF_MS = 30 * 1000; // 30 seconds
 
-export class CheapTokensClient {
+class CheapTokensClient {
   private baseUrl = "https://cheaptokens.ai/api";
 
   async getPricing(): Promise<PricingResponse> {
