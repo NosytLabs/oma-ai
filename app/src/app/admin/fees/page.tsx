@@ -15,38 +15,6 @@ type FeeConfig = {
 	providers: Record<string, { markupPercent: number }>;
 };
 
-type ProviderInfo = {
-	id: string;
-	name: string;
-	description: string;
-};
-
-const PROVIDERS: ProviderInfo[] = [
-	{
-		id: "venice",
-		name: "Venice AI",
-		description: "Primary provider with advanced models",
-	},
-	{
-		id: "openrouter",
-		name: "OpenRouter",
-		description: "Access to 100+ models",
-	},
-	{ id: "together", name: "Together AI", description: "Open source models" },
-	{
-		id: "deepinfra",
-		name: "DeepInfra",
-		description: "Fast inference at low cost",
-	},
-	{
-		id: "litellm",
-		name: "LiteLLM",
-		description: "Unified API for multiple providers",
-	},
-	{ id: "antseed", name: "AntSeed", description: "Privacy-focused inference" },
-	{ id: "tinyfish", name: "TinyFish", description: "Efficient small models" },
-];
-
 export default function AdminFeesPage() {
 	const queryClient = useQueryClient();
 	const [error, setError] = useState<string | null>(null);
@@ -214,46 +182,51 @@ export default function AdminFeesPage() {
 						</p>
 					</div>
 					<div className="divide-y divide-border/50">
-						{PROVIDERS.map((provider) => (
-							<div
-								key={provider.id}
-								className="px-4 py-4 flex items-center justify-between"
-							>
-								<div>
-									<p className="font-medium text-text-bright text-sm">
-										{provider.name}
-									</p>
-									<p className="text-[10px] text-text-muted">
-										{provider.description}
-									</p>
+						{Object.entries(feesQuery.data?.providers ?? {}).map(
+							([providerId, provider]) => (
+								<div
+									key={providerId}
+									className="px-4 py-4 flex items-center justify-between"
+								>
+									<div>
+										<p className="font-medium text-text-bright text-sm capitalize">
+											{providerId}
+										</p>
+									</div>
+									<div className="flex items-center gap-3">
+										<label
+											htmlFor={`${_id}-${providerId}-markup`}
+											className="sr-only"
+										>
+											{providerId} markup percent
+										</label>
+										<input
+											id={`${_id}-${providerId}-markup`}
+											type="number"
+											min={5}
+											max={200}
+											value={editValues[providerId] ?? provider.markupPercent}
+											onChange={(e) =>
+												setEditValues({
+													...editValues,
+													[providerId]:
+														parseInt(e.target.value, 10) || 10,
+												})
+											}
+											className="w-24 px-3 py-2 rounded border border-border bg-panel text-text text-right font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+										/>
+										<span className="text-text-muted font-mono w-6 text-right">
+											%
+										</span>
+									</div>
 								</div>
-								<div className="flex items-center gap-3">
-									<label
-										htmlFor={`${_id}-${provider.id}-markup`}
-										className="sr-only"
-									>
-										{provider.name} markup percent
-									</label>
-									<input
-										id={`${_id}-${provider.id}-markup`}
-										type="number"
-										min={5}
-										max={200}
-										value={editValues[provider.id] || 10}
-										onChange={(e) =>
-											setEditValues({
-												...editValues,
-												[provider.id]: parseInt(e.target.value, 10) || 10,
-											})
-										}
-										className="w-24 px-3 py-2 rounded border border-border bg-panel text-text text-right font-mono text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
-									/>
-									<span className="text-text-muted font-mono w-6 text-right">
-										%
-									</span>
-								</div>
+							),
+						)}
+						{Object.keys(feesQuery.data?.providers ?? {}).length === 0 && (
+							<div className="px-4 py-6 text-text-muted text-sm font-mono">
+								No providers configured.
 							</div>
-						))}
+						)}
 					</div>
 				</div>
 

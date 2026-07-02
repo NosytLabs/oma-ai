@@ -56,8 +56,12 @@ vi.mock('viem', () => ({
   parseAbi: vi.fn(() => []),
   decodeFunctionData: vi.fn(),
   createPublicClient: vi.fn(),
+  createWalletClient: vi.fn(),
   formatUnits: vi.fn((v: bigint) => v.toString()),
   http: vi.fn(),
+  recoverTypedDataAddress: vi.fn(),
+  keccak256: vi.fn(() => '0x' + '0'.repeat(64)),
+  encodePacked: vi.fn(() => '0x'),
 }))
 
 vi.mock('../credits/verify-usdc-on-chain.js', () => ({
@@ -297,7 +301,14 @@ vi.mock('viem', () => ({
       blockNumber: 194n,
     }),
   }),
+  createWalletClient: vi.fn(),
   http: vi.fn(),
+  parseAbi: vi.fn(() => []),
+  decodeFunctionData: vi.fn(),
+  formatUnits: vi.fn((v: bigint) => v.toString()),
+  recoverTypedDataAddress: vi.fn(),
+  keccak256: vi.fn(() => '0x' + '0'.repeat(64)),
+  encodePacked: vi.fn(() => '0x'),
 }))
 
 vi.mock('viem/chains', () => ({

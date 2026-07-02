@@ -1,3 +1,24 @@
+// Single source of truth for the model catalog surfaced in the UI.
+//
+// History:
+//   - Before 2026-07-02, this file held 13 hand-curated Model entries — many
+//     were fabricated (e.g. "Claude Opus 4", "claude-sonnet-4", "gemini-2.5-pro",
+//     "llama-3.3-70b-together"). Every page that imported MODEL_COUNT or
+//     MODELS was wrong, and the model detail pages rendered make-believe
+//     metadata.
+//   - Now we derive Model[] from the real Venice-only catalog in
+//     `server/models.json` (89 chat models). The 5 video models in
+//     VIDEO_MODELS are intentionally not mixed in here — they live in
+//     `app/src/app/video-generation/page.tsx`, which uses its own shape
+//     (`duration`, `mode: "text-to-video" | "image-to-video"`) that does
+//     not fit the LLM `Model` interface.
+//
+// Public API is preserved: Model interface, Capability, Provider, Tier,
+// formatPricePerMillion, formatPricePerToken, getModelsByTier, MODEL_COUNT,
+// MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER — all still exported.
+
+import catalogJson from "../../../server/models.json";
+
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 export type Provider =
 	| "Venice"
@@ -99,168 +120,161 @@ export const TIER_COLORS: Record<
 
 export const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
 
-// ponytail: this exists — source of truth is server/src/inference/models.ts FALLBACK_MODELS.
-// Only the 17 chat/text models are listed here; the 2 video models live in
-// app/src/app/video-generation/page.tsx (only place they are shown in UI).
-export const MODELS: Model[] = [
-	{
-		id: "deepseek-v3.2",
-		name: "DeepSeek V3.2",
+// ---------------------------------------------------------------------------
+// Catalog ingestion
+// ---------------------------------------------------------------------------
+//
+// `server/models.json` is the upstream source of truth. It is typed at
+// import time via a local interface so TypeScript catches structural drift
+// when the server bumps the catalog. We map each entry to the public `Model`
+// shape at module-load time — no runtime fetch, no per-render work.
+
+interface RawCatalog {
+	MODEL_CATALOG: Record<
+		string,
+		{
+			id: string;
+			veniceId?: string;
+			provider: string;
+			primaryProvider?: string;
+			inputPricePer1M: number;
+			outputPricePer1M: number;
+			markupPercent?: number;
+			category: Tier | string;
+			maxTokens: number;
+			supportsStreaming?: boolean;
+			displayName: string;
+			capabilities: string[];
+			description?: string;
+			creditsPerMillionInput?: number;
+			creditsPerMillionOutput?: number;
+		}
+	>;
+	VIDEO_MODELS?: Record<string, unknown>;
+}
+
+const CATALOG = (catalogJson as RawCatalog).MODEL_CATALOG;
+
+/** Format `maxTokens` (raw integer) as a short human string: "4K", "128K", "1M". */
+function formatContextLength(maxTokens: number): string {
+	if (!Number.isFinite(maxTokens) || maxTokens <= 0) return "—";
+	if (maxTokens >= 1_000_000) {
+		const m = maxTokens / 1_000_000;
+		// 1.28M-style numbers look cleaner as "1.3M" only when they need to —
+		// round to nearest 0.1M and trim trailing zeros.
+		const rounded = Math.round(m * 10) / 10;
+		return `${rounded}M`;
+	}
+	const k = Math.round(maxTokens / 1000);
+	return `${k}K`;
+}
+
+/**
+ * Map the server catalog's capability strings onto the public `Capability`
+ * union. Unknown server-side capabilities (e.g. `tools`, `function-calling`,
+ * `web-search`) are mapped onto the closest TS-side concept and dropped if
+ * there is no analogue — this keeps the public API stable while still
+ * preserving every signal the upstream catalog carries.
+ *
+ * Inferences that the server doesn't tag explicitly:
+ *   - `uncensored` — id or description mentions "uncensored" / "heretic"
+ *     (covers Venice's `venice-uncensored-*`, `gemma-4-uncensored`,
+ *     `e2ee-...-uncensored-p`, and the Heretic GLM variant).
+ *   - `coding` — id mentions "coder" or "codex" (covers Qwen Coder and
+ *     the GPT-codex variants).
+ */
+function deriveCapabilities(
+	id: string,
+	displayName: string,
+	description: string | undefined,
+	serverCaps: readonly string[] | undefined,
+): Capability[] {
+	const out = new Set<Capability>();
+	const capSet = new Set((serverCaps ?? []).map((c) => c.toLowerCase()));
+	const haystack = `${id} ${displayName} ${description ?? ""}`.toLowerCase();
+
+	// Every entry in the chat catalog is a chat model — confirm before assuming.
+	if (capSet.has("chat") || serverCaps === undefined || serverCaps.length === 0) {
+		out.add("chat");
+	}
+
+	if (capSet.has("reasoning")) out.add("reasoning");
+	if (capSet.has("vision")) out.add("vision");
+	if (capSet.has("video-input") || capSet.has("audio-input")) out.add("multimodal");
+	if (capSet.has("tools") || capSet.has("function-calling")) out.add("agents");
+
+	// Heuristic flags — derived, not declared by the server.
+	if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
+	if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase())) out.add("coding");
+
+	return [...out];
+}
+
+/**
+ * Build a fallback description when the server entry omits one (llama-3.x
+ * entries ship with empty strings today). We never want a blank card.
+ */
+function deriveDescription(
+	id: string,
+	displayName: string,
+	description: string | undefined,
+): string {
+	const trimmed = (description ?? "").trim();
+	if (trimmed) return trimmed;
+	// Strip provider prefix from id for a cleaner fallback label
+	// (e.g. "llama-3.3-70b" → "Llama 3.3 70B", not "Llama Llama 3.3 70B").
+	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
+	const titleCase = cleaned
+		.split(/[-_]/)
+		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+		.filter(Boolean)
+		.join(" ");
+	return `${titleCase || displayName} — language model served by OMA.`;
+}
+
+/**
+ * Build a single `Model` entry from the upstream JSON. Defensive against
+ * future server-side schema drift — a missing or unknown tier falls back
+ * to `"mid"` rather than dropping the model from the catalog.
+ */
+function toModel(entry: RawCatalog["MODEL_CATALOG"][string]): Model {
+	const tier: Tier =
+		entry.category === "budget" ||
+		entry.category === "mid" ||
+		entry.category === "premium" ||
+		entry.category === "frontier"
+			? entry.category
+			: "mid";
+
+	return {
+		id: entry.id,
+		name: entry.displayName,
+		// Server catalog is 100% Venice today. Keep the capitalisation that
+		// consumers (pricing page VENDOR_DISPLAY, capabilities-grid, badge
+		// colour map) expect.
 		provider: "Venice",
-		tier: "premium",
-		description: "DeepSeek's latest flagship model",
-		contextLength: "64K",
-		inputPricePer1M: 0.5,
-		outputPricePer1M: 1.5,
-		capabilities: ["chat", "coding", "reasoning"],
-		modelId: "deepseek-v3.2",
-	},
-	{
-		id: "llama-3.3-70b",
-		name: "Llama 3.3 70B",
-		provider: "Venice",
-		tier: "mid",
-		description: "Meta's latest 70B model",
-		contextLength: "8K",
-		inputPricePer1M: 0.35,
-		outputPricePer1M: 0.9,
-		capabilities: ["chat", "coding"],
-		modelId: "llama-3.3-70b",
-	},
-	{
-		id: "llama-3.2-3b",
-		name: "Llama 3.2 3B",
-		provider: "Venice",
-		tier: "budget",
-		description: "Fast, lightweight model",
-		contextLength: "8K",
-		inputPricePer1M: 0.06,
-		outputPricePer1M: 0.12,
-		capabilities: ["chat", "fast"],
-		modelId: "llama-3.2-3b",
-	},
-	{
-		id: "gpt-4o-mini",
-		name: "GPT-4o Mini",
-		provider: "OpenRouter",
-		tier: "mid",
-		description: "OpenAI's cost-efficient model",
-		contextLength: "128K",
-		inputPricePer1M: 0.15,
-		outputPricePer1M: 0.6,
-		capabilities: ["chat", "coding", "reasoning"],
-		modelId: "gpt-4o-mini",
-	},
-	{
-		id: "llama-3.3-70b-together",
-		name: "Llama 3.3 70B (Together)",
-		provider: "Together",
-		tier: "premium",
-		description: "Meta's 70B on Together AI",
-		contextLength: "8K",
-		inputPricePer1M: 0.35,
-		outputPricePer1M: 0.9,
-		capabilities: ["chat", "coding"],
-		modelId: "llama-3.3-70b-together",
-	},
-	{
-		id: "claude-3-5-sonnet-latest",
-		name: "Claude 3.5 Sonnet",
-		provider: "Claude",
-		tier: "frontier",
-		description:
-			"Anthropic Claude 3.5 Sonnet — best-in-class reasoning and code",
-		contextLength: "200K",
-		inputPricePer1M: 3.0,
-		outputPricePer1M: 15.0,
-		capabilities: ["chat", "coding", "reasoning", "agents"],
-		modelId: "claude-3-5-sonnet-latest",
-	},
-	{
-		id: "claude-3-5-haiku-latest",
-		name: "Claude 3.5 Haiku",
-		provider: "Claude",
-		tier: "mid",
-		description: "Anthropic Claude 3.5 Haiku — fast, cost-efficient",
-		contextLength: "200K",
-		inputPricePer1M: 0.8,
-		outputPricePer1M: 4.0,
-		capabilities: ["chat", "coding", "fast"],
-		modelId: "claude-3-5-haiku-latest",
-	},
-	{
-		id: "claude-sonnet-4",
-		name: "Claude Sonnet 4",
-		provider: "Claude",
-		tier: "frontier",
-		description: "Anthropic Claude Sonnet 4 — frontier reasoning",
-		contextLength: "200K",
-		inputPricePer1M: 3.0,
-		outputPricePer1M: 15.0,
-		capabilities: ["chat", "coding", "reasoning", "agents", "vision"],
-		modelId: "claude-sonnet-4",
-	},
-	{
-		id: "claude-opus-4",
-		name: "Claude Opus 4",
-		provider: "Claude",
-		tier: "frontier",
-		description: "Anthropic Claude Opus 4 — most capable model",
-		contextLength: "200K",
-		inputPricePer1M: 15.0,
-		outputPricePer1M: 75.0,
-		capabilities: ["chat", "coding", "reasoning", "agents", "vision"],
-		modelId: "claude-opus-4",
-	},
-	{
-		id: "gemini-2.5-pro",
-		name: "Gemini 2.5 Pro",
-		provider: "Gemini",
-		tier: "frontier",
-		description: "Google Gemini 2.5 Pro — frontier reasoning, 1M context",
-		contextLength: "1M",
-		inputPricePer1M: 1.25,
-		outputPricePer1M: 10.0,
-		capabilities: ["chat", "coding", "reasoning", "agents", "vision"],
-		modelId: "gemini-2.5-pro",
-	},
-	{
-		id: "gemini-2.5-flash",
-		name: "Gemini 2.5 Flash",
-		provider: "Gemini",
-		tier: "mid",
-		description: "Google Gemini 2.5 Flash — fast, cost-efficient",
-		contextLength: "1M",
-		inputPricePer1M: 0.075,
-		outputPricePer1M: 0.3,
-		capabilities: ["chat", "coding", "fast", "vision"],
-		modelId: "gemini-2.5-flash",
-	},
-	{
-		id: "gemini-2.5-flash-thinking",
-		name: "Gemini 2.5 Flash (thinking)",
-		provider: "Gemini",
-		tier: "mid",
-		description: "Google Gemini 2.5 Flash with thinking enabled",
-		contextLength: "1M",
-		inputPricePer1M: 0.075,
-		outputPricePer1M: 0.3,
-		capabilities: ["chat", "coding", "reasoning", "fast"],
-		modelId: "gemini-2.5-flash-thinking",
-	},
-	{
-		id: "gemini-2.5-pro-thinking",
-		name: "Gemini 2.5 Pro (thinking)",
-		provider: "Gemini",
-		tier: "frontier",
-		description: "Google Gemini 2.5 Pro with thinking enabled",
-		contextLength: "1M",
-		inputPricePer1M: 1.25,
-		outputPricePer1M: 10.0,
-		capabilities: ["chat", "coding", "reasoning", "agents"],
-		modelId: "gemini-2.5-pro-thinking",
-	},
-];
+		tier,
+		description: deriveDescription(entry.id, entry.displayName, entry.description),
+		contextLength: formatContextLength(entry.maxTokens),
+		inputPricePer1M: entry.inputPricePer1M,
+		outputPricePer1M: entry.outputPricePer1M,
+		capabilities: deriveCapabilities(
+			entry.id,
+			entry.displayName,
+			entry.description,
+			entry.capabilities,
+		),
+		modelId: entry.veniceId ?? entry.id,
+	};
+}
+
+/**
+ * The full static catalog surfaced in the UI. Generated from
+ * `server/models.json` at module load — no fetch, no async, no per-render
+ * work. Length is therefore guaranteed equal to `Object.keys(MODEL_CATALOG)`
+ * in the upstream file (89 entries today).
+ */
+export const MODELS: Model[] = Object.values(CATALOG).map(toModel);
 
 /**
  * Format a price-per-1M-tokens value for display.
@@ -296,5 +310,3 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 export const MODEL_COUNT = MODELS.length;
-
-
