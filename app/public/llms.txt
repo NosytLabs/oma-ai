@@ -1,0 +1,89 @@
+# OMA-AI
+
+> Permissionless AI inference gateway. One OpenAI-compatible API for 80+ models
+> across Venice and other providers. Pay with crypto (USDC on Base via x402),
+> sign in with a wallet, no subscriptions, no email, no prompts logged.
+
+## Overview
+- API base URL: `https://api.oma-ai.com/v1` (mirror: `https://api-staging.oma-ai.com/v1`)
+- OpenAI-compatible: drop-in for `openai-python`, `openai-node`, Vercel AI SDK,
+  LangChain, raw `fetch`, and any HTTP client.
+- Free tier: $0.05 in credits on signup, no card required.
+- Auth: wallet-based accounts (SIWE), API keys, and per-request x402 payments.
+
+## Documentation
+- [Docs home](https://oma-ai.com/docs): full API reference
+- [Model catalog](https://oma-ai.com/models): all models, prices, capabilities
+- [Pricing](https://oma-ai.com/pricing): per-token cost breakdown
+- [Quick start](https://oma-ai.com/docs#quickstart): first request in 5 minutes
+- [Error codes](https://oma-ai.com/docs#errors): status codes and retry patterns
+- [Privacy manifest (JSON)](https://oma-ai.com/api/v1/privacy): machine-readable privacy policy
+
+## Endpoints
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/v1/chat/completions` | POST | Chat completions (streaming + tool calls) |
+| `/v1/models` | GET | List available models and capabilities |
+| `/v1/images/generations` | POST | Image generation (Seedream, etc.) |
+| `/v1/videos/generations` | POST | Async video generation |
+| `/v1/videos/retrieve` | GET | Poll video job status |
+| `/v1/x402/quote` | POST | Get x402 payment quote for a request |
+| `/v1/x402/deposit` | POST | Create USDC deposit order |
+| `/v1/x402/proxy/chat/completions` | POST | Chat completions paid with x402 |
+| `/v1/api-keys` | GET/POST/DELETE | Manage API keys |
+| `/v1/account/export` | GET | Export all account data |
+| `/v1/account/delete` | POST | Delete account and all data |
+| `/v1/privacy` | GET | Machine-readable privacy manifest |
+| `/v1/health` | GET | Service and upstream provider health |
+
+## Authentication
+Three modes, all served by the same endpoints:
+
+1. **API key** — `Authorization: Bearer $OMA_KEY`. Free signup on
+   [oma-ai.com](https://oma-ai.com) issues $0.05 in credits to start.
+2. **Wallet (SIWE)** — `Authorization: SIWE <base64-payload>`. Wallet-based,
+   email-free account identity.
+3. **x402 pay-per-request** — `Pay-Req:` header with an EIP-3009 signed
+   USDC quote. No account required. Used by AI agents that auto-pay each
+   request from their own on-chain balance.
+
+## Pricing model
+Per-token prices in `server/models.json` are a **25% markup over Venice's cost**.
+The catalog JSON is the source of truth for both the displayed user price
+(`inputPricePer1M`, `outputPricePer1M`) and the internal credit conversion
+(`creditsPerMillionInput` = `inputPricePer1M * 125`).
+
+Direct passthrough pricing rules:
+- `/v1/chat/completions`: 25% markup over Venice's USD list price.
+- `/v1/x402/proxy/*`: 25% markup over Venice, paid per-request with USDC on Base.
+- `/v1/images/generations` and `/v1/videos/generations`: flat-fee per generation
+  in credits; markups vary per model.
+
+A full per-model breakdown is at [/v1/models](https://oma-ai.com/api/v1/models).
+
+## Privacy
+OMA stores only what it must to bill and authenticate you. **Prompts and
+completions are never stored.** See the JSON policy at
+[/v1/privacy](https://oma-ai.com/api/v1/privacy).
+
+Data we keep:
+- Wallet address (account identifier), nonce, optional email
+- API key hashes (plaintext is shown to the user once and discarded)
+- Credit balance and deposit history
+- Per-request billing record: model, tokens, cost, latency — **never the prompt or completion**
+
+Data we never keep:
+- Raw chat prompts or completions (forwarded to upstream; not logged)
+- Upstream provider API keys (you supply OMA-issued keys only)
+- Credit card numbers (handled by third-party onramps)
+- Long-term IP logs (request IP is held only for the duration of the request)
+
+We do not train models on your data. We do not sell your data. GDPR and CCPA
+rights are honored via `/v1/account/export` and `/v1/account/delete`.
+
+## Optional
+- [Terms](https://oma-ai.com/terms)
+- [Privacy policy](https://oma-ai.com/privacy)
+- [Status](https://oma-ai.com/status)
+- [FAQ](https://oma-ai.com/faq)
+- [Disclosures](https://oma-ai.com/disclosures)
