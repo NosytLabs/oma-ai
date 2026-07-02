@@ -57,7 +57,7 @@ const SERVICES: readonly Service[] = [
 	},
 	{
 		name: "x402 Settlement",
-		description: "USDC payment verification · EIP-3009 transfers · Base chain",
+		description: "USDC payment verification · Base chain",
 		status: "ready",
 	},
 	{

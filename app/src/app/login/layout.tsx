@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Sign in | OMA AI",
+	title: "Sign in",
 	description:
 		"Sign in to OMA AI with your wallet (SIWE on Base) or a 16-digit anonymous account number. No email, no password, no KYC — crypto-native AI inference.",
 	alternates: { canonical: "/login" },

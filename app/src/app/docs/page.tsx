@@ -1237,10 +1237,10 @@ curl https://api.oma-ai.com/v1/chat/completions \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Response: 402 Payment Required
-# Pay-Req: {"x402Version":"1","scheme":"evm","networkId":"base","asset":"0x8335...","amount":"0.00025","payee":"0x..."}
+# WWW-Authenticate: X-PAYMENT pay-Req: {"x402Version":"1","scheme":"evm","networkId":"base","asset":"0x8335...","amount":"0.00025","payee":"0x..."}
 
-# 2. Sign and pay via x402 (gasless on Base/Solana)
-# Use the @oma-ai/x402 SDK or any EIP-3009 compatible signer
+# 2. Pay USDC on Base (signed with your wallet), then retry with the receipt header
+# Use viem, ethers, or any EIP-3009 signer to construct transferWithAuthorization
 
 # 3. Retry with PAYMENT-SIGNATURE header — SUCCESS
 curl https://api.oma-ai.com/v1/chat/completions \\
@@ -1249,28 +1249,37 @@ curl https://api.oma-ai.com/v1/chat/completions \\
   -H "PAYMENT-SIGNATURE: <base64-json-signature>" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`;
 
-	const agentCode = `import { x402Fetch } from '@oma-ai/x402';
-import { privateKeyToAccount } from 'viem/accounts';
+	const agentCode = `import { privateKeyToAccount } from 'viem/accounts';
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
 
 const account = privateKeyToAccount(process.env.AGENT_KEY);
+const publicClient = createPublicClient({ chain: base, transport: http() });
 
-const res = await x402Fetch(
-  'https://api.oma-ai.com/v1/chat/completions',
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b',
-      messages: [{ role: 'user', content: 'Write a smart contract' }],
-    }),
-  },
-  { account, network: 'base' }
-);
+// 1) Call the API; if it returns 402, the WWW-Authenticate header
+//    carries the payment requirements (payee, asset, amount, network).
+// 2) Sign a USDC transferWithAuthorization (EIP-3009) to the payee.
+// 3) Retry the original request with PAYMENT-SIGNATURE: <base64>.
+//
+// The OMA server verifies the signature against the on-chain USDC
+// contract and settles the request when the authorization is valid.
+// See the open x402 spec (https://x402.org) for the request shape.
 
-const json = await res.json();
+const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: 'llama-3.3-70b',
+    messages: [{ role: 'user', content: 'Write a smart contract' }],
+  }),
+});
 
-// Payment is handled automatically per-request
-// No credit pre-funding required`;
+if (res.status === 402) {
+  const payReq = parsePayReq(res.headers.get('www-authenticate'));
+  // sign + retry omitted for brevity
+}
+
+const json = await res.json();`;
 
 	return (
 		<AnimatedSection delay={450}>
@@ -1278,18 +1287,21 @@ const json = await res.json();
 				id="x402"
 				icon={<Zap className="h-5 w-5" />}
 				title="x402 Payments"
-				subtitle="Native HTTP 402 payments for AI agents. Pay per request, no credit pre-funding."
+				subtitle="Per-request USDC payments on Base. No account, no credit pre-funding."
 			/>
 
 			<div className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6">
 				<div className="flex items-start gap-3">
 					<Zap className="h-5 w-5 text-warning mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-warning">Venice x402 Protocol</h4>
+						<h4 className="font-semibold text-warning">x402 — Per-Request Payments</h4>
 						<p className="mt-1 text-sm text-text-muted">
-							x402 enables gasless AI inference payments on Solana and Base.
-							When credits are exhausted, the API returns HTTP 402 with payment
-							details. Agents can pay directly without pre-funding.
+							Agents can call any OMA endpoint without pre-funding credits.
+							When the request has no usable balance, the API returns HTTP
+							402 with payment requirements (payee, asset, amount, chain).
+							Sign a USDC transferWithAuthorization (EIP-3009) on Base and
+							retry with the receipt. The server verifies the signature and
+							settles the request — no human in the loop.
 						</p>
 					</div>
 				</div>
@@ -1305,9 +1317,11 @@ const json = await res.json();
 			<div className="rounded-xl border border-border bg-surface/50 p-5">
 				<h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
 				<p className="text-sm text-text-muted mb-4">
-					Use the <code className="text-accent font-mono">@oma-ai/x402</code>{" "}
-					SDK to sign payments gaslessly. Ideal for agents that make sporadic
-					API calls and do not want to manage credit balances.
+					Use <code className="text-accent font-mono">viem</code> or{" "}
+					<code className="text-accent font-mono">ethers</code> directly to
+					sign USDC payment authorizations. No first-party SDK is required.
+					Ideal for agents that make sporadic API calls and don&apos;t want to
+					manage credit balances.
 				</p>
 				<CodeBlock code={agentCode} lang="javascript" />
 			</div>
@@ -1322,24 +1336,24 @@ const json = await res.json();
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							Gasless on Solana/Base
+							Per-request billing
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							Per-request billing
+							Standard x402 protocol
 						</li>
 					</ul>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Supported Chains</h4>
+					<h4 className="mb-2 font-semibold text-text">Supported Networks</h4>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" />{" "}
-							Base (USDC)
+							Base mainnet (USDC)
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" />{" "}
-							Solana (USDC)
+							Base Sepolia (USDC, dev only)
 						</li>
 					</ul>
 				</div>

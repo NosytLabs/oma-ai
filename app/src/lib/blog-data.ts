@@ -54,22 +54,27 @@ We are expanding model coverage, adding image and video generation endpoints, an
 			"A practical guide to integrating x402 payments into your AI agents. Pay per request with USDC on Base or Solana, no credit pre-funding required.",
 		content: `## What is x402?
 
-x402 is a protocol that turns HTTP 402 Payment Required into a first-class payment mechanism. Instead of pre-funding credits, your agent pays per request using EIP-3009 gasless transfers on Base or Solana.
+x402 is a protocol that turns HTTP 402 Payment Required into a first-class payment mechanism. Instead of pre-funding credits, your agent pays per request using USDC transfers on Base.
 
 ## The Flow
 
 1. Your agent sends a request without payment headers
 2. OMA returns 402 with payment requirements in the \`Pay-Req\` header
-3. Your agent signs a gasless USDC transfer
+3. Your agent signs a USDC transferWithAuthorization (EIP-3009) on Base
 4. Retry with the \`PAYMENT-SIGNATURE\` header
 5. Request succeeds
 
 ## Code Example
 
 \`\`\`typescript
-import { x402Fetch } from '@oma-ai/x402';
+import { privateKeyToAccount } from 'viem/accounts';
 
-const res = await x402Fetch(
+// See https://x402.org for the full protocol spec.
+// Sign a USDC transferWithAuthorization, then retry with
+// the \`PAYMENT-SIGNATURE\` header set to a base64-encoded receipt.
+
+const account = privateKeyToAccount(process.env.AGENT_KEY);
+const res = await fetch(
   'https://api.oma-ai.com/v1/chat/completions',
   {
     method: 'POST',

@@ -106,7 +106,7 @@ function SwapHeader() {
 				<div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 shadow-lg relative">
 					<ArrowRightLeft className="h-7 w-7 text-accent" />
 					<span className="absolute -top-1.5 -right-1.5 flex items-center gap-1 rounded-full bg-void border border-accent/40 px-2 py-0.5 text-[8px] font-mono text-accent uppercase tracking-wider shadow-sm">
-						x402 gasless
+						x402 per-request
 					</span>
 				</div>
 			</div>

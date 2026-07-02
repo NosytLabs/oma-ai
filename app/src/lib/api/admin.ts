@@ -23,7 +23,7 @@ export const admin = {
 		}>(CACHE_ADMINS);
 		if (cached) return cached;
 		const data = (await request(
-			`/v1/admin/users?page=${page}&limit=${limit}`,
+			`/admin/users?page=${page}&limit=${limit}`,
 		)) as unknown as {
 			users: AdminUser[];
 			pagination?: { total: number; page: number; limit: number };
@@ -66,7 +66,7 @@ export const admin = {
 				totalRequests: number;
 				totalRevenue: number;
 			}>;
-		}>(`/v1/admin/usage?period=${period}`);
+		}>(`/admin/usage?period=${period}`);
 	},
 
 	async getRevenue(period: string) {
@@ -86,10 +86,10 @@ export const admin = {
 				depositCount: number;
 			}>;
 			dailyRevenue?: Array<{ date: string; revenue: number; cost: number }>;
-		}>(`/v1/admin/revenue?period=${period}`);
+		}>(`/admin/revenue?period=${period}`);
 	},
 
 	async getKeys(page: number, limit: number) {
-		return request<unknown>(`/v1/admin/keys?page=${page}&limit=${limit}`);
+		return request<unknown>(`/admin/keys?page=${page}&limit=${limit}`);
 	},
 };

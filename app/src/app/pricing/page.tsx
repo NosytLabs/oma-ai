@@ -112,11 +112,11 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC (Direct) on Base or Solana for 1:1 USD credits, HoudiniSwap to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request for gasless Solana/Base payments.",
+		a: "USDC (Direct) on Base or Solana for 1:1 USD credits, HoudiniSwap to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
 	},
 	{
 		q: "What is x402 pay-per-request?",
-		a: "x402 enables gasless AI inference payments on Solana and Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request.",
+		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request.",
 	},
 ];
 

@@ -44,14 +44,14 @@ const TIER_INFO: Record<string, { name: string; description: string }> = {
 };
 
 async function fetchRateLimitsConfig(): Promise<RateLimitConfig> {
-	const res = await fetch("/api/admin/config/rate-limits");
+	const res = await fetch("/api/v1/admin/config/rate-limits");
 	if (!res.ok) throw new Error("Failed to fetch rate limit configuration");
 	const data = await res.json();
 	return data.config as RateLimitConfig;
 }
 
 async function fetchRateLimitOverrides(): Promise<RateLimitOverride[]> {
-	const res = await fetch("/api/admin/rate-limit-overrides");
+	const res = await fetch("/api/v1/admin/rate-limit-overrides");
 	if (!res.ok) throw new Error("Failed to fetch rate limit overrides");
 	const data = await res.json();
 	return (data.overrides as RateLimitOverride[]) ?? [];
@@ -107,7 +107,7 @@ export default function AdminRateLimitsPage() {
 
 	const saveTiersMutation = useMutation({
 		mutationFn: async (tiers: Record<string, RateLimitTier>) => {
-			const res = await fetch("/api/admin/config/rate-limits", {
+			const res = await fetch("/api/v1/admin/config/rate-limits", {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ config: { tiers } }),
@@ -139,7 +139,7 @@ export default function AdminRateLimitsPage() {
 			tpm?: number;
 			expiresAt?: string;
 		}) => {
-			const res = await fetch("/api/admin/rate-limit-overrides", {
+			const res = await fetch("/api/v1/admin/rate-limit-overrides", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
@@ -186,7 +186,7 @@ export default function AdminRateLimitsPage() {
 
 	const deleteOverrideMutation = useMutation({
 		mutationFn: async (id: string) => {
-			const res = await fetch(`/api/admin/rate-limit-overrides?id=${id}`, {
+			const res = await fetch(`/api/v1/admin/rate-limit-overrides?id=${id}`, {
 				method: "DELETE",
 			});
 			const data = await res.json();

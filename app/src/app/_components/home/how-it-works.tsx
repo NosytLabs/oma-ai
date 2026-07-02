@@ -39,7 +39,7 @@ const STEPS: Step[] = [
 		n: "03",
 		title: "Pay per call with USDC",
 		description:
-			"Top up with USDC on Base or skip ahead with x402 gasless payments. Metered by token, billed in real-time.",
+			"Top up with USDC on Base or skip ahead with x402 per-request payments. Metered by token, billed in real-time.",
 		icon: Rocket,
 	},
 ];

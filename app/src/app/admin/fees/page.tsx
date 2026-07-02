@@ -62,7 +62,7 @@ export default function AdminFeesPage() {
 	const feesQuery = useQuery<FeeConfig>({
 		queryKey: ["adminFeesConfig"],
 		queryFn: async () => {
-			const res = await fetch("/api/admin/config/fees");
+			const res = await fetch("/api/v1/admin/config/fees");
 			if (!res.ok) throw new Error("Failed to fetch fee configuration");
 			const data = await res.json();
 			if (data.config) {
@@ -79,7 +79,7 @@ export default function AdminFeesPage() {
 
 	const saveMutation = useMutation({
 		mutationFn: async (newConfig: FeeConfig) => {
-			const res = await fetch("/api/admin/config/fees", {
+			const res = await fetch("/api/v1/admin/config/fees", {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ config: newConfig }),
