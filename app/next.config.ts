@@ -163,6 +163,12 @@ const nextConfig: NextConfig = {
 	// offline" error instead of the more honest "API URL not configured".
 	// The dedicated app/server/ env file is the source of truth for the
 	// backend port — see server/README.md.
+	//
+	// x402: the backend exposes /v1/x402/* and /v2/x402/*. Without a
+	// dedicated rewrite, calls to /x402/* from the frontend would 404
+	// against the Next.js process. We rewrite /x402/:path* → backend/x402/:path*
+	// (the backend mounts both /v1/x402/* and /v2/x402/* under the /x402
+	// namespace relative to the upstream base URL).
 	async rewrites() {
 		const apiRewriteDestination = (() => {
 			const url = process.env.NEXT_PUBLIC_API_URL;
@@ -173,6 +179,13 @@ const nextConfig: NextConfig = {
 				// Non-admin API paths (chat, health, pricing, v1/*) → backend
 				source: "/api/:path((?!admin).*)",
 				destination: `${apiRewriteDestination}/:path*`,
+			},
+			{
+				// x402 protocol endpoints — backend serves both /v1/x402/*
+				// and /v2/x402/*. We forward under their full path so the
+				// backend can route by version prefix.
+				source: "/x402/:path*",
+				destination: `${apiRewriteDestination}/v1/x402/:path*`,
 			},
 		];
 	},

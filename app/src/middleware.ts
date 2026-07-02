@@ -13,6 +13,15 @@ const PROTECTED_PATHS = [
 // C-C1: when this cookie is present, the user has opted into a 24h demo
 // session. The middleware lets them through the protected-route gate so
 // they can browse the dashboard with mock data. Demo mode is read-only.
+//
+// /admin is intentionally excluded from demo bypass — admin actions
+// would touch production data and demo must never grant access.
+const DEMO_BYPASS_PATHS = [
+	"/dashboard",
+	"/settings",
+	"/deposit",
+	"/chat",
+];
 const DEMO_COOKIE_NAME = "oma-demo";
 
 const ISSUER = "oma-ai";
@@ -53,7 +62,9 @@ export async function middleware(request: NextRequest) {
 	// This must run BEFORE the session check so users without a session can
 	// still enter demo mode (that's the whole point).
 	const wantsDemo = request.nextUrl.searchParams.get("demo") === "1";
-	if (wantsDemo) {
+	// /admin must never accept demo bypass — admin actions touch prod data.
+	const demoAllowed = DEMO_BYPASS_PATHS.some((path) => pathname.startsWith(path));
+	if (wantsDemo && demoAllowed) {
 		const res = NextResponse.next();
 		res.cookies.set({
 			name: DEMO_COOKIE_NAME,
@@ -70,9 +81,10 @@ export async function middleware(request: NextRequest) {
 	// C-C1: demo cookie is a read-only bypass for the protected-route gate.
 	// The user can browse the dashboard with mock data; they cannot mutate
 	// anything because all backend calls are gated on !isDemo in the
-	// dashboard pages and on sessionAuth server-side.
+	// dashboard pages and on sessionAuth server-side. /admin always
+	// requires a real session.
 	const hasDemo = request.cookies.get(DEMO_COOKIE_NAME)?.value === "1";
-	if (hasDemo) return NextResponse.next();
+	if (hasDemo && demoAllowed) return NextResponse.next();
 
 	const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 	if (!session) {
