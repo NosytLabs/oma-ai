@@ -237,6 +237,7 @@ vi.mock('../inference/models.js', () => ({
   calculateCost: vi.fn().mockReturnValue({ inputCost: 0.001, outputCost: 0.002, totalCost: 0.003 }),
   estimateTokens: vi.fn().mockReturnValue(100),
   listModels: vi.fn().mockReturnValue([]),
+  listVideoModels: vi.fn().mockResolvedValue([]),
   ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 }))
 

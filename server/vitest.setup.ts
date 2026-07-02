@@ -27,3 +27,13 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.ENCRYPTION_KEY) {
   process.env.ENCRYPTION_KEY = 'test-encryption-key-32-chars-min-for-dev'
 }
+
+// Required by config.ts: z.string().min(1).optional().default("")
+// The schema's `.default("")` is still subject to the `.min(1)` constraint, so
+// an unset env var (or empty string) fails validation. Set a placeholder here.
+// Tests that need the "not configured" code path should mock `../config.js`
+// directly (e.g. `vi.mock('../config.js', () => ({ config: { CHAIN_RPC_URL: undefined } }))`)
+// — vi.stubEnv with `''` would still trigger the min(1) check.
+if (!process.env.CHAIN_RPC_URL) {
+  process.env.CHAIN_RPC_URL = 'https://base-rpc.publicnode.com'
+}
