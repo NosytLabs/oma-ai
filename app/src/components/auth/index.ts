@@ -6,7 +6,7 @@
  * every callsite.
  */
 export { AuthError, shapeAuthError } from "./AuthError";
-export { AuthSkeleton, useCountdown } from "./AuthSkeleton";
+export { AuthSkeleton } from "./AuthSkeleton";
 export { ConnectorIcon, classifyConnector } from "./ConnectorIcon";
 export { SiwePreview } from "./SiwePreview";
 export type {

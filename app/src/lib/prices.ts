@@ -46,7 +46,7 @@ interface PriceCache {
 // CONSTANTS
 // =============================================================================
 
-export const CACHE_DURATION = 30 * 1000; // 30 seconds in milliseconds
+const CACHE_DURATION = 30 * 1000; // 30 seconds in milliseconds
 const COINGECKO_API = "/api/pricing/crypto";
 const JUPITER_PRICE_API = "https://api.jup.ag/swap/v2/quote";
 
@@ -62,7 +62,7 @@ const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
  * Fetch SOL price from Jupiter Aggregator
  * Uses 1 SOL quote to determine current USD price
  */
-export async function fetchSolPriceFromJupiter(): Promise<CryptoPrice | null> {
+async function fetchSolPriceFromJupiter(): Promise<CryptoPrice | null> {
 	try {
 		const queryParams = new URLSearchParams({
 			inputMint: SOL_MINT,
@@ -118,7 +118,7 @@ interface CoinGeckoPriceResponse {
  * Fetch prices from CoinGecko via the existing API route
  * Gets BTC, ETH prices (and optionally SOL)
  */
-export async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
+async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 	try {
 		const response = await fetch(COINGECKO_API, {
 			next: { revalidate: 30 }, // Match cache duration
@@ -156,7 +156,7 @@ let ongoingFetch: Promise<PriceData> | null = null;
  * Get all crypto prices with caching and request deduplication
  * Returns cached data if fresh (< 30 seconds old), otherwise fetches new data
  */
-export async function getCryptoPrices(
+async function getCryptoPrices(
 	forceRefresh = false,
 ): Promise<PriceData> {
 	const now = Date.now();
@@ -310,18 +310,4 @@ export function calculateUsdValue(
 	return amount * price;
 }
 
-/**
- * Format price for display
- */
-export function formatPrice(price: number | null): string {
-	if (price === null) return "--";
-	if (price === 0) return "Free";
-	const prefix = "$";
-	if (price < 0.01) return `${prefix}${price.toFixed(6)}`;
-	if (price < 1) return `${prefix}${price.toFixed(4)}`;
-	if (price < 1000) return `${prefix}${price.toFixed(2)}`;
-	return `${prefix}${price.toLocaleString("en-US", {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	})}`;
-}
+

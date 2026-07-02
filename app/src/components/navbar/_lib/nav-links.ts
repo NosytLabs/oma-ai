@@ -4,7 +4,6 @@ import {
 	FileText,
 	Info,
 	type LucideIcon,
-	Settings,
 	Tag,
 	Terminal,
 } from "lucide-react";
@@ -41,44 +40,6 @@ export const toolsLinks: NavItem[] = [
 	{ href: "/about", label: "about", icon: Info, desc: "who we are" },
 ];
 
-/** Misc pages — not in primary nav or tools dropdown, but recognised by the breadcrumb. */
-export const miscLinks: NavItem[] = [
-	{ href: "/faq", label: "faq", icon: Info, desc: "faq" },
-	{
-		href: "/privacy",
-		label: "privacy",
-		icon: FileText,
-		desc: "privacy policy",
-	},
-	{ href: "/terms", label: "terms", icon: FileText, desc: "terms of service" },
-	{
-		href: "/image-generation",
-		label: "image-gen",
-		icon: Box,
-		desc: "image generation",
-	},
-	{
-		href: "/video-generation",
-		label: "video-gen",
-		icon: Box,
-		desc: "video generation",
-	},
-	{
-		href: "/deposit",
-		label: "deposit",
-		icon: ArrowLeftRight,
-		desc: "add funds",
-	},
-	{ href: "/dashboard", label: "dashboard", icon: Box, desc: "dashboard" },
-	{ href: "/settings", label: "settings", icon: Settings, desc: "settings" },
-];
-
-export const allLinks: NavItem[] = [
-	...primaryLinks,
-	...toolsLinks,
-	...miscLinks,
-];
-
 /** Group definitions for the mobile menu cards. */
 export const mobileGroups: NavGroup[] = [
 	{
@@ -108,7 +69,9 @@ export function isCurrentPath(pathname: string, href: string): boolean {
 
 export function sectionLabelFor(pathname: string): string {
 	if (pathname === "/" || pathname === "") return "home";
-	const matched = allLinks.find((link) => isCurrentPath(pathname, link.href));
+	const matched = [...primaryLinks, ...toolsLinks].find((link) =>
+		isCurrentPath(pathname, link.href),
+	);
 	if (matched) return matched.label.replace(/^\//, "").split("/")[0] ?? "home";
 	// Fallback: extract the first path segment (e.g. '/faq' → 'faq')
 	const segment = pathname.split("/").filter(Boolean)[0];
