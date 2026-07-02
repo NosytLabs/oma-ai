@@ -1,12 +1,11 @@
 /* OMA · Status page
- * system status with uptime indicators, service health, and incident history
- * copy: active voice, no invented metrics
+ * Honest pre-launch status. Until live metrics ship, no fake uptime numbers,
+ * no invented latency, no fabricated incident history.
  */
 
 import {
 	ArrowLeft,
 	CheckCircle2,
-	Clock,
 	ExternalLink,
 	Github,
 	Radio,
@@ -16,276 +15,89 @@ import Link from "next/link";
 import { StatusDot } from "@/components/ui/StatusDot";
 
 export const metadata: Metadata = {
-	title: "Status · OMA",
+	title: "Status",
 	description:
-		"Real-time system status for OMA AI. Check API uptime, service health, and recent incidents across all OMA infrastructure.",
+		"OMA AI system status. Currently in pre-launch — live uptime and incident tracking will ship with the public launch.",
 	alternates: { canonical: "/status" },
 	openGraph: {
-		title: "Status · OMA",
+		title: "Status",
 		description:
-			"Real-time system status for OMA AI. API uptime, service health, and incident history.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Status" },
-		],
+			"OMA AI system status. Pre-launch — live metrics ship with public launch.",
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Status · OMA",
-		description: "Real-time system status for OMA AI infrastructure.",
+		title: "Status",
+		description: "OMA AI system status — currently pre-launch.",
 	},
 };
 
-const ISSUED = "2026-06-30";
+type ServiceStatus = "ready" | "pending";
 
-/* ============================================================
-   SERVICE DEFINITIONS
-   Each service has a name, description, status, and optional latency.
-   Status: "operational" | "degraded" | "partial_outage" | "major_outage"
-   ============================================================ */
+interface Service {
+	name: string;
+	description: string;
+	status: ServiceStatus;
+}
 
-type ServiceStatus = "operational" | "degraded" | "partial_outage" | "major_outage";
-
-const SERVICES = [
+const SERVICES: readonly Service[] = [
 	{
 		name: "API Gateway",
 		description: "OpenAI-compatible endpoints · /v1/chat/completions, /v1/models",
-		status: "operational" as ServiceStatus,
-		latency: "42ms",
-		uptime: "99.98%",
+		status: "ready",
 	},
 	{
 		name: "Authentication",
 		description: "SIWE wallet sign-in · session tokens · API key verification",
-		status: "operational" as ServiceStatus,
-		latency: "38ms",
-		uptime: "99.99%",
+		status: "ready",
 	},
 	{
 		name: "Credit Engine",
 		description: "Balance checks · per-token deduction · credit preflight",
-		status: "operational" as ServiceStatus,
-		latency: "12ms",
-		uptime: "100%",
+		status: "ready",
 	},
 	{
 		name: "x402 Settlement",
 		description: "USDC payment verification · EIP-3009 transfers · Base chain",
-		status: "operational" as ServiceStatus,
-		latency: "1.2s",
-		uptime: "99.95%",
+		status: "ready",
 	},
 	{
 		name: "Image Generation",
-		description: "DALL·E · Stable Diffusion · Flux via upstream providers",
-		status: "operational" as ServiceStatus,
-		latency: "3.8s",
-		uptime: "99.90%",
+		description: "Stable Diffusion · Flux · upstream provider routing",
+		status: "ready",
 	},
 	{
 		name: "Video Generation",
 		description: "Hailuo · Runway · Kling via upstream providers",
-		status: "operational" as ServiceStatus,
-		latency: "12s",
-		uptime: "99.85%",
+		status: "ready",
 	},
 	{
 		name: "Deposit Watcher",
 		description: "USDC deposit detection · credit issuance · Base chain indexing",
-		status: "operational" as ServiceStatus,
-		latency: "8s",
-		uptime: "99.97%",
+		status: "ready",
 	},
 	{
 		name: "Dashboard",
 		description: "Web UI · API key management · usage analytics · settings",
-		status: "operational" as ServiceStatus,
-		latency: "—",
-		uptime: "100%",
+		status: "ready",
 	},
 ] as const;
 
-/* ============================================================
-   UPTIME BARS — 30-day visual history per service
-   Each bar represents one day. 1 = all clear, 0 = outage, 0.5 = degraded
-   ============================================================ */
-
-const UPTIME_BARS: Record<string, number[]> = {
-	"API Gateway": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,0.5,1,1,1,1,1,1,
-	],
-	"Authentication": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	"Credit Engine": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	"x402 Settlement": [
-		1,1,1,1,1,1,1,1,0.5,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	"Image Generation": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,0.5,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	"Video Generation": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,0.5,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	"Deposit Watcher": [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-	Dashboard: [
-		1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
-		1,1,1,1,1,1,1,1,1,1,
-	],
-};
-
-/* ============================================================
-   RECENT INCIDENTS
-   ============================================================ */
-
-const INCIDENTS = [
-	{
-		date: "2026-06-24",
-		title: "Degraded API latency — upstream provider",
-		severity: "degraded" as const,
-		resolved: true,
-		impact: "Elevated p99 latency on /v1/chat/completions for ~45 minutes.",
-		cause: "Upstream Venice provider experienced elevated load. Traffic rerouted to backup keys.",
-		resolution: "Latency returned to baseline after provider scaling.",
-		timeline: [
-			{ time: "14:12 UTC", event: "Latency alert triggered on API Gateway" },
-			{ time: "14:18 UTC", event: "Incident declared — degraded performance" },
-			{ time: "14:25 UTC", event: "Traffic shifted to backup Venice keys" },
-			{ time: "14:58 UTC", event: "Latency normalized — incident resolved" },
-		],
-	},
-	{
-		date: "2026-06-09",
-		title: "Deposit watcher delay — Base chain indexer",
-		severity: "degraded" as const,
-		resolved: true,
-		impact: "Credit issuance delayed by ~8 minutes for deposits during the window.",
-		cause: "Base chain RPC node returned stale block data. Indexer fell behind.",
-		resolution: "RPC endpoint rotated, indexer caught up within 12 minutes.",
-		timeline: [
-			{ time: "09:40 UTC", event: "Deposit confirmation times exceeded threshold" },
-			{ time: "09:47 UTC", event: "Root cause identified — stale RPC data" },
-			{ time: "09:52 UTC", event: "RPC endpoint rotated" },
-			{ time: "10:02 UTC", event: "All pending deposits cleared — resolved" },
-		],
-	},
-];
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
 function StatusBadge({ status }: { status: ServiceStatus }) {
-	const map: Record<ServiceStatus, { label: string; color: string; dot: "accent" | "warning" | "error" }> = {
-		operational: { label: "Operational", color: "text-accent", dot: "accent" },
-		degraded: { label: "Degraded", color: "text-warning", dot: "warning" },
-		partial_outage: { label: "Partial Outage", color: "text-warning", dot: "warning" },
-		major_outage: { label: "Major Outage", color: "text-error", dot: "error" },
+	const map: Record<
+		ServiceStatus,
+		{ label: string; color: string; dot: "accent" | "warning" }
+	> = {
+		ready: { label: "Ready", color: "text-accent", dot: "accent" },
+		pending: { label: "Pending launch", color: "text-warning", dot: "warning" },
 	};
 	const info = map[status];
 	return (
-		<span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${info.color}`}>
+		<span
+			className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${info.color}`}
+		>
 			<StatusDot tone={info.dot} />
 			{info.label}
 		</span>
-	);
-}
-
-function UptimeBar({ values }: { values: readonly number[] }) {
-	return (
-		<div className="flex gap-[2px]" aria-hidden="true">
-			{values.map((v, i) => (
-				<div
-					key={i}
-					className={`h-5 w-[3px] rounded-sm ${
-						v === 1
-							? "bg-accent/60"
-							: v === 0.5
-								? "bg-warning/60"
-								: "bg-error/60"
-					}`}
-					title={`Day ${i + 1}: ${v === 1 ? "Operational" : v === 0.5 ? "Degraded" : "Outage"}`}
-				/>
-			))}
-		</div>
-	);
-}
-
-function IncidentCard({ incident }: { incident: typeof INCIDENTS[number] }) {
-	const severityMap = {
-		degraded: { label: "Degraded", color: "border-warning/30 bg-warning/5", dot: "warning" as const },
-		outage: { label: "Outage", color: "border-error/30 bg-error/5", dot: "error" as const },
-	};
-	const sev = severityMap[incident.severity];
-
-	return (
-		<div className="border border-border bg-surface rounded-xl overflow-hidden">
-			<div className="px-5 py-4 border-b border-border flex items-center justify-between gap-4">
-				<div className="min-w-0">
-					<div className="flex items-center gap-2 mb-1">
-						<span className="text-[11px] text-text-muted tabular-nums font-mono">
-							{incident.date}
-						</span>
-						{incident.resolved ? (
-							<span className="inline-flex items-center gap-1 text-[10px] text-accent">
-								<CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-								Resolved
-							</span>
-						) : (
-							<span className="inline-flex items-center gap-1 text-[10px] text-warning">
-								<Clock className="h-3 w-3" aria-hidden="true" />
-								Ongoing
-							</span>
-						)}
-					</div>
-					<h3 className="text-[14px] sm:text-[15px] font-semibold text-text-bright">
-						{incident.title}
-					</h3>
-				</div>
-				<div className={`shrink-0 rounded-lg border px-2.5 py-1 ${sev.color}`}>
-					<StatusBadge status={incident.severity} />
-				</div>
-			</div>
-
-			<div className="px-5 py-4 space-y-3">
-				<div>
-					<p className="text-[11px] text-text-muted uppercase tracking-wide mb-1">Impact</p>
-					<p className="text-[13px] text-text-secondary leading-relaxed">{incident.impact}</p>
-				</div>
-				<div>
-					<p className="text-[11px] text-text-muted uppercase tracking-wide mb-1">Cause</p>
-					<p className="text-[13px] text-text-secondary leading-relaxed">{incident.cause}</p>
-				</div>
-				<div>
-					<p className="text-[11px] text-text-muted uppercase tracking-wide mb-1">Resolution</p>
-					<p className="text-[13px] text-text-secondary leading-relaxed">{incident.resolution}</p>
-				</div>
-			</div>
-
-			<div className="px-5 py-3 border-t border-border bg-panel">
-				<p className="text-[11px] text-text-muted uppercase tracking-wide mb-2">Timeline</p>
-				<ol className="space-y-1.5">
-					{incident.timeline.map((t) => (
-						<li key={t.time} className="flex items-start gap-3 text-[12px]">
-							<span className="text-text-muted tabular-nums font-mono shrink-0 w-[6.5rem]">
-								{t.time}
-							</span>
-							<span className="text-text-secondary">{t.event}</span>
-						</li>
-					))}
-				</ol>
-			</div>
-		</div>
 	);
 }
 
@@ -294,7 +106,7 @@ function IncidentCard({ incident }: { incident: typeof INCIDENTS[number] }) {
    ============================================================ */
 
 export default function StatusPage() {
-	const operationalCount = SERVICES.filter((s) => s.status === "operational").length;
+	const readyCount = SERVICES.filter((s) => s.status === "ready").length;
 	const totalCount = SERVICES.length;
 
 	return (
@@ -313,9 +125,12 @@ export default function StatusPage() {
 
 						<div className="grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
 							<div className="min-w-0">
-								<span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
-									<span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-									System status
+								<span className="inline-flex items-center gap-2 rounded-full border border-warning/20 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning">
+									<span
+										className="h-1.5 w-1.5 rounded-full bg-warning"
+										aria-hidden="true"
+									/>
+									Pre-launch
 								</span>
 
 								<h1
@@ -327,27 +142,28 @@ export default function StatusPage() {
 									}}
 								>
 									<span className="block">All systems</span>
-									<span className="block text-accent">
-										{operationalCount === totalCount ? "operational." : "monitoring."}
-									</span>
+									<span className="block text-accent">ready.</span>
 								</h1>
 
 								<p
 									className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed"
 									style={{ textWrap: "pretty" }}
 								>
-									{operationalCount === totalCount
-										? "Every service is running normally. If something breaks, this page updates first."
-										: `${operationalCount} of ${totalCount} services operational. Check the details below for affected components.`}
+									The OMA platform is fully built and ready to route traffic.
+									Live uptime metrics and a public incident history will be
+									published here when the public launch goes live.
 								</p>
 
 								<div className="mt-6 flex items-center gap-4 text-[12px] text-text-muted">
 									<span className="inline-flex items-center gap-1.5">
-										<Radio className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-										Auto-refresh every 60s
+										<Radio
+											className="h-3.5 w-3.5 text-text-muted"
+											aria-hidden="true"
+										/>
+										Live monitoring: pending launch
 									</span>
 									<span className="text-border">·</span>
-									<span>Last checked: just now</span>
+									<span>Last reviewed: 2026-07-02</span>
 								</div>
 							</div>
 
@@ -363,31 +179,40 @@ export default function StatusPage() {
 									<span className="text-[12px] font-semibold text-text-bright">
 										At a glance
 									</span>
-									<StatusBadge
-										status={operationalCount === totalCount ? "operational" : "degraded"}
-									/>
+									<StatusBadge status="ready" />
 								</div>
 								<dl className="text-[12px]">
-									{[
-										["Services", `${operationalCount}/${totalCount}`],
-										["Uptime (30d)", "99.97%"],
-										["Incidents", `${INCIDENTS.length} recent`],
-										["Last incident", INCIDENTS[0]?.date ?? "None"],
-									].map(([k, v]) => (
-										<div
-											key={k}
-											className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border last:border-b-0"
-										>
-											<dt className="text-text-muted text-[11.5px]">{k}</dt>
-											<dd className="text-text-secondary tabular-nums truncate text-right">
-												{v}
-											</dd>
-										</div>
-									))}
+									<div className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border">
+										<dt className="text-text-muted text-[11.5px]">Services</dt>
+										<dd className="text-text-secondary tabular-nums truncate text-right">
+											{readyCount}/{totalCount} ready
+										</dd>
+									</div>
+									<div className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border">
+										<dt className="text-text-muted text-[11.5px]">
+											Live uptime
+										</dt>
+										<dd className="text-text-secondary tabular-nums truncate text-right">
+											pending launch
+										</dd>
+									</div>
+									<div className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border">
+										<dt className="text-text-muted text-[11.5px]">
+											Incidents
+										</dt>
+										<dd className="text-text-secondary tabular-nums truncate text-right">
+											none yet
+										</dd>
+									</div>
+									<div className="grid grid-cols-2 gap-2 px-4 py-2">
+										<dt className="text-text-muted text-[11.5px]">
+											Last incident
+										</dt>
+										<dd className="text-text-secondary tabular-nums truncate text-right">
+											—
+										</dd>
+									</div>
 								</dl>
-								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
-									Updated · {ISSUED}
-								</div>
 							</aside>
 						</div>
 					</section>
@@ -403,11 +228,11 @@ export default function StatusPage() {
 								id="services-heading"
 								className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
 							>
-								Service health
+								Service readiness
 							</h2>
 							<p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
-								Live status for each component of the OMA infrastructure. All
-								metrics are measured from the public API endpoint.
+								Each component of the OMA platform and whether it&apos;s built
+								and ready to serve traffic at launch.
 							</p>
 						</header>
 
@@ -415,7 +240,7 @@ export default function StatusPage() {
 							{SERVICES.map((service) => (
 								<li
 									key={service.name}
-									className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_6rem_6rem_auto] items-center gap-3 px-4 sm:px-5 py-4"
+									className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-5 py-4"
 								>
 									<div className="min-w-0">
 										<p className="text-[13px] sm:text-[14px] font-semibold text-text-bright truncate">
@@ -425,76 +250,12 @@ export default function StatusPage() {
 											{service.description}
 										</p>
 									</div>
-									<span className="hidden sm:block text-[11px] text-text-muted tabular-nums text-right">
-										{service.latency}
-									</span>
-									<span className="hidden sm:block text-[11px] text-text-muted tabular-nums text-right">
-										{service.uptime}
-									</span>
 									<div className="shrink-0">
 										<StatusBadge status={service.status} />
 									</div>
 								</li>
 							))}
 						</ul>
-					</section>
-
-					{/* ===== UPTIME OVERVIEW ===== */}
-					<section
-						id="uptime"
-						aria-labelledby="uptime-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-reveal"
-					>
-						<header className="mb-8 sm:mb-10 max-w-2xl">
-							<h2
-								id="uptime-heading"
-								className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
-							>
-								Uptime — last 30 days
-							</h2>
-							<p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
-								Each bar represents one day. Green means fully operational,
-								yellow means degraded performance.
-							</p>
-						</header>
-
-						<div className="space-y-4">
-							{SERVICES.map((service) => {
-								const bars = UPTIME_BARS[service.name];
-								if (!bars) return null;
-								return (
-									<div
-										key={service.name}
-										className="border border-border bg-surface px-4 sm:px-5 py-3.5 rounded-lg"
-									>
-										<div className="flex items-center justify-between gap-3 mb-2.5">
-											<p className="text-[12px] sm:text-[13px] font-semibold text-text-bright truncate">
-												{service.name}
-											</p>
-											<span className="text-[11px] text-accent tabular-nums shrink-0">
-												{service.uptime}
-											</span>
-										</div>
-										<UptimeBar values={bars} />
-									</div>
-								);
-							})}
-						</div>
-
-						<div className="mt-5 flex items-center gap-4 text-[11px] text-text-muted">
-							<span className="inline-flex items-center gap-1.5">
-								<span className="h-2.5 w-[3px] rounded-sm bg-accent/60" aria-hidden="true" />
-								Operational
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<span className="h-2.5 w-[3px] rounded-sm bg-warning/60" aria-hidden="true" />
-								Degraded
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<span className="h-2.5 w-[3px] rounded-sm bg-error/60" aria-hidden="true" />
-								Outage
-							</span>
-						</div>
 					</section>
 
 					{/* ===== INCIDENTS ===== */}
@@ -508,31 +269,27 @@ export default function StatusPage() {
 								id="incidents-heading"
 								className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
 							>
-								Recent incidents
+								Incident history
 							</h2>
 							<p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
-								Post-mortems for recent disruptions. Each incident includes
-								impact, root cause, and resolution timeline.
+								Past disruptions will be documented here with full
+								post-mortems once the platform is serving production traffic.
 							</p>
 						</header>
 
-						{INCIDENTS.length > 0 ? (
-							<div className="space-y-4">
-								{INCIDENTS.map((incident) => (
-									<IncidentCard key={incident.date} incident={incident} />
-								))}
-							</div>
-						) : (
-							<div className="border border-border bg-surface p-8 rounded-xl text-center">
-								<CheckCircle2 className="h-8 w-8 text-accent mx-auto mb-3" aria-hidden="true" />
-								<p className="text-[14px] font-semibold text-text-bright mb-1">
-									No recent incidents
-								</p>
-								<p className="text-[12.5px] text-text-muted">
-									Everything has been running smoothly.
-								</p>
-							</div>
-						)}
+						<div className="border border-border bg-surface p-8 rounded-xl text-center">
+							<CheckCircle2
+								className="h-8 w-8 text-accent mx-auto mb-3"
+								aria-hidden="true"
+							/>
+							<p className="text-[14px] font-semibold text-text-bright mb-1">
+								No incidents yet
+							</p>
+							<p className="text-[12.5px] text-text-muted">
+								The platform has not yet entered public beta. There is
+								nothing to report — and that is the report.
+							</p>
+						</div>
 					</section>
 
 					{/* ===== MONITORING ===== */}
@@ -546,11 +303,12 @@ export default function StatusPage() {
 								id="monitoring-heading"
 								className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright"
 							>
-								How we monitor
+								How we&apos;ll monitor
 							</h2>
 							<p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
-								OMA runs continuous health checks against every public endpoint.
-								Metrics are collected every 60 seconds and surfaced here.
+								What this page will measure once the platform is live. We
+								publish the methodology up front so the numbers can be
+								audited later.
 							</p>
 						</header>
 
@@ -558,19 +316,19 @@ export default function StatusPage() {
 							{[
 								{
 									title: "API health checks",
-									body: "Automated requests to /api/health every 60 seconds. Failures trigger alerts within 2 minutes.",
+									body: "Automated requests to /api/health on a 60-second cadence. Failures page the on-call within 2 minutes.",
 								},
 								{
 									title: "Upstream monitoring",
-									body: "Each Venice and AntSeed key is pinged on a 5-minute cycle. Degraded keys are rotated automatically.",
+									body: "Every Venice and AntSeed key is pinged on a 5-minute cycle. Degraded keys are rotated automatically and surfaced here.",
 								},
 								{
 									title: "Base chain indexer",
-									body: "Deposit watcher tracks USDC transfers in real time. Backlog depth is monitored and alerts at 50+ blocks.",
+									body: "Deposit watcher tracks USDC transfers in real time. Backlog depth is monitored and alerts at 50+ blocks behind head.",
 								},
 								{
-									title: "Public status page",
-									body: "This page is served from a separate edge function. Even if the main API is down, this page stays up.",
+									title: "Independent status page",
+									body: "This page is served from a separate edge function. Even if the main API is down, this page stays up and reports it.",
 								},
 							].map((card) => (
 								<div
@@ -611,8 +369,8 @@ export default function StatusPage() {
 								>
 									@oma_ai
 								</a>{" "}
-								for real-time status updates. Major incidents are posted here
-								first, then on X.
+								for launch updates. When the platform goes live, real-time
+								status and incident history will be published here and on X.
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<a
@@ -677,9 +435,6 @@ export default function StatusPage() {
 						<ol>
 							<li>
 								<a href="#services">Services</a>
-							</li>
-							<li>
-								<a href="#uptime">Uptime</a>
 							</li>
 							<li>
 								<a href="#incidents">Incidents</a>

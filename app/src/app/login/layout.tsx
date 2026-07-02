@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 	openGraph: {
-		title: "Sign in | OMA AI",
+		title: "Sign in",
 		description:
 			"Sign in to OMA AI with your wallet or anonymous account number. SIWE on Base mainnet. No PII collected.",
 		url: "https://oma-ai.com/login",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Sign in | OMA AI",
+		title: "Sign in",
 		description:
 			"Sign in to OMA AI with your wallet or anonymous account number. SIWE on Base mainnet. No PII collected.",
 		images: ["/opengraph-image"],

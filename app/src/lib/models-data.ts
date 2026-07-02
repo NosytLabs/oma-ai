@@ -262,12 +262,25 @@ export const MODELS: Model[] = [
 	},
 ];
 
-export function formatPricePerToken(pricePer1M: number): string {
-	if (pricePer1M === 0) return "$0.00";
-	const perToken = pricePer1M / 1000000;
-	if (perToken < 0.00001) return "$0.00";
-	return `$${perToken.toFixed(6)}`;
+/**
+ * Format a price-per-1M-tokens value for display.
+ *
+ * BUGFIX (2026-07-02): the previous version divided the per-1M input by 1_000_000
+ * to derive a per-token rate, but the input is already per-1M — so every model
+ * returned "$0.00" (the smallest per-1M rate, $0.06/M, becomes $6e-8 per token
+ * which is below the 0.00001 floor). Screen readers heard "Input $0.00 per token"
+ * which falsely advertised the API as free. This function now formats the
+ * per-1M rate directly.
+ */
+export function formatPricePerMillion(pricePer1M: number): string {
+	if (pricePer1M === 0) return "$0";
+	if (pricePer1M < 0.01) return `$${pricePer1M.toFixed(4)}`;
+	if (pricePer1M < 1) return `$${pricePer1M.toFixed(3)}`;
+	return `$${pricePer1M.toFixed(2)}`;
 }
+
+/** @deprecated use formatPricePerMillion — kept as alias for back-compat. */
+export const formatPricePerToken = formatPricePerMillion;
 
 export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	const grouped: Record<Tier, Model[]> = {

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 export const metadata: Metadata = {
 	title: "Pricing",
-	description:
-		"Transparent AI API pricing. Pay per token with crypto. No subscriptions, no hidden fees. Access 91+ models from $0.01/M tokens.",
+	description: `Transparent AI API pricing. Pay per token with crypto. No subscriptions, no hidden fees. Access ${MODEL_COUNT} models from $0.06/M tokens.`,
 	keywords: [
 		"AI pricing",
 		"token pricing",
@@ -14,19 +14,12 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/pricing" },
 	openGraph: {
 		title: "AI API Pricing | OMA AI",
-		description:
-			"Pay per token, no subscriptions. Access 91+ AI models from $0.01/M tokens. Crypto payments supported.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
+		description: `Pay per token, no subscriptions. Access ${MODEL_COUNT} AI models from $0.06/M tokens. Crypto payments supported.`,
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "AI API Pricing | OMA AI",
 		description: "Transparent pay-per-token pricing. No subscriptions.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
 	},
 };
 

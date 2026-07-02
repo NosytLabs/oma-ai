@@ -46,6 +46,7 @@ const FOOTER_SECTIONS: FooterSection[] = [
 		title: "Resources",
 		links: [
 			{ label: "docs", href: "/docs" },
+			{ label: "blog", href: "/blog" },
 			{ label: "faq", href: "/faq" },
 		],
 	},
@@ -193,13 +194,9 @@ export function Footer() {
 
 				<div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
 					<p suppressHydrationWarning>
-						© {CURRENT_YEAR} OMA AI · base chain · one man army · build{" "}
+						© {CURRENT_YEAR} OMA AI · base mainnet · build{" "}
 						{process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev"} · last
 						deploy {LAST_DEPLOY}
-					</p>
-					<p className="mt-1">
-						Inference routes to upstream providers. Uptime is best-effort, not
-						guaranteed. Verify before you bet on it.
 					</p>
 				</div>
 			</div>

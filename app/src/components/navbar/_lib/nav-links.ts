@@ -4,6 +4,7 @@ import {
 	FileText,
 	Info,
 	type LucideIcon,
+	Newspaper,
 	Settings,
 	Tag,
 	Terminal,
@@ -38,6 +39,7 @@ export const toolsLinks: NavItem[] = [
 		icon: ArrowLeftRight,
 		desc: "token exchange",
 	},
+	{ href: "/blog", label: "blog", icon: Newspaper, desc: "changelog + notes" },
 	{ href: "/about", label: "about", icon: Info, desc: "who we are" },
 ];
 

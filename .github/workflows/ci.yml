@@ -1,8 +1,11 @@
 name: CI
 
+# Site not live yet — CI disabled on PRs to prevent GitHub email spam.
+# Re-enable the `pull_request` trigger when the site is ready for launch.
+# Until then, run CI manually from the Actions tab via `workflow_dispatch`,
+# or use `pnpm run validate` locally.
 on:
-  pull_request:
-    branches: [master, main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

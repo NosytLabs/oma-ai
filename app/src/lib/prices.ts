@@ -10,6 +10,7 @@ import { useCallback } from "react";
 // Re-export types and functions from models-data for backwards compatibility
 export type { Capability, Model, Provider, Tier } from "./models-data";
 export {
+	formatPricePerMillion,
 	formatPricePerToken,
 	getModelsByTier,
 	MODELS,

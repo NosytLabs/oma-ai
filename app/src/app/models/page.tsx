@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 import {
-	formatPricePerToken,
 	getModelsByTier,
 	MODELS,
 	PROVIDER_COLORS,
@@ -404,7 +403,7 @@ function ModelsPageInner() {
 													</div>
 												</div>
 												<span className="sr-only">
-													{`Input ${typeof model.inputPricePer1M === "number" ? formatPricePerToken(model.inputPricePer1M) : "unknown"} per token, output ${typeof model.outputPricePer1M === "number" ? formatPricePerToken(model.outputPricePer1M) : "unknown"} per token`}
+													{`Input $${(typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens, output $${(typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens`}
 												</span>
 											</div>
 										);
