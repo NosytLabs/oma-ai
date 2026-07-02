@@ -2,7 +2,7 @@
 // Uses a simple sliding window counter per key to limit abuse
 
 export const FALLBACK_BURST_LIMIT = 5;
-export const FALLBACK_WINDOW_MS = 60000; // 1 minute window
+const FALLBACK_WINDOW_MS = 60000; // 1 minute window
 
 const MAX_FALLBACK_ENTRIES = 10000;
 

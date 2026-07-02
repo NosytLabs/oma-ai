@@ -89,11 +89,3 @@ export function formatDateShort(iso: string): string {
 	});
 }
 
-/**
- * Format a per-million-token price for display.
- * 0.50 → "$0.50"   0 → "Free"
- */
-export function formatPricePerMillion(pricePer1M: number): string {
-	if (pricePer1M === 0) return "Free";
-	return `$${pricePer1M.toFixed(2)}`;
-}

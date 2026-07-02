@@ -14,7 +14,7 @@ const AdminOverviewCharts = dynamic(
 	{ ssr: false },
 );
 
-export type ChartDatum = { date: string; revenue: number; cost: number };
+type ChartDatum = { date: string; revenue: number; cost: number };
 
 export type AdminOverviewTabProps = {
 	adminStats: AdminStats | null;

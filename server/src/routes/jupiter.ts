@@ -15,9 +15,9 @@ import type { OmaEnv } from "../types.js";
 import { fetchSolanaTx, checkDuplicateDeposit, toLamports, SolanaVerifyError } from "../credits/solana-verify.js";
 
 // Jupiter constants
-export const SOL_MINT = "So11111111111111111111111111111111111111112";
-export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // Circle canonical USDC mint on Solana mainnet
-export const REFERRAL_FEE = 0.001;
+const SOL_MINT = "So11111111111111111111111111111111111111112";
+const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // Circle canonical USDC mint on Solana mainnet
+const REFERRAL_FEE = 0.001;
 
 interface JupiterQuote {
   inputMint: string;
@@ -91,8 +91,8 @@ class JupiterClient {
   }
 }
 
-export const jupiterClient = new JupiterClient();
-export const getQuote = (params: Parameters<JupiterClient["getQuote"]>[0]) => jupiterClient.getQuote(params);
+const jupiterClient = new JupiterClient();
+const getQuote = (params: Parameters<JupiterClient["getQuote"]>[0]) => jupiterClient.getQuote(params);
 
 export const jupiterRoutes = new Hono<OmaEnv>();
 

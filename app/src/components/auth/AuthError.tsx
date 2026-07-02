@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import {
 	AlertTriangle,
@@ -11,8 +12,32 @@ import {
 	XCircle,
 } from "lucide-react";
 import { ApiError, BackendUnavailableError } from "@/lib/api";
-import { useCountdown } from "./AuthSkeleton";
 import type { AuthErrorKind } from "./types";
+
+/**
+ * Inline countdown — previously extracted as `useCountdown` in AuthSkeleton.
+ * Returns the seconds remaining until `targetSec` reaches 0, ticking once
+ * per second. Returns 0 if `targetSec` is not a positive number.
+ */
+function useCountdown(targetSec: number | undefined): number {
+	const [remaining, setRemaining] = useState(targetSec ?? 0);
+	useEffect(() => {
+		if (typeof targetSec !== "number" || targetSec <= 0) {
+			setRemaining(0);
+			return;
+		}
+		setRemaining(targetSec);
+		const start = Date.now();
+		const id = setInterval(() => {
+			const elapsed = Math.floor((Date.now() - start) / 1000);
+			const left = Math.max(0, targetSec - elapsed);
+			setRemaining(left);
+			if (left === 0) clearInterval(id);
+		}, 1000);
+		return () => clearInterval(id);
+	}, [targetSec]);
+	return remaining;
+}
 
 interface AuthErrorProps {
 	error: unknown;

@@ -24,24 +24,6 @@ export interface ModelDef {
 
 export const WHISPER_MODEL = "whisper-1";
 
-export const WHISPER_MODEL_INFO: ModelDef = {
-  id: WHISPER_MODEL,
-  veniceId: WHISPER_MODEL,
-  provider: "venice",
-  primaryProvider: "venice",
-  inputPricePer1M: 0,
-  outputPricePer1M: 0,
-  markupPercent: 10,
-  category: "budget",
-  maxTokens: 0,
-  supportsStreaming: false,
-  displayName: "Whisper",
-  capabilities: ["audio", "transcription"],
-  description: "OpenAI Whisper model for audio transcription",
-  creditsPerMillionInput: 0,
-  creditsPerMillionOutput: 0,
-};
-
 export interface VideoModelDef {
   id: string;
   provider: "venice";
@@ -55,7 +37,7 @@ export interface VideoModelDef {
   creditsPrice: number;
 }
 
-export let MODEL_CATALOG: Record<string, ModelDef> = {};
+let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
@@ -161,11 +143,6 @@ export async function reloadModelCatalog(): Promise<void> {
     MODEL_CATALOG = FALLBACK_MODELS;
     VIDEO_MODELS = FALLBACK_VIDEO_MODELS;
   }
-}
-
-export async function getModelCatalog(): Promise<Record<string, ModelDef>> {
-  await ensureCatalogLoaded();
-  return MODEL_CATALOG;
 }
 
 export async function calculateCost(

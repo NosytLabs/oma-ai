@@ -75,15 +75,6 @@ export async function calculateActualCost(
   };
 }
 
-export async function calculateStreamingCost(
-  modelId: string,
-  inputTokens: number,
-  outputTokens: number,
-  discountPercent: number = 0
-): Promise<CostCalculation> {
-  return calculateActualCost(modelId, inputTokens, outputTokens, discountPercent);
-}
-
 export async function getEstimatedOutputTokens(modelId: string): Promise<number> {
   const model = await getModel(modelId);
   return model ? Math.floor(model.maxTokens / 4) : 1024;

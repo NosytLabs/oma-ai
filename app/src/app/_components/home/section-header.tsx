@@ -1,5 +1,4 @@
 import { cn } from "@/components/ui/utils";
-import { GradientText } from "@/components/ui/gradient-text";
 import type { ReactNode } from "react";
 
 /**
@@ -54,15 +53,4 @@ export function SectionHeader({
 			)}
 		</div>
 	);
-}
-
-/**
- * AccentHeadline — composes a headline with a GradientText accent word.
- */
-export function AccentHeadline({
-	children,
-}: {
-	children: ReactNode;
-}) {
-	return <GradientText as="span">{children}</GradientText>;
 }

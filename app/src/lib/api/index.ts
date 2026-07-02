@@ -28,12 +28,7 @@ export {
 	ApiError,
 	BackendUnavailableError,
 	getAuthToken,
-	getCached,
-	invalidateCache,
-	request,
 	setAuthToken,
-	STALE_TTL,
-	setCache,
 } from "./client.js";
 export type {
 	CreditTransaction,

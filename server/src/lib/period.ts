@@ -19,12 +19,3 @@ export function parsePeriodDate(period: string): Date {
   const days = PERIOD_DAYS[period] ?? DEFAULT_DAYS;
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
-
-/**
- * Parse a days parameter and return a Date object.
- * Clamps to [1, 365]. Defaults to 30.
- */
-export function parseDaysDate(daysStr: string | undefined, defaultValue = 30): Date {
-  const days = Math.min(Math.max(parseInt(daysStr ?? String(defaultValue), 10) || defaultValue, 1), 365);
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-}

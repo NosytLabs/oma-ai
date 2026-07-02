@@ -9,7 +9,3 @@ import { clsx, type ClassValue } from "clsx";
 export function cn(...inputs: ClassValue[]): string {
 	return clsx(inputs);
 }
-
-/** Compose focus-visible ring class consistent with design system. */
-export const FOCUS_RING =
-	"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base";

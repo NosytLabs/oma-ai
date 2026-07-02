@@ -13,7 +13,6 @@
  *   a `<figcaption className="sr-only">` description for screen readers.
  */
 
-import { format } from "date-fns";
 import { Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -92,55 +91,6 @@ export function providerColor(provider: string): string {
 // Recharts axes / tooltips should import from there so every chart in the app
 // produces the same shape. The helpers below stay chart-specific (date, etc.).
 
-/**
- * Compact number formatter: "1.2k", "3.4M".
- */
-export function formatCompactNumber(value: number, decimals = 1): string {
-	if (!Number.isFinite(value)) return "0";
-	const abs = Math.abs(value);
-	if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(decimals)}M`;
-	if (abs >= 1_000) return `${(value / 1_000).toFixed(decimals)}k`;
-	return value.toLocaleString("en-US");
-}
-
-/**
- * Adaptive date axis tick formatter.
- * - < 60 days: "Jun 11"
- * - 60-365 days: "Jun 11"
- * - >= 365 days: "Jun 2025"
- */
-export function formatChartDate(
-	value: string | number | Date,
-	spanDays: number,
-): string {
-	const d = value instanceof Date ? value : new Date(value);
-	if (Number.isNaN(d.getTime())) return String(value);
-	if (spanDays >= 365) return format(d, "MMM yyyy");
-	return format(d, "MMM d");
-}
-
-/**
- * Full date for tooltips: "Jun 11, 2026".
- */
-export function formatFullDate(value: string | number | Date): string {
-	const d = value instanceof Date ? value : new Date(value);
-	if (Number.isNaN(d.getTime())) return String(value);
-	return format(d, "MMM d, yyyy");
-}
-
-/**
- * Compute the span (in days) covered by a date-keyed series. Returns 0
- * for empty / single-point series so callers can use it as a fallback
- * for the adaptive date formatter.
- */
-export function dateSpanDays(dates: Array<string | number | Date>): number {
-	if (dates.length < 2) return 0;
-	const first = new Date(dates[0]).getTime();
-	const last = new Date(dates[dates.length - 1]).getTime();
-	if (Number.isNaN(first) || Number.isNaN(last)) return 0;
-	return Math.max(0, Math.round((last - first) / 86_400_000));
-}
-
 // ─── Empty / Loading / Figure ────────────────────────────────────────────────
 
 interface ChartEmptyStateProps {
@@ -184,57 +134,5 @@ export function ChartEmptyState({
 					</a>
 				) : null)}
 		</div>
-	);
-}
-
-/**
- * Lightweight skeleton placeholder for charts while data is loading.
- * Uses the same height as the chart slot so the layout doesn't jump.
- */
-export function ChartSkeleton({ height = 280 }: { height?: number }) {
-	return (
-		<div
-			className="w-full animate-pulse rounded-sm border border-border/50 bg-surface/40"
-			style={{ height }}
-			aria-hidden="true"
-		>
-			<div className="flex h-full items-end gap-1.5 p-4">
-				{Array.from({ length: 12 }).map((_, i) => (
-					<div
-						key={i}
-						className="flex-1 rounded-sm bg-border/60"
-						style={{ height: `${30 + ((i * 17) % 60)}%` }}
-					/>
-				))}
-			</div>
-		</div>
-	);
-}
-
-interface ChartFigureProps {
-	/** Accessible description of the chart contents, read by screen readers. */
-	description: string;
-	/** Optional caption (rarely visible). */
-	caption?: string;
-	children: ReactNode;
-	className?: string;
-}
-
-/**
- * Wrap every chart in a `<figure role="img">` with a `<figcaption className="sr-only">`
- * description. Recharts renders the underlying `<svg>` directly so we set
- * `role="img"` on the figure (NOT on the svg) to keep a single a11y node.
- */
-export function ChartFigure({
-	description,
-	caption,
-	children,
-	className,
-}: ChartFigureProps) {
-	return (
-		<figure role="img" aria-label={description} className={className}>
-			{children}
-			<figcaption className="sr-only">{caption ?? description}</figcaption>
-		</figure>
 	);
 }

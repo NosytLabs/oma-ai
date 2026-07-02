@@ -62,14 +62,9 @@ function deleteCookie(name: string) {
 	document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict${secure}`;
 }
 
-export const DEMO_COOKIE_NAME = "oma-demo";
+const DEMO_COOKIE_NAME = "oma-demo";
 
-export function setDemoCookie() {
-	if (typeof document === "undefined") return;
-	setCookie(DEMO_COOKIE_NAME, "1", 7);
-}
-
-export function clearDemoCookie() {
+function clearDemoCookie() {
 	if (typeof document === "undefined") return;
 	deleteCookie(DEMO_COOKIE_NAME);
 }

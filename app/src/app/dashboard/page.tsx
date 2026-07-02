@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 import { ConnectWalletView } from "@/components/dashboard/ConnectWalletView";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -8,11 +9,31 @@ import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { type TabId, type TimeRangeId } from "./_constants";
-import { DashboardGrid } from "./_components/DashboardGrid";
 import { DashboardHeader } from "./_components/DashboardHeader";
 import { useDashboardData } from "./_hooks/useDashboardData";
 import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
 import { useDashboardStats } from "./_hooks/useDashboardStats";
+
+// Lazy-load the 599-line grid + chart components. Initial paint shows
+// the header + skeleton; the grid hydrates after data is fetched.
+const DashboardGrid = dynamic(
+	() =>
+		import("./_components/DashboardGrid").then((m) => ({
+			default: m.DashboardGrid,
+		})),
+	{
+		loading: () => (
+			<div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div
+						key={i}
+						className="h-32 animate-pulse rounded-lg bg-surface-elevated/40"
+					/>
+				))}
+			</div>
+		),
+	},
+);
 
 const RECENT_REQUESTS_LIMIT = 20;
 

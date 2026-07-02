@@ -16,7 +16,7 @@ function getViemChain(chain: CctpChain): ViemChain {
   }
 }
 
-export const CCTP_SUPPORTED_CHAINS = [
+const CCTP_SUPPORTED_CHAINS = [
   "solana",
   "ethereum",
   "avalanche",
@@ -28,7 +28,7 @@ export const CCTP_SUPPORTED_CHAINS = [
 
 export type CctpChain = typeof CCTP_SUPPORTED_CHAINS[number];
 
-export const CCTP_CHAIN_DOMAIN_IDS: Record<CctpChain, number> = {
+const CCTP_CHAIN_DOMAIN_IDS: Record<CctpChain, number> = {
   ethereum: 0,
   avalanche: 1,
   optimism: 2,

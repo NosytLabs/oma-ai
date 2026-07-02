@@ -3,7 +3,6 @@ import {
   getModelPricing,
   estimateCost,
   calculateActualCost,
-  calculateStreamingCost,
   getEstimatedOutputTokens,
 } from '../billing-service.js'
 import { getModel, calculateCost } from '../models.js'
@@ -193,21 +192,6 @@ describe('billing-service', () => {
       const result = await calculateActualCost('unknown-model', 1, 1)
       expect(result.costCents).toBe('1')
       expect(result.totalCents).toBe('1')
-    })
-  })
-
-  describe('calculateStreamingCost', () => {
-    it('returns same result as calculateActualCost', async () => {
-      vi.mocked(getModel).mockResolvedValue({ id: 'deepseek-v3' } as any)
-      vi.mocked(calculateCost).mockResolvedValue({
-        costCents: '2',
-        markupCents: '3',
-        totalCents: '5',
-      })
-
-      expect(await calculateStreamingCost('deepseek-v3', 100, 50)).toEqual(
-        await calculateActualCost('deepseek-v3', 100, 50)
-      )
     })
   })
 

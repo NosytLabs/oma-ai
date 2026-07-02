@@ -19,5 +19,3 @@ export const TRUST_NAMES = [
 	"DeepSeek",
 	"Gemini",
 ] as const;
-
-export type TrustName = (typeof TRUST_NAMES)[number];
