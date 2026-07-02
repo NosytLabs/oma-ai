@@ -1,9 +1,27 @@
 "use client";
 
 import { m } from "framer-motion";
+import dynamic from "next/dynamic";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
-import { UnifiedDepositInterface } from "./_components/UnifiedDepositInterface";
+
+// Lazy-load the 950-line client interface. Pulls in viem + wagmi + the
+// payment-link API; defer until after the header paints.
+const UnifiedDepositInterface = dynamic(
+	() =>
+		import("./_components/UnifiedDepositInterface").then((m) => ({
+			default: m.UnifiedDepositInterface,
+		})),
+	{
+		ssr: false,
+		loading: () => (
+			<div
+				className="h-96 w-full animate-pulse rounded-lg bg-surface/40"
+				aria-label="Loading deposit interface"
+			/>
+		),
+	},
+);
 
 export default function DepositPage() {
 	return (
