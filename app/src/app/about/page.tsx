@@ -24,10 +24,7 @@ export const metadata: Metadata = {
 		title: "About · OMA",
 		description:
 			"OMA is a thin inference gateway. One OpenAI-compatible endpoint, one price list, USDC on Base, wallet-only auth.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	twitter: {
 		card: "summary_large_image",
 		title: "About · OMA",

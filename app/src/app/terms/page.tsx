@@ -22,10 +22,7 @@ export const metadata: Metadata = {
 		title: "Terms · OMA",
 		description:
 			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	twitter: {
 		card: "summary_large_image",
 		title: "Terms · OMA",

@@ -26,10 +26,7 @@ export const metadata: Metadata = {
 		title: "Privacy · OMA",
 		description:
 			"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	twitter: {
 		card: "summary_large_image",
 		title: "Privacy · OMA",

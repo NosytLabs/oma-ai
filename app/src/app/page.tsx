@@ -12,7 +12,6 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "Open Model Access · One API for every model",
 		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions.`,
-		images: [{ url: "/og-image.png", width: 1200, height: 630 }],
 	},
 };
 

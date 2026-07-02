@@ -92,8 +92,7 @@ export const metadata: Metadata = {
 		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native.`,
 		site: "@oma_ai",
 		creator: "@oma_ai",
-		images: ["/og-image.png"],
-	},
+			},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
@@ -106,7 +105,7 @@ export const metadata: Metadata = {
 				url: "/og-image.png",
 				width: 1200,
 				height: 630,
-				alt: "OMA-AI — AI Compute for Builders",
+				alt: "OMA AI — Open Model Access, one API for every model",
 			},
 		],
 	},

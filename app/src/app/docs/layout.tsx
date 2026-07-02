@@ -19,10 +19,10 @@ export const metadata: Metadata = {
 			"Complete API reference for OMA — OpenAI-compatible endpoints with crypto-native billing.",
 		images: [
 			{
-				url: "/opengraph-image",
+				url: "/og-image.png",
 				width: 1200,
 				height: 630,
-				alt: "OMA AI Gateway",
+				alt: "OMA AI — Open Model Access, one API for every model",
 			},
 		],
 	},

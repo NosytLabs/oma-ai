@@ -13,10 +13,7 @@ export const metadata: Metadata = {
 		title: "FAQ · OMA",
 		description:
 			"Common questions about the wallet-only inference gateway, x402 pay-per-request, USDC on Base, and the data we keep on file.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	twitter: {
 		card: "summary_large_image",
 		title: "FAQ · OMA",

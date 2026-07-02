@@ -10,19 +10,13 @@ export const metadata: Metadata = {
 		title: "Deposit Credits | OMA AI",
 		description:
 			"Deposit funds to your OMA AI account. USDC on Base and Solana supported.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	twitter: {
 		card: "summary_large_image",
 		title: "Deposit Credits | OMA AI",
 		description:
 			"Deposit funds to your OMA AI account. USDC on Base and Solana supported.",
-		images: [
-			{ url: "/og-image.png", width: 1200, height: 630, alt: "OMA AI Gateway" },
-		],
-	},
+			},
 	robots: {
 		index: true,
 		follow: true,
