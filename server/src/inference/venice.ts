@@ -443,16 +443,6 @@ export async function chatCompletion(body: {
   return provider.chatCompletion(buildVeniceChatCompletion(body), signal);
 }
 
-export async function completion(body: {
-  model: string;
-  prompt?: string | Array<string>;
-  input?: string | Array<string>;
-  stream?: boolean;
-  [key: string]: unknown;
-}): Promise<Response> {
-  return provider.completion(body);
-}
-
 export async function embeddings(body: {
   model: string;
   input: string | string[];
@@ -481,7 +471,7 @@ export async function textToSpeech(body: {
   return provider.textToSpeech(body);
 }
 
-export function streamChatCompletion(body: {
+function streamChatCompletion(body: {
   model: string;
   messages: ChatMessage[];
   stream?: boolean;
@@ -496,6 +486,7 @@ export function streamChatCompletion(body: {
 }): Promise<Response> {
   return provider.streamChatCompletion(buildVeniceChatCompletion(body));
 }
+
 
 export async function veniceModels(): Promise<unknown[]> {
   if (!config.VENICE_API_KEY) {

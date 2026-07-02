@@ -23,10 +23,6 @@ vi.mock("../lib/redis-client.js", () => ({
   isRedisReady: (...args: unknown[]) => mockIsRedisReady(...args),
 }));
 
-vi.mock("../lib/rate-limit-config.js", () => ({
-  getApiKeyRateLimits: vi.fn(() => ({ rpm: 60, tpm: 120_000 })),
-}));
-
 // Import after mocks are set up
 const {
   checkTokenBucket,
