@@ -19,16 +19,38 @@ import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, api, type Session, type User } from "@/lib/api";
-import { ApiKeysSection } from "./_components/ApiKeysSection";
-import { DangerZoneSection } from "./_components/DangerZoneSection";
-import { ProfileSection } from "./_components/ProfileSection";
-import { SessionsSection } from "./_components/SessionsSection";
-import { WalletsSection } from "./_components/WalletsSection";
 
 const AccountLoginModal = dynamic(
 	() =>
 		import("@/components/account-login-modal").then((m) => m.AccountLoginModal),
 	{ ssr: false },
+);
+
+// Lazy-load each section so only the active tab pulls its code in.
+const ProfileSection = dynamic(() =>
+	import("./_components/ProfileSection").then((m) => ({
+		default: m.ProfileSection,
+	})),
+);
+const WalletsSection = dynamic(() =>
+	import("./_components/WalletsSection").then((m) => ({
+		default: m.WalletsSection,
+	})),
+);
+const ApiKeysSection = dynamic(() =>
+	import("./_components/ApiKeysSection").then((m) => ({
+		default: m.ApiKeysSection,
+	})),
+);
+const SessionsSection = dynamic(() =>
+	import("./_components/SessionsSection").then((m) => ({
+		default: m.SessionsSection,
+	})),
+);
+const DangerZoneSection = dynamic(() =>
+	import("./_components/DangerZoneSection").then((m) => ({
+		default: m.DangerZoneSection,
+	})),
 );
 
 type SettingsTab = "profile" | "wallets" | "api-keys" | "sessions" | "danger";
