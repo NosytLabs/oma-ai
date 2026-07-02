@@ -60,18 +60,24 @@ export function Hero({ modelCount }: HeroProps) {
 				aria-hidden="true"
 			/>
 
-			<div className="container-page">
+				<div className="container-page">
 				<div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center min-h-[60dvh]">
+					{/* suppressHydrationWarning on the motion wrappers: framer-motion
+					   applies opacity:0 + transform at first paint, which the SSR
+					   can't reproduce without serializing the variant state.
+					   The content (text, structure) still hydrates correctly. */}
 					<m.div
 						className="flex flex-col items-start text-left"
 						variants={container}
 						initial="hidden"
 						animate="show"
+						suppressHydrationWarning
 					>
 						<m.h1
 							id="hero-headline"
 							className="display-headline text-text-bright"
 							variants={child}
+							suppressHydrationWarning
 						>
 							Run any model.
 							<br />
@@ -81,6 +87,7 @@ export function Hero({ modelCount }: HeroProps) {
 						<m.p
 							className="mt-6 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg"
 							variants={child}
+							suppressHydrationWarning
 						>
 							{modelCount}+ AI models behind one OpenAI-compatible API.
 							x402-native USDC payments on Base. No subscriptions, no
@@ -90,6 +97,7 @@ export function Hero({ modelCount }: HeroProps) {
 						<m.div
 							className="mt-9 flex flex-wrap items-center gap-3"
 							variants={child}
+							suppressHydrationWarning
 						>
 							<Button
 								asChild
@@ -106,6 +114,7 @@ export function Hero({ modelCount }: HeroProps) {
 						<m.div
 							className="mt-5 flex items-center gap-2 text-xs text-text-muted font-mono"
 							variants={child}
+							suppressHydrationWarning
 						>
 							<span className="inline-block h-1.5 w-1.5 rounded-full bg-accent pulse-ring" />
 							<span>
@@ -117,7 +126,7 @@ export function Hero({ modelCount }: HeroProps) {
 								<span className="mx-2 text-border-bright">·</span>
 								<span className="text-text-secondary">No prompts logged or trained on</span>
 								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">From $0.06 – $3.00 / 1M tokens</span>
+								<span className="text-text-secondary">From $0.06 – $15.00 / 1M tokens</span>
 							</span>
 						</m.div>
 					</m.div>
@@ -127,6 +136,7 @@ export function Hero({ modelCount }: HeroProps) {
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.8, ease: EASE_OUT, delay: 0.3 }}
 						className="w-full"
+						suppressHydrationWarning
 					>
 						<TerminalBlock code={CURL_SNIPPET} />
 					</m.div>
