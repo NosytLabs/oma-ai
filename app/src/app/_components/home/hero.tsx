@@ -111,7 +111,11 @@ export function Hero({ modelCount }: HeroProps) {
 							<span>
 								<span className="text-text-secondary">No credit card</span>
 								<span className="mx-2 text-border-bright">·</span>
+								<span className="text-text-secondary">$0.05 free credit on signup</span>
+								<span className="mx-2 text-border-bright">·</span>
 								<span className="text-text-secondary">x402 pay-per-request</span>
+								<span className="mx-2 text-border-bright">·</span>
+								<span className="text-text-secondary">No prompts logged or trained on</span>
 								<span className="mx-2 text-border-bright">·</span>
 								<span className="text-text-secondary">From $0.06 – $3.00 / 1M tokens</span>
 							</span>
