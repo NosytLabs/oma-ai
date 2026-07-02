@@ -29,32 +29,36 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "LLM Chat",
 		description:
-			"OpenAI, Anthropic, Gemini, DeepSeek, Llama — one API key, one schema. Streaming, function-calling, vision inputs included.",
+			"Venice-powered chat completions: Claude, GPT, Gemini, DeepSeek, Llama, Qwen — one API key, one OpenAI-compatible schema. Streaming, function-calling, vision inputs included.",
 		icon: MessageSquare,
 		cell: "hero",
 		example: "POST /v1/chat/completions",
 	},
 	{
 		title: "Image Generation",
-		description: "FLUX, Stable Diffusion, Imagen. Pay per image, not per minute.",
+		description:
+			"Bring your own key for FLUX, SDXL, Imagen — or route any provider behind the same endpoint. Pay per image, not per minute.",
 		icon: ImageIcon,
 		cell: "standard",
 	},
 	{
 		title: "Video Generation",
-		description: "Runway, Pika, Kling. Per-second billing, automatic provider failover.",
+		description:
+			"Text-to-video and image-to-video via the same gateway. Per-second billing, automatic provider failover when keys are configured.",
 		icon: Video,
 		cell: "tinted",
 	},
 	{
 		title: "Model Routing",
-		description: "Automatic failover across providers. Latency-optimized by default.",
+		description:
+			"Circuit-breaker failover across your upstream keys. Latency-optimized routing when multiple providers are available.",
 		icon: GitBranch,
 		cell: "standard",
 	},
 	{
 		title: "Crypto-Native Billing",
-		description: "USDC on Base. x402 pay-per-request. No accounts, no subscriptions.",
+		description:
+			"USDC on Base. x402 pay-per-request supported on /v1/x402/* — no accounts, no subscriptions.",
 		icon: Coins,
 		cell: "standard",
 	},

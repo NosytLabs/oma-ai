@@ -56,7 +56,7 @@ const GROUPS: FAQGroup[] = [
 			{
 				iconName: "Coins",
 				q: "How much does it cost?",
-				a: "Pay per request. From about $0.0001 per token for the smallest models. The full price list is on the /pricing page. A 25% markup over Venice retail covers the gateway, the metering, and the x402 settlement.",
+				a: "Pay per request. From about $0.06 per million input tokens for the smallest models up to $15.00 per million for Claude Opus 4. The full price list is on the /pricing page. A small markup over Venice retail covers the gateway, the metering, and the x402 settlement.",
 			},
 			{
 				iconName: "Receipt",

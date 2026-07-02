@@ -184,7 +184,7 @@ We are exploring Solana USDC, cross-chain deposits via Houdini Swap, and program
 		readingTime: 5,
 		tags: ["crypto", "payments", "usdc", "base", "guide"],
 	},
-];
+].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
 	return BLOG_POSTS.find((p) => p.slug === slug);

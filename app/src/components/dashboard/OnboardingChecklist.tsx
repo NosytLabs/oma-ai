@@ -103,7 +103,7 @@ export function OnboardingChecklist({
 			done: hasUsage,
 			action: !hasUsage ? (
 				<Link
-					href="https://docs.oma.ai"
+					href="/docs"
 					target="_blank"
 					rel="noopener noreferrer"
 					className="inline-flex items-center gap-1.5 text-[11px] font-medium text-accent hover:text-accent/80 transition-colors"

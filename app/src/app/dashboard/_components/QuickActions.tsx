@@ -39,7 +39,7 @@ const ACTIONS: QuickAction[] = [
 		icon: VideoIcon,
 	},
 	{
-		href: "https://docs.oma.ai",
+		href: "/docs",
 		label: "Read the docs",
 		description: "REST + x402 reference",
 		icon: BookOpen,

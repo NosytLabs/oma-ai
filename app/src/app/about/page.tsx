@@ -84,7 +84,7 @@ const ENDPOINT_FLOW = [
 	},
 ] as const;
 
-const ISSUED = "2026-06-12";
+const ISSUED = "2026-07-02";
 
 const STACK = [
 	{

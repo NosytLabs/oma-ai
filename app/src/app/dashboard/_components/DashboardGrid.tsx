@@ -374,7 +374,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								description="Once you start making API requests, your usage data will appear here."
 								action={
 									<a
-										href="https://docs.oma.ai"
+										href="/docs"
 										target="_blank"
 										rel="noopener noreferrer"
 										className="inline-flex items-center gap-1.5 text-accent hover:text-accent/80 text-sm font-medium transition-colors"
