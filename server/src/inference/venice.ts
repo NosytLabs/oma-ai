@@ -471,23 +471,6 @@ export async function textToSpeech(body: {
   return provider.textToSpeech(body);
 }
 
-function streamChatCompletion(body: {
-  model: string;
-  messages: ChatMessage[];
-  stream?: boolean;
-  enable_web_search?: "off" | "on" | "auto";
-  enable_web_scraping?: boolean;
-  enable_x_search?: boolean;
-  enable_web_citations?: boolean;
-  strip_thinking_response?: boolean;
-  disable_thinking?: boolean;
-  include_venice_system_prompt?: boolean;
-  [key: string]: unknown;
-}): Promise<Response> {
-  return provider.streamChatCompletion(buildVeniceChatCompletion(body));
-}
-
-
 export async function veniceModels(): Promise<unknown[]> {
   if (!config.VENICE_API_KEY) {
     throw Object.assign(
