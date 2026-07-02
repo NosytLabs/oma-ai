@@ -340,12 +340,11 @@ h6 {
 }
 
 /* ============================================================
-   HEADING UTILITIES
-   Distinctive type scale for hero / page / utility contexts.
-   Use these instead of ad-hoc text-[clamp(...)] combos so the
-   whole site has a consistent voice.
+   HEADING UTILITIES (legacy alias block — kept for the ~15 files
+   that still reference h1-hero / h1-page / h1-utility / h2-page).
+   The newer .display-headline / .section-headline utilities below
+   are the canonical scale; migrate gradually.
    ============================================================ */
-
 .h1-hero {
 	font-family: var(--font-display);
 	font-weight: 800;
@@ -353,7 +352,6 @@ h6 {
 	line-height: 0.95;
 	font-size: clamp(2.5rem, 6vw, 4.5rem);
 }
-
 .h1-page {
 	font-family: var(--font-display);
 	font-weight: 700;
@@ -361,7 +359,6 @@ h6 {
 	line-height: 1.05;
 	font-size: clamp(2rem, 4.5vw, 3.25rem);
 }
-
 .h1-utility {
 	font-family: var(--font-heading);
 	font-weight: 700;
@@ -369,18 +366,12 @@ h6 {
 	line-height: 1.15;
 	font-size: clamp(1.5rem, 2.5vw, 2rem);
 }
-
 .h2-page {
 	font-family: var(--font-heading);
 	font-weight: 700;
 	letter-spacing: -0.02em;
 	line-height: 1.2;
 	font-size: clamp(1.5rem, 3vw, 2.25rem);
-}
-
-::selection {
-	background: var(--color-accent-dim);
-	color: var(--color-accent);
 }
 
 ::-webkit-scrollbar {
@@ -1004,11 +995,12 @@ table {
 	transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
 }
 
-/* --- Scrollbar glow (accent on hover) --- */
-
-::-webkit-scrollbar-thumb:hover {
-	background: color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
-}
+/* --- Scrollbar glow (accent on hover) ---
+   NOTE: The :hover variant above (line ~400) sets the base color. This
+   rule layers the accent mix on top of the same selector; CSS applies
+   the last matching rule, so this is what wins on hover. Kept as a
+   separate block (rather than folding into the base rule) so the
+   intent — "subtle accent flash on hover" — is documented locally. */
 
 /* --- Reduce motion: disable all new effects --- */
 
@@ -1559,10 +1551,7 @@ input[type="range"]::-moz-range-thumb {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-html {
-	scroll-behavior: smooth;
-	-webkit-tap-highlight-color: transparent;
-}
+/* html reset extras merged into the html {} block at line 250. */
 
 /* Selection color matches accent */
 ::selection {

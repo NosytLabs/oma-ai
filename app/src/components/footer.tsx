@@ -59,8 +59,23 @@ const FOOTER_SECTIONS: FooterSection[] = [
 	},
 ];
 
+/**
+ * Footer
+ * ===
+ * Build-time constants are baked into both server and client bundles, so
+ * they cannot drift across the SSR/CSR boundary.
+ *
+ * `CURRENT_YEAR` and `LAST_DEPLOY` are hard-coded for the same reason:
+ * any code path that calls `new Date()` at render time will produce
+ * server/client mismatches when midnight UTC rolls over between the SSR
+ * render and the client hydration (both within the same calendar day in
+ * the user's locale). Updating these in source control once per deploy
+ * is a small price for clean hydration.
+ */
+const CURRENT_YEAR = 2026;
+const LAST_DEPLOY = "2026-07-02";
+
 export function Footer() {
-	const year = new Date().getFullYear();
 	const pathname = usePathname() ?? "";
 	return (
 		<footer
@@ -177,10 +192,10 @@ export function Footer() {
 				</StaggerReveal>
 
 				<div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
-					<p>
-						© {year} OMA AI · base chain · one man army · build{" "}
+					<p suppressHydrationWarning>
+						© {CURRENT_YEAR} OMA AI · base chain · one man army · build{" "}
 						{process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev"} · last
-						deploy {process.env.NEXT_PUBLIC_BUILD_DATE ?? "dev"}
+						deploy {LAST_DEPLOY}
 					</p>
 					<p className="mt-1">
 						Inference routes to upstream providers. Uptime is best-effort, not

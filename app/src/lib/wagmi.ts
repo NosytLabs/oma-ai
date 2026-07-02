@@ -21,9 +21,20 @@ function getWagmiConfig() {
 	// Reject known placeholder values so the app doesn't send 403-bound
 	// requests to api.web3modal.org. A real project ID must be obtained from
 	// https://cloud.walletconnect.com and set in .env.local.
-	const WALLETCONNECT_PLACEHOLDER = "your_walletconnect_project_id";
+	//
+	// ponytail: the previous check only caught `your_walletconnect_project_id`
+	// (the example in .env.example). The shipped .env.local used
+	// `dev-placeholder-project-id`, which slipped through and was passed to
+	// @walletconnect/ethereum-provider. The connector then retried its
+	// Core.init() handshake on every page load, producing 10+ "WalletConnect
+	// Core is already initialized" warnings. Both known sentinels are
+	// rejected here.
+	const KNOWN_PLACEHOLDERS = new Set([
+		"your_walletconnect_project_id",
+		"dev-placeholder-project-id",
+	]);
 	const walletConnectProjectId =
-		rawProjectId && rawProjectId !== WALLETCONNECT_PLACEHOLDER
+		rawProjectId && !KNOWN_PLACEHOLDERS.has(rawProjectId)
 			? rawProjectId
 			: undefined;
 

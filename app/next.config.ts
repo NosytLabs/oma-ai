@@ -153,12 +153,26 @@ const nextConfig: NextConfig = {
 	// this exclusion, dynamic segments like /api/admin/users/[id] would
 	// fall through to the rewrite (shadowing the file route) and return 500
 	// when the backend is unreachable.
+	//
+	// ponytail: when NEXT_PUBLIC_API_URL is unset (e.g. fresh dev checkout
+	// with no .env.local), default to an unreachable 127.0.0.1:9999 host
+	// rather than the dev server's own port (3000/3001). The old fallback
+	// `localhost:3001` rewrote /api/* back into THIS Next.js process, so
+	// every API call hit non-existent app routes and returned 404; the
+	// `/login` page's health check then surfaced a confusing "Backend
+	// offline" error instead of the more honest "API URL not configured".
+	// The dedicated app/server/ env file is the source of truth for the
+	// backend port — see server/README.md.
 	async rewrites() {
+		const apiRewriteDestination = (() => {
+			const url = process.env.NEXT_PUBLIC_API_URL;
+			return url && url.trim().length > 0 ? url : "http://127.0.0.1:9999";
+		})();
 		return [
 			{
 				// Non-admin API paths (chat, health, pricing, v1/*) → backend
 				source: "/api/:path((?!admin).*)",
-				destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/:path*`,
+				destination: `${apiRewriteDestination}/:path*`,
 			},
 		];
 	},
