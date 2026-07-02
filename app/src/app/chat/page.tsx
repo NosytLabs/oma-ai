@@ -1,9 +1,18 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { ChatPlaygroundShell } from "./_components/ChatPlaygroundShell";
+
+// Lazy-load the 569-line chat shell (framer-motion + wallet hooks).
+const ChatPlaygroundShell = dynamic(
+	() =>
+		import("./_components/ChatPlaygroundShell").then((m) => ({
+			default: m.ChatPlaygroundShell,
+		})),
+	{ ssr: false },
+);
 
 function ChatLoadingFallback() {
 	return (
