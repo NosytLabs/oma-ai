@@ -7,7 +7,6 @@
  */
 export { AuthError, shapeAuthError } from "./AuthError";
 export { AuthSkeleton } from "./AuthSkeleton";
-export { ConnectorIcon, classifyConnector } from "./ConnectorIcon";
 export { SiwePreview } from "./SiwePreview";
 export type {
 	AuthErrorKind,

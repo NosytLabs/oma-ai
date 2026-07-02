@@ -24,7 +24,6 @@ import { m } from "framer-motion";
 import { AlertCircle, ChevronRight, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 
-export const A2UI_CONTENT_TYPE = "application/a2ui+json";
 export const A2UI_VERSION = "0.9.1";
 
 export interface A2UISurfaceUpdate {
@@ -54,13 +53,6 @@ export function isA2UI(payload: unknown): payload is A2UIEnvelope {
 	if (Array.isArray(e.surfaces) && e.surfaces.length > 0) return true;
 	if (Array.isArray(e.components) && e.components.length > 0) return true;
 	return false;
-}
-
-export function isA2UIContentType(
-	contentType: string | null | undefined,
-): boolean {
-	if (!contentType) return false;
-	return contentType.toLowerCase().includes(A2UI_CONTENT_TYPE);
 }
 
 interface A2UIRendererProps {

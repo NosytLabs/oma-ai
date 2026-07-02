@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 /**
  * Skeleton shown while wagmi initializes its connectors.
  *
@@ -30,25 +28,4 @@ export function AuthSkeleton({ lines = 3 }: { lines?: number }) {
 			<span className="sr-only">Preparing wallet session…</span>
 		</div>
 	);
-}
-
-/**
- * Hook-friendly countdown for "retry in N seconds" UI. Returns the
- * remaining seconds; ticks down once per second until it hits 0, where
- * it stops (so the visual hint disappears as soon as the user can retry).
- */
-export function useCountdown(startSec: number | undefined): number {
-	const [secs, setSecs] = useState(startSec ?? 0);
-	useEffect(() => {
-		if (!startSec || startSec <= 0) {
-			setSecs(0);
-			return;
-		}
-		setSecs(startSec);
-		const interval = setInterval(() => {
-			setSecs((prev) => (prev <= 1 ? 0 : prev - 1));
-		}, 1000);
-		return () => clearInterval(interval);
-	}, [startSec]);
-	return secs;
 }
