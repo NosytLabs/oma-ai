@@ -11,6 +11,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { ApiError, BackendUnavailableError } from "@/lib/api";
+import { useCountdown } from "./AuthSkeleton";
 import type { AuthErrorKind } from "./types";
 
 interface AuthErrorProps {
@@ -149,6 +150,16 @@ export function AuthError({ error, onRetry, onDismiss }: AuthErrorProps) {
 	const meta = KIND_META[shaped.kind];
 	const reduceMotion = useReducedMotion();
 	const Icon = meta.Icon;
+	const retryCountdown = useCountdown(shaped.retryAfterSec);
+
+	// Only show the countdown while there are seconds remaining on the
+	// rate-limit window. After the timer hits 0, the hint disappears
+	// (matches the original wording for non-rate-limited errors).
+	const showCountdown =
+		shaped.kind === "rate_limited" &&
+		typeof shaped.retryAfterSec === "number" &&
+		shaped.retryAfterSec > 0 &&
+		retryCountdown > 0;
 
 	return (
 		<m.div
@@ -164,10 +175,13 @@ export function AuthError({ error, onRetry, onDismiss }: AuthErrorProps) {
 				<p className="font-semibold text-red">{meta.title}</p>
 				<p className="mt-0.5 text-text leading-relaxed">
 					{shaped.message}
-					{shaped.retryAfterSec && shaped.retryAfterSec > 0 && (
-						<span className="text-text-muted">
+					{showCountdown && (
+						<span
+							className="text-text-muted tabular-nums"
+							aria-live="off"
+						>
 							{" "}
-							(try again in {shaped.retryAfterSec}s)
+							(retry in {retryCountdown}s)
 						</span>
 					)}
 				</p>
@@ -177,9 +191,10 @@ export function AuthError({ error, onRetry, onDismiss }: AuthErrorProps) {
 							<button
 								type="button"
 								onClick={onRetry}
-								className="inline-flex items-center rounded-md border border-red/30 bg-red/10 px-2.5 py-1 text-[11px] font-semibold text-red hover:bg-red/20 transition-colors"
+								disabled={showCountdown}
+								className="inline-flex items-center rounded-md border border-red/30 bg-red/10 px-2.5 py-1 text-[11px] font-semibold text-red hover:bg-red/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
 							>
-								Try again
+								{showCountdown ? `Wait ${retryCountdown}s` : "Try again"}
 							</button>
 						)}
 						{onDismiss && (

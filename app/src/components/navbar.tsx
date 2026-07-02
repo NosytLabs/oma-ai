@@ -23,7 +23,8 @@ import { ImprovedConnectButton as Web3ConnectButton } from "./ui/ImprovedConnect
 const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev";
 
 export function Navbar() {
-	const { evmAddress, isConnected, disconnect } = useWallet();
+	const { evmAddress, isConnected, disconnect, authMethod, accountNumber } =
+		useWallet();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -179,9 +180,10 @@ export function Navbar() {
 						</div>
 
 						{isConnected ? (
-							// biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
 							<NavbarUserMenu
-								evmAddress={evmAddress!}
+								evmAddress={evmAddress}
+								authMethod={authMethod}
+								accountNumber={accountNumber ?? null}
 								onDisconnect={disconnect}
 							/>
 						) : (
@@ -219,6 +221,7 @@ export function Navbar() {
 					isConnected={isConnected}
 					section={section}
 					build={build}
+					onDisconnect={disconnect}
 				/>
 			</nav>
 		</header>

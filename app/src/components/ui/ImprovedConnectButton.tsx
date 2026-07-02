@@ -218,10 +218,20 @@ export function ImprovedConnectButton({
 		};
 	}, [open]);
 
-	function handleConnect(id: string) {
+	async function handleConnect(id: string) {
 		setConnectingId(id);
-		connectEvm(id);
-		setOpen(false);
+		// Await + try/catch so wallet rejections / missing-connector errors
+		// surface in the UI instead of vanishing silently. Without this, a
+		// user who hits "MetaMask" with no MetaMask installed (or who rejects
+		// the popup) sees the menu close and *nothing* — the error is gone.
+		try {
+			await connectEvm(id);
+		} catch (err) {
+			console.error("Wallet connect failed:", err);
+		} finally {
+			setConnectingId(null);
+			setOpen(false);
+		}
 	}
 
 	const popular = availableConnectors.filter((c) => POPULAR_IDS.includes(c.id));

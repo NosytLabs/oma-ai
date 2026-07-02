@@ -1,10 +1,10 @@
 "use client";
 
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
-import { CornerDownLeft, FileText, Key, Settings, Zap } from "lucide-react";
+import { CornerDownLeft, FileText, Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { EASE_OUT, staggerContainer } from "@/lib/motion";
 import { ApiStatus } from "../api-status";
 import { useFocusTrap } from "./_hooks/useFocusTrap";
@@ -18,6 +18,10 @@ interface NavbarMobileMenuProps {
 	isConnected: boolean;
 	section: string;
 	build: string;
+	/** Terminates the active session. Optional because the menu is also
+	 * rendered during the brief pre-hydration window before the wallet
+	 * provider has been mounted. */
+	onDisconnect?: () => void | Promise<void>;
 }
 
 // Mobile link stagger variant — subtle slide-in from the right.
@@ -48,10 +52,13 @@ export function NavbarMobileMenu({
 	isConnected,
 	section,
 	build,
+	onDisconnect,
 }: NavbarMobileMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
+	const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+	const [disconnecting, setDisconnecting] = useState(false);
 
 	useFocusTrap({
 		active: open,
@@ -68,6 +75,30 @@ export function NavbarMobileMenu({
 			document.body.style.overflow = "";
 		};
 	}, [open]);
+
+	// Reset any in-flight confirm/disconnect state when the drawer closes
+	// so reopening it starts clean. Without this, the confirm dialog can
+	// appear pre-armed next time the user opens the menu.
+	useEffect(() => {
+		if (!open) {
+			setConfirmDisconnect(false);
+			setDisconnecting(false);
+		}
+	}, [open]);
+
+	const handleConfirmDisconnect = async () => {
+		if (!onDisconnect || disconnecting) return;
+		setDisconnecting(true);
+		try {
+			await onDisconnect();
+			onOpenChange(false);
+		} finally {
+			// Even on failure we close the menu — the user explicitly asked
+			// to log out, and any partial state is cleared by `disconnect()`
+			// itself. Stop loading either way.
+			setDisconnecting(false);
+		}
+	};
 
 	const isAccountCardActive = accountHrefs.some((href) =>
 		isCurrentPath(pathname, href),
@@ -219,6 +250,56 @@ export function NavbarMobileMenu({
 											);
 										})}
 									</m.ul>
+									{isConnected && onDisconnect && !confirmDisconnect && (
+										<button
+											type="button"
+											onClick={() => setConfirmDisconnect(true)}
+											className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-red/30 px-3 py-2 text-sm font-medium text-red/80 transition-colors hover:border-red/50 hover:bg-red/10 hover:text-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+										>
+											<LogOut className="h-4 w-4" aria-hidden="true" />
+											<span>terminate session</span>
+										</button>
+									)}
+									{isConnected && onDisconnect && confirmDisconnect && (
+										<div
+											role="alertdialog"
+											aria-labelledby="mobile-disconnect-title"
+											aria-describedby="mobile-disconnect-body"
+											className="mt-2 rounded-sm border border-red/40 bg-red/5 p-3"
+										>
+											<p
+												id="mobile-disconnect-title"
+												className="text-xs font-semibold text-red"
+											>
+												Terminate session?
+											</p>
+											<p
+												id="mobile-disconnect-body"
+												className="mt-1 text-[11px] leading-relaxed text-text-secondary"
+											>
+												You&apos;ll need your wallet or account number to sign
+												back in.
+											</p>
+											<div className="mt-2 grid grid-cols-2 gap-1">
+												<button
+													type="button"
+													onClick={() => setConfirmDisconnect(false)}
+													disabled={disconnecting}
+													className="min-h-[40px] rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-text transition-colors hover:bg-panel disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+												>
+													Cancel
+												</button>
+												<button
+													type="button"
+													onClick={handleConfirmDisconnect}
+													disabled={disconnecting}
+													className="min-h-[40px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+												>
+													{disconnecting ? "Signing out…" : "Sign out"}
+												</button>
+											</div>
+										</div>
+									)}
 								</m.div>
 							</div>
 
