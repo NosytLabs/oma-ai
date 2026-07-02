@@ -153,8 +153,6 @@ export function WelcomeBanner({
 	const [visible, setVisible] = useState(false);
 	const [dismissed, setDismissed] = useState(true);
 	const [showTips, setShowTips] = useState(false);
-	const [hydrated, setHydrated] = useState(false);
-
 	useEffect(() => {
 		try {
 			const notDismissed = localStorage.getItem(STORAGE_KEY) !== "1";
@@ -164,7 +162,6 @@ export function WelcomeBanner({
 		} catch {
 			// localStorage unavailable (SSR) — keep defaults
 		}
-		setHydrated(true);
 	}, []);
 
 	// Track whether this dismissal was user-initiated (X button / CTA) vs.

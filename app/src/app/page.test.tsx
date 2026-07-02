@@ -24,11 +24,9 @@ vi.mock("@/lib/framer-motion-client", () => {
 	};
 	// Return an object whose properties return motion components that render real HTML elements
 	// This preserves semantic elements (h1, etc.) for accessibility tests
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const m = new Proxy({} as Record<string, (props: { children?: React.ReactNode; className?: string }) => React.ReactElement>, {
 		get: (_target, tag: string) => {
 			const htmlTag = TAG_MAP[tag] ?? "div";
-			// eslint-disable-next-line react/display-name
 			return ({ children, className, ..._props }: { children?: React.ReactNode; className?: string }) =>
 				React.createElement(htmlTag, { className }, children);
 		},
