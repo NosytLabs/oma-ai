@@ -149,27 +149,23 @@ export function WelcomeBanner({
 	onGetStarted,
 }: WelcomeBannerProps) {
 	const toast = useToast();
-	const [visible, setVisible] = useState(() => {
+	// SSR-safe: default to hidden, then read localStorage after mount
+	const [visible, setVisible] = useState(false);
+	const [dismissed, setDismissed] = useState(true);
+	const [showTips, setShowTips] = useState(false);
+	const [hydrated, setHydrated] = useState(false);
+
+	useEffect(() => {
 		try {
-			return localStorage.getItem(STORAGE_KEY) !== "1";
+			const notDismissed = localStorage.getItem(STORAGE_KEY) !== "1";
+			setVisible(notDismissed);
+			setDismissed(!notDismissed);
+			setShowTips(localStorage.getItem(TIPS_KEY) !== "1");
 		} catch {
-			return false;
+			// localStorage unavailable (SSR) — keep defaults
 		}
-	});
-	const [dismissed, setDismissed] = useState(() => {
-		try {
-			return localStorage.getItem(STORAGE_KEY) === "1";
-		} catch {
-			return true;
-		}
-	});
-	const [showTips, setShowTips] = useState(() => {
-		try {
-			return localStorage.getItem(TIPS_KEY) !== "1";
-		} catch {
-			return false;
-		}
-	});
+		setHydrated(true);
+	}, []);
 
 	// Track whether this dismissal was user-initiated (X button / CTA) vs.
 	// auto-dismissed by the timer. We only fire the corner toast on auto-dismiss;

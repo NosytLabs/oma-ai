@@ -28,7 +28,7 @@ import { MessagesList } from "./MessagesList";
 
 const LazyMessageInput = dynamic(
 	() =>
-		import("@/components/chat/MessageInput").then((mod) => mod.MessageInput),
+		import("@/components/chat/MessageInputRedesign").then((mod) => mod.MessageInputRedesigned),
 	{ ssr: false, loading: () => <Skeleton className="h-16 w-full" /> },
 );
 

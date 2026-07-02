@@ -135,6 +135,8 @@ export const MessageInputRedesigned = forwardRef<
 
 				<textarea
 					ref={setTextareaRef}
+					id="chat-message-input"
+					name="chat-message"
 					value={input}
 					onChange={(e) => setInput(e.target.value)}
 					onKeyDown={handleKeyDown}

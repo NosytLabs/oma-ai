@@ -243,7 +243,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					{isUser ? (
 						<p className="whitespace-pre-wrap break-words">{msg.content}</p>
 					) : (
-						<div className="markdown-content font-mono text-sm">
+						<div className="markdown-content font-mono text-sm" aria-live="polite">
 							<ReactMarkdown
 								remarkPlugins={[remarkGfm]}
 								components={{
