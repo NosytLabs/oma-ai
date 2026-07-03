@@ -12,16 +12,6 @@ export const metadata: Metadata = {
 		"AI API",
 	],
 	alternates: { canonical: "/image-generation" },
-	openGraph: {
-		title: "Image Generation API | OMA AI",
-		description:
-			"Generate images with AI. Access FLUX.1 and other models via API.",
-			},
-	twitter: {
-		card: "summary_large_image",
-		title: "Image Generation API | OMA AI",
-		description: "Generate images with AI via API.",
-			},
 };
 
 export default function ImageGenerationLayout({

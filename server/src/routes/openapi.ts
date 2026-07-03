@@ -1941,7 +1941,7 @@ const openapiSpec = {
     //  X402
     // ═══════════════════════════════════════════════════════════
     "/v1/x402/quote": {
-      get: {
+      post: {
         tags: ["X402"],
         summary: "Quote a cross-chain deposit",
         security: [],

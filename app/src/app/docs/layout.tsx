@@ -13,24 +13,6 @@ export const metadata: Metadata = {
 		"chat completions",
 	],
 	alternates: { canonical: "/docs" },
-	openGraph: {
-		title: "API Documentation | OMA AI",
-		description:
-			"Complete API reference for OMA — OpenAI-compatible endpoints with crypto-native billing.",
-		images: [
-			{
-				url: "/og-image.png",
-				width: 1200,
-				height: 630,
-				alt: "OMA AI — Open Model Access, one API for every model",
-			},
-		],
-	},
-	twitter: {
-		card: "summary_large_image",
-		title: "API Documentation | OMA AI",
-		description: "Complete API reference for OMA AI gateway.",
-	},
 };
 
 export default function DocsLayout({

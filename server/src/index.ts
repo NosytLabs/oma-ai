@@ -26,8 +26,7 @@ import { withdrawalRoutes } from "./routes/withdraw.js";
 import { refundRoutes } from "./routes/refunds.js";
 import { exportRoutes } from "./routes/export.js";
 import { healthRoutes } from "./routes/health.js";
-import { pingRoutes } from "./routes/ping.js";
-import { metricsRoutes } from "./routes/metrics.js";
+import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { providersMetaRoutes } from "./routes/providers-meta.js";
 import { usageRoutes } from "./routes/usage.js";
@@ -144,6 +143,9 @@ const corsOptions = {
 
 app.use("*", cors(corsOptions));
 
+// Count every HTTP request for /metrics (mount before all routes)
+app.use("*", metricsMiddleware);
+
 // Public operational routes (no auth) — MUST be mounted before any auth-protected
 // sub-router that uses a `*` wildcard, so probes/ping/metrics/openapi are not
 // shadowed by 401s. The inline `app.get("/health")` previously in this file
@@ -151,7 +153,6 @@ app.use("*", cors(corsOptions));
 // /version set lives in routes/health.ts. See docs/archive/audit-2026-06-13v2/backend.md
 // S-NEW-1 (23 orphan endpoints before this fix).
 app.route("/", healthRoutes);
-app.route("/", pingRoutes);
 app.route("/", metricsRoutes);
 app.route("/", openapiRoutes);
 app.route("/", providersMetaRoutes);

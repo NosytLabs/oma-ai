@@ -5,9 +5,9 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 
-const metricsStore = {
-  // Counters
-  httpRequestsTotal: new Map<string, number>(), // key: method|path|status
+// ponytail: simple in-memory counters. prom-client if scrape performance matters.
+export const metricsStore = {
+  httpRequestsTotal: new Map<string, number>(),
   httpRequestErrors: new Map<string, number>(),
   chatCompletionsTotal: 0,
   chatCompletionTokens: 0,
@@ -18,7 +18,6 @@ const metricsStore = {
   apiKeysCreated: 0,
   rateLimitHits: 0,
   circuitBreakerTrips: 0,
-  // Gauges
   activeUsers: 0,
   dbConnections: 0,
 };
@@ -95,6 +94,19 @@ function formatPrometheus(): string {
   lines.push(`oma_ai_scrape_timestamp_seconds ${(now / 1000).toFixed(3)}`);
 
   return lines.join("\n") + "\n";
+}
+
+// Middleware: count every HTTP request. Mount BEFORE all other routes.
+export async function metricsMiddleware(c: any, next: any) {
+  await next();
+  const method = c.req.method;
+  const path = c.req.path;
+  const status = c.res.status;
+  const key = `${method}|${path}|${status}`;
+  metricsStore.httpRequestsTotal.set(key, (metricsStore.httpRequestsTotal.get(key) ?? 0) + 1);
+  if (status >= 400) {
+    metricsStore.httpRequestErrors.set(key, (metricsStore.httpRequestErrors.get(key) ?? 0) + 1);
+  }
 }
 
 export const metricsRoutes = new Hono<OmaEnv>();

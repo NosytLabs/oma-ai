@@ -1,8 +1,9 @@
-// Operational health endpoints.
+// Operational health + ping endpoints.
 // /live  - is the process alive? (liveness probe)
 // /ready - is the process ready to serve traffic? (readiness probe - pings DB + Redis)
 // /health - alias for /ready with same payload (legacy + Docker HEALTHCHECK)
 // /version - build/runtime metadata
+// /ping, /v1/ping - cheap uptime-monitor endpoints
 
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
@@ -11,6 +12,16 @@ import { sql } from "drizzle-orm";
 import { SERVICE_VERSION } from "../constants.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
+
+// ── Ping (uptime monitors) ────────────────────────────────────────────────
+healthRoutes.get("/ping", (c) => {
+  c.header("Cache-Control", "no-store");
+  return c.json({ pong: true, ts: Date.now() });
+});
+healthRoutes.get("/v1/ping", (c) => {
+  c.header("Cache-Control", "no-store");
+  return c.json({ pong: true, ts: Date.now() });
+});
 
 const BUILD_SHA = process.env.BUILD_SHA ?? "dev";
 const BUILD_TIME = process.env.BUILD_TIME ?? new Date().toISOString();

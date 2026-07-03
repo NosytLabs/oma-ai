@@ -1,11 +1,11 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import crypto from "node:crypto";
 import { houdiniClient, SwapType, OrderStatus } from "../credits/houdini-client.js";
 import { getModel } from "../inference/models.js";
 import { getModelPricing, handleChatCompletion } from "../inference/router.js";
-import { settlePayment, verifyPayment, getSettlementReceipt } from "./facilitator.js";
+import { settlePayment, verifyPayment, getSettlementReceipt, type PaymentSignature } from "./facilitator.js";
 import { bearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { config } from "../config.js";
@@ -57,6 +57,36 @@ interface PendingQuote {
   createdAt: number;
   slippageTolerance: number;
   requestId: string;
+}
+
+function routeError(c: Context, err: unknown, prefix: string, type: string): Response {
+  const message = err instanceof Error ? err.message : String(err);
+  return c.json({ error: { message: `${prefix}: ${message}`, type } }, 502);
+}
+
+function buildHoudiniPaymentSig(
+  order: { id: string; depositAddress: string; transactionHash?: string; toAmount?: string },
+  orderId: string,
+  houdiniToAddress: string,
+): PaymentSignature {
+  return {
+    x402Version: "1" as const,
+    signature: order.transactionHash ?? orderId,
+    authorization: "houdini_crosschain",
+    payload: {
+      x402Version: "1" as const,
+      scheme: "evm" as const,
+      networkId: "base",
+      asset: USDC_BASE,
+      amount: order.toAmount ?? "0",
+      payee: houdiniToAddress,
+      payFrom: order.depositAddress,
+      maxAmountRequired: order.toAmount ?? "0",
+      validBefore: Math.floor(Date.now() / 1000) + 3600,
+      validAfter: Math.floor(Date.now() / 1000) - 3600,
+      nonce: `houdini:${order.id}:${order.transactionHash ?? orderId}`.padEnd(32, "0").slice(0, 64),
+    },
+  };
 }
 
 async function evictOldestQuotes(redis: NonNullable<Awaited<ReturnType<typeof getRedisClient>>>, count: number): Promise<void> {
@@ -172,8 +202,7 @@ crosschainRoutes.post("/v1/x402/quote", x402QuoteRateLimit, async (c) => {
       slippageTolerance,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Quote failed: ${message}`, type: "quote_error" } }, 502);
+    return routeError(c, err, "Quote failed", "quote_error");
   }
 });
 
@@ -241,8 +270,7 @@ crosschainRoutes.post("/v1/x402/deposit", x402DepositRateLimit, async (c) => {
       expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Deposit creation failed: ${message}`, type: "deposit_error" } }, 502);
+    return routeError(c, err, "Deposit creation failed", "deposit_error");
   } finally {
     const currentLockValue = await redis.get(lockKey);
     if (currentLockValue === lockValue) {
@@ -298,28 +326,7 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
           response.creditsIssued = null;
           response.receipt = null;
         } else {
-          const paymentSig = {
-            x402Version: "1" as const,
-            signature: order.transactionHash,
-            authorization: "houdini_crosschain",
-            payload: {
-              x402Version: "1" as const,
-              scheme: "evm" as const,
-              networkId: "base",
-              asset: USDC_BASE,
-              amount: order.toAmount,
-              payee: houdiniToAddress,
-              payFrom: order.depositAddress,
-              maxAmountRequired: order.toAmount,
-              validBefore: Math.floor(Date.now() / 1000) + 3600,
-              validAfter: Math.floor(Date.now() / 1000) - 3600,
-              // AUDIT-2: nonce is required by verifyEvmPayment's
-              // consumeNonce (16-128 char gate). Without a nonce, real-mode
-              // verify would always fail with "Replay protection: invalid_nonce".
-              // Use order.id + tx hash as a deterministic, single-use nonce.
-              nonce: `houdini:${order.id}:${order.transactionHash}`.padEnd(32, "0").slice(0, 64),
-            },
-          };
+          const paymentSig = buildHoudiniPaymentSig(order, order.id, houdiniToAddress);
 
           const verification = await verifyPayment(paymentSig);
           if (!verification.valid) {
@@ -348,8 +355,7 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
 
     return c.json(response);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Status check failed: ${message}`, type: "status_error" } }, 502);
+    return routeError(c, err, "Status check failed", "status_error");
   }
 });
 
@@ -358,8 +364,7 @@ crosschainRoutes.get("/v1/x402/chains", async (c) => {
     const chains = await houdiniClient.getChains();
     return c.json({ chains });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Failed to fetch chains: ${message}`, type: "external_error" } }, 502);
+    return routeError(c, err, "Failed to fetch chains", "external_error");
   }
 });
 
@@ -371,8 +376,7 @@ crosschainRoutes.get("/v1/x402/tokens", async (c) => {
       : await houdiniClient.getTokens();
     return c.json({ tokens });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Failed to fetch tokens: ${message}`, type: "external_error" } }, 502);
+    return routeError(c, err, "Failed to fetch tokens", "external_error");
   }
 });
 
@@ -385,12 +389,11 @@ crosschainRoutes.post("/v1/x402/proxy/chat/completions", async (c) => {
     return c.json({ error: { message: "X-Houdini-Order-Id header required", type: "payment_error" } }, 402);
   }
 
-  let order;
+  let order: Awaited<ReturnType<typeof houdiniClient.getOrder>>;
   try {
     order = await houdiniClient.getOrder(orderId);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message: `Order lookup failed: ${message}`, type: "payment_error" } }, 502);
+    return routeError(c, err, "Order lookup failed", "payment_error");
   }
 
   if (order.status !== OrderStatus.FINISHED) {
@@ -405,26 +408,7 @@ crosschainRoutes.post("/v1/x402/proxy/chat/completions", async (c) => {
 
   const houdiniToAddress = config.HOUDINI_ADDRESS_TO || "";
 
-  const paymentSig = {
-    x402Version: "1" as const,
-    signature: order.transactionHash ?? orderId,
-    authorization: "houdini_crosschain",
-    payload: {
-      x402Version: "1" as const,
-      scheme: "evm" as const,
-      networkId: "base",
-      asset: USDC_BASE,
-      amount: order.toAmount ?? "0",
-      payee: houdiniToAddress,
-      payFrom: order.depositAddress,
-      maxAmountRequired: order.toAmount ?? "0",
-      validBefore: Math.floor(Date.now() / 1000) + 3600,
-      validAfter: Math.floor(Date.now() / 1000) - 3600,
-      // AUDIT-2: see status handler. Order-id+tx-derived nonce satisfies
-      // the 16-128 char gate in consumeNonce so real-mode verify succeeds.
-      nonce: `houdini:${order.id}:${order.transactionHash ?? orderId}`.padEnd(32, "0").slice(0, 64),
-    },
-  };
+  const paymentSig = buildHoudiniPaymentSig(order, orderId, houdiniToAddress);
 
   const verification = await verifyPayment(paymentSig);
   if (!verification.valid) {

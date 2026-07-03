@@ -213,14 +213,17 @@ export async function request<T>(
 		}
 
 		// Inject x-csrf-token for state-changing requests. The server sets the
-		// csrf_token cookie (now JS-readable in dev) and expects the same value
-		// echoed in x-csrf-token header. GET requests don't need it.
+		// csrf_token (dev) or __Host-csrf_token (prod) cookie (env-dependent,
+		// see server cookies.ts) and expects the same value echoed in
+		// x-csrf-token header. GET requests don't need it.
+		// H6 fix: check both cookie names so prod __Host-csrf_token is found.
 		const method = (opts.method || "GET").toUpperCase();
 		if (method !== "GET" && method !== "HEAD") {
 			try {
-				const csrfCookie = document.cookie
-					.split("; ")
-					.find((c) => c.startsWith("csrf_token="));
+				const cookies = document.cookie.split("; ");
+				const csrfCookie = cookies.find(
+					(c) => c.startsWith("csrf_token=") || c.startsWith("__Host-csrf_token="),
+				);
 				if (csrfCookie && !headers["x-csrf-token"]) {
 					const token = decodeURIComponent(csrfCookie.split("=")[1]);
 					if (token) headers["x-csrf-token"] = token;

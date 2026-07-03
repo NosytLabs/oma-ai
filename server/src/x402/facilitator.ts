@@ -268,11 +268,39 @@ function atomicCacheSet(cacheKey: string, record: SettlementRecord): void {
   }
 }
 
-setInterval(cleanExpiredCache, 300_000).unref();
+function cacheVerifiedRecord(payload: PaymentPayload, result: PaymentResponse): void {
+  if (result.valid && result.txHash) {
+    atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
+      txHash: result.txHash,
+      amount: result.amount ?? payload.amount,
+      networkId: result.networkId ?? payload.networkId,
+      payee: payload.payee,
+      settledAt: 0,
+    });
+  }
+}
 
-// ============================================================
-// Nonce Management
-// ============================================================
+function checkTransferAmount(
+  rawAmount: bigint,
+  recipient: string,
+  payeeLower: string,
+  txHash: Hash,
+  networkId: string,
+  requiredAmountStr: string,
+): PaymentResponse {
+  const amount = formatUnits(rawAmount, USDC_DECIMALS);
+  const actualAtomic = parseUsdcAtomic(amount);
+  const requiredAtomic = parseUsdcAtomic(requiredAmountStr);
+  if (actualAtomic < requiredAtomic) {
+    return { valid: false, error: `Insufficient payment: ${actualAtomic} < ${requiredAtomic}` };
+  }
+  if (recipient.toLowerCase() !== payeeLower) {
+    return { valid: false, error: "Recipient mismatch" };
+  }
+  return { valid: true, txHash, amount, networkId };
+}
+
+setInterval(cleanExpiredCache, 300_000).unref();
 
 // ============================================================
 // Signing Utilities
@@ -748,46 +776,12 @@ async function verifyUsdcTransferReceipt(
 
         if (decoded.functionName === "transfer") {
           const [recipient, rawAmount] = decoded.args as [string, bigint];
-          const amount = formatUnits(rawAmount, USDC_DECIMALS);
-          const actualAtomic = parseUsdcAtomic(amount);
-          const requiredAtomic = parseUsdcAtomic(payload.maxAmountRequired || payload.amount || "0");
-
-          if (actualAtomic < requiredAtomic) {
-            return { valid: false, error: `Insufficient payment: ${actualAtomic} < ${requiredAtomic}` };
-          }
-
-          if (recipient.toLowerCase() !== payeeLower) {
-            return { valid: false, error: "Recipient mismatch" };
-          }
-
-          return {
-            valid: true,
-            txHash,
-            amount,
-            networkId: payload.networkId,
-          };
+          return checkTransferAmount(rawAmount, recipient, payeeLower, txHash, payload.networkId, payload.maxAmountRequired || payload.amount || "0");
         }
 
         if (decoded.functionName === "transferFrom") {
           const [, recipient, rawAmount] = decoded.args as [string, string, bigint];
-          const amount = formatUnits(rawAmount, USDC_DECIMALS);
-          const actualAtomic = parseUsdcAtomic(amount);
-          const requiredAtomic = parseUsdcAtomic(payload.maxAmountRequired || payload.amount || "0");
-
-          if (actualAtomic < requiredAtomic) {
-            return { valid: false, error: `Insufficient payment: ${actualAtomic} < ${requiredAtomic}` };
-          }
-
-          if (recipient.toLowerCase() !== payeeLower) {
-            return { valid: false, error: "Recipient mismatch" };
-          }
-
-          return {
-            valid: true,
-            txHash,
-            amount,
-            networkId: payload.networkId,
-          };
+          return checkTransferAmount(rawAmount, recipient, payeeLower, txHash, payload.networkId, payload.maxAmountRequired || payload.amount || "0");
         }
       } catch (decodeErr) {
         logger.error({ err: decodeErr }, "[facilitator] Failed to decode USDC transfer data");
@@ -975,17 +969,7 @@ export async function verifyPayment(
     }
     logger.warn("[FACILITATOR] Processing payment in mock mode -- signatures are NOT verified on-chain");
     const result = await mockVerifyPayment(signature, payload);
-    // ponytail: C2 — cache the verified record so /x402/settle can derive
-    // `amount` from the cache instead of trusting the request body.
-    if (result.valid && result.txHash) {
-      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
-        txHash: result.txHash,
-        amount: result.amount ?? payload.amount,
-        networkId: result.networkId ?? payload.networkId,
-        payee: payload.payee,
-        settledAt: 0,
-      });
-    }
+    cacheVerifiedRecord(payload, result);
     return result;
   }
 
@@ -993,29 +977,13 @@ export async function verifyPayment(
   // configured. Local viem-based verification is the default.
   if (QUICKNODE_X402_ENABLED) {
     const result = await quicknodeX402Verify(paymentSig);
-    if (result.valid && result.txHash) {
-      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
-        txHash: result.txHash,
-        amount: result.amount ?? payload.amount,
-        networkId: result.networkId ?? payload.networkId,
-        payee: payload.payee,
-        settledAt: 0,
-      });
-    }
+    cacheVerifiedRecord(payload, result);
     return result;
   }
 
   if (payload.scheme === "evm") {
     const result = await verifyEvmPayment(signature, authorization, payload);
-    if (result.valid && result.txHash) {
-      atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
-        txHash: result.txHash,
-        amount: result.amount ?? payload.amount,
-        networkId: result.networkId ?? payload.networkId,
-        payee: payload.payee,
-        settledAt: 0,
-      });
-    }
+    cacheVerifiedRecord(payload, result);
     return result;
   }
 
@@ -1405,26 +1373,46 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 
   // Look up the verified record from the in-memory cache. The cache is
   // populated by `/x402/verify` after a successful on-chain verification.
-  // If the cache has no entry for this txHash, the client never verified
-  // the payment — refuse to settle (the cache holds the canonical amount).
-  const cached = settlementCache.get(`${body.networkId}:${body.txHash}`);
-  if (!cached) {
-    return c.json(
-      {
-        error: {
-          message: "No verified payment on file for this txHash. Call /x402/verify first.",
-          type: "missing_verify",
-          code: "x402_verify_required",
-        },
-      },
-      400,
-    );
+  // If the cache has no entry for this txHash, fall back to the DB so that
+  // settlements survive server restarts (CRIT-4).
+  const cacheKey = `${body.networkId}:${body.txHash}`;
+  const cached = settlementCache.get(cacheKey);
+  if (cached) {
+    // Use settlePaymentAsync which persists the receipt to the DB.
+    const result = await settlePaymentAsync(body.txHash, cached.amount, cached.networkId, expectedPayee);
+    return c.json(result, result.settled ? 200 : 422);
   }
-  const settledAmount = cached.amount;
-  const settledNetworkId = cached.networkId;
 
-  const result = settlePayment(body.txHash, settledAmount, settledNetworkId, expectedPayee);
-  return c.json(result, result.settled ? 200 : 422);
+  // Cache miss — check the DB for an existing settlement.
+  const existingSettlement = await db
+    .select()
+    .from(settlements)
+    .where(and(eq(settlements.txHash, body.txHash), eq(settlements.networkId, body.networkId)))
+    .limit(1);
+  if (existingSettlement.length > 0) {
+    // Repopulate the cache and return the stored receipt.
+    atomicCacheSet(cacheKey, {
+      txHash: existingSettlement[0].txHash,
+      amount: existingSettlement[0].amount,
+      networkId: existingSettlement[0].networkId,
+      payee: existingSettlement[0].payee,
+      settledAt: existingSettlement[0].settledAt.getTime(),
+      receipt: existingSettlement[0].receipt,
+    });
+    return c.json({ settled: true, receipt: existingSettlement[0].receipt }, 200);
+  }
+
+  // No record anywhere — client must call /x402/verify first.
+  return c.json(
+    {
+      error: {
+        message: "No verified payment on file for this txHash. Call /x402/verify first.",
+        type: "missing_verify",
+        code: "x402_verify_required",
+      },
+    },
+    400,
+  );
 });
 
 x402Routes.post("/x402/pay-req-test",
@@ -1491,42 +1479,8 @@ x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
 });
 
-x402Routes.post("/v1/x402/proxy/chat/completions", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
-  // BUG-1: pin payee to server-configured merchant address; reject mismatches with 400.
-  const expectedPayee = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
-  const xPayment = c.req.header("X-PAYMENT");
-  if (expectedPayee && xPayment) {
-    let parsed: { payload?: { payee?: string; payTo?: string } };
-    try {
-      parsed = JSON.parse(xPayment) as { payload?: { payee?: string; payTo?: string } };
-    } catch {
-      // ponytail: malformed JSON now returns 400 (was 501) — it's a client error,
-      // not a "feature not implemented" condition.
-      return c.json(
-        { error: { message: "Invalid X-PAYMENT header: must be valid JSON", type: "invalid_payment" } },
-        400,
-      );
-    }
-    const declared = (parsed?.payload?.payee ?? parsed?.payload?.payTo ?? "").toLowerCase();
-    if (!declared || declared !== expectedPayee) {
-      return c.json(
-        { error: { message: "Invalid payee: payload does not match configured merchant address", type: "invalid_payee" } },
-        400,
-      );
-    }
-  }
-  return c.json(
-    {
-      error: {
-        message: "x402 direct proxy is not yet enabled. Use the credit-proxy flow via /v1/chat/completions with an API key, or call /v1/x402/quote to deposit credits first.",
-        type: "not_implemented",
-        code: "x402_proxy_pending",
-        docs: "https://github.com/anomalyco/oma#x402-payments",
-      },
-    },
-    501,
-  );
-});
+// NOTE: /v1/x402/proxy/chat/completions is implemented in crosschain.ts
+// (Houdini cross-chain flow, requires bearer auth + X-Houdini-Order-Id).
 
 // =============================================================================
 // x402 SPEC NOTE (post-2026-07-02 audit fix):

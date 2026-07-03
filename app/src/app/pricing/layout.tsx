@@ -12,15 +12,6 @@ export const metadata: Metadata = {
 		"pay per token",
 	],
 	alternates: { canonical: "/pricing" },
-	openGraph: {
-		title: "AI API Pricing | OMA AI",
-		description: `Pay per token, no subscriptions. Access ${MODEL_COUNT} AI models from $0.06/M tokens. Crypto payments supported.`,
-	},
-	twitter: {
-		card: "summary_large_image",
-		title: "AI API Pricing | OMA AI",
-		description: "Transparent pay-per-token pricing. No subscriptions.",
-	},
 };
 
 export default function PricingLayout({
