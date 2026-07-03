@@ -180,6 +180,7 @@ export const usageRecords = pgTable(
     index("idx_usage_records_provider").on(t.provider),
     index("idx_usage_records_analytics").on(t.createdAt, t.model, t.provider, t.costCents),
     index("idx_usage_user_created_model").on(t.userId, t.createdAt, t.model),
+    index("idx_usage_user_status_created").on(t.userId, t.status, t.createdAt),
   ]
 );
 
@@ -647,6 +648,7 @@ export const auditLogs = pgTable(
     index("idx_audit_logs_user_action").on(t.userId, t.action),
     index("idx_audit_logs_user_created").on(t.userId, t.createdAt),
     index("idx_audit_logs_user_action_created").on(t.userId, t.action, t.createdAt),
+    index("idx_audit_logs_action_created").on(t.action, t.createdAt),
   ]
 );
 

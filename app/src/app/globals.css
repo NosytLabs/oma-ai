@@ -118,6 +118,9 @@
 	--color-orange: #10b981;
 	--color-orange-dim: rgba(16, 185, 129, 0.18);
 
+	/* Accent foreground (text on accent background) */
+	--color-accent-fg: #0a0a0f;
+
 	/* Shadow tokens */
 	--shadow-accent-sm: 0 0 8px var(--color-accent-glow);
 
@@ -221,6 +224,9 @@
 	--color-emerald: #059669;
 	--color-red: #dc2626;
 	--color-blue: #2563eb;
+	/* Accent foreground (text on accent background) */
+	--color-accent-fg: #fafafa;
+
 	--color-accent-soft: rgba(5, 150, 105, 0.08);
 	--color-orange: #059669;
 	--color-orange-dim: rgba(5, 150, 105, 0.18);
@@ -492,7 +498,7 @@ h6 {
 .card {
 	background: var(--color-panel);
 	border: 1px solid var(--color-border);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 	padding: 1.5rem;
 	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -907,7 +913,7 @@ table {
 .border-gradient {
 	position: relative;
 	background: var(--color-panel);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 }
 
 .border-gradient::before {
@@ -1010,7 +1016,8 @@ table {
 	.aurora::after,
 	.border-gradient::before,
 	.float,
-	.pulse-ring {
+	.pulse-ring,
+	.gradient-text-accent {
 		animation: none;
 	}
 	.tilt-card:hover {

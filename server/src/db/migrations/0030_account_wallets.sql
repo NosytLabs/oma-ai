@@ -59,3 +59,7 @@ ALTER TYPE "public"."audit_action" ADD VALUE IF NOT EXISTS 'WALLET_ROTATED';
 ALTER TYPE "public"."audit_action" ADD VALUE IF NOT EXISTS 'ACCOUNT_NUMBER_ROTATED';
 --> statement-breakpoint
 ALTER TYPE "public"."audit_action" ADD VALUE IF NOT EXISTS 'ACCOUNT_NUMBER_RECOVERED';
+--> statement-breakpoint
+
+-- Also adds 'zerog' provider (merged from duplicate 0030_add_zerog_provider.sql)
+ALTER TYPE "public"."provider" ADD VALUE IF NOT EXISTS 'zerog';

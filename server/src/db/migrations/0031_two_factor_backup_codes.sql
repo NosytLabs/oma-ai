@@ -1,4 +1,15 @@
--- Migration 0031: Two-Factor Backup Codes
+-- Migration 0031: Two-Factor Backup Codes + Neon Auth Columns
+--
+-- Part A: Neon Auth (merged from duplicate 0031_add_neon_auth_columns.sql)
+-- Adds columns needed for Neon Auth linking.
+-- NEON_AUTH_URL is not currently set so this remains dormant until configured.
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "neon_auth_user_id" text;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "neon_auth_linked_at" timestamptz;
+CREATE INDEX IF NOT EXISTS "idx_users_neon_auth_user_id" ON "users" ("neon_auth_user_id");
+--> statement-breakpoint
+
+--
+-- Part B: Two-Factor Backup Codes
 --
 -- 2FA TOTP was added in an earlier migration (the `users.two_factor_secret`
 -- and `users.two_factor_enabled` columns). This migration adds the recovery

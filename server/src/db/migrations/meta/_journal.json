@@ -43,6 +43,27 @@
       "when": 1781470800000,
       "tag": "0028_api_key_model_allowlist",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1781500000000,
+      "tag": "0029_cheerful_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1781550000000,
+      "tag": "0030_account_wallets",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1781600000000,
+      "tag": "0031_two_factor_backup_codes",
+      "breakpoints": true
     }
   ]
 }
