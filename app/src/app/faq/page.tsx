@@ -1,7 +1,15 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MODEL_COUNT } from "@/lib/models-data";
+import { MODEL_COUNT, MODELS, formatPricePerMillion } from "@/lib/models-data";
+
+// Derive actual price range from the real model catalog
+const PRICE_RANGE_INPUT = (() => {
+	const prices = MODELS.map((m) => m.inputPricePer1M);
+	const min = Math.min(...prices);
+	const max = Math.max(...prices);
+	return { min: formatPricePerMillion(min), max: formatPricePerMillion(max) };
+})();
 import { FAQClient, type FAQGroup } from "./FAQClient";
 
 export const metadata: Metadata = {
@@ -56,7 +64,7 @@ const GROUPS: FAQGroup[] = [
 			{
 				iconName: "Coins",
 				q: "How much does it cost?",
-				a: "Pay per request. From about $0.06 per million input tokens for the smallest models up to $15.00 per million for Claude Opus 4. The full price list is on the /pricing page. A small markup over Venice retail covers the gateway, the metering, and the x402 settlement.",
+				a: `Pay per request. From about ${PRICE_RANGE_INPUT.min} per million input tokens for the smallest models up to ${PRICE_RANGE_INPUT.max} per million for the largest frontier models. The full price list is on the /pricing page. A small markup over Venice retail covers the gateway, the metering, and the x402 settlement.`,
 			},
 			{
 				iconName: "Receipt",

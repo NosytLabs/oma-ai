@@ -13,6 +13,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
+import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+
+// Derive actual price range from the real model catalog
+const PRICE_RANGE_INPUT = (() => {
+	const prices = MODELS.map((m) => m.inputPricePer1M);
+	const min = Math.min(...prices);
+	const max = Math.max(...prices);
+	return `${formatPricePerMillion(min)} – ${formatPricePerMillion(max)}`;
+})();
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -124,7 +133,7 @@ export function Hero({ modelCount }: HeroProps) {
 							<span className="mx-2 text-border-bright">·</span>
 							<span className="text-text-secondary">No prompts logged or trained on</span>
 							<span className="mx-2 text-border-bright">·</span>
-							<span className="text-text-secondary">From $0.06 – $3.00 / 1M tokens</span>
+							<span className="text-text-secondary">From {PRICE_RANGE_INPUT} / 1M tokens</span>
 						</span>
 					</m.div>
 					</m.div>

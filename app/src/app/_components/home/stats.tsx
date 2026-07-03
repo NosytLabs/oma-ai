@@ -14,6 +14,15 @@
 
 import { Reveal } from "@/app/_components/home/reveal";
 import Link from "next/link";
+import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+
+// Derive actual price range from the real model catalog
+const PRICE_RANGE_INPUT = (() => {
+	const prices = MODELS.map((m) => m.inputPricePer1M);
+	const min = Math.min(...prices);
+	const max = Math.max(...prices);
+	return { min: formatPricePerMillion(min), max: formatPricePerMillion(max) };
+})();
 
 export interface StatsProps {
 	modelCount: number;
@@ -44,8 +53,8 @@ export function Stats({ modelCount }: StatsProps) {
 				<Reveal>
 					<p className="mt-6 text-center text-sm sm:text-base text-text-secondary max-w-2xl mx-auto">
 						Input pricing ranges from{" "}
-						<span className="font-mono text-text-primary">$0.06</span> to{" "}
-						<span className="font-mono text-text-primary">$15.00</span> per
+						<span className="font-mono text-text-primary">{PRICE_RANGE_INPUT.min}</span> to{" "}
+						<span className="font-mono text-text-primary">{PRICE_RANGE_INPUT.max}</span> per
 						1M tokens, depending on model tier.{" "}
 						<Link
 							href="/pricing"
