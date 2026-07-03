@@ -194,9 +194,11 @@ export function Footer() {
 
 				<div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
 					<p suppressHydrationWarning>
-						© {CURRENT_YEAR} OMA AI · base mainnet · build{" "}
-						{process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev"} · last
-						deploy {LAST_DEPLOY}
+						© {CURRENT_YEAR} OMA AI · base mainnet
+						{process.env.NEXT_PUBLIC_BUILD_SHA
+							? ` · build ${process.env.NEXT_PUBLIC_BUILD_SHA.slice(0, 7)}`
+							: ""}{" "}
+						· last deploy {LAST_DEPLOY}
 					</p>
 				</div>
 			</div>

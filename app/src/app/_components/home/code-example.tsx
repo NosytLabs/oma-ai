@@ -10,9 +10,13 @@ import { useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { MODEL_COUNT } from "@/lib/models-data";
 
-const EXAMPLE_CODE = `import OpenAI from "openai";
+export interface CodeExampleProps {
+	modelCount: number;
+}
+
+function buildExampleCode(modelCount: number) {
+	return `import OpenAI from "openai";
 
 const client = new OpenAI({
   apiKey: process.env.OMA_KEY,        // one key for every model
@@ -20,7 +24,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "llama-3.3-70b",            // or any of ${MODEL_COUNT}+ models
+  model: "llama-3.3-70b",            // or any of ${modelCount}+ models
   messages: [
     { role: "system", content: "You are concise." },
     { role: "user",   content: "Ship a minimal RAG agent in 3 lines." }
@@ -29,8 +33,9 @@ const response = await client.chat.completions.create({
 
 console.log(response.choices[0].message.content);
 // → billed in USDC, settled on Base, no subscription`;
+}
 
-export function CodeExample() {
+export function CodeExample({ modelCount }: CodeExampleProps) {
 	return (
 		<section
 			aria-labelledby="code-example-headline"
@@ -53,7 +58,7 @@ export function CodeExample() {
 				</Reveal>
 
 				<Reveal className="mt-12">
-					<TerminalExample code={EXAMPLE_CODE} />
+					<TerminalExample code={buildExampleCode(modelCount)} />
 				</Reveal>
 			</div>
 		</section>

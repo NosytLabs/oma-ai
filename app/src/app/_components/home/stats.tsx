@@ -1,14 +1,11 @@
-"use client";
-
 /**
  * Stats — section 6 of the homepage.
  *
- * Honest, non-numeric credibility block. The previous version displayed
- * four fabricated metrics (uptime / latency / placeholder counts) with
- * a visible "Figures are placeholders" disclaimer — that is no longer
- * shipped. Every figure here is sourced from real data:
+ * Honest, non-numeric credibility block. Every figure is sourced from
+ * real data:
  *
- *   - Model count      → @/lib/models-data (MODELS.length)
+ *   - Model count      → passed as prop from server (avoids client import
+ *                        of server/models.json which causes hydration mismatch)
  *   - API surface      → one OpenAI-compatible endpoint
  *   - Price range      → min and max inputPricePer1M in MODELS
  *
@@ -16,10 +13,13 @@
  */
 
 import { Reveal } from "@/app/_components/home/reveal";
-import { MODEL_COUNT } from "@/lib/models-data";
 import Link from "next/link";
 
-export function Stats() {
+export interface StatsProps {
+	modelCount: number;
+}
+
+export function Stats({ modelCount }: StatsProps) {
 	return (
 		<section
 			aria-labelledby="stats-headline"
@@ -37,7 +37,7 @@ export function Stats() {
 
 				<Reveal>
 					<p className="text-center text-2xl sm:text-3xl text-text-bright font-medium tracking-tight">
-						{MODEL_COUNT}+ models · 1 OpenAI-compatible API · Pay per request
+						{modelCount}+ models · 1 OpenAI-compatible API · Pay per request
 					</p>
 				</Reveal>
 

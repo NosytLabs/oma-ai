@@ -26,8 +26,8 @@ export function HomeView({ modelCount }: HomeViewProps) {
 			<TrustStrip />
 			<CapabilitiesGrid />
 			<HowItWorks />
-			<CodeExample />
-			<Stats />
+			<CodeExample modelCount={modelCount} />
+			<Stats modelCount={modelCount} />
 			<X402Banner />
 			<FinalCTA />
 		</div>

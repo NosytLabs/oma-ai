@@ -111,24 +111,22 @@ export function Hero({ modelCount }: HeroProps) {
 							</Button>
 						</m.div>
 
-						<m.div
-							className="mt-5 flex items-center gap-2 text-xs text-text-muted font-mono"
-							variants={child}
-							suppressHydrationWarning
-						>
-							<span className="inline-block h-1.5 w-1.5 rounded-full bg-accent pulse-ring" />
-							<span>
-								<span className="text-text-secondary">No credit card</span>
-								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">$0.05 free credit on signup</span>
-								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">x402 pay-per-request</span>
-								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">No prompts logged or trained on</span>
-								<span className="mx-2 text-border-bright">·</span>
-								<span className="text-text-secondary">From $0.06 – $15.00 / 1M tokens</span>
-							</span>
-						</m.div>
+					<m.div
+						className="mt-5 flex items-center gap-2 text-xs text-text-muted font-mono"
+						variants={child}
+						suppressHydrationWarning
+					>
+						<span className="inline-block h-1.5 w-1.5 rounded-full bg-accent pulse-ring" />
+						<span suppressHydrationWarning>
+							<span className="text-text-secondary">No credit card</span>
+							<span className="mx-2 text-border-bright">·</span>
+							<span className="text-text-secondary">x402 pay-per-request</span>
+							<span className="mx-2 text-border-bright">·</span>
+							<span className="text-text-secondary">No prompts logged or trained on</span>
+							<span className="mx-2 text-border-bright">·</span>
+							<span className="text-text-secondary">From $0.06 – $3.00 / 1M tokens</span>
+						</span>
+					</m.div>
 					</m.div>
 
 					<m.div
