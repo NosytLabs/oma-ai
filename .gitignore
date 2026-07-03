@@ -40,6 +40,9 @@ app/audit_site.py
 app/audit_ux.py
 app/dev.err
 audit-screenshots/
+screenshots/visual-audit-*/
+screenshots/*.txt
+.audit/
 .opencode/audit-*/
 public/
 scripts/remove-duplicate-hooks.ts
