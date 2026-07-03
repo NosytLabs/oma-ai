@@ -62,7 +62,7 @@ describe.skipIf(!ENABLED)('Live inference (gated on OMA_RUN_LIVE=1)', () => {
     expect(body.choices![0].message?.role).toBe('assistant')
     expect(typeof body.choices![0].message?.content).toBe('string')
     expect(body.usage?.total_tokens).toBeGreaterThan(0)
-  }, { timeout: 30_000 })
+  }, 30_000)
 
   it(`${provider}: server records usage in the local DB`, async () => {
     if (!apiKey || !adminKey) {
@@ -93,5 +93,5 @@ describe.skipIf(!ENABLED)('Live inference (gated on OMA_RUN_LIVE=1)', () => {
     expect(res.status).toBeLessThan(300)
     const body = (await res.json()) as { usage?: { total_tokens?: number } }
     expect(body.usage?.total_tokens).toBeGreaterThan(0)
-  }, { timeout: 30_000 })
+  }, 30_000)
 })

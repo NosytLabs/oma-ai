@@ -16,9 +16,6 @@ permissions:
 
 env:
   HUSKY: 0
-  # Belt-and-suspenders: pin to secure Node majors only. Bump when GitHub
-  # Actions drops support for the current Node version.
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
 
 jobs:
   lint-typecheck:
