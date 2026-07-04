@@ -34,12 +34,12 @@ export async function verifyUsdcOnChain(
 ): Promise<UsdcVerifyResult> {
   const hash = (txHash.startsWith("0x") ? txHash : `0x${txHash}`) as Hash;
   const treasury = config.TREASURY_BASE_ADDRESS;
-  const expectedRawAmount = BigInt(Math.round(claimedAmountUsd * 10 ** USDC_DECIMALS));
+  const expectedRawAmount = BigInt(Math.round(claimedAmountUsd)) * 1_000_000n;
 
   async function attempt(rpcUrl: string): Promise<UsdcVerifyResult> {
     const client = createPublicClient({ chain: base, transport: http(rpcUrl) });
 
-    let receipt;
+    let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null = null;
     try {
       receipt = await client.getTransactionReceipt({ hash });
     } catch (err) {
@@ -65,7 +65,7 @@ export async function verifyUsdcOnChain(
       return { valid: false, error: "Missing USDC transfer calldata" };
     }
 
-    let decoded;
+    let decoded: ReturnType<typeof decodeFunctionData<typeof USDC_TRANSFER_ABI>> | null = null;
     try {
       decoded = decodeFunctionData({ abi: USDC_TRANSFER_ABI, data: tx.input as `0x${string}` });
     } catch (err) {

@@ -179,7 +179,7 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
   // the local 2FA gate because Better Auth enforces its own session
   // policies server-side.
   if (isNeonAuthConfigured()) {
-    let neonAuth;
+    let neonAuth: Awaited<ReturnType<typeof verifyNeonAuthToken>> | null = null;
     try {
       neonAuth = await verifyNeonAuthToken(token);
     } catch (err) {

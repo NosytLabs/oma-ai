@@ -241,7 +241,7 @@ const ADMIN_WALLET_ADDRESSES_SET: Set<string> = new Set(
 );
 export { ADMIN_WALLET_ADDRESSES_SET };
 
-const validProductionEnvironments = ["production", "staging", "prod", "preview"];
+const validProductionEnvironments: string[] = ["production", "staging", "prod", "preview"];
 const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
 
 if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
@@ -251,6 +251,21 @@ if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
 
 if (config.FACILITATOR_MODE === "mock" && isProductionEnv) {
   throw new Error("FATAL: FACILITATOR_MODE=mock is not allowed in production or staging environments. Set FACILITATOR_MODE=live or run in development.");
+}
+
+if (config.FACILITATOR_MODE === "live" && isProductionEnv) {
+  if (config.X402_FACILITATOR_PROVIDER === "coinbase-cdp" && !config.FACILITATOR_PRIVATE_KEY) {
+    throw new Error(
+      "FATAL: FACILITATOR_MODE=live with X402_FACILITATOR_PROVIDER=coinbase-cdp requires FACILITATOR_PRIVATE_KEY to be set. " +
+      "Set a 32-byte hex private key (0x-prefixed, 64 hex chars) or switch X402_FACILITATOR_PROVIDER=quicknode."
+    );
+  }
+  if (config.X402_FACILITATOR_PROVIDER === "quicknode" && (!config.QUICKNODE_X402_URL || !config.QUICKNODE_X402_API_KEY)) {
+    throw new Error(
+      "FATAL: X402_FACILITATOR_PROVIDER=quicknode requires QUICKNODE_X402_URL and QUICKNODE_X402_API_KEY to be set. " +
+      "Both are required when delegating x402 settlement to QuickNode."
+    );
+  }
 }
 
 if (isProductionEnv) {
@@ -269,6 +284,10 @@ if (isProductionEnv && INSECURE_DEFAULTS.includes(config.JWT_SECRET)) {
 if (isProductionEnv && config.JWT_SECRET.length < 40) {
   console.error("[FATAL] JWT_SECRET must be at least 40 characters in production for adequate entropy.");
   process.exit(1);
+}
+
+if (isProductionEnv && config.FACILITATOR_MODE === "live" && !config.SURPLUS_WALLET_PRIVATE_KEY) {
+  console.warn("[oma-config] WARNING: FACILITATOR_MODE=live without SURPLUS_WALLET_PRIVATE_KEY disables the surplus fallback path. Set a Surplus settlement key or the fallback will be unavailable.");
 }
 
 if (isProductionEnv && !config.RECEIPT_HMAC_SECRET) {

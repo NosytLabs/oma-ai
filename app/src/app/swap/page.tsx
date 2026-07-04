@@ -1003,7 +1003,7 @@ function DepositAddressCard({
 			</div>
 
 			{/* Expected Output */}
-			<div className="flex items-center justify-between rounded-xl border p-4 border-border bg-bg-secondary">
+			<div className="flex items-center justify-between rounded-xl border p-4 border-border bg-surface-elevated">
 				<div>
 					<div className="text-xs text-text-secondary">You will receive</div>
 					<div className="flex items-center gap-2 mt-1">

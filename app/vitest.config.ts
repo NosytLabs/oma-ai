@@ -10,6 +10,15 @@ export default defineConfig({
 		globals: true,
 		include: ["src/**/*.test.{ts,tsx}"],
 		exclude: ["e2e/**", "tests/**", "node_modules/**", ".next/**"],
+		onConsoleLog(log: string, type: string) {
+			// Suppress framer-motion React.Fragment className warnings in jsdom
+			if (
+				type === "stderr" &&
+				log.includes("Invalid prop `className` supplied to `React.Fragment`")
+			) {
+				return false;
+			}
+		},
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "lcov", "json-summary"],

@@ -45,28 +45,29 @@ auditLogsRoutes.get("/v1/admin/audit-logs", async (c) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const logsResult = await db
-      .select({
-        id: auditLogs.id,
-        userId: auditLogs.userId,
-        action: auditLogs.action,
-        resource: auditLogs.resource,
-        resourceId: auditLogs.resourceId,
-        ipAddress: auditLogs.ipAddress,
-        userAgent: auditLogs.userAgent,
-        metadata: auditLogs.metadata,
-        createdAt: auditLogs.createdAt,
-      })
-      .from(auditLogs)
-      .where(whereClause)
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    const totalResult = await db
-      .select({ count: count() })
-      .from(auditLogs)
-      .where(whereClause);
+    const [logsResult, totalResult] = await Promise.all([
+      db
+        .select({
+          id: auditLogs.id,
+          userId: auditLogs.userId,
+          action: auditLogs.action,
+          resource: auditLogs.resource,
+          resourceId: auditLogs.resourceId,
+          ipAddress: auditLogs.ipAddress,
+          userAgent: auditLogs.userAgent,
+          metadata: auditLogs.metadata,
+          createdAt: auditLogs.createdAt,
+        })
+        .from(auditLogs)
+        .where(whereClause)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: count() })
+        .from(auditLogs)
+        .where(whereClause),
+    ]);
 
     const logsWithParsedMetadata = logsResult.map((log) => ({
       ...log,

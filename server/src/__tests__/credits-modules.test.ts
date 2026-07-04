@@ -82,6 +82,7 @@ const { mockConfig } = vi.hoisted(() => ({
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',
     OMA_PRICE_OVERRIDE: undefined as number | undefined,
+    AFFINITY_TTL_MS: 300_000,
   },
 }))
 

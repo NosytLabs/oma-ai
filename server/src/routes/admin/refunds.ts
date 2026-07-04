@@ -61,27 +61,28 @@ adminRefundRoutes.get("/admin/refunds", async (c) => {
   }
 
   try {
-    const rows = await db.select({
-      id: refundRequests.id,
-      userId: refundRequests.userId,
-      depositId: refundRequests.depositId,
-      amountCents: refundRequests.amountCents,
-      reason: refundRequests.reason,
-      status: refundRequests.status,
-      notes: refundRequests.notes,
-      decidedBy: refundRequests.decidedBy,
-      decidedAt: refundRequests.decidedAt,
-      createdAt: refundRequests.createdAt,
-    })
-    .from(refundRequests)
-    .where(eq(refundRequests.status, status as "pending" | "granted" | "denied"))
-    .orderBy(desc(refundRequests.createdAt))
-    .limit(limit)
-    .offset(offset);
-
-    const [{ count: total }] = await db.select({ count: sql<number>`count(*)::int` })
+    const [rows, [{ count: total }]] = await Promise.all([
+      db.select({
+        id: refundRequests.id,
+        userId: refundRequests.userId,
+        depositId: refundRequests.depositId,
+        amountCents: refundRequests.amountCents,
+        reason: refundRequests.reason,
+        status: refundRequests.status,
+        notes: refundRequests.notes,
+        decidedBy: refundRequests.decidedBy,
+        decidedAt: refundRequests.decidedAt,
+        createdAt: refundRequests.createdAt,
+      })
       .from(refundRequests)
-      .where(eq(refundRequests.status, status as "pending" | "granted" | "denied"));
+      .where(eq(refundRequests.status, status as "pending" | "granted" | "denied"))
+      .orderBy(desc(refundRequests.createdAt))
+      .limit(limit)
+      .offset(offset),
+      db.select({ count: sql<number>`count(*)::int` })
+        .from(refundRequests)
+        .where(eq(refundRequests.status, status as "pending" | "granted" | "denied")),
+    ]);
 
     return c.json({
       status,

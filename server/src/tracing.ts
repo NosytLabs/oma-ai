@@ -8,7 +8,6 @@ import { RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 
-// Correlation ID generator
 const idGenerator = new RandomIdGenerator();
 
 /**
@@ -109,40 +108,33 @@ export function setErrorAttributes(
   }
 }
 
-// Trace exporter (OTLP HTTP)
 const traceExporter = new OTLPTraceExporter({
   url: config.OTEL_EXPORTER_OTLP_ENDPOINT ?? "http://localhost:4318/v1/traces",
 });
 
 // Initialize SDK before other imports
 const sdk = new NodeSDK({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: "oma-server",
-    [ATTR_SERVICE_VERSION]: "0.1.0",
-    [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.NODE_ENV,
-  }),
-  traceExporter,
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      "@opentelemetry/instrumentation-fs": { enabled: false },
-      "@opentelemetry/instrumentation-http": {
-        enabled: true,
-        ignoreIncomingRequestHook: (req) => {
-          return req.url === "/health";
-        },
-      },
-      "@opentelemetry/instrumentation-express": { enabled: true },
-    }),
-  ],
-});
+   resource: resourceFromAttributes({
+     [ATTR_SERVICE_NAME]: "oma-server",
+     [ATTR_SERVICE_VERSION]: "0.1.0",
+     [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.NODE_ENV,
+   }),
+   traceExporter,
+   instrumentations: [
+     getNodeAutoInstrumentations({
+       "@opentelemetry/instrumentation-fs": { enabled: false },
+       "@opentelemetry/instrumentation-http": {
+         enabled: true,
+         ignoreIncomingRequestHook: (req) => req.url === "/health",
+       },
+       "@opentelemetry/instrumentation-express": { enabled: true },
+     }),
+   ],
+ });
 
-// Start the SDK
-if (config.NODE_ENV !== "test") {
-  sdk.start();
-}
+ if (config.NODE_ENV !== "test") sdk.start();
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
+ process.on("SIGTERM", async () => {
   try {
     await sdk.shutdown();
     logger.info("[otel] OpenTelemetry SDK shut down successfully");

@@ -53,7 +53,10 @@ services:
       - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL:-}
       - TINYFISH_API_KEY=${TINYFISH_API_KEY:-}
       # Payment & wallet
-      - TREASURY_PRIVATE_KEY=${TREASURY_PRIVATE_KEY:-}
+      # SURPLUS_WALLET_PRIVATE_KEY — facilitator key for Surplus provider settlement.
+      # Only needed when Surplus is enabled. The server uses FACILITATOR_PRIVATE_KEY
+      # as its primary signing key (see server/src/config.ts). Remove TREASURY_PRIVATE_KEY:
+      # this var was never read by the server and is not defined in the config schema.
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY:-}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET:-}
       - OMA_API_KEY=${OMA_API_KEY:-}

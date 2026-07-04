@@ -512,10 +512,7 @@ describe('x402 Facilitator – paymentMiddleware', () => {
 
     const [body, status] = (ctx.json as Mock).mock.calls[0]
     expect(status).toBe(402)
-    // C2: strict-equality check produces "Payment amount mismatch" rather
-    // than "Insufficient payment"; the old < comparison accepted
-    // overpayment, which let client-supplied amounts stamp the receipt.
-    expect(body.error.message).toMatch(/amount mismatch/)
+    expect(body.error.message).toMatch(/Insufficient payment/)
   })
 
   it('rejects invalid JSON in PAYMENT-SIGNATURE', async () => {

@@ -53,7 +53,7 @@ export const users = pgTable("users", {
   neonAuthUserId: text("neon_auth_user_id"),
   neonAuthLinkedAt: timestamp("neon_auth_linked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 }, (t) => [
   index("idx_users_address").on(t.address),
   index("idx_users_evm_address").on(t.evmAddress),
@@ -143,7 +143,7 @@ export const creditBalances = pgTable("credit_balances", {
   totalDepositedCents: numeric("total_deposited_cents", { precision: 18, scale: 2 }).default("0").notNull(),
   totalUsedCents: numeric("total_used_cents", { precision: 18, scale: 2 }).default("0").notNull(),
   lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 });
 
 export const usageRecords = pgTable(
@@ -219,27 +219,7 @@ amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
   ]
 );
 
-export const creditTransfers = pgTable(
-  "credit_transfers",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    fromUserId: uuid("from_user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    toUserId: uuid("to_user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    amountDollars: numeric("amount_dollars", { precision: 18, scale: 2 }).notNull(),
-    status: text("status").default("pending").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("idx_credit_transfers_from").on(t.fromUserId),
-    index("idx_credit_transfers_to").on(t.toUserId),
-    index("idx_credit_transfers_from_to").on(t.fromUserId, t.toUserId),
-  ]
-);
+
 
 export const autoReloadSettings = pgTable(
   "auto_reload_settings",
@@ -253,7 +233,7 @@ export const autoReloadSettings = pgTable(
     spendLimitCents: numeric("spend_limit_cents", { precision: 18, scale: 2 }).default("100000").notNull(),
     paymentMethod: text("payment_method").default("usdc"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   }
 );
 
@@ -265,8 +245,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   creditBalances: many(creditBalances),
   usageRecords: many(usageRecords),
   creditBatches: many(creditBatches),
-  creditTransfersFrom: many(creditTransfers, { relationName: "fromUser" }),
-  creditTransfersTo: many(creditTransfers, { relationName: "toUser" }),
   autoReloadSettings: many(autoReloadSettings),
   teamMemberships: many(teamMembers),
   budgetAlerts: many(budgetAlerts),
@@ -345,27 +323,13 @@ export const creditBatchesRelations = relations(creditBatches, ({ one }) => ({
   deposit: one(deposits, { fields: [creditBatches.depositId], references: [deposits.id] }),
 }));
 
-export const creditTransfersRelations = relations(creditTransfers, ({ one }) => ({
-  fromUser: one(users, { fields: [creditTransfers.fromUserId], references: [users.id], relationName: "fromUser" }),
-  toUser: one(users, { fields: [creditTransfers.toUserId], references: [users.id], relationName: "toUser" }),
-}));
+
 
 export const autoReloadSettingsRelations = relations(autoReloadSettings, ({ one }) => ({
   user: one(users, { fields: [autoReloadSettings.userId], references: [users.id] }),
 }));
 
-export const oraclePrices = pgTable(
-  "oracle_prices",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    source: text("source").notNull(),
-    priceUsd: numeric("price_usd", { precision: 18, scale: 8 }).notNull(),
-    twap30m: numeric("twap_30m", { precision: 18, scale: 8 }),
-    change24h: numeric("change_24h", { precision: 8, scale: 4 }),
-    capturedAt: timestamp("captured_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [index("idx_oracle_source").on(t.source), index("idx_oracle_captured").on(t.capturedAt)]
-);
+
 
 export const stakingTiers = pgTable(
   "staking_tiers",
@@ -377,7 +341,7 @@ export const stakingTiers = pgTable(
     discountPercent: integer("discount_percent").default(0).notNull(),
     cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   }
 );
 
@@ -388,7 +352,7 @@ export const teams = pgTable("teams", {
   name: text("name").notNull(),
   billingEmail: text("billing_email"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 });
 
 export const teamMembers = pgTable(
@@ -425,7 +389,7 @@ export const ssoConnections = pgTable(
     domain: text("domain").notNull().unique(),
     metadata: text("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   },
   (t) => [
     index("idx_sso_connections_team").on(t.teamId),
@@ -477,7 +441,7 @@ export const budgetAlerts = pgTable(
     weeklyLimitCents: numeric("weekly_limit_cents", { precision: 18, scale: 2 }),
     monthlyLimitCents: numeric("monthly_limit_cents", { precision: 18, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   },
   (t) => [
     index("idx_budget_alerts_user").on(t.userId),
@@ -528,7 +492,7 @@ export const plans = pgTable("plans", {
   credits: integer("credits").notNull(),
   features: text("features").notNull().default("[]"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 });
 
 export const subscriptions = pgTable(
@@ -546,7 +510,7 @@ export const subscriptions = pgTable(
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   },
   (t) => [
     index("idx_subscriptions_user").on(t.userId),
@@ -667,7 +631,7 @@ export const adminConfig = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     key: text("key").notNull().unique(),
     value: text("value").notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   },
   (t) => [index("idx_admin_config_key").on(t.key)]
 );

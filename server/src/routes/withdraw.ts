@@ -133,14 +133,16 @@ withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, rateLimit({ window
 
   // M5: hardcoded fees moved to config.ts (env-tunable)
   const protocolFeePercent = config.WITHDRAW_PROTOCOL_FEE_PERCENT / 100; // 0.1% → 0.001
-  const protocolFee = amount * protocolFeePercent;
+  // Use integer cents arithmetic to avoid floating-point rounding errors, then
+  // convert back to dollars for the response (matching execution handler math)
+  const protocolFeeDollars = Math.round(amountCents * protocolFeePercent) / 100;
   const networkFeeEstimate = config.WITHDRAW_NETWORK_FEE_ESTIMATE_USD;
-  const netAmount = amount - protocolFee - networkFeeEstimate;
+  const netAmount = amount - protocolFeeDollars - networkFeeEstimate;
 
   return c.json({
     amount: amount,
     netAmount: Math.max(0, netAmount),
-    protocolFee: protocolFee,
+    protocolFee: protocolFeeDollars,
     networkFee: networkFeeEstimate,
     toAddress,
     chainId,
@@ -149,7 +151,7 @@ withdrawalRoutes.post("/v1/withdraw/usdc/quote", sessionAuth, rateLimit({ window
   });
 });
 
-withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
+withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
   const userId = c.get("userId");
   const parsed = withdrawalRequestSchema.safeParse(await c.req.json());
   if (!parsed.success) {
@@ -160,6 +162,10 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, async (c) => {
   const balance = await getBalance(userId);
   const balanceCents = parseInt(balance.balanceCents, 10);
   const amountCents = Math.round(amount * 100);
+  // Enforce integer cents upper bound: $100,000 max (10M cents)
+  if (amountCents > 10_000_000) {
+    return c.json({ error: { message: "Withdrawal amount exceeds maximum", type: "validation_error" } }, 400);
+  }
 
   if (balanceCents < amountCents) {
     return c.json({
@@ -370,7 +376,7 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
   // Allow a 1% tolerance to absorb rounding by the sender's client/wallet.
   const tolerance = requiredValue / 100n;
 
-  let receipt;
+  let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null = null;
   try {
     receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
   } catch (err) {
@@ -416,7 +422,7 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
       txHash,
       completedAt: new Date(),
     })
-    .where(eq(withdrawals.id, withdrawalId));
+    .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.userId, userId)));
 
   return c.json({ status: "completed", txHash });
 });

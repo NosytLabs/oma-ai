@@ -57,8 +57,20 @@ export function Reveal({
 		transition: delay ? { delay } : undefined,
 	};
 
+	// framer-motion v12 can internally render as Fragment when animation
+	// state is active, which breaks `className` (Fragments only accept `key`
+	// and `children`). Keep className off the motion tag; wrap in a div when
+	// one is needed.
+	if (className) {
+		return (
+			<MotionTag {...motionProps}>
+				<div className={className}>{children}</div>
+			</MotionTag>
+		);
+	}
+
 	return (
-		<MotionTag className={className} {...motionProps}>
+		<MotionTag {...motionProps}>
 			{children}
 		</MotionTag>
 	);
@@ -110,9 +122,21 @@ export function RevealStagger({
 		return <Tag className={className}>{children}</Tag>;
 	}
 
+	if (className) {
+		return (
+			<MotionTag
+				variants={staggerParent}
+				initial="hidden"
+				whileInView="show"
+				viewport={{ once, amount }}
+			>
+				<div className={className}>{children}</div>
+			</MotionTag>
+		);
+	}
+
 	return (
 		<MotionTag
-			className={className}
 			variants={staggerParent}
 			initial="hidden"
 			whileInView="show"

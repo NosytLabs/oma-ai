@@ -92,6 +92,246 @@ services:
       - key: NODE_OPTIONS
         value: --max-old-space-size=512
 
+      # =========================================================================
+      # HOUDINI SWAP CONFIGURATION (required for cross-chain on/off ramps)
+      # =========================================================================
+      - key: HOUDINI_API_KEY
+        sync: false  # Houdini partner API key
+      - key: HOUDINI_API_SECRET
+        sync: false  # Houdini partner API secret
+      - key: HOUDINI_PARTNER_ID
+        sync: false  # Houdini partner ID
+      - key: HOUDINI_WEBHOOK_SECRET
+        sync: false  # For webhook signature verification
+      - key: HOUDINI_ADDRESS_TO
+        sync: false  # Recipient address for Houdini swaps (0x...)
+      - key: HOUDINI_API_URL
+        value: https://api-partner.houdiniswap.com/v2
+      - key: HOUDINI_WS_URL
+        value: wss://partner-api.houdiniswap.com/v2/ws
+
+      # =========================================================================
+      # ADDITIONAL API KEYS
+      # =========================================================================
+      - key: ZERO_G_API_KEY
+        sync: false  # 0G.ai decentralized inference (optional)
+      - key: HELIUS_API_KEY
+        sync: false  # Helius RPC / webhooks
+      - key: ANTSEED_PROXY_URL
+        sync: false  # AntSeed proxy URL (not an API key)
+      - key: QUICKNODE_API_KEY
+        sync: false  # QuickNode RPC access
+
+      # =========================================================================
+      # CHAIN RPC URLs
+      # =========================================================================
+      - key: CHAIN_RPC_URL
+        sync: false  # Base mainnet RPC (e.g. https://base-rpc.publicnode.com)
+      - key: CHAIN_RPC_URL_FALLBACK
+        sync: false
+      - key: QUICKNODE_RPC_URL
+        sync: false  # QuickNode Base mainnet endpoint
+      - key: QUICKNODE_RPC_URL_FALLBACK
+        sync: false
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: SOLANA_RPC_URL_FALLBACK
+        sync: false
+
+      # =========================================================================
+      # WALLET & TREASURY ADDRESSES
+      # =========================================================================
+      - key: FACILITATOR_PRIVATE_KEY
+        sync: false  # Hex-encoded private key for x402 settlement (0x...)
+      - key: TREASURY_SOLANA_ADDRESS
+        sync: false  # Solana treasury address
+      - key: TREASURY_BASE_ADDRESS
+        sync: false  # Base treasury address (0x...)
+      - key: PRIMARY_DOMAIN
+        value: oma.ai
+      - key: PUBLIC_API_URL
+        value: https://api.oma-ai.com
+
+      # =========================================================================
+      # WEBHOOK & HMAC SECRETS
+      # =========================================================================
+      - key: ONRAMP_WEBHOOK_SECRET
+        sync: false  # Circle Onramp webhook verification
+      - key: RECEIPT_HMAC_SECRET
+        generateValue: true  # HMAC secret for receipt signing
+
+      # =========================================================================
+      # DEBUG & RELOAD SETTINGS
+      # =========================================================================
+      - key: DEBUG_STREAM
+        value: "false"
+      - key: AUTO_RELOAD_THRESHOLD
+        value: "50000"
+      - key: AUTO_RELOAD_AMOUNT
+        value: "1000000"
+      - key: AUTO_RELOAD_SPEND_LIMIT
+        value: "1000000"
+      - key: OMA_PRICE_OVERRIDE
+        sync: false  # Override OMA price per token
+
+      # =========================================================================
+      # SPEND LIMITS
+      # =========================================================================
+      - key: SPEND_LIMIT_DAILY_CENTS
+        value: "10000"  # $100/day default
+
+      # =========================================================================
+      # CREDIT SYSTEM
+      # =========================================================================
+      - key: CREDIT_VALUE_PER_DOLLAR
+        value: "1"
+      - key: CREDIT_PRICE_PER_TOKEN
+        value: "0.000001"
+      - key: CREDIT_EXPIRY_DAYS
+        value: "90"
+      - key: CREDIT_BATCH_EXPIRY_DAYS
+        value: "90"
+      - key: DEFAULT_KEY_EXPIRY_DAYS
+        value: "90"
+
+      # =========================================================================
+      # ADMIN CONFIG
+      # =========================================================================
+      - key: ADMIN_WALLET_ADDRESSES
+        sync: false  # Comma-separated admin wallet addresses
+      - key: PLATFORM_TEAM_ID
+        sync: false
+
+      # =========================================================================
+      # CCTP / CIRCLE CONFIG
+      # =========================================================================
+      - key: CCTP_CIRCLE_API_URL
+        value: https://iris-api.circle.com
+      - key: CCTP_SOURCE_CHAINS
+        value: solana,ethereum,arbitrum,optimism,polygon,avalanche
+      - key: CCTP_BASE_DOMAIN
+        value: "6"
+
+      # =========================================================================
+      # BASE CHAIN CONFIG
+      # =========================================================================
+      - key: BASE_CHAIN_ID
+        value: "8453"
+
+      # =========================================================================
+      # BILLING & WITHDRAWAL FEES
+      # =========================================================================
+      - key: OMA_MARKUP_PCT
+        value: "25"
+      - key: WITHDRAW_PROTOCOL_FEE_PERCENT
+        value: "0.1"
+      - key: WITHDRAW_NETWORK_FEE_ESTIMATE_USD
+        value: "0.01"
+      - key: WITHDRAW_DAILY_LIMIT_CENTS
+        value: "5000000"  # $50,000
+      - key: WITHDRAW_WEEKLY_LIMIT_CENTS
+        value: "20000000"  # $200,000
+      - key: WITHDRAW_NETWORK_FEE_CENTS
+        value: "100"  # $1.00
+
+      # =========================================================================
+      # AFFINITY & ONRAMP CONFIG
+      # =========================================================================
+      - key: AFFINITY_TTL_MS
+        value: "300000"
+      - key: LIFI_API_URL
+        value: https://li.quest/v1
+      - key: LIFI_INTEGRATOR
+        value: oma-ai
+      - key: LIFI_SOURCE_CHAINS
+        value: ethereum,arbitrum,optimism,polygon,avalanche,base,solana,bsc,gnosis,fantom
+
+      # =========================================================================
+      # OPENTELEMETRY
+      # =========================================================================
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://localhost:4318
+      - key: OTEL_SERVICE_NAME
+        value: oma-server
+      - key: OTEL_EXPORTER_PROMETHEUS_PORT
+        value: "9464"
+
+      # =========================================================================
+      # PROVIDER LOAD BALANCING
+      # =========================================================================
+      - key: PROVIDER_WEIGHTS
+        sync: false  # Format: "venice:70,surplus:30"
+      - key: MODEL_WEIGHTS
+        sync: false  # Format: "deepseek-v3.2=venice:70,surplus:30"
+      - key: PROVIDER_TIMEOUT_STREAM_MS
+        value: "120000"
+      - key: PROVIDER_TIMEOUT_NON_STREAM_MS
+        value: "60000"
+      - key: MODELS_CONFIG_PATH
+        sync: false  # Path to models.json (for Docker/K8s)
+
+      # =========================================================================
+      # CROSS-CHAIN SETTINGS
+      # =========================================================================
+      - key: CROSSCHAIN_SLIPPAGE_TOLERANCE
+        value: "0.02"
+      - key: CROSSCHAIN_BLOCK_CONFIRMATIONS
+        value: "6"
+      - key: TRUSTED_PROXY_IPS
+        sync: false  # Comma-separated trusted proxy IPs
+      - key: CHAIN_RPC_URL_PER_CHAIN
+        sync: false  # Format: "ethereum:https://...,base:https://..."
+      - key: CT_DAILY_USDC_CENTS_MAX
+        value: "0"  # 0 = no cap
+
+      # =========================================================================
+      # SURPLUS CONTRACT CONFIG
+      # =========================================================================
+      - key: SURPLUS_VERIFIER_CONTRACT
+        sync: false  # Surplus verifier contract address
+      - key: SURPLUS_SETTLEMENT_CONTRACT
+        sync: false  # Surplus settlement proxy address
+      - key: SURPLUS_PERMIT2_CONTRACT
+        sync: false
+      - key: SURPLUS_USDC_CONTRACT
+        sync: false
+      - key: SURPLUS_CHAIN_ID
+        value: "8453"
+      - key: SURPLUS_DEFAULT_SCHEME
+        value: upto
+      - key: SURPLUS_MIN_DISCOUNT_PCT
+        value: "0"
+
+      # =========================================================================
+      # SESSION & INVOICE
+      # =========================================================================
+      - key: SESSION_COOKIE_TTL_MS
+        value: "3600000"  # 1 hour
+      - key: INVOICE_DEFAULT_DUE_DAYS
+        value: "30"
+
+      # =========================================================================
+      # ONRAMP CREDITS CONVERSION
+      # =========================================================================
+      - key: CREDITS_PER_USD
+        value: "100"
+      - key: ONRAMP_MIN_USD
+        value: "10"
+      - key: ONRAMP_MAX_USD
+        value: "1000"
+      - key: CONNECTION_POOL_SIZE
+        value: "10"
+
+      # =========================================================================
+      # NEON AUTH (managed Better Auth service)
+      # =========================================================================
+      - key: NEON_AUTH_URL
+        sync: false  # From Neon console
+      - key: NEON_AUTH_JWKS_URL
+        sync: false  # From Neon console
+      - key: NEON_AUTH_ENABLED
+        value: "true"
+
 # ============================================================================
 # Cost breakdown (verified via render.com/pricing 2026-06-13)
 # - Free tier: 0.1 CPU, 512MB RAM, spins down after 15min idle, slow cold starts

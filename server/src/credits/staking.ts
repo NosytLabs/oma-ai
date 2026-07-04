@@ -2,6 +2,7 @@ import { db } from '../db/client.js'
 import { stakingTiers } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 import { getRedisClient } from '../lib/redis-client.js'
+import { config } from '../config.js'
 
 export async function getStakingDiscount(userId: string): Promise<number> {
   const redis = await getRedisClient()
@@ -27,7 +28,7 @@ export async function getStakingDiscount(userId: string): Promise<number> {
 
     if (redis) {
       try {
-        await redis.setEx(cacheKey, 300, JSON.stringify(discount))
+        await redis.setEx(cacheKey, Math.round(config.AFFINITY_TTL_MS / 1000), JSON.stringify(discount))
       } catch {
         // Cache write failure is non-critical
       }

@@ -32,7 +32,7 @@ if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
 const JWT_SECRET = new TextEncoder().encode(config.JWT_SECRET);
 const ISSUER = "oma-ai";
 const AUDIENCE = "oma-ai-api";
-const AUTH_METHODS = new Set<AuthMethod>(["siwe", "account-number", "sso"]);
+const AUTH_METHODS = new Set<AuthMethod>(["siwe", "account-number", "sso", "neon-auth"]);
 
 export type SessionIdentity = {
   userId: string;

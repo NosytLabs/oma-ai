@@ -2,33 +2,14 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	// Disable X-Powered-By header for security (information disclosure).
 	poweredByHeader: false,
 
-	// eslint.typecheck are enforced during `next build`.
-	// If pre-existing errors block a needed build, fix them at the source
-	// rather than silencing the compiler.
-	eslint: {
-		ignoreDuringBuilds: false,
-	},
-	typescript: {
-		ignoreBuildErrors: false,
-	},
+	eslint: { ignoreDuringBuilds: false },
+	typescript: { ignoreBuildErrors: false },
 
-	// Enable standalone output for optimized Docker deployments
 	output: "standalone",
-
-	// Pin the workspace root to this app's directory so Next.js doesn't
-	// mis-detect /Users/tyson/ because of a stray package-lock.json there.
 	outputFileTracingRoot: __dirname,
 
-	// Build-time env injection so footer.tsx can show the real deploy SHA + date.
-	// Vercel auto-sets VERCEL_GIT_COMMIT_SHA on every production deploy; we map
-	// it (truncated to 7 chars) to NEXT_PUBLIC_BUILD_SHA which the footer
-	// already references. Local dev without Vercel falls through to
-	// NEXT_PUBLIC_BUILD_SHA if explicitly set, otherwise undefined — footer.tsx:139
-	// then falls back to 'dev' via the `??` operator. BUILD_DATE defaults to
-	// today's ISO date at build time.
 	env: {
 		NEXT_PUBLIC_BUILD_SHA:
 			process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
@@ -38,237 +19,87 @@ const nextConfig: NextConfig = {
 			new Date().toISOString().slice(0, 10),
 	},
 
-	// Next.js 15 + React 19: barrel optimizer enabled for client-only icon
-	// libraries. lucide-react ships ~1500 named exports and is the largest
-	// dependency in the client bundle; the optimizer rewrites
-	//   `import { Foo, Bar } from 'lucide-react'`
-	// into per-icon imports at build time, cutting the client JS by ~40 KB
-	// gzip on the average page.
-	//
-	// framer-motion is NOT listed: it has ESM/CJS interop issues with the
-	// optimizer when used alongside react-query (see git history for the
-	// 2025-04 regression). Add it back only after running `next build` +
-	// a smoke-test page to verify the `m.*` motion components still hydrate.
-	experimental: {
-		// reactCompiler: true, // DISABLED — causes "Cannot read properties of undefined (reading 'call')" on pages importing framer-motion
-		optimizePackageImports: ["lucide-react"],
-	},
-
-	// FIX: The old alias redirect is REMOVED. It caused dual module registration
-	// when paired with transpilePackages (both the alias and the transpiler created
-	// separate identity copies of framer-motion internals → "options.factory"
-	// undefined errors on hydration).
-	//
-	// framer-motion 12.x ships 'use client' on its entry points, so direct imports
-	// work correctly in RSC. The app's 'use client' wrapper at
-	// src/lib/framer-motion-client.tsx still provides a single-entry boundary:
-	// it imports from the bare 'framer-motion' specifier (no alias, so no
-	// recursion) and re-exports each binding as an independent client reference
-	// to preserve Proxy behavior through RSC serialization.
-	//
-	// transpilePackages is intentionally empty — compiling framer-motion as
-	// local source alongside the alias was what caused the dual registration.
+	experimental: { optimizePackageImports: ["lucide-react"] },
 	transpilePackages: [],
 
-	// Server-only packages (Node-only modules that break static prerendering).
-	// Do NOT add ESM client packages here — they get the hookless react-server export.
-	serverExternalPackages: [
-		"porto",
-		"@metamask/connect-evm",
-		"ethers", // siwe@3 CJS-require('ethers') at module load — external required
-	],
+	serverExternalPackages: ["porto", "@metamask/connect-evm", "ethers"],
 
-	// Webpack optimizations for bundle size reduction
 	webpack: (config, { isServer }) => {
-		// Allow `.js` extension imports to resolve to `.ts` source files
-		// (NodeNext ESM convention used by app/src/lib/api/* modules).
 		config.resolve.extensionAlias = {
 			...(config.resolve.extensionAlias || {}),
 			".js": [".ts", ".tsx", ".js", ".jsx"],
 		};
-
-		// REMOVED: framer-motion alias — caused dual module registration with
-		// transpilePackages ("options.factory" undefined on hydration). All
-		// 'framer-motion' imports now resolve normally through the package.
-		// Components that need a 'use client' boundary import from the wrapper
-		// at src/lib/framer-motion-client.tsx explicitly.
-
-		// Suppress "Critical dependency" warnings from third-party libs that
-		// use dynamic require() (mppx/ox/tempo via wagmi connectors). The lib
-		// works at runtime; webpack just can't statically analyze the require.
 		config.module.exprContextCritical = false;
 
 		if (!isServer) {
 			config.resolve.fallback = {
 				...config.resolve.fallback,
 				ws: false,
-				// tempo connector (pulled in by @wagmi/core 3.5+) needs `accounts`
-				// at module load but only uses it lazily. Stub to false so webpack
-				// doesn't fail the build; runtime is unaffected because the connector
-				// is never invoked in this app.
 				accounts: false,
-				// wagmi/connectors barrel statically imports `metaMask` and `porto`
-				// connectors that this app never instantiates (we only use
-				// `injected`, `coinbaseWallet`, `walletConnect`). Those connectors
-				// reference `@metamask/connect-evm` and `porto/internal` which aren't
-				// installed at the top level (peer of `porto` but not declared in
-				// package.json). Stub to false to silence the warnings; the unused
-				// connectors are dead-code-eliminated by the wagmi tree-shake.
 				"@metamask/connect-evm": false,
 				porto: false,
 				"porto/internal": false,
 			};
-
-			// Optimize chunk splitting for better caching
-			// DISABLED custom cacheGroups — caused "Cannot read properties of undefined (reading 'call')"
-			// on pages importing framer-motion. The animation-vendor chunk was split in a way
-			// that webpack couldn't resolve at runtime. Re-enable after testing with default splitting.
-			// config.optimization.splitChunks = { ... };
 		}
-
 		return config;
 	},
 
-	// Compiler optimizations
 	compiler: {
-		// Remove console logs in production
 		removeConsole: process.env.NODE_ENV === "production",
-		// Optimize for performance
 		reactRemoveProperties:
 			process.env.NODE_ENV === "production"
 				? { properties: ["^data-test-id$"] }
 				: false,
 	},
 
-	// Redirects — none currently.
-	// Previously had /about → /about-us but /about has a real page and
-	// /about-us doesn't exist, so the redirect was causing 404s.
-	async redirects() {
-		return [];
-	},
+	async redirects() { return []; },
 
-	// API rewrites for proxy to backend
-	// Exclude /api/admin/* — those paths have file-based route handlers in
-	// app/src/app/api/admin/* that take priority over the rewrite. Without
-	// this exclusion, dynamic segments like /api/admin/users/[id] would
-	// fall through to the rewrite (shadowing the file route) and return 500
-	// when the backend is unreachable.
-	//
-	// ponytail: when NEXT_PUBLIC_API_URL is unset (e.g. fresh dev checkout
-	// with no .env.local), default to an unreachable 127.0.0.1:9999 host
-	// rather than the dev server's own port (3000/3001). The old fallback
-	// `localhost:3001` rewrote /api/* back into THIS Next.js process, so
-	// every API call hit non-existent app routes and returned 404; the
-	// `/login` page's health check then surfaced a confusing "Backend
-	// offline" error instead of the more honest "API URL not configured".
-	// The dedicated app/server/ env file is the source of truth for the
-	// backend port — see server/README.md.
-	//
-	// x402: the backend exposes /v1/x402/* and /v2/x402/*. Without a
-	// dedicated rewrite, calls to /x402/* from the frontend would 404
-	// against the Next.js process. We rewrite /x402/:path* → backend/x402/:path*
-	// (the backend mounts both /v1/x402/* and /v2/x402/* under the /x402
-	// namespace relative to the upstream base URL).
 	async rewrites() {
 		const apiRewriteDestination = (() => {
 			const url = process.env.NEXT_PUBLIC_API_URL;
-			return url && url.trim().length > 0 ? url : "http://127.0.0.1:9999";
+			return url?.trim() ? url : "http://127.0.0.1:9999";
 		})();
 		return [
-			{
-				// Non-admin API paths (chat, health, pricing, v1/*) → backend
-				source: "/api/:path((?!admin).*)",
-				destination: `${apiRewriteDestination}/:path*`,
-			},
-			{
-				// x402 protocol endpoints — backend serves both /v1/x402/*
-				// and /v2/x402/*. We forward under their full path so the
-				// backend can route by version prefix.
-				source: "/x402/:path*",
-				destination: `${apiRewriteDestination}/v1/x402/:path*`,
-			},
+			{ source: "/api/:path((?!admin).*)", destination: `${apiRewriteDestination}/:path*` },
+			{ source: "/x402/:path*", destination: `${apiRewriteDestination}/v1/x402/:path*` },
 		];
 	},
 
-	// Security and performance headers
 	async headers() {
 		return [
 			{
 				source: "/(.*)",
 				headers: [
-					{
-						key: "Content-Security-Policy",
-						value: generateContentSecurityPolicy(),
-					},
+					{ key: "Content-Security-Policy", value: generateContentSecurityPolicy() },
 					{ key: "X-Content-Type-Options", value: "nosniff" },
 					{ key: "X-Frame-Options", value: "DENY" },
 					{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-					{
-						key: "Strict-Transport-Security",
-						value: "max-age=63072000; includeSubDomains; preload",
-					},
-					{
-						key: "Permissions-Policy",
-						value: "camera=(), microphone=(), geolocation=()",
-					},
+					{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+					{ key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 				],
 			},
-			// Static asset caching headers
-			{
-				source: "/_next/static/:path*",
-				headers: [
-					{
-						key: "Cache-Control",
-						value: "public, max-age=31536000, immutable",
-					},
-				],
-			},
-			// API routes - no cache
-			{
-				source: "/api/:path*",
-				headers: [
-					{
-						key: "Cache-Control",
-						value: "no-store, no-cache, must-revalidate",
-					},
-				],
-			},
-			// HTML pages - no cache
-			{
-				source: "/(.*)\\.(html|htm)",
-				headers: [
-					{
-						key: "Cache-Control",
-						value: "no-cache, no-store, must-revalidate, proxy-revalidate",
-					},
-				],
-			},
+			{ source: "/_next/static/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+			{ source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }] },
+			{ source: "/(.*)\\.(html|htm)", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate, proxy-revalidate" }] },
 		];
 	},
 
-	// Image optimization configuration
 	images: {
 		remotePatterns: [
 			{ protocol: "https", hostname: "oma-ai.com" },
 			{ protocol: "https", hostname: "**.cloudfront.net" },
 			{ protocol: "https", hostname: "lh3.googleusercontent.com" },
 		],
-		// Enable modern formats for better compression
 		formats: ["image/avif", "image/webp"],
-		// Disable image optimization for static SVG files
 		disableStaticImages: false,
 	},
 };
 
-/**
- * Generate Content Security Policy header.
- * This is more maintainable than writing it inline.
- */
 function generateContentSecurityPolicy(): string {
 	const directives = [
 		"default-src 'self'",
 		"script-src 'self' 'unsafe-eval' 'unsafe-inline' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
-		"style-src 'self' 'unsafe-inline'", // Required for Tailwind
+		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data: https: blob:",
 		"font-src 'self'",
 		"frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
@@ -278,17 +109,12 @@ function generateContentSecurityPolicy(): string {
 		"base-uri 'self'",
 		"form-action 'self'",
 	];
-
 	return directives.join("; ");
 }
 
 export default withSentryConfig(nextConfig, {
-	// Sentry build options — source-map upload is disabled when
-	// SENTRY_AUTH_TOKEN is absent so local / CI builds don't fail.
 	org: process.env.SENTRY_ORG || "oma-ai",
 	project: process.env.SENTRY_PROJECT || "oma-app",
 	silent: !process.env.SENTRY_AUTH_TOKEN,
-	sourcemaps: {
-		disable: !process.env.SENTRY_AUTH_TOKEN,
-	},
+	sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
 });

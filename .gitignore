@@ -67,6 +67,8 @@ app/.lighthouseci/
 # vibedoctor output
 .vibedoctor/
 app/.vibedoctor/
-tmp/
+
+# test output
+test-results/
 tmp/lighthouse/
 server/models.json.bak

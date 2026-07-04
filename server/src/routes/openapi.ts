@@ -2150,7 +2150,9 @@ const openapiSpecMutable = openapiSpec as unknown as OpenApiSpec;
 
 export const openapiRoutes = new Hono<OmaEnv>();
 
-openapiRoutes.get("/v1/openapi.json", (c) => c.json(openapiSpecMutable));
+openapiRoutes.get("/v1/openapi.json", (c) =>
+  c.json(openapiSpecMutable, 200, { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" }),
+);
 // YAML is not generated — we ship only the JSON spec.
 openapiRoutes.get("/v1/openapi.yaml", (c) =>
   c.text("See /v1/openapi.json for the machine-readable spec.\n", 200, { "Content-Type": "text/plain" }),
@@ -2193,5 +2195,9 @@ const SWAGGER_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-openapiRoutes.get("/v1/docs", (c) => c.html(SWAGGER_HTML));
-openapiRoutes.get("/docs", (c) => c.html(SWAGGER_HTML));
+openapiRoutes.get("/v1/docs", (c) =>
+  c.html(SWAGGER_HTML, 200, { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" }),
+);
+openapiRoutes.get("/docs", (c) =>
+  c.html(SWAGGER_HTML, 200, { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" }),
+);

@@ -162,15 +162,4 @@ adminObservabilityRoutes.on("GET", "/v1/admin/dlq", async (c) => {
   }
 });
 
-// GET /v1/admin/oracle-prices
-adminObservabilityRoutes.on("GET", "/v1/admin/oracle-prices", async (c) => {
-  try {
-    const r = await db.execute(sql`SELECT token_symbol, price_usd, source, fetched_at FROM oracle_prices ORDER BY fetched_at DESC LIMIT 50`);
-    return c.json({
-      prices: (r as { rows?: unknown[] }).rows ?? [],
-      count: ((r as { rows?: unknown[] }).rows ?? []).length,
-    });
-  } catch (err) {
-    return c.json({ error: { message: (err as Error).message, type: "server_error" } }, 500);
-  }
-});
+

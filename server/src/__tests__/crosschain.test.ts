@@ -27,7 +27,7 @@ const {
     del: vi.fn(async (keys) => {
       const count = Array.isArray(keys) ? keys.length : 1;
       if (Array.isArray(keys)) {
-        keys.forEach(k => fakeRedis.delete(k));
+        keys.forEach((k) => { fakeRedis.delete(k); });
       } else {
         fakeRedis.delete(keys);
       }

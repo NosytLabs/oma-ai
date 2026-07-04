@@ -80,38 +80,41 @@ vi.mock('../routes/auth.js', () => ({
   authRoutes: new (require('hono').Hono)(),
 }))
 
-const { mockQuoteCache } = vi.hoisted(() => {
+vi.mock('../lib/quote-cache.js', () => {
   const _sessionStore = new Map<string, { id: string; userId: string; amountUsd: number; creditsCents: number; fiatFeeCents: number; status: 'pending' | 'completed' | 'expired'; createdAt: number }>()
 
-  const mockQuoteCache = {
-    set: vi.fn().mockImplementation(async (session) => {
-      _sessionStore.set(session.id, session)
+  const mqc = {
+    set: vi.fn().mockImplementation(async (session: { id: string }) => {
+      _sessionStore.set(session.id, session as any)
       return true
     }),
-    get: vi.fn().mockImplementation(async (id) => {
+    get: vi.fn().mockImplementation(async (id: string) => {
       return _sessionStore.get(id) || null
     }),
-    delete: vi.fn().mockImplementation(async (id) => {
+    delete: vi.fn().mockImplementation(async (id: string) => {
       _sessionStore.delete(id)
       return true
     }),
     acquireLock: vi.fn().mockResolvedValue(true),
     releaseLock: vi.fn().mockResolvedValue(true),
-    updateStatus: vi.fn().mockImplementation(async (id, status) => {
+    updateStatus: vi.fn().mockImplementation(async (id: string, status: string) => {
       const session = _sessionStore.get(id)
       if (session) {
-        session.status = status
+        (session as any).status = status
       }
       return true
     }),
   }
 
-  return { mockQuoteCache }
-})
+  // QuoteCache is called with 'new', so return a constructor function
+  function MockQuoteCache() {
+    return mqc
+  }
 
-vi.mock('../lib/quote-cache.js', () => ({
-  QuoteCache: vi.fn().mockImplementation(() => mockQuoteCache),
-}))
+  return {
+    QuoteCache: MockQuoteCache,
+  }
+})
 
 import app from '../index.js'
 

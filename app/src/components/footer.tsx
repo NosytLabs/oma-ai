@@ -48,6 +48,7 @@ const FOOTER_SECTIONS: FooterSection[] = [
 			{ label: "docs", href: "/docs" },
 			{ label: "blog", href: "/blog" },
 			{ label: "faq", href: "/faq" },
+			{ label: "support", href: "/support" },
 		],
 	},
 	{

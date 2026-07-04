@@ -7,8 +7,7 @@ import type { ChatMessage } from "./types.js";
 import { logger } from "../lib/logger.js";
 
 const SURPLUS_TIMEOUT_MS = 60_000;
-const SURPLUS_BASE_URL = "https://www.surplusintelligence.ai";
-const SURPLUS_API_VERSION = "v1";
+const SURPLUS_BASE_URL = "https://api.surplusintelligence.ai";
 
 // Clamp the operator-facing "Minimum Discount Routing" knob to the
 // 0-90 range accepted by config validation. Values > 90 are rejected
@@ -119,7 +118,7 @@ export async function surplusChatCompletion(body: {
   [key: string]: unknown;
 }, requestSignal?: AbortSignal): Promise<Response> {
   const tracer = trace.getTracer("oma-server");
-  const endpoint = `/x402/api/inference/${SURPLUS_API_VERSION}/chat/completions`;
+  const endpoint = `/v1/chat/completions`;
   const requestBody = {
     model: body.model,
     messages: body.messages,
@@ -373,7 +372,7 @@ async function signPayment(
 
 export async function surplusListModels(): Promise<SurplusModelsResponse> {
   const tracer = trace.getTracer("oma-server");
-  const endpoint = `/api/inference/${SURPLUS_API_VERSION}/models`;
+  const endpoint = `/v1/models`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -428,7 +427,7 @@ export async function surplusHealthCheck(): Promise<{
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
-  const endpoint = `/api/inference/${SURPLUS_API_VERSION}/models`;
+  const endpoint = `/v1/models`;
 
   return tracer.startActiveSpan("llm.provider.surplus", { kind: SpanKind.CLIENT }, async (span) => {
     try {

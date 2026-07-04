@@ -1602,13 +1602,18 @@ export function paymentMiddleware(
 
     const requestedAtomic = parseUsdcAtomic(paymentSig.payload?.amount ?? "0");
     const requiredAtomic = parseUsdcAtomic(price);
-    // Strict equality: accepting overpayment (old `<` check) let
-    // client-supplied amounts stamp the receipt without the server
-    // confirming the actual paid amount. Reject anything that doesn't
-    // match exactly.
-    if (requestedAtomic !== requiredAtomic) {
+    // Reject underpayment first (the client is paying less than the price).
+    if (requestedAtomic < requiredAtomic) {
       return c.json(
-        { error: { message: `Payment amount mismatch: requested ${requestedAtomic} but ${requiredAtomic} required`, type: "payment_error" } },
+        { error: { message: `Insufficient payment: requested ${requestedAtomic} but ${requiredAtomic} required`, type: "payment_error" } },
+        402,
+      );
+    }
+    // Reject overpayment — the actual settled amount is determined by
+    // verifyPayment (on-chain), not the client-supplied amount field.
+    if (requestedAtomic > requiredAtomic) {
+      return c.json(
+        { error: { message: `Payment amount exceeds maximum: requested ${requestedAtomic} but ${requiredAtomic} allowed`, type: "payment_error" } },
         402,
       );
     }
