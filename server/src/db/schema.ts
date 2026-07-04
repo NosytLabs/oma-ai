@@ -10,6 +10,7 @@ import {
   index,
   pgEnum,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -155,8 +156,7 @@ export const usageRecords = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     apiKeyId: uuid("api_key_id")
-      .references(() => apiKeys.id, { onDelete: "set null" })
-      .notNull(),
+      .references(() => apiKeys.id, { onDelete: "set null" }),
     model: text("model").notNull(),
     provider: providerEnum("provider").notNull(),
     inputTokens: integer("input_tokens").notNull().default(0),
@@ -211,6 +211,7 @@ amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
   },
   (t) => [
     index("idx_credit_batches_user").on(t.userId),
+    index("idx_credit_batches_deposit").on(t.depositId),
     index("idx_credit_batches_expiry").on(t.expiresAt),
     index("idx_credit_batches_user_remaining").on(t.userId, t.remainingCents),
     index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
@@ -301,6 +302,8 @@ export const refundRequests = pgTable(
   (t) => [
     index("idx_refund_requests_status_created").on(t.status, t.createdAt),
     index("idx_refund_requests_user").on(t.userId),
+    index("idx_refund_requests_deposit").on(t.depositId),
+    index("idx_refund_requests_decided_by").on(t.decidedBy),
   ]
 );
 
@@ -368,9 +371,9 @@ export const teamMembers = pgTable(
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
+    primaryKey({ columns: [t.teamId, t.userId] }),
     index("idx_team_members_team").on(t.teamId),
     index("idx_team_members_user").on(t.userId),
-    index("idx_team_members_team_user").on(t.teamId, t.userId),
   ]
 );
 
@@ -387,7 +390,7 @@ export const ssoConnections = pgTable(
       .notNull(),
     provider: text("provider").notNull(),
     domain: text("domain").notNull().unique(),
-    metadata: text("metadata"),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
   },
@@ -490,7 +493,7 @@ export const plans = pgTable("plans", {
   name: text("name").notNull().unique(),
   price: integer("price").notNull(),
   credits: integer("credits").notNull(),
-  features: text("features").notNull().default("[]"),
+  features: jsonb("features").notNull().default("[]"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 });
@@ -514,6 +517,7 @@ export const subscriptions = pgTable(
   },
   (t) => [
     index("idx_subscriptions_user").on(t.userId),
+    index("idx_subscriptions_plan").on(t.planId),
     index("idx_subscriptions_status").on(t.status),
     index("idx_subscriptions_period_end").on(t.currentPeriodEnd),
   ]
@@ -600,7 +604,7 @@ export const auditLogs = pgTable(
     resourceId: uuid("resource_id"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    metadata: text("metadata"),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

@@ -17,10 +17,10 @@ const ChatPlaygroundShell = dynamic(
 function ChatLoadingFallback() {
 	return (
 		<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-			<div className="animate-pulse space-y-4">
-				<div className="h-8 w-48 bg-surface-elevated rounded" />
-				<div className="h-20 w-full max-w-2xl bg-surface-elevated rounded" />
-				<div className="h-16 w-full max-w-2xl bg-surface-elevated rounded" />
+			<div className="space-y-4">
+				<div className="animate-shimmer h-8 w-48 rounded bg-surface-elevated" />
+				<div className="animate-shimmer h-20 w-full max-w-2xl rounded bg-surface-elevated" />
+				<div className="animate-shimmer h-16 w-full max-w-2xl rounded bg-surface-elevated" />
 			</div>
 		</div>
 	);

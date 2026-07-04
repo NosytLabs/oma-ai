@@ -49,6 +49,16 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(redirectUrl);
 	}
 
+	// /credits → /dashboard/credits
+	if (pathname === "/credits") {
+		return NextResponse.redirect(new URL("/dashboard/credits", request.url));
+	}
+
+	// /account → /settings
+	if (pathname === "/account") {
+		return NextResponse.redirect(new URL("/settings", request.url));
+	}
+
 	const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 	if (!isProtected) return NextResponse.next();
 

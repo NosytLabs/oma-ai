@@ -314,7 +314,7 @@ export default function PricingPage() {
 							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
 
 							<div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-								<table className="w-full text-left min-w-[640px] sm:min-w-0">
+								<table className="w-full text-left">
 									<thead>
 										<tr className="border-b border-border bg-surface-elevated">
 											<th

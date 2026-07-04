@@ -99,10 +99,11 @@ videoRouter.post("/v1/videos/generations", async (c) => {
 
 videoRouter.get("/v1/videos/retrieve", bearerAuth, async (c) => {
   const queueId = c.req.query("queue_id");
+  const model = c.req.query("model");
   if (!queueId) return c.json({ error: { message: "queue_id required", type: "invalid_request_error" } }, 400);
 
   try {
-    const result = await venice.retrieveVideo(queueId);
+    const result = await venice.retrieveVideo(queueId, model || undefined);
     return c.json({
       id: `vid_${queueId}`,
       object: "video",

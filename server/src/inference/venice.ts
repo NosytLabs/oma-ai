@@ -600,14 +600,19 @@ export async function videoGeneration(body: {
   return { queueId: data.queue_id, status: "queued" };
 }
 
-export async function retrieveVideo(queueId: string): Promise<{
+export async function retrieveVideo(queueId: string, model?: string): Promise<{
   status: string;
   video_url?: string;
   download_url?: string;
 }> {
   const response = await fetch(
-    veniceUrl(`/api/v1/video/retrieve?queue_id=${queueId}`),
-    { headers: veniceHeaders(), signal: AbortSignal.timeout(VENICE_TIMEOUT_MS) }
+    veniceUrl(`/api/v1/video/retrieve`),
+    {
+      method: "POST",
+      headers: { ...veniceHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ queue_id: queueId, model }),
+      signal: AbortSignal.timeout(VENICE_TIMEOUT_MS),
+    }
   );
 
   logVeniceResponseHeaders(response, "/video/retrieve");

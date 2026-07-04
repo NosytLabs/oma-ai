@@ -118,7 +118,7 @@ describe("retrieveVideo", () => {
     expect(result.video_url).toBe("https://example.com/video.mp4");
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/video/retrieve"),
-      expect.any(Object)
+      expect.objectContaining({ method: "POST" })
     );
   });
 

@@ -71,8 +71,8 @@ adminObservabilityRoutes.on("GET", "/v1/admin/deposits", async (c) => {
   const status = c.req.query("status");
   try {
     const r = status
-      ? await db.execute(sql`SELECT id, user_id, type, status, token_symbol, amount, amount_usd_cents, tx_hash, from_address, credited_at, created_at FROM deposits WHERE status = ${status}::deposit_status ORDER BY created_at DESC LIMIT ${limit}`)
-      : await db.execute(sql`SELECT id, user_id, type, status, token_symbol, amount, amount_usd_cents, tx_hash, from_address, credited_at, created_at FROM deposits ORDER BY created_at DESC LIMIT ${limit}`);
+      ? await db.execute(sql`SELECT id, user_id, type, status, amount_usd, credits_issued, tx_hash, from_coin, to_coin, deposit_address, created_at, completed_at FROM deposits WHERE status = ${status}::deposit_status ORDER BY created_at DESC LIMIT ${limit}`)
+      : await db.execute(sql`SELECT id, user_id, type, status, amount_usd, credits_issued, tx_hash, from_coin, to_coin, deposit_address, created_at, completed_at FROM deposits ORDER BY created_at DESC LIMIT ${limit}`);
     return c.json({
       deposits: (r as { rows?: unknown[] }).rows ?? [],
       count: ((r as { rows?: unknown[] }).rows ?? []).length,
@@ -100,9 +100,9 @@ adminObservabilityRoutes.on("GET", "/v1/admin/deposits/stats", async (c) => {
 adminObservabilityRoutes.on("GET", "/v1/admin/credit-balances", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 500);
   try {
-    const r = await db.execute(sql`SELECT cb.user_id, u.address, cb.credits, cb.lifetime_credits, cb.last_credited_at, cb.created_at
+    const r = await db.execute(sql`SELECT cb.user_id, u.address, cb.balance_cents, cb.total_deposited_cents, cb.total_used_cents, cb.last_activity_at, cb.updated_at
       FROM credit_balances cb JOIN users u ON cb.user_id = u.id
-      ORDER BY cb.credits DESC LIMIT ${limit}`);
+      ORDER BY cb.balance_cents DESC LIMIT ${limit}`);
     return c.json({
       balances: (r as { rows?: unknown[] }).rows ?? [],
       count: ((r as { rows?: unknown[] }).rows ?? []).length,
@@ -133,7 +133,7 @@ adminObservabilityRoutes.on("GET", "/v1/admin/subscriptions", async (c) => {
 // GET /v1/admin/circuit-breaker
 adminObservabilityRoutes.on("GET", "/v1/admin/circuit-breaker", async (c) => {
   try {
-    const r = await db.execute(sql`SELECT provider, is_up, consecutive_failures, avg_latency_ms, last_success_at, last_failure_at, updated_at FROM provider_health ORDER BY provider`);
+    const r = await db.execute(sql`SELECT provider, is_up, latency_ms, error_rate, last_check_at, cooldown_until FROM provider_health ORDER BY provider`);
     return c.json({
       providers: (r as { rows?: unknown[] }).rows ?? [],
       count: ((r as { rows?: unknown[] }).rows ?? []).length,
