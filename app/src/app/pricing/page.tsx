@@ -27,12 +27,7 @@ interface PricedModel {
 }
 
 const VENDOR_DISPLAY: Record<string, string> = {
-	Claude: "Anthropic",
-	Gemini: "Google",
-	OpenRouter: "OpenAI",
 	Venice: "Venice",
-	AntSeed: "AntSeed",
-	Together: "Together",
 };
 
 const PRICED_MODELS: PricedModel[] = MODELS.map((m) => ({
@@ -375,11 +370,9 @@ export default function PricingPage() {
 												<td className="px-4 py-3">
 													<span
 														className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
-															mm.provider === "Venice"
-																? "bg-accent/20 text-accent"
-																: mm.provider === "AntSeed"
-																	? "bg-accent/20 text-accent"
-																	: "bg-secondary/20 text-secondary"
+														mm.provider === "Venice"
+															? "bg-accent/20 text-accent"
+															: "bg-secondary/20 text-secondary"
 														}`}
 													>
 														{mm.provider}

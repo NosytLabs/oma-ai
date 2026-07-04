@@ -56,19 +56,9 @@ services:
       - key: CSRF_SECRET
         generateValue: true
       - key: VENICE_API_KEY
-        sync: false  # User must set
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: TOGETHER_API_KEY
-        sync: false
-      - key: DEEPINFRA_API_KEY
-        sync: false
-      - key: MORPHEUS_API_KEY
-        sync: false
-      - key: HELIUS_API_KEY
-        sync: false
-      - key: ANTSEED_PROXY_URL
-        sync: false  # Note: ANTSEED uses a proxy URL, not an API key (see config.ts:17)
+        sync: false  # Venice AI API key
+      - key: SURPLUS_WALLET_PRIVATE_KEY
+        sync: false  # Surplus settlement wallet private key (0x-prefixed hex)
       - key: TINYFISH_API_KEY
         sync: false
       - key: FACILITATOR_URL
@@ -115,10 +105,6 @@ services:
       # =========================================================================
       - key: ZERO_G_API_KEY
         sync: false  # 0G.ai decentralized inference (optional)
-      - key: HELIUS_API_KEY
-        sync: false  # Helius RPC / webhooks
-      - key: ANTSEED_PROXY_URL
-        sync: false  # AntSeed proxy URL (not an API key)
       - key: QUICKNODE_API_KEY
         sync: false  # QuickNode RPC access
 
