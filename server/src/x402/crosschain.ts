@@ -316,7 +316,8 @@ crosschainRoutes.get("/v1/x402/deposit/:orderId/status", async (c) => {
         response.blockConfirmations = confirmationCheck;
       } else {
         const houdiniToAddress = config.HOUDINI_ADDRESS_TO || "";
-        const pendingQuoteMinAmount = (parseFloat(order.toAmount) * 0.98).toFixed(8);
+        const slippageTolerance = config.CROSSCHAIN_SLIPPAGE_TOLERANCE ?? 0.02;
+        const pendingQuoteMinAmount = (parseFloat(order.toAmount) * (1 - slippageTolerance)).toFixed(8);
         const actualToAmount = parseFloat(order.toAmount);
         const minAcceptedAmount = parseFloat(pendingQuoteMinAmount);
 

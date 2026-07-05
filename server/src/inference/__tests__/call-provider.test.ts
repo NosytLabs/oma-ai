@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('../venice.js', () => ({ chatCompletion: vi.fn() }))
 vi.mock('../surplus.js', () => ({ surplusChatCompletion: vi.fn() }))
-vi.mock('../provider-result.js', () => ({ reportProviderResult: vi.fn() }))
+vi.mock('../provider-health.js', () => ({ reportProviderResult: vi.fn() }))
 vi.mock('../circuit-breaker.js', () => ({
   isCircuitOpen: vi.fn().mockResolvedValue(false),
   recordProviderSuccess: vi.fn(),
@@ -52,7 +52,7 @@ describe('callProvider', () => {
 
     await callProvider('venice', 'test-model', mockBody)
 
-    const { reportProviderResult } = await import('../provider-result.js')
+    const { reportProviderResult } = await import('../provider-health.js')
     expect(reportProviderResult).toHaveBeenCalledWith('venice', true, expect.any(Number))
 
     const { recordProviderSuccess } = await import('../circuit-breaker.js')
@@ -65,7 +65,7 @@ describe('callProvider', () => {
 
     await expect(callProvider('venice', 'test-model', mockBody)).rejects.toThrow('Provider error')
 
-    const { reportProviderResult } = await import('../provider-result.js')
+    const { reportProviderResult } = await import('../provider-health.js')
     expect(reportProviderResult).toHaveBeenCalledWith('venice', false, expect.any(Number))
 
     const { recordProviderError } = await import('../circuit-breaker.js')

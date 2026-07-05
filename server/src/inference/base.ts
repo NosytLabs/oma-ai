@@ -1,4 +1,4 @@
-import { reportProviderResult } from "./provider-result.js";
+import { reportProviderResult } from "./provider-health.js";
 import type { ChatMessage, InferenceError } from "./types.js";
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 

@@ -52,10 +52,6 @@ export async function findProvidersForModel(
   return out;
 }
 
-function inferProviderFromModel(_model: string): Provider {
-  return "venice";
-}
-
 export async function getCandidateProviders(
   modelId: string,
   modelDef: ModelDef | null,
@@ -63,7 +59,7 @@ export async function getCandidateProviders(
   if (!modelDef) {
     // Mirror the legacy selectProvider inference for catalog-unknown models.
     // All unknown models now route through Venice.
-    return { primary: inferProviderFromModel(modelId), alternates: [] };
+    return { primary: "venice", alternates: [] };
   }
   const all = await findProvidersForModel(modelId, modelDef);
   const primary = modelDef.primaryProvider;

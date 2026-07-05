@@ -1,6 +1,6 @@
 import * as venice from "./venice.js";
 import * as surplus from "./surplus.js";
-import { reportProviderResult } from "./provider-result.js";
+import { reportProviderResult } from "./provider-health.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
 import type { Provider } from "./provider-selector.js";

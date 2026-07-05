@@ -44,7 +44,7 @@ import {
   stopBackgroundProbing,
   stopCacheCleanup,
 } from "./inference/provider-health.js";
-import { initProviderResultReporter } from "./inference/provider-result.js";
+
 import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheaptokens.js";
 
 reloadModelCatalog();
@@ -91,7 +91,6 @@ if (config.NODE_ENV === "production" && (!config.CSRF_SECRET || config.CSRF_SECR
 }
 
 if (config.NODE_ENV !== "test") {
-  initProviderResultReporter();
   startBackgroundDbSync();
   startBackgroundProbing();
   startCacheCleanup();

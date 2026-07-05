@@ -1,5 +1,5 @@
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
-import { createWalletClient, http } from "viem";
+import { createWalletClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 import { config } from "../config.js";
@@ -186,11 +186,16 @@ export async function surplusChatCompletion(body: {
 
         const paymentPayload = await buildPaymentPayload(paymentData, body);
         const signature = await signPayment(paymentPayload);
+
+        // Strip internal signing fields (BigInt) before JSON serialization.
+        // Surplus only needs the payment fields, not the raw witness/permit objects.
+        const payloadJson = serializePayloadForJson(paymentPayload);
+
         const paymentSignature: SurplusPaymentSignatureEnvelope = {
           x402Version: String(paymentData.x402Version),
           signature,
           authorization: "",
-          payload: paymentPayload,
+          payload: payloadJson,
         };
 
         const retryResponse = await surplusFetch(endpoint, {
@@ -250,10 +255,82 @@ export async function surplusChatCompletion(body: {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Scheme-aware EIP-712 payload types
+// ---------------------------------------------------------------------------
+//
+// Surplus accepts two x402 schemes on Base:
+//
+//  `upto`  — Permit2 witness pattern (USDC approve + permitWitnessTransferFrom).
+//             Signs a PermitWitnessTransferFrom typed data with the Surplus
+//             Payment as the witness. Verifying contract = Permit2
+//             (0x0000…BA3 on Base).
+//
+//  `exact` — EIP-3009 transferWithAuthorization.
+//             Signs a TransferWithAuthorization typed data with the USDC
+//             FiatTokenV2_2 domain. Verifying contract = USDC
+//             (0x8335…2913 on Base).
+
+interface SurplusPaymentWitness {
+  payTo: string;
+  asset: string;
+  amount: string;
+  network: string;
+  resource: SurplusPaymentRequirement["resource"];
+}
+
+interface SurplusExactPayload {
+  x402Version: number;
+  selectedScheme: "exact";
+  scheme: "exact";
+  payType: "exact";
+  payment: string;
+  payTo: string;
+  network: string;
+  asset: string;
+  maxTimeoutSeconds: number;
+  extra?: Record<string, unknown>;
+  resource: SurplusPaymentRequirement["resource"];
+}
+
+interface SurplusUptoPayload {
+  x402Version: number;
+  selectedScheme: "upto";
+  scheme: "upto";
+  payType: "upto";
+  maxPayment: string;
+  payTo: string;
+  network: string;
+  asset: string;
+  maxTimeoutSeconds: number;
+  extra?: Record<string, unknown>;
+  resource: SurplusPaymentRequirement["resource"];
+  // Permit2 witness fields (only needed for signing, not serialized to JSON)
+  witness?: SurplusPaymentWitness;
+  transferDetails?: {
+    to: string;
+    token: string;
+    amount: string;
+    expiry: number;
+  };
+  permit?: {
+    permitted: { token: string; amount: string };
+    spender: string;
+    nonce: bigint;
+    deadline: bigint;
+  };
+}
+
+type SurplusPayload = SurplusExactPayload | SurplusUptoPayload;
+
+// ---------------------------------------------------------------------------
+// Payload builder
+// ---------------------------------------------------------------------------
+
 async function buildPaymentPayload(
   paymentData: SurplusPaymentRequirement,
   _originalBody: Record<string, unknown>
-): Promise<Record<string, unknown>> {
+): Promise<SurplusPayload> {
   const upto = paymentData.accepts.find((a) => a.scheme === "upto");
   const exact = paymentData.accepts.find((a) => a.scheme === "exact");
   const selected = upto || exact;
@@ -265,30 +342,157 @@ async function buildPaymentPayload(
     );
   }
 
-  const payload: Record<string, unknown> = {
-    ...paymentData,
-    selectedScheme: selected.scheme,
-  };
-
   if (selected.scheme === "upto") {
-    payload.payType = "upto";
-    payload.maxPayment = selected.amount;
-    payload.payTo = selected.payTo;
-    payload.network = selected.network;
-    payload.asset = selected.asset;
-  } else {
-    payload.payType = "exact";
-    payload.payment = selected.amount;
-    payload.payTo = selected.payTo;
-    payload.network = selected.network;
-    payload.asset = selected.asset;
-  }
+    // build Permit2 witness + transferDetails for PermitWitnessTransferFrom signing
+    const nonce = BigInt(
+      "0x" +
+        Array.from({ length: 32 }, () =>
+          Math.floor(Math.random() * 256)
+            .toString(16)
+            .padStart(2, "0")
+        ).join("")
+    );
+    const deadline =
+      BigInt(Math.floor(Date.now() / 1000)) +
+      BigInt(selected.maxTimeoutSeconds);
 
-  return payload;
+    const payload: SurplusUptoPayload = {
+      x402Version: paymentData.x402Version,
+      selectedScheme: "upto",
+      scheme: "upto",
+      payType: "upto",
+      maxPayment: selected.amount,
+      payTo: selected.payTo,
+      network: selected.network,
+      asset: selected.asset,
+      maxTimeoutSeconds: selected.maxTimeoutSeconds,
+      extra: selected.extra,
+      resource: paymentData.resource,
+      witness: {
+        payTo: selected.payTo,
+        asset: selected.asset,
+        amount: selected.amount,
+        network: selected.network,
+        resource: paymentData.resource,
+      },
+      transferDetails: {
+        to: selected.payTo,
+        token: selected.asset,
+        amount: selected.amount,
+        expiry: Number(deadline),
+      },
+      permit: {
+        permitted: {
+          token: selected.asset,
+          amount: selected.amount,
+        },
+        spender: config.SURPLUS_SETTLEMENT_CONTRACT ?? "0x0770d2124C0a581C28Cfc47a659817145e6Cc137",
+        nonce,
+        deadline,
+      },
+    };
+    return payload;
+  } else {
+    // exact: EIP-3009 TransferWithAuthorization
+    const payload: SurplusExactPayload = {
+      x402Version: paymentData.x402Version,
+      selectedScheme: "exact",
+      scheme: "exact",
+      payType: "exact",
+      payment: selected.amount,
+      payTo: selected.payTo,
+      network: selected.network,
+      asset: selected.asset,
+      maxTimeoutSeconds: selected.maxTimeoutSeconds,
+      extra: selected.extra,
+      resource: paymentData.resource,
+    };
+    return payload;
+  }
 }
 
+// ---------------------------------------------------------------------------
+// EIP-712 type constants
+// ---------------------------------------------------------------------------
+
+// EIP-3009 TransferWithAuthorization (exact scheme)
+const EIP3009_DOMAIN = {
+  name: "USD Coin",
+  version: "2",
+  chainId: 8453,
+  verifyingContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+} as const;
+
+const EIP3009_TYPES = {
+  TransferWithAuthorization: [
+    { name: "from", type: "address" },
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "validAfter", type: "uint256" },
+    { name: "validBefore", type: "uint256" },
+    { name: "nonce", type: "bytes32" },
+  ],
+} as const;
+
+// Permit2 PermitWitnessTransferFrom (upto scheme)
+const PERMIT2_DOMAIN = {
+  name: "Permit2",
+  version: "1",
+  chainId: 8453,
+  verifyingContract: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+} as const;
+
+// Surplus Payment witness type for upto scheme
+const SURPLUS_PAYMENT_TYPES = {
+  Payment: [
+    { name: "payTo", type: "address" },
+    { name: "asset", type: "address" },
+    { name: "amount", type: "uint256" },
+    { name: "network", type: "string" },
+    { name: "resource", type: "Resource" },
+  ],
+  Resource: [
+    { name: "url", type: "string" },
+    { name: "description", type: "string" },
+    { name: "mimeType", type: "string" },
+  ],
+} as const;
+
+const PERMIT_TYPES = {
+  Permit: [
+    { name: "permitted", type: "TokenPermissions" },
+    { name: "spender", type: "address" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+  TokenPermissions: [
+    { name: "token", type: "address" },
+    { name: "amount", type: "uint256" },
+  ],
+  TransferDetails: [
+    { name: "to", type: "address" },
+    { name: "token", type: "address" },
+    { name: "amount", type: "uint256" },
+    { name: "expiry", type: "uint256" },
+  ],
+} as const;
+
+const PERMITWITNESS_TYPES = {
+  PermitWitnessTransferFrom: [
+    { name: "permit", type: "Permit" },
+    { name: "transferDetails", type: "TransferDetails" },
+    { name: "witness", type: "Payment" },
+  ],
+  ...PERMIT_TYPES,
+  ...SURPLUS_PAYMENT_TYPES,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Scheme-aware signer
+// ---------------------------------------------------------------------------
+
 async function signPayment(
-  _payload: Record<string, unknown>
+  payload: SurplusPayload
 ): Promise<string> {
   const walletPrivateKey = config.SURPLUS_WALLET_PRIVATE_KEY;
   if (!walletPrivateKey) {
@@ -300,32 +504,15 @@ async function signPayment(
     );
   }
 
-  // Resolve the EIP-712 verifyingContract.
-  // Per surplusintelligence.ai/llms.txt (2026-06-12), Surplus's
-  // verifyingContract on Base is the SETTLEMENT PROXY at
-  // 0x0770d2124C0a581C28Cfc47a659817145e6Cc137. The 0x8581…c402
-  // address we previously used is the payTo/treasury recipient, NOT
-  // the verifier, which is why signatures were being rejected
-  // silently.
-  //
-  // TRACKED ISSUE: github.com/oma-ai/oma-ai/issues/surplus-x402-schemes
-  // Stopgap: this route signs against the Surplus settlement proxy
-  // (0x0770…c137) as the EIP-712 verifyingContract. The proper
-  // scheme-aware signer — `exact` over EIP-3009 TransferWithAuthorization
-  // (USDC_BASE, name "USD Coin", version "2", chainId 8453) and `upto`
-  // over Permit2 PermitWitnessTransferFrom (0x0000…BA3, name "Permit2",
-  // chainId 8453) — is pending. Until that lands, signatures verify
-  // against the proxy and the verifier, not the recipient, which is
-  // why the previous 0x8581…c402 attempts were silently rejected.
-  const legacyVerifier = config.SURPLUS_VERIFIER_CONTRACT;
-  const verifyingContract = (legacyVerifier ??
-    config.SURPLUS_SETTLEMENT_CONTRACT) as `0x${string}`;
   const chainId = config.SURPLUS_CHAIN_ID ?? 8453;
+  const usdcContract = (config.SURPLUS_USDC_CONTRACT ??
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913") as `0x${string}`;
+  const permit2Contract = (config.SURPLUS_PERMIT2_CONTRACT ??
+    "0x000000000022D473030F116dDEE9F6B43aC78BA3") as `0x${string}`;
+  const settlementContract = (config.SURPLUS_SETTLEMENT_CONTRACT ??
+    "0x0770d2124C0a581C28Cfc47a659817145e6Cc137") as `0x${string}`;
 
   try {
-    // ponytail: dynamic viem imports removed (V6 #7). The static imports above
-    // amortize the cost across calls. Previous dynamic-import approach added
-    // 100-300ms latency on first call.
     const account = privateKeyToAccount(`0x${walletPrivateKey.replace("0x", "")}`);
     const walletClient = createWalletClient({
       account,
@@ -333,40 +520,141 @@ async function signPayment(
       transport: http(),
     });
 
-    const signResult = await walletClient.signTypedData({
-      domain: {
-        name: "Surplus Intelligence",
-        version: "1",
-        chainId,
-        verifyingContract,
-      },
-      types: {
-        Payment: [
-          { name: "payTo", type: "address" },
-          { name: "asset", type: "address" },
-          { name: "amount", type: "uint256" },
-          { name: "network", type: "string" },
-        ],
-      },
-      message: {
-        payTo: _payload.payTo as `0x${string}`,
-        asset: _payload.asset as `0x${string}`,
-        amount: BigInt(_payload.maxPayment as string || _payload.payment as string),
-        network: _payload.network as string,
-      },
-      primaryType: "Payment",
-    });
+    let signature: Hex;
 
-    return signResult;
+    if (payload.selectedScheme === "exact") {
+      // EIP-3009 TransferWithAuthorization
+      const now = Math.floor(Date.now() / 1000);
+      const nonceHex =
+        "0x" +
+        Array.from({ length: 32 }, () =>
+          Math.floor(Math.random() * 256)
+            .toString(16)
+            .padStart(2, "0")
+        ).join("");
+      const nonce = nonceHex as `0x${string}`;
+      const validAfter = BigInt(now - 60); // allow 60s clock skew
+      const validBefore = BigInt(now + payload.maxTimeoutSeconds);
+
+      const domain = {
+        name: EIP3009_DOMAIN.name,
+        version: EIP3009_DOMAIN.version,
+        chainId,
+        verifyingContract: usdcContract,
+      };
+
+      signature = await walletClient.signTypedData({
+        domain,
+        types: EIP3009_TYPES,
+        primaryType: "TransferWithAuthorization",
+        message: {
+          from: account.address,
+          to: payload.payTo as `0x${string}`,
+          value: BigInt(payload.payment),
+          validAfter,
+          validBefore,
+          nonce,
+        },
+      });
+    } else {
+      // Permit2 PermitWitnessTransferFrom (upto scheme)
+      if (!isSurplusUptoPayload(payload)) {
+        throw Object.assign(
+          new Error("Invalid upto payload: missing Permit2 witness fields"),
+          { status: 500 }
+        );
+      }
+
+      const { permit, transferDetails, witness } = payload;
+      if (!permit || !transferDetails || !witness) {
+        throw Object.assign(
+          new Error("Invalid upto payload: missing Permit2 witness fields"),
+          { status: 500 }
+        );
+      }
+
+      const domain = {
+        name: PERMIT2_DOMAIN.name,
+        version: PERMIT2_DOMAIN.version,
+        chainId,
+        verifyingContract: permit2Contract,
+      };
+
+      signature = await walletClient.signTypedData({
+        domain,
+        types: PERMITWITNESS_TYPES,
+        primaryType: "PermitWitnessTransferFrom",
+        message: {
+          permit: {
+            permitted: {
+              token: permit.permitted.token as `0x${string}`,
+              amount: BigInt(permit.permitted.amount),
+            },
+            spender: settlementContract,
+            nonce: permit.nonce,
+            deadline: permit.deadline,
+          },
+          transferDetails: {
+            to: transferDetails.to as `0x${string}`,
+            token: transferDetails.token as `0x${string}`,
+            amount: BigInt(transferDetails.amount),
+            expiry: BigInt(transferDetails.expiry),
+          },
+          witness: {
+            payTo: witness.payTo as `0x${string}`,
+            asset: witness.asset as `0x${string}`,
+            amount: BigInt(witness.amount),
+            network: witness.network,
+            resource: {
+              url: witness.resource.url,
+              description: witness.resource.description,
+              mimeType: witness.resource.mimeType,
+            },
+          },
+        },
+      });
+    }
+
+    return signature;
   } catch (err) {
     logger.error(
-      { error: (err as Error).message },
+      { error: (err as Error).message, scheme: payload.selectedScheme },
       "Surplus x402 payment signing failed"
     );
     throw Object.assign(
       new Error("Failed to sign Surplus payment"),
       { status: 500 }
     );
+  }
+}
+
+// Type guard for upto payload
+function isSurplusUptoPayload(p: SurplusPayload): p is SurplusUptoPayload {
+  return p.selectedScheme === "upto";
+}
+
+/**
+ * Convert a SurplusPayload to a JSON-serializable plain object.
+ * Strips internal signing fields (BigInt nonce/deadline) and converts
+ * BigInt amounts to decimal strings for JSON.stringify compatibility.
+ */
+function serializePayloadForJson(payload: SurplusPayload): Record<string, unknown> {
+  const base: Record<string, unknown> = {
+    x402Version: payload.x402Version,
+    selectedScheme: payload.selectedScheme,
+    payType: payload.payType,
+    payTo: payload.payTo,
+    network: payload.network,
+    asset: payload.asset,
+    maxTimeoutSeconds: payload.maxTimeoutSeconds,
+    resource: payload.resource,
+    extra: payload.extra,
+  };
+
+  if (payload.selectedScheme === "exact") {
+    return { ...base, payment: payload.payment, scheme: "exact" };
+  } else {
+    return { ...base, maxPayment: payload.maxPayment, scheme: "upto" };
   }
 }
 

@@ -71,7 +71,11 @@ auditLogsRoutes.get("/v1/admin/audit-logs", async (c) => {
 
     const logsWithParsedMetadata = logsResult.map((log) => ({
       ...log,
-      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+      metadata: log.metadata
+        ? typeof log.metadata === "string"
+          ? JSON.parse(log.metadata)
+          : log.metadata
+        : null,
     }));
 
     return c.json({

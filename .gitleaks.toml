@@ -1,14 +1,7 @@
 title = "OMA-AI Gitleaks Config"
 
-[extend]
-useDefault = true
-
-###############################################################################
-# Allowlist rules for documentation, tests, and public constants
-###############################################################################
-
-[[rules.allowlists]]
-description = "Documentation files with placeholder API keys in curl examples"
+[allowlist]
+description = "OMA AI allowlist rules"
 paths = [
   '''docs/.*\.md$''',
   '''deploy/.*\.md$''',
@@ -17,28 +10,14 @@ paths = [
   '''app/src/app/use-cases/.*''',
   '''app/src/components/landing/.*''',
   '''app/src/components/models/.*''',
-  '''app/public/llms-full\.txt$''',
+  '''app/src/public/llms-full\.txt$''',
   '''render\.yaml$''',
-]
-
-[[rules.allowlists]]
-description = "Test files with mock secrets (test-jwt-secret, test-csrf-secret, etc.)"
-paths = [
   '''server/src/__tests__/.*\.test\.ts$''',
   '''server/vitest\.setup\.ts$''',
   '''app/src/.*\.test\.ts$''',
   '''app/src/.*\.test\.tsx$''',
   '''app/src/.*\.spec\.ts$''',
 ]
-
-[[rules.allowlists]]
-description = "Public Ethereum contract addresses (USDC on Base)"
-regexes = [
-  '''0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913''',
-]
-
-[[rules.allowlists]]
-description = "Known placeholder API key patterns in documentation"
 regexes = [
   '''oma_sk_your_key_here''',
   '''oma_sk_agent_key''',
@@ -46,4 +25,5 @@ regexes = [
   '''\$OMA_KEY''',
   '''YOUR_QUEUE_ID''',
   '''your-domain\.com''',
+  '''0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913''',
 ]

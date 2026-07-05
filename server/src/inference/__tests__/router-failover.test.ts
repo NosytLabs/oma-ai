@@ -49,7 +49,7 @@ vi.mock('../circuit-breaker.js', () => ({
   recordProviderError: vi.fn(),
 }))
 
-vi.mock('../provider-result.js', () => ({
+vi.mock('../provider-health.js', () => ({
   reportProviderResult: vi.fn(),
   stopBackgroundDbSync: vi.fn(),
   stopBackgroundProbing: vi.fn(),

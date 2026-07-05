@@ -4,7 +4,7 @@ import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { getActiveVeniceKey } from "./cheaptokens.js";
 import { BaseInferenceProvider, type ProviderConfig } from "./base.js";
 import { createProvider } from "./provider-factory.js";
-import { reportProviderResult } from "./provider-result.js";
+import { reportProviderResult } from "./provider-health.js";
 import { logger } from "../lib/logger.js";
 
 const VENICE_TIMEOUT_MS = 30_000;

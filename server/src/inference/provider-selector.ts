@@ -16,15 +16,6 @@ export const ALL_PROVIDERS: Provider[] = SURPLUS_ENABLED
   ? ["venice", "surplus"]
   : ["venice"];
 
-function inferProviderFromModel(_model: string): Provider {
-  return "venice";
-}
-
-export interface ModelWeightConfig {
-  weights: Map<Provider, number>;
-  modelId: string;
-}
-
 function selectProviderWeighted(weights: Map<Provider, number>, available: Provider[]): Provider | null {
   const activeProviders = available.filter(p => weights.get(p) && weights.get(p)! > 0);
   if (activeProviders.length === 0) return null;
@@ -81,7 +72,7 @@ function logAndReturn(model: string, result: { provider: Provider; providerModel
 
 export async function selectProvider(model: string): Promise<{ provider: Provider; providerModelId: string }> {
   const modelDef = await getModel(model);
-  const preferred = modelDef ? modelDef.primaryProvider : inferProviderFromModel(model);
+  const preferred = modelDef?.primaryProvider ?? "venice";
   const providerModelId = getModelIdForProvider(modelDef, preferred, model);
   const modelWeights = parseModelWeights(config.MODEL_WEIGHTS);
   const globalWeights = parseProviderWeights(config.PROVIDER_WEIGHTS);

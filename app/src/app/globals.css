@@ -2,6 +2,18 @@
 @import "../styles/syntax-highlight.css";
 
 /* ================================================
+   BASE RESETS
+   ================================================ */
+
+/* Remove default list styling from navigation lists */
+nav ul,
+.nav-list,
+ul[class],
+ul[class*="nav"] {
+	list-style: none;
+}
+
+/* ================================================
    COLOR SCHEME
    Hint the browser so native form controls, scrollbars,
    and the address bar match the active theme.

@@ -112,20 +112,19 @@ describe("Surplus Provider", () => {
     expect(paymentSignatureHeader).not.toBe(Buffer.from(JSON.stringify(paymentRequired)).toString("base64"));
     expect(signTypedData).toHaveBeenCalledTimes(1);
 
-    // P0 fix: verifyingContract must be the settlement proxy
-    // (0x0770…c137), NOT the old recipient address 0x8581…c402.
+    // Scheme-aware signer: upto uses Permit2 as the EIP-712 verifyingContract
+    // (0x0000…BA3), NOT the settlement proxy. exact uses USDC (0x8335…2913).
     const signArgs = vi.mocked(signTypedData).mock.calls[0][0] as {
       domain: { verifyingContract: string; chainId: number; name: string; version: string };
       primaryType: string;
     };
     expect(signArgs.domain.verifyingContract).toBe(
-      "0x0770d2124C0a581C28Cfc47a659817145e6Cc137"
+      "0x000000000022D473030F116dDEE9F6B43aC78BA3"
     );
-    expect(signArgs.domain.verifyingContract.toLowerCase()).not.toBe(
-      "0x8581784d3e598cca3482375cff2409ac9dd8c402"
-    );
+    expect(signArgs.domain.name).toBe("Permit2");
+    expect(signArgs.domain.version).toBe("1");
     expect(signArgs.domain.chainId).toBe(8453);
-    expect(signArgs.primaryType).toBe("Payment");
+    expect(signArgs.primaryType).toBe("PermitWitnessTransferFrom");
   });
 
   it("uses exact scheme when only exact is offered", async () => {
@@ -177,6 +176,20 @@ describe("Surplus Provider", () => {
     expect(parsed.payload.payment).toBe("2500000");
     expect(parsed.payload.maxPayment).toBeUndefined();
     expect(parsed.payload.payTo).toBe("0x2222222222222222222222222222222222222222");
+    expect(signTypedData).toHaveBeenCalledTimes(1);
+
+    // exact scheme: EIP-3009 TransferWithAuthorization signed against USDC domain
+    const exactSignArgs = vi.mocked(signTypedData).mock.calls[0][0] as {
+      domain: { verifyingContract: string; chainId: number; name: string; version: string };
+      primaryType: string;
+    };
+    expect(exactSignArgs.domain.verifyingContract).toBe(
+      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    );
+    expect(exactSignArgs.domain.name).toBe("USD Coin");
+    expect(exactSignArgs.domain.version).toBe("2");
+    expect(exactSignArgs.domain.chainId).toBe(8453);
+    expect(exactSignArgs.primaryType).toBe("TransferWithAuthorization");
   });
 
   it("forwards X-Surplus-Min-Discount-Pct when minDiscountPct is provided", async () => {

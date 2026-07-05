@@ -10,6 +10,15 @@
  * for test env defaults.
  */
 
+// Enable development mode for all tests so SURPLUS provider is available
+// (SURPLUS_ENABLED requires NODE_ENV === "development" to prevent accidental production use)
+process.env.NODE_ENV = 'development';
+
+// Surplus wallet key - required for SURPLUS_ENABLED to be true in tests
+if (!process.env.SURPLUS_WALLET_PRIVATE_KEY) {
+  process.env.SURPLUS_WALLET_PRIVATE_KEY = '0x' + 'a1'.repeat(31) + 'b1'; // valid hex format for test
+}
+
 // Required for config.ts schema parse — has min(1) constraint and tests
 // mutate it to "" to exercise the "not configured" code path.
 if (!process.env.OPENROUTER_API_KEY) {

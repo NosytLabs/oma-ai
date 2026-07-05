@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { healthCheck } from "./provider-factory.js";
 import { surplusHealthCheck } from "./surplus.js";
+import type { Provider } from "./provider-selector.js";
+import { ALL_PROVIDERS } from "./provider-selector.js";
 
 const FAILURE_THRESHOLD = 5;
 const RECOVERY_TIMEOUT_MS = 60_000;
@@ -13,8 +15,6 @@ enum CircuitState {
   OPEN = "OPEN",
   HALF_OPEN = "HALF_OPEN",
 }
-
-type Provider = "venice" | "surplus";
 
 interface HealthRecord {
   state: CircuitState;
@@ -104,8 +104,6 @@ export function stopCacheCleanup(): void {
 const lastTrafficAt = new Map<Provider, number>();
 const PROBE_INTERVAL_MS = 45_000;
 const IDLE_THRESHOLD_MS = 60_000;
-
-const ALL_PROVIDERS: Provider[] = ["venice", "surplus"];
 
 async function createInitialRecord(provider: Provider): Promise<HealthRecord> {
   const record: HealthRecord = {

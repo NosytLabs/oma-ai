@@ -7,6 +7,8 @@ const INSECURE_DEFAULTS = [
   "secret",
   "jwt-secret",
   "dev-receipt-hmac-placeholder",
+  "dev-csrf-secret-change-me-in-prod-32ch",
+  "dev-encryption-key-change-me-in-prod-32ch",
 ];
 
 const envSchema = z.object({
@@ -55,7 +57,7 @@ const envSchema = z.object({
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x3333333333333333333333333333333333333333"),
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
-  ENCRYPTION_KEY: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
+  ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   // Canonical production domain. Used as the SIWE/SIWS `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
@@ -286,8 +288,19 @@ if (isProductionEnv && config.JWT_SECRET.length < 40) {
   process.exit(1);
 }
 
+if (isProductionEnv && INSECURE_DEFAULTS.includes(config.ENCRYPTION_KEY)) {
+  console.error("[FATAL] ENCRYPTION_KEY must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
+  process.exit(1);
+}
+
+if (isProductionEnv && config.ENCRYPTION_KEY.length < 40) {
+  console.error("[FATAL] ENCRYPTION_KEY must be at least 40 characters in production for adequate entropy.");
+  process.exit(1);
+}
+
 if (isProductionEnv && config.FACILITATOR_MODE === "live" && !config.SURPLUS_WALLET_PRIVATE_KEY) {
-  console.warn("[oma-config] WARNING: FACILITATOR_MODE=live without SURPLUS_WALLET_PRIVATE_KEY disables the surplus fallback path. Set a Surplus settlement key or the fallback will be unavailable.");
+  console.error("[FATAL] FACILITATOR_MODE=live requires SURPLUS_WALLET_PRIVATE_KEY to be set in production. Set a Surplus settlement key or disable the surplus fallback path.");
+  process.exit(1);
 }
 
 if (isProductionEnv && !config.RECEIPT_HMAC_SECRET) {
