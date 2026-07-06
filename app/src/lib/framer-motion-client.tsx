@@ -22,23 +22,23 @@
  *     No alias, no transpilePackages. All app imports go through this wrapper.
  */
 
-import * as FM from "framer-motion";
-
 // Re-export motion components explicitly so each becomes an independent
 // client reference. Static `export { m }` does not do this — it forwards
 // the value reference, which loses the Proxy through RSC.
-export const m = FM.m;
-export const LazyMotion = FM.LazyMotion;
-export const MotionConfig = FM.MotionConfig;
+// SECURITY (perf): Import only what we use. `import * as FM` prevents
+// tree-shaking and loads the full framer-motion bundle (~150KB waste).
+import {
+	m,
+	LazyMotion,
+	MotionConfig,
+	domAnimation,
+	useMotionValue,
+	useSpring,
+	useScroll,
+	useReducedMotion,
+} from "framer-motion";
 
-// Features
-export const domAnimation = FM.domAnimation;
-
-// Hooks
-export const useMotionValue = FM.useMotionValue;
-export const useSpring = FM.useSpring;
-export const useScroll = FM.useScroll;
-export const useReducedMotion = FM.useReducedMotion;
+export { m, LazyMotion, MotionConfig, domAnimation, useMotionValue, useSpring, useScroll, useReducedMotion };
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration
 export type {

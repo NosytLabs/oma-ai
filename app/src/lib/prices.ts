@@ -1,6 +1,6 @@
 /**
  * Crypto Price Fetching Module
- * Fetches real-time prices from Jupiter (SOL) and CoinGecko (BTC, ETH)
+ * Fetches real-time prices from CoinGecko (BTC, ETH, etc.)
  * Implements 30-second client-side caching
  */
 
@@ -29,11 +29,10 @@ export interface CryptoPrice {
 	price: number;
 	change24h: number;
 	lastUpdated: string;
-	source: "jupiter" | "coingecko";
+	source: "coingecko";
 }
 
 export interface PriceData {
-	sol: CryptoPrice | null;
 	btc: CryptoPrice | null;
 	eth: CryptoPrice | null;
 }
@@ -49,60 +48,6 @@ interface PriceCache {
 
 const CACHE_DURATION = 30 * 1000; // 30 seconds in milliseconds
 const COINGECKO_API = "/api/pricing/crypto";
-const JUPITER_PRICE_API = "https://api.jup.ag/swap/v2/quote";
-
-// SOL and USDC mints for Jupiter
-const SOL_MINT = "So11111111111111111111111111111111111111112";
-const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-
-// =============================================================================
-// JUPITER PRICE FETCHING
-// =============================================================================
-
-/**
- * Fetch SOL price from Jupiter Aggregator
- * Uses 1 SOL quote to determine current USD price
- */
-async function fetchSolPriceFromJupiter(): Promise<CryptoPrice | null> {
-	try {
-		const queryParams = new URLSearchParams({
-			inputMint: SOL_MINT,
-			outputMint: USDC_MINT,
-			amount: "1000000000", // 1 SOL in lamports
-			slippageBps: "1",
-			onlyDirectRoutes: "false",
-		});
-
-		const response = await fetch(
-			`${JUPITER_PRICE_API}?${queryParams.toString()}`,
-			{
-				headers: {
-					"Content-Type": "application/json",
-				},
-			},
-		);
-
-		if (!response.ok) {
-			throw new Error(`Jupiter API error: ${response.status}`);
-		}
-
-		const quote = await response.json();
-		// USDC has 6 decimals, so divide by 1e6
-		const price = parseFloat(quote.outAmount) / 1e6;
-
-		return {
-			symbol: "SOL",
-			name: "Solana",
-			price,
-			change24h: 0, // Jupiter doesn't provide 24h change
-			lastUpdated: new Date().toISOString(),
-			source: "jupiter",
-		};
-	} catch (error) {
-		console.error("Failed to fetch SOL price from Jupiter:", error);
-		return null;
-	}
-}
 
 // =============================================================================
 // COINGECKO PRICE FETCHING
@@ -115,14 +60,10 @@ interface CoinGeckoPriceResponse {
 	cachedAt: string;
 }
 
-/**
- * Fetch prices from CoinGecko via the existing API route
- * Gets BTC, ETH prices (and optionally SOL)
- */
 async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 	try {
 		const response = await fetch(COINGECKO_API, {
-			next: { revalidate: 30 }, // Match cache duration
+			next: { revalidate: 30 },
 		});
 
 		if (!response.ok) {
@@ -135,7 +76,6 @@ async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 			throw new Error("Invalid response from pricing API");
 		}
 
-		// Add source marker to each price
 		return data.data.map((price) => ({
 			...price,
 			source: "coingecko" as const,
@@ -153,10 +93,6 @@ async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 let priceCache: PriceCache | null = null;
 let ongoingFetch: Promise<PriceData> | null = null;
 
-/**
- * Get all crypto prices with caching and request deduplication
- * Returns cached data if fresh (< 30 seconds old), otherwise fetches new data
- */
 async function getCryptoPrices(
 	forceRefresh = false,
 ): Promise<PriceData> {
@@ -166,7 +102,6 @@ async function getCryptoPrices(
 
 	if (isCacheValid && !forceRefresh && priceCache) {
 		return {
-			sol: priceCache.data.find((p) => p.symbol === "SOL") || null,
 			btc: priceCache.data.find((p) => p.symbol === "BTC") || null,
 			eth: priceCache.data.find((p) => p.symbol === "ETH") || null,
 		};
@@ -177,27 +112,12 @@ async function getCryptoPrices(
 	}
 
 	ongoingFetch = (async () => {
-		const [jupiterPrice, coingeckoPrices] = await Promise.all([
-			fetchSolPriceFromJupiter(),
-			fetchPricesFromCoinGecko(),
-		]);
+		const coingeckoPrices = await fetchPricesFromCoinGecko();
 
-		const mergedPrices: CryptoPrice[] = [];
-
-		if (jupiterPrice) {
-			mergedPrices.push(jupiterPrice);
-		}
-
-		for (const price of coingeckoPrices) {
-			if (price.symbol === "SOL" && jupiterPrice) continue;
-			mergedPrices.push(price);
-		}
-
-		priceCache = { data: mergedPrices, timestamp: now };
+		priceCache = { data: coingeckoPrices, timestamp: now };
 		return {
-			sol: mergedPrices.find((p) => p.symbol === "SOL") || null,
-			btc: mergedPrices.find((p) => p.symbol === "BTC") || null,
-			eth: mergedPrices.find((p) => p.symbol === "ETH") || null,
+			btc: coingeckoPrices.find((p) => p.symbol === "BTC") || null,
+			eth: coingeckoPrices.find((p) => p.symbol === "ETH") || null,
 		};
 	})();
 
@@ -250,13 +170,12 @@ export function useCryptoPrices(
 		refetchOnWindowFocus: false,
 	});
 
-	const prices: PriceData = data ?? { sol: null, btc: null, eth: null };
+	const prices: PriceData = data ?? { btc: null, eth: null };
 
 	const refresh = useCallback(async () => {
 		await queryClient.invalidateQueries({ queryKey: ["cryptoPrices"] });
 	}, [queryClient]);
 
-	// Approximate countdown to next refresh
 	const elapsed = Date.now() - dataUpdatedAt;
 	const nextRefreshIn = autoRefresh
 		? Math.max(0, refreshInterval - elapsed)
@@ -280,15 +199,10 @@ export function useCryptoPrices(
 // UTILITY FUNCTIONS
 // =============================================================================
 
-/**
- * Get price for a specific symbol
- */
 function getPriceBySymbol(prices: PriceData, symbol: string): number | null {
 	const upperSymbol = symbol.toUpperCase();
 
 	switch (upperSymbol) {
-		case "SOL":
-			return prices.sol?.price ?? null;
 		case "BTC":
 			return prices.btc?.price ?? null;
 		case "ETH":
@@ -310,5 +224,3 @@ export function calculateUsdValue(
 	if (price === null) return null;
 	return amount * price;
 }
-
-

@@ -13,7 +13,7 @@
  * `null` and the caller falls back to the existing HS256 path.
  *
  * IMPORTANT: this module is purely additive. It does NOT change how the
- * server's own HS256 session tokens (siwe/solana/account-number/sso) are
+ * server's own HS256 session tokens (siwe/account-number/sso) are
  * issued or verified. The two paths run in parallel:
  *
  *   sessionAuth() → verifySessionToken (HS256, jose) → verifyNeonAuthToken

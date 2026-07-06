@@ -4,11 +4,8 @@ import { getBalance } from "../../credits/index.js";
 import { db } from "../../db/client.js";
 import { usageRecords, deposits } from "../../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
-import { houdiniClient } from "../../credits/houdini-client.js";
 import { checkCircuitBreaker } from "../../credits/price-guard.js";
 import type { OmaEnv } from "../../types.js";
-import { mapHoudiniStatus } from "./houdini.js";
-import { completeHoudiniDeposit } from "../../credits/deposit.js";
 import { logger } from "../../lib/logger.js";
 
 export const balanceRoutes = new Hono<OmaEnv>();
@@ -65,42 +62,6 @@ balanceRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
       });
     }
 
-    if (deposit.type === "houdini_swap" && deposit.houdiniId) {
-      try {
-        const order = await houdiniClient.getDepositStatus(deposit.houdiniId);
-        const mappedStatus = mapHoudiniStatus(order.status);
-        if (mappedStatus !== deposit.status) {
-          await db.update(deposits)
-            .set({ status: mappedStatus })
-            .where(eq(deposits.id, depositId!));
-        }
-        if (order.status === "FINISHED" && order.toAmount && !deposit.txHash) {
-          await completeHoudiniDeposit(depositId!, Number(order.toAmount), order.transactionHash ?? "", deposit.userId);
-        }
-        return c.json({
-          id: deposit.id,
-          type: deposit.type,
-          status: mappedStatus,
-          houdiniStatus: order.status,
-          amountUsd: deposit.amountUsd,
-          creditsIssued: deposit.creditsIssued,
-          fromAmount: order.fromAmount,
-          toAmount: order.toAmount,
-          txHash: deposit.txHash || order.transactionHash,
-        });
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({
-          id: deposit.id,
-          type: deposit.type,
-          status: deposit.status,
-          amountUsd: deposit.amountUsd,
-          creditsIssued: deposit.creditsIssued,
-          pollError: message,
-        });
-      }
-    }
-
     return c.json({
       id: deposit.id,
       type: deposit.type,
@@ -116,12 +77,3 @@ balanceRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
   }
 });
 
-balanceRoutes.get("/v1/deposit/coins", async (c) => {
-  try {
-    const tokens = await houdiniClient.getTokens();
-    return c.json({ tokens });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: { message, type: "external_error" } }, 502);
-  }
-});

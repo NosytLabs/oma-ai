@@ -27,6 +27,7 @@ import { z } from "zod";
 import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { authLimiter } from "@/lib/rate-limiter";
+import { log } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -105,7 +106,7 @@ export const POST = withRateLimit(
 			// Mirror middleware behavior: if JWT_SECRET is missing/weak in
 			// production, refuse to mint a cookie at all.
 			if (process.env.NODE_ENV === "production") {
-				console.error(
+				log.error(
 					"[/api/auth/session/cookie] JWT_SECRET missing or too short; refusing to set session cookie",
 				);
 			}

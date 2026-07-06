@@ -3,15 +3,11 @@
 import { AnimatePresence, m } from "framer-motion";
 import {
 	AlertTriangle,
-	ArrowRightLeft,
 	Check,
 	CheckCircle2,
 	ExternalLink,
-	Link2,
 	Loader2,
-	Rocket,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import {
 	useCallback,
@@ -27,7 +23,7 @@ import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
-import { Magnetic, StaggerReveal, scaleIn, scaleInSpring } from "@/lib/motion";
+import { Magnetic, scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/prices";
 import {
 	type CoinOption,
@@ -48,16 +44,6 @@ export interface PendingDeposit {
 	createdAt: string;
 }
 
-interface PaymentLinkInfo {
-	id: string;
-	url: string;
-	amount: string;
-	token: string;
-	chain: string;
-	expiresAt: string;
-	depositId: string;
-}
-
 export function UnifiedDepositInterface({
 	onDeposit,
 }: {
@@ -69,15 +55,12 @@ export function UnifiedDepositInterface({
 	const [processingStep, setProcessingStep] = useState("");
 	const [txHash, setTxHash] = useState("");
 	const [error, setError] = useState("");
-	const [paymentLinkInfo, setPaymentLinkInfo] =
-		useState<PaymentLinkInfo | null>(null);
-	const [creatingPaymentLink, setCreatingPaymentLink] = useState(false);
 	const [coinBalance, setCoinBalance] = useState<string | null>(null);
 	const toast = useToast();
 	const id = useId();
 
 	const stepOrder = useMemo<DepositStep[]>(
-		() => ["select", "route", "processing", "complete", "error"],
+		() => ["select", "processing", "complete", "error"],
 		[],
 	);
 	const prevStepRef = useRef<DepositStep>("select");
@@ -105,11 +88,6 @@ export function UnifiedDepositInterface({
 
 	const detectRoute = useCallback((): RouteInfo => {
 		if (!selectedCoin) return ROUTES["usdc-base"];
-		if (selectedCoin.id === "usdc-base") return ROUTES["usdc-base"];
-		if (selectedCoin.id === "usdc-sol") return ROUTES["usdc-sol"];
-
-		// HoudiniSwap is not configured on this server. Disable the route.
-		// Users should use Direct USDC deposit or contact support.
 		return ROUTES["usdc-base"];
 	}, [selectedCoin]);
 
@@ -122,7 +100,7 @@ export function UnifiedDepositInterface({
 		}
 		const fetchBalance = async () => {
 			try {
-				const bal = await api.oma.getBalance();
+				const bal = await api.balance.get();
 				const balanceCents = parseInt(bal.balanceCents || "0", 10);
 				setCoinBalance((balanceCents / 100).toFixed(2));
 			} catch {
@@ -281,25 +259,11 @@ export function UnifiedDepositInterface({
 				toast.success(`Successfully deposited $${amount} USDC`);
 				setStep("complete");
 			} else {
-				let tokensResponse: Response | null = null;
-				try {
-					tokensResponse = await fetch("/api/v1/deposit/houdini/tokens", {
-						headers: { Authorization: `Bearer ${sessionToken}` },
-					});
-				} catch {
-					// Network error - Houdini service unreachable
-				}
-
-				if (!tokensResponse?.ok) {
-					const errorMsg =
-						"HoudiniSwap is not currently configured on this server. Please try using Direct USDC deposit or contact support.";
-					setError(errorMsg);
-					toast.error("Service unavailable");
-					setStep("error");
-					return;
-				}
-
-				setStep("route");
+				const errorMsg =
+					"Only USDC on Base is supported for direct deposit. Please select USDC.";
+				setError(errorMsg);
+				toast.error(errorMsg);
+				setStep("error");
 			}
 		} catch (e) {
 			const errMsg = e instanceof Error ? e.message : "Deposit failed";
@@ -321,50 +285,6 @@ export function UnifiedDepositInterface({
 		signMessage,
 	]);
 
-	const handleCreatePaymentLink = async () => {
-		if (!amount || parseFloat(amount) <= 0 || !selectedCoin) return;
-		setCreatingPaymentLink(true);
-		try {
-			setProcessingStep("Creating payment link...");
-			const chain = selectedCoin.chain === "solana" ? "solana" : "base";
-			const response = await fetch("/api/pricing/crypto", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					action: "create-payment-link",
-					amount: parseFloat(amount),
-					chain,
-					token: selectedCoin.symbol,
-				}),
-			});
-
-			const result = await response.json();
-
-			if (result.success && result.paymentLink) {
-				setPaymentLinkInfo({
-					id: result.paymentLink.id,
-					url: result.paymentLink.url,
-					amount: result.paymentLink.amount,
-					token: result.paymentLink.token,
-					chain: result.paymentLink.chain,
-					expiresAt: result.paymentLink.expiresAt,
-					depositId: result.paymentLink.depositId,
-				});
-				toast.success("Payment link created!");
-				setStep("processing");
-			} else {
-				throw new Error(result.error || "Failed to create payment link");
-			}
-		} catch (e) {
-			const errMsg =
-				e instanceof Error ? e.message : "Failed to create payment link";
-			toast.error(errMsg);
-			setStep("error");
-		} finally {
-			setCreatingPaymentLink(false);
-		}
-	};
-
 	const handleReset = () => {
 		setStep("select");
 		setSelectedCoin(null);
@@ -378,7 +298,6 @@ export function UnifiedDepositInterface({
 
 	const STEPS = [
 		{ key: "select" as const, label: "Select Asset" },
-		{ key: "route" as const, label: "Choose Route" },
 		{ key: "processing" as const, label: "Process" },
 		{ key: "complete" as const, label: "Complete" },
 	];
@@ -590,142 +509,6 @@ export function UnifiedDepositInterface({
 						</div>
 					)}
 
-					{step === "route" && (
-						<div className="space-y-5">
-							<m.div
-								className="text-left"
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ duration: 0.2 }}
-							>
-								<div className="flex items-center gap-3 mb-4">
-									<div className="flex h-10 w-10 items-center justify-center rounded border border-border-bright bg-surface">
-										<ArrowRightLeft className="h-5 w-5 text-accent" />
-									</div>
-									<div>
-										<h3 className="text-lg font-bold text-text-bright">
-											Swap Required
-										</h3>
-										<p className="text-text-secondary text-sm">
-											{selectedCoin?.symbol} is not directly supported. Use
-											HoudiniSwap to convert to USDC.
-										</p>
-									</div>
-								</div>
-							</m.div>
-
-							<StaggerReveal stagger={0.07} className="space-y-3">
-								<m.div
-									variants={scaleIn}
-									className="rounded border border-border-bright bg-surface/50 p-4 tilt-card sheen glass"
-								>
-									<div className="flex items-center gap-2 mb-3">
-										<Sparkles className="h-4 w-4 text-amber" />
-										<span className="text-sm font-medium text-text-bright">
-											HoudiniSwap Integration
-										</span>
-									</div>
-									<div className="space-y-2 text-sm text-text-secondary">
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>100+ cryptocurrencies supported</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>Cross-chain swaps</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>Privacy enhanced routing via Monero tunnel</span>
-										</div>
-									</div>
-								</m.div>
-
-								<m.div
-									variants={scaleIn}
-									className="rounded border border-border-bright bg-surface/50 p-4 tilt-card sheen glass"
-								>
-									<div className="flex items-center gap-2 mb-3">
-										<Rocket className="h-4 w-4 text-pink" />
-										<span className="text-sm font-medium text-text-bright">
-											x402 Pay-Per-Request
-										</span>
-									</div>
-									<p className="text-sm text-text-secondary mb-3">
-										Create a payment link and share it with users. They can pay
-										without connecting a wallet directly.
-									</p>
-									<div className="space-y-2 text-sm text-text-secondary">
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>Gasless transactions</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>Works on Solana and Base</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<Check className="h-4 w-4 text-success" />
-											<span>Automatic token conversion</span>
-										</div>
-									</div>
-								</m.div>
-							</StaggerReveal>
-
-							<div className="flex gap-3">
-								<m.button
-									onClick={handleReset}
-									className="flex-1 py-3 text-sm font-medium rounded-lg border border-border-bright
-                  text-text-secondary bg-transparent
-                  hover:bg-surface hover:text-text-bright
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
-                  active:translate-y-0
-                  transition-colors duration-150"
-									whileHover={{ scale: 1 }}
-									whileTap={{ scale: 0.98 }}
-								>
-									Back
-								</m.button>
-								<m.button
-									onClick={handleCreatePaymentLink}
-									disabled={creatingPaymentLink}
-									className="flex-1 py-3 text-sm font-semibold rounded-lg
-                  bg-accent text-void
-                  hover:bg-accent-bright
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                  active:translate-y-0
-                  transition-colors duration-150"
-									whileHover={{ scale: 1 }}
-									whileTap={{ scale: 0.98 }}
-								>
-									{creatingPaymentLink ? (
-										<span className="inline-flex items-center gap-2">
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Creating...
-										</span>
-									) : (
-										<span className="inline-flex items-center gap-2">
-											<Link2 className="h-4 w-4" />
-											Create Link
-										</span>
-									)}
-								</m.button>
-							</div>
-
-							<div className="text-left">
-								<a
-									href="https://app.houdiniswap.com"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-sm text-accent hover:text-accent-bright underline"
-								>
-									Open HoudiniSwap →
-								</a>
-							</div>
-						</div>
-					)}
-
 					{step === "processing" && (
 						<m.div
 							className="text-left py-6"
@@ -733,143 +516,45 @@ export function UnifiedDepositInterface({
 							animate={{ opacity: 1 }}
 							transition={{ duration: 0.2 }}
 						>
-							{paymentLinkInfo ? (
-								<>
-									<div className="flex items-center gap-3 mb-4">
-										<div className="flex h-10 w-10 items-center justify-center rounded border border-border-bright bg-surface">
-											<Link2 className="h-5 w-5 text-accent" />
-										</div>
-										<div>
-											<h3 className="text-lg font-bold text-text-bright">
-												Payment Link Created
-											</h3>
-											<p className="text-text-secondary text-sm">
-												Share this link with anyone to receive payment
-											</p>
-										</div>
-									</div>
-
-									<div className="rounded border border-border-bright bg-surface/50 glass-strong float p-4 mb-4">
-										<div className="flex items-center justify-between mb-2">
-											<span className="text-sm text-text-secondary">
-												Amount
-											</span>
-											<span className="font-bold text-lg text-text-bright">
-												${paymentLinkInfo.amount} {paymentLinkInfo.token}
-											</span>
-										</div>
-										<div className="flex items-center justify-between mb-2">
-											<span className="text-sm text-text-secondary">Chain</span>
-											<span className="font-medium text-text-bright capitalize">
-												{paymentLinkInfo.chain}
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm text-text-secondary">
-												Expires
-											</span>
-											<span className="text-sm text-text-bright">
-												{new Date(paymentLinkInfo.expiresAt).toLocaleString()}
-											</span>
-										</div>
-									</div>
-
-									<div className="rounded border border-border-bright bg-surface/50 glass p-3 mb-4 break-all">
-										<div className="text-xs text-text-muted mb-1 font-mono">
-											Payment Link
-										</div>
-										<div className="text-sm font-mono text-accent">
-											{paymentLinkInfo.url}
-										</div>
-									</div>
-
-									<div className="flex gap-3">
-										<m.button
-											onClick={async () => {
-												await navigator.clipboard.writeText(
-													paymentLinkInfo.url,
-												);
-												toast.success("Copied to clipboard!");
+								<div className="flex items-center justify-center mb-6">
+									<div className="pulse-ring">
+										<m.div
+											className="h-14 w-14 rounded border border-border-bright bg-surface flex items-center justify-center"
+											animate={{ rotate: 360 }}
+											transition={{
+												duration: 2,
+												repeat: Infinity,
+												ease: "linear",
 											}}
-											className="py-3 px-5 text-sm font-medium rounded-lg border border-border-bright
-                      text-text-secondary bg-transparent
-                      hover:bg-surface hover:text-text-bright
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
-                      active:translate-y-0
-                      transition-colors duration-150"
-											whileHover={{ scale: 1 }}
-											whileTap={{ scale: 0.98 }}
 										>
-											<span className="inline-flex items-center gap-2">
-												<Link2 className="h-4 w-4" />
-												Copy Link
-											</span>
-										</m.button>
-										<m.button
-											onClick={handleReset}
-											className="py-3 px-5 text-sm font-semibold rounded-lg
-                      bg-accent text-void
-                      hover:bg-accent-bright
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50
-                      active:translate-y-0
-                      transition-colors duration-150"
-											whileHover={{ scale: 1 }}
-											whileTap={{ scale: 0.98 }}
+											<Loader2 className="h-7 w-7 text-accent" />
+										</m.div>
+									</div>
+								</div>
+								<h3 className="text-lg font-bold text-text-bright text-center mb-2">
+									Processing Deposit
+								</h3>
+								<p className="text-text-secondary text-sm text-center mb-4">
+									{processingStep}
+								</p>
+								{txHash && (
+									<div className="flex items-center justify-center gap-2">
+										<span className="text-xs text-text-muted font-mono">
+											Tx:
+										</span>
+										<span className="text-xs font-mono text-accent">
+											{txHash.slice(0, 10)}...{txHash.slice(-8)}
+										</span>
+										<a
+											href={`https://basescan.io/tx/${txHash}`}
+											target="_blank"
+											rel="noopener"
+											className="text-accent hover:text-accent-bright"
 										>
-											Done
-										</m.button>
+											<ExternalLink className="h-3 w-3" />
+										</a>
 									</div>
-
-									<p className="text-xs text-text-muted mt-5 font-mono">
-										Deposit ID: {paymentLinkInfo.depositId}
-										<br />
-										Credits will be added to your account once payment is
-										confirmed via webhook.
-									</p>
-								</>
-							) : (
-								<>
-									<div className="flex items-center justify-center mb-6">
-										<div className="pulse-ring">
-											<m.div
-												className="h-14 w-14 rounded border border-border-bright bg-surface flex items-center justify-center"
-												animate={{ rotate: 360 }}
-												transition={{
-													duration: 2,
-													repeat: Infinity,
-													ease: "linear",
-												}}
-											>
-												<Loader2 className="h-7 w-7 text-accent" />
-											</m.div>
-										</div>
-									</div>
-									<h3 className="text-lg font-bold text-text-bright text-center mb-2">
-										Processing Deposit
-									</h3>
-									<p className="text-text-secondary text-sm text-center mb-4">
-										{processingStep}
-									</p>
-									{txHash && (
-										<div className="flex items-center justify-center gap-2">
-											<span className="text-xs text-text-muted font-mono">
-												Tx:
-											</span>
-											<span className="text-xs font-mono text-accent">
-												{txHash.slice(0, 10)}...{txHash.slice(-8)}
-											</span>
-											<a
-												href={`https://basescan.io/tx/${txHash}`}
-												target="_blank"
-												rel="noopener"
-												className="text-accent hover:text-accent-bright"
-											>
-												<ExternalLink className="h-3 w-3" />
-											</a>
-										</div>
-									)}
-								</>
-							)}
+								)}
 						</m.div>
 					)}
 

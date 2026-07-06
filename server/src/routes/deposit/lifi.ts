@@ -3,6 +3,7 @@ import { z } from "zod";
 import { processLifiDeposit } from "../../credits/deposit.js";
 import { sessionAuth } from "../../auth/middleware.js";
 import { auditLog } from "../../middleware/audit.js";
+import { logger } from "../../lib/logger.js";
 import { db } from "../../db/client.js";
 import { deposits } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -41,7 +42,34 @@ lifiRoutes.post("/v1/deposit/lifi", sessionAuth, async (c) => {
       return c.json({ error: { message: "Route transaction has not completed", type: "verification_error", routeStatus: routeStatus?.status } }, 400);
     }
 
-    const result = await processLifiDeposit(userId, amount, txHash, fromChain, fromToken, toToken);
+    // SECURITY: Validate that the user-claimed amount matches the on-chain received amount.
+    // LiFi's status endpoint returns toAmount (destination USDC received). Use that as
+    // the source of truth instead of the user-supplied body amount, which could be inflated.
+    const onChainAmountUsd = Number(routeStatus.toAmount) / 1e6; // USDC has 6 decimals
+    if (!Number.isFinite(onChainAmountUsd) || onChainAmountUsd <= 0) {
+      // If LiFi doesn't report toAmount, use the user-claimed amount but log a warning.
+      // This is a degraded security posture — operators should monitor for abuse.
+      logger.warn({ txHash, fromChain, claimedAmount: amount, toAmount: routeStatus.toAmount }, "LiFi deposit: toAmount missing or invalid, falling back to claimed amount");
+    }
+    const verifiedAmount = (Number.isFinite(onChainAmountUsd) && onChainAmountUsd > 0)
+      ? onChainAmountUsd
+      : amount;
+
+    // If on-chain amount is available, verify it roughly matches the claim (1% tolerance for fees/slippage)
+    if (Number.isFinite(onChainAmountUsd) && onChainAmountUsd > 0) {
+      if (onChainAmountUsd < amount * 0.99) {
+        return c.json({
+          error: {
+            message: `Amount mismatch: claimed $${amount}, on-chain received is $${onChainAmountUsd.toFixed(2)}`,
+            type: "amount_mismatch",
+            claimedAmount: amount,
+            onChainAmount: onChainAmountUsd,
+          },
+        }, 400);
+      }
+    }
+
+    const result = await processLifiDeposit(userId, verifiedAmount, txHash, fromChain, fromToken, toToken);
 
     const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
     const userAgent = c.req.header("user-agent") || undefined;

@@ -9,7 +9,7 @@
 import { CHART_PALETTE } from "@/components/ui/charts/shared";
 import { toDollars } from "@/lib/utils";
 
-/** Raw shape returned by `api.oma.getUsage()` — mirrors `UsageRecord`. */
+/** Raw shape returned by `api.usage.get()` — mirrors `UsageRecord`. */
 export interface UsageRecordLike {
 	id: string;
 	model: string;

@@ -34,7 +34,7 @@ export default function ApiKeysPage() {
 
 	const keysQuery = useQuery({
 		queryKey: ["apiKeys"],
-		queryFn: () => api.oma.getApiKeys(),
+		queryFn: () => api.auth.listKeys(),
 		enabled: isConnected,
 		staleTime: 60_000,
 	});
@@ -75,7 +75,7 @@ export default function ApiKeysPage() {
 		if (!newKeyName.trim()) return;
 		setCreating(true);
 		try {
-			const key = await api.oma.createApiKey(newKeyName.trim());
+			const key = await api.auth.createKey(newKeyName.trim());
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
@@ -114,7 +114,7 @@ export default function ApiKeysPage() {
 			setRevokingId(keyId);
 			setConfirmRevokeId(null);
 			try {
-				await api.oma.revokeApiKey(keyId);
+				await api.auth.deleteKey(keyId);
 				queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) =>
 					(prev ?? []).filter((k) => k.id !== keyId),
 				);
@@ -135,7 +135,7 @@ export default function ApiKeysPage() {
 			// biome-ignore lint/style/noNonNullAssertion: checked above
 			const limits = rateLimits[keyId]!;
 			try {
-				await api.oma.updateApiKeyRateLimits(keyId, {
+				await api.auth.updateKeyRateLimits(keyId, {
 					rpm: limits.rpm,
 					tpm: limits.tpm,
 				});

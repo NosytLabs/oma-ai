@@ -20,7 +20,7 @@ export default function NotFound() {
 	}, []);
 
 	return (
-		<div className="min-h-[80dvh] flex flex-col items-center justify-center px-4 py-20">
+		<div className="min-h-[60dvh] flex flex-col items-center justify-center px-4 py-20">
 			<div className="w-full max-w-md text-center flex flex-col items-center gap-7">
 				{/* Large 404 with accent-tinted digits */}
 				<div className="relative">

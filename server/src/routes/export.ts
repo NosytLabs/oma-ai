@@ -29,8 +29,8 @@ function formatJSON(data: Record<string, unknown>[]): string {
 exportRoutes.get("/v1/export/deposits", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const userId = c.get("userId");
   const format = c.req.query("format") || "csv";
-  const limit = Math.min(parseInt(c.req.query("limit") || "100", 10), 1000);
-  const offset = parseInt(c.req.query("offset") || "0", 10);
+  const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "100", 10) || 100, 1), 1000);
+  const offset = Math.max(parseInt(c.req.query("offset") || "0", 10) || 0, 0);
 
   const depositsData = await db.select().from(deposits)
     .where(eq(deposits.userId, userId))
@@ -61,7 +61,7 @@ exportRoutes.get("/v1/export/deposits", sessionAuth, rateLimit({ windowMs: 60_00
   return c.body(csv);
 });
 
-exportRoutes.get("/v1/export/withdrawals", sessionAuth, async (c) => {
+exportRoutes.get("/v1/export/withdrawals", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const userId = c.get("userId");
   const format = c.req.query("format") || "csv";
 
@@ -95,7 +95,7 @@ exportRoutes.get("/v1/export/withdrawals", sessionAuth, async (c) => {
   return c.body(csv);
 });
 
-exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
+exportRoutes.get("/v1/export/usage", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const userId = c.get("userId");
   const format = c.req.query("format") || "csv";
   const startDate = c.req.query("start_date");
@@ -147,27 +147,28 @@ exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
   return c.body(csv);
 });
 
-exportRoutes.get("/v1/export/summary", sessionAuth, async (c) => {
+exportRoutes.get("/v1/export/summary", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
   const userId = c.get("userId");
   const format = c.req.query("format") || "json";
 
-  const balance = await db.select().from(creditBalances)
-    .where(eq(creditBalances.userId, userId))
-    .limit(1);
-
-  const totalDeposits = await db.select({
-    count: sql<string>`COUNT(*)`,
-    total: sql<string>`SUM(${deposits.amountUsd}::numeric)`,
-  }).from(deposits)
-    .where(and(eq(deposits.userId, userId), eq(deposits.status, "completed")));
-
-  const totalUsage = await db.select({
-    totalInputTokens: sql<string>`SUM(${usageRecords.inputTokens})`,
-    totalOutputTokens: sql<string>`SUM(${usageRecords.outputTokens})`,
-    totalCost: sql<string>`SUM(${usageRecords.totalCents})`,
-    requestCount: sql<string>`COUNT(*)`,
-  }).from(usageRecords)
-    .where(eq(usageRecords.userId, userId));
+  // Parallel queries — all 3 are independent
+  const [balance, totalDeposits, totalUsage] = await Promise.all([
+    db.select().from(creditBalances)
+      .where(eq(creditBalances.userId, userId))
+      .limit(1),
+    db.select({
+      count: sql<string>`COUNT(*)`,
+      total: sql<string>`SUM(${deposits.amountUsd}::numeric)`,
+    }).from(deposits)
+      .where(and(eq(deposits.userId, userId), eq(deposits.status, "completed"))),
+    db.select({
+      totalInputTokens: sql<string>`SUM(${usageRecords.inputTokens})`,
+      totalOutputTokens: sql<string>`SUM(${usageRecords.outputTokens})`,
+      totalCost: sql<string>`SUM(${usageRecords.totalCents})`,
+      requestCount: sql<string>`COUNT(*)`,
+    }).from(usageRecords)
+      .where(eq(usageRecords.userId, userId)),
+  ]);
 
   const summary = {
     generated_at: new Date().toISOString(),

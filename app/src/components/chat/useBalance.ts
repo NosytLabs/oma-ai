@@ -27,7 +27,7 @@ export function useBalance(): {
 
 	const query = useQuery({
 		queryKey: ["balance"],
-		queryFn: () => api.balance(),
+		queryFn: () => api.balance.get(),
 		enabled: isAuthenticated,
 		// Slower polling (120s instead of 30s) and stop on auth errors —
 		// the old 30s + auto-refetch-on-fail created an infinite 401 loop.

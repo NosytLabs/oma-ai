@@ -3,6 +3,7 @@
 import { AlertTriangle, Bug, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { log } from "@/lib/logger";
 
 interface RouteErrorFallbackProps {
 	error: Error & { digest?: string };
@@ -18,13 +19,13 @@ export function RouteErrorFallback({
 	routeName = "page",
 }: RouteErrorFallbackProps) {
 	useEffect(() => {
-		console.error(`[RouteError:${routeName}]`, error);
+		log.error(`[RouteError:${routeName}]`, error);
 	}, [error, routeName]);
 
 	const errorMessage = error.message || "An unexpected error occurred";
 
 	return (
-		<div className="min-h-[50vh] flex flex-col items-center justify-center px-4">
+		<div className="min-h-[60dvh] flex flex-col items-center justify-center px-4">
 			<div className="text-center max-w-lg">
 				<div className="mb-6 flex items-center justify-center">
 					<div className="flex h-16 w-16 items-center justify-center rounded-full border border-error/30 bg-error/10">

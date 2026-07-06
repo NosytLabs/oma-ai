@@ -8,7 +8,7 @@
  */
 
 import { m } from "@/lib/framer-motion-client";
-import { ArrowRight, Copy, Terminal } from "lucide-react";
+import { ArrowRight, Copy, Terminal, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,7 @@ export function Hero({ modelCount }: HeroProps) {
 						</m.h1>
 
 						<m.p
-							className="mt-6 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg"
+							className="mt-6 text-xl sm:text-2xl text-text-secondary leading-relaxed max-w-lg"
 							variants={child}
 							suppressHydrationWarning
 						>
@@ -149,6 +149,19 @@ export function Hero({ modelCount }: HeroProps) {
 					</m.div>
 				</div>
 			</div>
+
+			<m.div
+				className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 1.2, duration: 0.6 }}
+				aria-hidden="true"
+			>
+				<span className="text-[10px] uppercase tracking-[0.2em] font-mono text-text-muted">
+					Scroll
+				</span>
+				<ChevronDown className="h-4 w-4 text-text-muted animate-bounce" />
+			</m.div>
 		</section>
 	);
 }
@@ -212,7 +225,7 @@ function TerminalBlock({ code }: { code: string }) {
 				</button>
 			</div>
 			<pre className="p-5 text-text-secondary overflow-x-auto leading-relaxed whitespace-pre">
-				<code className="font-mono text-[12px] sm:text-[13px]">
+				<code className="font-mono text-[13px] sm:text-[14px]">
 					<TokenizedCode code={code} />
 				</code>
 			</pre>

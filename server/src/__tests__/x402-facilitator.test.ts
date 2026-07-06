@@ -171,14 +171,6 @@ describe('x402 Facilitator – verifyPayment', () => {
       expect(result.networkId).toBe('base')
     })
 
-    it('returns valid=true for solana scheme in mock mode', async () => {
-      const sig = makePaymentSig({ scheme: 'solana' })
-      const result = await verifyPayment(sig)
-
-      expect(result.valid).toBe(true)
-      expect(result.txHash).toBeTruthy()
-      expect(result.amount).toBe('1.00')
-    })
   })
 
   describe('expiry validation', () => {

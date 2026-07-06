@@ -114,7 +114,7 @@ export function useLiveModels(): ModelOption[] {
 			return;
 		let cancelled = false;
 		api
-			.models()
+			.models.list()
 			.then((data) => {
 				if (cancelled || !data?.data?.length) return;
 				const mapped = (data.data as unknown[])

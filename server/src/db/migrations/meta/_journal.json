@@ -71,6 +71,13 @@
       "when": 1781664000000,
       "tag": "0032_drop_orphaned_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1781728000000,
+      "tag": "0033_schema_fixes",
+      "breakpoints": true
     }
   ]
 }

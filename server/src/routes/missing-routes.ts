@@ -7,10 +7,9 @@
 // Two spec entries still have no handler at the spec path:
 //   - /v1/api-keys (GET, POST) — the real handler is /keys (in routes/auth.ts).
 //     Kept as a 501 here so the spec entry is not a 404; clients should use /keys.
-//   - /v1/x402/proxy (POST) — the real 501 handler lives at the sub-path
-//     /v1/x402/proxy/chat/completions in x402/facilitator.ts. This top-level
-//     path is a placeholder for a future direct x402 proxy and is documented as
-//     501 in the spec.
+//   - /v1/x402/proxy (POST) — kept as a 501 placeholder; no handler exists
+//     for the proxy/chat/completions sub-path as of Solana/Houdini cleanup.
+//     This top-level path is documented as 501 in the spec.
 //
 // ponytail: do NOT add a real implementation here. Full handlers are a separate
 // task. The 501 body is the OpenAPI-standard error shape so clients can parse it.

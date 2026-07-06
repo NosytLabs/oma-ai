@@ -80,7 +80,7 @@ describe("DLQ", () => {
     });
 
     it("should default attempts to 1", async () => {
-      await addSettlementToDlq("order-456", "5.00", "solana", "error");
+      await addSettlementToDlq("order-456", "5.00", "base", "error");
 
       const entry = JSON.parse(mockRedis.lPush.mock.calls[0][1]);
       expect(entry.attempts).toBe(1);

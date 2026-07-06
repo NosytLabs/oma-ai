@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { ChevronDown, Copy, Loader2, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 

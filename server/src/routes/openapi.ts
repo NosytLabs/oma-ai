@@ -12,7 +12,7 @@ const openapiSpec = {
     version: "2.1.0",
     description:
       "Permissionless AI inference gateway. Access 91+ models across multiple providers with automatic failover.\n\n" +
-      "Pay with crypto (USDC on Base, SOL, or any chain via LiFi/Houdini/CCTP) or fiat on-ramp.\n\n" +
+      "Pay with crypto (USDC on Base, or any chain via LiFi/CCTP) or fiat on-ramp.\n\n" +
       "Authentication: Bearer token (API key or session JWT) in the `Authorization` header.",
     contact: { name: "OMA AI", url: "https://oma-ai.com" },
     license: { name: "Proprietary" },
@@ -27,7 +27,7 @@ const openapiSpec = {
     { name: "Credits", description: "Balance, top-up, auto-reload, refunds, budget alerts, price estimates" },
     { name: "Usage", description: "Per-user usage analytics and recent records" },
     { name: "Auth", description: "SIWE / account-number auth, API key management, 2FA" },
-    { name: "Deposits", description: "Crypto deposit flows (USDC, CCTP, Houdini, LiFi)" },
+    { name: "Deposits", description: "Crypto deposit flows (USDC, CCTP, LiFi)" },
     { name: "Onramp", description: "Fiat-to-crypto on-ramp via MoonPay" },
     { name: "Search", description: "Web search via Tinyfish" },
     { name: "X402", description: "x402 payment protocol endpoints (v1 + v2)" },
@@ -1927,38 +1927,6 @@ const openapiSpec = {
         responses: { "200": { description: "Balance" } },
       },
     },
-    "/v1/deposit/houdini/tokens": {
-      get: {
-        tags: ["Deposits"],
-        summary: "List Houdini-supported swap tokens",
-        security: [],
-        operationId: "getHoudiniTokens",
-        responses: { "200": { description: "Token list" } },
-      },
-    },
-
-    // ═══════════════════════════════════════════════════════════
-    //  X402
-    // ═══════════════════════════════════════════════════════════
-    "/v1/x402/quote": {
-      post: {
-        tags: ["X402"],
-        summary: "Quote a cross-chain deposit",
-        security: [],
-        operationId: "x402Quote",
-        responses: { "200": { description: "Quote" } },
-      },
-    },
-    "/v1/x402/deposit": {
-      post: {
-        tags: ["X402"],
-        summary: "Initiate cross-chain deposit via x402",
-        security: [],
-        operationId: "x402Deposit",
-        responses: { "200": { description: "Deposit initiated" } },
-      },
-    },
-
     // ═══════════════════════════════════════════════════════════
     //  ADMIN
     // ═══════════════════════════════════════════════════════════

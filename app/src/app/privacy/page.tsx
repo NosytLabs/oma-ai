@@ -3,6 +3,9 @@
  * copy: plain English summary at the top, active voice
  */
 
+// ISR: Revalidate every 24 hours (legal content, very rarely changes)
+export const revalidate = 86400;
+
 import {
 	ArrowLeft,
 	CheckCircle2,
@@ -268,7 +271,7 @@ export default function PrivacyPage() {
 								<ul className="space-y-3">
 									<DataPoint
 										term="Wallet address"
-										detail="Used for authentication via SIWE (EVM) or Solana signatures."
+										detail="Used for authentication via SIWE (EVM) signatures."
 									/>
 									<DataPoint
 										term="API usage"
@@ -329,7 +332,7 @@ export default function PrivacyPage() {
 						</h3>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							Sign-In With Ethereum (SIWE) or Solana signatures authenticate
+							Sign-In With Ethereum (SIWE) signatures authenticate
 							every request. Your wallet address is used to:
 						</p>
 
@@ -498,11 +501,6 @@ export default function PrivacyPage() {
 									"AntSeed",
 									"P2P routing",
 									"peer-to-peer failover; no content logging",
-								],
-								[
-									"Houdini Swap",
-									"Token swap",
-									"operates independently; swap metadata only",
 								],
 								["Base", "Settlement", "on-chain transaction verification"],
 							].map(([name, role, note]) => (

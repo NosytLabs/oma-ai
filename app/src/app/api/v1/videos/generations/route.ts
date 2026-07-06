@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL as API_URL } from "@/lib/config";
 import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
+import { log } from "@/lib/logger";
 import { generationLimiter } from "@/lib/rate-limiter";
 
 export const runtime = "nodejs";
@@ -98,7 +99,7 @@ export const POST = withRateLimit(
 				signal: AbortSignal.timeout(60_000),
 			});
 		} catch (err) {
-			console.error("[video-proxy] /v1/videos/generations error:", err);
+			log.error("[video-proxy] /v1/videos/generations error:", err);
 			return NextResponse.json(
 				{
 					error: {

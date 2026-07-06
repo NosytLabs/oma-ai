@@ -6,7 +6,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth (no account required), multi-provider routing, cross-chain deposits, and native crypto payments.
 
-> **Audit status (2026-06-30):** All validation gates green — 0 typecheck/lint errors, tests passing. Dead code removed (8 inference providers, 4 jobs, MiniChat). Docs consolidated.
+> **Audit status (2026-07-05):** All validation gates green — 0 typecheck/lint errors, tests passing. Dead code removed (8 inference providers, 4 jobs, MiniChat). Stale audit screenshots, broken sitemap routes, and fabricated model data cleaned. QuickNode key moved to server-side proxy.
 
 ---
 
@@ -57,10 +57,10 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ```bash
 # From oma root
-./start-dev.sh
+./scripts/start-dev.sh
 
 # Or manually:
-cd app && npm run dev   # Frontend :3000
+cd app && npm run dev   # Frontend :3001
 cd server && npm run dev # Backend :3001
 ```
 
@@ -76,7 +76,7 @@ cd server && npm run dev # Backend :3001
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Next.js Frontend (:3000)                  │
+│                   Next.js Frontend (:3001)                   │
 │    Landing │ Dashboard │ Pricing │ Chat │ Docs        │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -93,8 +93,8 @@ cd server && npm run dev # Backend :3001
           ▼              ▼              ▼              ▼
      ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐
      │  Redis  │   │  Venice  │   │ Houdini  │   │On-chain │
-     │ (Rate    │   │  TinyFish│   │  Swap   │   │(Base)   │
-     │ Limits) │   │ CheapTok │   │  CCTP   │   │         │
+     │ (Rate    │   │   AI     │   │  Swap   │   │(Base)   │
+     │ Limits) │   │          │   │  CCTP   │   │         │
      └─────────┘   └──────────┘   └──────────┘   └─────────┘
 ```
 
@@ -143,34 +143,19 @@ cd server && npm run dev # Backend :3001
 
 ## Available Models
 
-### Frontier Models
-| Model | Provider | Input | Output | Context |
-|-------|----------|-------|--------|---------|
-| claude-opus-4-7 | Venice | $15.00 | $75.00 | 200K |
-| gpt-5.5 | Venice | $10.00 | $30.00 | 128K |
-| o3 | Venice | $10.00 | $40.00 | 200K |
+89+ models available via Venice AI. For the full catalog with live pricing, see:
 
-### Premium Models (Mid-tier)
-| Model | Provider | Input | Output | Context |
-|-------|----------|-------|--------|---------|
-| claude-sonnet-4-6 | Venice | $3.00 | $15.00 | 200K |
-| gpt-4o | Venice | $2.50 | $10.00 | 128K |
-| deepseek-v4-pro | Venice | $0.18 | $1.00 | 128K |
-| llama-3.3-70b | Venice | $0.30 | $0.48 | 128K |
+- **Web UI:** [oma-ai.com/models](https://oma-ai.com/models)
+- **API:** `GET /v1/models` (returns JSON with `inputPricePer1M`, `outputPricePer1M`, `capabilities`, `maxTokens`)
 
-### Budget (Fast/Cheap)
-| Model | Provider | Input | Output | Context |
-|-------|----------|-------|--------|---------|
-| deepseek-v4-flash | Venice | $0.05 | $0.19 | 128K |
-| qwen3-8b | Venice | $0.01 | $0.01 | 32K |
-| gemini-2.5-flash | Venice | $0.15 | $0.60 | 1M |
+### Model Tiers
 
-### Video Models
-| Model | Provider | Price | Duration |
-|-------|----------|-------|----------|
-| seedance-2-0-text-to-video | Venice | $0.90 | 5s |
-| kling-v3-pro-text-to-video | Venice | $0.92 | 5s |
-| grok-imagine-text-to-video | Venice | $0.85 | 5s |
+| Tier | Examples | Price Range (input/1M tokens) |
+|------|----------|-------------------------------|
+| **Frontier** | Claude Opus 4.8, Grok 4.3, Gemini 3.1 Pro | $3.00 – $6.00 |
+| **Premium** | Claude Sonnet 4.6, GPT-5.4 Mini, DeepSeek V4 Pro | $1.00 – $3.60 |
+| **Mid-Range** | Llama 3.3 70B, Qwen 3.7 Max, Kimi K2.6 | $0.30 – $1.73 |
+| **Budget** | GLM 4.7 Flash, Qwen3 5B-9B, Gemma 4 31B | $0.01 – $0.70 |
 
 ---
 

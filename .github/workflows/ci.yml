@@ -89,6 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for gitleaks detect
 
       - uses: pnpm/action-setup@v4
         with:
@@ -97,6 +99,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # Secret scanning with gitleaks — catches API keys, private keys,
+      # tokens, and other secrets before they land in the repo.
+      - name: GitLeaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install server dependencies
         working-directory: server
@@ -136,4 +145,4 @@ jobs:
 
       - name: Install and build app
         working-directory: app
-        run: pnpm install --frozen-lockfile && pnpm run build
+        run: pnpm install --frozen-lockfile && rm -rf .next && pnpm run build

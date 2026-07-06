@@ -332,7 +332,7 @@ function ModelsPageInner() {
 										return (
 											<div
 												key={model.id}
-												className="group relative rounded-xl border border-border bg-panel p-4 transition-all hover:border-accent/50 hover:shadow-[0_0_15px_rgba(255,153,51,0.08)]"
+												className="group relative rounded-xl border border-border bg-panel p-4 transition-all hover:border-accent/50 hover:shadow-[0_0_15px_var(--color-accent-dim)]"
 											>
 												<div className="flex items-start justify-between gap-2">
 													<div className="min-w-0 flex-1">

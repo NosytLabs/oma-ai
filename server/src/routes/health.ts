@@ -45,7 +45,10 @@ healthRoutes.get("/ready", async (c) => {
     await db.execute(sql`SELECT 1`);
     checks.database = { ok: true, latencyMs: Date.now() - dbStart };
   } catch (err) {
-    checks.database = { ok: false, error: (err as Error).message };
+    const errMsg = process.env.NODE_ENV === "production"
+      ? "database_connection_failed"
+      : (err as Error).message;
+    checks.database = { ok: false, error: errMsg };
     allOk = false;
   }
 
@@ -59,7 +62,7 @@ healthRoutes.get("/ready", async (c) => {
       checks.redis = { ok: true, error: "not_configured" };
     }
   } catch (err) {
-    checks.redis = { ok: false, error: (err as Error).message };
+    checks.redis = { ok: false, error: process.env.NODE_ENV === "production" ? "redis_connection_failed" : (err as Error).message };
     // Redis is best-effort; don't fail readiness.
   }
 
@@ -98,7 +101,7 @@ healthRoutes.get("/health", async (c) => {
         version: SERVICE_VERSION,
         service: "oma-ai",
         uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
-        error: (err as Error).message,
+        error: process.env.NODE_ENV === "production" ? "database_connection_failed" : (err as Error).message,
       },
       503
     );

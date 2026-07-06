@@ -34,6 +34,13 @@ export async function verifyUsdcOnChain(
 ): Promise<UsdcVerifyResult> {
   const hash = (txHash.startsWith("0x") ? txHash : `0x${txHash}`) as Hash;
   const treasury = config.TREASURY_BASE_ADDRESS;
+  if (!treasury) {
+    return { valid: false, error: "Treasury address not configured" };
+  }
+  // After the guard above, treasury is string — but the inner function
+  // `attempt` captures it in a closure, so TS doesn't narrow. Use the
+  // definite assignment assertion since we've already handled the undefined case.
+  const treasuryAddr = treasury;
   const expectedRawAmount = BigInt(Math.round(claimedAmountUsd)) * 1_000_000n;
 
   async function attempt(rpcUrl: string): Promise<UsdcVerifyResult> {
@@ -74,7 +81,7 @@ export async function verifyUsdcOnChain(
 
     if (decoded.functionName === "transfer") {
       const [recipient, rawAmount] = decoded.args as [string, bigint];
-      if (recipient.toLowerCase() !== treasury.toLowerCase()) {
+      if (recipient.toLowerCase() !== treasuryAddr.toLowerCase()) {
         return { valid: false, error: "Recipient mismatch: not treasury" };
       }
       if (rawAmount < expectedRawAmount) {
@@ -85,7 +92,7 @@ export async function verifyUsdcOnChain(
 
     if (decoded.functionName === "transferFrom") {
       const [, recipient, rawAmount] = decoded.args as [string, string, bigint];
-      if (recipient.toLowerCase() !== treasury.toLowerCase()) {
+      if (recipient.toLowerCase() !== treasuryAddr.toLowerCase()) {
         return { valid: false, error: "Recipient mismatch: not treasury" };
       }
       if (rawAmount < expectedRawAmount) {
@@ -98,7 +105,7 @@ export async function verifyUsdcOnChain(
   }
 
   try {
-    return await attempt(config.CHAIN_RPC_URL);
+    return await attempt(config.CHAIN_RPC_URL!);
   } catch (primaryErr: unknown) {
     const isNetworkError = primaryErr instanceof Error && (
       primaryErr.message.includes("fetch") ||

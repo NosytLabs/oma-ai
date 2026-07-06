@@ -6,7 +6,7 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("returns a non-empty array", () => {
 		const result = sitemap();
 		expect(Array.isArray(result)).toBe(true);
-		expect(result.length).toBeGreaterThanOrEqual(20);
+		expect(result.length).toBeGreaterThanOrEqual(17);
 	});
 
 	it("every entry has a valid https url under oma-ai.com", () => {

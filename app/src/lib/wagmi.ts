@@ -2,18 +2,17 @@ import { createConfig, createStorage, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 
-const MAINNET_RPC_FALLBACK = "https://mainnet.base.org";
-const TESTNET_RPC_FALLBACK = "https://sepolia.base.org";
-
-const mainnetUrl =
-	process.env.NEXT_PUBLIC_QUICKNODE_MAINNET_URL || MAINNET_RPC_FALLBACK;
-// ponytail: dedicated Sepolia endpoint when set; otherwise reuse the mainnet URL
-// (the QuickNode endpoint is multichain-flagged, but the X-QN-Network-Version
-// header is not honored by the current endpoint — verified 2026-06-23 — so we
-// fall back to public Sepolia RPC unless an operator provisions a dedicated
-// Base Sepolia endpoint).
-const testnetUrl =
-	process.env.NEXT_PUBLIC_QUICKNODE_TESTNET_URL || TESTNET_RPC_FALLBACK;
+/**
+ * RPC transport URLs.
+ *
+ * We route through /api/rpc/[chain] so the QuickNode API key stays
+ * server-side (QUICKNODE_RPC_URL env var, no NEXT_PUBLIC_ prefix).
+ * The proxy route forwards JSON-RPC calls to QuickNode (or public RPC
+ * fallbacks if no key is configured). This keeps the key out of the
+ * client-side JS bundle.
+ */
+const MAINNET_RPC = "/api/rpc/base";
+const TESTNET_RPC = "/api/rpc/base-sepolia";
 
 function getWagmiConfig() {
 	const rawProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
@@ -21,14 +20,6 @@ function getWagmiConfig() {
 	// Reject known placeholder values so the app doesn't send 403-bound
 	// requests to api.web3modal.org. A real project ID must be obtained from
 	// https://cloud.walletconnect.com and set in .env.local.
-	//
-	// ponytail: the previous check only caught `your_walletconnect_project_id`
-	// (the example in .env.example). The shipped .env.local used
-	// `dev-placeholder-project-id`, which slipped through and was passed to
-	// @walletconnect/ethereum-provider. The connector then retried its
-	// Core.init() handshake on every page load, producing 10+ "WalletConnect
-	// Core is already initialized" warnings. Both known sentinels are
-	// rejected here.
 	const KNOWN_PLACEHOLDERS = new Set([
 		"your_walletconnect_project_id",
 		"dev-placeholder-project-id",
@@ -50,8 +41,6 @@ function getWagmiConfig() {
 		injected(),
 		coinbaseWallet({ appName: "OMA AI" }),
 		// WalletConnect is only registered when a valid project ID is configured.
-		// Without one, the connector would silently fail to initialize. Operators
-		// can opt in by setting NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in .env.local.
 		...(walletConnectProjectId
 			? [
 					walletConnect({
@@ -66,12 +55,12 @@ function getWagmiConfig() {
 		chains: [base, baseSepolia],
 		connectors,
 		transports: {
-			[base.id]: http(mainnetUrl, {
+			[base.id]: http(MAINNET_RPC, {
 				batch: { batchSize: 8, wait: 50 },
 				retryCount: 3,
 				retryDelay: 200,
 			}),
-			[baseSepolia.id]: http(testnetUrl, {
+			[baseSepolia.id]: http(TESTNET_RPC, {
 				batch: { batchSize: 8, wait: 50 },
 				retryCount: 3,
 				retryDelay: 200,

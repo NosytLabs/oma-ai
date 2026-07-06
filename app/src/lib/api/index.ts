@@ -16,13 +16,6 @@ import { creditHistory, credits } from "./credits.js";
 import { deposit } from "./deposit.js";
 import { health } from "./inference.js";
 import { balance, models, usage } from "./resources.js";
-import type {
-	ApiKeyWithSecret,
-	AutoReloadSettings,
-	CreditBatch,
-	HoudiniDepositResult,
-	PurchaseCreditsResponse,
-} from "./types.js";
 
 export {
 	ApiError,
@@ -55,69 +48,12 @@ export const exportData = {
 export const api = {
 	admin,
 	auth,
-	balance: balance.get,
-	usage: usage.get,
-	models: models.list,
+	balance,
+	usage,
+	models,
 	deposit,
 	health: health.get,
 	creditHistory,
 	credits,
 	exportData,
-
-	// Legacy aliases — prefer the namespaced versions above
-	oma: {
-		health: () => health.get(),
-		getBalance: () => balance.get(),
-		getApiKeys: () => auth.listKeys(),
-		createApiKey: (name: string) =>
-			request<ApiKeyWithSecret>("/keys", {
-				method: "POST",
-				body: JSON.stringify({ name }),
-			}),
-		revokeApiKey: (id: string) =>
-			request<void>(`/keys/${id}`, { method: "DELETE" }),
-		updateApiKeyRateLimits: (
-			id: string,
-			limits: { rpm?: number; tpm?: number; expiresAt?: string },
-		) =>
-			request<void>(`/keys/${id}`, {
-				method: "PATCH",
-				body: JSON.stringify(limits),
-			}),
-		getUsage: () => usage.get(),
-		depositUsdc: (amount: number, txHash: string) =>
-			deposit.usdc(amount, txHash),
-		depositOma: (amount: number, txHash: string) => deposit.oma(amount, txHash),
-		depositHoudini: (
-			fromCoin: string,
-			amount: string,
-			quoteId?: string,
-			swapType?: string,
-		) =>
-			deposit.houdini(
-				fromCoin,
-				amount,
-				quoteId,
-				swapType,
-			) as Promise<HoudiniDepositResult>,
-		getDepositStatus: (id: string) => deposit.status(id),
-		getSupportedCoins: (blockchain?: string) =>
-			deposit.houdiniTokens(blockchain ?? "base"),
-		purchaseCredits: (
-			amountCents: number,
-			paymentMethod: "usdc" | "sol" | "oma" = "usdc",
-		) =>
-			request<PurchaseCreditsResponse>("/v1/credits/purchase", {
-				method: "POST",
-				body: JSON.stringify({ amountCents, paymentMethod }),
-			}),
-		getCreditBatches: () =>
-			request<{ activeBatches: CreditBatch[] }>("/v1/credits/balance"),
-		getAutoReload: () => request<AutoReloadSettings>("/v1/credits/auto-reload"),
-		updateAutoReload: (settings: Partial<AutoReloadSettings>) =>
-			request<AutoReloadSettings>("/v1/credits/auto-reload", {
-				method: "POST",
-				body: JSON.stringify(settings),
-			}),
-	},
 };

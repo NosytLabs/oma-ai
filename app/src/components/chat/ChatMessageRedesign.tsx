@@ -222,7 +222,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 						// Subtle depth on assistant messages
 						boxShadow: isUser
 							? "none"
-							: "0 2px 12px -4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+							: "var(--shadow-message-inset)",
 					}}
 				>
 					{/* Ambient glow line along the inner edge */}

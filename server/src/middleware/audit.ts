@@ -59,20 +59,32 @@ export function createAuditLogger(params: { action: AuditAction; resource: strin
 }
 
 /**
- * Convenience wrapper: sets resourceId and metadata from per-request
- * functions before delegating to createAuditLogger.
+ * Middleware factory for write-operation audit logs with dynamic resourceId
+ * and metadata resolved from the request context.
  */
 export function auditWriteOp(
   action: AuditAction,
   resource: string,
-  resourceIdFn: (c: Context) => string,
-  metadataFn: (c: Context) => Record<string, unknown>,
+  resourceIdFn: (c: Context) => string | undefined,
+  metadataFn: (c: Context) => Record<string, unknown> | undefined,
 ) {
-  const auditMiddleware = createAuditLogger({ action, resource });
   return async (c: Context, next: Next) => {
-    c.set("resourceId", resourceIdFn(c));
-    c.set("auditMetadata", metadataFn(c));
-    await auditMiddleware(c, next);
+    await next();
+    const userId = c.get("userId") as string | undefined;
+    const ipAddress = c.req.header("x-real-ip")
+      ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? "unknown";
+    const userAgent = c.req.header("user-agent") ?? null;
+    await auditLog({
+      userId,
+      action,
+      resource,
+      resourceId: resourceIdFn(c),
+      metadata: metadataFn(c),
+      ipAddress,
+      userAgent: userAgent ?? undefined,
+    });
   };
 }
+
 

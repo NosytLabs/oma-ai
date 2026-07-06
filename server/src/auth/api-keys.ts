@@ -10,6 +10,7 @@ import { getRedisClient } from "../lib/redis-client.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
 const API_KEY_CACHE_TTL_SECONDS = 300;
+const MAX_CIDR_RANGES = 20;
 
 const pendingLastUsedUpdates = new Set<string>();
 let flushTimer: ReturnType<typeof setInterval> | null = null;
@@ -139,6 +140,9 @@ function validateIpAllowlist(
 ): string[] | null {
   if (list === null || list === undefined) return null;
   if (!Array.isArray(list) || list.length === 0) return null;
+  if (list.length > MAX_CIDR_RANGES) {
+    throw new Error(`IP allowlist exceeds maximum of ${MAX_CIDR_RANGES} CIDR ranges`);
+  }
   const out: string[] = [];
   for (const raw of list) {
     if (typeof raw !== "string") {

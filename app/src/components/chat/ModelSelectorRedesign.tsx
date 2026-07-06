@@ -38,13 +38,13 @@ const tierStyles: Record<
 	frontier: {
 		bg: "bg-violet/20",
 		text: "text-violet",
-		glow: "rgba(167, 139, 250, 0.15)",
+		glow: "var(--color-violet-dim)",
 		border: "var(--color-violet)",
 	},
 	premium: {
 		bg: "bg-violet/20",
 		text: "text-violet",
-		glow: "rgba(167, 139, 250, 0.15)",
+		glow: "var(--color-violet-dim)",
 		border: "var(--color-violet)",
 	},
 	mid: {
@@ -62,19 +62,19 @@ const tierStyles: Record<
 	reasoning: {
 		bg: "bg-warning/20",
 		text: "text-warning",
-		glow: "rgba(255, 184, 0, 0.15)",
+		glow: "var(--color-secondary-dim)",
 		border: "var(--color-warning)",
 	},
 	coding: {
 		bg: "bg-pink/20",
 		text: "text-pink",
-		glow: "rgba(236, 72, 153, 0.15)",
+		glow: "var(--color-pink-dim)",
 		border: "var(--color-pink)",
 	},
 	uncensored: {
 		bg: "bg-error/20",
 		text: "text-error",
-		glow: "rgba(255, 51, 102, 0.15)",
+		glow: "var(--color-error-dim)",
 		border: "var(--color-error)",
 	},
 };
@@ -206,8 +206,7 @@ export function ModelSelector({
               glass-strong absolute top-full left-0 mt-1.5 w-80 overflow-hidden z-50
             "
 						style={{
-							boxShadow:
-								"0 20px 60px -12px rgba(0, 0, 0, 0.5), 0 0 40px -20px var(--color-accent-glow)",
+							boxShadow: "var(--shadow-dropdown)",
 						}}
 						role="listbox"
 						aria-label="Available AI models"

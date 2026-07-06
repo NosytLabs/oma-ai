@@ -4,18 +4,18 @@ import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 export const metadata: Metadata = {
 	title: "Deposit Credits",
 	description:
-		"Deposit funds to your OMA AI account. Supports USDC on Base and Solana, and 100+ cryptocurrencies via HoudiniSwap.",
+		"Deposit funds to your OMA AI account. USDC on Base supported.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
 		title: "Deposit Credits | OMA AI",
 		description:
-			"Deposit funds to your OMA AI account. USDC on Base and Solana supported.",
+			"Deposit funds to your OMA AI account. USDC on Base supported.",
 			},
 	twitter: {
 		card: "summary_large_image",
 		title: "Deposit Credits | OMA AI",
 		description:
-			"Deposit funds to your OMA AI account. USDC on Base and Solana supported.",
+			"Deposit funds to your OMA AI account. USDC on Base supported.",
 			},
 	robots: {
 		index: true,

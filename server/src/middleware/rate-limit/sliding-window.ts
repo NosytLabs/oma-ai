@@ -47,7 +47,7 @@ export function rateLimit(options: RateLimitOptions) {
   const windowSec = Math.ceil(windowMs / 1000);
 
   return async (c: Context, next: Next) => {
-    const apiKeyId = c.get("apiKeyId") as string | undefined;
+    const apiKeyId = (c.get("apiKeyId") as string | undefined) || (c.get("apiKey") as { id?: string } | undefined)?.id;
 
     let rateLimitKey: string;
     if (apiKeyId) {

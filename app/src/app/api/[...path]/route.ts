@@ -87,7 +87,7 @@ async function proxy(request: NextRequest) {
 		);
 	}
 
-	// Build upstream headers — forward cookies + auth headers.
+	// Build upstream headers — forward cookies + auth + CSRF headers.
 	const headers: Record<string, string> = {
 		accept: "application/json",
 	};
@@ -100,6 +100,11 @@ async function proxy(request: NextRequest) {
 	if (auth) headers.authorization = auth;
 	const ctype = request.headers.get("content-type");
 	if (ctype) headers["content-type"] = ctype;
+	// Forward CSRF token on state-changing requests so the backend can
+	// verify double-submit CSRF. Dedicated /api/auth/* proxies already
+	// forward this; the catch-all should too.
+	const csrf = request.headers.get("x-csrf-token");
+	if (csrf) headers["x-csrf-token"] = csrf;
 
 	// B3 fix: forward the HttpOnly session cookie as `Authorization: Bearer
 	// <jwt>`. The browser already sent the cookie with this request, but the

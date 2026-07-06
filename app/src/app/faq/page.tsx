@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MODEL_COUNT, MODELS, formatPricePerMillion } from "@/lib/models-data";
 
+// ISR: Revalidate every hour (static content, rarely changes)
+export const revalidate = 3600;
+
 // Derive actual price range from the real model catalog
 const PRICE_RANGE_INPUT = (() => {
 	const prices = MODELS.map((m) => m.inputPricePer1M);
@@ -43,7 +46,7 @@ const GROUPS: FAQGroup[] = [
 			{
 				iconName: "KeyRound",
 				q: "Do I need an account?",
-				a: "No. Your wallet is your account. Sign in with Ethereum (or Solana), and the dashboard generates an API key automatically. There is no signup form anywhere.",
+				a: "No. Your wallet is your account. Sign in with Ethereum, and the dashboard generates an API key automatically. There is no signup form anywhere.",
 			},
 			{
 				iconName: "Layers",

@@ -3,6 +3,7 @@
 // For production, swap to a real metrics library (prom-client) without changing the route surface.
 
 import { Hono } from "hono";
+import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 
 // ponytail: simple in-memory counters. prom-client if scrape performance matters.
@@ -97,7 +98,7 @@ function formatPrometheus(): string {
 }
 
 // Middleware: count every HTTP request. Mount BEFORE all other routes.
-export async function metricsMiddleware(c: any, next: any) {
+export async function metricsMiddleware(c: Context<OmaEnv>, next: Next) {
   await next();
   const method = c.req.method;
   const path = c.req.path;

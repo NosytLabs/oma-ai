@@ -17,10 +17,7 @@ import {
   getUserRecoveries,
   scanForWrongNetworkDeposits,
 } from "../../jobs/deposit-recovery.js";
-import {
-  getDepositRetryStatus,
-  resetDepositRetry,
-} from "../../jobs/deposit-retry.js";
+
 
 export const depositStatusRoutes = new Hono<OmaEnv>();
 
@@ -77,13 +74,6 @@ depositStatusRoutes.get("/v1/deposit/:depositId", sessionAuth, async (c) => {
     return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
   }
 
-  let retryStatus = null;
-  try {
-    retryStatus = await getDepositRetryStatus(depositId);
-  } catch {
-    // Retry status is optional
-  }
-
   return c.json({
     deposit: {
       id: deposit.id,
@@ -92,44 +82,9 @@ depositStatusRoutes.get("/v1/deposit/:depositId", sessionAuth, async (c) => {
       amountUsd: deposit.amountUsd,
       creditsIssued: deposit.creditsIssued,
       txHash: deposit.txHash,
-      houdiniId: deposit.houdiniId,
       createdAt: deposit.createdAt,
       completedAt: deposit.completedAt,
     },
-    retryStatus,
-  });
-});
-
-depositStatusRoutes.post("/v1/deposit/:depositId/retry", sessionAuth, async (c) => {
-  const userId = c.get("userId");
-  const depositId = c.req.param("depositId");
-
-  if (!depositId) {
-    return c.json({ error: { message: "Invalid deposit ID", type: "validation_error" } }, 400);
-  }
-
-  const [deposit] = await db
-    .select()
-    .from(deposits)
-    .where(and(eq(deposits.id, depositId), eq(deposits.userId, userId)))
-    .limit(1);
-
-  if (!deposit) {
-    return c.json({ error: { message: "Deposit not found", type: "not_found" } }, 404);
-  }
-
-  if (deposit.status !== "pending") {
-    return c.json({ error: { message: "Deposit is not pending", type: "invalid_request_error" } }, 400);
-  }
-
-  const reset = await resetDepositRetry(depositId);
-  if (!reset) {
-    return c.json({ error: { message: "Failed to reset retry counter", type: "internal_error" } }, 500);
-  }
-
-  return c.json({
-    success: true,
-    message: "Retry scheduled. Check deposit status for updates.",
   });
 });
 

@@ -12,7 +12,7 @@ import {
 import { auditLog } from "../middleware/audit.js";
 import { db } from "../db/client.js";
 import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts } from "../db/schema.js";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gte } from "drizzle-orm";
 import { config } from "../config.js";
 import { calculateCostCredits, getModel } from "../inference/models.js";
 import { validationError } from "../lib/validation.js";
@@ -54,7 +54,7 @@ creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
 
     const [deposit] = await db.insert(deposits).values({
       userId,
-      type: paymentMethod === "sol" ? "usdc_solana" : "usdc_direct",
+      type: "usdc_direct",
       status: "pending",
       amountUsd: String(amountCents / 100),
       creditsIssued: "0",
@@ -96,16 +96,18 @@ creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.get("/v1/credits/balance", bearerAuth, async (c) => {
+  creditRoutes.get("/v1/credits/balance", bearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
-    const balance = await getBalance(userId);
 
-    const batches = await db.select()
-      .from(creditBatches)
-      .where(eq(creditBatches.userId, userId))
-      .orderBy(desc(creditBatches.createdAt))
-      .limit(50);
+    const [balance, batches] = await Promise.all([
+      getBalance(userId),
+      db.select()
+        .from(creditBatches)
+        .where(eq(creditBatches.userId, userId))
+        .orderBy(desc(creditBatches.createdAt))
+        .limit(50),
+    ]);
 
     const activeBatches = batches.filter(b => Number(b.remainingCents) > 0 && new Date(b.expiresAt) > new Date());
 
@@ -174,44 +176,36 @@ creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
 creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
-    const limit = Math.min(Number(c.req.query("limit") ?? 100), 500);
+    const limit = Math.min(Number(c.req.query("limit") ?? 20), 100);
     const days = Math.min(Number(c.req.query("days") ?? 90), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const usageResult = await db.select({
+    // SQL-level GROUP BY — fetches aggregated rows instead of 500+ individual records
+    const modelAgg = await db.select({
       model: usageRecords.model,
-      inputTokens: usageRecords.inputTokens,
-      outputTokens: usageRecords.outputTokens,
-      totalCents: usageRecords.totalCents,
+      inputTokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+      outputTokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+      totalCents: sql<string>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      requestCount: sql<number>`count(${usageRecords.id})`,
     })
       .from(usageRecords)
       .where(and(
         eq(usageRecords.userId, userId),
-        sql`${usageRecords.createdAt} >= ${since}`,
+        gte(usageRecords.createdAt, since),
       ))
-      .orderBy(desc(usageRecords.createdAt))
+      .groupBy(usageRecords.model)
+      .orderBy(sql`sum(${usageRecords.totalCents}) desc`)
       .limit(limit);
 
-    const modelTotals: Record<string, { inputTokens: number; outputTokens: number; totalCents: number; count: number }> = {};
-    for (const record of usageResult) {
-      if (!modelTotals[record.model]) {
-        modelTotals[record.model] = { inputTokens: 0, outputTokens: 0, totalCents: 0, count: 0 };
-      }
-      modelTotals[record.model].inputTokens += record.inputTokens;
-      modelTotals[record.model].outputTokens += record.outputTokens;
-      modelTotals[record.model].totalCents += Number(record.totalCents);
-      modelTotals[record.model].count += 1;
-    }
-
     return c.json({
-      usageByModel: Object.entries(modelTotals).map(([model, data]) => ({
-        model,
-        inputTokens: data.inputTokens,
-        outputTokens: data.outputTokens,
-        totalCents: data.totalCents,
-        requestCount: data.count,
+      usageByModel: modelAgg.map((r) => ({
+        model: r.model,
+        inputTokens: Number(r.inputTokens),
+        outputTokens: Number(r.outputTokens),
+        totalCents: Number(r.totalCents),
+        requestCount: Number(r.requestCount),
       })),
-      totalUsageCents: Object.values(modelTotals).reduce((sum, m) => sum + m.totalCents, 0),
+      totalUsageCents: modelAgg.reduce((sum, m) => sum + Number(m.totalCents), 0),
       periodDays: days,
       recordLimit: limit,
     });

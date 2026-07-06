@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { m } from "framer-motion";
 import {
 	BookOpen,
@@ -45,7 +46,7 @@ interface Step {
  * Persists dismissal to localStorage so it doesn't reappear after the user
  * explicitly closes it.
  */
-export function OnboardingChecklist({
+export const OnboardingChecklist = memo(function OnboardingChecklist({
 	walletConnected,
 	hasApiKey,
 	hasUsage,
@@ -226,4 +227,4 @@ export function OnboardingChecklist({
 			</div>
 		</m.div>
 	);
-}
+});

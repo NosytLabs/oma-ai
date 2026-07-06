@@ -87,8 +87,6 @@ vi.mock('../credits/index.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
-  processHoudiniDeposit: vi.fn(),
-  completeHoudiniDeposit: vi.fn(),
 }))
 
 vi.mock('../credits/oracle.js', () => ({
@@ -100,14 +98,6 @@ vi.mock('../inference/circuit-breaker.js', () => ({
     omaDepositsAllowed: true, omaBonusPercent: 5, reason: null,
   }),
   checkOracleCircuitBreaker: vi.fn().mockResolvedValue(false),
-}))
-
-vi.mock('../credits/houdini-client.js', () => ({
-  houdiniClient: {
-    getTokens: vi.fn().mockResolvedValue([]),
-    getDepositStatus: vi.fn(),
-    createDeposit: vi.fn(),
-  },
 }))
 
   function freshChatResponse() {

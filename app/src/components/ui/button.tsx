@@ -109,9 +109,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		);
 
 		if (asChild) {
+			// When asChild, Slot merges className/ref into the child element.
+			// Wrap icon + text in a <span> so Slot never receives a Fragment
+			// (Fragment cannot accept className, causing React warnings).
 			return (
 				<Slot ref={ref} className={classes}>
-					{content}
+					<span className="inline-flex items-center gap-inherit">
+						{loading ? (
+							<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+						) : (
+							leftIcon
+						)}
+						{children}
+						{!loading && rightIcon}
+					</span>
 				</Slot>
 			);
 		}

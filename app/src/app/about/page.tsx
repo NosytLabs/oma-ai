@@ -3,6 +3,9 @@
  * copy: active voice, no adverbs, no invented metrics
  */
 
+// ISR: Revalidate every hour (static content, rarely changes)
+export const revalidate = 3600;
+
 import {
 	ArrowLeft,
 	ArrowRight,

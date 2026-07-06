@@ -45,14 +45,6 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		fallbackUrl: `${COINGECKO_THUMB}/279/small/ethereum.png`,
 		svgUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.svg",
 	},
-	SOL: {
-		symbol: "SOL",
-		name: "Solana",
-		coingeckoId: "4128",
-		primaryUrl: `${COINGECKO_BASE}/4128/large/Solana_magic_icon.png`,
-		fallbackUrl: `${COINGECKO_THUMB}/4128/small/Solana_magic_icon.png`,
-		svgUrl: "https://cryptologos.cc/logos/solana-sol-logo.svg",
-	},
 	DOGE: {
 		symbol: "DOGE",
 		name: "Dogecoin",

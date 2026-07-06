@@ -36,40 +36,53 @@ async function executeSearch(c: Context<OmaEnv>, stream: boolean) {
   try {
     const results = await searchWeb(query);
 
-    // Deduct credits and track spend
-    const requestId = crypto.randomUUID();
-    await deductCredits(
-      userId,
-      SEARCH_COST_CENTS,
-      0, // markup
-      SEARCH_COST_CENTS, // total
-      "tinyfish-search",
-      "tinyfish" as const,
-      apiKey?.id ?? "unknown",
-      0,
-      0,
-      requestId
-    );
+    // SECURITY: Only deduct credits if search returned non-empty results.
+    // Previously, credits were deducted even for empty/partial results.
+    const hasResults = Array.isArray(results.results) && results.results.length > 0;
+    if (hasResults) {
+      const requestId = crypto.randomUUID();
+      await deductCredits(
+        userId,
+        SEARCH_COST_CENTS,
+        0, // markup
+        SEARCH_COST_CENTS, // total
+        "tinyfish-search",
+        "tinyfish" as const,
+        apiKey?.id ?? "unknown",
+        0,
+        0,
+        requestId
+      );
 
-    trackApiKeySpend(apiKey?.keyHash, SEARCH_COST_CENTS);
+      trackApiKeySpend(apiKey?.keyHash, SEARCH_COST_CENTS);
+    }
 
     if (stream) {
       const sseStream = new ReadableStream({
         async start(controller) {
-          for (let i = 0; i < results.results.length; i++) {
-            const result = results.results[i];
-            const data = JSON.stringify({
-              type: "result",
-              position: result.position,
-              site_name: result.site_name,
-              title: result.title,
-              snippet: result.snippet,
-              url: result.url,
-            });
-            controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+          try {
+            const encoder = new TextEncoder();
+            for (let i = 0; i < results.results.length; i++) {
+              const result = results.results[i];
+              const data = JSON.stringify({
+                type: "result",
+                position: result.position,
+                site_name: result.site_name,
+                title: result.title,
+                snippet: result.snippet,
+                url: result.url,
+              });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          } catch {
+            try {
+              const errData = JSON.stringify({ type: "error", message: "Stream error" });
+              controller.enqueue(new TextEncoder().encode(`data: ${errData}\n\n`));
+            } catch { /* enqueue may fail if controller already errored */ }
+            try { controller.close(); } catch { /* already closed */ }
           }
-          controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
-          controller.close();
         },
       });
 

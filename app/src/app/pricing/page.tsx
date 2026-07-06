@@ -269,7 +269,7 @@ export default function PricingPage() {
 									Native x402 support lets applications integrate AI payments
 									without managing credit balances.
 									<Link
-										href="/deposit"
+										href="/docs#x402"
 										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
 									>
 										Learn more →

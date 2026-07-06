@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { memo } from "react";
+import { m } from "@/lib/framer-motion-client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
@@ -14,7 +15,7 @@ interface RecentRequestsTableProps {
 	onPageChange: (page: number) => void;
 }
 
-export function RecentRequestsTable({
+export const RecentRequestsTable = memo(function RecentRequestsTable({
 	usage,
 	loading,
 	page,
@@ -95,7 +96,7 @@ export function RecentRequestsTable({
 							</tr>
 						) : (
 							usage.slice((page - 1) * limit, page * limit).map((row, i) => (
-								<motion.tr
+								<m.tr
 									key={row.id}
 									className="border-b border-border bg-void transition-colors hover:bg-surface"
 									initial={{ opacity: 0 }}
@@ -117,7 +118,7 @@ export function RecentRequestsTable({
 									<td className="px-6 py-4 text-sm text-text-muted">
 										{formatTime(row.createdAt)}
 									</td>
-								</motion.tr>
+								</m.tr>
 							))
 						)}
 					</tbody>
@@ -156,4 +157,4 @@ export function RecentRequestsTable({
 			)}
 		</div>
 	);
-}
+});

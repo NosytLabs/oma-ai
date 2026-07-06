@@ -1,10 +1,9 @@
 export type DepositStep =
 	| "select"
-	| "route"
 	| "processing"
 	| "complete"
 	| "error";
-export type RouteType = "direct-usdc" | "houdini-swap" | "onramp" | "x402-pay";
+export type RouteType = "direct-usdc" | "onramp" | "x402-pay";
 
 export interface CoinOption {
 	id: string;
@@ -15,7 +14,7 @@ export interface CoinOption {
 	isPopular?: boolean;
 	isNative?: boolean;
 	isPrivacy?: boolean;
-	chain: "base" | "solana";
+	chain: "base";
 }
 
 export interface RouteInfo {
@@ -54,9 +53,8 @@ export const ERC20_ABI = [
 export const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 export const treasuryAddress = process.env.NEXT_PUBLIC_TREASURY_BASE_ADDRESS;
 
-// Only USDC coins are supported for direct deposit. Non-USDC coins require
-// Houdini swap which is currently disabled. Filtered at the UI level in
-// CoinSelector to avoid silent errors when users select unsupported coins.
+// Only USDC on Base is supported for direct deposit. Non-USDC coins
+// require a swap flow which is currently disabled.
 export const POPULAR_COINS: CoinOption[] = [
 	{
 		id: "usdc-base",
@@ -68,103 +66,6 @@ export const POPULAR_COINS: CoinOption[] = [
 		isPopular: true,
 		chain: "base",
 	},
-	{
-		id: "usdc-sol",
-		symbol: "USDC",
-		name: "USD Coin",
-		network: "Solana",
-		isNative: true,
-		decimals: 6,
-		isPopular: true,
-		chain: "solana",
-	},
-];
-
-export const SWAP_COINS: CoinOption[] = [
-	{
-		id: "btc",
-		symbol: "BTC",
-		name: "Bitcoin",
-		network: "BTC",
-		isPopular: true,
-		decimals: 8,
-		chain: "base",
-	},
-	{
-		id: "eth",
-		symbol: "ETH",
-		name: "Ethereum",
-		network: "ETH",
-		isPopular: true,
-		decimals: 18,
-		chain: "base",
-	},
-	{
-		id: "sol",
-		symbol: "SOL",
-		name: "Solana",
-		network: "SOL",
-		isPopular: true,
-		decimals: 9,
-		chain: "solana",
-	},
-	{
-		id: "xmr",
-		symbol: "XMR",
-		name: "Monero",
-		network: "XMR",
-		isPrivacy: true,
-		decimals: 12,
-		chain: "base",
-	},
-	{
-		id: "doge",
-		symbol: "DOGE",
-		name: "Dogecoin",
-		network: "DOGE",
-		decimals: 8,
-		chain: "base",
-	},
-	{
-		id: "ltc",
-		symbol: "LTC",
-		name: "Litecoin",
-		network: "LTC",
-		decimals: 8,
-		chain: "base",
-	},
-	{
-		id: "usdt",
-		symbol: "USDT",
-		name: "Tether",
-		network: "ETH",
-		decimals: 6,
-		chain: "base",
-	},
-	{
-		id: "usdt-sol",
-		symbol: "USDT",
-		name: "Tether",
-		network: "Solana",
-		decimals: 6,
-		chain: "solana",
-	},
-	{
-		id: "ada",
-		symbol: "ADA",
-		name: "Cardano",
-		network: "ADA",
-		decimals: 6,
-		chain: "base",
-	},
-	{
-		id: "avax",
-		symbol: "AVAX",
-		name: "Avalanche",
-		network: "AVAX",
-		decimals: 18,
-		chain: "base",
-	},
 ];
 
 export const ROUTES: Record<string, RouteInfo> = {
@@ -174,22 +75,6 @@ export const ROUTES: Record<string, RouteInfo> = {
 		description: "Instant deposit directly to Base treasury",
 		estimatedTime: "~30s",
 		feePercent: 0,
-		creditMultiplier: 1.0,
-	},
-	"usdc-sol": {
-		type: "direct-usdc",
-		label: "Direct USDC (Solana)",
-		description: "Instant deposit via Solana with x402 facilitator",
-		estimatedTime: "~2s",
-		feePercent: 0,
-		creditMultiplier: 1.0,
-	},
-	"houdini-swap": {
-		type: "houdini-swap",
-		label: "Swap + Deposit",
-		description: "Convert any crypto to USDC on Base via Houdini",
-		estimatedTime: "5-15 min",
-		feePercent: 0.5,
 		creditMultiplier: 1.0,
 	},
 	"x402-pay": {
@@ -226,6 +111,6 @@ export interface PaymentLinkInfo {
 	depositId?: string;
 	/** Optional token symbol (USDC, ETH, etc.) for display. */
 	token?: string;
-	/** Optional chain label for display (base, solana, etc). */
+	/** Optional chain label for display (base, etc). */
 	chain?: string;
 }

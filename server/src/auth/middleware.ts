@@ -277,7 +277,10 @@ export function requireAdmin() {
       }
     }
 
-    const teamId = PLATFORM_TEAM_ID || c.req.query("teamId") || c.req.header("X-Team-ID");
+    // SECURITY (A1): Never accept teamId from client. PLATFORM_TEAM_ID must be
+    // the only source. If unset, reject immediately — do not fall back to
+    // query params or headers (those allowed any team member to bypass admin).
+    const teamId = PLATFORM_TEAM_ID;
     if (!teamId) {
       return c.json({ error: { message: "Admin access required", type: "forbidden" } }, 403);
     }

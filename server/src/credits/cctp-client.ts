@@ -17,7 +17,6 @@ function getViemChain(chain: CctpChain): ViemChain {
 }
 
 const CCTP_SUPPORTED_CHAINS = [
-  "solana",
   "ethereum",
   "avalanche",
   "optimism",
@@ -28,14 +27,13 @@ const CCTP_SUPPORTED_CHAINS = [
 
 export type CctpChain = typeof CCTP_SUPPORTED_CHAINS[number];
 
-const CCTP_CHAIN_DOMAIN_IDS: Record<CctpChain, number> = {
+export const CCTP_CHAIN_DOMAIN_IDS: Record<CctpChain, number> = {
   ethereum: 0,
   avalanche: 1,
   optimism: 2,
   arbitrum: 3,
   base: 6,
   polygon: 7,
-  solana: 8,
 };
 
 const FINALITY_CONFIRMATIONS = 12;
@@ -106,10 +104,9 @@ export interface CctpVerifyResult {
 
 const CIRCLE_API = config.CCTP_CIRCLE_API_URL;
 
-function normalizeChainName(chain: string): CctpChain | null {
+export function normalizeChainName(chain: string): CctpChain | null {
   const c = chain.toLowerCase();
   const map: Record<string, CctpChain> = {
-    solana: "solana",
     ethereum: "ethereum",
     eth: "ethereum",
     avalanche: "avalanche",
@@ -285,6 +282,92 @@ async function deriveBurnFromSourceChain(
       }`,
     );
   }
+}
+
+export interface CctpAttestationVerifyResult {
+  verified: boolean;
+  error?: string;
+  onChainAmount?: string;
+}
+
+/**
+ * H-CCTP-1: Verify a CCTP deposit against Circle's attestation API before
+ * crediting the user. Calls `/attestations/{messageHash}` to confirm the
+ * attestation exists and is `complete`, then re-queries
+ * `/v2/messages/{sourceDomain}?transactionHash={burnTxHash}` to confirm the
+ * on-chain USDC amount matches the user's claim. Rejects deposits where
+ * the attestation is missing, still pending, or where the on-chain amount
+ * does not match — preventing fabricated messageHashes or stale
+ * attestations from minting credits.
+ */
+export async function verifyCctpAttestation(
+  messageHash: string,
+  claimedAmountUsd: number,
+  sourceDomain: number,
+  burnTxHash: string,
+): Promise<CctpAttestationVerifyResult> {
+  if (!/^0x[a-fA-F0-9]{64}$/.test(messageHash)) {
+    return { verified: false, error: "Invalid CCTP messageHash: must be 0x-prefixed 64 hex chars" };
+  }
+
+  // Step 1: verify the attestation itself exists and is complete.
+  const attResp = await fetch(
+    `${CIRCLE_API}/attestations/${messageHash}`,
+    { headers: { Accept: "application/json" } },
+  );
+
+  if (attResp.status === 404) {
+    return { verified: false, error: "CCTP attestation not found for messageHash" };
+  }
+  if (!attResp.ok) {
+    return { verified: false, error: `Circle attestation API error: ${attResp.status}` };
+  }
+
+  const attData = await attResp.json() as { status: string; attestation?: string };
+  if (attData.status !== "complete") {
+    return { verified: false, error: `CCTP attestation status is "${attData.status}", expected "complete"` };
+  }
+
+  // Step 2: verify the on-chain amount matches the user's claim.
+  // The /attestations/{messageHash} endpoint does not include the amount,
+  // so we cross-reference against /v2/messages/{sourceDomain}?transactionHash=...
+  const msgResp = await fetch(
+    `${CIRCLE_API}/v2/messages/${sourceDomain}?transactionHash=${burnTxHash}`,
+    { headers: { Accept: "application/json" } },
+  );
+
+  if (!msgResp.ok) {
+    return { verified: false, error: `Circle messages API error: ${msgResp.status}` };
+  }
+
+  const msgData = await msgResp.json() as {
+    messages: Array<{
+      messageHash: string;
+      amount: string;
+      status: string;
+    }>;
+  };
+
+  const msg = msgData.messages?.find(
+    (m) => m.messageHash.toLowerCase() === messageHash.toLowerCase(),
+  );
+  if (!msg) {
+    return { verified: false, error: "CCTP message not found for given messageHash" };
+  }
+
+  const onChainAmountUsd = Number(msg.amount) / 1e6;
+  if (!Number.isFinite(onChainAmountUsd) || onChainAmountUsd <= 0) {
+    return { verified: false, error: "CCTP on-chain amount invalid", onChainAmount: msg.amount };
+  }
+  if (Math.abs(onChainAmountUsd - claimedAmountUsd) > 0.01) {
+    return {
+      verified: false,
+      error: `CCTP amount mismatch: claimed $${claimedAmountUsd}, on-chain is $${onChainAmountUsd.toFixed(2)}`,
+      onChainAmount: msg.amount,
+    };
+  }
+
+  return { verified: true, onChainAmount: msg.amount };
 }
 
 export async function waitForAttestation(

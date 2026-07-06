@@ -13,7 +13,7 @@ an API key. The credit card step is skipped; wallet-based accounts are
 optional.
 
 ```bash
-export OMA_KEY="oma_sk_..."           # issued at signup
+export OMA_KEY="${OMA_KEY:-oma_sk_...}"  # issued at signup or from env
 curl https://api.oma-ai.com/v1/chat/completions \
   -H "Authorization: Bearer $OMA_KEY" \
   -H "Content-Type: application/json" \
@@ -27,7 +27,7 @@ OpenAI SDK drop-in:
 ```python
 from openai import OpenAI
 client = OpenAI(
-    api_key="oma_sk_...",
+    api_key=os.environ.get("OMA_KEY", "oma_sk_..."),
     base_url="https://api.oma-ai.com/v1",
 )
 resp = client.chat.completions.create(
@@ -39,7 +39,7 @@ resp = client.chat.completions.create(
 ```ts
 import OpenAI from "openai";
 const client = new OpenAI({
-  apiKey: "oma_sk_...",
+  apiKey: process.env.OMA_KEY ?? "oma_sk_...",
   baseURL: "https://api.oma-ai.com/v1",
 });
 const resp = await client.chat.completions.create({
@@ -55,7 +55,7 @@ All paths mirror OpenAI's API. Set `base_url` once and reuse any OpenAI SDK.
 | Path | Notes |
 |---|---|
 | `POST /v1/chat/completions` | Streaming, tool calls, structured outputs |
-| `POST /v1/embeddings` | Coming soon; use `/v1/chat/completions` for now |
+| `POST /v1/embeddings` | Text embeddings |
 | `POST /v1/images/generations` | Returns `{ "data": [{ "url": "..." }] }` |
 | `POST /v1/videos/generations` | Async; poll `/v1/videos/retrieve?id=...` |
 | `GET  /v1/models` | Full catalog as JSON |

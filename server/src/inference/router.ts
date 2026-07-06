@@ -45,11 +45,19 @@ async function callProviderWithRefund(
   userId: string,
   estimatedCostCents: string,
   signal?: AbortSignal,
+  skipRefund = false,
 ): Promise<Response> {
   try {
     return await callProvider(provider, providerModelId, body, undefined, signal);
   } catch (err) {
-    await refundCreditsWithRetry(userId, estimatedCostCents);
+    // SECURITY: When skipRefund is true, the credit reservation is still held
+    // from a previous provider attempt. We do NOT refund here because the
+    // failover loop will try the next provider using the same reservation.
+    // Refunding on every failure would cause a double-refund:
+    //   p1 fails → refund full estimate → p2 succeeds → refund delta = net gain
+    if (!skipRefund) {
+      await refundCreditsWithRetry(userId, estimatedCostCents);
+    }
     const errorType = (err as { status?: number }).status
       ? (err as { type?: string }).type ?? PROVIDER_ERROR_TYPES.UNKNOWN_ERROR
       : PROVIDER_ERROR_TYPES.CONNECTION_ERROR;
@@ -144,8 +152,14 @@ export async function handleChatCompletion(
       for (let i = 0; i < providersToTry.length; i++) {
         const provider = providersToTry[i];
         const providerModelId = getModelIdForProvider(model, provider, modelId);
+        // SECURITY: On failover (i > 0), skip the refund in callProviderWithRefund.
+        // The preflight deduction is still held; refunding on each failure would
+        // cause double-refund: p1 fails → full refund → p2 succeeds → partial
+        // refund → user balance higher than before the request. Instead, we keep
+        // the reservation and only settle the delta after the final provider.
+        const isFailover = i > 0;
         try {
-          const resp = await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal);
+          const resp = await callProviderWithRefund(provider, providerModelId, body, userId, estimatedCostCents, signal, isFailover);
 
           span.setAttribute(LLM_ATTRS.PROVIDER, provider);
           span.setAttribute("llm.provider_model_id", providerModelId);
@@ -196,8 +210,11 @@ export async function handleChatCompletion(
         }
       }
 
-      // All providers failed. Surface the last error.
-      throw lastError ?? Object.assign(new Error("All providers failed"), { status: 502 });
+       // All providers failed. Refund the full preflight deduction since
+       // no provider succeeded. This is the only safe refund point for the
+       // full estimated cost.
+       await refundCreditsWithRetry(userId, estimatedCostCents);
+       throw lastError ?? Object.assign(new Error("All providers failed"), { status: 502 });
     } catch (err) {
       const errorType = (err as { status?: number }).status
         ? (err as { type?: string }).type ?? PROVIDER_ERROR_TYPES.UNKNOWN_ERROR

@@ -23,10 +23,11 @@ export function ThemeToggle() {
 			type="button"
 			onClick={toggleTheme}
 			aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
-			aria-pressed={isLight}
+			role="switch"
+			aria-checked={isLight}
 			title={isLight ? "Switch to dark theme" : "Switch to light theme"}
 			data-theme-toggle
-			className="hidden md:inline-flex items-center justify-center w-11 h-11 rounded-sm text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-all duration-150"
+			className="inline-flex items-center justify-center w-11 h-11 rounded-sm text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-all duration-150"
 		>
 			{isLight ? (
 				// Moon — shown when current theme is light; clicking goes back to dark.

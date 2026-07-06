@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
+import { log } from "@/lib/logger";
 import { type TabId, type TimeRangeId } from "./_constants";
 import { TABS } from "./_constants";
 import { DashboardHeader } from "./_components/DashboardHeader";
@@ -116,7 +117,7 @@ export default function DashboardPage() {
 					setTimeout(() => setCopied(null), 2000);
 				})
 				.catch((err) => {
-					console.error("Failed to copy:", err);
+					log.error("Failed to copy:", err);
 					toast.error(
 						"Failed to copy to clipboard. Please check your browser permissions.",
 					);

@@ -6,6 +6,7 @@ import { db } from "../db/client.js";
 import { deposits, refundRequests } from "../db/schema.js";
 import { eq, and, sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
+import { logger } from "../lib/logger.js";
 
 export const refundRoutes = new Hono<OmaEnv>();
 
@@ -75,27 +76,32 @@ refundRoutes.post("/v1/refunds/request", sessionAuth, rateLimit({ windowMs: 60_0
 });
 
 refundRoutes.get("/v1/refunds/history", sessionAuth, async (c) => {
-  const userId = c.get("userId");
-  const limit = Math.min(parseInt(c.req.query("limit") || "20", 10), 100);
+  try {
+    const userId = c.get("userId");
+    const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "20", 10) || 20, 1), 100);
 
-  const userDeposits = await db.select().from(deposits)
-    .where(and(eq(deposits.userId, userId), sql`${deposits.status} IN ('refunded', 'pending')`))
-    .orderBy(sql`${deposits.createdAt} DESC`)
-    .limit(limit);
+    const userDeposits = await db.select().from(deposits)
+      .where(and(eq(deposits.userId, userId), sql`${deposits.status} IN ('refunded', 'pending')`))
+      .orderBy(sql`${deposits.createdAt} DESC`)
+      .limit(limit);
 
-  return c.json({
-    refunds: userDeposits.map(d => ({
-      id: d.id,
-      depositId: d.id,
-      amount: parseFloat(String(d.creditsIssued)),
-      status: d.status,
-      type: d.type,
-      txHash: d.txHash,
-      createdAt: d.createdAt,
-      completedAt: d.completedAt,
-    })),
-    pagination: { limit, hasMore: userDeposits.length === limit },
-  });
+    return c.json({
+      refunds: userDeposits.map(d => ({
+        id: d.id,
+        depositId: d.id,
+        amount: parseFloat(String(d.creditsIssued)),
+        status: d.status,
+        type: d.type,
+        txHash: d.txHash,
+        createdAt: d.createdAt,
+        completedAt: d.completedAt,
+      })),
+      pagination: { limit, hasMore: userDeposits.length === limit },
+    });
+  } catch (err) {
+    logger.error({ err }, "[refunds] History error:");
+    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+  }
 });
 
 refundRoutes.get("/v1/refunds/:id", sessionAuth, async (c) => {

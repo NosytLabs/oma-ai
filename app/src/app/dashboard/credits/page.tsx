@@ -77,7 +77,7 @@ export default function CreditsPage() {
 
 	const balanceQuery = useQuery({
 		queryKey: ["balance"],
-		queryFn: () => api.oma.getBalance(),
+		queryFn: () => api.balance.get(),
 		enabled: isConnected,
 		staleTime: 60_000,
 	});
@@ -103,7 +103,7 @@ export default function CreditsPage() {
 				: null;
 
 	const [buyAmount, setBuyAmount] = useState("");
-	const [selectedPayment, setSelectedPayment] = useState<"usdc" | "sol">(
+	const [selectedPayment, setSelectedPayment] = useState<"usdc">(
 		"usdc",
 	);
 	const [processing, setProcessing] = useState(false);
@@ -122,7 +122,7 @@ export default function CreditsPage() {
 	// with empty values.
 	const autoReloadQuery = useQuery({
 		queryKey: ["autoReload"],
-		queryFn: () => api.oma.getAutoReload(),
+		queryFn: () => api.credits.getAutoReload(),
 		enabled: isConnected,
 		staleTime: 60_000,
 	});
@@ -192,7 +192,7 @@ export default function CreditsPage() {
 		setProcessing(true);
 		try {
 			const amountCents = Math.round(parseFloat(buyAmount) * 100);
-			const result = await api.oma.purchaseCredits(
+			const result = await api.credits.purchase(
 				amountCents,
 				selectedPayment,
 			);
@@ -381,7 +381,7 @@ export default function CreditsPage() {
 							<h2 className="text-lg font-semibold text-text-bright">
 								Buy Credits
 							</h2>
-							<p className="text-xs text-text-muted">USDC or SOL payment</p>
+							<p className="text-xs text-text-muted">USDC payment</p>
 						</div>
 					</div>
 
@@ -428,7 +428,7 @@ export default function CreditsPage() {
 							<label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-text-muted">
 								Payment Method
 							</label>
-							<div className="grid grid-cols-2 gap-3">
+							<div className="grid grid-cols-1 gap-3">
 								<m.button
 									onClick={() => setSelectedPayment("usdc")}
 									className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
@@ -441,19 +441,6 @@ export default function CreditsPage() {
 								>
 									<div className="h-6 w-6 rounded-full bg-gradient-to-br from-accent to-blue" />
 									USDC
-								</m.button>
-								<m.button
-									onClick={() => setSelectedPayment("sol")}
-									className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
-										selectedPayment === "sol"
-											? "border-accent bg-accent/10 text-accent"
-											: "border-border bg-surface-elevated text-text-muted hover:brightness-125"
-									}`}
-									whileHover={{ scale: 1.02 }}
-									whileTap={{ scale: 0.98 }}
-								>
-									<div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet to-violet" />
-									SOL
 								</m.button>
 							</div>
 						</div>
@@ -503,7 +490,7 @@ export default function CreditsPage() {
 								<m.button
 									onClick={async () => {
 										try {
-											await api.oma.updateAutoReload({ enabled: !autoReload });
+											await api.credits.updateAutoReload({ enabled: !autoReload });
 											setAutoReload(!autoReload);
 											toast.success(
 												`Auto-reload ${!autoReload ? "enabled" : "disabled"}`,
@@ -588,7 +575,7 @@ export default function CreditsPage() {
 											}
 											try {
 												setSavingAutoReload(true);
-												await api.oma.updateAutoReload({
+												await api.credits.updateAutoReload({
 													enabled: autoReload,
 													thresholdCents: Math.round(thresholdDollars * 100),
 													reloadAmountCents: Math.round(amountDollars * 100),

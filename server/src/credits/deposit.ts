@@ -1,6 +1,16 @@
 import { db } from "../db/client.js";
+
+// Drizzle's PgTransaction is a subset of NeonHttpDatabase (no $withAuth/batch).
+// Both support .select/.insert/.update/.delete used in deposit helpers.
+type DbClient = Pick<typeof db, "select" | "insert" | "update" | "delete" | "query">;
 import { deposits, creditBatches, creditBalances } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
+import {
+  verifyCctpAttestation,
+  normalizeChainName,
+  CCTP_CHAIN_DOMAIN_IDS,
+} from "./cctp-client.js";
+import { verifyUsdcOnChain } from "./verify-usdc-on-chain.js";
 
 const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 
@@ -31,10 +41,9 @@ export function calculateCreditsWithBonus(amountUsd: number): { baseCents: numbe
   return { baseCents, bonusCents, totalCents: baseCents + bonusCents };
 }
 
-// Transaction type from Drizzle - complex generic makes 'any' pragmatic here
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Transaction type from Drizzle - using typeof db since tx has the same interface
 async function createDepositAndCreditBatch(
-  tx: any,
+  tx: DbClient,
   userId: string,
   creditsCents: number,
   depositId: string,
@@ -96,77 +105,14 @@ export async function processUsdcDeposit(userId: string, amountUsd: number, txHa
   });
 }
 
-export async function processHoudiniDeposit(
+export async function processCctpDeposit(
   userId: string,
-  quoteId: string,
-  fromCoin: string,
-  fromAmount: string,
-  houdiniId: string,
-  depositAddress: string,
+  amountUsd: number,
+  txHash: string,
+  sourceChain: string,
+  messageHash: string,
+  attestation?: string,
 ) {
-  const [deposit] = await db.insert(deposits).values({
-    userId,
-    type: "houdini_swap",
-    status: "pending",
-    amountUsd: "0",
-    creditsIssued: "0",
-    fromCoin,
-    houdiniId: houdiniId || null,
-    depositAddress: depositAddress || null,
-  }).returning();
-
-  return { depositId: deposit.id, depositAddress: depositAddress || "" };
-}
-
-export async function completeHoudiniDeposit(depositId: string, toAmount: number, txHash: string, userId: string) {
-  if (typeof toAmount !== "number" || !Number.isFinite(toAmount) || toAmount <= 0) {
-    throw new Error("Invalid toAmount");
-  }
-  if (!isValidTxHash(txHash)) {
-    throw new Error("Invalid txHash");
-  }
-
-  const result = await db.transaction(async (tx) => {
-    return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId);
-  });
-
-  return { creditsCents: result.creditsCents };
-}
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-async function completeHoudiniDepositImpl(
-  tx: any, depositId: string, toAmount: number, txHash: string, userId: string) {
-  const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
-  if (!rows.length) throw new Error("Deposit not found");
-
-  const deposit = rows[0];
-  if (deposit.userId !== userId) throw new Error("Deposit ownership mismatch");
-  if (deposit.status !== "pending") throw new Error("Deposit is not pending");
-
-  // creditsCents is derived from the on-chain toAmount + bonus tier.
-  const netAmountUsd = toAmount;
-  const { totalCents: creditsCents } = calculateCreditsWithBonus(netAmountUsd);
-
-  await tx.update(deposits)
-    .set({
-      status: "completed",
-      amountUsd: String(netAmountUsd),
-      creditsIssued: String(creditsCents / 100),
-      txHash,
-      completedAt: new Date(),
-    })
-    .where(eq(deposits.id, depositId));
-
-  await createDepositAndCreditBatch(tx, deposit.userId, creditsCents, deposit.id);
-
-  return { creditsCents, userId: deposit.userId };
-}
-
-export async function completeHoudiniDepositWithTx(tx: Awaited<ReturnType<typeof db.transaction>>, depositId: string, toAmount: number, txHash: string, userId: string) {
-  return completeHoudiniDepositImpl(tx, depositId, toAmount, txHash, userId);
-}
-
-export async function processCctpDeposit(userId: string, amountUsd: number, txHash: string, _sourceChain: string, messageHash?: string, attestation?: string) {
   if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
     throw new Error("Invalid amountUsd: must be a positive finite number");
   }
@@ -175,12 +121,25 @@ export async function processCctpDeposit(userId: string, amountUsd: number, txHa
     throw new Error("Invalid txHash format: must be 0x-prefixed 64 hex chars (EVM)");
   }
 
-  if (messageHash && !/^0x[a-fA-F0-9]{64}$/.test(messageHash)) {
+  if (!messageHash || !/^0x[a-fA-F0-9]{64}$/.test(messageHash)) {
     throw new Error("Invalid CCTP messageHash: must be 0x-prefixed 64 hex chars");
   }
 
   if (attestation && !/^0x[a-fA-F0-9]+$/.test(attestation)) {
     throw new Error("Invalid CCTP attestation: must be a valid hex string");
+  }
+
+  // H-CCTP-1: Verify against Circle's attestation API before crediting.
+  // Catches fabricated messageHashes and stale/incomplete attestations
+  // that could otherwise mint credits without a real on-chain burn.
+  const normalized = normalizeChainName(sourceChain);
+  if (!normalized) {
+    throw new Error(`Unsupported CCTP source chain: ${sourceChain}`);
+  }
+  const sourceDomain = CCTP_CHAIN_DOMAIN_IDS[normalized];
+  const verifyResult = await verifyCctpAttestation(messageHash, amountUsd, sourceDomain, txHash);
+  if (!verifyResult.verified) {
+    throw new Error(`CCTP attestation verification failed: ${verifyResult.error ?? "unknown error"}`);
   }
 
   const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
@@ -212,7 +171,7 @@ export async function processLifiDeposit(
   txHash: string,
   fromChain: string,
   _fromToken: string,
-  toToken?: string,
+  _toToken?: string,
   lifiStatus?: string,
 ) {
   if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0) {
@@ -229,6 +188,14 @@ export async function processLifiDeposit(
 
   if (!fromChain || typeof fromChain !== "string") {
     throw new Error("Invalid LiFi fromChain");
+  }
+
+  // H-LIFI-1: Verify the on-chain USDC transfer before crediting.
+  // LiFi deposits bridge USDC to Base; we independently confirm the
+  // transfer to our treasury matches the claimed amount.
+  const onChainResult = await verifyUsdcOnChain(txHash, amountUsd);
+  if (!onChainResult.valid) {
+    throw new Error(`LiFi on-chain verification failed: ${onChainResult.error ?? "unknown error"}`);
   }
 
   const { totalCents: creditsCents } = calculateCreditsWithBonus(amountUsd);
@@ -266,6 +233,14 @@ export async function processPaymentLinkDeposit(
   }
 
   const result = await db.transaction(async (tx) => {
+    // SECURITY: Check for duplicate txHash before processing — same guard as USDC/CCTP/LiFi paths
+    if (txHash) {
+      const existing = await tx.select({ id: deposits.id }).from(deposits)
+        .where(eq(deposits.txHash, txHash))
+        .for("update");
+      if (existing.length > 0) throw new Error("Duplicate txHash");
+    }
+
     const rows = await tx.select().from(deposits).where(eq(deposits.id, depositId)).for("update");
     if (!rows.length) throw new Error("Deposit not found");
 
@@ -281,7 +256,6 @@ export async function processPaymentLinkDeposit(
         amountUsd: String(amountUsd),
         creditsIssued: String(creditsCents / 100),
         txHash,
-        houdiniId: paymentLinkId,
         completedAt: new Date(),
       })
       .where(eq(deposits.id, depositId));

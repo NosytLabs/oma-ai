@@ -91,11 +91,9 @@ const LIFI_CHAIN_MAP: Record<string, number> = {
   bsc: 56,
   gnosis: 100,
   fantom: 250,
-  solana: 792703809,
 };
 
 const CCTP_CHAIN_MAP: Record<string, number> = {
-  solana: 792703809,
   ethereum: 1,
   avalanche: 43114,
   optimism: 10,

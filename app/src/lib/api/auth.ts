@@ -17,7 +17,7 @@ import type {
  * Auth requests must go through the Next.js /api/* proxy in the browser so
  * that cookies (csrf_token, oma_session) live on the same origin as the
  * page. Direct cross-origin calls to the backend would carry cookies under
- * localhost:3001 only, and the auth/CSRF round-trip would fail.
+	 * localhost only, and the auth/CSRF round-trip would fail.
  */
 const isBrowser = () => typeof window !== "undefined";
 
@@ -110,6 +110,16 @@ export const auth = {
 
 	deleteKey(id: string) {
 		return request<void>(p(`/keys/${id}`), { method: "DELETE" });
+	},
+
+	updateKeyRateLimits(
+		id: string,
+		limits: { rpm?: number; tpm?: number; expiresAt?: string },
+	) {
+		return request<void>(p(`/keys/${id}`), {
+			method: "PATCH",
+			body: JSON.stringify(limits),
+		});
 	},
 
 	setup2FA() {

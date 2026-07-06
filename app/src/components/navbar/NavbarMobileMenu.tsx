@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
-import { CornerDownLeft, FileText, Key, LogOut, Settings, Zap } from "lucide-react";
+import { CornerDownLeft, Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type RefObject, useEffect, useRef, useState } from "react";
@@ -36,7 +36,6 @@ const ACCOUNT_LINKS: { href: string; label: string; icon: typeof Key }[] = [
 	{ href: "/dashboard", label: "dashboard", icon: Key },
 	{ href: "/deposit", label: "deposit", icon: Zap },
 	{ href: "/settings", label: "settings", icon: Settings },
-	{ href: "/docs", label: "api docs", icon: FileText },
 ];
 
 /**

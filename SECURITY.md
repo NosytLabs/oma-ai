@@ -21,7 +21,7 @@ Instead, please report them via one of the following:
    - Potential impact
    - Any suggested fixes (optional)
 
-2. **GitHub Security Advisories** — Use the [Advisories page](https://github.com/oma-ai/OMA-AI/security/advisories) to report privately.
+2. **GitHub Security Advisories** — Use the [Advisories page](https://github.com/NosytLabs/oma-ai/security/advisories) to report privately.
 
 ## Response Timeline
 

@@ -14,7 +14,7 @@
 
 import { AnimatePresence, m } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useLiveModels } from "./chat-message-shared";
 
@@ -60,11 +60,12 @@ function Slider({
 	displayValue?: string;
 }) {
 	const pct = ((value - min) / (max - min)) * 100;
+	const inputId = useId();
 
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between">
-				<label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+				<label htmlFor={inputId} className="text-xs font-mono text-text-muted uppercase tracking-wider">
 					{label}
 				</label>
 				<span className="text-xs font-mono text-success tabular-nums">
@@ -86,6 +87,7 @@ function Slider({
 				</div>
 				{/* Native input */}
 				<input
+					id={inputId}
 					type="range"
 					min={min}
 					max={max}
@@ -143,7 +145,7 @@ function GlowToggle({
           focus-visible:ring-offset-2 focus-visible:ring-offset-void
           ${
 						checked
-							? "bg-success shadow-[0_0_12px_rgba(52,211,153,0.3)]"
+							? "bg-success shadow-[0_0_12px_var(--color-success-dim)]"
 							: "bg-surface-elevated"
 					}
         `}

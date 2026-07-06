@@ -85,6 +85,7 @@ import {
 import { SiweMessage } from "siwe";
 import { base as baseChain } from "wagmi/chains";
 import { AccountLoginModal } from "@/components/account-login-modal";
+import { log } from "@/lib/logger";
 import { useApiHealth } from "@/components/api-status";
 import {
 	AuthError,
@@ -112,12 +113,12 @@ type AuthTab = "wallet" | "account";
  * authorize (the OMA Terms of Service statement).
  */
 function buildPreviewSiweMessage(address: `0x${string}`): string {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 	let url: URL;
 	try {
 		url = new URL(appUrl);
 	} catch {
-		url = new URL("http://localhost:3000");
+		url = new URL("http://localhost:3001");
 	}
 	// Note: nonce value below is illustrative. The real nonce comes from
 	// the server during the actual sign flow (`/api/auth/nonce`).
@@ -181,7 +182,7 @@ function LoginInner() {
 			})
 			.catch((err) => {
 				if (cancelled) return;
-				console.warn("CSRF pre-fetch failed:", err);
+			log.warn("CSRF pre-fetch failed:", err);
 				setCsrfError(true);
 			})
 			.finally(() => {
@@ -427,8 +428,19 @@ function BrandPitch() {
 		<m.section
 			{...fadeUpProps(0)}
 			aria-labelledby="brand-heading"
-			className="hidden md:block"
 		>
+			{/* Compact brand banner on mobile */}
+			<div className="md:hidden mb-6 text-center">
+				<h1 className="text-2xl font-bold text-text-bright">
+					Sign in to <span className="text-accent">OMA-AI</span>
+				</h1>
+				<p className="mt-2 text-sm text-text-secondary">
+					Crypto-native AI compute. Pay in USDC, ship faster.
+				</p>
+			</div>
+
+			{/* Full brand pitch on desktop */}
+			<div className="hidden md:block">
 			<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
 				<Sparkles className="h-3 w-3" aria-hidden="true" />
 				Permissionless inference
@@ -479,6 +491,7 @@ function BrandPitch() {
 				</Link>
 				.
 			</p>
+			</div> {/* end hidden md:block */}
 		</m.section>
 	);
 }

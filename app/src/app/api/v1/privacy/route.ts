@@ -95,7 +95,6 @@ const PRIVACY_MANIFEST = {
 			"Venice AI — primary LLM provider; processes prompts/completions",
 			"CheapTokens.ai — procurement layer for Venice credits (operator-internal)",
 			"Surplus Intelligence — fallback procurement (x402 payment on Base)",
-			"OpenRouter, AntSeed, Together, DeepInfra, LiteLLM — additional providers",
 		],
 		payments: [
 			"Circle (USDC) on Base — credit purchases and x402 settlement",

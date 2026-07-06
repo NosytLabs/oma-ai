@@ -88,6 +88,8 @@ export function AccountLoginModal({
 	const [copied, setCopied] = useState(false);
 	const [copyError, setCopyError] = useState<string | null>(null);
 	const [csrfToken, setCsrfToken] = useState<string | null>(initialCsrfToken);
+	const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+	const [totpCode, setTotpCode] = useState("");
 	const modalRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLElement | null>(null);
 	// Pending "copied" indicator timer. Held in a ref so we can clear it on
@@ -213,6 +215,7 @@ export function AccountLoginModal({
 
 	const handleLogin = useCallback(async () => {
 		if (!accountNumber.trim()) return;
+		if (requiresTwoFactor && !totpCode.trim()) return;
 		setLoading(true);
 		setError(null);
 		try {
@@ -230,6 +233,11 @@ export function AccountLoginModal({
 				headers["x-csrf-token"] = csrf;
 			}
 
+			// If the server previously told us 2FA is required, send the TOTP code.
+			if (requiresTwoFactor && totpCode.trim()) {
+				headers["X-2FA-Code"] = totpCode.trim();
+			}
+
 			const res = await fetch(
 				`${typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/account/login`,
 				{
@@ -237,20 +245,18 @@ export function AccountLoginModal({
 					headers,
 					body: JSON.stringify({
 						accountNumber: accountNumber.trim().toUpperCase(),
-						// TODO(2FA): when the server supports it, append
-						// `totpCode` here from a 6-digit input rendered below
-						// the account-number field on the
-						// `{ requiresTwoFactor: true }` response below.
+						totpCode: requiresTwoFactor ? totpCode.trim() : undefined,
 					}),
 				},
 			);
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}));
-				// TODO(2FA): branch on
-				//   body.requiresTwoFactor === true
-				// here and surface a TOTP input instead of throwing the
-				// generic "Login failed". Until the server returns that
-				// shape, fall through to the standard error path.
+				// If the server says 2FA is required, switch to the TOTP input.
+				if ((body as { requiresTwoFactor?: boolean })?.requiresTwoFactor) {
+					setRequiresTwoFactor(true);
+					setLoading(false);
+					return;
+				}
 				const msg =
 					(body as { error?: { message?: string } })?.error?.message ||
 					"Login failed";
@@ -282,7 +288,7 @@ export function AccountLoginModal({
 		} finally {
 			setLoading(false);
 		}
-	}, [accountNumber, csrfToken]);
+	}, [accountNumber, csrfToken, requiresTwoFactor, totpCode]);
 
 	const handleCreate = useCallback(async () => {
 		setLoading(true);
@@ -441,8 +447,8 @@ export function AccountLoginModal({
 						: "fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-accent/30 bg-panel border rounded-xl shadow-2xl"
 				}
 				onClick={(e) => e.stopPropagation()}
-				role={inline ? undefined : "dialog"}
-				aria-modal={inline ? undefined : "true"}
+				role="dialog"
+				aria-modal="true"
 				aria-labelledby="modal-title"
 			>
 				<div className="flex items-center justify-between mb-4">
@@ -492,7 +498,13 @@ export function AccountLoginModal({
 
 				{mode === "login" && (
 					<>
-<div className="mb-4">
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								handleLogin();
+							}}
+						>
+						<div className="mb-4">
 						<div className="mb-2 flex items-center justify-between gap-2">
 							<label
 								htmlFor="account-number-input"
@@ -517,7 +529,6 @@ export function AccountLoginModal({
 							type="text"
 							value={accountNumber}
 							onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-							onKeyDown={(e) => e.key === "Enter" && handleLogin()}
 							placeholder="1234 5678 9012 3456 or OMA-XXXX-XXXX-XXXX"
 							aria-label="Account number"
 							aria-invalid={!!error}
@@ -529,9 +540,10 @@ export function AccountLoginModal({
 										? "account-error"
 										: undefined
 							}
+							aria-required="true"
 							autoComplete="off"
 							spellCheck={false}
-							inputMode="numeric"
+							inputMode="text"
 							className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-wider placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
 							disabled={loading}
 						/>
@@ -546,10 +558,38 @@ export function AccountLoginModal({
 								</p>
 							)}
 					</div>
+						{requiresTwoFactor && (
+							<div className="mb-4">
+								<label
+									htmlFor="totp-code-input"
+									className="block text-xs font-medium uppercase tracking-widest text-text-muted mb-2"
+								>
+									2FA Verification Code
+								</label>
+								<input
+									id="totp-code-input"
+									name="totpCode"
+									type="text"
+									value={totpCode}
+									onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+									placeholder="6-digit code"
+									aria-label="2FA verification code"
+									aria-required="true"
+									inputMode="numeric"
+									autoComplete="one-time-code"
+									maxLength={6}
+									className="w-full rounded-lg border border-border bg-surface px-4 py-3 font-mono text-lg tracking-[0.5em] text-center placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50 disabled:opacity-50"
+									disabled={loading}
+									data-autofocus
+								/>
+								<p className="mt-2 text-[11px] text-text-muted">
+									Enter the 6-digit code from your authenticator app.
+								</p>
+							</div>
+						)}
 						<button
-							type="button"
-							onClick={handleLogin}
-							disabled={loading || !accountNumber.trim()}
+							type="submit"
+							disabled={loading || !accountNumber.trim() || (requiresTwoFactor && !totpCode.trim())}
 							className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{loading ? (
@@ -574,10 +614,11 @@ export function AccountLoginModal({
 								Create one
 							</button>
 						</p>
-						<p className="mt-2 text-center text-[11px] text-text-muted/80">
-							Mullvad-style: no email, no KYC, no PII. Just a number to write
-							down.
-						</p>
+					<p className="mt-2 text-center text-[11px] text-text-muted/80">
+						Mullvad-style: no email, no KYC, no PII. Just a number to write
+						down.
+					</p>
+						</form>
 					</>
 				)}
 

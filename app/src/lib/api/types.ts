@@ -140,24 +140,7 @@ export interface DepositStatus {
 	txHash?: string | null;
 	fromAmount?: string;
 	toAmount?: string;
-	houdiniStatus?: string;
 	pollError?: string;
-}
-
-export interface HoudiniDepositResult {
-	depositAddress: string;
-	depositId: string;
-	orderId: string;
-}
-
-export interface HoudiniExchangeResult {
-	depositId: string;
-	depositAddress: string;
-	orderId: string;
-	fromAmount: string;
-	toAmount: string;
-	status: string;
-	expiresAt: string;
 }
 
 export interface Token {

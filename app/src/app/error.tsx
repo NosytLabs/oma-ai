@@ -4,6 +4,7 @@ import { AlertTriangle, Bug, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { log } from "@/lib/logger";
 
 interface ErrorPageProps {
 	error: Error & { digest?: string };
@@ -18,14 +19,14 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
 	useEffect(() => {
-		console.error("[GlobalError]", error);
+		log.error("[GlobalError]", error);
 	}, [error]);
 
 	const isKnownError = error.digest !== undefined;
 	const errorMessage = error.message || "An unexpected system fault occurred";
 
 	return (
-		<div className="min-h-[70dvh] flex flex-col items-center justify-center px-4 py-20">
+		<div className="min-h-[60dvh] flex flex-col items-center justify-center px-4 py-20">
 			<div className="w-full max-w-lg text-center flex flex-col items-center gap-6">
 				<div className="flex items-center justify-center">
 					<div className="relative">
@@ -79,9 +80,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 					</Button>
 				</div>
 
-				{error.stack && (
+				{error.stack && process.env.NODE_ENV === "development" && (
 					<details
-						open
 						className="mt-4 text-left w-full"
 						style={{ maxHeight: 320, overflow: "auto" }}
 					>

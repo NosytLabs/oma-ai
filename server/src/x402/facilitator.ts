@@ -36,11 +36,16 @@ import {
 import { logger } from "../lib/logger.js";
 
 const LOCK_TTL_SECONDS = 30;
-// ponytail: in tests HOUDINI_ADDRESS_TO may be unset and TREASURY_BASE_ADDRESS
-// may resolve to the placeholder; resolve defensively.
-const SERVER_TREASURY = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
-if (!SERVER_TREASURY) {
-  logger.warn("[FACILITATOR] SERVER_TREASURY is empty — payee validation is DISABLED. Set HOUDINI_ADDRESS_TO or TREASURY_BASE_ADDRESS to enable merchant pinning.");
+// ponytail: in tests TREASURY_BASE_ADDRESS may be unset;
+// resolve defensively.
+const SERVER_TREASURY = (config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+// SECURITY (A3): Fail closed — if no treasury address is configured, the
+// facilitator cannot verify payee pinning. Refuse to verify payments rather
+// than silently accepting payments to any address.
+if (!SERVER_TREASURY && config.FACILITATOR_MODE === "live") {
+  throw new Error("[FACILITATOR] FATAL: SERVER_TREASURY is empty in live mode. Set TREASURY_BASE_ADDRESS before starting.");
+} else if (!SERVER_TREASURY) {
+  logger.warn("[FACILITATOR] SERVER_TREASURY is empty in mock mode — payee validation disabled. This is NOT safe for production.");
 }
 
 // ponytail: CRIT-2 (x402 nonce/replay). Atomic consume via Redis SET NX EX.
@@ -678,7 +683,7 @@ async function verifyEip3009Payment(
   //    double-spend attempts even before submission.
   let txHash: Hash;
   try {
-    await simulateEip3009Transfer(auth, sigHex, config.CHAIN_RPC_URL);
+    await simulateEip3009Transfer(auth, sigHex, config.CHAIN_RPC_URL!);
     // 8. Settle: real on-chain submission when facilitator key is configured,
     //    deterministic synthetic txHash otherwise. The synthetic path keeps
     //    the verify+settle contract intact for dev/preview deployments that
@@ -800,7 +805,7 @@ async function verifyUsdcTransferReceipt(
   }
 
   try {
-    return await attemptVerification(config.CHAIN_RPC_URL);
+    return await attemptVerification(config.CHAIN_RPC_URL!);
   } catch (primaryErr: unknown) {
     const isNetworkError = primaryErr instanceof Error && (
       primaryErr.message.includes("fetch") ||
@@ -941,7 +946,10 @@ export async function verifyPayment(
   paymentSig: PaymentSignature,
 ): Promise<PaymentResponse> {
   const { signature, authorization, payload } = paymentSig;
-  const cacheKey = `${payload.scheme}:${signature}`;
+  // SECURITY: Include payload.nonce in the cache key so that two different
+  // nonces with the same signature cannot collide. Without this, a cached
+  // verification could bypass the nonce replay protection in consumeNonce.
+  const cacheKey = `${payload.scheme}:${payload.nonce}:${signature}`;
 
   const cached = settlementCache.get(cacheKey);
   if (cached) {
@@ -1334,7 +1342,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 
   // Pin payee to the configured merchant address; never trust user-supplied
   // recipients. The x402 spec requires the merchant to receive the payment.
-  const expectedPayee = (config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS || "").toLowerCase();
+  const expectedPayee = (config.TREASURY_BASE_ADDRESS || "").toLowerCase();
   if (!expectedPayee) {
     return c.json(
       { error: { message: "Server merchant address not configured", type: "server_misconfigured" } },
@@ -1422,10 +1430,10 @@ x402Routes.post("/x402/pay-req-test",
   // falling back to 0x000… lets an attacker mint a Pay-Req header with a
   // bogus payee and probe verification behavior. Returns 503 (not 500) so
   // it's clearly "intentionally disabled", not "broken".
-  const payeeAddress = config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS;
+  const payeeAddress = config.TREASURY_BASE_ADDRESS;
   if (!payeeAddress) {
     return c.json(
-      { error: { message: "x402 test endpoint disabled: HOUDINI_ADDRESS_TO and TREASURY_BASE_ADDRESS both unset", type: "feature_disabled" } },
+      { error: { message: "x402 test endpoint disabled: TREASURY_BASE_ADDRESS unset", type: "feature_disabled" } },
       503,
     );
   }
@@ -1464,7 +1472,7 @@ const testPricing: Record<string, string> = {
   "/x402/middleware-test": "0.50",
 };
 
-const testPayeeAddress = config.HOUDINI_ADDRESS_TO || config.TREASURY_BASE_ADDRESS;
+const testPayeeAddress = config.TREASURY_BASE_ADDRESS;
 // ponytail: only mount the middleware test when a real merchant address is set.
 // Falling back to the zero address would let `/x402/middleware-test` accept
 // payments to nobody and falsely report "success" — see audit X402-2026-06-14.
@@ -1479,8 +1487,7 @@ x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
 });
 
-// NOTE: /v1/x402/proxy/chat/completions is implemented in crosschain.ts
-// (Houdini cross-chain flow, requires bearer auth + X-Houdini-Order-Id).
+// crosschain.ts (Houdini flow) removed — /v1/x402/proxy/chat/completions no longer exists.
 
 // =============================================================================
 // x402 SPEC NOTE (post-2026-07-02 audit fix):
@@ -1521,9 +1528,6 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 // Base Sepolia = eip155:84532, USDC = 0x036CbD…CF7e (matches v2 spec).
 // Only mainnet is supported today.
 //
-// The Houdini crosschain flow in `crosschain.ts` is a NAMING COLLISION with
-// x402 (URLs `/v1/x402/quote` etc. are NOT the x402 protocol). See the
-// v2-comment in `crosschain.ts` for the rename plan.
 // =============================================================================
 
 // ============================================================

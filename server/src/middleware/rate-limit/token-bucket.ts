@@ -8,6 +8,7 @@ import { logger } from "../../lib/logger.js";
 import {
   getModelLimits,
   getRateLimitKey,
+  extractClientIp,
   type RateLimitResult,
   type RedisEvalResult,
 } from "./utils.js";
@@ -229,10 +230,11 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
        if (apiKey) {
          rateLimitKey = `tb:model:${apiKey.id}:${model}`;
        } else {
-          // Use x-real-ip (set by reverse proxy, can't be spoofed by client)
-          // or first entry in x-forwarded-for (client IP as seen by proxy)
-          const ip = c.req.header('x-real-ip') || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-          rateLimitKey = `tb:model:ip:${ip}:${model}`;
+           // SECURITY (C-2): Use extractClientIp() which validates trusted
+           // proxy IPs before reading x-forwarded-for. Direct header reads
+           // allowed spoofed XFF bypass of per-IP rate limits.
+           const ip = extractClientIp(c);
+           rateLimitKey = `tb:model:ip:${ip}:${model}`;
        }
 
       const rpmKey = `${rateLimitKey}:rpm`;

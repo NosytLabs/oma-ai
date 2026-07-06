@@ -3,6 +3,9 @@
  * copy: plain English summary at the top, active voice, no invented metrics
  */
 
+// ISR: Revalidate every 24 hours (legal content, very rarely changes)
+export const revalidate = 86400;
+
 import {
 	ArrowLeft,
 	CheckCircle2,

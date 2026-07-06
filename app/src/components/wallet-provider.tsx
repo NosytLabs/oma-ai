@@ -155,12 +155,12 @@ function clearSession() {
 }
 
 function buildSiweMessage(address: string, nonce: string): string {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 	let url: URL;
 	try {
 		url = new URL(appUrl);
 	} catch {
-		url = new URL("http://localhost:3000");
+		url = new URL("http://localhost:3001");
 	}
 	const siweMsg = new SiweMessage({
 		domain: url.hostname,

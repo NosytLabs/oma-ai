@@ -122,6 +122,7 @@ export default function DisclosuresPage() {
 								</span>
 
 								<h1
+									id="summary"
 									className="h1-page text-text-bright mt-6"
 									style={{
 										overflowWrap: "anywhere",
@@ -396,7 +397,7 @@ export default function DisclosuresPage() {
 					<nav aria-label="Section index" className="sr-only">
 						<ol>
 							<li>
-								<a href="#subject">Summary</a>
+								<a href="#summary">Summary</a>
 							</li>
 							{SECTIONS.map((s) => (
 								<li key={s.id}>

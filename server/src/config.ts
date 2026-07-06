@@ -30,18 +30,14 @@ const envSchema = z.object({
   // zero-data-retention privacy. If you need a non-private provider, add it to
   // provider-selector.ts, call-provider.ts, and models.ts in the same commit.
   SURPLUS_WALLET_PRIVATE_KEY: z.string().min(1).optional(),
-  HOUDINI_API_KEY: z.string().min(1).optional(),
-  HOUDINI_API_SECRET: z.string().min(1).optional(),
-  HOUDINI_PARTNER_ID: z.string().min(1).optional(),
-  HOUDINI_WEBHOOK_SECRET: z.string().min(1).optional(),
-  HOUDINI_API_URL: z.string().min(1).default("https://api-partner.houdiniswap.com/v2"),
-  HOUDINI_WS_URL: z.string().min(1).default("wss://partner-api.houdiniswap.com/v2/ws"),
-  HOUDINI_ADDRESS_TO: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   CHEAPTOKENS_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   // Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
   // production endpoint). Set to https://base-rpc.publicnode.com or another
   // provider for dev/test environments.
-  CHAIN_RPC_URL: z.string().min(1).optional().default(""),
+  // SECURITY (A12): No empty-string default. Callers must handle undefined.
+  // The production startup guard below requires either CHAIN_RPC_URL or
+  // QUICKNODE_RPC_URL to be set.
+  CHAIN_RPC_URL: z.string().min(1).optional(),
   CHAIN_RPC_URL_FALLBACK: z.string().optional(),
   // Explicit QuickNode overrides. Set in render.yaml via QUICKNODE_RPC_URL when
   // you want the URL to live in a single named env var (vs. CHAIN_RPC_URL).
@@ -49,12 +45,11 @@ const envSchema = z.object({
   QUICKNODE_RPC_URL: z.string().url().optional(),
   QUICKNODE_RPC_URL_FALLBACK: z.string().url().optional(),
   QUICKNODE_API_KEY: z.string().min(1).optional(),
-  SOLANA_RPC_URL: z.string().min(1).default("https://api.mainnet-beta.solana.com"),
-  SOLANA_RPC_URL_FALLBACK: z.string().optional(),
   FACILITATOR_MODE: z.enum(["mock", "live"]).default("mock"),
   FACILITATOR_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
-  TREASURY_SOLANA_ADDRESS: z.string().min(1).optional(),
-  TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x3333333333333333333333333333333333333333"),
+  // SECURITY (A14): No placeholder default. Must be explicitly set in
+  // production. The production startup guard below rejects known placeholders.
+  TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   // JWT_SECRET_PREVIOUS enables zero-downtime key rotation. When set, tokens
@@ -63,7 +58,7 @@ const envSchema = z.object({
   // Optional — leave unset on fresh deployments.
   JWT_SECRET_PREVIOUS: z.string().min(32).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  CORS_ORIGIN: z.string().default("http://localhost:3001"),
   // Canonical production domain. Used as the SIWE/SIWS `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
   // and dev default to a permissive value.
@@ -97,7 +92,7 @@ const envSchema = z.object({
   PLATFORM_TEAM_ID: z.string().optional().default(""),
 
   CCTP_CIRCLE_API_URL: z.string().min(1).default("https://iris-api.circle.com"),
-  CCTP_SOURCE_CHAINS: z.string().min(1).default("solana,ethereum,arbitrum,optimism,polygon,avalanche"),
+  CCTP_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche"),
   CCTP_BASE_DOMAIN: z.coerce.number().default(6),
 
   // Base mainnet chain ID (used by withdraw route as default chainId)
@@ -123,7 +118,7 @@ const envSchema = z.object({
   LIFI_API_URL: z.string().min(1).default("https://li.quest/v1"),
   LIFI_INTEGRATOR: z.string().min(1).default("oma-ai"),
 
-  LIFI_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche,base,solana,bsc,gnosis,fantom"),
+  LIFI_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche,base,bsc,gnosis,fantom"),
 
   // OpenTelemetry configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
@@ -276,10 +271,12 @@ if (config.FACILITATOR_MODE === "live" && isProductionEnv) {
 }
 
 if (isProductionEnv) {
-  for (const key of ["TREASURY_BASE_ADDRESS"] as const) {
-    if (PLACEHOLDER_ADDRESSES.includes(config[key])) {
-      throw new Error(`FATAL: ${key} is a placeholder address. Set a real address in production.`);
-    }
+  const treasuryAddress = config.TREASURY_BASE_ADDRESS;
+  if (!treasuryAddress) {
+    throw new Error("FATAL: TREASURY_BASE_ADDRESS must be set in production.");
+  }
+  if (PLACEHOLDER_ADDRESSES.includes(treasuryAddress)) {
+    throw new Error("FATAL: TREASURY_BASE_ADDRESS is a placeholder address. Set a real address in production.");
   }
 }
 
@@ -314,6 +311,10 @@ if (config.JWT_SECRET_PREVIOUS) {
   }
 }
 
+// SECURITY (A12): Require at least one RPC endpoint in production.
+if (isProductionEnv && !config.CHAIN_RPC_URL && !config.QUICKNODE_RPC_URL) {
+  throw new Error("FATAL: Either CHAIN_RPC_URL or QUICKNODE_RPC_URL must be set in production.");
+}
 if (isProductionEnv && INSECURE_DEFAULTS.includes(config.ENCRYPTION_KEY)) {
   console.error("[FATAL] ENCRYPTION_KEY must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
   process.exit(1);

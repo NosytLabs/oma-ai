@@ -79,19 +79,6 @@ vi.mock('../auth/siwe.js', () => ({
   verifySessionToken: vi.fn(),
 }))
 
-vi.mock('../credits/deposit.js', () => ({
-  processUsdcDeposit: vi.fn(),
-  processHoudiniDeposit: vi.fn(),
-  completeHoudiniDeposit: vi.fn(),
-}))
-
-vi.mock('../credits/houdini-client.js', () => ({
-  houdiniClient: {
-    getTokens: vi.fn().mockResolvedValue([]),
-    getDepositStatus: vi.fn(),
-    createDeposit: vi.fn(),
-  },
-}))
 
 vi.mock('../inference/router.js', () => ({
   handleChatCompletion: vi.fn(),
@@ -137,9 +124,7 @@ vi.mock('../config.js', () => ({
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',
-    HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
-    TREASURY_SOLANA_ADDRESS: '',
-    SOLANA_RPC_URL: '',
+
   },
 }))
 

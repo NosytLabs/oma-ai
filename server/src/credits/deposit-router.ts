@@ -1,7 +1,7 @@
 import { getCctpSupportedChains } from "./cctp-client.js";
 import { getLifiSourceChains } from "./lifi-client.js";
 
-export type RouteMethod = "cctp" | "lifi" | "houdini";
+export type RouteMethod = "cctp" | "lifi";
 
 export interface RouteOption {
   method: RouteMethod;
@@ -24,11 +24,6 @@ function isUsdc(token: string): boolean {
   return t === "USDC" || t === "USDC.E" || t === "USDCCIRCLE";
 }
 
-function isPrivacyCoin(token: string): boolean {
-  const t = token.toUpperCase();
-  return t === "XMR" || t === "BTC";
-}
-
 function getNativeCctpChains(): string[] {
   return getCctpSupportedChains();
 }
@@ -45,24 +40,11 @@ export function routeDeposit(
   const chain = sourceChain.toLowerCase();
   const token = sourceToken.toUpperCase();
   const isUsdcToken = isUsdc(token);
-  const isPrivacy = isPrivacyCoin(token);
-
   const cctpChains = getNativeCctpChains();
   const lifiChains = getLifiChains();
   const allOptions: RouteOption[] = [];
 
-  if (isPrivacy) {
-    allOptions.push({
-      method: "houdini",
-      label: "Private Swap (HoudiniSwap)",
-      description: "Multi-hop CEX routing with optional privacy layer. Best for XMR, BTC, and privacy-sensitive deposits.",
-      estimatedTime: "15-45 minutes",
-      fee: "1-2% (included in rate)",
-      requiredFields: ["fromCoin", "amount"],
-      requiresWallet: false,
-      privacyLevel: "high",
-    });
-  } else if (isUsdcToken && cctpChains.includes(chain)) {
+  if (isUsdcToken && cctpChains.includes(chain)) {
     allOptions.push({
       method: "cctp",
       label: "USDC via CCTP",
@@ -96,31 +78,10 @@ export function routeDeposit(
       privacyLevel: "standard",
     });
 
-    allOptions.push({
-      method: "houdini",
-      label: "Swap via HoudiniSwap",
-      description: "CEX-backed swap with privacy options. No wallet connection needed.",
-      estimatedTime: "3-45 minutes",
-      fee: "1-2% (included in rate)",
-      requiredFields: ["fromCoin", "amount"],
-      requiresWallet: false,
-      privacyLevel: "medium",
-    });
-  } else {
-    allOptions.push({
-      method: "houdini",
-      label: "Swap via HoudiniSwap",
-      description: "HoudiniSwap supports 100+ coins across multiple chains. Best for exotic assets and privacy.",
-      estimatedTime: "3-45 minutes",
-      fee: "1-2% (included in rate)",
-      requiredFields: ["fromCoin", "amount"],
-      requiresWallet: false,
-      privacyLevel: "medium",
-    });
   }
 
   const sorted = [...allOptions].sort((a, b) => {
-    const score: Record<RouteMethod, number> = { cctp: 0, lifi: 1, houdini: 2 };
+    const score: Record<RouteMethod, number> = { cctp: 0, lifi: 1 };
     return score[a.method] - score[b.method];
   });
 
@@ -135,5 +96,5 @@ export function routeDepositByToken(token: string, amount: string): DepositRoute
 }
 
 export function getSupportedMethods(): RouteMethod[] {
-  return ["cctp", "lifi", "houdini"];
+  return ["cctp", "lifi"];
 }

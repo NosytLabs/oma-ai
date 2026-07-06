@@ -25,12 +25,8 @@ export const depositStatusEnum = pgEnum("deposit_status", [
 
 export const depositTypeEnum = pgEnum("deposit_type", [
   "usdc_direct",
-  "usdc_solana",
-  "houdini_swap",
   "cctp_crosschain",
   "lifi_swap",
-  "jupiter_swap",
-  "solana_direct",
   "payment_link",
   "wrong_network_recovery",
 ]);
@@ -39,9 +35,8 @@ export const providerEnum = pgEnum("provider", ["venice", "tinyfish", "surplus"]
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
-  address: text("address").unique(), // Nullable: post-0030 wallet links carry EVM/Solana separately; account-only users have null
+  address: text("address").unique(), // Nullable: post-0030 wallet links carry EVM separately; account-only users have null
   evmAddress: text("evm_address"), // EVM-only address (post-0030). Nullable; partial unique index in DB.
-  solanaAddress: text("solana_address"),
   accountNumber: text("account_number"), // 16-digit numeric (unique, nullable)
   accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
   twoFactorSecret: text("two_factor_secret"),
@@ -56,7 +51,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
 }, (t) => [
-  index("idx_users_address").on(t.address),
+  // idx_users_address removed — UNIQUE constraint on `address` (line 42) already provides an index
   index("idx_users_evm_address").on(t.evmAddress),
   index("idx_users_account_number_hash").on(t.accountNumberHash),
   index("idx_users_neon_auth_user_id").on(t.neonAuthUserId),
@@ -118,7 +113,6 @@ export const deposits = pgTable(
     amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }).notNull(),
     creditsIssued: numeric("credits_issued", { precision: 18, scale: 8 }).notNull(),
     txHash: text("tx_hash"),
-    houdiniId: text("houdini_id"),
     fromCoin: text("from_coin"),
     toCoin: text("to_coin"),
     depositAddress: text("deposit_address"),
@@ -128,9 +122,10 @@ export const deposits = pgTable(
   },
   (t) => [
     index("idx_deposits_user").on(t.userId),
-    index("idx_deposits_houdini").on(t.houdiniId),
     index("idx_deposits_status").on(t.status),
     index("idx_deposits_txhash").on(t.txHash),
+    // Unique constraint on txHash for dedup — partial because txHash is NULL for pending deposits
+    uniqueIndex("idx_deposits_txhash_unique").on(t.txHash).where(sql`${t.txHash} is not null`),
     index("idx_deposits_user_status").on(t.userId, t.status),
     index("idx_deposits_created_at").on(t.createdAt),
   ]
@@ -213,7 +208,8 @@ amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
     index("idx_credit_batches_user").on(t.userId),
     index("idx_credit_batches_deposit").on(t.depositId),
     index("idx_credit_batches_expiry").on(t.expiresAt),
-    index("idx_credit_batches_user_remaining").on(t.userId, t.remainingCents),
+    // idx_credit_batches_user_remaining removed — idx_credit_batches_remaining_positive (partial)
+    // covers the same access pattern for the hot path (remainingCents > 0)
     index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
     index("idx_credit_batches_remaining_positive").on(t.userId).where(sql`${t.remainingCents} > 0`),
     index("idx_credit_batches_expiring").on(t.userId, t.remainingCents, t.expiresAt).where(sql`${t.remainingCents} > 0`),
@@ -613,8 +609,8 @@ export const auditLogs = pgTable(
     index("idx_audit_logs_resource").on(t.resource),
     index("idx_audit_logs_resource_id").on(t.resourceId),
     index("idx_audit_logs_created").on(t.createdAt),
-    index("idx_audit_logs_user_action").on(t.userId, t.action),
-    index("idx_audit_logs_user_created").on(t.userId, t.createdAt),
+    // idx_audit_logs_user_action + idx_audit_logs_user_created removed —
+    // idx_audit_logs_user_action_created (3-col composite) covers both prefix access patterns
     index("idx_audit_logs_user_action_created").on(t.userId, t.action, t.createdAt),
     index("idx_audit_logs_action_created").on(t.action, t.createdAt),
   ]

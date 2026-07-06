@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { log } from "@/lib/logger";
 
 /**
  * Global Error Boundary
@@ -19,7 +20,7 @@ interface GlobalErrorProps {
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
 	useEffect(() => {
 		if (process.env.NODE_ENV === "production") {
-			console.error("[GlobalError]", {
+			log.error("[GlobalError]", {
 				message: error.message,
 				stack: error.stack,
 				digest: error.digest,
@@ -89,8 +90,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 						style={{
 							padding: "0.625rem 1.25rem",
 							borderRadius: "0.5rem",
-							border: "1px solid var(--color-accent, #f97316)",
-							background: "var(--color-accent, #f97316)",
+							border: "1px solid var(--color-accent, #10b981)",
+							background: "var(--color-accent, #10b981)",
 							color: "var(--color-void, #0a0a0f)",
 							fontWeight: 600,
 							cursor: "pointer",

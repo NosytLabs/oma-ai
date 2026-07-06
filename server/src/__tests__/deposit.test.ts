@@ -102,39 +102,9 @@ vi.mock('../credits/index.js', () => ({
   preflightDeduction: vi.fn(),
 }))
 
-vi.mock('../credits/deposit.js', () => ({
-  processUsdcDeposit: vi.fn(),
-  processHoudiniDeposit: vi.fn(),
-  completeHoudiniDeposit: vi.fn(),
-}))
-
-vi.mock('../credits/oracle.js', () => ({
-  getOmaUsdPrice: vi.fn().mockResolvedValue(0.10),
-}))
-
-vi.mock('../inference/circuit-breaker.js', () => ({
-  checkCircuitBreaker: vi.fn().mockResolvedValue({ omaDepositsAllowed: true, omaBonusPercent: 5, reason: null }),
-  checkOracleCircuitBreaker: vi.fn().mockResolvedValue(false),
-}))
-
-vi.mock('../credits/houdini-client.js', () => ({
-  OrderStatus: { NEW: 'NEW', WAITING: 'WAITING', CONFIRMING: 'CONFIRMING', EXCHANGING: 'EXCHANGING', ANONYMIZING: 'ANONYMIZING', FINISHED: 'FINISHED', FAILED: 'FAILED', REFUNDED: 'REFUNDED', EXPIRED: 'EXPIRED' },
-  SwapType: { PRIVATE: 'private', STANDARD: 'standard', DEX: 'dex' },
-  houdiniClient: {
-    isConfigured: vi.fn().mockReturnValue(true),
-    getTokens: vi.fn().mockResolvedValue([]),
-    getDepositStatus: vi.fn(),
-    createDeposit: vi.fn(),
-    getQuotes: vi.fn(),
-    createExchange: vi.fn(),
-    getChains: vi.fn(),
-    getOrder: vi.fn(),
-  },
-}))
-
 vi.mock('../credits/cctp-client.js', () => ({
-  verifyBurnTransaction: vi.fn().mockResolvedValue({ verified: true, sourceChain: 'ethereum', burnTxHash: '0xabc', burnAmount: '10', mintRecipient: '0xrecv', messageHash: '0xmsg' }),
-  waitForAttestation: vi.fn().mockResolvedValue({ verified: true, sourceChain: 'ethereum', burnTxHash: '0xabc', burnAmount: '10', mintRecipient: '0xrecv', messageHash: '0xmsg' }),
+  verifyBurnTransaction: vi.fn().mockResolvedValue({ verified: true, sourceChain: 'ethereum', burnTxHash: '0xabc', burnAmount: '10000000', mintRecipient: '0xrecv', messageHash: '0xmsg' }),
+  waitForAttestation: vi.fn().mockResolvedValue({ verified: true, sourceChain: 'ethereum', burnTxHash: '0xabc', burnAmount: '10000000', mintRecipient: '0xrecv', messageHash: '0xmsg' }),
   getCctpSupportedChains: vi.fn().mockReturnValue(['ethereum', 'base', 'polygon', 'arbitrum']),
 }))
 
@@ -150,18 +120,17 @@ vi.mock('../credits/lifi-client.js', () => ({
     routes: [{ id: 'route-1', estimate: { toAmount: '9.95', toAmountMin: '9.90', fromAmount: '10', approvalAddress: '0xapp', executionDuration: 30, gasCosts: [], feeCosts: [] }, steps: [] }],
     estimatedDuration: 30,
   }),
-  getRouteStatus: vi.fn().mockResolvedValue({ status: 'DONE', fromAmount: '10', toAmount: '9.95', toAmountMin: '9.90' }),
+  // toAmount must be raw 6-decimal USDC (lifi.ts does Number(toAmount) / 1e6)
+  getRouteStatus: vi.fn().mockResolvedValue({ status: 'DONE', fromAmount: '1000000000000000000', toAmount: '9950000', toAmountMin: '9900000' }),
   checkPossibleRoutes: vi.fn().mockResolvedValue(true),
   isCctpChain: vi.fn().mockReturnValue(false),
   getLifiSourceChains: vi.fn().mockReturnValue(['ethereum', 'optimism', 'arbitrum', 'polygon']),
+  getSupportedChains: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn(),
   processOmaDeposit: vi.fn(),
-  processHoudiniDeposit: vi.fn(),
-  completeHoudiniDeposit: vi.fn(),
-  completeHoudiniDepositWithTx: vi.fn().mockResolvedValue({ creditsCents: 500 }),
   processCctpDeposit: vi.fn(),
   processLifiDeposit: vi.fn(),
   processPaymentLinkDeposit: vi.fn().mockResolvedValue({ creditsCents: 500 }),
@@ -182,31 +151,9 @@ vi.mock('../lib/redis-client.js', () => ({
 
 vi.mock('../lib/dlq.js', () => ({
   addToDlq: vi.fn().mockResolvedValue(undefined),
-}))
+ }))
 
-vi.mock('../credits/cctp-client.js', () => ({
-  verifyBurnTransaction: vi.fn().mockResolvedValue({ verified: true, sourceChain: 'ethereum', burnTxHash: '0xabc', burnAmount: '10', mintRecipient: '0xrecv', messageHash: '0xmsg' }),
-  waitForAttestation: vi.fn().mockResolvedValue({ status: 'complete', attestation: '0xatt', messageHash: '0xmsg' }),
-  getCctpSupportedChains: vi.fn().mockReturnValue(['ethereum', 'base', 'polygon', 'arbitrum']),
-}))
 
-vi.mock('../credits/lifi-client.js', () => ({
-  getQuoteForSwap: vi.fn().mockResolvedValue({
-    id: 'quote-1',
-    estimatedAmount: '9950000',
-    fromAmount: '1000000000000000000',
-    toToken: { symbol: 'USDC', decimals: 6, address: '0xusdc', name: 'USD Coin', chainId: 8453 },
-    toChain: { id: 8453, key: 'base', name: 'Base', enabled: true },
-    fromToken: { symbol: 'ETH', decimals: 18, address: '0xeee', name: 'Ethereum', chainId: 1 },
-    fromChain: { id: 1, key: 'ethereum', name: 'Ethereum', enabled: true },
-    estimatedDuration: 30,
-    steps: [],
-  }),
-  getRouteStatus: vi.fn().mockResolvedValue({ status: 'DONE', fromAmount: '1000000000000000000', toAmount: '9950000', toAmountMin: '9900000' }),
-  checkPossibleRoutes: vi.fn().mockResolvedValue(true),
-  getLifiSourceChains: vi.fn().mockReturnValue(['ethereum', 'optimism', 'arbitrum', 'polygon']),
-  isCctpChain: vi.fn().mockReturnValue(false),
-}))
 
 vi.mock('../inference/router.js', () => ({
   handleChatCompletion: vi.fn(),
@@ -252,11 +199,7 @@ vi.mock('../config.js', () => ({
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',
-    HOUDINI_API_KEY: 'test-houdini-key',
-    HOUDINI_API_SECRET: 'test-houdini-secret',
-    HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
-    TREASURY_SOLANA_ADDRESS: 'TreasurySolAddress1111111111111111111',
-    SOLANA_RPC_URL: 'https://api.mainnet-beta.solana.com',
+
   },
 }))
 
@@ -268,13 +211,12 @@ vi.mock('../credits/deposit-router.js', () => ({
       { method: 'lifi', label: 'Swap via LI.FI', estimatedTime: '15 seconds - 20 minutes', fee: '0.05-0.3%', requiresWallet: true, privacyLevel: 'standard', requiredFields: ['fromChain', 'fromToken', 'fromAmount', 'txHash'] },
     ],
   }),
-  getSupportedMethods: vi.fn().mockReturnValue(['cctp', 'lifi', 'houdini']),
+  getSupportedMethods: vi.fn().mockReturnValue(['cctp', 'lifi']),
 }))
 
 import app from '../index.js'
 import { verifySessionToken } from '../auth/siwe.js'
-import { processUsdcDeposit, processHoudiniDeposit, completeHoudiniDeposit, processCctpDeposit, processLifiDeposit } from '../credits/deposit.js'
-import { houdiniClient, OrderStatus, SwapType } from '../credits/houdini-client.js'
+import { processUsdcDeposit, processCctpDeposit, processLifiDeposit } from '../credits/deposit.js'
 import { db } from '../db/client.js'
 
 describe('Deposit Routes', () => {
@@ -347,11 +289,10 @@ describe('Deposit Routes', () => {
       expect(body.error).toBeDefined()
     })
 
-    it('returns 409 for duplicate txHash', async () => {
+    it('returns 409 for duplicate txHash in DB', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
-      vi.mocked(processUsdcDeposit).mockRejectedValueOnce(new Error('Duplicate transaction'))
-       
+        
       const nonceRes = await app.request('/v1/deposit/usdc/nonce', {
         method: 'POST',
         headers: {
@@ -363,12 +304,12 @@ describe('Deposit Routes', () => {
       expect(nonceRes.status).toBe(200)
       const { nonce } = await nonceRes.json()
 
-      const mockChain: any = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
-      }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
+      // 1st db.select: sessionAuth middleware checks 2FA (returns user without 2FA enabled)
+      const authChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ twoFactorEnabled: false }]) }
+      vi.mocked(db.select).mockReturnValueOnce(authChain)
+      // 2nd db.select: route duplicate check returns existing deposit → 409
+      const dupChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ id: 'existing-dep' }]) }
+      vi.mocked(db.select).mockReturnValueOnce(dupChain)
 
       const res = await app.request('/v1/deposit/usdc', {
         method: 'POST',
@@ -378,78 +319,9 @@ describe('Deposit Routes', () => {
         },
         body: JSON.stringify({ ...validDepositBody, nonce }),
       })
-      expect(res.status).toBe(500)
+      expect(res.status).toBe(409)
       const body = await res.json()
-      expect(body.error.type).toBe('deposit_error')
-    })
-  })
-
-  describe('POST /v1/deposit/houdini', () => {
-    it('processes HoudiniSwap deposit with valid body', async () => {
-      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
-      vi.mocked(houdiniClient.createExchange).mockResolvedValueOnce({ id: 'ord-1', depositAddress: '0xHoudiniDeposit', fromAmount: '0.001', toAmount: '0.99', fromToken: 'btc', toToken: 'usdc', swapType: SwapType.STANDARD, status: OrderStatus.WAITING, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
-      vi.mocked(processHoudiniDeposit).mockResolvedValueOnce({ depositAddress: '0xHoudiniDeposit', depositId: 'dep-3' })
-
-      const res = await app.request('/v1/deposit/houdini', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer session-token',
-        },
-        body: JSON.stringify({ fromCoin: 'btc', amount: '0.001', quoteId: 'q1' }),
-      })
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.depositAddress).toBe('0xHoudiniDeposit')
-      expect(body.depositId).toBe('dep-3')
-      expect(body.orderId).toBe('ord-1')
-    })
-  })
-
-  describe('POST /v1/deposit/houdini/webhook', () => {
-    it('processes webhook with valid signature', async () => {
-      vi.mocked(completeHoudiniDeposit).mockResolvedValueOnce({ creditsCents: 500 })
-       
-      const mockSelectChain: any = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        for: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([{ id: 'dep-1', userId: 'user-1', type: 'houdini_swap' }]),
-      }
-      vi.mocked(db.select).mockReturnValueOnce(mockSelectChain)
-
-      const crypto = await import('node:crypto')
-      const rawBody = JSON.stringify({ depositId: 'dep-1', toAmount: '5', txHash: '0xabc' })
-      const signature = crypto.createHmac('sha256', 'test-webhook-secret').update(rawBody).digest('hex')
-
-      const res = await app.request('/v1/deposit/houdini/webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Houdini-Signature': signature,
-        },
-        body: rawBody,
-      })
-      const body = await res.json().catch(() => ({ error: 'Failed to parse JSON' }))
-      expect(res.status).toBe(200)
-      expect(body.credits).toBe(500)
-      expect(body.status).toBe('completed')
-    })
-
-    it('returns 401 with invalid signature', async () => {
-      const rawBody = JSON.stringify({ depositId: 'dep-1', toAmount: '5', txHash: '0xabc' })
-
-      const res = await app.request('/v1/deposit/houdini/webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Houdini-Signature': 'invalid-signature',
-        },
-        body: rawBody,
-      })
-      expect(res.status).toBe(401)
-      const body = await res.json()
-      expect(body.error.type).toBe('authentication_error')
+      expect(body.error.type).toBe('duplicate')
     })
   })
 
@@ -473,17 +345,42 @@ describe('Deposit Routes', () => {
       expect(body.method).toBe('cctp')
     })
 
-    it('returns 409 for duplicate txHash', async () => {
+    it('returns 409 for duplicate txHash in DB', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
-      vi.mocked(processCctpDeposit).mockRejectedValueOnce(new Error('Duplicate transaction'))
        
-      const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
+      // 1st db.select: sessionAuth middleware checks 2FA (returns user without 2FA enabled)
+      const authChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ twoFactorEnabled: false }]) }
+      vi.mocked(db.select).mockReturnValueOnce(authChain)
+      // 2nd db.select: route duplicate check returns existing deposit → 409
+      const dupChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ id: 'existing-dep' }]) }
+      vi.mocked(db.select).mockReturnValueOnce(dupChain)
 
       const res = await app.request('/v1/deposit/cctp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer session-token' },
         body: JSON.stringify({ amount: 10, txHash: '0x' + 'd'.repeat(64), sourceChain: 'ethereum' }),
+      })
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error.type).toBe('duplicate')
+    })
+
+    it('returns 500 when processCctpDeposit throws', async () => {
+      vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
+      vi.mocked(processCctpDeposit).mockRejectedValueOnce(new Error('Internal deposit error'))
+       
+      // 1st db.select: sessionAuth middleware checks 2FA
+      const authChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ twoFactorEnabled: false }]) }
+      vi.mocked(db.select).mockReturnValueOnce(authChain)
+      // 2nd db.select: route duplicate check returns [] (no duplicate)
+      const dupChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
+      vi.mocked(db.select).mockReturnValueOnce(dupChain)
+
+      // burnAmount mock is now 10000000 (raw 6-decimal) → onChain $10, so amount:10 passes validation
+      const res = await app.request('/v1/deposit/cctp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer session-token' },
+        body: JSON.stringify({ amount: 10, txHash: '0x' + 'e'.repeat(64), sourceChain: 'ethereum' }),
       })
       expect(res.status).toBe(500)
       const body = await res.json()
@@ -495,9 +392,13 @@ describe('Deposit Routes', () => {
     it('processes LI.FI deposit with valid auth and body', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
       vi.mocked(processLifiDeposit).mockResolvedValueOnce({ creditsCents: 995, depositId: 'lifi-dep-1', method: 'lifi' })
-       
-      const mockChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
-      vi.mocked(db.select).mockReturnValueOnce(mockChain)
+        
+      // 1st db.select: sessionAuth middleware checks 2FA (returns user without 2FA enabled)
+      const authChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ twoFactorEnabled: false }]) }
+      vi.mocked(db.select).mockReturnValueOnce(authChain)
+      // 2nd db.select: route duplicate check returns empty → no duplicate
+      const dupChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
+      vi.mocked(db.select).mockReturnValueOnce(dupChain)
 
       const res = await app.request('/v1/deposit/lifi', {
         method: 'POST',
@@ -512,11 +413,14 @@ describe('Deposit Routes', () => {
 
     it('returns 400 when route has not completed', async () => {
       vi.mocked(verifySessionToken).mockResolvedValueOnce({ userId: 'user-1', authMethod: 'siwe' })
-      interface MockChain {
-        from: () => { where: () => { limit: () => Promise<unknown[]> }; limit: () => Promise<unknown[]> };
-      }
-      const mockChain: MockChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }) }
-      ;(vi.mocked(db.select) as ReturnType<typeof vi.fn>).mockReturnValueOnce(mockChain)
+
+      // 1st db.select: sessionAuth middleware checks 2FA
+      const authChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([{ twoFactorEnabled: false }]) }
+      vi.mocked(db.select).mockReturnValueOnce(authChain)
+      // 2nd db.select: route duplicate check returns empty → no duplicate
+      const dupChain: any = { from: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue([]) }
+      vi.mocked(db.select).mockReturnValueOnce(dupChain)
+
       const { getRouteStatus } = await import('../credits/lifi-client.js')
       vi.mocked(getRouteStatus).mockResolvedValueOnce({ status: 'PENDING', fromAmount: '10', toAmount: '0', toAmountMin: '0' })
 

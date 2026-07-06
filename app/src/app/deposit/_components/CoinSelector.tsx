@@ -5,7 +5,7 @@ import { ChevronDown, Coins, Lock, Search } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { CryptoLogo } from "@/components/ui/CryptoLogo";
-import { type CoinOption, POPULAR_COINS, SWAP_COINS } from "../_constants";
+import { type CoinOption, POPULAR_COINS } from "../_constants";
 
 export function CoinSelector({
 	selected,
@@ -31,12 +31,7 @@ export function CoinSelector({
 		return () => document.removeEventListener("mousedown", handleClick);
 	}, []);
 
-	const allCoins = [
-		...POPULAR_COINS,
-		...SWAP_COINS.filter(
-			(c) => !POPULAR_COINS.some((p) => p.symbol === c.symbol),
-		),
-	];
+	const allCoins = POPULAR_COINS;
 
 	const filteredCoins = allCoins.filter(
 		(coin) =>

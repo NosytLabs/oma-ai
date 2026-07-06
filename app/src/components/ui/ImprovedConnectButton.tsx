@@ -14,6 +14,7 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { log } from "@/lib/logger";
 import { useEnsName } from "wagmi";
 import { useWallet } from "@/components/wallet-context";
 import { api } from "@/lib/api";
@@ -227,7 +228,7 @@ export function ImprovedConnectButton({
 		try {
 			await connectEvm(id);
 		} catch (err) {
-			console.error("Wallet connect failed:", err);
+			log.error("Wallet connect failed:", err);
 		} finally {
 			setConnectingId(null);
 			setOpen(false);

@@ -36,7 +36,7 @@ async function attemptSettlementRetry(entry: {
         networkId: chain,
         asset: USDC_BASE,
         amount,
-        payee: config.HOUDINI_ADDRESS_TO || "",
+        payee: config.TREASURY_BASE_ADDRESS || "",
         payFrom: "",
         maxAmountRequired: amount,
         validBefore: now + 300,
@@ -61,7 +61,7 @@ async function attemptSettlementRetry(entry: {
         verification.txHash,
         verification.amount || amount,
         verification.networkId || chain,
-        config.HOUDINI_ADDRESS_TO || "",
+        config.TREASURY_BASE_ADDRESS || "",
       );
 
       if (result.settled) {

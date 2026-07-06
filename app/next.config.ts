@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
 			new Date().toISOString().slice(0, 10),
 	},
 
-	experimental: { optimizePackageImports: ["lucide-react"] },
+	experimental: { optimizePackageImports: ["lucide-react", "recharts", "viem", "wagmi", "framer-motion", "react-markdown", "date-fns", "jose", "zod"] },
 	transpilePackages: [],
 
 	serverExternalPackages: ["porto", "@metamask/connect-evm", "ethers"],
@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
 	async rewrites() {
 		const apiRewriteDestination = (() => {
 			const url = process.env.NEXT_PUBLIC_API_URL;
-			return url?.trim() ? url : "http://127.0.0.1:9999";
+			return url?.trim() ? url : "http://127.0.0.1:3001";
 		})();
 		return [
 			{ source: "/api/:path((?!admin).*)", destination: `${apiRewriteDestination}/:path*` },

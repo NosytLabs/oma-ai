@@ -17,34 +17,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.5,
 		},
 		{
-			url: `${baseUrl}/compare`,
+			url: `${baseUrl}/blog`,
 			lastModified: new Date(),
-			changeFrequency: "monthly",
+			changeFrequency: "weekly",
+			priority: 0.6,
+		},
+		{
+			url: `${baseUrl}/chat`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
 			priority: 0.5,
-		},
-		{
-			url: `${baseUrl}/compare/cheaptokens-alternative`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
-		},
-		{
-			url: `${baseUrl}/compare/openrouter-alternative`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
-		},
-		{
-			url: `${baseUrl}/compare/venice-ai-alternative`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
-		},
-		{
-			url: `${baseUrl}/compare/surplus-min-discount-routing`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
 		},
 		{
 			url: `${baseUrl}/deposit`,
@@ -53,10 +35,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.7,
 		},
 		{
-			url: `${baseUrl}/deposit`,
+			url: `${baseUrl}/disclosures`,
 			lastModified: new Date(),
-			changeFrequency: "weekly",
-			priority: 0.5,
+			changeFrequency: "monthly",
+			priority: 0.3,
 		},
 		{
 			url: `${baseUrl}/docs`,
@@ -95,10 +77,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.3,
 		},
 		{
-			url: `${baseUrl}/private-ai-api`,
+			url: `${baseUrl}/status`,
 			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
+			changeFrequency: "daily",
+			priority: 0.3,
 		},
 		{
 			url: `${baseUrl}/swap`,
@@ -107,34 +89,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.5,
 		},
 		{
+			url: `${baseUrl}/support`,
+			lastModified: new Date(),
+			changeFrequency: "monthly",
+			priority: 0.4,
+		},
+		{
 			url: `${baseUrl}/terms`,
 			lastModified: new Date(),
 			changeFrequency: "yearly",
 			priority: 0.3,
-		},
-		{
-			url: `${baseUrl}/use-cases`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.6,
-		},
-		{
-			url: `${baseUrl}/use-cases/ai-agents`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.5,
-		},
-		{
-			url: `${baseUrl}/use-cases/apps`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.5,
-		},
-		{
-			url: `${baseUrl}/use-cases/chatbots`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.5,
 		},
 		{
 			url: `${baseUrl}/video-generation`,

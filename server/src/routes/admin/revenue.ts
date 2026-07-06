@@ -33,35 +33,38 @@ revenueRoutes.get("/admin/revenue", async (c) => {
   }
 
   try {
-    const revenueAgg = await db.select({
-      totalRevenueCents: sql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
-      totalCostCents: sql<number>`coalesce(sum(${usageRecords.costCents}), 0)`,
-      totalMarkupCents: sql<number>`coalesce(sum(${usageRecords.markupCents}), 0)`,
-      requestCount: sql<number>`count(${usageRecords.id})`,
-    })
-    .from(usageRecords)
-    .where(sql`${usageRecords.createdAt} >= ${dateFilter}`);
+    // Parallel queries — all 4 are independent
+    const [revenueAgg, depositsAgg, monthlyRevenue, activeUsers] = await Promise.all([
+      db.select({
+        totalRevenueCents: sql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+        totalCostCents: sql<number>`coalesce(sum(${usageRecords.costCents}), 0)`,
+        totalMarkupCents: sql<number>`coalesce(sum(${usageRecords.markupCents}), 0)`,
+        requestCount: sql<number>`count(${usageRecords.id})`,
+      })
+      .from(usageRecords)
+      .where(sql`${usageRecords.createdAt} >= ${dateFilter}`),
 
-    const depositsAgg = await db.select({
-      totalDeposits: sql<number>`coalesce(sum(${deposits.amountUsd}), 0)`,
-      count: count(deposits.id),
-    })
-    .from(deposits)
-    .where(sql`${deposits.createdAt} >= ${dateFilter} and ${deposits.status} = 'completed'`);
+      db.select({
+        totalDeposits: sql<number>`coalesce(sum(${deposits.amountUsd}), 0)`,
+        count: count(deposits.id),
+      })
+      .from(deposits)
+      .where(sql`${deposits.createdAt} >= ${dateFilter} and ${deposits.status} = 'completed'`),
 
-    const monthlyRevenue = await db.select({
-      month: sql<string>`to_char(${deposits.createdAt}, 'YYYY-MM')`,
-      totalRevenue: sql<number>`coalesce(sum(${deposits.amountUsd}), 0)`,
-      count: count(deposits.id),
-    })
-    .from(deposits)
-    .where(sql`${deposits.createdAt} >= ${new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)} and ${deposits.status} = 'completed'`)
-    .groupBy(sql`to_char(${deposits.createdAt}, 'YYYY-MM')`)
-    .orderBy(sql`to_char(${deposits.createdAt}, 'YYYY-MM')`);
+      db.select({
+        month: sql<string>`to_char(${deposits.createdAt}, 'YYYY-MM')`,
+        totalRevenue: sql<number>`coalesce(sum(${deposits.amountUsd}), 0)`,
+        count: count(deposits.id),
+      })
+      .from(deposits)
+      .where(sql`${deposits.createdAt} >= ${new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)} and ${deposits.status} = 'completed'`)
+      .groupBy(sql`to_char(${deposits.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${deposits.createdAt}, 'YYYY-MM')`),
 
-    const activeUsers = await db.select({ count: count() })
-      .from(users)
-      .where(sql`${users.createdAt} >= ${dateFilter}`);
+      db.select({ count: count() })
+        .from(users)
+        .where(sql`${users.createdAt} >= ${dateFilter}`),
+    ]);
 
     const totalRev = Number(revenueAgg[0]?.totalRevenueCents || 0);
     const totalCost = Number(revenueAgg[0]?.totalCostCents || 0);

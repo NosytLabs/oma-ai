@@ -1568,7 +1568,7 @@ const client = new OpenAI({
 
 const models = await client.models.list();
 for (const model of models.data) {
-  console.log(\`\${model.id} (\${(model as any).category ?? "chat"})\`);
+  console.log(\`\${model.id} (\${(model as Record<string, unknown>).category ?? "chat"})\`);
 }`;
 
 	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
@@ -1841,7 +1841,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<aside
 				id={mobileNavId}
 				aria-label="Mobile navigation"
-				className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+				className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-56 lg:w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>

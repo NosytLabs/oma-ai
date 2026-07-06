@@ -34,6 +34,21 @@ cctpRoutes.post("/v1/deposit/cctp", sessionAuth, async (c) => {
       return c.json({ error: { message: "Invalid burn transaction", type: "verification_error" } }, 400);
     }
 
+    // SECURITY: Validate that the user-claimed amount matches the on-chain burn amount.
+    // Without this check, a user could submit a real 1-cent burn tx but claim $10,000
+    // and receive unlimited credits. The on-chain amount is the single source of truth.
+    const onChainAmountUsd = Number(burnTx.burnAmount) / 1e6; // USDC has 6 decimals
+    if (Math.abs(onChainAmountUsd - amount) > 0.01) {
+      return c.json({
+        error: {
+          message: `Amount mismatch: claimed $${amount}, on-chain burn is $${onChainAmountUsd.toFixed(2)}`,
+          type: "amount_mismatch",
+          claimedAmount: amount,
+          onChainAmount: onChainAmountUsd,
+        },
+      }, 400);
+    }
+
     if (fastTransfer) {
       const attestation = await waitForAttestation(sourceChain, txHash, 15, 2000);
       if (attestation.status !== "complete") {
@@ -41,7 +56,7 @@ cctpRoutes.post("/v1/deposit/cctp", sessionAuth, async (c) => {
       }
     }
 
-    const result = await processCctpDeposit(userId, amount, txHash, sourceChain);
+    const result = await processCctpDeposit(userId, onChainAmountUsd, txHash, sourceChain, burnTx.messageHash);
 
     const ipAddress = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || undefined;
     const userAgent = c.req.header("user-agent") || undefined;

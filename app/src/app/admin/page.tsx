@@ -188,8 +188,8 @@ export default function AdminPage() {
 		return (
 			<div className="min-h-screen bg-void text-text flex flex-col items-center justify-center px-4">
 				<div className="rounded border border-border bg-surface p-10 max-w-md w-full text-center">
-					<div className="w-16 h-16 rounded border border-red-300/30 bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-						<ShieldAlert className="w-8 h-8 text-red-400" />
+					<div className="w-16 h-16 rounded border border-error/30 bg-error-dim flex items-center justify-center mx-auto mb-6">
+						<ShieldAlert className="w-8 h-8 text-error" />
 					</div>
 					<h1 className="text-xl font-bold font-display tracking-tight text-text-bright mb-2">
 						Not Authorized

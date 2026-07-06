@@ -43,7 +43,7 @@ export function FinalCTA() {
 								rightIcon={<ArrowRight className="h-4 w-4" />}
 								className="self-start lg:self-end px-7 h-14 text-base"
 							>
-								<Link href="/chat">Get your API key</Link>
+								<Link href="/login">Get your API key</Link>
 							</Button>
 							<div className="text-xs text-text-muted font-mono lg:text-right">
 								Or{" "}

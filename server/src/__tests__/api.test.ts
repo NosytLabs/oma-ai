@@ -82,9 +82,6 @@ vi.mock('../credits/index.js', () => ({
 
 vi.mock('../credits/deposit.js', () => ({
   processUsdcDeposit: vi.fn().mockResolvedValue({ depositId: 'dep-1', creditsCents: 1000 }),
-  processHoudiniDeposit: vi.fn().mockResolvedValue({ depositId: 'dep-2', creditsCents: 500 }),
-  completeHoudiniDeposit: vi.fn().mockResolvedValue(undefined),
-  completeHoudiniDepositWithTx: vi.fn().mockResolvedValue({ depositId: 'dep-2', creditsCents: 500 }),
   processPaymentLinkDeposit: vi.fn().mockResolvedValue({ depositId: 'dep-3', creditsCents: 300 }),
 }))
 
@@ -97,19 +94,6 @@ vi.mock('../credits/price-guard.js', () => ({
   checkOracleCircuitBreaker: vi.fn().mockResolvedValue(false),
 }))
 
-vi.mock('../credits/houdini-client.js', () => ({
-  houdiniClient: {
-    isConfigured: vi.fn().mockReturnValue(true),
-    getTokens: vi.fn().mockResolvedValue([
-      { symbol: 'BTC', name: 'Bitcoin', decimals: 8, chain: 'bitcoin', address: null },
-      { symbol: 'ETH', name: 'Ethereum', decimals: 18, chain: 'ethereum', address: null },
-    ]),
-    getDepositStatus: vi.fn().mockResolvedValue({ status: 'PENDING' }),
-    createDeposit: vi.fn().mockResolvedValue({ id: 'h-1', depositAddress: '0x123' }),
-    getQuotes: vi.fn().mockResolvedValue([{ id: 'q-1', fromCoin: 'BTC', toCoin: 'USDC' }]),
-    createExchange: vi.fn().mockResolvedValue({ id: 'ex-1', depositAddress: '0x456' }),
-  },
-}))
 
 vi.mock('../inference/router.js', () => ({
   handleChatCompletion: vi.fn().mockResolvedValue({
@@ -332,17 +316,6 @@ describe('API Endpoints', () => {
         body: JSON.stringify({ amount: 10, txHash: 'not-a-hash', signature: 'sig' + 'a'.repeat(64) }),
       })
       expect(res.status).toBe(400)
-    })
-  })
-
-  describe('POST /v1/deposit/houdini', () => {
-    it('returns 200 (sessionAuth mocked)', async () => {
-      const res = await app.request('/v1/deposit/houdini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: 'q-1', fromCoin: 'BTC', amount: '0.001' }),
-      })
-      expect(res.status).toBe(200)
     })
   })
 

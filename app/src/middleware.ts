@@ -2,6 +2,7 @@ import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/cookies";
+import { log } from "@/lib/logger";
 
 const PROTECTED_PATHS = [
 	"/dashboard",
@@ -115,7 +116,7 @@ export async function middleware(request: NextRequest) {
 	const secret = getSecret();
 	if (!secret) {
 		if (process.env.NODE_ENV === "production") {
-			console.error(
+			log.error(
 				"middleware: JWT_SECRET missing or too short; redirecting protected requests to /login",
 			);
 		}

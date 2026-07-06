@@ -20,8 +20,7 @@ export function UnifiedDepositHeader() {
 				<div className="flex-1">
 					<h1 className="h1-utility text-text-bright">Deposit Credits</h1>
 					<p className="text-text-secondary text-sm">
-						Crypto-friendly credit system. Fund with USDC or swap from 100+
-						cryptocurrencies via Houdini-powered flow.
+						Crypto-friendly credit system. Fund with USDC on Base or use x402 gasless pay-per-request.
 					</p>
 				</div>
 				<m.span

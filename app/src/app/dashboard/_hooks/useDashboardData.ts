@@ -51,7 +51,7 @@ export function useDashboardData({
 
 	const balanceQuery = useQuery({
 		queryKey: ["balance"],
-		queryFn: () => api.balance(),
+		queryFn: () => api.balance.get(),
 		enabled,
 		staleTime: STALE_DEFAULT,
 	});
@@ -63,7 +63,7 @@ export function useDashboardData({
 	});
 	const usageQuery = useQuery({
 		queryKey: ["usage"],
-		queryFn: () => api.usage({ limit: 500 }),
+		queryFn: () => api.usage.get({ limit: 500 }),
 		enabled,
 		staleTime: STALE_DEFAULT,
 	});
@@ -75,7 +75,7 @@ export function useDashboardData({
 	});
 	const modelsQuery = useQuery({
 		queryKey: ["models"],
-		queryFn: () => api.models(),
+		queryFn: () => api.models.list(),
 		enabled,
 		staleTime: STALE_MODELS,
 	});

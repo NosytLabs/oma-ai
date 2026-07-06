@@ -14,7 +14,7 @@ import { logger } from './logger.js';
  * `strictDns: true`, which means a DNS resolution failure (e.g. NXDOMAIN,
  * timeout) is treated as `safe: false` rather than allowing the request
  * through. (2) For server-side fetches that we own (cctp-client,
- * lifi-client, houdini-client, oracle, cheaptokens), the caller MUST
+ * lifi-client, oracle, cheaptokens), the caller MUST
  * additionally pin the resolved IP at fetch time by constructing a
  * custom `http.Agent`/`https.Agent` and using `lookup: () => pinnedIp`
  * (see {@link resolvePublicIp} + {@link createPinnedLookup}). The static

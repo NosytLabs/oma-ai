@@ -279,8 +279,8 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60
 
 withdrawalRoutes.get("/v1/withdraw/history", sessionAuth, async (c) => {
   const userId = c.get("userId");
-  const limit = Math.min(parseInt(c.req.query("limit") || "20", 10), 100);
-  const offset = parseInt(c.req.query("offset") || "0", 10);
+  const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "20", 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query("offset") || "0", 10) || 0, 0);
 
   const history = await db.select().from(withdrawals)
     .where(eq(withdrawals.userId, userId))
@@ -331,7 +331,7 @@ withdrawalRoutes.get("/v1/withdraw/:id", sessionAuth, async (c) => {
   });
 });
 
-withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
+withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {
   const userId = c.get("userId");
   const withdrawalId = c.req.param("id") as string;
 
@@ -342,16 +342,14 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
   }
   const txHash = parsed.data.txHash;
 
+  // SECURITY (A6): Filter by both ID and userId in a single query to avoid
+  // timing-based existence leaks (404 vs 403 reveals whether ID exists).
   const [withdrawal] = await db.select().from(withdrawals)
-    .where(eq(withdrawals.id, withdrawalId))
+    .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.userId, userId)))
     .limit(1);
 
   if (!withdrawal) {
     return c.json({ error: { message: "Withdrawal not found", type: "not_found" } }, 404);
-  }
-
-  if (withdrawal.userId !== userId) {
-    return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 403);
   }
 
   if (withdrawal.status !== "pending") {
@@ -367,7 +365,9 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
   const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
   const padTopic = (addr: string) =>
     "0x" + addr.toLowerCase().replace(/^0x/, "").padStart(64, "0");
-  const treasuryTopic = padTopic(config.TREASURY_BASE_ADDRESS);
+  // Non-null: TREASURY_BASE_ADDRESS is required in production (config guard);
+  // the withdraw route is auth-gated and only accessible in production.
+  const treasuryTopic = padTopic(config.TREASURY_BASE_ADDRESS!);
   const recipientTopic = padTopic(withdrawal.toAddress);
   // USDC has 6 decimals, so 1 cent = 0.01 USDC = 10_000 raw units.
   // The previous multiplier (1_000_000) required 100x the actual amount, so
@@ -416,13 +416,25 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, async (c) => {
     }, 400);
   }
 
-  await db.update(withdrawals)
+  // SECURITY (A6): Include status="pending" in WHERE to make the update
+  // atomic with the ownership check — prevents overwriting a concurrent
+  // status change (e.g., admin marking it failed between SELECT and UPDATE).
+  const [updated] = await db.update(withdrawals)
     .set({
       status: "completed",
       txHash,
       completedAt: new Date(),
     })
-    .where(and(eq(withdrawals.id, withdrawalId), eq(withdrawals.userId, userId)));
+    .where(and(
+      eq(withdrawals.id, withdrawalId),
+      eq(withdrawals.userId, userId),
+      eq(withdrawals.status, "pending"),
+    ))
+    .returning({ id: withdrawals.id });
+
+  if (!updated) {
+    return c.json({ error: { message: "Withdrawal already processed or not found", type: "invalid_state" } }, 400);
+  }
 
   return c.json({ status: "completed", txHash });
 });

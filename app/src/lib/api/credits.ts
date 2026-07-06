@@ -7,6 +7,7 @@
  * `oma_session` cookie automatically.
  */
 import { request } from "./client.js";
+import type { AutoReloadSettings } from "./types.js";
 
 export interface CreditTransaction {
 	id: string;
@@ -36,6 +37,11 @@ export const creditHistory = {
  * The legacy `oma.getCreditBatches()` alias still works through the
  * composite `api` object in `./index.ts`.
  */
+export interface PurchaseCreditsResponse {
+	creditsAdded: number;
+	balanceCents: string;
+}
+
 export const credits = {
 	getBatches() {
 		return request<{
@@ -47,5 +53,26 @@ export const credits = {
 				paymentMethod: string | null;
 			}>;
 		}>("/v1/credits/balance");
+	},
+
+	purchase(
+		amountCents: number,
+		paymentMethod: "usdc" | "sol" | "oma" = "usdc",
+	) {
+		return request<PurchaseCreditsResponse>("/v1/credits/purchase", {
+			method: "POST",
+			body: JSON.stringify({ amountCents, paymentMethod }),
+		});
+	},
+
+	getAutoReload() {
+		return request<AutoReloadSettings>("/v1/credits/auto-reload");
+	},
+
+	updateAutoReload(settings: Partial<AutoReloadSettings>) {
+		return request<AutoReloadSettings>("/v1/credits/auto-reload", {
+			method: "POST",
+			body: JSON.stringify(settings),
+		});
 	},
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { formatTime } from "@/lib/utils";
 import {
@@ -29,7 +30,7 @@ function formatRelativeTime(timestamp: number | undefined): string {
 export function ProviderHealthCard() {
 	const { data: health, isLoading, isError, dataUpdatedAt } = useHealthQuery();
 
-	const checks: CheckEntry[] = health?.checks
+	const checks: CheckEntry[] = useMemo(() => health?.checks
 		? Object.entries(health.checks).map(([id, raw]) => {
 				const entry = (raw ?? {}) as {
 					status?: CheckStatus;
@@ -44,7 +45,7 @@ export function ProviderHealthCard() {
 					cooldownMs: entry.cooldownMs,
 				};
 			})
-		: [];
+		: [], [health]);
 
 	return (
 		<div className="flex flex-col p-6">

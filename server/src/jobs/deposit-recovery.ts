@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { config } from "../config.js";
+import { addToDlq } from "../lib/dlq.js";
 import { createPublicClient, http, formatUnits } from "viem";
 import { base } from "viem/chains";
 
@@ -285,7 +286,14 @@ export async function processPendingRecoveries(): Promise<void> {
         })
         .where(eq(depositRecoveries.id, _recovery.id));
 
-      logger.info({ recoveryId: _recovery.id }, "[recovery] Auto-expired pending recovery");
+      // Send to DLQ so ops can investigate stuck recoveries
+      await addToDlq(
+        "deposit-recovery",
+        JSON.stringify({ recoveryId: _recovery.id, originalTxHash: _recovery.originalTxHash, status: "expired" }),
+        "Auto-expired: not processed within 1 hour",
+      );
+
+      logger.info({ recoveryId: _recovery.id }, "[recovery] Auto-expired pending recovery, sent to DLQ");
     }
   }
 }

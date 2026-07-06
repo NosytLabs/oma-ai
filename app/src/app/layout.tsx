@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
+import { MotionProvider } from "@/components/motion-provider";
 import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Footer } from "@/components/footer";
-import { MotionProvider } from "@/components/motion-provider";
 import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
-import { ScrollProgress } from "@/components/scroll-progress";
 import { THEME_HEAD_SCRIPT, ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { OrganizationJsonLd, SoftwareApplicationJsonLd } from "@/components/json-ld";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: "website",
 		locale: "en_US",
-		url: "https://oma-ai.com",
+		url: BASE_URL,
 		siteName: "OMA AI",
 		title: "OMA-AI — AI Compute for Builders",
 		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions.`,
@@ -130,6 +130,8 @@ export default function RootLayout({
             to set <html data-theme="..."> from localStorage. Prevents FOUC
             for light-theme users. See ThemeProvider.tsx. */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_HEAD_SCRIPT }} />
+				<OrganizationJsonLd />
+				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://eth.coinbase.com" />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
 				<link rel="preconnect" href="https://api.jup.ag" />
@@ -148,7 +150,6 @@ export default function RootLayout({
 				<ThemeProvider>
 					<ToastProviderClient>
 						<MotionProvider>
-							<ScrollProgress />
 							<Providers>
 								<ConnectWalletWrapper>
 									<Navbar />

@@ -134,7 +134,7 @@ async function handleStreamEnd(
 
 export function createTrackingStream(
   upstream: ReadableStream<Uint8Array>,
-  model: ModelDef | null,
+  _model: ModelDef | null,
   modelId: string,
   _inputTokens: number,
   discountPercent: number,
@@ -142,7 +142,7 @@ export function createTrackingStream(
   apiKeyId: string,
   provider: string,
   estimatedTotalCents: string,
-  pricing: ModelPricing,
+  _pricing: ModelPricing,
   requestId: string,
   onStreamingMetrics?: (ttftMs: number, totalTokens: number, durationMs: number) => Promise<void>
 ): ReadableStream<Uint8Array> {

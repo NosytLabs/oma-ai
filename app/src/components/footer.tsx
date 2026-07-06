@@ -153,20 +153,20 @@ export function Footer() {
 						aria-label="Footer navigation"
 						className="text-[11px]"
 					>
-						<p className="text-text-muted mb-3 uppercase tracking-widest text-[10px]">
+						<p className="text-text-muted mb-3 uppercase tracking-widest text-[11px]">
 							Index
 						</p>
 						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-6">
 							{FOOTER_SECTIONS.map((section) => (
 								<div key={section.title} className="min-w-0">
-									<p className="text-accent mb-2 uppercase tracking-widest text-[9px] font-semibold">
+									<p className="text-accent mb-2 uppercase tracking-widest text-[11px] font-semibold">
 										{section.title}
 									</p>
 									<ul className="flex flex-col gap-1">
 										{section.links.map((link) => {
 											const isCurrent =
 												pathname === link.href ||
-												pathname.startsWith(`${link.href}/`);
+												(pathname.startsWith(`${link.href}/`) && link.href.length > 1);
 											return (
 												<li key={link.label}>
 													<Link
@@ -193,7 +193,7 @@ export function Footer() {
 					</m.nav>
 				</StaggerReveal>
 
-				<div className="mt-10 pt-5 border-t border-border text-[10px] text-text-muted leading-relaxed">
+				<div className="mt-10 pt-5 border-t border-border text-[11px] text-text-muted leading-relaxed">
 					<p suppressHydrationWarning>
 						© {CURRENT_YEAR} OMA AI · base mainnet
 						{process.env.NEXT_PUBLIC_BUILD_SHA
