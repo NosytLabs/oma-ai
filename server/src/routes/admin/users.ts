@@ -20,11 +20,28 @@ usersRoutes.get("/admin/users", async (c) => {
   const searchResult = searchSchema.safeParse(c.req.query("search") || "");
   const search = searchResult.success ? searchResult.data : "";
   // M6: Escape SQL wildcard characters in search to prevent pattern injection
-  const escapedSearch = (search ?? "").replace(/%/g, "\\%").replace(/_/g, "\\_");
+  const escapedSearch = (search ?? "")
+    .replace(/\\/g, "\\\\") // escape the LIKE default escape char first
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
   const hasSearch = escapedSearch.length > 0;
 
   try {
-    const baseQuery = db.select({
+    // Per-user usage totals (request count, token totals) previously came
+    // from a LEFT JOIN on usageRecords with GROUP BY. Even with the existing
+    // (userId, createdAt) index, that path paid for a hash-aggregate over the
+    // joined rows plus extra projection width on every page. The list
+    // endpoint now only carries the balance snapshot; per-user usage stats
+    // are served by the detail endpoint (GET /admin/users/:id), which has a
+    // tightly-scoped WHERE on a single userId. BREAKING: any admin UI that
+    // reads per-user totalRequests / totalInputTokens / totalOutputTokens
+    // from the list response must fetch detail instead.
+    const searchWhere = hasSearch ? or(
+      ilike(users.address, `%${escapedSearch}%`),
+      ilike(users.accountNumber, `%${escapedSearch}%`),
+    ) : undefined;
+
+    const listQuery = db.select({
       id: users.id,
       address: users.address,
       accountNumber: users.accountNumber,
@@ -33,29 +50,23 @@ usersRoutes.get("/admin/users", async (c) => {
       totalDepositedCents: creditBalances.totalDepositedCents,
       totalUsedCents: creditBalances.totalUsedCents,
       balanceCents: creditBalances.balanceCents,
-      totalRequests: sql<number>`count(${usageRecords.id})`.as("total_requests"),
-      totalInputTokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`.as("total_input_tokens"),
-      totalOutputTokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`.as("total_output_tokens"),
     })
     .from(users)
     .leftJoin(creditBalances, eq(users.id, creditBalances.userId))
-    .leftJoin(usageRecords, eq(users.id, usageRecords.userId))
-    .where(hasSearch ? or(
-      ilike(users.address, `%${escapedSearch}%`),
-      ilike(users.accountNumber, `%${escapedSearch}%`),
-    ) : undefined)
-    .groupBy(users.id, users.address, users.accountNumber, users.createdAt, creditBalances.lastActivityAt, creditBalances.totalDepositedCents, creditBalances.totalUsedCents, creditBalances.balanceCents)
+    .where(searchWhere)
     .orderBy(desc(users.createdAt))
     .limit(limit)
     .offset(offset);
 
-    const results = await baseQuery;
+    const countQuery = db
+      .select({ count: count() })
+      .from(users)
+      .where(searchWhere);
 
-    const totalResult = await db.select({ count: count() }).from(users)
-      .where(hasSearch ? or(
-        ilike(users.address, `%${escapedSearch}%`),
-        ilike(users.accountNumber, `%${escapedSearch}%`),
-      ) : undefined);
+    // Run the page query and the total-count query in parallel. They are
+    // independent (no shared row state, no ordering dependency) so there is
+    // no reason to serialize.
+    const [results, totalResult] = await Promise.all([listQuery, countQuery]);
     const total = totalResult[0]?.count || 0;
 
     return c.json({
@@ -64,7 +75,6 @@ usersRoutes.get("/admin/users", async (c) => {
         balanceDollars: Number(u.balanceCents || 0) / 100,
         totalDeposited: Number(u.totalDepositedCents || 0) / 100,
         totalUsed: Number(u.totalUsedCents || 0) / 100,
-        lastActivityAt: u.lastActivityAt,
       })),
       pagination: {
         page,

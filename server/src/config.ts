@@ -57,6 +57,11 @@ const envSchema = z.object({
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default("0x3333333333333333333333333333333333333333"),
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
+  // JWT_SECRET_PREVIOUS enables zero-downtime key rotation. When set, tokens
+  // signed with the previous secret remain valid (for verification) until they
+  // expire or are rotated out. New tokens are always signed with JWT_SECRET.
+  // Optional — leave unset on fresh deployments.
+  JWT_SECRET_PREVIOUS: z.string().min(32).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   // Canonical production domain. Used as the SIWE/SIWS `domain` bind target
@@ -286,6 +291,27 @@ if (isProductionEnv && INSECURE_DEFAULTS.includes(config.JWT_SECRET)) {
 if (isProductionEnv && config.JWT_SECRET.length < 40) {
   console.error("[FATAL] JWT_SECRET must be at least 40 characters in production for adequate entropy.");
   process.exit(1);
+}
+
+// JWT_SECRET_PREVIOUS is optional but if set, must also follow the same
+// minimum-entropy rules as the current secret. Equal to JWT_SECRET is
+// pointless (rotation is a no-op) — reject so misconfigurations fail loudly.
+// OPERATIONAL NOTE: when rotating because JWT_SECRET was compromised,
+// UNSET JWT_SECRET_PREVIOUS in addition to rotating. Keeping it set means
+// the compromised key still verifies tokens (fallback path) until they expire.
+if (config.JWT_SECRET_PREVIOUS) {
+  if (INSECURE_DEFAULTS.includes(config.JWT_SECRET_PREVIOUS)) {
+    console.error("[FATAL] JWT_SECRET_PREVIOUS must not be a known insecure default. Set a strong secret (>= 32 chars).");
+    process.exit(1);
+  }
+  if (config.JWT_SECRET_PREVIOUS === config.JWT_SECRET) {
+    console.error("[FATAL] JWT_SECRET_PREVIOUS must differ from JWT_SECRET. Equal values make rotation a no-op.");
+    process.exit(1);
+  }
+  if (isProductionEnv && config.JWT_SECRET_PREVIOUS.length < 40) {
+    console.error("[FATAL] JWT_SECRET_PREVIOUS must be at least 40 characters in production for adequate entropy (matches JWT_SECRET).");
+    process.exit(1);
+  }
 }
 
 if (isProductionEnv && INSECURE_DEFAULTS.includes(config.ENCRYPTION_KEY)) {

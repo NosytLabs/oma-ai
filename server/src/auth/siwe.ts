@@ -1,6 +1,6 @@
 import { SiweMessage } from "siwe";
 import { nanoid } from "nanoid";
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, jwtVerify, decodeProtectedHeader } from "jose";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { config } from "../config.js";
@@ -29,7 +29,25 @@ function getAllowedSiweDomains(): string[] {
 if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
   throw new Error("FATAL: JWT_SECRET must be configured with at least 32 characters. Current value is missing or too short.");
 }
-const JWT_SECRET = new TextEncoder().encode(config.JWT_SECRET);
+// JWT key rotation: `JWT_SECRET` is the active signing key; `JWT_SECRET_PREVIOUS`
+// (optional) keeps recently-issued tokens verifiable during a rotation window.
+// New tokens are always signed with the active key and carry `kid: "current"`.
+// Verification tries the active key first, then the previous key (if set) so
+// tokens issued before rotation continue to work until they expire.
+// SECURITY: the kid header is a routing hint only — the signature is always
+// cryptographically validated against the chosen key. A token whose kid is
+// intentionally mis-set can still pass if it was actually signed by the
+// fallback key (e.g. an attacker who knows PREVIOUS_JWT_SECRET mints
+// kid:"current" tokens; primary verify fails, fallback verify succeeds).
+// Therefore JWT_SECRET_PREVIOUS should be unset whenever possible — only
+// keep it during a short, time-bounded rotation window.
+const KEY_ID_CURRENT = "current";
+const KEY_ID_PREVIOUS = "previous";
+const CURRENT_JWT_SECRET = new TextEncoder().encode(config.JWT_SECRET);
+const PREVIOUS_JWT_SECRET =
+  config.JWT_SECRET_PREVIOUS && config.JWT_SECRET_PREVIOUS.length >= 32
+    ? new TextEncoder().encode(config.JWT_SECRET_PREVIOUS)
+    : null;
 const ISSUER = "oma-ai";
 const AUDIENCE = "oma-ai-api";
 const AUTH_METHODS = new Set<AuthMethod>(["siwe", "account-number", "sso", "neon-auth"]);
@@ -189,38 +207,79 @@ export async function getNonce(address: string) {
 
 export async function generateSessionToken(userId: string, authMethod: AuthMethod = "siwe"): Promise<string> {
   return new SignJWT({ authMethod })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT", kid: KEY_ID_CURRENT })
     .setSubject(userId)
     .setIssuedAt()
     .setExpirationTime("24h")
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
-    .sign(JWT_SECRET);
+    .sign(CURRENT_JWT_SECRET);
 }
 
 export async function verifySessionToken(token: string): Promise<SessionIdentity | null> {
+  // C10: pin the algorithm to HS256 to prevent "alg=none" / RS-vs-HS
+  // confusion attacks. Allow 5s clock skew between issuer and
+  // verifier to absorb minor clock drift across nodes.
+  const verifyOpts: { issuer: string; audience: string; algorithms: ("HS256")[]; clockTolerance: number } = {
+    issuer: ISSUER,
+    audience: AUDIENCE,
+    algorithms: ["HS256"],
+    clockTolerance: 5,
+  };
+
+  // Use the JWT `kid` header as a hint to pick the verification key. The
+  // signature is still validated against the picked key — a mismatched kid
+  // alone cannot bypass verification, only steer us to the wrong key
+  // (which then fails). When the kid is missing or unknown, fall back to
+  // the current key to support tokens issued before this code path existed.
+  const kid = safeReadKid(token);
+  const primary = kid === KEY_ID_PREVIOUS && PREVIOUS_JWT_SECRET
+    ? PREVIOUS_JWT_SECRET
+    : CURRENT_JWT_SECRET;
+
+  const verified = await tryVerifyWith(token, primary, verifyOpts);
+  if (verified) {
+    return identityFromPayload(verified.payload);
+  }
+  // Fallback: if primary verification failed AND we have a previous key
+  // available that we didn't already try, attempt it. This covers (a)
+  // tokens issued before this change that have no kid header and were
+  // signed with what is now the previous key, and (b) tokens whose kid
+  // hint pointed the wrong way due to misconfiguration.
+  const fallback = primary === CURRENT_JWT_SECRET && PREVIOUS_JWT_SECRET
+    ? PREVIOUS_JWT_SECRET
+    : null;
+  if (fallback) {
+    const fb = await tryVerifyWith(token, fallback, verifyOpts);
+    if (fb) return identityFromPayload(fb.payload);
+  }
+  return null;
+}
+
+function safeReadKid(token: string): string | null {
   try {
-    // C10: pin the algorithm to HS256 to prevent "alg=none" / RS-vs-HS
-    // confusion attacks. Allow 5s clock skew between issuer and
-    // verifier to absorb minor clock drift across nodes.
-    const { payload } = await jwtVerify(token, JWT_SECRET, {
-      issuer: ISSUER,
-      audience: AUDIENCE,
-      algorithms: ["HS256"],
-      clockTolerance: 5,
-    });
-    if (!payload.sub) {
-      return null;
-    }
+    const header = decodeProtectedHeader(token);
+    return typeof header.kid === "string" ? header.kid : null;
+  } catch {
+    return null;
+  }
+}
 
-    const authMethod = typeof payload.authMethod === "string" && AUTH_METHODS.has(payload.authMethod as AuthMethod)
-      ? payload.authMethod as AuthMethod
-      : "siwe";
+function identityFromPayload(payload: import("jose").JWTPayload): SessionIdentity | null {
+  if (!payload.sub) return null;
+  const authMethod = typeof payload.authMethod === "string" && AUTH_METHODS.has(payload.authMethod as AuthMethod)
+    ? payload.authMethod as AuthMethod
+    : "siwe";
+  return { userId: payload.sub, authMethod };
+}
 
-    return {
-      userId: payload.sub,
-      authMethod,
-    };
+async function tryVerifyWith(
+  token: string,
+  key: Uint8Array,
+  opts: { issuer: string; audience: string; algorithms: ("HS256")[]; clockTolerance: number },
+): Promise<{ payload: import("jose").JWTPayload } | null> {
+  try {
+    return await jwtVerify(token, key, opts);
   } catch {
     return null;
   }
