@@ -24,7 +24,6 @@ export async function deductCredits(
         gt(creditBatches.expiresAt, new Date()),
       ))
       .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.remainingCents))
-      .limit(5)
       .for('update')
 
     if (!activeBatches.length) {

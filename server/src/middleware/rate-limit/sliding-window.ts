@@ -1,7 +1,7 @@
 import type { Context, Next } from "hono";
 import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
 import { RPM_LIMIT_SCRIPT } from "./lua-scripts.js";
-import { getRightmostIp, type RateLimitResult, type RedisEvalResult } from "./utils.js";
+import { extractClientIp, type RateLimitResult, type RedisEvalResult } from "./utils.js";
 import { logger } from "../../lib/logger.js";
 
 // RPM limiter using sliding window
@@ -53,9 +53,7 @@ export function rateLimit(options: RateLimitOptions) {
     if (apiKeyId) {
       rateLimitKey = `${keyPrefix}:key:${apiKeyId}`;
     } else {
-      const ip = getRightmostIp(c.req.header("x-forwarded-for"))
-        || c.req.header("x-real-ip")
-        || "unknown";
+      const ip = extractClientIp(c);
       rateLimitKey = `${keyPrefix}:ip:${ip}`;
     }
 

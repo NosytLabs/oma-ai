@@ -9,6 +9,8 @@ const PROTECTED_PATHS = [
 	"/settings",
 	"/deposit",
 	"/chat",
+	"/image-generation",
+	"/video-generation",
 ];
 // C-C1: when this cookie is present, the user has opted into a 24h demo
 // session. The middleware lets them through the protected-route gate so
@@ -21,6 +23,8 @@ const DEMO_BYPASS_PATHS = [
 	"/settings",
 	"/deposit",
 	"/chat",
+	"/image-generation",
+	"/video-generation",
 ];
 const DEMO_COOKIE_NAME = "oma-demo";
 
@@ -146,5 +150,7 @@ export const config = {
 		"/deposit/:path*",
 		"/chat/:path*",
 		"/playground/:path*",
+		"/image-generation/:path*",
+		"/video-generation/:path*",
 	],
 };
