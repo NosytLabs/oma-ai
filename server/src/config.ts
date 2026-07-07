@@ -102,6 +102,12 @@ const envSchema = z.object({
   // Applied per-model via ModelPricing.markup in billing-service.ts.
   OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
 
+  // Operator-expected markup floor per model, used by the price-drift audit at
+  // catalog load. Format: "model-a=25,model-b=10". If a catalog entry's actual
+  // markupPercent is below its expected floor, OMA logs a WARN (likely selling
+  // at a loss — sync models.json with upstream pricing). Optional.
+  OMA_MODEL_MARKUP_OVERRIDES: z.string().optional(),
+
   // Withdraw route fee configuration (moved from hardcoded literals in routes/withdraw.ts)
   // 0.1% = 0.001 default for protocol fee percent; $0.01 default for network fee USD estimate.
   WITHDRAW_PROTOCOL_FEE_PERCENT: z.coerce.number().min(0).max(50).default(0.1), // 0.1% — value is in PERCENT not fraction

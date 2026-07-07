@@ -132,17 +132,122 @@ export function ensureCatalogLoaded(): Promise<void> {
 
 export async function reloadModelCatalog(): Promise<void> {
   const configPath = config.MODELS_CONFIG_PATH || path.join(process.cwd(), 'models.json');
+  let loadedFromDisk = false;
   try {
     const data = await fs.promises.readFile(configPath, 'utf-8');
     const parsed = JSON.parse(data);
     MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS;
     VIDEO_MODELS = parsed.VIDEO_MODELS || FALLBACK_VIDEO_MODELS;
-    logger.info({ modelCount: Object.keys(MODEL_CATALOG).length, videoModelCount: Object.keys(VIDEO_MODELS).length, configPath, type: 'model_catalog_loaded' });
+    loadedFromDisk = parsed.MODEL_CATALOG !== undefined;
+    logger.info({
+      modelCount: Object.keys(MODEL_CATALOG).length,
+      videoModelCount: Object.keys(VIDEO_MODELS).length,
+      configPath,
+      source: loadedFromDisk ? 'models.json' : 'fallback',
+      type: 'model_catalog_loaded'
+    });
   } catch (error) {
     logger.warn({ configPath, error: error instanceof Error ? error.message : String(error), type: 'model_catalog_fallback' }, 'Failed to load models.json, using fallback models');
     MODEL_CATALOG = FALLBACK_MODELS;
     VIDEO_MODELS = FALLBACK_VIDEO_MODELS;
   }
+  // Audit the catalog AFTER both success and failure paths so operators
+  // see the same warnings no matter which catalog got loaded.
+  auditMarkupSanity(MODEL_CATALOG);
+  runExpectedMarkupAudit(MODEL_CATALOG);
+}
+
+/**
+ * Emits a WARN for every model whose `markupPercent` is missing or <= 0.
+ * Selling Venice compute at 0% markup = direct revenue leak. Operators see
+ * the warning once per process (not per request) at startup.
+ */
+function auditMarkupSanity(catalog: Record<string, ModelDef>): void {
+  if (!catalog) return;
+  const offenders: Array<{ id: string; markupPercent: number }> = [];
+  for (const [id, def] of Object.entries(catalog)) {
+    if (!Number.isFinite(def?.markupPercent) || def.markupPercent <= 0) {
+      offenders.push({ id, markupPercent: def?.markupPercent ?? NaN });
+    }
+  }
+  if (offenders.length > 0) {
+    logger.warn({
+      offenderCount: offenders.length,
+      offenders: offenders.slice(0, 25),
+      truncated: offenders.length > 25,
+      type: 'model_markup_missing_or_zero',
+    }, `[models] ${offenders.length} model(s) have missing or non-positive markupPercent — OMA is selling these at a loss until models.json is updated.`);
+  }
+}
+
+/**
+ * Parses the `OMA_MODEL_MARKUP_OVERRIDES` env var (format
+ * "model-a=25,model-b=10") as the operator's *expected* markup floor.
+ * Logs a HIGH-severity WARN for every catalog entry whose actual markup
+ * is below the expected floor — i.e. price-drift between the upstream
+ * config and what the operator believes billing should be.
+ *
+ * This is the static-price-drift guard: if Venice raises upstream prices
+ * and operators forget to update models.json, this fires at boot.
+ */
+function runExpectedMarkupAudit(catalog: Record<string, ModelDef>): void {
+  const expected = parseModelMarkupOverrides(config.OMA_MODEL_MARKUP_OVERRIDES);
+  if (!expected || Object.keys(expected).length === 0) return;
+  if (!catalog) return;
+  const drift: Array<{ id: string; expected: number; actual: number }> = [];
+  for (const [id, expectedPct] of Object.entries(expected)) {
+    const def = catalog[id];
+    const actualPct = def?.markupPercent ?? 0;
+    if (actualPct < expectedPct) {
+      drift.push({ id, expected: expectedPct, actual: actualPct });
+    }
+  }
+  if (drift.length > 0) {
+    logger.warn({
+      driftCount: drift.length,
+      drift: drift.slice(0, 25),
+      truncated: drift.length > 25,
+      type: 'price_drift_detected',
+    }, `[models] Price-drift detected: ${drift.length} model(s) have markupPercent BELOW operator-expected floor (OMA_MODEL_MARKUP_OVERRIDES). Likely selling at a loss — sync models.json with upstream pricing.`);
+  }
+}
+
+/**
+ * Public, exported so tests + admin tooling can call this on demand without
+ * re-running the env-var audit. Returns the drift list — empty when there
+ * is no drift.
+ */
+export function detectPriceDrift(
+  catalog: Record<string, ModelDef>,
+  expectedOverrides: Record<string, number>,
+): Array<{ id: string; expected: number; actual: number }> {
+  const out: Array<{ id: string; expected: number; actual: number }> = [];
+  if (!expectedOverrides || !catalog) return out;
+  for (const [id, expectedPct] of Object.entries(expectedOverrides)) {
+    const def = catalog[id];
+    const actualPct = def?.markupPercent ?? 0;
+    if (actualPct < expectedPct) {
+      out.push({ id, expected: expectedPct, actual: actualPct });
+    }
+  }
+  return out;
+}
+
+function parseModelMarkupOverrides(raw: string | undefined): Record<string, number> | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const out: Record<string, number> = {};
+  for (const entry of raw.split(",")) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const id = trimmed.slice(0, eq).trim();
+    const value = Number(trimmed.slice(eq + 1).trim());
+    if (!Number.isFinite(value)) continue;
+    if (!id) continue;
+    out[id] = value;
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 export async function calculateCost(

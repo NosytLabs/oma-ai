@@ -7,6 +7,7 @@ import {
   estimateTokensFromWords,
   listModels,
   ensureCatalogLoaded,
+  detectPriceDrift,
 } from '../models.js'
 
 describe('models', () => {
@@ -76,6 +77,42 @@ describe('models', () => {
         expect(model).toHaveProperty('capabilities')
         expect(model).toHaveProperty('description')
       }
+    })
+  })
+
+  // detectPriceDrift gates revenue decisions: it must flag catalog entries whose
+  // actual markupPercent is BELOW the operator-expected floor. Tested defensively
+  // per independent review (revenue-gating logic deserves coverage).
+  describe('detectPriceDrift', () => {
+    const catalog = {
+      'model-a': { markupPercent: 10 } as any,
+      'model-b': { markupPercent: 50 } as any,
+      'model-c': { markupPercent: 0 } as any,
+    }
+
+    it('returns empty when no expected overrides', () => {
+      expect(detectPriceDrift(catalog, {})).toEqual([])
+    })
+
+    it('flags models below their expected floor', () => {
+      const drift = detectPriceDrift(catalog, { 'model-a': 25, 'model-b': 40 })
+      expect(drift).toHaveLength(1)
+      expect(drift[0]).toMatchObject({ id: 'model-a', expected: 25, actual: 10 })
+    })
+
+    it('does not flag models at or above the floor', () => {
+      expect(detectPriceDrift(catalog, { 'model-b': 40, 'model-c': 0 })).toEqual([])
+    })
+
+    it('treats missing catalog entries as 0 actual (always drift if floor > 0)', () => {
+      const drift = detectPriceDrift(catalog, { 'model-z': 10 })
+      expect(drift).toHaveLength(1)
+      expect(drift[0]).toMatchObject({ id: 'model-z', expected: 10, actual: 0 })
+    })
+
+    it('never throws on null/undefined inputs', () => {
+      expect(detectPriceDrift(null as any, { 'model-a': 10 })).toEqual([])
+      expect(detectPriceDrift(catalog, null as any)).toEqual([])
     })
   })
 })
