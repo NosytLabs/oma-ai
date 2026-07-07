@@ -31,3 +31,10 @@ deploy/
 
 # Next.js
 .next/
+
+# Docusaurus (docs site, if added)
+.docusaurus/
+website/
+website/build/
+website/.docusaurus/
+website/node_modules/

@@ -1,6 +1,16 @@
 node_modules/
 dist/
+# Next.js
 .next/
+
+# Docusaurus (docs site, if added)
+.docusaurus/
+website/build/
+website/.docusaurus/
+website/node_modules/
+
+# Turbo / Vercel
+.turbo/
 .env*
 !.env.example
 *.log

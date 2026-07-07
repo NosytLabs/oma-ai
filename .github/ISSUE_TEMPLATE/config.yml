@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/NosytLabs/oma-ai/discussions
+    about: Open-ended questions and community conversation.
+  - name: 🔒 Security disclosures
+    url: https://github.com/NosytLabs/oma-ai/security/advisories/new
+    about: Please do NOT file security issues publicly — see SECURITY.md.

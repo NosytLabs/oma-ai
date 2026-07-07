@@ -1,0 +1,68 @@
+name: ✨ Feature Request
+description: Suggest a new feature or capability for OMA AI Gateway.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you are trying to solve and the proposed solution. Feature requests without a clear motivation are unlikely to be picked up.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which area would this feature touch?
+      options:
+        - Server (Hono API)
+        - App (Next.js frontend)
+        - Inference routing / providers
+        - Auth / SIWE / API keys
+        - Deposits / x402 / payments
+        - Rate limiting / Redis
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve? What is the user-facing pain?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the proposed feature and how it would work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you considered and why you didn't take them.
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples / mockups
+      description: API examples, UI mockups, or references to similar features elsewhere.
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Implementation scope
+      description: Optional — rough estimate of effort (small / medium / large) and which files/packages would be touched.
+    validations:
+      required: false

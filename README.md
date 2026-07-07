@@ -6,7 +6,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth (no account required), multi-provider routing, cross-chain deposits, and native crypto payments.
 
-> **Audit status (2026-07-05):** All validation gates green — 0 typecheck/lint errors, tests passing. Dead code removed (8 inference providers, 4 jobs, MiniChat). Stale audit screenshots, broken sitemap routes, and fabricated model data cleaned. QuickNode key moved to server-side proxy.
+> **Audit status (2026-07-06):** All validation gates green — server tsc 0 errors, 705/707 tests passing, app tsc + build + 117 tests green. Added startup markup-drift guard (`models.ts`) that WARNS when any model sells at ≤0% markup or below the operator's `OMA_MODEL_MARKUP_OVERRIDES` floor (price-drift vs upstream). Fixed README port docs (frontend :3000 / API :3001). Added GitHub templates (issue/PR/CODEOWNERS/SECURITY/FUNDING), `.gitignore`/`.dockerignore` Docusaurus+Turbo safety net.
 
 ---
 
@@ -60,8 +60,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ./scripts/start-dev.sh
 
 # Or manually:
-cd app && npm run dev   # Frontend :3001
-cd server && npm run dev # Backend :3001
+cd app && npm run dev   # Frontend :3000
+cd server && npm run dev # Backend (Hono API) :3001
 ```
 
 ---
@@ -76,7 +76,7 @@ cd server && npm run dev # Backend :3001
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Next.js Frontend (:3001)                   │
+│                   Next.js Frontend (:3000)                   │
 │    Landing │ Dashboard │ Pricing │ Chat │ Docs        │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -192,3 +192,15 @@ This README is the primary documentation. For env vars and config, see `server/.
 ---
 
 *Pay-as-you-go inference. Pay with crypto. Wallet-based auth.*
+
+---
+
+## Disclaimer
+
+This software is provided **"AS IS"** and **"AS AVAILABLE"**, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.
+
+In no event shall the authors, contributors, or copyright holders be liable for any claim, damages, or other liability — whether in an action of contract, tort, or otherwise — arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+OMA AI is a self-hosted gateway. Operators are solely responsible for their deployment environment, key management, regulatory compliance in their jurisdiction, and any costs incurred from third-party AI providers. Nothing in this repository constitutes financial, legal, or professional advice.
+
+See [LICENSE](./LICENSE) for the full MIT license text.

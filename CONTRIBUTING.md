@@ -11,9 +11,9 @@ Thank you for your interest in contributing to OMA AI Gateway!
 
 2. **Make your changes** — ensure your work is focused and atomic.
 
-3. **Run validation** before pushing:
+3. **Run validation** before pushing (this repo uses pnpm):
    ```bash
-   npm run validate
+   pnpm run validate
    ```
    This runs typecheck, lint, and tests for both `app/` and `server/`.
 
@@ -27,16 +27,17 @@ Thank you for your interest in contributing to OMA AI Gateway!
 ## Coding Standards
 
 - **TypeScript** — strict mode enabled. No `any` without explicit justification.
-- **Formatting** — run `npm run lint:fix` before committing. ESLint + Prettier are configured.
+- **Formatting** — run `pnpm run lint` (and `pnpm run lint --fix` where supported) before committing. `app/` uses Biome; `server/` uses ESLint flat config.
 - **Naming** — use descriptive names. Follow existing conventions in each package (`app/` and `server/`).
 - **Error handling** — never swallow errors silently. Propagate with context.
 - **No dead code** — remove unused imports, functions, and providers. The project maintains a clean inference provider list.
+- **Voice & terminology** — user-facing strings must follow `BRAND.md` (preferred terms, words to avoid).
 
 ## Testing Requirements
 
-- **Unit tests** — required for new logic. Run with `npm test` in `app/` or `server/`.
+- **Unit tests** — required for new logic. Run with `pnpm test` in `app/` or `server/` (both use Vitest).
 - **Integration tests** — for API routes and payment flows.
-- **100% passing** — CI will not merge PRs with failing tests. Run `npm run validate` locally to verify.
+- **100% passing** — CI will not merge PRs with failing tests. Run `pnpm run validate` locally to verify.
 
 ## Project Structure
 

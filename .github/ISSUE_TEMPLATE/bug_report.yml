@@ -1,0 +1,110 @@
+name: 🐛 Bug Report
+description: Report a bug, regression, or unexpected behavior in OMA AI Gateway.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out the sections below — incomplete reports will be closed after 14 days.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which area of the project is affected?
+      options:
+        - Server (Hono API)
+        - App (Next.js frontend)
+        - Inference routing / providers
+        - Auth / SIWE / API keys
+        - Deposits / x402 / payments
+        - Rate limiting / Redis
+        - Docker / deployment
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is the impact?
+      options:
+        - Critical — production outage / data loss / security
+        - High — feature broken for many users
+        - Medium — feature broken in specific cases
+        - Low — minor / cosmetic
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: OMA AI version
+      description: Git SHA, release tag, or `2.x.y`.
+      placeholder: "v2.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One- or two-sentence description of the bug.
+      placeholder: "Inference requests fail with 502 when provider key rotates."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps. Include the exact request/command if relevant.
+      placeholder: |
+        1. POST /v1/chat/completions with model=…
+        2. …
+        3. Observe 502
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Paste logs / stack traces / screenshots.
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Deployment mode (self-hosted Docker / Coolify / Render), Node version, OS.
+      placeholder: |
+        - Deployment: Coolify self-hosted
+        - Node: 22.x
+        - OS: Ubuntu 24.04
+        - Database: Neon Postgres
+        - Redis: Upstash
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else relevant (screenshots, links, related issues).
+    validations:
+      required: false

@@ -1,5 +1,7 @@
 # Security Policy
 
+> **Please do not file security vulnerabilities in public GitHub issues, discussions, or anywhere public.** Public disclosure before a fix is available puts every operator of OMA AI at risk.
+
 ## Supported Versions
 
 | Version | Supported          |
@@ -11,38 +13,42 @@ We recommend always running the latest stable release.
 
 ## Reporting a Vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+Private disclosure channels only:
 
-Instead, please report them via one of the following:
+1. **GitHub Security Advisories (preferred)** — Use the [private advisory form](https://github.com/NosytLabs/oma-ai/security/advisories/new). Reports are visible only to maintainers until published.
+2. **Email** — `security@oma-ai.com` (PGP key available on request). Encrypt if reporting sensitive details.
 
-1. **Email** — Send to `security@oma-ai.com` with:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Any suggested fixes (optional)
+Include in your report:
+- Description of the vulnerability and impact
+- Reproduction steps / proof-of-concept
+- Affected versions / commits
+- Any suggested fix (optional)
 
-2. **GitHub Security Advisories** — Use the [Advisories page](https://github.com/NosytLabs/oma-ai/security/advisories) to report privately.
+## Response SLA
 
-## Response Timeline
+| Stage | Target |
+|-------|--------|
+| Initial acknowledgment | **≤ 48 hours** |
+| Severity triage &amp; confirmation | ≤ 5 business days |
+| Fix timeline (Critical) | ≤ 7 days |
+| Fix timeline (High) | ≤ 30 days |
+| Fix timeline (Medium / Low) | Next release cycle |
 
-- **Initial acknowledgment**: within 24 hours
-- **Severity assessment**: within 48 hours
-- **Fix timeline**:
-  - Critical: 7 days or less
-  - High: 14 days or less
-  - Medium: 30 days or less
-  - Low: next release cycle
+We will coordinate disclosure timing with the reporter. Credit is given unless anonymity is requested.
 
 ## Scope
 
-OMA AI Gateway is a self-hosted gateway. Security responsibilities:
-- **Project maintainers**: secure the codebase, prompt patching, release security updates
-- **Operators**: secure their deployment environment, access controls, and keys
+OMA AI Gateway is a self-hosted gateway. Security responsibilities are split:
+
+- **Maintainers** — secure the codebase, ship security patches, coordinate CVE / GHSA publication
+- **Operators** — secure their deployment environment, network access, secrets, and key management
+
+Out of scope: third-party AI provider behavior (Venice, OpenAI, etc.) — report upstream.
 
 ## Security-Related Updates
 
-Security advisories are posted to:
-- GitHub Security Advisories
-- The project README changelog
+- Published via [GitHub Security Advisories](https://github.com/NosytLabs/oma-ai/security/advisories)
+- Noted in the project README changelog
+- Tagged with the `security` label on GitHub
 
-We encourage operators to watch the repository for releases.
+Operators should watch the repository for releases.
