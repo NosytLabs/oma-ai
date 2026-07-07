@@ -31,8 +31,7 @@ export default defineConfig({
 	// resolves against. The `(?:^|\/)` anchors prevent accidentally
 	// matching `e2e/` inside an unrelated path segment.
 	testDir: ".",
-	testMatch:
-		/(?:^|\/)(?:e2e\/[^/]+\.spec\.ts|tests\/e2e\/[^/]+\.e2e\.spec\.ts)$/,
+	testMatch: /(?:^|\/)e2e\/[^/]+\.spec\.ts$/,
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,

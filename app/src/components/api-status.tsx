@@ -13,7 +13,12 @@ async function fetchHealth(): Promise<HealthStatus> {
 	try {
 		const res = await fetch("/api/health", {
 			method: "GET",
-			signal: AbortSignal.timeout(5_000),
+			cache: "no-store",
+			// 2.5s timeout. On abort the catch returns "offline" so the
+			// UI never sees an unhandled rejection. Kept well under the
+			// 30s polling cadence so users stuck on /login see the
+			// "Reconnecting…" banner quickly when the API is down.
+			signal: AbortSignal.timeout(2_500),
 		});
 		return res.ok ? "online" : "offline";
 	} catch {
@@ -23,16 +28,24 @@ async function fetchHealth(): Promise<HealthStatus> {
 
 export function useApiHealth() {
 	const queryClient = useQueryClient();
+	// Shared `["health"]` key with useHealthQuery so all callers share
+	// one polling stream regardless of which hook they import.
 	const { data: status = "checking", dataUpdatedAt } = useQuery({
-		queryKey: ["apiStatus"],
+		queryKey: ["health"],
 		queryFn: fetchHealth,
 		staleTime: STALE_TIME_MS,
 		refetchInterval: POLL_INTERVAL_MS,
 		refetchOnWindowFocus: false,
+		// fetchHealth already swallows errors and resolves with "offline".
+		// Disabling retries prevents React Query from racing the abort
+		// signal during React 19 StrictMode unmount/remount cycles in
+		// dev mode (which logs `net::ERR_ABORTED` for every double-fetch).
+		retry: false,
+		retryOnMount: false,
 	});
 
 	const refresh = useCallback(() => {
-		queryClient.invalidateQueries({ queryKey: ["apiStatus"] });
+		queryClient.invalidateQueries({ queryKey: ["health"] });
 	}, [queryClient]);
 
 	return { status, refresh, lastCheckedAt: dataUpdatedAt };

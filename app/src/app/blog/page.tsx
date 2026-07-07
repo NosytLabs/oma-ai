@@ -14,7 +14,7 @@ export default function BlogPage() {
 
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono">
-			<div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-24 sm:pb-32">
+			<div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 sm:pb-20">
 				{/* Header */}
 				<header className="mb-12 sm:mb-16">
 					<span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent mb-6">

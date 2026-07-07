@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
+import { IBM_Plex_Serif, JetBrains_Mono, Space_Grotesk, Syne } from "next/font/google";
 import { MotionProvider } from "@/components/motion-provider";
 import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -37,6 +37,15 @@ const jetbrainsMono = JetBrains_Mono({
 	preload: false,
 	weight: ["400", "500", "600"],
 	fallback: ["ui-monospace", "SFMono-Regular", "monospace"],
+});
+
+const ibmPlexSerif = IBM_Plex_Serif({
+	subsets: ["latin"],
+	variable: "--font-ibm-plex-serif",
+	display: "swap",
+	preload: false,
+	weight: ["400", "500", "600", "700"],
+	fallback: ["Georgia", "serif"],
 });
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
@@ -123,13 +132,26 @@ export default function RootLayout({
 		<html
 			lang="en"
 			suppressHydrationWarning
-			className={`${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable}`}
+			className={`${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable} ${ibmPlexSerif.variable}`}
 		>
 			<head>
 				{/* Pre-hydration theme script — runs synchronously before first paint
             to set <html data-theme="..."> from localStorage. Prevents FOUC
             for light-theme users. See ThemeProvider.tsx. */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_HEAD_SCRIPT }} />
+				{/* Noise suppression for wagmi/wallet-init errors in environments
+            without a wallet extension (preview browsers, embeds, sandboxed
+            iframes). wagmi's `getProvider` calls `checkCrossOriginOpenerPolicy`
+            which throws `Cannot read properties of undefined` when window
+            isn't cross-origin-isolated. The wallet UI still works when a real
+            wallet IS present — this only catches the specific noisy error and
+            only when no wallet is detected. Scope is tightly narrowed to the
+            wagmi/wallet chunk paths so we never silence legitimate app errors. */}
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `(function(){try{if(typeof window==='undefined')return;var hasWallet=!!(window.ethereum);if(hasWallet)return;var isWagmiChunk=function(src){if(!src)return false;return /wagmi|wallet-connect|@waku|coinbase/i.test(String(src));};var orig=window.onerror;window.onerror=function(msg,src,l,c,e){if(msg&&String(msg).indexOf("checkCrossOriginOpenerPolicy")!==-1){return true;}if(msg&&String(msg).indexOf("Cannot read properties of undefined")!==-1&&isWagmiChunk(src)){return true;}if(typeof orig==='function'){return orig.apply(this,arguments);}return false;};window.addEventListener('unhandledrejection',function(ev){var r=ev&&ev.reason;var m=r&&(r.message||String(r));var st=r&&r.stack;if(m&&String(m).indexOf("checkCrossOriginOpenerPolicy")!==-1){ev.preventDefault();return;}if(m&&String(m).indexOf("Cannot read properties of undefined")!==-1&&isWagmiChunk(st)){ev.preventDefault();}});}catch(_){}})();`,
+					}}
+				/>
 				<OrganizationJsonLd />
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://eth.coinbase.com" />
@@ -155,10 +177,10 @@ export default function RootLayout({
 									<Navbar />
 								</ConnectWalletWrapper>
 								<main
-									id="main-content"
-									className="pt-14 page-enter"
-									tabIndex={-1}
-								>
+								id="main-content"
+								className="pt-14 page-enter"
+								tabIndex={-1}
+							>
 									<ErrorBoundary>{children}</ErrorBoundary>
 								</main>
 								<Footer />

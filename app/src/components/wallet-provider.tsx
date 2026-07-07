@@ -287,8 +287,20 @@ function InnerProvider({ children }: { children: ReactNode }) {
 					storeSession(verifyRes.token, "siwe");
 					setSession({ token: verifyRes.token, authMethod: "siwe" });
 					siweDoneRef.current = address;
-					const userData = await api.auth.getUser();
-					setUser(userData);
+					// ponytail: /auth/verify now returns the canonical user
+					// payload, so we skip the follow-up /user round-trip.
+					if (verifyRes.user) {
+						// `verifyRes.user.address` is nullable in the response
+						// contract (account-only users have null `address`).
+						// The local `User` type assumes a SIWE sign-in context
+						// where we always have a verified EVM address, so
+						// fall back to the verified wallet address.
+						setUser({
+							...verifyRes.user,
+							address: verifyRes.user.address ?? address,
+							createdAt: verifyRes.user.createdAt ?? new Date().toISOString(),
+						} as Parameters<typeof setUser>[0]);
+					}
 				}
 			} catch (err: unknown) {
 				console.error("SIWE login failed:", err);

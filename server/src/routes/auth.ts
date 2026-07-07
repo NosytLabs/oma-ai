@@ -194,7 +194,23 @@ authRoutes.post("/auth/verify", rateLimit({ windowMs: 60_000, maxRequests: 20 })
   }
 
   const token = await generateSessionToken(user.id, "siwe");
-  return c.json({ token, address: user.address, accountNumber, authMethod: "siwe" });
+  // ponytail: include the canonical user payload so the client doesn't
+  // need to immediately call /user after a successful verify. The shape
+  // matches the /user endpoint response.
+  return c.json({
+    token,
+    address: user.address,
+    evmAddress: user.evmAddress,
+    accountNumber,
+    authMethod: "siwe",
+    user: {
+      id: user.id,
+      address: user.address,
+      evmAddress: user.evmAddress,
+      accountNumber,
+      createdAt: user.createdAt,
+    },
+  });
 });
 
 authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 }), async (c) => {

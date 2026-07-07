@@ -10,6 +10,7 @@ import {
 	GitBranch,
 	Image as ImageIcon,
 	MessageSquare,
+	ShieldCheck,
 	Video,
 } from "lucide-react";
 import { Reveal, childFadeUp } from "@/app/_components/home/reveal";
@@ -62,13 +63,20 @@ const CAPABILITIES: Capability[] = [
 		icon: Coins,
 		cell: "standard",
 	},
+	{
+		title: "Permissionless Auth",
+		description:
+			"Sign in with any Ethereum wallet (SIWE). No email, no password, no card. Your wallet is your account.",
+		icon: ShieldCheck,
+		cell: "standard",
+	},
 ];
 
 export function CapabilitiesGrid() {
 	return (
 		<section
 			aria-labelledby="capabilities-headline"
-			className="relative py-24 sm:py-32"
+			className="relative py-16 sm:py-20"
 		>
 			<div className="container-page">
 				<Reveal>

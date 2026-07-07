@@ -442,13 +442,17 @@ export function useStreamingChat(
 			opts.isNearBottomRef.current = true;
 
 			try {
-				// Run web searches in parallel for compare mode
-				const [primarySearch, compareSearch] = await Promise.all([
-					fetchWebSearch(promptText, opts.setSearching),
-					opts.compareMode
-						? fetchWebSearch(promptText, () => {})
-						: Promise.resolve({ results: [], contextMessage: null }),
-				]);
+				// Run web search once per prompt. In compare mode we reuse the
+				// same context for both streams so we don't double the search
+				// latency and backend load.
+				const searchResult = await fetchWebSearch(
+					promptText,
+					opts.setSearching,
+				);
+				const primarySearch = searchResult;
+				const compareSearch = opts.compareMode
+					? searchResult
+					: { results: [], contextMessage: null };
 
 				// Fire both streams in parallel. Use Promise.allSettled so one stream
 				// failing doesn't leave the other running as a zombie.

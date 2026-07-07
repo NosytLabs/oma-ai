@@ -89,7 +89,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			"inline-flex items-center justify-center",
 			"font-sans whitespace-nowrap select-none",
 			"transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out",
-			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base",
+			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void",
 			"disabled:pointer-events-none",
 			VARIANT_STYLES[variant],
 			SIZE_STYLES[size],
@@ -114,7 +114,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			// (Fragment cannot accept className, causing React warnings).
 			return (
 				<Slot ref={ref} className={classes}>
-					<span className="inline-flex items-center gap-inherit">
+					<span className="inline-flex items-center gap-2">
 						{loading ? (
 							<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
 						) : (

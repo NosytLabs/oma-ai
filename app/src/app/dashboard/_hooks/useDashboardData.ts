@@ -12,6 +12,7 @@ import {
 	type Model,
 	type UsageRecord,
 } from "@/lib/api";
+import { useBalance } from "@/components/chat/useBalance";
 
 interface UseDashboardDataOptions {
 	isAuthenticated: boolean;
@@ -49,12 +50,7 @@ export function useDashboardData({
 	const queryClient = useQueryClient();
 	const enabled = isAuthenticated;
 
-	const balanceQuery = useQuery({
-		queryKey: ["balance"],
-		queryFn: () => api.balance.get(),
-		enabled,
-		staleTime: STALE_DEFAULT,
-	});
+	const { balance: balanceData, loading: balanceLoading } = useBalance();
 	const keysQuery = useQuery({
 		queryKey: ["apiKeys"],
 		queryFn: () => api.auth.listKeys(),
@@ -107,9 +103,9 @@ export function useDashboardData({
 		[transactionsQuery.data?.transactions],
 	);
 
-	const balance: BalanceResponse | null = balanceQuery.data ?? null;
+	const balance: BalanceResponse | null = balanceData;
 	const loading =
-		balanceQuery.isLoading ||
+		balanceLoading ||
 		keysQuery.isLoading ||
 		usageQuery.isLoading ||
 		batchesQuery.isLoading ||
@@ -117,7 +113,6 @@ export function useDashboardData({
 		transactionsQuery.isLoading;
 
 	const anyError =
-		balanceQuery.error ||
 		keysQuery.error ||
 		usageQuery.error ||
 		batchesQuery.error ||

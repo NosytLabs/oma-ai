@@ -2,6 +2,7 @@
 
 import { ChevronRight, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDialog } from "@/lib/use-dialog";
 import { NAV_ITEMS, type NavItem } from "../_lib/nav-data";
 
 interface SearchResult {
@@ -77,22 +78,38 @@ export function DocsSearch() {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const resultsRef = useRef<HTMLDivElement>(null);
+	const { panelRef } = useDialog({ open, onClose: () => setOpen(false), initialFocusRef: inputRef });
 
 	const results = useMemo(() => searchDocs(query), [query]);
 
-	const handleSelect = useCallback((result: SearchResult) => {
+	const handleSelect = useCallback((result: SearchResult | undefined) => {
+		if (!result) return;
 		const targetId = result.headingId ?? result.item.id;
 		const el = document.getElementById(targetId);
-		if (el) {
-			el.scrollIntoView({ behavior: "smooth", block: "start" });
-			setOpen(false);
-			setQuery("");
+		if (!el) return; // Heading/section not present in DOM — don't silently swallow.
+		el.scrollIntoView({ behavior: "smooth", block: "start" });
+		// Update URL hash so the result is shareable and back/forward works.
+		if (typeof history !== "undefined") {
+			history.replaceState(null, "", `#${targetId}`);
 		}
+		setOpen(false);
+		setQuery("");
 	}, []);
 
+	// Clamp selection whenever the result set changes so keyboard users can
+	// never target a stale index (or undefined after filtering down).
 	useEffect(() => {
 		setSelectedIndex(0);
-	}, []);
+	}, [query]);
+
+	// Clamp on every result change too, in case a deeper effect updates it.
+	useEffect(() => {
+		if (results.length === 0) {
+			setSelectedIndex(0);
+			return;
+		}
+		setSelectedIndex((i) => (i >= results.length ? results.length - 1 : i));
+	}, [results.length]);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -110,18 +127,24 @@ export function DocsSearch() {
 				return;
 			}
 			// Arrow navigation when open
-			if (!open || results.length === 0) return;
+		if (!open || results.length === 0) return;
 
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setSelectedIndex((i) => (i + 1) % results.length);
-			} else if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setSelectedIndex((i) => (i - 1 + results.length) % results.length);
-			} else if (e.key === "Enter") {
-				e.preventDefault();
-				handleSelect(results[selectedIndex]);
-			}
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setSelectedIndex((i) => (i + 1) % results.length);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setSelectedIndex((i) => (i - 1 + results.length) % results.length);
+		} else if (e.key === "Enter") {
+			e.preventDefault();
+			handleSelect(results[selectedIndex]);
+		} else if (e.key === "Home") {
+			e.preventDefault();
+			setSelectedIndex(0);
+		} else if (e.key === "End") {
+			e.preventDefault();
+			setSelectedIndex(results.length - 1);
+		}
 		}
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
@@ -152,6 +175,7 @@ export function DocsSearch() {
 					className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh]"
 					role="dialog"
 					aria-modal="true"
+					aria-label="Search documentation"
 				>
 					<div
 						className="absolute inset-0 bg-void/70 backdrop-blur-sm"
@@ -160,7 +184,11 @@ export function DocsSearch() {
 							setQuery("");
 						}}
 					/>
-					<div className="relative w-full max-w-xl mx-4 overflow-hidden rounded-2xl border border-border bg-panel shadow-2xl">
+					<div
+						ref={panelRef}
+						tabIndex={-1}
+						className="relative w-full max-w-xl mx-4 overflow-hidden rounded-2xl border border-border bg-panel shadow-2xl focus:outline-none"
+					>
 						{/* Search input */}
 						<div className="flex items-center gap-3 border-b border-border px-4 py-3">
 							<Search className="h-4 w-4 text-text-muted shrink-0" />

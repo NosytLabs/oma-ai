@@ -32,7 +32,7 @@ export function Stats({ modelCount }: StatsProps) {
 	return (
 		<section
 			aria-labelledby="stats-headline"
-			className="relative border-y border-border-subtle bg-[var(--color-bg-base)] py-20 sm:py-24"
+			className="relative border-y border-border-subtle bg-[var(--color-void)] py-20 sm:py-24"
 		>
 			<div className="container-page">
 				<Reveal>

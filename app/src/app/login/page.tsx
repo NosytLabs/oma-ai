@@ -796,11 +796,10 @@ function LoginCard(p: LoginCardProps) {
 						)}
 						<div className="flex flex-col gap-2 sm:flex-row">
 							<button
-								type="button"
-								onClick={onSwitchWallet}
-								disabled={offline}
-								className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-							>
+							type="button"
+							onClick={onSwitchWallet}
+							className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+						>
 								<WalletIcon className="h-3.5 w-3.5" aria-hidden="true" />
 								Switch wallet
 							</button>

@@ -1,17 +1,25 @@
 "use client";
 
 /**
- * ThemeProvider — M2 BLOCKER fix
+ * ThemeProvider — 4 distinct themes (dark by default).
  *
  * Provides a `useTheme()` hook and persists the user's choice to localStorage.
  * The companion inline `<script>` in `app/src/app/layout.tsx` (see HeadScript)
  * handles the synchronous, pre-hydration `data-theme` attribute set so we
  * never get a flash of the wrong theme on first paint.
  *
- * Design constraints (see .opencode/todo.md S2.1.4 / S2.1.5):
- *   - No system preference detection (OMA is dark-by-default; light is explicit opt-in).
- *   - Dark is the default for fresh users / cleared storage.
- *   - Setting is persisted under localStorage key `oma-theme` ('light' | 'dark').
+ * Themes:
+ *   - "emerald"  — default, terminal-emerald accent on graphite (current OMA palette)
+ *   - "amber"    — warm CRT amber accent on deep navy (retro mainframe)
+ *   - "mono"     — pure grayscale, no accent (engineering austere)
+ *   - "synth"    — cyber violet on near-black (synthwave / network op)
+ *
+ * Design constraints:
+ *   - No system preference detection (OMA is dark-by-default).
+ *   - "emerald" is the default for fresh users / cleared storage.
+ *   - Setting is persisted under localStorage key `oma-theme`.
+ *   - `data-theme="<name>"` is set on `<html>`. The default "emerald" sets nothing
+ *     (so base palette wins). Other themes set their own attribute.
  */
 
 import {
@@ -24,47 +32,56 @@ import {
 	useState,
 } from "react";
 
-export type Theme = "dark" | "light";
+export type Theme = "emerald" | "amber" | "mono" | "synth";
+
+export const THEME_LIST: ReadonlyArray<{ id: Theme; name: string; hint: string }> =
+	[
+		{ id: "emerald", name: "Emerald", hint: "default · terminal" },
+		{ id: "amber", name: "Amber", hint: "retro · CRT" },
+		{ id: "mono", name: "Mono", hint: "grayscale · austere" },
+		{ id: "synth", name: "Synth", hint: "violet · network op" },
+	];
 
 const STORAGE_KEY = "oma-theme";
+const DEFAULT_THEME: Theme = "emerald";
+
+function isValidTheme(value: string | null): value is Theme {
+	return value === "emerald" || value === "amber" || value === "mono" || value === "synth";
+}
 
 interface ThemeContextValue {
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
-	toggleTheme: () => void;
+	cycleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function readStoredTheme(): Theme {
-	if (typeof window === "undefined") return "dark";
+	if (typeof window === "undefined") return DEFAULT_THEME;
 	try {
 		const stored = window.localStorage.getItem(STORAGE_KEY);
-		if (stored === "light" || stored === "dark") return stored;
+		if (isValidTheme(stored)) return stored;
 	} catch {
 		// localStorage can throw in private mode / sandboxed iframes — fall through
 	}
-	return "dark";
+	return DEFAULT_THEME;
 }
 
 function applyTheme(theme: Theme): void {
 	if (typeof document === "undefined") return;
-	if (theme === "light") {
-		document.documentElement.setAttribute("data-theme", "light");
-	} else {
+	if (theme === DEFAULT_THEME) {
 		document.documentElement.removeAttribute("data-theme");
+	} else {
+		document.documentElement.setAttribute("data-theme", theme);
 	}
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-	// Start as 'dark' on both server and client first render so SSR markup is stable.
-	// The inline head script in layout.tsx has already set the real value on
-	// <html data-theme="..."> before hydration, so this initial state is purely
-	// for the React tree — useEffect below syncs the React state with reality.
-	const [theme, setThemeState] = useState<Theme>("dark");
+	// Start as default on both server and client first render so SSR markup is stable.
+	const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
 
 	// On mount, reconcile React state with whatever the inline script applied.
-	// Using a microtask-less read so the first paint after hydration matches.
 	useEffect(() => {
 		const current = readStoredTheme();
 		setThemeState(current);
@@ -75,18 +92,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		try {
 			window.localStorage.setItem(STORAGE_KEY, next);
 		} catch {
-			// best-effort persistence; toggle still works in-session
+			// best-effort persistence
 		}
 		applyTheme(next);
 	}, []);
 
-	const toggleTheme = useCallback(() => {
-		setTheme(theme === "light" ? "dark" : "light");
-	}, [theme, setTheme]);
+	const cycleTheme = useCallback(() => {
+		setThemeState((prev) => {
+			const idx = THEME_LIST.findIndex((t) => t.id === prev);
+			const next = THEME_LIST[(idx + 1) % THEME_LIST.length]?.id ?? DEFAULT_THEME;
+			try {
+				window.localStorage.setItem(STORAGE_KEY, next);
+			} catch {
+				// best-effort
+			}
+			applyTheme(next);
+			return next;
+		});
+	}, []);
 
 	const value = useMemo<ThemeContextValue>(
-		() => ({ theme, setTheme, toggleTheme }),
-		[theme, setTheme, toggleTheme],
+		() => ({ theme, setTheme, cycleTheme }),
+		[theme, setTheme, cycleTheme],
 	);
 
 	return (
@@ -105,12 +132,8 @@ export function useTheme(): ThemeContextValue {
 /**
  * HeadScript — exported as a raw HTML string for use inside `<head>`.
  *
- * This script runs synchronously BEFORE React hydrates, so it can set
- * `<html data-theme="light">` before the first paint. Without it, light-theme
- * users would see a dark flash on every page load (FOUC).
- *
- * Kept as a string (not JSX) because it must be inlined into <head> and
- * cannot depend on React/Next hydration. The function form keeps the
- * code co-located with the React provider for auditability.
+ * Runs synchronously BEFORE React hydrates, so it can set
+ * `<html data-theme="...">` before the first paint. Without it, non-default
+ * theme users would see a flash of the default theme on every page load (FOUC).
  */
-export const THEME_HEAD_SCRIPT = `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='light'||t==='dark'){if(t==='light'){document.documentElement.setAttribute('data-theme','light');}else{document.documentElement.removeAttribute('data-theme');}}}catch(e){}})();`;
+export const THEME_HEAD_SCRIPT = `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){document.documentElement.removeAttribute('data-theme');}else{document.documentElement.setAttribute('data-theme',t);}}}catch(e){}})();`;

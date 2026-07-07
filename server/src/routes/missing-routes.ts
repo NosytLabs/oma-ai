@@ -1,27 +1,52 @@
-// 501 stubs for OpenAPI spec entries that have no working implementation.
+// Compat routes for OpenAPI spec entries that point at a path we don't
+// physically mount under that name.
 //
-// Audit 2026-06-15: OpenAPI spec declares 21 paths. The spec/code audit found
-// path/method mismatches that were resolved by updating the spec to match the
-// real handlers (see routes/openapi.ts for the path/method fixes).
+// Audit 2026-06-15: the spec declares /v1/api-keys but the real handler
+// lives at /keys (mounted in routes/auth.ts). To keep spec-driven clients
+// honest, we return a 410 Gone with a `correct_path` field rather than a
+// silent 404 or a generic 501 — clients can read the body and switch to
+// the real endpoint with no guesswork.
 //
-// Two spec entries still have no handler at the spec path:
-//   - /v1/api-keys (GET, POST) — the real handler is /keys (in routes/auth.ts).
-//     Kept as a 501 here so the spec entry is not a 404; clients should use /keys.
-//   - /v1/x402/proxy (POST) — kept as a 501 placeholder; no handler exists
-//     for the proxy/chat/completions sub-path as of Solana/Houdini cleanup.
-//     This top-level path is documented as 501 in the spec.
+// /v1/x402/proxy is also a 410 — the spec documents it as a future
+// direct-proxy placeholder; the real proxy is at
+// /v1/x402/proxy/chat/completions.
 //
-// ponytail: do NOT add a real implementation here. Full handlers are a separate
-// task. The 501 body is the OpenAPI-standard error shape so clients can parse it.
+// ponytail: we do NOT delegate here. routes/auth.ts mounts `/keys/*`
+// directly inside `authRoutes`; extracting a sub-router would touch a
+// lot of code for a compat-only path. A 410 with the correct_path hint
+// is the right cost/value trade.
 import { Hono } from "hono";
 import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
 
 export const missingRoutes = new Hono<OmaEnv>();
 
-const stub = (reason: string) => (c: Context<OmaEnv>) =>
-  c.json({ error: { message: reason, type: "not_implemented" } }, 501);
+const gone = (
+	c: Context<OmaEnv>,
+	correctPath: string,
+	message: string,
+) =>
+	c.json(
+		{
+			error: {
+				message,
+				type: "gone",
+				correct_path: correctPath,
+			},
+		},
+		410,
+	);
 
-missingRoutes.get("/v1/api-keys", stub("Use /keys (mounted in routes/auth.ts) - /v1/api-keys is reserved for a future v2 API"));
-missingRoutes.post("/v1/api-keys", stub("Use /keys (mounted in routes/auth.ts) - /v1/api-keys is reserved for a future v2 API"));
-missingRoutes.post("/v1/x402/proxy", stub("Use /v1/x402/proxy/chat/completions for the x402 chat proxy; /v1/x402/proxy is a future direct-proxy placeholder"));
+missingRoutes.all("/v1/api-keys", (c) =>
+	gone(c, "/keys", "Use /keys (mounted in routes/auth.ts)."),
+);
+missingRoutes.all("/v1/api-keys/*", (c) =>
+	gone(c, "/keys", "Use /keys (mounted in routes/auth.ts)."),
+);
+missingRoutes.all("/v1/x402/proxy", (c) =>
+	gone(
+		c,
+		"/v1/x402/proxy/chat/completions",
+		"Use POST /v1/x402/proxy/chat/completions for the x402 chat proxy.",
+	),
+);

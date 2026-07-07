@@ -106,6 +106,8 @@ export function VideoGenerationPanel() {
 
 	const startPolling = useCallback(
 		(qId: string) => {
+			// Always clear the previous poller before starting a new one
+			// to prevent overlapping intervals from double-driving state.
 			if (pollingRef.current) clearInterval(pollingRef.current);
 			setPolling(true);
 			let attempts = 0;
@@ -115,6 +117,7 @@ export function VideoGenerationPanel() {
 				attempts++;
 				if (attempts >= maxAttempts) {
 					if (pollingRef.current) clearInterval(pollingRef.current);
+					pollingRef.current = null;
 					setPolling(false);
 					setLoading(false);
 					toast.error("Video generation timed out. Check your queue later.");
@@ -122,13 +125,17 @@ export function VideoGenerationPanel() {
 				}
 
 				try {
-					const resp = await fetch(`${RETRIEVE_URL}?queue_id=${qId}`, {
-						credentials: "include",
-						headers: buildAuthHeaders({ Accept: "application/json" }),
-					});
+					const resp = await fetch(
+						`${RETRIEVE_URL}?queue_id=${encodeURIComponent(qId)}`,
+						{
+							credentials: "include",
+							headers: buildAuthHeaders({ Accept: "application/json" }),
+						},
+					);
 
 					if (resp.status === 401) {
 						if (pollingRef.current) clearInterval(pollingRef.current);
+						pollingRef.current = null;
 						setPolling(false);
 						setLoading(false);
 						toast.error(
@@ -138,9 +145,15 @@ export function VideoGenerationPanel() {
 					}
 					if (!resp.ok) return;
 
-					const json = await resp.json();
+					const json = (await resp.json()) as {
+						status?: string;
+						video_url?: string;
+						queue_position?: number;
+						eta?: string;
+					};
 					if (json.status === "completed" && json.video_url) {
 						if (pollingRef.current) clearInterval(pollingRef.current);
+						pollingRef.current = null;
 						setVideoUrl(json.video_url);
 						setPolling(false);
 						setLoading(false);
@@ -149,11 +162,10 @@ export function VideoGenerationPanel() {
 						if (json.queue_position !== undefined)
 							setQueuePosition(json.queue_position);
 						if (json.eta) setEta(json.eta);
-						else if (json.queue_position > 0)
-							setEta(`~${json.queue_position * 30}s`);
+						else if (json.queue_position) setEta(`~${json.queue_position * 30}s`);
 					}
 				} catch {
-					// retry
+					// retry on the next tick
 				}
 			}, 3000);
 		},

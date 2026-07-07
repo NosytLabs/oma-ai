@@ -15,7 +15,7 @@ export function X402Banner() {
 	return (
 		<section
 			aria-labelledby="x402-headline"
-			className="relative py-24 sm:py-32"
+			className="relative py-16 sm:py-20"
 		>
 			<div className="container-page">
 				<Reveal>

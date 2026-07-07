@@ -1,9 +1,11 @@
 import {
+	Activity,
 	ArrowLeftRight,
 	Box,
 	FileText,
 	Info,
 	type LucideIcon,
+	Network,
 	Newspaper,
 	Tag,
 	Terminal,
@@ -33,12 +35,30 @@ export const primaryLinks: NavItem[] = [
 /** Tools dropdown — secondary, off the primary path. */
 export const toolsLinks: NavItem[] = [
 	{
+		href: "/network",
+		label: "network",
+		icon: Network,
+		desc: "programmable primitives",
+	},
+	{
+		href: "/observability",
+		label: "observability",
+		icon: Activity,
+		desc: "live system metrics",
+	},
+	{
+		href: "/changelog",
+		label: "changelog",
+		icon: Newspaper,
+		desc: "release notes",
+	},
+	{
 		href: "/swap",
 		label: "swap",
 		icon: ArrowLeftRight,
 		desc: "token exchange",
 	},
-	{ href: "/blog", label: "blog", icon: Newspaper, desc: "changelog + notes" },
+	{ href: "/blog", label: "blog", icon: Newspaper, desc: "engineering notes" },
 	{ href: "/about", label: "about", icon: Info, desc: "who we are" },
 ];
 

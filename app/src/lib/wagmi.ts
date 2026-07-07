@@ -37,6 +37,34 @@ function getWagmiConfig() {
 		);
 	}
 
+	// Headless environments (preview browsers, embeds, server-side renders
+	// that get hydrated without a real window) cause wagmi's `getProvider`
+	// to throw inside `checkCrossOriginOpenerPolicy`. We gate the entire
+	// wagmi setup on the presence of an injected provider; the navbar
+	// `Connect Wallet` button already handles the "no wallet installed"
+	// state separately via its own empty-connector fallback.
+	const hasInjectedWallet =
+		typeof window !== "undefined" &&
+		Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+
+	if (!hasInjectedWallet) {
+		// Return a stub config that doesn't bind real connectors. Components
+		// that read `useAccount().isConnected` etc. will simply report
+		// disconnected — which is the truth in this environment.
+		return createConfig({
+			chains: [base, baseSepolia],
+			connectors: [],
+			transports: {
+				[base.id]: http(MAINNET_RPC),
+				[baseSepolia.id]: http(TESTNET_RPC),
+			},
+			storage: createStorage({
+				storage: undefined,
+				key: "wagmi",
+			}),
+		});
+	}
+
 	const connectors = [
 		injected(),
 		coinbaseWallet({ appName: "OMA AI" }),

@@ -60,11 +60,13 @@ export function NavbarUserMenu({
 	const [confirming, setConfirming] = useState(false);
 	const [disconnecting, setDisconnecting] = useState(false);
 	const prefersReduced = useReducedMotion();
-	const _pathname = usePathname();
+	const pathname = usePathname();
 
+	// Close the user menu on every route change.
 	useEffect(() => {
 		setOpen(false);
-	}, []);
+		setConfirming(false);
+	}, [pathname]);
 
 	useClickOutside(containerRef, open, () => {
 		setOpen(false);

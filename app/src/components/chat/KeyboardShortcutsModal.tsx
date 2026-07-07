@@ -2,6 +2,7 @@
 
 import { AnimatePresence, m } from "framer-motion";
 import { Command, Keyboard, X } from "lucide-react";
+import { useDialog } from "@/lib/use-dialog";
 
 export interface Shortcut {
 	keys: string[];
@@ -52,6 +53,7 @@ export function KeyboardShortcutsModal({
 	open,
 	onClose,
 }: KeyboardShortcutsModalProps) {
+	const { panelRef } = useDialog({ open, onClose });
 	return (
 		<AnimatePresence>
 			{open && (
@@ -67,12 +69,14 @@ export function KeyboardShortcutsModal({
 					aria-label="Keyboard shortcuts"
 				>
 					<m.div
+						ref={panelRef}
+						tabIndex={-1}
 						initial={{ opacity: 0, scale: 0.96, y: 8 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.96, y: 8 }}
 						transition={{ duration: 0.15 }}
 						onClick={(e) => e.stopPropagation()}
-						className="w-full max-w-md bg-void border border-border shadow-2xl"
+						className="w-full max-w-md bg-void border border-border shadow-2xl focus:outline-none"
 					>
 						<div className="flex items-center justify-between px-4 py-3 border-b border-border">
 							<div className="flex items-center gap-2">

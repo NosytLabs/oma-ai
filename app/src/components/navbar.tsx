@@ -32,10 +32,13 @@ export function Navbar() {
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
 
+	// Close transient nav UI (mobile menu, tools dropdown) on every
+	// route change so they don't stay open after a Next client-side
+	// navigation. The user-menu manages its own state internally.
 	useEffect(() => {
 		setMobileOpen(false);
 		setToolsOpen(false);
-	}, []);
+	}, [pathname]);
 
 	// Scroll-driven glass + border glow. Passive + rAF-throttled.
 	useEffect(() => {
@@ -59,12 +62,12 @@ export function Navbar() {
 		<header
 			className={`sticky top-0 left-0 right-0 z-50 border-b font-mono transition-colors duration-300 ${
 				scrolled
-					? "glass-strong border-accent/20"
+					? "glass-strong border-border-bright"
 					: "border-border bg-void/95 backdrop-blur-md"
 			}`}
 		>
 			<nav aria-label="Main navigation" className="w-full">
-				<div className="mx-auto flex h-11 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
+				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
 					<div className="flex min-w-0 items-center gap-2 sm:gap-3">
 						<Magnetic strength={6}>
@@ -109,7 +112,7 @@ export function Navbar() {
 											<Link
 												href={link.href}
 												aria-current={isActive ? "page" : undefined}
-												className={`relative inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+												className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-2.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 													isActive
 														? "text-accent"
 														: "text-text-secondary hover:text-text-bright"
@@ -197,7 +200,7 @@ export function Navbar() {
 							ref={mobileToggleRef}
 							type="button"
 							onClick={() => setMobileOpen(!mobileOpen)}
-							className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
+							className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
 							aria-label={
 								mobileOpen ? "Close navigation menu" : "Open navigation menu"
 							}

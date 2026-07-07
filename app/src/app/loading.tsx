@@ -14,7 +14,7 @@ export default function Loading() {
 			aria-live="polite"
 			aria-busy="true"
 			aria-label="Loading OMA-AI homepage"
-			className="min-h-[100dvh] pt-20 pb-24"
+			className="min-h-[100dvh] pt-8 pb-16"
 		>
 			<div className="container-page">
 				<div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center min-h-[60dvh]">

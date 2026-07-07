@@ -28,8 +28,7 @@
 		"**/*.tsx",
 		".next/types/**/*.ts",
 		".next/dev/types/**/*.ts",
-		"**/*.mts",
-		"../server/models.json"
+		"**/*.mts"
 	],
 	"exclude": ["node_modules", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"]
 }

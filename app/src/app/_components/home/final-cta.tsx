@@ -14,7 +14,7 @@ export function FinalCTA() {
 	return (
 		<section
 			aria-labelledby="final-cta-headline"
-			className="relative border-t border-border-subtle py-24 sm:py-32"
+			className="relative border-t border-border-subtle py-16 sm:py-20"
 		>
 			<div className="container-page">
 				<Reveal>

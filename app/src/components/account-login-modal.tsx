@@ -447,9 +447,9 @@ export function AccountLoginModal({
 						: "fixed inset-x-0 top-1/2 -translate-y-1/2 z-[101] mx-4 w-[calc(100%-2rem)] max-w-md border-accent/30 bg-panel border rounded-xl shadow-2xl"
 				}
 				onClick={(e) => e.stopPropagation()}
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="modal-title"
+				{...(inline
+					? { role: "region", "aria-labelledby": "modal-title" }
+					: { role: "dialog", "aria-modal": "true", "aria-labelledby": "modal-title" })}
 			>
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center gap-3">

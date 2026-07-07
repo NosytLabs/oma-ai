@@ -9,8 +9,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
-import { useToast } from "@/components/ui/Toast";
-import { buildAuthHeaders } from "@/lib/cookies";
+import { useImageGeneration } from "@/lib/use-image-generation";
 
 const IMAGE_MODELS = [
 	{ id: "sdxl", name: "SDXL" },
@@ -36,62 +35,27 @@ const STYLE_OPTIONS = [
 const CREDITS_PER_IMAGE = 5;
 const USD_PER_CREDIT = 0.0025;
 
-const API_URL = "/api/v1/images/generations";
-
 export function ImageGenerationPanel() {
 	const [prompt, setPrompt] = useState("");
 	const [model, setModel] = useState("sdxl");
 	const [size, setSize] = useState("1024x1024");
 	const [style, setStyle] = useState<string>("");
 	const [count, setCount] = useState(1);
-	const [loading, setLoading] = useState(false);
 	const [images, setImages] = useState<string[]>([]);
-	const [error, setError] = useState<string | null>(null);
-	const toast = useToast();
+	const { generate, loading, error, setError } = useImageGeneration();
 
-	const generate = useCallback(async () => {
+	const onGenerate = useCallback(async () => {
 		if (!prompt.trim() || loading) return;
-
-		setLoading(true);
-		setError(null);
-
-		const enhancedPrompt = style
-			? `${prompt.trim()}, ${style} style`
-			: prompt.trim();
-
-		try {
-			const resp = await fetch(API_URL, {
-				method: "POST",
-				credentials: "include",
-				headers: buildAuthHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({ model, prompt: enhancedPrompt, n: count, size }),
-			});
-
-			if (resp.status === 401) {
-				throw new Error("Connect your wallet to generate an API key");
-			}
-			if (!resp.ok) {
-				const errBody = await resp.json().catch(() => null);
-				throw new Error(errBody?.error?.message || `HTTP ${resp.status}`);
-			}
-
-			const json = await resp.json();
-			const urls = (json.data || []).map((d: { url: string }) => d.url);
-			setImages(urls);
-			if (urls.length > 0)
-				toast.success(
-					`Generated ${urls.length} image${urls.length > 1 ? "s" : ""}`,
-				);
-		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Generation failed";
-			setError(msg);
-			toast.error(msg);
-		} finally {
-			setLoading(false);
-		}
-	}, [prompt, model, count, size, style, loading, toast]);
+		setImages([]);
+		const result = await generate({
+			model,
+			prompt,
+			count,
+			size,
+			style: style || null,
+		});
+		if (result) setImages(result.urls);
+	}, [prompt, model, count, size, style, loading, generate]);
 
 	const downloadImage = useCallback(
 		async (url: string, index: number) => {
@@ -104,10 +68,13 @@ export function ImageGenerationPanel() {
 				a.click();
 				URL.revokeObjectURL(a.href);
 			} catch {
-				toast.error("Failed to download image");
+				// Download failure is non-fatal; the user can still right-click
+				// the image. We log to the console so the failure is visible
+				// in dev tools without a noisy toast.
+				console.error("Image download failed");
 			}
 		},
-		[toast],
+		[],
 	);
 
 	return (
@@ -252,7 +219,7 @@ export function ImageGenerationPanel() {
 				<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<button
 						type="button"
-						onClick={generate}
+						onClick={onGenerate}
 						disabled={!prompt.trim() || loading}
 						className="btn-primary w-full sm:w-auto justify-center"
 						aria-label={

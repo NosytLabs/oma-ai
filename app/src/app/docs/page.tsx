@@ -421,7 +421,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 			aria-controls={id}
 		>
 			{copied ? (
-				<Check className="h-4 w-4 text-orange" />
+				<Check className="h-4 w-4 text-success" />
 			) : (
 				<Copy className="h-4 w-4" />
 			)}
@@ -1841,7 +1841,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<aside
 				id={mobileNavId}
 				aria-label="Mobile navigation"
-				className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-56 lg:w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>

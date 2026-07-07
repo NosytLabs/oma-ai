@@ -22,7 +22,7 @@ export default function SwapPage() {
 				</div>
 			}
 		>
-			<div className="min-h-[calc(100vh-4rem)] px-4 pt-20 pb-8 bg-void">
+			<div className="min-h-[calc(100vh-4rem)] px-4 pt-6 sm:pt-8 pb-8 bg-void">
 				<div className="mx-auto max-w-md text-center">
 					{/* Header */}
 					<div className="mb-8">

@@ -1,6 +1,6 @@
 /* OMA · Support page
  * support channels: general · billing · privacy · legal
- * contact form: mailto-based (no backend required)
+ * contact form: posts to /api/support, which forwards to the topic inbox
  */
 
 import {
@@ -8,18 +8,18 @@ import {
 	Bug,
 	Clock,
 	HelpCircle,
-	Mail,
 	MessageSquare,
 	Shield,
 	Wallet,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SupportForm } from "./SupportForm";
 
 export const metadata: Metadata = {
 	title: "Support · OMA",
 	description:
-		"Get help with OMA. Reach us by email for billing, privacy, legal, or general questions. Average response time is 14 days.",
+		"Get help with OMA. Reach us for billing, privacy, legal, or general questions. Average response time is 14 days.",
 	alternates: { canonical: "/support" },
 	openGraph: {
 		title: "Support · OMA",
@@ -74,7 +74,7 @@ const SELF_SERVICE = [
 	{
 		icon: Clock,
 		label: "API Status",
-		href: "/about#status",
+		href: "/status",
 		description: "Real-time endpoint and deposit watcher status.",
 	},
 ] as const;
@@ -85,7 +85,7 @@ export default function SupportPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-10 sm:pb-14">
+					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-10 sm:pb-14">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -185,127 +185,19 @@ export default function SupportPage() {
 									gets CC&apos;d automatically.
 								</p>
 
-								<form
-									className="border border-border bg-surface p-5 sm:p-6 space-y-4"
-									action="mailto:hello@oma-ai.com"
-									method="POST"
-									encType="text/plain"
+							<SupportForm />
+
+							<p className="text-[11px] text-text-tertiary">
+								We never ask for API keys, passwords, or seed phrases.
+								For encrypted communication, email us directly at{" "}
+								<a
+									href="mailto:hello@oma-ai.com"
+									className="text-accent hover:underline underline-offset-2"
 								>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<div className="space-y-1.5">
-											<label
-												htmlFor="topic"
-												className="text-[11px] font-semibold uppercase tracking-wide text-text-muted"
-											>
-												Topic
-											</label>
-											<select
-												id="topic"
-												name="topic"
-												className="w-full rounded-lg border border-border bg-panel px-3 py-2 text-[13px] text-text-secondary outline-none focus:border-accent transition-colors cursor-pointer"
-												defaultValue=""
-											>
-												<option value="" disabled>
-													Select a topic
-												</option>
-												<option value="General">General question</option>
-												<option value="Billing">
-													Billing / credits
-												</option>
-												<option value="Refund">
-													Refund request
-												</option>
-												<option value="Privacy">
-													Privacy / data
-												</option>
-												<option value="Security">
-													Security issue
-												</option>
-												<option value="Bug">Bug report</option>
-												<option value="Feature">
-													Feature request
-												</option>
-												<option value="Partnership">
-													Partnership
-												</option>
-											</select>
-										</div>
-
-										<div className="space-y-1.5">
-											<label
-												htmlFor="email"
-												className="text-[11px] font-semibold uppercase tracking-wide text-text-muted"
-											>
-												Your email
-											</label>
-											<input
-												id="email"
-												name="email"
-												type="email"
-												placeholder="you@example.com"
-												required
-												className="w-full rounded-lg border border-border bg-panel px-3 py-2 text-[13px] text-text-secondary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
-											/>
-										</div>
-									</div>
-
-									<div className="space-y-1.5">
-										<label
-											htmlFor="wallet"
-											className="text-[11px] font-semibold uppercase tracking-wide text-text-muted"
-										>
-											Wallet address{" "}
-											<span className="normal-case font-normal text-text-tertiary">
-												(optional)
-											</span>
-										</label>
-										<input
-											id="wallet"
-											name="wallet"
-											type="text"
-											placeholder="0x..."
-											pattern="^0x[a-fA-F0-9]{40}$"
-											className="w-full rounded-lg border border-border bg-panel px-3 py-2 text-[13px] text-text-secondary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors font-mono"
-										/>
-									</div>
-
-									<div className="space-y-1.5">
-										<label
-											htmlFor="message"
-											className="text-[11px] font-semibold uppercase tracking-wide text-text-muted"
-										>
-											Message
-										</label>
-										<textarea
-											id="message"
-											name="message"
-											rows={5}
-											placeholder="Describe the issue in as much detail as you can. Include any transaction hashes, API keys, or error messages."
-											required
-											className="w-full rounded-lg border border-border bg-panel px-3 py-2 text-[13px] text-text-secondary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors resize-y min-h-[120px]"
-										/>
-									</div>
-
-									<button
-										type="submit"
-										className="w-full sm:w-auto bg-accent text-void hover:bg-accent-hover px-6 py-2.5 rounded-lg text-[13px] font-medium transition-colors flex items-center justify-center gap-2"
-									>
-										<Mail className="h-3.5 w-3.5" aria-hidden="true" />
-										Open in mail client
-									</button>
-
-									<p className="text-[11px] text-text-tertiary">
-										Form opens your default mail client. For encrypted
-										communication, email us directly at{" "}
-										<a
-											href="mailto:hello@oma-ai.com"
-											className="text-accent hover:underline underline-offset-2"
-										>
-											hello@oma-ai.com
-										</a>
-										.
-									</p>
-								</form>
+									hello@oma-ai.com
+								</a>
+								.
+							</p>
 							</div>
 
 							{/* ===== SIDEBAR ===== */}

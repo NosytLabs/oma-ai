@@ -20,6 +20,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
+import { memo } from "react";
 import type { Message } from "@/components/chat";
 import { formatCreditsShort } from "@/components/chat/useBalance";
 import { btnBase } from "@/components/playground/PlaygroundComponents";
@@ -72,7 +73,13 @@ export interface ChatToolbarProps {
 	exportStatus: "default" | "loading" | "success" | "error";
 	exportConversation: () => void;
 	clearChat: () => void;
-	messages: Message[];
+	/**
+	 * `messages.length` rather than the `Message[]` itself. The toolbar
+	 * uses this only to gate the share/clear buttons. Holding the array
+	 * here would force a re-render on every SSE token flush because the
+	 * streaming flush replaces the messages reference.
+	 */
+	messagesLength: number;
 	deferredMessages: Message[];
 	setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
 }
@@ -112,11 +119,12 @@ export function ChatToolbar({
 	exportStatus,
 	exportConversation,
 	clearChat,
-	messages,
+	messagesLength,
 	deferredMessages,
 	setShortcutsOpen,
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
+	const messageCount = messagesLength;
 	return (
 		<header
 			aria-label="Playground toolbar"
@@ -253,7 +261,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={shareConversation}
-					disabled={shareStatus === "default" && messages.length === 0}
+					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
 					className={`${btnBase} focus-ring data-[state=success]:text-success data-[state=success]:border-success/30 data-[state=success]:bg-success/10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
@@ -280,7 +288,7 @@ export function ChatToolbar({
 					<span className="hidden sm:inline">?</span>
 				</button>
 
-				{messages.length > 0 && (
+				{messageCount > 0 && (
 					<div className="flex items-center gap-1">
 						<button
 							type="button"
@@ -314,3 +322,11 @@ export function ChatToolbar({
 		</header>
 	);
 }
+
+// ponytail: wrap the toolbar in `memo` so SSE token flushes (which
+// replace the messages array reference) don't re-render the entire
+// toolbar — the toolbar reads `messages.length` (via `clearChat`/`share`)
+// but doesn't render the messages themselves. The shell passes a stable
+// `messagesLength: number` to keep the memo effective; the actual
+// `messages: Message[]` reference is not in the toolbar's prop list.
+export const MemoizedChatToolbar = memo(ChatToolbar);

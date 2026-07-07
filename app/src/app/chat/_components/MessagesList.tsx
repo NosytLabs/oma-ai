@@ -96,6 +96,39 @@ function safeJsonParse(s: string): unknown {
 	}
 }
 
+type Classification =
+	| { kind: "plain" }
+	| { kind: "a2ui"; payload: unknown };
+
+// ponytail: memoize message classification per content string so token
+// flushes don't trigger repeated JSON.parse + isA2UI checks per render.
+// Streaming text changes the content reference but the *classification*
+// flips at most once per assistant message (when it finishes); the cache
+// key uses content length so we re-evaluate at terminal chunks only.
+const classificationCache = new Map<string, Classification>();
+
+function classifyMessage(content: string): Classification {
+	const key = `${content.length}:${content.startsWith("{") ? "1" : "0"}`;
+	const cached = classificationCache.get(key);
+	if (cached) return cached;
+	const trimmed = content.trimStart();
+	let result: Classification;
+	if (trimmed.startsWith("{")) {
+		const parsed = safeJsonParse(trimmed);
+		if (parsed && isA2UI(parsed)) {
+			result = { kind: "a2ui", payload: parsed };
+		} else {
+			result = { kind: "plain" };
+		}
+	} else {
+		result = { kind: "plain" };
+	}
+	// Keep the cache bounded — 256 entries is enough for a long chat.
+	if (classificationCache.size > 256) classificationCache.clear();
+	classificationCache.set(key, result);
+	return result;
+}
+
 export interface MessagesListProps {
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
 	messagesEndRef: RefObject<HTMLDivElement | null>;
@@ -231,16 +264,19 @@ export function MessagesList({
 					<div className="space-y-6 md:space-y-8 pb-12">
 						<AnimatePresence mode="popLayout">
 							{deferredMessages.map((msg) => {
-								const trimmed = msg.content.trimStart();
-								const parsed = safeJsonParse(trimmed);
-								const looksLikeA2UI = trimmed.startsWith("{") && isA2UI(parsed);
-								if (looksLikeA2UI) {
+								// ponytail: memoize the JSON-classification result per
+								// message so SSE token flushes (which replace the
+								// content array reference) don't re-parse every line
+								// on every render. The cache lives in a ref because
+								// we don't want it to trigger re-renders.
+								const classification = classifyMessage(msg.content);
+								if (classification.kind === "a2ui") {
 									return (
 										<div
 											key={`${msg.role}-${msg.timestamp}`}
 											className="flex gap-4"
 										>
-											<A2UIRenderer payload={parsed} />
+											<A2UIRenderer payload={classification.payload} />
 										</div>
 									);
 								}

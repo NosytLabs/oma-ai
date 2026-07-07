@@ -53,7 +53,7 @@ export function Hero({ modelCount }: HeroProps) {
 	return (
 		<section
 			aria-labelledby="hero-headline"
-			className="relative overflow-hidden pt-20 pb-24 sm:pt-28 sm:pb-32"
+			className="relative overflow-hidden pt-8 pb-16 sm:pt-10 sm:pb-20"
 		>
 			<div className="aurora" aria-hidden="true" />
 			<div
@@ -70,7 +70,7 @@ export function Hero({ modelCount }: HeroProps) {
 			/>
 
 				<div className="container-page">
-				<div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center min-h-[60dvh]">
+				<div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center min-h-[52dvh]">
 					{/* suppressHydrationWarning on the motion wrappers: framer-motion
 					   applies opacity:0 + transform at first paint, which the SSR
 					   can't reproduce without serializing the variant state.
@@ -128,11 +128,11 @@ export function Hero({ modelCount }: HeroProps) {
 						<span className="inline-block h-1.5 w-1.5 rounded-full bg-accent pulse-ring" />
 						<span suppressHydrationWarning>
 							<span className="text-text-secondary">No credit card</span>
-							<span className="mx-2 text-border-bright">·</span>
+							<span className="mx-2 text-text-tertiary">·</span>
 							<span className="text-text-secondary">x402 pay-per-request</span>
-							<span className="mx-2 text-border-bright">·</span>
-							<span className="text-text-secondary">No prompts logged or trained on</span>
-							<span className="mx-2 text-border-bright">·</span>
+							<span className="mx-2 text-text-tertiary">·</span>
+							<span className="text-text-secondary">No prompts stored</span>
+							<span className="mx-2 text-text-tertiary">·</span>
 							<span className="text-text-secondary">From {PRICE_RANGE_INPUT} / 1M tokens</span>
 						</span>
 					</m.div>
@@ -182,9 +182,21 @@ function TerminalBlock({ code }: { code: string }) {
 	return (
 		<div className="surface-code overflow-hidden shadow-[0_20px_60px_-30px_var(--color-accent-glow)] border-[color-mix(in_srgb,var(--color-accent)_20%,var(--color-border))]">
 			<div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-[var(--color-surface)]">
-				<span className="h-2.5 w-2.5 rounded-full bg-error" aria-hidden="true" />
-				<span className="h-2.5 w-2.5 rounded-full bg-warning" aria-hidden="true" />
-				<span className="h-2.5 w-2.5 rounded-full bg-success" aria-hidden="true" />
+				<span
+					className="h-2.5 w-2.5 rounded-full"
+					style={{ background: "#ff5f57" }}
+					aria-hidden="true"
+				/>
+				<span
+					className="h-2.5 w-2.5 rounded-full"
+					style={{ background: "#febc2e" }}
+					aria-hidden="true"
+				/>
+				<span
+					className="h-2.5 w-2.5 rounded-full"
+					style={{ background: "#28c840" }}
+					aria-hidden="true"
+				/>
 				<span className="ml-3 inline-flex items-center gap-1.5 text-[11px] text-text-muted font-mono">
 					<Terminal className="h-3 w-3" aria-hidden="true" />
 					api.oma-ai.com

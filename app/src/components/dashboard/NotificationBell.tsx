@@ -75,15 +75,14 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	const notifications: Notification[] =
 		(data as { notifications?: Notification[] })?.notifications ?? [];
 	const recent = notifications.slice(0, 10);
-	// "Unread" = the backend has a notifiedAt but the user hasn't opened this
-	// menu yet. Until that flag ships, treat last 24h as "new" so the badge
-	// surfaces something even before the backend implements unread tracking.
+	// "Unread" predicate. The backend's `notifiedAt` flag is the source of
+	// truth once a notification has been seen by the user. Fall back to a
+	// 24h "new" window only for legacy rows that don't carry the flag.
 	const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-	const unreadCount = recent.filter(
-		(n) =>
-			(n.notifiedAt && !n.notifiedAt) ||
-			new Date(n.createdAt).getTime() > oneDayAgo,
-	).length;
+	const unreadCount = recent.filter((n) => {
+		if (n.notifiedAt) return false; // already acknowledged by user
+		return new Date(n.createdAt).getTime() > oneDayAgo;
+	}).length;
 
 	// Close on click outside + Escape
 	useEffect(() => {

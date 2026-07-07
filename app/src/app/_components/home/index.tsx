@@ -11,6 +11,7 @@ import { CodeExample } from "@/app/_components/home/code-example";
 import { FinalCTA } from "@/app/_components/home/final-cta";
 import { Hero } from "@/app/_components/home/hero";
 import { HowItWorks } from "@/app/_components/home/how-it-works";
+import { NetworkStrip } from "@/app/_components/home/network-strip";
 import { Stats } from "@/app/_components/home/stats";
 import { TrustStrip } from "@/app/_components/home/trust-strip";
 import { X402Banner } from "@/app/_components/home/x402-banner";
@@ -28,6 +29,7 @@ export function HomeView({ modelCount }: HomeViewProps) {
 			<HowItWorks />
 			<CodeExample modelCount={modelCount} />
 			<Stats modelCount={modelCount} />
+			<NetworkStrip />
 			<X402Banner />
 			<FinalCTA />
 		</div>

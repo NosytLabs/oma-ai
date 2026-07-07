@@ -224,7 +224,7 @@ export default async function BlogPostPage({ params }: Props) {
 
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono">
-			<div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-24 sm:pb-32">
+			<div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 sm:pb-20">
 				{/* Breadcrumb */}
 				<Breadcrumb
 					items={[

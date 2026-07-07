@@ -28,9 +28,19 @@ export interface VerifyResponse {
 	token: string;
 	/** The signer's address (0x… for EVM). */
 	address: string;
+	/** EVM-only address (post-0030 wallet link split). */
+	evmAddress?: string | null;
 	/** Mullvad-style 16-digit account number. */
 	accountNumber: string;
 	authMethod: "siwe";
+	/** Canonical user payload so clients can skip the follow-up /user call. */
+	user?: {
+		id: string;
+		address: string | null;
+		evmAddress?: string | null;
+		accountNumber?: string | null;
+		createdAt?: string | null;
+	};
 }
 
 /** Response from POST /auth/wallet (link wallet & get API key). */

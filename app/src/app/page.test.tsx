@@ -143,35 +143,39 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	});
 });
 
-describe("Footer (unchanged)", () => {
+describe("Footer", () => {
 	it("renders product links", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText("models")).toBeInTheDocument();
-		expect(screen.getByText("pricing")).toBeInTheDocument();
-		expect(screen.getByText("docs")).toBeInTheDocument();
-		expect(screen.getByText("chat")).toBeInTheDocument();
+		// Use getAllByText because "docs" appears in both Resources and Product.
+		expect(screen.getAllByText("docs").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("models").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("pricing").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("chat").length).toBeGreaterThan(0);
 	});
 
 	it("renders legal links", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText("terms")).toBeInTheDocument();
-		expect(screen.getByText("privacy")).toBeInTheDocument();
+		expect(screen.getAllByText("terms").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("privacy").length).toBeGreaterThan(0);
 	});
 
 	it("renders OMA brand", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText("oma")).toBeInTheDocument();
+		expect(screen.getByText(/^oma$/i)).toBeInTheDocument();
 	});
 
 	it("renders GitHub link", () => {
 		renderWithQueryClient(<Footer />);
-		const githubLink = screen.getByText("github.com/oma-ai");
-		expect(githubLink).toBeInTheDocument();
-		expect(githubLink).toHaveAttribute("href", "https://github.com/oma-ai");
+		const githubLinks = screen.getAllByRole("link", {
+			name: /github/i,
+		});
+		expect(githubLinks.length).toBeGreaterThan(0);
+		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/oma-ai");
 	});
 
-	it("renders copyright", () => {
+	it("renders copyright line with year + license", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText(/OMA AI/)).toBeInTheDocument();
+		expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/MIT/i).length).toBeGreaterThan(0);
 	});
 });

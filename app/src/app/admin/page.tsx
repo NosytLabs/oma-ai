@@ -72,18 +72,22 @@ export default function AdminPage() {
 		queryKey: ["adminUsers", usersPage],
 		queryFn: () => api.admin.getUsers(usersPage, 50),
 		staleTime: 30_000,
+		// ponytail: only fetch when the user actually opens the users tab.
+		enabled: activeTab === "users",
 	});
 
 	const usageQuery = useQuery({
 		queryKey: ["adminUsage", usagePeriod],
 		queryFn: () => api.admin.getUsage(usagePeriod),
 		staleTime: 30_000,
+		enabled: activeTab === "usage",
 	});
 
 	const revenueQuery = useQuery({
 		queryKey: ["adminRevenue", revenuePeriod],
 		queryFn: () => api.admin.getRevenue(revenuePeriod),
 		staleTime: 30_000,
+		enabled: activeTab === "revenue",
 	});
 
 	const keysQuery = useQuery({
@@ -93,6 +97,7 @@ export default function AdminPage() {
 				.getKeys(1, 100)
 				.then((data) => (data as { keys?: ApiKey[] })?.keys ?? []),
 		staleTime: 30_000,
+		enabled: activeTab === "keys",
 	});
 
 	const users = useMemo(

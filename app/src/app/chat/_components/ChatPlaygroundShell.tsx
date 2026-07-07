@@ -24,7 +24,7 @@ import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
 import { ChatErrorBanner } from "./ChatErrorBanner";
 import { ChatSettingsPanel } from "./ChatSettingsPanel";
-import { ChatToolbar } from "./ChatToolbar";
+import { MemoizedChatToolbar } from "./ChatToolbar";
 import { MessagesList } from "./MessagesList";
 
 const LazyMessageInput = dynamic(
@@ -350,7 +350,7 @@ function ShellContent({
 	return (
 		<div className="min-h-dvh h-dvh w-full flex flex-col bg-void text-text-secondary font-mono overflow-hidden">
 			<h1 className="sr-only">{isChat ? "OMA Chat" : "OMA API Playground"}</h1>
-			<ChatToolbar
+			<MemoizedChatToolbar
 				variant={variant}
 				model={model}
 				setModel={setModel}
@@ -372,7 +372,7 @@ function ShellContent({
 				exportStatus={exportStatus}
 				exportConversation={exportConversation}
 				clearChat={clearChat}
-				messages={messages}
+				messagesLength={messages.length}
 				deferredMessages={deferredMessages}
 				setShortcutsOpen={setShortcutsOpen}
 			/>

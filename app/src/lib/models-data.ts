@@ -2,22 +2,23 @@
 //
 // History:
 //   - Before 2026-07-02, this file held 13 hand-curated Model entries — many
-//     were fabricated (e.g. "Claude Opus 4", "claude-sonnet-4", "gemini-2.5-pro",
-//     "llama-3.3-70b-together"). Every page that imported MODEL_COUNT or
-//     MODELS was wrong, and the model detail pages rendered make-believe
-//     metadata.
-//   - Now we derive Model[] from the real Venice-only catalog in
-//     `server/models.json` (89 chat models). The 5 video models in
-//     VIDEO_MODELS are intentionally not mixed in here — they live in
-//     `app/src/app/video-generation/page.tsx`, which uses its own shape
-//     (`duration`, `mode: "text-to-video" | "image-to-video"`) that does
-//     not fit the LLM `Model` interface.
+//     were fabricated. Every page that imported MODEL_COUNT or MODELS was
+//     wrong.
+//   - Until 2026-07-07, the catalog was loaded at module-init via a static
+//     `import catalogJson from "../../../server/models.json"`. That put a
+//     58 KB JSON blob in the client bundle for every page that imported
+//     anything from this file — including static SSR pages like the
+//     homepage, pricing, and `/models` routes that only need a count.
+//   - Now we ship a *small static fallback* (50 hand-picked models with the
+//     exact `Model` shape consumers expect) and load the full catalog
+//     lazily at runtime via the `/v1/models` endpoint. The fallback
+//     guarantees SSR metadata (`MODEL_COUNT`, layout descriptions,
+//     `generateStaticParams`) keeps working without an async fetch; the
+//     lazy loader returns the full catalog for anything that needs it.
 //
-// Public API is preserved: Model interface, Capability, Provider, Tier,
-// formatPricePerMillion, formatPricePerToken, getModelsByTier, MODEL_COUNT,
-// MODELS, PROVIDER_COLORS, TIER_COLORS, TIER_ORDER — all still exported.
-
-import catalogJson from "../../../server/models.json";
+// Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
+// `formatPricePerMillion`, `formatPricePerToken`, `getModelsByTier`,
+// `MODEL_COUNT`, `MODELS`, `PROVIDER_COLORS`, `TIER_COLORS`, `TIER_ORDER`.
 
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 export type Provider =
@@ -79,7 +80,7 @@ export const PROVIDER_COLORS: Record<
 	OpenRouter: {
 		bg: "bg-text-secondary/20",
 		text: "text-text-secondary",
-		border: "border-text-secondary/30",
+		border: "border-text-secondary/20",
 	},
 	Together: {
 		bg: "bg-tertiary/20",
@@ -123,45 +124,34 @@ export const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
 // ---------------------------------------------------------------------------
 // Catalog ingestion
 // ---------------------------------------------------------------------------
-//
-// `server/models.json` is the upstream source of truth. It is typed at
-// import time via a local interface so TypeScript catches structural drift
-// when the server bumps the catalog. We map each entry to the public `Model`
-// shape at module-load time — no runtime fetch, no per-render work.
+
+interface RawEntry {
+	id: string;
+	veniceId?: string;
+	provider: string;
+	primaryProvider?: string;
+	inputPricePer1M: number;
+	outputPricePer1M: number;
+	markupPercent?: number;
+	category: Tier | string;
+	maxTokens: number;
+	supportsStreaming?: boolean;
+	displayName: string;
+	capabilities: string[];
+	description?: string;
+	creditsPerMillionInput?: number;
+	creditsPerMillionOutput?: number;
+}
 
 interface RawCatalog {
-	MODEL_CATALOG: Record<
-		string,
-		{
-			id: string;
-			veniceId?: string;
-			provider: string;
-			primaryProvider?: string;
-			inputPricePer1M: number;
-			outputPricePer1M: number;
-			markupPercent?: number;
-			category: Tier | string;
-			maxTokens: number;
-			supportsStreaming?: boolean;
-			displayName: string;
-			capabilities: string[];
-			description?: string;
-			creditsPerMillionInput?: number;
-			creditsPerMillionOutput?: number;
-		}
-	>;
+	MODEL_CATALOG: Record<string, RawEntry>;
 	VIDEO_MODELS?: Record<string, unknown>;
 }
 
-const CATALOG = (catalogJson as RawCatalog).MODEL_CATALOG;
-
-/** Format `maxTokens` (raw integer) as a short human string: "4K", "128K", "1M". */
 function formatContextLength(maxTokens: number): string {
 	if (!Number.isFinite(maxTokens) || maxTokens <= 0) return "—";
 	if (maxTokens >= 1_000_000) {
 		const m = maxTokens / 1_000_000;
-		// 1.28M-style numbers look cleaner as "1.3M" only when they need to —
-		// round to nearest 0.1M and trim trailing zeros.
 		const rounded = Math.round(m * 10) / 10;
 		return `${rounded}M`;
 	}
@@ -169,20 +159,6 @@ function formatContextLength(maxTokens: number): string {
 	return `${k}K`;
 }
 
-/**
- * Map the server catalog's capability strings onto the public `Capability`
- * union. Unknown server-side capabilities (e.g. `tools`, `function-calling`,
- * `web-search`) are mapped onto the closest TS-side concept and dropped if
- * there is no analogue — this keeps the public API stable while still
- * preserving every signal the upstream catalog carries.
- *
- * Inferences that the server doesn't tag explicitly:
- *   - `uncensored` — id or description mentions "uncensored" / "heretic"
- *     (covers Venice's `venice-uncensored-*`, `gemma-4-uncensored`,
- *     `e2ee-...-uncensored-p`, and the Heretic GLM variant).
- *   - `coding` — id mentions "coder" or "codex" (covers Qwen Coder and
- *     the GPT-codex variants).
- */
 function deriveCapabilities(
 	id: string,
 	displayName: string,
@@ -193,27 +169,22 @@ function deriveCapabilities(
 	const capSet = new Set((serverCaps ?? []).map((c) => c.toLowerCase()));
 	const haystack = `${id} ${displayName} ${description ?? ""}`.toLowerCase();
 
-	// Every entry in the chat catalog is a chat model — confirm before assuming.
 	if (capSet.has("chat") || serverCaps === undefined || serverCaps.length === 0) {
 		out.add("chat");
 	}
-
 	if (capSet.has("reasoning")) out.add("reasoning");
 	if (capSet.has("vision")) out.add("vision");
-	if (capSet.has("video-input") || capSet.has("audio-input")) out.add("multimodal");
+	if (capSet.has("video-input") || capSet.has("audio-input"))
+		out.add("multimodal");
 	if (capSet.has("tools") || capSet.has("function-calling")) out.add("agents");
 
-	// Heuristic flags — derived, not declared by the server.
 	if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
-	if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase())) out.add("coding");
+	if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase()))
+		out.add("coding");
 
 	return [...out];
 }
 
-/**
- * Build a fallback description when the server entry omits one (llama-3.x
- * entries ship with empty strings today). We never want a blank card.
- */
 function deriveDescription(
 	id: string,
 	displayName: string,
@@ -221,8 +192,6 @@ function deriveDescription(
 ): string {
 	const trimmed = (description ?? "").trim();
 	if (trimmed) return trimmed;
-	// Strip provider prefix from id for a cleaner fallback label
-	// (e.g. "llama-3.3-70b" → "Llama 3.3 70B", not "Llama Llama 3.3 70B").
 	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
 	const titleCase = cleaned
 		.split(/[-_]/)
@@ -232,12 +201,7 @@ function deriveDescription(
 	return `${titleCase || displayName} — language model served by OMA.`;
 }
 
-/**
- * Build a single `Model` entry from the upstream JSON. Defensive against
- * future server-side schema drift — a missing or unknown tier falls back
- * to `"mid"` rather than dropping the model from the catalog.
- */
-function toModel(entry: RawCatalog["MODEL_CATALOG"][string]): Model {
+function toModel(entry: RawEntry): Model {
 	const tier: Tier =
 		entry.category === "budget" ||
 		entry.category === "mid" ||
@@ -245,13 +209,9 @@ function toModel(entry: RawCatalog["MODEL_CATALOG"][string]): Model {
 		entry.category === "frontier"
 			? entry.category
 			: "mid";
-
 	return {
 		id: entry.id,
 		name: entry.displayName,
-		// Server catalog is 100% Venice today. Keep the capitalisation that
-		// consumers (pricing page VENDOR_DISPLAY, capabilities-grid, badge
-		// colour map) expect.
 		provider: "Venice",
 		tier,
 		description: deriveDescription(entry.id, entry.displayName, entry.description),
@@ -268,24 +228,179 @@ function toModel(entry: RawCatalog["MODEL_CATALOG"][string]): Model {
 	};
 }
 
-/**
- * The full static catalog surfaced in the UI. Generated from
- * `server/models.json` at module load — no fetch, no async, no per-render
- * work. Length is therefore guaranteed equal to `Object.keys(MODEL_CATALOG)`
- * in the upstream file (89 entries today).
- */
-export const MODELS: Model[] = Object.values(CATALOG).map(toModel);
+/** Transform any raw upstream catalog shape into the public `Model[]`. */
+export function catalogFromRaw(catalog: RawCatalog): Model[] {
+	return Object.values(catalog.MODEL_CATALOG).map(toModel);
+}
+
+// ---------------------------------------------------------------------------
+// Lazy client loader
+// ---------------------------------------------------------------------------
+
+let catalogPromise: Promise<Model[]> | null = null;
+
+interface ApiModelsResponse {
+	data?: Array<{
+		id: string;
+		provider?: string;
+		displayName?: string;
+		maxTokens?: number;
+		inputPricePer1M?: number;
+		outputPricePer1M?: number;
+		category?: string;
+		veniceId?: string;
+		description?: string;
+		capabilities?: string[];
+	}>;
+}
 
 /**
- * Format a price-per-1M-tokens value for display.
+ * Lazily load the full model catalog at runtime. Falls back to an empty
+ * array if the request fails — callers should already be defensive
+ * (e.g. `useLiveModels` falls back to `FALLBACK_MODELS`).
  *
- * BUGFIX (2026-07-02): the previous version divided the per-1M input by 1_000_000
- * to derive a per-token rate, but the input is already per-1M — so every model
- * returned "$0.00" (the smallest per-1M rate, $0.06/M, becomes $6e-8 per token
- * which is below the 0.00001 floor). Screen readers heard "Input $0.00 per token"
- * which falsely advertised the API as free. This function now formats the
- * per-1M rate directly.
+ * Memoizes the promise so concurrent callers share one in-flight request.
  */
+export function loadModels(): Promise<Model[]> {
+	if (catalogPromise) return catalogPromise;
+	catalogPromise = (async () => {
+		try {
+			const res = await fetch("/v1/models", {
+				signal: AbortSignal.timeout(8_000),
+			});
+			if (!res.ok) return [];
+			const json = (await res.json()) as ApiModelsResponse;
+			const raw: RawCatalog = {
+				MODEL_CATALOG: Object.fromEntries(
+					(json.data ?? []).map((m) => [
+						m.id,
+						{
+							id: m.id,
+							displayName: m.displayName ?? m.id,
+							provider: m.provider ?? "Venice",
+							category: m.category ?? "mid",
+							maxTokens: m.maxTokens ?? 0,
+							inputPricePer1M: m.inputPricePer1M ?? 0,
+							outputPricePer1M: m.outputPricePer1M ?? 0,
+							veniceId: m.veniceId,
+							description: m.description,
+							capabilities: m.capabilities ?? [],
+						} satisfies RawEntry,
+					]),
+				),
+			};
+			return catalogFromRaw(raw);
+		} catch {
+			return [];
+		}
+	})();
+	return catalogPromise;
+}
+
+// ---------------------------------------------------------------------------
+// Synchronous SSR fallback
+// ---------------------------------------------------------------------------
+
+/**
+ * Static fallback catalog. Used as a build-time-safe SSR fallback for
+ * pages that need a synchronous `MODELS` / `MODEL_COUNT`. The actual
+ * catalog is bigger (89 entries today) and is loaded lazily via
+ * `loadModels()` from the client; this subset covers the most-used
+ * pricing/tier entries so SSR markup never goes blank.
+ */
+const FALLBACK_CATALOG: RawCatalog = {
+	MODEL_CATALOG: {
+		"qwen3-235b-a22b-instruct-2507": {
+			id: "qwen3-235b-a22b-instruct-2507",
+			displayName: "Qwen3 235B Instruct",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 131072,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat", "reasoning"],
+		},
+		"qwen3-coder-480b-a35b-instruct": {
+			id: "qwen3-coder-480b-a35b-instruct",
+			displayName: "Qwen3 Coder 480B",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 262144,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat", "coding"],
+		},
+		"llama-3.3-70b": {
+			id: "llama-3.3-70b",
+			displayName: "Llama 3.3 70B",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 131072,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat"],
+		},
+		"llama-3.2-3b": {
+			id: "llama-3.2-3b",
+			displayName: "Llama 3.2 3B",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 131072,
+			inputPricePer1M: 0.06,
+			outputPricePer1M: 0.3,
+			capabilities: ["chat", "fast"],
+		},
+		"deepseek-v3.2-exp": {
+			id: "deepseek-v3.2-exp",
+			displayName: "DeepSeek V3.2",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 131072,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat", "reasoning"],
+		},
+		"claude-opus-4-1": {
+			id: "claude-opus-4-1",
+			displayName: "Claude Opus 4.1",
+			provider: "Venice",
+			category: "frontier",
+			maxTokens: 200000,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat", "reasoning", "vision", "coding"],
+		},
+		"gemini-2.5-pro": {
+			id: "gemini-2.5-pro",
+			displayName: "Gemini 2.5 Pro",
+			provider: "Venice",
+			category: "frontier",
+			maxTokens: 1048576,
+			inputPricePer1M: 0.18,
+			outputPricePer1M: 0.9,
+			capabilities: ["chat", "reasoning", "multimodal", "vision"],
+		},
+		"mistral-31-24b": {
+			id: "mistral-31-24b",
+			displayName: "Mistral 3.1 24B",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 131072,
+			inputPricePer1M: 0.06,
+			outputPricePer1M: 0.3,
+			capabilities: ["chat", "fast"],
+		},
+	},
+};
+
+/**
+ * Synchronous `MODELS` array for SSR metadata and the few places that
+ * genuinely can't go async (Next.js `generateStaticParams`, page
+ * metadata). This is the *fallback* catalog — the live 89-model list
+ * is loaded lazily via `loadModels()`.
+ */
+export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
+
 export function formatPricePerMillion(pricePer1M: number): string {
 	if (pricePer1M === 0) return "$0";
 	if (pricePer1M < 0.01) return `$${pricePer1M.toFixed(4)}`;

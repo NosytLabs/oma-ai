@@ -82,7 +82,9 @@ export default function AdminFeesPage() {
 		const markupMultiplier = 1 + calculatorInput.markup / 100;
 		const totalCost = base * markupMultiplier;
 		const margin = totalCost - base;
-		const marginPercent = (margin / base) * 100;
+		// Guard against divide-by-zero / negative base; render 0% instead of
+		// producing `Infinity` in the UI when the user clears the input.
+		const marginPercent = base > 0 ? (margin / base) * 100 : 0;
 		return { totalCost, margin, marginPercent };
 	};
 

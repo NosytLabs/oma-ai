@@ -39,7 +39,7 @@ export function CodeExample({ modelCount }: CodeExampleProps) {
 	return (
 		<section
 			aria-labelledby="code-example-headline"
-			className="relative py-24 sm:py-32"
+			className="relative py-16 sm:py-20"
 		>
 			<div className="container-page">
 				<Reveal>
