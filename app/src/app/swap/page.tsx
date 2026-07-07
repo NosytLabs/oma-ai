@@ -3,7 +3,6 @@
 import { ArrowRightLeft, Hexagon, Wallet } from "lucide-react";
 import Link from "next/link";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { useWallet } from "@/components/wallet-provider";
 
 export default function SwapPage() {
 	return (
