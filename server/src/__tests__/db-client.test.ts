@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const { neonMock, configState, exitSpy } = vi.hoisted(() => ({
   neonMock: vi.fn(),
-  configState: { DATABASE_URL: 'postgresql://localhost:5432/oma' },
+  configState: { DATABASE_URL: 'postgresql://ep-example.neon.tech/oma' },
   exitSpy: vi.fn(),
 }))
 
