@@ -87,8 +87,8 @@ const PAYMENT_METHODS = [
 	},
 	{
 		icon: Coins,
-		title: "HoudiniSwap",
-		desc: "Convert 100+ cryptocurrencies to USDC credits on Base. Rate varies by asset.",
+		title: "LI.FI / CCTP",
+		desc: "Swap 100+ cryptocurrencies to USDC credits on Base via LI.FI / CCTP. Rate varies by asset.",
 		tag: "100+ assets",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
@@ -104,7 +104,7 @@ const PAYMENT_METHODS = [
 const FAQ_ITEMS = [
 	{
 		q: "How do I add credits?",
-		a: "Deposit USDC on Base or Solana, or swap from 100+ cryptocurrencies via HoudiniSwap. Instant settlement.",
+		a: "Deposit USDC on Base or Solana, or swap from 100+ cryptocurrencies via LI.FI / CCTP. Instant settlement.",
 	},
 	{
 		q: "Do credits expire?",
@@ -112,7 +112,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC (Direct) on Base or Solana for 1:1 USD credits, HoudiniSwap to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
+		a: "USDC (Direct) on Base or Solana for 1:1 USD credits, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
 	},
 	{
 		q: "What is x402 pay-per-request?",

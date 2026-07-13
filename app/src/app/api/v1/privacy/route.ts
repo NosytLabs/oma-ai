@@ -98,7 +98,7 @@ const PRIVACY_MANIFEST = {
 		],
 		payments: [
 			"Circle (USDC) on Base — credit purchases and x402 settlement",
-			"HoudiniSwap, LiFi, CCTP — cross-chain deposit routing",
+			"LI.FI, CCTP — cross-chain deposit routing",
 		],
 	},
 	retention_policies: {

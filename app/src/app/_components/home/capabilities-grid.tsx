@@ -59,7 +59,7 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "Crypto-Native Billing",
 		description:
-			"USDC on Base at 1:1 USD. x402 pay-per-request for agents — no pre-funding, no subscriptions. Also supports HoudiniSwap from 100+ assets.",
+			"USDC on Base at 1:1 USD. x402 pay-per-request for agents — no pre-funding, no subscriptions. Also supports LI.FI / CCTP from 100+ assets.",
 		icon: Coins,
 		cell: "standard",
 	},
