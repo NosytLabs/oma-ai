@@ -24,13 +24,26 @@
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/v1/chat/completions` | POST | Chat completions (streaming + tool calls) |
-| `/v1/models` | GET | List available models and capabilities |
+| `/v1/completions` | POST | Text completions (legacy) |
+| `/v1/embeddings` | POST | Text embeddings |
+| `/v1/audio/speech` | POST | Text-to-speech |
+| `/v1/audio/transcriptions` | POST | Speech-to-text |
 | `/v1/images/generations` | POST | Image generation |
 | `/v1/videos/generations` | POST | Async video generation |
-| `/v1/x402/quote` | POST | Get x402 payment quote for a request |
-| `/v1/api-keys` | GET/POST/DELETE | Manage API keys |
-| `/v1/balance` | GET | Credit balance |
-| `/v1/health` | GET | Service and upstream provider health |
+| `/v1/videos/retrieve` | GET | Poll async video job |
+| `/v1/models` | GET | List available models and capabilities |
+| `/v1/balance` | GET | Credit balance (Bearer auth) |
+| `/v1/deposit/usdc` | POST | USDC deposit on Base |
+| `/v1/deposit/cctp` | POST | Cross-chain deposit via CCTP |
+| `/v1/deposit/lifi` | POST | Cross-chain deposit via LI.FI |
+| `/v1/deposit/status` | GET | Deposit status |
+| `/health` | GET | Liveness probe |
+| `/x402/verify` | POST | Verify x402 payment receipt |
+| `/x402/settle` | POST | Settle x402 payment (session auth) |
+| `/auth/nonce` | POST | Get SIWE nonce for wallet |
+| `/auth/verify` | POST | Verify SIWE signature, start session |
+| `/auth/wallet` | POST | Bind additional wallet to account |
+| `/auth/logout` | POST | End session |
 
 ## Authentication
 Three modes, all served by the same endpoints:

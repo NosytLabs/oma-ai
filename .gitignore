@@ -18,73 +18,48 @@ website/node_modules/
 Thumbs.db
 .hallmark/
 coverage/
+
+# Images: ignore stray screenshots everywhere, but keep real app/public assets
 *.png
 *.jpg
 *.ico
-# Brand / static site assets (Next serves app/public)
 !app/public/**/*.png
 !app/public/**/*.jpg
 !app/public/**/*.ico
 !app/public/**/*.svg
-audit_*/
-audit_results_*/
-*_audit*.md
-*_AUDIT*.md
-*REPORT*.md
-*VALIDATION*.md
-PERFORMANCE_REPORT.md
-FULL_UI_AUDIT.md
-WEB3_AI_DESIGN_RESEARCH.md
-css_design_tokens.md
-css_tokens_validation.md
-component_inventory.md
-phase1_component_inventory.md
-server_api_audit.md
-visual_consistency_*.md
-accessibility_*.md
-screenshot_comparison.md
+
+# Debug/audit screenshots must never be committed
+app/public/screenshots-ux/
 e2e_screenshots/
 test-screenshots/
-e2e_test.py
-test_*.py
-screenshot_*.py
-app/audit_site.py
-app/audit_ux.py
-app/dev.err
 audit-screenshots/
-screenshots/visual-audit-*/
-screenshots/*.txt
-.audit/
-.opencode/audit-*/
+screenshots/
+
 # Root-level public only (Next app assets live in app/public/)
 /public/
-scripts/remove-duplicate-hooks.ts
+
+# Build/test artifacts
+.vercel
+.turbo/
 server/tsconfig.tsbuildinfo
 app/tsconfig.tsbuildinfo
-app/remaining_components_audit.md
-app/data_fetching_audit.md
-app/security_audit.md
-webwright_audit/
-.vercel
-app/lighthouse.json
-app/.lighthouseci/
-
-# opencode research cache
-.opencode/docs/
-.opencode/lottie-*.png
-.opencode/assets/
-.opencode/plugins/
-.opencode/research/
-.opencode/v5-screenshots/
-
-# vibedoctor output
-.vibedoctor/
-app/.vibedoctor/
-
-# test output
 test-results/
 tmp/lighthouse/
 server/models.json.bak
 
-# debug session artifacts
+# opencode + tool working dirs
+.opencode/
+.vibedoctor/
 .dbg/
+
+# Transient audit/working artifacts (screenshots, scratch output)
+.tmp/
+
+# Backup / archive files (never tracked)
+*.bak
+*.backup
+*.orig
+*.swp
+*.swo
+*~
+

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, X, Sparkles } from "lucide-react";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
 export const metadata: Metadata = {
 	title: "oma vs Portkey vs LiteLLM vs OpenRouter — comparison",
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "oma vs Portkey vs LiteLLM vs OpenRouter",
 		description:
-			"Feature-by-feature comparison. oma is the only agent-native LLM gateway with x402, free tier, anonymous accounts, and circuit-breaker failover.",
+			"Feature-by-feature comparison. oma is the only agent-native LLM gateway with x402, a genuine free tier, privacy-first accounts, and circuit-breaker failover.",
 	},
 };
 
@@ -217,8 +216,8 @@ const summaryCards = [
 		body: "Only oma speaks x402 natively. Agents pay per request on Base in USDC — no monthly contract, no API key leaks.",
 	},
 	{
-		title: "Anonymous by default",
-		body: "Mullvad-style account numbers, SIWE for wallet users, zero KYC. Privacy is the default, not a premium tier.",
+		title: "Privacy-first by default",
+		body: "Mullvad-style account numbers, SIWE for wallet users. No credit-card signup. Privacy is the default, not a premium tier.",
 	},
 	{
 		title: "Free tier, structurally",
@@ -352,9 +351,9 @@ export default function ComparePage() {
 								oma vs Portkey
 							</h3>
 							<p className="text-sm text-text-secondary mb-3">
-								Portkey is enterprise-grade but requires a credit card, account
-								signup, and offers no free tier. oma is anonymous, x402-native,
-								and starts at $0.0002/M tokens.
+Portkey is enterprise-grade but requires a credit card, account
+							signup, and offers no free tier. oma is privacy-first,
+							x402-native, and starts at $0.0002/M tokens.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">oma wins on:</strong> privacy,

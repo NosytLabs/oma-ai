@@ -110,7 +110,6 @@
 		--color-accent-hover: var(--color-accent-bright);
 		--color-accent-muted: var(--color-text-muted);
 		--color-info-dim: rgba(96, 165, 250, 0.12);
-		--color-success: #34d399;
 		--color-success-dim: rgba(52, 211, 153, 0.12);
 		--color-bg: var(--color-void);
 		--color-bg-elevated: var(--color-panel);
@@ -172,23 +171,15 @@
 		min-height: calc(100dvh - 4rem);
 	}
 
-	.container-page,
-	.container-narrow,
-	.container-prose {
+	.container-page {
 		@apply mx-auto w-full px-4;
 		max-width: 72rem;
 	}
-	.container-narrow { max-width: 56rem; }
-	.container-prose { max-width: 48rem; }
 	@media (min-width: 640px) {
-		.container-page,
-		.container-narrow,
-		.container-prose { padding-left: 1.5rem; padding-right: 1.5rem; }
+		.container-page { padding-left: 1.5rem; padding-right: 1.5rem; }
 	}
 	@media (min-width: 1024px) {
-		.container-page,
-		.container-narrow,
-		.container-prose { padding-left: 2rem; padding-right: 2rem; }
+		.container-page { padding-left: 2rem; padding-right: 2rem; }
 	}
 
 	/* ---------- Surfaces ---------- */
@@ -202,14 +193,6 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		backdrop-filter: blur(12px);
-	}
-
-	.surface-card-hover {
-		transition: all 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.surface-card-hover:hover {
-		border-color: var(--color-accent-shadow);
-		transform: translateY(-1px);
 	}
 
 	/* ---------- Typography components ---------- */
@@ -238,14 +221,6 @@
 		font-weight: 500;
 	}
 
-	.h3-card {
-		font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-		font-size: 1.0625rem;
-		line-height: 1.35;
-		letter-spacing: -0.012em;
-		font-weight: 600;
-	}
-
 	.eyebrow {
 		font-family: var(--font-mono), ui-monospace, "SF Mono", monospace;
 		font-size: 0.6875rem;
@@ -257,10 +232,6 @@
 
 	.text-display {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-	}
-
-	.text-mono {
-		font-family: var(--font-mono), ui-monospace, "SF Mono", monospace;
 	}
 
 	.italic-accent {
@@ -285,22 +256,6 @@
 		border: 1px solid var(--color-accent-shadow);
 		background: var(--color-accent-soft);
 		color: var(--color-accent);
-	}
-
-	.badge-ghost {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.3rem 0.65rem;
-		font-size: 0.6875rem;
-		font-family: var(--font-mono), ui-monospace, monospace;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		font-weight: 500;
-		border-radius: var(--radius-full);
-		border: 1px solid var(--color-border-hi);
-		background: rgba(255, 255, 255, 0.02);
-		color: var(--color-text-muted);
 	}
 
 	/* ---------- Buttons ---------- */
@@ -398,89 +353,8 @@
 	}
 
 	/* ---------- Links ---------- */
-
-	.link-accent {
-		color: var(--color-accent);
-		font-weight: 500;
-		text-decoration: none;
-		background-image: linear-gradient(
-			var(--color-accent),
-			var(--color-accent)
-		);
-		background-position: 0 100%;
-		background-repeat: no-repeat;
-		background-size: 100% 1px;
-		padding-bottom: 1px;
-		transition: background-size 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.link-accent:hover {
-		background-size: 100% 2px;
-	}
-
-	.link-muted {
-		color: var(--color-text-muted);
-		text-decoration: none;
-		transition: color 180ms ease;
-	}
 	.link-muted:hover {
 		color: var(--color-text-bright);
-	}
-
-	/* ---------- Cards / tiles ---------- */
-
-	.tile {
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.025) 0%,
-			rgba(255, 255, 255, 0.005) 100%
-		);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: 1.5rem;
-		transition: all 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.tile:hover {
-		border-color: var(--color-accent-shadow);
-		transform: translateY(-2px);
-	}
-
-	.tile-featured {
-		background: linear-gradient(
-			160deg,
-			var(--color-accent-dim) 0%,
-			rgba(13, 17, 16, 0.9) 70%
-		);
-		border: 1px solid var(--color-accent-shadow);
-		border-radius: var(--radius-lg);
-		padding: 2rem;
-		position: relative;
-		overflow: hidden;
-	}
-	.tile-featured::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(
-			circle at top right,
-			var(--color-accent-shadow),
-			transparent 60%
-		);
-		opacity: 0.5;
-		pointer-events: none;
-	}
-
-	/* ---------- Inline code ---------- */
-
-	.inline-code {
-		display: inline-block;
-		padding: 0.1rem 0.4rem;
-		font-family: var(--font-mono), ui-monospace, monospace;
-		font-size: 0.8125em;
-		color: var(--color-accent);
-		background: var(--color-accent-soft);
-		border: 1px solid var(--color-accent-shadow);
-		border-radius: 0.25rem;
-		letter-spacing: -0.01em;
 	}
 
 	/* ---------- Animated dot ---------- */
@@ -522,20 +396,6 @@
 		50% { background-position: 100% 50%; }
 	}
 
-	/* ---------- Section divider (thin gold/emerald rule) ---------- */
-
-	.section-rule {
-		height: 1px;
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			var(--color-border-hi) 50%,
-			transparent 100%
-		);
-		border: none;
-		margin: 0;
-	}
-
 	/* ---------- Grid background ---------- */
 
 	.bg-grid {
@@ -560,46 +420,9 @@
 
 	/* ---------- Marquee for NetworkStrip ---------- */
 
-	.marquee-mask {
-		mask-image: linear-gradient(
-			90deg,
-			transparent,
-			black 8%,
-			black 92%,
-			transparent
-		);
-		-webkit-mask-image: linear-gradient(
-			90deg,
-			transparent,
-			black 8%,
-			black 92%,
-			transparent
-		);
-	}
-
-	@keyframes marquee {
-		0% { transform: translateX(0); }
-		100% { transform: translateX(-50%); }
-	}
-	.animate-marquee {
-		animation: marquee 60s linear infinite;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.animate-marquee { animation: none; }
-	}
-
-	/* ---------- Scroll reveal ---------- */
-
-	.scroll-reveal {
-		opacity: 0;
-		transform: translateY(20px);
-		transition: opacity 800ms cubic-bezier(0.2, 0.8, 0.2, 1),
-			transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.scroll-reveal.is-visible {
-		opacity: 1;
-		transform: translateY(0);
-	}
+	/* Marquee keyframes + class were unused at audit time (2026-07) and
+	   were removed. If reintroducing NetworkStrip marquee, restore from
+	   git history. */
 
 	/* ---------- Legacy compatibility utilities ---------- */
 
@@ -704,16 +527,6 @@
 		color: var(--color-text-tertiary);
 	}
 
-	.display-statement {
-		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(1.5rem, 2.4vw, 2.25rem);
-		line-height: 1.15;
-		letter-spacing: -0.02em;
-		font-weight: 500;
-		font-style: italic;
-		color: var(--color-text-bright);
-	}
-
 	/* ---------- Keyframes ---------- */
 
 	@keyframes fadeInUp {
@@ -749,14 +562,11 @@
 
 @layer utilities {
 	.bg-void { background-color: var(--color-void); }
-	.bg-void-deep { background-color: var(--color-void-deep); }
 	.bg-panel { background-color: var(--color-panel); }
 	.bg-surface { background-color: var(--color-surface); }
 	.bg-surface-elevated { background-color: var(--color-surface-elevated); }
-	.bg-surface-hi { background-color: var(--color-surface-hi); }
 	.bg-accent { background-color: var(--color-accent); }
 	.bg-accent-dim { background-color: var(--color-accent-dim); }
-	.bg-accent-soft { background-color: var(--color-accent-soft); }
 	.bg-secondary { background-color: var(--color-secondary); }
 	.bg-tertiary { background-color: var(--color-tertiary); }
 	.bg-info\/10 { background-color: color-mix(in srgb, var(--color-info) 10%, transparent); }

@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		entry("/models", 0.9, "daily"),
 		entry("/pricing", 0.9, "weekly"),
 		entry("/docs", 0.85, "weekly"),
+		entry("/compare", 0.7, "weekly"),
 		entry("/chat", 0.7, "weekly"),
 		entry("/image-generation", 0.55, "weekly"),
 		entry("/video-generation", 0.55, "weekly"),

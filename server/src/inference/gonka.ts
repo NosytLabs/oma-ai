@@ -1,9 +1,7 @@
 import { config } from "../config.js";
 import type { ChatMessage, InferenceError } from "./types.js";
-import { BaseInferenceProvider, type ProviderConfig, createErrorMapper } from "./base.js";
+import { BaseInferenceProvider, type ProviderConfig } from "./base.js";
 import { createProvider } from "./provider-factory.js";
-import { reportProviderResult } from "./provider-health.js";
-import { logger } from "../lib/logger.js";
 
 const GONKA_TIMEOUT_MS = 60_000;
 const GONKA_STREAM_TIMEOUT_MS = 120_000;

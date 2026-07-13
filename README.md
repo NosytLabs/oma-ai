@@ -61,8 +61,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ./scripts/start-dev.sh
 
 # Or manually:
-cd app && npm run dev   # Frontend :3000
-cd server && npm run dev # Backend (Hono API) :3001
+cd app && pnpm dev       # Frontend :3000
+cd server && pnpm dev    # Backend (Hono API) :3001
 ```
 
 ---
@@ -144,19 +144,25 @@ cd server && npm run dev # Backend (Hono API) :3001
 
 ## Available Models
 
-89+ models available via Venice AI. For the full catalog with live pricing, see:
+Live catalog fetched from `GET /v1/models` (OpenAI-compatible) — returns the
+full list with `inputPricePer1M`, `outputPricePer1M`, `capabilities`, and
+`maxTokens`. The `app/src/lib/models-data.ts` module ships a small hand-picked
+fallback for SSR metadata so layout descriptions and `MODEL_COUNT` work
+without an async fetch.
 
 - **Web UI:** [oma-ai.com/models](https://oma-ai.com/models)
-- **API:** `GET /v1/models` (returns JSON with `inputPricePer1M`, `outputPricePer1M`, `capabilities`, `maxTokens`)
+- **API:** `GET https://api.oma-ai.com/v1/models`
 
-### Model Tiers
+### Model Tiers (representative)
 
-| Tier | Examples | Price Range (input/1M tokens) |
-|------|----------|-------------------------------|
-| **Frontier** | Claude Opus 4.8, Grok 4.3, Gemini 3.1 Pro | $3.00 – $6.00 |
-| **Premium** | Claude Sonnet 4.6, GPT-5.4 Mini, DeepSeek V4 Pro | $1.00 – $3.60 |
-| **Mid-Range** | Llama 3.3 70B, Qwen 3.7 Max, Kimi K2.6 | $0.30 – $1.73 |
-| **Budget** | GLM 4.7 Flash, Qwen3 5B-9B, Gemma 4 31B | $0.01 – $0.70 |
+| Tier | Examples | Price range (input / 1M tokens) |
+|------|----------|-----------------------------------|
+| **Frontier** | `claude-opus-4-1` | ~$3.00 – $6.00 |
+| **Premium** | `gemini-2.5-pro`, `qwen3-coder-480b-a35b-instruct` | ~$1.00 – $3.60 |
+| **Mid-Range** | `llama-3.3-70b`, `kimi-k2.6`, `mistral-31-24b` | ~$0.30 – $1.73 |
+| **Budget** | `deepseek-v3.2-exp`, `llama-3.2-3b`, `glm-5.2-fp8` | ~$0.01 – $0.70 |
+
+See `GET /v1/models` for the live, complete catalog and current pricing.
 
 ---
 

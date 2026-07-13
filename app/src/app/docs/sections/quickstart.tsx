@@ -1,0 +1,64 @@
+import { Play, Terminal } from "lucide-react";
+import { AnimatedSection, CodeBlock, SectionHeading, QUICK_START_STEPS } from "./shared";
+
+export function QuickStartSection() {
+	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
+  -H "Authorization: Bearer oma_sk_your_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "llama-3.2-3b",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'`;
+
+	return (
+		<AnimatedSection>
+			<SectionHeading
+				id="quickstart"
+				icon={<Play className="h-5 w-5" />}
+				title="Quick Start"
+				subtitle="Get up and running with the OMA API in under a minute."
+			/>
+
+			<div className="mb-8 grid gap-4 sm:grid-cols-3">
+				{QUICK_START_STEPS.map((step) => (
+					<div
+						key={step.n}
+						className="rounded-xl border border-border bg-surface/50 p-5"
+					>
+						<div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent text-sm font-bold font-mono">
+							{step.n}
+						</div>
+						<h3 className="mb-1 font-semibold text-text">{step.title}</h3>
+						<p className="text-sm text-text-muted">{step.desc}</p>
+					</div>
+				))}
+			</div>
+
+			<div className="relative rounded-xl border border-border bg-panel p-6">
+				<div className="mb-4 flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<Terminal className="h-4 w-4 text-accent" />
+						<span className="text-sm font-medium text-text">
+							Your First Request
+						</span>
+					</div>
+					<span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">
+						cURL
+					</span>
+				</div>
+				<CodeBlock code={curlCode} lang="bash" />
+			</div>
+
+			<div className="mt-4 grid gap-3 sm:grid-cols-2">
+				<div className="rounded-lg border border-border bg-surface/50 p-3">
+					<div className="text-xs text-text-muted mb-1">Base URL</div>
+					<code className="text-sm text-accent">https://api.oma-ai.com/v1</code>
+				</div>
+				<div className="rounded-lg border border-border bg-surface/50 p-3">
+					<div className="text-xs text-text-muted mb-1">SDK Install</div>
+					<code className="text-sm text-accent">npm install openai</code>
+				</div>
+			</div>
+		</AnimatedSection>
+	);
+}
