@@ -513,7 +513,7 @@ export function AccountLoginModal({
 								Account Number
 							</label>
 							<a
-								href="/docs#account-number"
+								href="/docs#auth-account"
 								className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-accent"
 							>
 								<HelpCircle
@@ -654,7 +654,7 @@ export function AccountLoginModal({
 									Creating...
 								</span>
 							) : (
-								"Generate Anonymous Number"
+								"Generate Private Number"
 							)}
 						</button>
 						<p className="mt-4 text-center text-xs text-text-muted">

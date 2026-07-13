@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatPricePerMillion, MODELS } from "@/lib/models-data";
+import { formatPricePerMillion, MODELS, MODEL_COUNT } from "@/lib/models-data";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
 
@@ -203,7 +203,7 @@ export default function PricingPage() {
 						platform fee layered on top of the quoted rates.
 					</p>
 					<div className="meta-strip">
-						<span>{MODELS.length} live models</span>
+							<span>{MODEL_COUNT} live models</span>
 						<span>Usage-based billing</span>
 						<span>x402 native</span>
 					</div>
@@ -253,7 +253,7 @@ export default function PricingPage() {
 							</h2>
 						</div>
 						<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text-secondary md:block">
-							Filter by tier to find the cheapest model that still fits your
+							Filter by tier to find the most cost-effective model that still fits your
 							latency and context needs.
 						</p>
 					</div>

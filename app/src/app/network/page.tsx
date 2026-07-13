@@ -408,7 +408,7 @@ export default function NetworkPage() {
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
-									href="/docs#network"
+									href="/network"
 									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs

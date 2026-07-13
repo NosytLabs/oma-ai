@@ -56,7 +56,7 @@ Three modes, all served by the same endpoints:
 
 ## Pricing model
 Pay-as-you-go credits denominated in USDC. Deposit USDC on Base, SOL via
-cross-chain routes, or 20+ chains via HoudiniSwap. Per-model input/output
+cross-chain routes, or 20+ chains via LI.FI / CCTP. Per-model input/output
 rates are listed on `/models` and `GET /v1/models`.
 
 ## Source

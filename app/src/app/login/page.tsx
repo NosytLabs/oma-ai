@@ -595,7 +595,7 @@ function LoginCard(p: LoginCardProps) {
 				<p className="mt-1 text-xs text-text-muted">
 					{accountLoginAvailable
 						? "Wallet or private account number. SIWE on Base mainnet."
-						: "Wallet sign-in is live now. Anonymous account numbers return when auth bootstrap is healthy."}
+						: "Wallet sign-in is live now. Private account numbers return when auth bootstrap is healthy."}
 				</p>
 			</div>
 
@@ -607,7 +607,7 @@ function LoginCard(p: LoginCardProps) {
 				<p className="mt-1 text-xs text-text-muted">
 					{accountLoginAvailable
 						? "Wallet or private account number. SIWE on Base mainnet."
-						: "Wallet sign-in is available. Anonymous account numbers re-enable automatically when auth bootstrap recovers."}
+						: "Wallet sign-in is available. Private account numbers re-enable automatically when auth bootstrap recovers."}
 				</p>
 			</div>
 
@@ -650,7 +650,7 @@ function LoginCard(p: LoginCardProps) {
 					/>
 					<div className="flex-1 text-xs text-text leading-relaxed">
 						<p className="font-semibold mb-1">
-							Anonymous account numbers are temporarily unavailable
+							Private account numbers are temporarily unavailable
 						</p>
 						<p className="text-text-muted">
 							We couldn&apos;t prepare the auth bootstrap for account-number

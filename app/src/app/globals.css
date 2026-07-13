@@ -352,10 +352,6 @@
 		color: var(--color-text-bright);
 	}
 
-	/* ---------- Links ---------- */
-	.link-muted:hover {
-		color: var(--color-text-bright);
-	}
 
 	/* ---------- Animated dot ---------- */
 

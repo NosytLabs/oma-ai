@@ -41,7 +41,7 @@ type RowKey =
 
 const rows: { key: RowKey; label: string; note?: string }[] = [
 	{ key: "x402", label: "x402 pay-per-request (HTTP 402)", note: "Crypto-native, gasless for agents" },
-	{ key: "anonymous_auth", label: "Anonymous auth (no KYC, no signup)" },
+	{ key: "anonymous_auth", label: "Private auth (low-friction signup)" },
 	{ key: "free_tier", label: "Genuine free tier", note: "Not just a trial — ongoing" },
 	{ key: "credit_card_required", label: "Requires credit card", note: "Inverted — ✓ means it requires one" },
 	{ key: "circuit_breaker", label: "Circuit-breaker failover" },
@@ -182,7 +182,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 function CellView({ value, ours }: { value: Cell; ours: boolean }) {
 	if (value === "yes") {
 		return (
-			<div className={`flex justify-center ${ours ? "text-accent" : "text-emerald-400"}`}>
+			<div className={`flex justify-center ${ours ? "text-accent" : "text-zinc-400"}`}>
 				<Check className="w-5 h-5" />
 			</div>
 		);
@@ -360,7 +360,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								crypto-native billing, free tier, account numbers.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-emerald-400">Portkey wins on:</strong>{" "}
+								<strong className="text-zinc-400">Portkey wins on:</strong>{" "}
 								enterprise features (SSO, audit logs, RBAC), observability
 								depth, on-prem deployment.
 							</p>
@@ -373,14 +373,14 @@ Portkey is enterprise-grade but requires a credit card, account
 							<p className="text-sm text-text-secondary mb-3">
 								LiteLLM is a self-hosted proxy — you run it, you manage it, you
 								pay your own infra. oma is fully managed with x402 + USDC +
-								anonymous accounts out of the box.
+								private accounts out of the box.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">oma wins on:</strong> managed
-								infrastructure, payment rails, free tier, account anonymity.
+								infrastructure, payment rails, free tier, account privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-emerald-400">LiteLLM wins on:</strong>{" "}
+								<strong className="text-zinc-400">LiteLLM wins on:</strong>{" "}
 								data sovereignty (your hardware), 100+ provider support,
 								deep customization.
 							</p>
@@ -393,7 +393,7 @@ Portkey is enterprise-grade but requires a credit card, account
 							<p className="text-sm text-text-secondary mb-3">
 								OpenRouter is the closest competitor. Same multi-provider model.
 								OpenRouter wins on brand recognition and provider breadth. oma
-								wins on price (250× cheaper budget tier), privacy (Venice
+								wins on price (250× lower-cost budget tier), privacy (Venice
 								routing), and payment (x402 + USDC).
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
@@ -401,7 +401,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								x402, price, account model.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-emerald-400">OpenRouter wins on:</strong>{" "}
+								<strong className="text-zinc-400">OpenRouter wins on:</strong>{" "}
 								provider breadth, ecosystem integrations, market share.
 							</p>
 						</div>
@@ -414,14 +414,14 @@ Portkey is enterprise-grade but requires a credit card, account
 								Together is a direct inference provider, not a gateway. They
 								own GPUs and serve models directly. oma is a routing layer on
 								top of multiple providers — you get failover, mix-and-match,
-								and Gonka-cheap routes Together can&apos;t match.
+								and Gonka cost-effective routes Together can&apos;t match.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">oma wins on:</strong>{" "}
 								multi-provider, failover, free tier, privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-emerald-400">Together wins on:</strong>{" "}
+								<strong className="text-zinc-400">Together wins on:</strong>{" "}
 								direct GPU access, fine-tuning, dedicated capacity, raw speed.
 							</p>
 						</div>
@@ -434,7 +434,7 @@ Portkey is enterprise-grade but requires a credit card, account
 						Ready to ship faster?
 					</h2>
 					<p className="text-text-secondary mb-6 max-w-xl mx-auto">
-						No credit card. No KYC. Just an account number or a wallet. Run your
+						No credit card required. Low-friction signup — just an account number or a wallet. Run your
 						first request in under a minute.
 					</p>
 					<div className="flex flex-wrap gap-3 justify-center">

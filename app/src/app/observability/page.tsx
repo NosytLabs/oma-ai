@@ -522,7 +522,7 @@ export default function ObservabilityPage() {
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link
-									href="/docs#observability"
+									href="/observability"
 									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs

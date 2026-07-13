@@ -16,7 +16,7 @@ Self-hosted AI inference gateway with wallet-based auth, multi-provider routing,
 ### Payment Methods
 - **USDC on Base** - Direct deposit, instant crediting
 - **Solana SOL** - Cross-chain via Jupiter swap
-- **20+ Chains** - Any token via HoudiniSwap
+- **20+ Chains** - Any token via LI.FI / CCTP
 - **x402 Payments** - On-demand payment receipts for AI agents
 
 ### Developer Features
@@ -93,7 +93,7 @@ cd server && pnpm dev    # Backend (Hono API) :3001
          │              │              │              │
           ▼              ▼              ▼              ▼
      ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐
-     │  Redis  │   │  Venice  │   │ Houdini  │   │On-chain │
+      │  Redis  │   │  Venice  │   │  LI.FI   │   │On-chain │
      │ (Rate    │   │   AI     │   │  Swap   │   │(Base)   │
      │ Limits) │   │          │   │  CCTP   │   │         │
      └─────────┘   └──────────┘   └──────────┘   └─────────┘
@@ -130,8 +130,9 @@ cd server && pnpm dev    # Backend (Hono API) :3001
 |--------|----------|-------------|
 | GET | `/v1/balance` | Get credit balance |
 | POST | `/v1/deposit/usdc` | USDC deposit on Base |
-| POST | `/v1/deposit/houdini` | Cross-chain via Houdini |
-| GET | `/v1/deposit/pending` | List pending deposits |
+| POST | `/v1/deposit/lifi` | Cross-chain via LI.FI |
+| POST | `/v1/deposit/cctp` | Cross-chain via CCTP |
+| GET | `/v1/deposit/status` | Check deposit status |
 
 ### x402 Payments
 
