@@ -72,11 +72,8 @@ services:
       - SOLANA_RPC_URL_FALLBACK=${SOLANA_RPC_URL_FALLBACK}
       - BASE_CHAIN_ID=${BASE_CHAIN_ID:-8453}
 
-      # Houdini bridge
-      - HOUDINI_API_KEY=${HOUDINI_API_KEY}
-      - HOUDINI_API_SECRET=${HOUDINI_API_SECRET}
-      - HOUDINI_PARTNER_ID=${HOUDINI_PARTNER_ID}
-      - HOUDINI_WEBHOOK_SECRET=${HOUDINI_WEBHOOK_SECRET}
+      # Onramp webhook (cross-chain deposits via LI.FI / CCTP). Server reads ONRAMP_WEBHOOK_SECRET.
+      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

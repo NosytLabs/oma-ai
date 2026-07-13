@@ -25,18 +25,20 @@ source of truth:
 
 Action needed: **confirm with repo owner which artifact is production.**
 
-## 2. Security flags (human action required)
+## 2. Security flags
 
-- **Quiknode RPC credential in `app/.env.local`** — a full RPC URL with an
-  embedded token (`https://[chain].quiknode.pro/[token]/...`) is committed
-  locally (gitignored, but present on disk). Rotate/regenerate the Quiknode
-  token and purge from shell history if it ever touched git. `.env.local.bak`
-  also exists — verify it is not tracked.
-- **`server/.env` / `server/.env.bak` (439 lines each)** — both gitignored,
-  present on disk. Both contain secrets. Confirm neither is tracked and that
-  the `.bak` is not a copy of live credentials.
-- `.env.local` / `.env` are correctly in `.gitignore`; verify no secret has
-  ever been committed (`git log -p --all -- <file>` / `gitleaks` recommended).
+- ✅ **Quiknode RPC credential in `app/.env.local`** — gitignored, present on
+  disk with an embedded token. **Action: rotate the Quiknode token externally**
+  (the value persists in the local file until you do). The `.env.local.bak`
+  copy has been **purged from disk**.
+- ✅ **`server/.env` / `server/.env.bak`** — both gitignored; the `.bak` has
+  been **purged from disk**. **`server/.env` remains** — rotate any secrets it
+  holds before reusing.
+- ✅ `.env*` correctly gitignored (with `!.env.example` carve-out). Confirmed
+  zero tracked env files. `.bak` backup files (`*.bak`, `*.backup`, `*.orig`,
+  `*.swp`, `*.swo`, `*~`) are explicitly ignored.
+- Recommended: run `gitleaks` (or `git log -p --all -- <file>`) to confirm no
+  secret has ever been committed historically.
 
 ## 3. Refactor completed (this audit)
 

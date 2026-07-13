@@ -83,22 +83,10 @@ services:
         value: --max-old-space-size=512
 
       # =========================================================================
-      # HOUDINI SWAP CONFIGURATION (required for cross-chain on/off ramps)
+      # ONRAMP / CROSS-CHAIN DEPOSITS (LI.FI + CCTP)
       # =========================================================================
-      - key: HOUDINI_API_KEY
-        sync: false  # Houdini partner API key
-      - key: HOUDINI_API_SECRET
-        sync: false  # Houdini partner API secret
-      - key: HOUDINI_PARTNER_ID
-        sync: false  # Houdini partner ID
-      - key: HOUDINI_WEBHOOK_SECRET
-        sync: false  # For webhook signature verification
-      - key: HOUDINI_ADDRESS_TO
-        sync: false  # Recipient address for Houdini swaps (0x...)
-      - key: HOUDINI_API_URL
-        value: https://api-partner.houdiniswap.com/v2
-      - key: HOUDINI_WS_URL
-        value: wss://partner-api.houdiniswap.com/v2/ws
+      - key: ONRAMP_WEBHOOK_SECRET
+        sync: false  # Webhook signing secret for onramp callbacks (required in production)
 
       # =========================================================================
       # ADDITIONAL API KEYS
