@@ -8,18 +8,23 @@ type HealthStatus = "checking" | "online" | "offline";
 
 const POLL_INTERVAL_MS = 30_000;
 const STALE_TIME_MS = 25_000;
+const HEALTH_TIMEOUT_MS = 2_500;
 
 async function fetchHealth(): Promise<HealthStatus> {
 	try {
-		const res = await fetch("/api/health", {
-			method: "GET",
-			cache: "no-store",
-			// 2.5s timeout. On abort the catch returns "offline" so the
-			// UI never sees an unhandled rejection. Kept well under the
-			// 30s polling cadence so users stuck on /login see the
-			// "Reconnecting…" banner quickly when the API is down.
-			signal: AbortSignal.timeout(2_500),
+		const timeout = new Promise<Response>((_, reject) => {
+			globalThis.setTimeout(
+				() => reject(new Error("health-check-timeout")),
+				HEALTH_TIMEOUT_MS,
+			);
 		});
+		const res = await Promise.race([
+			fetch("/api/health", {
+				method: "GET",
+				cache: "no-store",
+			}),
+			timeout,
+		]);
 		return res.ok ? "online" : "offline";
 	} catch {
 		return "offline";

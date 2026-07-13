@@ -157,8 +157,10 @@ function ConnectorRow({
 
 export function ImprovedConnectButton({
 	align = "right",
+	compact = false,
 }: {
 	align?: "left" | "right";
+	compact?: boolean;
 }) {
 	const {
 		evmAddress: address,
@@ -179,6 +181,7 @@ export function ImprovedConnectButton({
 	const [showInfo, setShowInfo] = useState(false);
 	const [showAccountLogin, setShowAccountLogin] = useState(false);
 	const [connectingId, setConnectingId] = useState<string | null>(null);
+	const [connectError, setConnectError] = useState<string | null>(null);
 	// Pre-fetch the CSRF token so the AccountLoginModal opens race-free
 	// (A-C1 fix: the user can press Enter before any in-modal async fetch).
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
@@ -221,17 +224,39 @@ export function ImprovedConnectButton({
 
 	async function handleConnect(id: string) {
 		setConnectingId(id);
+		setConnectError(null);
 		// Await + try/catch so wallet rejections / missing-connector errors
 		// surface in the UI instead of vanishing silently. Without this, a
 		// user who hits "MetaMask" with no MetaMask installed (or who rejects
 		// the popup) sees the menu close and *nothing* — the error is gone.
 		try {
 			await connectEvm(id);
+			setOpen(false);
 		} catch (err) {
 			log.error("Wallet connect failed:", err);
+			const msg =
+				err instanceof Error
+					? err.message
+					: typeof err === "object" &&
+						  err &&
+						  "message" in err &&
+						  typeof (err as { message: unknown }).message === "string"
+						? (err as { message: string }).message
+						: "Connection failed. Try another wallet or account number.";
+			const denied =
+				/denied|rejected|4001/i.test(msg) ||
+				(typeof err === "object" &&
+					err &&
+					"code" in err &&
+					(err as { code: number }).code === 4001);
+			setConnectError(
+				denied
+					? "Request rejected in wallet. Try again when ready."
+					: msg.slice(0, 160),
+			);
+			// Keep menu open so the user can pick another connector.
 		} finally {
 			setConnectingId(null);
-			setOpen(false);
 		}
 	}
 
@@ -247,7 +272,9 @@ export function ImprovedConnectButton({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className="group flex items-center gap-2 rounded-sm border border-accent/30 bg-accent/5 px-4 py-2 text-sm font-medium text-accent transition-all hover:border-accent/50 hover:bg-accent/10 cursor-pointer"
+					className={`group flex items-center gap-2 rounded-[var(--radius-sm)] border border-accent/30 bg-accent/5 font-medium text-accent transition-all hover:border-accent/50 hover:bg-accent/10 cursor-pointer ${
+						compact ? "px-3.5 py-2 text-xs sm:text-sm" : "px-4 py-2 text-sm"
+					}`}
 					aria-expanded={open}
 					aria-controls="wallet-menu"
 					aria-haspopup="menu"
@@ -317,7 +344,9 @@ export function ImprovedConnectButton({
 				type="button"
 				onClick={() => setOpen(!open)}
 				disabled={isConnecting}
-				className="group relative inline-flex items-center gap-2 overflow-hidden rounded-sm px-5 py-2.5 text-sm font-semibold text-void transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+					className={`group relative inline-flex items-center gap-2 overflow-hidden rounded-[var(--radius-sm)] font-semibold text-[var(--color-accent-fg)] transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+						compact ? "px-3.5 py-2 text-xs sm:px-4 sm:text-sm" : "px-5 py-2.5 text-sm"
+					}`}
 			>
 				<div
 					className="absolute inset-0 rounded-sm"
@@ -339,7 +368,7 @@ export function ImprovedConnectButton({
 					) : (
 						<Wallet className="h-4 w-4" />
 					)}
-					{isConnecting ? "Connecting..." : "Connect Wallet"}
+					{isConnecting ? "Connecting..." : compact ? "Wallet" : "Connect Wallet"}
 				</span>
 			</button>
 
@@ -360,9 +389,33 @@ export function ImprovedConnectButton({
 							<p className="text-[10px] font-mono font-medium uppercase tracking-widest text-text-muted">
 								Connect a wallet
 							</p>
+							{connectError && (
+								<p
+									role="alert"
+									className="mt-2 text-[11px] leading-snug text-error"
+								>
+									{connectError}
+								</p>
+							)}
 						</div>
 
 						<div className="p-2">
+							{availableConnectors.length === 0 && (
+								<p className="px-2 py-3 text-[11px] text-text-muted leading-relaxed">
+									No browser wallets detected. Use{" "}
+									<button
+										type="button"
+										className="text-accent hover:underline"
+										onClick={() => {
+											setOpen(false);
+											setShowAccountLogin(true);
+										}}
+									>
+										account number
+									</button>{" "}
+									or install Coinbase / MetaMask.
+								</p>
+							)}
 							{popular.length > 0 && (
 								<div className="mb-2">
 									<p className="px-1 text-[11px] font-mono uppercase tracking-wider text-text-muted mb-1">

@@ -150,6 +150,7 @@ export const config = {
 		"/settings/:path*",
 		"/deposit/:path*",
 		"/chat/:path*",
+		"/playground",
 		"/playground/:path*",
 		"/image-generation/:path*",
 		"/video-generation/:path*",

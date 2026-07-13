@@ -13,12 +13,12 @@ export function OrganizationJsonLd() {
 		name: "OMA AI",
 		alternateName: "Open Model Access",
 		url: BASE_URL,
-		logo: `${BASE_URL}/favicon.svg`,
+		logo: `${BASE_URL}/logos/oma-icon-512.png`,
 		description:
-			"Run any model, pay per request with USDC. AI models behind one OpenAI-compatible API. x402-native, no subscriptions.",
+			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference paid per request in USDC on Base.",
 		sameAs: [
 			"https://twitter.com/oma_ai",
-			"https://github.com/oma-ai",
+			"https://github.com/NosytLabs/oma-ai",
 		],
 		contactPoint: {
 			"@type": "ContactPoint",
@@ -44,7 +44,7 @@ export function SoftwareApplicationJsonLd() {
 		operatingSystem: "Web",
 		url: BASE_URL,
 		description:
-			"OpenAI-compatible API gateway to 100+ AI models. Pay per request with USDC on Base. No subscriptions.",
+			"OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC pay-per-request on Base.",
 		offers: {
 			"@type": "Offer",
 			price: "0",

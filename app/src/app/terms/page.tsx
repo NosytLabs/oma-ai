@@ -539,7 +539,7 @@ export default function TermsPage() {
 							<ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
 								{[
 									{ href: "/privacy", label: "Privacy" },
-									{ href: "/about", label: "About" },
+									{ href: "/", label: "Home" },
 									{ href: "/pricing", label: "Pricing" },
 									{ href: "/docs", label: "API docs" },
 								].map((l) => (

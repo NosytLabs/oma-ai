@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { WalletProvider } from "./wallet-provider";
 
 /**
@@ -20,16 +20,6 @@ import { WalletProvider } from "./wallet-provider";
  * wallet logic until the browser is available — without forcing an SSR
  * bailout. InnerProvider already gates on `isMounted` itself.
  */
-const WalletSkeleton = () => (
-	<div
-		className="animate-pulse flex items-center gap-2 px-4 py-2.5"
-		aria-hidden="true"
-	>
-		<div className="h-2 w-2 rounded-full bg-text-muted/30" />
-		<div className="h-4 w-20 rounded bg-text-muted/30" />
-	</div>
-);
-
 interface ConnectWalletWrapperProps {
 	children: React.ReactNode;
 }
@@ -41,9 +31,5 @@ export function ConnectWalletWrapper({ children }: ConnectWalletWrapperProps) {
 		setMounted(true);
 	}, []);
 
-	return (
-		<Suspense fallback={<WalletSkeleton />}>
-			<WalletProvider mounted={mounted}>{children}</WalletProvider>
-		</Suspense>
-	);
+	return <WalletProvider mounted={mounted}>{children}</WalletProvider>;
 }

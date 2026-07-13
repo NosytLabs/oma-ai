@@ -2,8 +2,7 @@
 
 /**
  * HomeView — homepage client root.
- * Renders all 8 sections in flow order. Each section is its own client
- * component with viewport-driven entrance motion.
+ * Renders all sections in conversion order.
  */
 
 import { CapabilitiesGrid } from "@/app/_components/home/capabilities-grid";
@@ -11,25 +10,20 @@ import { CodeExample } from "@/app/_components/home/code-example";
 import { FinalCTA } from "@/app/_components/home/final-cta";
 import { Hero } from "@/app/_components/home/hero";
 import { HowItWorks } from "@/app/_components/home/how-it-works";
-import { NetworkStrip } from "@/app/_components/home/network-strip";
-import { Stats } from "@/app/_components/home/stats";
+import { StatsStrip } from "@/app/_components/home/stats-strip";
 import { TrustStrip } from "@/app/_components/home/trust-strip";
 import { X402Banner } from "@/app/_components/home/x402-banner";
+import { MODEL_COUNT } from "@/lib/models-data";
 
-export interface HomeViewProps {
-	modelCount: number;
-}
-
-export function HomeView({ modelCount }: HomeViewProps) {
+export function HomeView() {
 	return (
 		<div className="flex flex-col">
-			<Hero modelCount={modelCount} />
+			<Hero />
 			<TrustStrip />
+			<StatsStrip />
 			<CapabilitiesGrid />
 			<HowItWorks />
-			<CodeExample modelCount={modelCount} />
-			<Stats modelCount={modelCount} />
-			<NetworkStrip />
+			<CodeExample modelCount={MODEL_COUNT} />
 			<X402Banner />
 			<FinalCTA />
 		</div>

@@ -67,17 +67,19 @@ export function Navbar() {
 			}`}
 		>
 			<nav aria-label="Main navigation" className="w-full">
-				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
+				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
-					<div className="flex min-w-0 items-center gap-2 sm:gap-3">
+					<div className="flex min-w-0 items-center gap-2 sm:gap-4">
 						<Magnetic strength={6}>
 							<Link
 								href="/"
-								className="inline-flex shrink-0 items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								aria-label="OMA home"
 							>
-								<OmaLogo size="sm" />
-								<span className="text-sm font-semibold text-text-bright tracking-tight">
+								<span className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)]">
+									<OmaLogo size="sm" />
+								</span>
+								<span className="text-sm font-semibold text-text-bright tracking-tight group-hover:text-accent transition-colors">
 									oma
 								</span>
 							</Link>
@@ -149,7 +151,7 @@ export function Navbar() {
 					{/* RIGHT: actions */}
 					<div className="flex shrink-0 items-center gap-1 sm:gap-2">
 						<m.a
-							href="https://github.com/oma-ai"
+							href="https://github.com/NosytLabs/oma-ai"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="GitHub repository (opens in new tab)"

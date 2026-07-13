@@ -155,12 +155,19 @@ function clearSession() {
 }
 
 function buildSiweMessage(address: string, nonce: string): string {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+	// Prefer the real browser origin so SIWE domain matches the page the user
+	// is on (localhost:3000 in dev, oma-ai.com in prod). Fallback is the app
+	// origin — never the API port (3001), which would fail domain checks.
+	const fallback =
+		process.env.NEXT_PUBLIC_APP_URL ||
+		(typeof window !== "undefined" ? window.location.origin : "https://oma-ai.com");
+	const appUrl =
+		typeof window !== "undefined" ? window.location.origin : fallback;
 	let url: URL;
 	try {
 		url = new URL(appUrl);
 	} catch {
-		url = new URL("http://localhost:3001");
+		url = new URL("https://oma-ai.com");
 	}
 	const siweMsg = new SiweMessage({
 		domain: url.hostname,
@@ -175,7 +182,13 @@ function buildSiweMessage(address: string, nonce: string): string {
 	return siweMsg.toMessage();
 }
 
-function InnerProvider({ children }: { children: ReactNode }) {
+function InnerProvider({
+	children,
+	mounted = false,
+}: {
+	children: ReactNode;
+	mounted?: boolean;
+}) {
 	const {
 		address,
 		isConnected: evmConnected,
@@ -235,23 +248,54 @@ function InnerProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	useEffect(() => {
+		let cancelled = false;
 		const hasDemoCookie =
 			typeof document !== "undefined" &&
 			document.cookie.split("; ").some((c) => c.startsWith("oma-demo="));
 		if (hasDemoCookie) setIsDemo(true);
 
+		// Hard-reload restore: the JWT lives only in the HttpOnly cookie, so the
+		// JS-readable meta cookie is a hint, not authority. Always try /api/user
+		// (proxy attaches cookie → Bearer). That way account-number login survives
+		// a full page refresh even if meta was lost.
 		const stored = getStoredSession();
 		if (stored) {
 			setSession(stored);
-			api.auth
-				.getUser()
-				.then(setUser)
-				.catch(() => {
+		}
+
+		api.auth
+			.getUser()
+			.then((userData) => {
+				if (cancelled) return;
+				setUser(userData);
+				const method =
+					(userData as { authMethod?: AuthMethod }).authMethod ||
+					stored?.authMethod ||
+					"account-number";
+				setSession({ token: "", authMethod: method });
+				// Refresh the meta hint so UI state is stable across navigations.
+				setCookie(
+					"oma_session_meta",
+					JSON.stringify({ authMethod: method }),
+					7,
+				);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				// No valid session cookie — clear any stale meta and UI state.
+				if (stored) {
 					clearSession();
 					setSession(null);
-				});
-		}
-		setIsReady(true);
+				}
+				setUser(null);
+			})
+			.finally(() => {
+				if (!cancelled) setIsReady(true);
+			});
+
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	useEffect(() => {
@@ -402,7 +446,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
 
 	const value = useMemo(
 		() => ({
-			isReady,
+			isReady: isReady && mounted,
 			isConnected: isDemo || isConnected,
 			isAuthenticated: isDemo || !!session,
 			isDemo,
@@ -424,6 +468,7 @@ function InnerProvider({ children }: { children: ReactNode }) {
 		}),
 		[
 			isReady,
+			mounted,
 			isDemo,
 			isConnected,
 			session,
@@ -463,7 +508,7 @@ export function WalletProvider({
 
 	return (
 		<WagmiProvider config={config}>
-			{isMounted ? <InnerProvider>{children}</InnerProvider> : children}
+			<InnerProvider mounted={isMounted}>{children}</InnerProvider>
 		</WagmiProvider>
 	);
 }

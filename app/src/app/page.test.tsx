@@ -5,37 +5,99 @@ import { describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer";
 import HomePage from "./page";
 
-// Mock next/navigation — not exercised by static rendering of HomePage,
-// but Footer + future child components may import usePathname.
+// Mock next/navigation — Footer + future child components may import usePathname.
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
 	useSearchParams: () => new URLSearchParams(),
 	usePathname: () => "/",
 }));
 
-// Mock framer-motion to disable all animations so content is always visible in tests.
-// The new HomeView uses Reveal/RevealStagger which require viewport triggers.
+// Mock framer-motion so content is always visible in tests.
 vi.mock("@/lib/framer-motion-client", () => {
-	// Map of motion tags to their HTML equivalents
 	const TAG_MAP: Record<string, string> = {
-		div: "div", section: "section", article: "article", span: "span",
-		p: "p", ul: "ul", ol: "ol", li: "li", h1: "h1", h2: "h2",
-		h3: "h3", button: "button", a: "a",
+		div: "div",
+		section: "section",
+		article: "article",
+		span: "span",
+		p: "p",
+		ul: "ul",
+		ol: "ol",
+		li: "li",
+		h1: "h1",
+		h2: "h2",
+		h3: "h3",
+		button: "button",
+		a: "a",
 	};
-	// Return an object whose properties return motion components that render real HTML elements
-	// This preserves semantic elements (h1, etc.) for accessibility tests
-	const m = new Proxy({} as Record<string, (props: { children?: React.ReactNode; className?: string }) => React.ReactElement>, {
-		get: (_target, tag: string) => {
-			const htmlTag = TAG_MAP[tag] ?? "div";
-			return ({ children, className, ..._props }: { children?: React.ReactNode; className?: string }) =>
-				React.createElement(htmlTag, { className }, children);
+	const m = new Proxy(
+		{} as Record<
+			string,
+			(props: {
+				children?: React.ReactNode;
+				className?: string;
+			}) => React.ReactElement
+		>,
+		{
+			get: (_target, tag: string) => {
+				const htmlTag = TAG_MAP[tag] ?? "div";
+				return ({
+					children,
+					className,
+					..._props
+				}: {
+					children?: React.ReactNode;
+					className?: string;
+				}) => React.createElement(htmlTag, { className }, children);
+			},
 		},
-	});
+	);
 	return {
 		m: m as unknown as typeof import("@/lib/framer-motion-client").m,
 		useMotionValue: () => ({ get: () => 0 }),
 		useReducedMotion: () => true,
 		useSpring: () => ({ get: () => 0 }),
+	};
+});
+
+// Hero imports `m` from framer-motion directly — stub that too.
+vi.mock("framer-motion", () => {
+	const TAG_MAP: Record<string, string> = {
+		div: "div",
+		section: "section",
+		h1: "h1",
+		h2: "h2",
+		p: "p",
+		ul: "ul",
+		li: "li",
+		span: "span",
+	};
+	const m = new Proxy(
+		{} as Record<
+			string,
+			(props: {
+				children?: React.ReactNode;
+				className?: string;
+			}) => React.ReactElement
+		>,
+		{
+			get: (_target, tag: string) => {
+				const htmlTag = TAG_MAP[tag] ?? "div";
+				return ({
+					children,
+					className,
+				}: {
+					children?: React.ReactNode;
+					className?: string;
+				}) => React.createElement(htmlTag, { className }, children);
+			},
+		},
+	);
+	return {
+		m,
+		motion: m,
+		useReducedMotion: () => true,
+		AnimatePresence: ({ children }: { children: React.ReactNode }) =>
+			children,
 	};
 });
 
@@ -48,18 +110,18 @@ const renderWithQueryClient = (ui: React.ReactElement) => {
 	);
 };
 
-describe("HomePage (revamped 2026-06-30)", () => {
+describe("HomePage", () => {
 	it("renders the hero headline", async () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		// "Pay per request" appears in hero AND stats — just confirm at least one exists
-		expect(screen.getAllByText(/pay per request/i).length).toBeGreaterThan(0);
+		// Headline is split across elements: "AI inference, paid per request in USDC."
+		expect(h1.textContent).toMatch(/paid per request/i);
+		expect(h1.textContent).toMatch(/USDC/i);
 	});
 
 	it("renders the primary CTA", async () => {
 		renderWithQueryClient(<HomePage />);
-		// Primary CTA: "Get API Key" → /login (where API keys are actually issued)
 		const ctaLinks = await screen.findAllByRole("link", {
 			name: /get api key/i,
 		});
@@ -67,11 +129,10 @@ describe("HomePage (revamped 2026-06-30)", () => {
 		expect(ctaLinks[0]).toHaveAttribute("href", "/login");
 	});
 
-	it("renders the x402 / no-signup CTA in the hero", async () => {
+	it("renders the x402 pay-per-request CTA in the hero", async () => {
 		renderWithQueryClient(<HomePage />);
-		// Secondary CTA: "Try without signup" → /docs#x402
 		const docsLinks = await screen.findAllByRole("link", {
-			name: /try without signup/i,
+			name: /x402 pay-per-request/i,
 		});
 		expect(docsLinks.length).toBeGreaterThan(0);
 		expect(docsLinks[0]).toHaveAttribute("href", "/docs#x402");
@@ -80,9 +141,7 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the trust strip with provider wordmarks", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// New TrustStrip: "Routing through" with plain-text provider names
 			expect(screen.getByText(/routing through/i)).toBeInTheDocument();
-			// OpenAI/Venice appear in the trust strip — getAllByText is safe
 			expect(screen.getAllByText("OpenAI").length).toBeGreaterThan(0);
 			expect(screen.getAllByText("Venice").length).toBeGreaterThan(0);
 		});
@@ -91,7 +150,6 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the capabilities section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// New CapabilitiesGrid titles
 			expect(screen.getByText("LLM Chat")).toBeInTheDocument();
 			expect(screen.getByText("Image Generation")).toBeInTheDocument();
 			expect(screen.getByText("Video Generation")).toBeInTheDocument();
@@ -103,21 +161,17 @@ describe("HomePage (revamped 2026-06-30)", () => {
 	it("renders the how-it-works steps", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// All 3 step titles should appear somewhere on the page
 			expect(screen.getByText(/sign in with wallet/i)).toBeInTheDocument();
 			expect(screen.getByText(/pay per call with usdc/i)).toBeInTheDocument();
 		});
-		// "Get your API key" appears in both FinalCTA and possibly the how-it-works step
 		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders the stats section with honest metrics", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			// Stats section now uses "What is actually here" as the eyebrow
 			const signalEl = screen.getByText(/what is actually here/i);
 			expect(signalEl).toBeInTheDocument();
-			// Find the parent section and scope the per-1M query to it
 			const section = signalEl.closest("section");
 			expect(section).toBeInTheDocument();
 			expect(within(section!).getByText(/1M tokens/i)).toBeInTheDocument();
@@ -146,17 +200,16 @@ describe("HomePage (revamped 2026-06-30)", () => {
 describe("Footer", () => {
 	it("renders product links", () => {
 		renderWithQueryClient(<Footer />);
-		// Use getAllByText because "docs" appears in both Resources and Product.
-		expect(screen.getAllByText("docs").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("models").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("pricing").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("chat").length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/docs/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/models/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/pricing/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/chat/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders legal links", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getAllByText("terms").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("privacy").length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/terms/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/privacy/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders OMA brand", () => {
@@ -170,7 +223,7 @@ describe("Footer", () => {
 			name: /github/i,
 		});
 		expect(githubLinks.length).toBeGreaterThan(0);
-		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/oma-ai");
+		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/NosytLabs/oma-ai");
 	});
 
 	it("renders copyright line with year + license", () => {

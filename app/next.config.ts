@@ -1,5 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import { SITE_REDIRECTS } from "./src/lib/site-redirects";
 
 const nextConfig: NextConfig = {
 	poweredByHeader: false,
@@ -19,7 +20,7 @@ const nextConfig: NextConfig = {
 			new Date().toISOString().slice(0, 10),
 	},
 
-	experimental: { optimizePackageImports: ["lucide-react", "recharts", "viem", "wagmi", "framer-motion", "react-markdown", "date-fns", "jose", "zod"] },
+	experimental: {},
 	transpilePackages: [],
 
 	serverExternalPackages: ["porto", "@metamask/connect-evm", "ethers"],
@@ -52,15 +53,22 @@ const nextConfig: NextConfig = {
 				: false,
 	},
 
-	async redirects() { return []; },
+	async redirects() {
+		// Removed marketing surfaces → keep SEO juice & bookmarks alive.
+		// Source list: src/lib/site-redirects.ts (unit-tested).
+		return SITE_REDIRECTS.map((r) => ({ ...r, permanent: true as const }));
+	},
 
 	async rewrites() {
+		// NOTE: Do NOT rewrite `/api/*` to the Hono backend. App Router handlers
+		// under `app/api/**` (incl. catch-all) translate the HttpOnly session
+		// cookie into `Authorization: Bearer` before proxying. A rewrite would
+		// skip that and 401 every authenticated call after hard reload.
 		const apiRewriteDestination = (() => {
 			const url = process.env.NEXT_PUBLIC_API_URL;
 			return url?.trim() ? url : "http://127.0.0.1:3001";
 		})();
 		return [
-			{ source: "/api/:path((?!admin).*)", destination: `${apiRewriteDestination}/:path*` },
 			{ source: "/x402/:path*", destination: `${apiRewriteDestination}/v1/x402/:path*` },
 		];
 	},

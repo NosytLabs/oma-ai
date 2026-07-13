@@ -15,6 +15,7 @@ import {
 } from "../tracing.js";
 import { getCandidateProviders, recordFailover } from "./cross-provider-router.js";
 import { getModelIdForProvider } from "./provider-selector.js";
+import { logger } from "../lib/logger.js";
 
 export { getModelPricing } from "./billing-service.js";
 export { selectProvider } from "./provider-selector.js";
@@ -137,7 +138,28 @@ export async function handleChatCompletion(
       const estimatedCostCents = String(Math.max(1, Math.ceil(estimatedCostUsd * 100)));
 
       const deducted = await preflightDeduction(userId, estimatedCostCents);
-      if (!deducted) throw Object.assign(new Error("Insufficient credits"), { status: 402 });
+      if (!deducted) {
+        // Free tier fallback: route to Gonka/OpenBroker instead of blocking.
+        // Gonka costs us ~$0.0002/M tokens — negligible enough to absorb for
+        // users with zero balance. No billing/credits are touched on this path.
+        const freeModelId = model ? getModelIdForProvider(model, 'gonka', modelId) : null;
+        if (freeModelId) {
+          logger.info({ userId, modelId, gonkaModelId: freeModelId }, "[free-tier] Routing to Gonka");
+          const provider = 'gonka' as Provider;
+          const freeResponse = await callProvider(provider, freeModelId, body, undefined, signal);
+          if (body.stream) {
+            const streamingResponse = new Response(freeResponse.body, {
+              status: freeResponse.status,
+              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": "gonka", "X-Accel-Buffering": "no" },
+            });
+            return { response: streamingResponse, provider: 'gonka', inputTokens };
+          }
+          const json = await freeResponse.json();
+          const nonStreamResponse = Response.json(json, { headers: { "x-provider": "gonka" } });
+          return { response: nonStreamResponse, provider: 'gonka', inputTokens };
+        }
+        throw Object.assign(new Error("Insufficient credits"), { status: 402 });
+      }
 
       // Find the ordered list of candidate providers for this model.
       const candidates = await getCandidateProviders(modelId, model);

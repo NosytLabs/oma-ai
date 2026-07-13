@@ -66,6 +66,7 @@ describe("getWagmiConfigSingleton", () => {
 		} else {
 			process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = ORIGINAL_PROJECT_ID;
 		}
+		clearWindowEthereum();
 	});
 
 	const loadSingleton = async () => {
@@ -74,40 +75,38 @@ describe("getWagmiConfigSingleton", () => {
 		return mod.getWagmiConfigSingleton() as any;
 	};
 
+	it("always registers coinbaseWallet + injected (even without ethereum)", async () => {
+		// Users on Safari / clean Chrome / mobile must still see connect paths.
+		clearWindowEthereum();
+		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+		const config = await loadSingleton();
+
+		const names = connectorCalls.map((c) => c.name);
+		expect(names).toContain("coinbaseWallet");
+		expect(names).toContain("injected");
+		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
+	});
+
 	it("registers coinbaseWallet + injected when window.ethereum exists", async () => {
-		// Stub window.ethereum so the wagmi singleton wires real connectors.
-		// In jsdom (the test environment), there's no provider by default
-		// and wagmi's getProvider throws — so we simulate a present one.
 		setWindowEthereum({ isMetaMask: true });
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 		const config = await loadSingleton();
 
 		const names = connectorCalls.map((c) => c.name);
 		expect(names).toContain("coinbaseWallet");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(1);
-		clearWindowEthereum();
-	});
-
-	it("returns an empty connector list when no window.ethereum is present", async () => {
-		// Ensure no injected provider exists.
-		clearWindowEthereum();
-		const config = await loadSingleton();
-		expect(config.connectors).toHaveLength(0);
+		expect(names).toContain("injected");
+		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
 	});
 
 	it("does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset", async () => {
-		setWindowEthereum({ isMetaMask: true });
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		const config = await loadSingleton();
+		await loadSingleton();
 
 		const names = connectorCalls.map((c) => c.name);
 		expect(names).not.toContain("walletConnect");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(1);
-		clearWindowEthereum();
 	});
 
 	it("registers walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set", async () => {
-		setWindowEthereum({ isMetaMask: true });
 		process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID =
 			"test-walletconnect-project-id";
 		const config = await loadSingleton();
@@ -120,8 +119,15 @@ describe("getWagmiConfigSingleton", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
 		const wcArgs = wcCall as any;
 		expect(wcArgs.args[0].projectId).toBe("test-walletconnect-project-id");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
-		clearWindowEthereum();
+		expect(config.connectors.length).toBeGreaterThanOrEqual(3);
+	});
+
+	it("skips walletConnect for known placeholder project IDs", async () => {
+		process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID =
+			"your_walletconnect_project_id";
+		await loadSingleton();
+		const names = connectorCalls.map((c) => c.name);
+		expect(names).not.toContain("walletConnect");
 	});
 
 	it("always configures Base + Base Sepolia chains", async () => {

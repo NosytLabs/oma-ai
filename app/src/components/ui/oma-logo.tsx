@@ -1,19 +1,19 @@
-/* Hallmark · P4 H5 E4 S5 R4 V4
- * component: logo · genre: atmospheric · theme: terminal (catalog)
- * states: default · hover (sm+md+lg variants)
- * contrast: pass (accent 0xffc8 on void 0x0a0a0f = 13.4:1)
+/**
+ * OMA mark — "Open Gateway"
  *
- * Mark concept: a 40-unit badge with a constructed bar-equalizer (heights
- * deliberately unequal: tall, short, mid — encodes O/M/A as data points),
- * a single status LED in the bottom-right corner, and a hairline baseline
- * tick. No two strokes are the same length. No fake chrome. Locked tokens
- * only — every stroke and fill uses var(--color-*).
+ * Matches generated brand art:
+ *   - rounded terminal badge
+ *   - open emerald ring (gap at ~1 o'clock)
+ *   - three ascending signal bars
+ *   - status LED at the ring gap
+ *
+ * Uses CSS brand tokens so the mark tracks ThemeToggle accents.
  */
 
 const SIZE_MAP = {
-	sm: { px: 22, bar: 1.8, dot: 0.9, frame: 1, notch: 1.5 },
-	md: { px: 30, bar: 2.4, dot: 1.2, frame: 1, notch: 2 },
-	lg: { px: 40, bar: 3, dot: 1.6, frame: 1.25, notch: 2.5 },
+	sm: { px: 22, ring: 2.1, bar: 2.6, led: 1.7 },
+	md: { px: 30, ring: 2.35, bar: 2.9, led: 1.95 },
+	lg: { px: 40, ring: 2.6, bar: 3.2, led: 2.2 },
 } as const;
 
 export function OmaLogo({
@@ -35,72 +35,87 @@ export function OmaLogo({
 			role="img"
 			aria-label="OMA"
 		>
+			{/* Badge */}
 			<rect
-				x={0.5}
-				y={0.5}
-				width={39}
-				height={39}
-				rx={3}
+				width={40}
+				height={40}
+				rx={10}
 				fill="var(--color-void)"
-				stroke="var(--color-border)"
-				strokeWidth={s.frame}
 			/>
-
-			<line
-				x1={8}
-				y1={32}
-				x2={28}
-				y2={32}
-				stroke="var(--color-border-bright)"
+			<rect
+				x={1.5}
+				y={1.5}
+				width={37}
+				height={37}
+				rx={9}
+				fill="var(--color-panel)"
+				stroke="var(--color-border-hi)"
 				strokeWidth={1}
-				strokeLinecap="round"
 			/>
 
-			<line
-				x1={8}
-				y1={11}
-				x2={8}
-				y2={28}
-				stroke="var(--color-accent)"
-				strokeWidth={s.bar}
-				strokeLinecap="round"
+			{/* Soft glow */}
+			<circle
+				cx={20}
+				cy={20}
+				r={13.5}
+				fill="var(--color-accent)"
+				opacity={0.08}
 			/>
 
-			<line
-				x1={16}
-				y1={18}
-				x2={16}
-				y2={28}
+			{/* Open ring — gap at ~1 o'clock */}
+			<circle
+				cx={20}
+				cy={20}
+				r={11.2}
 				stroke="var(--color-accent)"
-				strokeWidth={s.bar}
+				strokeWidth={s.ring}
 				strokeLinecap="round"
+				strokeDasharray="58 12.5"
+				strokeDashoffset={-5}
+			/>
+
+			{/* Signal bars */}
+			<rect
+				x={13.6}
+				y={22.2}
+				width={s.bar}
+				height={6}
+				rx={s.bar / 2}
+				fill="var(--color-accent)"
 				opacity={0.7}
 			/>
-
-			<line
-				x1={24}
-				y1={14}
-				x2={24}
-				y2={28}
-				stroke="var(--color-accent)"
-				strokeWidth={s.bar}
-				strokeLinecap="round"
-				opacity={0.45}
+			<rect
+				x={18.6}
+				y={18.2}
+				width={s.bar}
+				height={10}
+				rx={s.bar / 2}
+				fill="var(--color-accent)"
+				opacity={0.88}
+			/>
+			<rect
+				x={23.6}
+				y={14.2}
+				width={s.bar}
+				height={14}
+				rx={s.bar / 2}
+				fill="var(--color-accent)"
 			/>
 
-			<line
-				x1={8}
-				y1={14}
-				x2={24}
-				y2={22}
-				stroke="var(--color-accent)"
-				strokeWidth={s.notch}
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				opacity={0.85}
+			{/* Status LED at ring gap */}
+			<circle
+				cx={30.2}
+				cy={10.8}
+				r={s.led * 1.7}
+				fill="var(--color-accent)"
+				opacity={0.22}
 			/>
-
-			<circle cx={32} cy={10} r={s.dot} fill="var(--color-accent)" />
+			<circle
+				cx={30.2}
+				cy={10.8}
+				r={s.led}
+				fill="var(--color-accent-bright)"
+			/>
 		</svg>
 	);
 }

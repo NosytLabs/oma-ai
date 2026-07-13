@@ -39,6 +39,20 @@ export async function checkIdempotencyKey(
             }
             return { isNew: true };
           }
+          // Fresh processing lock: poll for the completed result instead of
+          // returning the "processing" placeholder to the concurrent caller.
+          const deadline = Date.now() + Math.max(lockTtl, PROCESSING_LOCK_TTL) * 1000;
+          while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 200));
+            const current = await redis.get(lockKey);
+            if (!current) break;
+            const cp = JSON.parse(current);
+            if (cp.status !== "processing") {
+              return { isNew: false, existingResponse: cp };
+            }
+          }
+          // Timed out (the original request likely errored): allow a retry.
+          return { isNew: true };
         }
         return { isNew: false, existingResponse: parsed };
       } catch {

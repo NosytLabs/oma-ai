@@ -2,11 +2,12 @@
 
 **Website:** https://oma-ai.com  
 **Version:** 2.1.0  
-**Status:** Production Ready
+**Status:** Production Ready  
+**Brand:** Open Model Access · void `#07090a` · accent `#46d39a` · see `BRAND.md`
 
-Self-hosted AI inference gateway with wallet-based auth (no account required), multi-provider routing, cross-chain deposits, and native crypto payments.
+Self-hosted AI inference gateway with wallet-based auth, multi-provider routing, cross-chain deposits, and native crypto payments (USDC on Base, x402).
 
-> **Audit status (2026-07-06):** All validation gates green — server tsc 0 errors, 705/707 tests passing, app tsc + build + 117 tests green. Added startup markup-drift guard (`models.ts`) that WARNS when any model sells at ≤0% markup or below the operator's `OMA_MODEL_MARKUP_OVERRIDES` floor (price-drift vs upstream). Fixed README port docs (frontend :3000 / API :3001). Added GitHub templates (issue/PR/CODEOWNERS/SECURITY/FUNDING), `.gitignore`/`.dockerignore` Docusaurus+Turbo safety net.
+> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). Removed dead marketing routes (`/about`, `/blog`, `/faq`, …) with permanent redirects. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App: typecheck + lint clean, **127** tests green.
 
 ---
 

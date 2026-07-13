@@ -20,10 +20,12 @@ Thumbs.db
 coverage/
 *.png
 *.jpg
+*.ico
+# Brand / static site assets (Next serves app/public)
 !app/public/**/*.png
 !app/public/**/*.jpg
-!public/icons/**/*.png
-!public/screenshots/*.png
+!app/public/**/*.ico
+!app/public/**/*.svg
 audit_*/
 audit_results_*/
 *_audit*.md
@@ -54,7 +56,8 @@ screenshots/visual-audit-*/
 screenshots/*.txt
 .audit/
 .opencode/audit-*/
-public/
+# Root-level public only (Next app assets live in app/public/)
+/public/
 scripts/remove-duplicate-hooks.ts
 server/tsconfig.tsbuildinfo
 app/tsconfig.tsbuildinfo
@@ -82,3 +85,6 @@ app/.vibedoctor/
 test-results/
 tmp/lighthouse/
 server/models.json.bak
+
+# debug session artifacts
+.dbg/

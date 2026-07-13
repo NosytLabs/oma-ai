@@ -1,0 +1,110 @@
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+	REMOVED_PUBLIC_PATHS,
+	SITE_REDIRECTS,
+} from "./site-redirects";
+import sitemap from "@/app/sitemap";
+import manifest from "@/app/manifest";
+
+const publicDir = join(process.cwd(), "public");
+
+describe("SITE_REDIRECTS (shipped next.config source)", () => {
+	it("covers every removed public path with a permanent-style mapping", () => {
+		const sources = SITE_REDIRECTS.map((r) => r.source);
+		for (const path of REMOVED_PUBLIC_PATHS) {
+			const covered =
+				sources.includes(path) ||
+				sources.some((s) => s === `${path}/:path*` || s.startsWith(`${path}/`));
+			expect(covered, `missing redirect for ${path}`).toBe(true);
+		}
+	});
+
+	it("never redirects a removed path onto another removed path", () => {
+		const removed = new Set<string>(REMOVED_PUBLIC_PATHS);
+		for (const r of SITE_REDIRECTS) {
+			const destPath = r.destination.split("#")[0];
+			if (destPath === "/") continue;
+			expect(removed.has(destPath)).toBe(false);
+		}
+	});
+
+	it("maps known consolidations to live product surfaces", () => {
+		const bySource = Object.fromEntries(
+			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
+		);
+		expect(bySource["/about"]).toBe("/");
+		expect(bySource["/faq"]).toBe("/pricing#faq");
+		expect(bySource["/blog"]).toBe("/changelog");
+		expect(bySource["/status"]).toBe("/network");
+		expect(bySource["/signup"]).toBe("/login");
+		expect(bySource["/playground"]).toBe("/chat");
+	});
+});
+
+describe("sitemap excludes removed marketing routes", () => {
+	it("does not list any REMOVED_PUBLIC_PATHS URL", () => {
+		const urls = sitemap().map((e) => e.url);
+		for (const path of REMOVED_PUBLIC_PATHS) {
+			const hit = urls.some(
+				(u) =>
+					u === `https://oma-ai.com${path}` ||
+					u.startsWith(`https://oma-ai.com${path}/`),
+			);
+			expect(hit, `sitemap still lists ${path}`).toBe(false);
+		}
+	});
+});
+
+describe("brand assets on disk (public/)", () => {
+	const required = [
+		"favicon.svg",
+		"favicon.ico",
+		"favicon-16x16.png",
+		"favicon-32x32.png",
+		"apple-touch-icon.png",
+		"og-image.png",
+		"logos/oma-logo.svg",
+		"logos/oma-icon-192.png",
+		"logos/oma-icon-512.png",
+	];
+
+	it.each(required)("exists: %s", (rel) => {
+		expect(existsSync(join(publicDir, rel))).toBe(true);
+	});
+
+	it("favicon.svg encodes void + accent and open-gateway mark geometry", () => {
+		const svg = readFileSync(join(publicDir, "favicon.svg"), "utf8");
+		expect(svg).toContain("#07090a");
+		expect(svg).toContain("#46d39a");
+		// Open ring (stroked circle with dash gap)
+		expect(svg).toMatch(/stroke-dasharray/i);
+		// Signal bars (multiple filled rects with accent)
+		const barRects = svg.match(/fill="#46d39a"/g) ?? [];
+		expect(barRects.length).toBeGreaterThanOrEqual(3);
+		// LED at ring gap (small filled circles)
+		expect(svg).toMatch(/circle[^>]+fill="#46d39a"/);
+	});
+
+	it("lockup SVG uses the same brand hex tokens", () => {
+		const svg = readFileSync(join(publicDir, "logos/oma-logo.svg"), "utf8");
+		expect(svg).toContain("#07090a");
+		expect(svg).toContain("#46d39a");
+	});
+});
+
+describe("manifest brand wiring", () => {
+	it("uses void background and references brand icons that exist on disk", () => {
+		const m = manifest();
+		expect(m.background_color).toBe("#07090a");
+		expect(m.theme_color).toBe("#07090a");
+		expect(m.icons?.length).toBeGreaterThan(0);
+		for (const icon of m.icons ?? []) {
+			const rel = icon.src.replace(/^\//, "");
+			expect(existsSync(join(publicDir, rel)), `missing icon ${icon.src}`).toBe(
+				true,
+			);
+		}
+	});
+});

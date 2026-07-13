@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, api, type Session, type User } from "@/lib/api";
@@ -241,9 +242,9 @@ export default function SettingsPage() {
 					>
 						<UserIcon className="h-7 w-7 text-accent" />
 					</m.div>
-					<h2 className="mb-2 text-center text-xl font-bold tracking-tight">
+					<h1 className="mb-2 text-center text-xl font-bold tracking-tight text-text-bright">
 						Sign in to manage your account
-					</h2>
+					</h1>
 					<p className="mb-6 text-center text-sm text-text-secondary">
 						Settings covers your wallets, account number, sessions, and API
 						keys.
@@ -268,26 +269,32 @@ export default function SettingsPage() {
 					</ul>
 
 					<div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-						<m.button
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
+						<Button
+							variant="primary"
+							size="md"
+							className="w-full sm:w-auto"
 							onClick={() => connectEvm()}
-							className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-void shadow-lg shadow-accent/20 transition-all hover:bg-accent/90 sm:w-auto"
+							leftIcon={<Hexagon className="h-4 w-4" aria-hidden="true" />}
 						>
-							<Hexagon className="h-4 w-4" />
 							Connect wallet
-						</m.button>
-						<m.button
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
+						</Button>
+						<Button
+							variant="secondary"
+							size="md"
+							className="w-full sm:w-auto"
 							onClick={() => setShowAccountLogin(true)}
-							className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-text transition-colors hover:border-accent/60 hover:text-text-bright sm:w-auto"
+							leftIcon={<KeyRound className="h-4 w-4" aria-hidden="true" />}
 						>
-							<KeyRound className="h-4 w-4" />
 							Use account number
-						</m.button>
+						</Button>
 					</div>
-					<div className="mt-3 text-center">
+					<div className="mt-4 flex flex-col items-center gap-2 text-center">
+						<a
+							href="/login?method=account&next=/settings"
+							className="text-xs text-accent hover:underline underline-offset-2"
+						>
+							Open full login →
+						</a>
 						<a
 							href="/dashboard?demo=1"
 							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text"

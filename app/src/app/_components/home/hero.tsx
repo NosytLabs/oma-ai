@@ -1,278 +1,178 @@
 "use client";
 
 /**
- * Hero — section 1 of the homepage.
- * Asymmetric split: copy on the left, animated terminal on the right.
- * No eyebrow (max 1 per 3 sections — reserved for the x402 banner).
- * Single primary CTA + single secondary CTA. Buttons do not wrap on desktop.
+ * Home · Hero
+ *
+ * Product-first landing: clear value prop, dual CTAs (try / integrate),
+ * and a live code strip that shows the OpenAI-compatible surface.
  */
 
-import { m } from "@/lib/framer-motion-client";
-import { ArrowRight, Copy, Terminal, ChevronDown } from "lucide-react";
+import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
+import { m } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/components/ui/utils";
-import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+import { MODEL_COUNT } from "@/lib/models-data";
 
-// Derive actual price range from the real model catalog
-const PRICE_RANGE_INPUT = (() => {
-	const prices = MODELS.map((m) => m.inputPricePer1M);
-	const min = Math.min(...prices);
-	const max = Math.max(...prices);
-	return `${formatPricePerMillion(min)} – ${formatPricePerMillion(max)}`;
-})();
-
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-
-const CURL_SNIPPET = `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer $OMA_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [{ "role": "user", "content": "Hello!" }]
-  }'`;
-
-const container = {
-	hidden: {},
-	show: {
-		transition: { staggerChildren: 0.12, delayChildren: 0.1 },
-	},
-};
-
-const child = {
-	hidden: { opacity: 0, y: 24 },
-	show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE_OUT } },
-};
-
-export interface HeroProps {
-	modelCount: number;
+function reveal(index: number) {
+	return {
+		initial: { opacity: 0, y: 16 },
+		animate: { opacity: 1, y: 0 },
+		transition: {
+			delay: 0.05 + index * 0.06,
+			duration: 0.55,
+			ease: [0.2, 0.8, 0.2, 1] as const,
+		},
+	};
 }
 
-export function Hero({ modelCount }: HeroProps) {
+export function Hero() {
 	return (
-		<section
-			aria-labelledby="hero-headline"
-			className="relative overflow-hidden pt-8 pb-16 sm:pt-10 sm:pb-20"
-		>
-			<div className="aurora" aria-hidden="true" />
+		<section className="relative overflow-hidden">
+			{/* Atmosphere */}
 			<div
-				className="pointer-events-none absolute inset-0 -z-10 bg-grid mask-radial opacity-40"
 				aria-hidden="true"
-			/>
-			<div
-				className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px]"
-				style={{
-					background:
-						"radial-gradient(ellipse at 70% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent) 0%, transparent 60%)",
-				}}
-				aria-hidden="true"
-			/>
+				className="pointer-events-none absolute inset-0 -z-10"
+			>
+				<div className="absolute inset-0 bg-grid opacity-[0.28] mask-radial" />
+				<div className="absolute -left-40 top-8 h-[32rem] w-[32rem] rounded-full bg-accent/[0.09] blur-[140px]" />
+				<div className="absolute right-[-10rem] top-32 h-[26rem] w-[26rem] rounded-full bg-tertiary/[0.07] blur-[140px]" />
+				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+			</div>
 
-				<div className="container-page">
-				<div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center min-h-[52dvh]">
-					{/* suppressHydrationWarning on the motion wrappers: framer-motion
-					   applies opacity:0 + transform at first paint, which the SSR
-					   can't reproduce without serializing the variant state.
-					   The content (text, structure) still hydrates correctly. */}
-					<m.div
-						className="flex flex-col items-start text-left"
-						variants={container}
-						initial="hidden"
-						animate="show"
-						suppressHydrationWarning
-					>
+			<div className="container-page pt-16 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
+				<div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+					{/* Copy column */}
+					<div>
+						<m.div {...reveal(0)} className="mb-6">
+							<span className="badge">
+								<span
+									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
+									aria-hidden="true"
+								/>
+								OpenAI-compatible · USDC on Base
+							</span>
+						</m.div>
+
 						<m.h1
-							id="hero-headline"
-							className="display-headline text-text-bright"
-							variants={child}
-							suppressHydrationWarning
+							{...reveal(1)}
+							className="h1-hero max-w-3xl text-text-bright"
+							style={{ textWrap: "balance" }}
 						>
-							Run any model.
-							<br />
-							<span className="gradient-text-accent">Pay per request.</span>
+							AI inference,{" "}
+							<span className="italic-accent">paid per request</span> in
+							USDC.
 						</m.h1>
 
 						<m.p
-							className="mt-6 text-xl sm:text-2xl text-text-secondary leading-relaxed max-w-lg"
-							variants={child}
-							suppressHydrationWarning
+							{...reveal(2)}
+							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text-secondary sm:text-[1.125rem]"
+							style={{ textWrap: "pretty" }}
 						>
-							{modelCount}+ AI models behind one OpenAI-compatible API.
-							x402-native USDC payments on Base. No subscriptions, no
-							monthly bills, no email.
+							One gateway, {MODEL_COUNT}+ models underneath. Wallet-based auth,
+							credit billing, and x402 pay-per-request for agents — drop-in
+							OpenAI SDK compatibility.
 						</m.p>
 
 						<m.div
+							{...reveal(3)}
 							className="mt-9 flex flex-wrap items-center gap-3"
-							variants={child}
-							suppressHydrationWarning
 						>
-							<Button
-								asChild
-								size="lg"
-								rightIcon={<ArrowRight className="h-4 w-4" />}
+							<Link
+								href="/login"
+								className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px]"
 							>
-								<Link href="/login">Get API Key</Link>
-							</Button>
-							<Button asChild size="lg" variant="secondary">
-								<Link href="/docs#x402">Try without signup</Link>
-							</Button>
+								<KeyRound className="h-4 w-4" aria-hidden="true" />
+								Get API key
+								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							</Link>
+							<Link
+								href="/chat"
+								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"
+							>
+								<Sparkles className="h-4 w-4" aria-hidden="true" />
+								Try chat
+							</Link>
+							<Link
+								href="/docs#x402"
+								className="btn-ghost inline-flex h-12 items-center justify-center gap-2 px-3 text-[13px] text-text-muted"
+							>
+								x402 pay-per-request
+							</Link>
 						</m.div>
 
-					<m.div
-						className="mt-5 flex items-center gap-2 text-xs text-text-muted font-mono"
-						variants={child}
-						suppressHydrationWarning
-					>
-						<span className="inline-block h-1.5 w-1.5 rounded-full bg-accent pulse-ring" />
-						<span suppressHydrationWarning>
-							<span className="text-text-secondary">No credit card</span>
-							<span className="mx-2 text-text-tertiary">·</span>
-							<span className="text-text-secondary">x402 pay-per-request</span>
-							<span className="mx-2 text-text-tertiary">·</span>
-							<span className="text-text-secondary">No prompts stored</span>
-							<span className="mx-2 text-text-tertiary">·</span>
-							<span className="text-text-secondary">From {PRICE_RANGE_INPUT} / 1M tokens</span>
-						</span>
-					</m.div>
-					</m.div>
+						<m.ul
+							{...reveal(4)}
+							className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-mono text-text-muted"
+						>
+							<li className="inline-flex items-center gap-1.5">
+								<Zap className="h-3 w-3 text-accent" aria-hidden="true" />
+								Streaming + function calling
+							</li>
+							<li className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-text-tertiary" />
+								SIWE wallet auth
+							</li>
+							<li className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-text-tertiary" />
+								Circuit-breaker failover
+							</li>
+							<li className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-tertiary" />
+								Pay in USDC
+							</li>
+							<li className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-tertiary" />
+								Account number login
+							</li>
+						</m.ul>
+					</div>
 
-					<m.div
-						initial={{ opacity: 0, y: 32 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.8, ease: EASE_OUT, delay: 0.3 }}
-						className="w-full"
-						suppressHydrationWarning
-					>
-						<TerminalBlock code={CURL_SNIPPET} />
+					{/* Live request card */}
+					<m.div {...reveal(3)} className="relative">
+						<div
+							aria-hidden="true"
+							className="absolute -inset-4 rounded-2xl bg-accent/[0.04] blur-2xl"
+						/>
+						<div className="relative overflow-hidden rounded-xl border border-border-hi bg-surface-elevated/90 shadow-xl backdrop-blur-sm">
+							<div className="flex items-center gap-2 border-b border-border px-4 py-3">
+								<span className="h-2 w-2 rounded-full bg-error/80" />
+								<span className="h-2 w-2 rounded-full bg-warning/80" />
+								<span className="h-2 w-2 rounded-full bg-success/80" />
+								<span className="ml-2 font-mono text-[11px] text-text-muted">
+									POST /v1/chat/completions
+								</span>
+								<span className="ml-auto rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] text-accent">
+									200 OK · 142ms
+								</span>
+							</div>
+							<pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
+								<code>
+									<span className="text-info">curl</span> https://api.oma-ai.com
+									/v1/chat/completions \{"\n"}
+									{"  "}
+									<span className="text-text-muted">-H</span>{" "}
+									<span className="text-[var(--color-secondary)]">
+										&quot;Authorization: Bearer $OMA_KEY&quot;
+									</span>{" "}
+									\{"\n"}
+									{"  "}
+									<span className="text-text-muted">-d</span>{" "}
+									<span className="text-[var(--color-secondary)]">
+										&apos;{`{"model":"llama-3.3-70b","messages":[...]}`}&apos;
+									</span>
+									{"\n\n"}
+									<span className="text-text-muted">
+										{"// billed in USDC · settled on Base"}
+									</span>
+									{"\n"}
+									<span className="text-accent">
+										{`{ "id": "chatcmpl_…", "usage": { "total_tokens": 87 } }`}
+									</span>
+								</code>
+							</pre>
+						</div>
 					</m.div>
 				</div>
 			</div>
-
-			<m.div
-				className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				transition={{ delay: 1.2, duration: 0.6 }}
-				aria-hidden="true"
-			>
-				<span className="text-[10px] uppercase tracking-[0.2em] font-mono text-text-muted">
-					Scroll
-				</span>
-				<ChevronDown className="h-4 w-4 text-text-muted animate-bounce" />
-			</m.div>
 		</section>
-	);
-}
-
-function TerminalBlock({ code }: { code: string }) {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		try {
-			await navigator.clipboard.writeText(code);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 1800);
-		} catch {
-			// best-effort
-		}
-	};
-
-	return (
-		<div className="surface-code overflow-hidden shadow-[0_20px_60px_-30px_var(--color-accent-glow)] border-[color-mix(in_srgb,var(--color-accent)_20%,var(--color-border))]">
-			<div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-[var(--color-surface)]">
-				<span
-					className="h-2.5 w-2.5 rounded-full"
-					style={{ background: "#ff5f57" }}
-					aria-hidden="true"
-				/>
-				<span
-					className="h-2.5 w-2.5 rounded-full"
-					style={{ background: "#febc2e" }}
-					aria-hidden="true"
-				/>
-				<span
-					className="h-2.5 w-2.5 rounded-full"
-					style={{ background: "#28c840" }}
-					aria-hidden="true"
-				/>
-				<span className="ml-3 inline-flex items-center gap-1.5 text-[11px] text-text-muted font-mono">
-					<Terminal className="h-3 w-3" aria-hidden="true" />
-					api.oma-ai.com
-				</span>
-				<button
-					type="button"
-					onClick={handleCopy}
-					className={cn(
-						"ml-auto inline-flex items-center gap-1.5 px-2.5 py-1",
-						"rounded text-[11px] font-mono",
-						"border border-border-bright text-text-secondary",
-						"hover:border-accent hover:text-accent",
-						"transition-colors duration-200",
-						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-					)}
-					aria-label={copied ? "Copied" : "Copy snippet"}
-				>
-					{copied ? (
-						<>
-							<svg
-								className="h-3 w-3"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth={2}
-								aria-hidden="true"
-							>
-								<polyline points="20 6 9 17 4 12" />
-							</svg>
-							Copied
-						</>
-					) : (
-						<>
-							<Copy className="h-3 w-3" aria-hidden="true" />
-							Copy
-						</>
-					)}
-				</button>
-			</div>
-			<pre className="p-5 text-text-secondary overflow-x-auto leading-relaxed whitespace-pre">
-				<code className="font-mono text-[13px] sm:text-[14px]">
-					<TokenizedCode code={code} />
-				</code>
-			</pre>
-		</div>
-	);
-}
-
-function TokenizedCode({ code }: { code: string }) {
-	const tokens: { text: string; cls: string }[] = [];
-	const regex =
-		/(\$[A-Z_]+)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(curl\b)|(--?[a-zA-Z-]+)|(https?:\/\/[^\s\\]+)|(\b\w+\b)(?=\s*:)/g;
-	let lastIndex = 0;
-	for (const m of code.matchAll(regex)) {
-		if (m.index > lastIndex) {
-			tokens.push({ text: code.slice(lastIndex, m.index), cls: "" });
-		}
-		if (m[1]) tokens.push({ text: m[1], cls: "text-accent font-medium" });
-		else if (m[2] || m[3])
-			tokens.push({ text: m[2] || m[3], cls: "text-[var(--color-secondary)]" });
-		else if (m[4]) tokens.push({ text: m[4], cls: "text-info" });
-		else if (m[5]) tokens.push({ text: m[5], cls: "text-text-muted" });
-		else if (m[6]) tokens.push({ text: m[6], cls: "text-[var(--color-tertiary)]" });
-		else if (m[7]) tokens.push({ text: m[7], cls: "text-accent-bright" });
-		lastIndex = m.index + m[0].length;
-	}
-	if (lastIndex < code.length) {
-		tokens.push({ text: code.slice(lastIndex), cls: "" });
-	}
-	return (
-		<>
-			{tokens.map((t, i) => (
-				<span key={i} className={t.cls || undefined}>
-					{t.text}
-				</span>
-			))}
-		</>
 	);
 }

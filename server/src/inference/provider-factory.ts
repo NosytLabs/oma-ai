@@ -12,7 +12,7 @@ export interface ProviderEndpoints {
 }
 
 export interface ProviderFactoryConfig {
-  name: "venice" | "surplus";
+  name: "venice" | "surplus" | "gonka";
   apiKeyConfigPath?: string;
   baseUrl: string;
   endpoints: ProviderEndpoints;
@@ -74,7 +74,7 @@ export function createProvider<T extends BaseInferenceProvider>(
 }
 
 export async function healthCheck(
-  _provider: "venice" | "surplus",
+  _provider: "venice" | "surplus" | "gonka",
   baseUrl: string,
   healthPath: string,
   timeoutMs: number = DEFAULT_HEALTH_CHECK_TIMEOUT_MS

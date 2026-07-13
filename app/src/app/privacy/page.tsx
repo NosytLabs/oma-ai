@@ -600,8 +600,9 @@ export default function PrivacyPage() {
 							<ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
 								{[
 									{ href: "/terms", label: "Terms" },
-									{ href: "/about", label: "About" },
+									{ href: "/", label: "Home" },
 									{ href: "/pricing", label: "Pricing" },
+									{ href: "/docs", label: "Docs" },
 								].map((l) => (
 									<li key={l.href}>
 										<Link

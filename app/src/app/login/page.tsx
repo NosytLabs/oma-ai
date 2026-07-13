@@ -72,10 +72,9 @@ import {
 	Wallet as WalletIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
 	forwardRef,
-	Suspense,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -85,18 +84,18 @@ import {
 import { SiweMessage } from "siwe";
 import { base as baseChain } from "wagmi/chains";
 import { AccountLoginModal } from "@/components/account-login-modal";
-import { log } from "@/lib/logger";
 import { useApiHealth } from "@/components/api-status";
 import {
 	AuthError,
-	AuthSkeleton,
 	SiwePreview,
 	shapeAuthError,
 	WalletPicker,
 	WalletStatus,
 } from "@/components/auth";
+import { OmaLogo } from "@/components/ui/oma-logo";
 import { useWallet } from "@/components/wallet-provider";
 import { api } from "@/lib/api";
+import { log } from "@/lib/logger";
 import { fadeUpProps } from "@/lib/motion";
 import { safeNextPath } from "@/lib/safe-next-path";
 
@@ -113,12 +112,18 @@ type AuthTab = "wallet" | "account";
  * authorize (the OMA Terms of Service statement).
  */
 function buildPreviewSiweMessage(address: `0x${string}`): string {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+	// Mirror wallet-provider: browser origin first so the preview matches
+	// the SIWE domain the user will actually sign.
+	const fallback =
+		process.env.NEXT_PUBLIC_APP_URL ||
+		(typeof window !== "undefined" ? window.location.origin : "https://oma-ai.com");
+	const appUrl =
+		typeof window !== "undefined" ? window.location.origin : fallback;
 	let url: URL;
 	try {
 		url = new URL(appUrl);
 	} catch {
-		url = new URL("http://localhost:3001");
+		url = new URL("https://oma-ai.com");
 	}
 	// Note: nonce value below is illustrative. The real nonce comes from
 	// the server during the actual sign flow (`/api/auth/nonce`).
@@ -141,7 +146,6 @@ function buildPreviewSiweMessage(address: `0x${string}`): string {
 
 function LoginInner() {
 	const router = useRouter();
-	const params = useSearchParams();
 	const {
 		isReady,
 		isAuthenticated,
@@ -154,12 +158,15 @@ function LoginInner() {
 		availableConnectors,
 	} = useWallet();
 
-	const rawNext = params.get("next") || "/dashboard";
-	const next = safeNextPath(rawNext);
-	const initialTab = (
-		params.get("method") === "account" ? "account" : "wallet"
-	) as AuthTab;
-	const [tab, setTab] = useState<AuthTab>(initialTab);
+	const [next, setNext] = useState("/dashboard");
+	const [tab, setTab] = useState<AuthTab>("wallet");
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const params = new URLSearchParams(window.location.search);
+		setNext(safeNextPath(params.get("next") || "/dashboard"));
+		setTab(params.get("method") === "account" ? "account" : "wallet");
+	}, []);
 
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
 	const [csrfError, setCsrfError] = useState(false);
@@ -182,7 +189,9 @@ function LoginInner() {
 			})
 			.catch((err) => {
 				if (cancelled) return;
-			log.warn("CSRF pre-fetch failed:", err);
+				// Expected when API is down (placeholder DATABASE_URL / offline).
+				// UI surfaces csrfError + offline banner; avoid noisy console.
+				log.debug("CSRF pre-fetch failed", err);
 				setCsrfError(true);
 			})
 			.finally(() => {
@@ -279,14 +288,6 @@ function LoginInner() {
 		[evmAddress],
 	);
 
-	if (!isReady) {
-		return (
-			<div className="flex min-h-[80vh] items-center justify-center px-4">
-				<AuthSkeleton />
-			</div>
-		);
-	}
-
 	const walletPanelState: "disconnected" | "authenticating" | "connected" =
 		isAuthenticating
 			? "authenticating"
@@ -295,22 +296,20 @@ function LoginInner() {
 				: "disconnected";
 
 	return (
-		<div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
+		<div className="page-shell relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center">
 			<div
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10"
+				className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
 			>
-				<div className="absolute inset-0 bg-gradient-to-br from-void via-void to-surface" />
-				<div className="absolute -left-32 top-20 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-				<div className="absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
+				<div className="absolute inset-0 bg-grid opacity-[0.18] mask-radial" />
+				<div className="absolute -left-24 top-8 h-80 w-80 rounded-full bg-accent/12 blur-[120px]" />
+				<div className="absolute right-[-4rem] top-1/3 h-72 w-72 rounded-full bg-tertiary/10 blur-[120px]" />
+				<div className="absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-secondary/8 blur-[140px]" />
 			</div>
 
-			<div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl grid-cols-1 items-center gap-12 px-4 py-10 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-16 md:px-8">
+			<div className="container-page grid w-full max-w-6xl grid-cols-1 items-center gap-8 py-4 md:grid-cols-[1.08fr_0.92fr] md:gap-10">
 				<BrandPitch />
-				<m.div
-					{...fadeUpProps(0)}
-					className="mx-auto w-full max-w-md space-y-4"
-				>
+				<div className="mx-auto w-full max-w-md space-y-6">
 					<X402Callout />
 					<LoginCard
 						tab={tab}
@@ -318,7 +317,7 @@ function LoginInner() {
 						offline={offline}
 						refreshApiHealth={refreshApiHealth}
 						csrfError={csrfError}
-						csrfPreparing={csrfPreparing}
+						csrfPreparing={csrfPreparing || !isReady}
 						retryCsrf={fetchCsrf}
 						csrfToken={csrfToken}
 						onTabKeyDown={onTabKeyDown}
@@ -328,7 +327,7 @@ function LoginInner() {
 						evmAddress={evmAddress}
 						evmChain={evmChain}
 						previewMessage={previewMessage}
-						isConnecting={isConnecting}
+						isConnecting={isConnecting || !isReady}
 						pendingConnectorId={pendingConnectorId}
 						availableConnectors={availableConnectors}
 						pickerOpen={pickerOpen}
@@ -340,7 +339,7 @@ function LoginInner() {
 						walletError={walletError}
 						onDismissWalletError={() => setWalletError(null)}
 					/>
-				</m.div>
+				</div>
 			</div>
 
 			<WalletPicker
@@ -367,7 +366,7 @@ function X402Callout() {
 	return (
 		<m.div
 			{...fadeUpProps(0)}
-			className="rounded-2xl border border-accent/30 bg-accent/5 p-5 shadow-sm"
+			className="rounded-[var(--radius-md)] border border-accent/25 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_10%,transparent)_0%,color-mix(in_srgb,var(--color-panel)_92%,transparent)_100%)] p-5 shadow-[0_18px_44px_-32px_var(--color-accent-glow)]"
 		>
 			<div className="flex items-start gap-3">
 				<span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
@@ -376,17 +375,17 @@ function X402Callout() {
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
 						<p className="text-sm font-semibold text-text-bright">
-							Skip login — pay per request with x402
+							Pay per request with x402
 						</p>
 						<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-accent">
-							No account
+							Agents
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Hit any OMA endpoint with an{" "}
+						Call any OMA endpoint with an{" "}
 						<code className="font-mono text-text-secondary">X-PAYMENT</code>{" "}
-						header on Base. No signup, no JWT, no cookies. Best for AI agents
-						and one-off requests.
+						header on Base. Agent-native USDC settlement — no pre-funded
+						credits or session cookie required.
 					</p>
 					<a
 						href="/docs#x402"
@@ -409,18 +408,18 @@ function BrandPitch() {
 	const items: Array<{ Icon: LucideIcon; title: string; body: string }> = [
 		{
 			Icon: ShieldCheck,
-			title: "No email. No password.",
-			body: "Authenticate with your wallet or a 16-digit anonymous number. No PII collected.",
+			title: "Low-friction signup.",
+			body: "Wallet (SIWE) or a 16-digit account number. No email gate, no password to leak.",
 		},
 		{
 			Icon: Sparkles,
-			title: "Pay-as-you-go AI.",
-			body: "OpenAI, Anthropic, and open models behind one USDC-metered endpoint.",
+			title: "One gateway. Every model.",
+			body: "OpenAI-compatible API. Multi-provider routing with circuit-breaker failover.",
 		},
 		{
 			Icon: Shield,
-			title: "Self-custody by default.",
-			body: "Wallet never holds your funds. SIWE signature proves ownership — no transaction.",
+			title: "Crypto-native billing.",
+			body: "Credits in USDC on Base. x402 pay-per-request for agents — no pre-fund required.",
 		},
 	];
 
@@ -430,68 +429,80 @@ function BrandPitch() {
 			aria-labelledby="brand-heading"
 		>
 			{/* Compact brand banner on mobile */}
-			<div className="md:hidden mb-6 text-center">
+			<div className="mb-6 text-center md:hidden">
+				<div className="mb-3 flex justify-center">
+					<span className="inline-flex rounded-xl border border-accent/25 bg-accent/8 p-2">
+						<OmaLogo size="md" />
+					</span>
+				</div>
 				<h1 className="text-2xl font-bold text-text-bright">
-					Sign in to <span className="text-accent">OMA-AI</span>
+					Sign in to <span className="text-accent">oma</span>
 				</h1>
 				<p className="mt-2 text-sm text-text-secondary">
-					Crypto-native AI compute. Pay in USDC, ship faster.
+					Open Model Access — USDC-metered inference for builders.
 				</p>
 			</div>
 
 			{/* Full brand pitch on desktop */}
 			<div className="hidden md:block">
-			<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
-				<Sparkles className="h-3 w-3" aria-hidden="true" />
-				Permissionless inference
-			</div>
-			<h1
-				id="brand-heading"
-				className="h1-utility text-4xl leading-tight text-text-bright md:text-5xl"
-			>
-				Sign in to <span className="text-accent">OMA-AI</span>
-			</h1>
-			<p className="mt-4 max-w-md text-base leading-relaxed text-text-secondary">
-				Crypto-native AI compute for builders. Sign in with a wallet, pay in
-				USDC, ship faster. No account forms, no marketing emails — your keys,
-				your session.
-			</p>
-
-			<ul className="mt-8 space-y-4">
-				{items.map(({ Icon, title, body }) => (
-					<li key={title} className="flex items-start gap-3">
-						<span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
-							<Icon className="h-4 w-4" aria-hidden="true" />
+				<div className="surface-card overflow-hidden p-8 lg:p-10">
+					<div className="mb-6 flex items-center gap-3">
+						<span className="inline-flex rounded-xl border border-accent/25 bg-accent/8 p-2 shadow-[0_0_24px_-8px_var(--color-accent-glow)]">
+							<OmaLogo size="md" />
 						</span>
-						<div>
-							<p className="text-sm font-semibold text-text-bright">{title}</p>
-							<p className="mt-1 text-xs leading-relaxed text-text-muted">
-								{body}
-							</p>
-						</div>
-					</li>
-				))}
-			</ul>
+						<span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
+							<Sparkles className="h-3 w-3" aria-hidden="true" />
+							Open Model Access
+						</span>
+					</div>
+					<h1
+						id="brand-heading"
+						className="display-headline max-w-xl text-[clamp(2.6rem,4.8vw,4.6rem)] text-text-bright"
+					>
+						Sign in once.
+						<br />
+						<span className="gradient-text-accent">Ship without friction.</span>
+					</h1>
+					<p className="mt-5 max-w-xl text-[1.03rem] leading-relaxed text-text-secondary">
+						One OpenAI-compatible gateway. Wallet or account number, credits in
+						USDC on Base, x402 for agents.
+					</p>
 
-			<p className="mt-10 text-xs text-text-muted">
-				No account? Just connect — your wallet{" "}
-				<span className="text-text-secondary">is</span> your account. New here?{" "}
-				<Link
-					href="/docs"
-					className="text-accent hover:underline underline-offset-2"
-				>
-					Read the docs
-				</Link>{" "}
-				or skip auth entirely with{" "}
-				<Link
-					href="/docs#x402"
-					className="text-accent hover:underline underline-offset-2"
-				>
-					x402
-				</Link>
-				.
-			</p>
-			</div> {/* end hidden md:block */}
+					<ul className="mt-8 space-y-4">
+						{items.map(({ Icon, title, body }) => (
+							<li key={title} className="flex items-start gap-3">
+								<span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent/10 text-accent">
+									<Icon className="h-4 w-4" aria-hidden="true" />
+								</span>
+								<div>
+									<p className="text-sm font-semibold text-text-bright">{title}</p>
+									<p className="mt-1 text-sm leading-relaxed text-text-muted">
+										{body}
+									</p>
+								</div>
+							</li>
+						))}
+					</ul>
+
+					<p className="mt-10 text-sm text-text-muted">
+						No account? Just connect. New here?{" "}
+						<Link
+							href="/docs"
+							className="text-accent hover:underline underline-offset-2"
+						>
+							Read the docs
+						</Link>{" "}
+						or skip auth entirely with{" "}
+						<Link
+							href="/docs#x402"
+							className="text-accent hover:underline underline-offset-2"
+						>
+							x402
+						</Link>
+						.
+					</p>
+				</div>
+			</div>
 		</m.section>
 	);
 }
@@ -559,11 +570,18 @@ function LoginCard(p: LoginCardProps) {
 
 	const isWrongChain = evmChain !== undefined && evmChain.id !== baseChain.id;
 	const reduceMotion = useReducedMotion();
+	const accountLoginAvailable = !offline && !csrfError && !!csrfToken;
+
+	useEffect(() => {
+		if (!accountLoginAvailable && tab === "account") {
+			setTab("wallet");
+		}
+	}, [accountLoginAvailable, setTab, tab]);
 
 	return (
 		<div
 			className={
-				"rounded-2xl border border-border bg-panel/95 p-6 shadow-2xl shadow-overlay backdrop-blur-sm sm:p-8 " +
+				"surface-card rounded-[calc(var(--radius-lg)+2px)] bg-panel/95 p-6 shadow-[0_24px_72px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm sm:p-8 " +
 				(reduceMotion ? "" : "")
 			}
 		>
@@ -575,7 +593,9 @@ function LoginCard(p: LoginCardProps) {
 				</div>
 				<h2 className="text-xl font-bold text-text-bright">Sign in</h2>
 				<p className="mt-1 text-xs text-text-muted">
-					Wallet or anonymous account number. SIWE on Base mainnet.
+					{accountLoginAvailable
+						? "Wallet or private account number. SIWE on Base mainnet."
+						: "Wallet sign-in is live now. Anonymous account numbers return when auth bootstrap is healthy."}
 				</p>
 			</div>
 
@@ -585,7 +605,9 @@ function LoginCard(p: LoginCardProps) {
 					Choose how to sign in
 				</h2>
 				<p className="mt-1 text-xs text-text-muted">
-					Wallet or anonymous account number. SIWE on Base mainnet.
+					{accountLoginAvailable
+						? "Wallet or private account number. SIWE on Base mainnet."
+						: "Wallet sign-in is available. Anonymous account numbers re-enable automatically when auth bootstrap recovers."}
 				</p>
 			</div>
 
@@ -628,11 +650,12 @@ function LoginCard(p: LoginCardProps) {
 					/>
 					<div className="flex-1 text-xs text-text leading-relaxed">
 						<p className="font-semibold mb-1">
-							Account-number sign-in is unavailable
+							Anonymous account numbers are temporarily unavailable
 						</p>
 						<p className="text-text-muted">
-							We couldn&apos;t prepare a CSRF token. The wallet tab still works.
-							You can retry below or switch tabs.
+							We couldn&apos;t prepare the auth bootstrap for account-number
+							sign-in. Wallet sign-in still works and is the fastest recovery
+							path right now.
 						</p>
 						<button
 							type="button"
@@ -684,8 +707,11 @@ function LoginCard(p: LoginCardProps) {
 							#
 						</span>
 					}
-					onSelect={() => setTab("account")}
+					onSelect={() => {
+						if (accountLoginAvailable) setTab("account");
+					}}
 					onKeyDown={onTabKeyDown}
+					disabled={!accountLoginAvailable}
 				/>
 			</div>
 
@@ -838,15 +864,31 @@ function LoginCard(p: LoginCardProps) {
 			</div>
 
 			<p className="mt-6 text-center text-xs text-text-muted">
-				Wallet auth &amp; account-number auth share the same JWT — switch
-				methods anytime from{" "}
-				<Link
-					href="/settings"
-					className="text-text-secondary hover:text-accent underline underline-offset-2"
-				>
-					settings
-				</Link>
-				.
+				{accountLoginAvailable ? (
+					<>
+						Wallet auth &amp; account-number auth share the same JWT — switch
+						methods anytime from{" "}
+						<Link
+							href="/settings"
+							className="text-text-secondary hover:text-accent underline underline-offset-2"
+						>
+							settings
+						</Link>
+						.
+					</>
+				) : (
+					<>
+						Wallet sign-in stays available while account-number auth recovers.
+						Continue with SIWE, or open{" "}
+						<Link
+							href="/docs"
+							className="text-text-secondary hover:text-accent underline underline-offset-2"
+						>
+							docs
+						</Link>{" "}
+						for recovery steps.
+					</>
+				)}
 			</p>
 		</div>
 	);
@@ -863,10 +905,14 @@ interface TabButtonProps {
 	icon: React.ReactNode;
 	onSelect: () => void;
 	onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
+	disabled?: boolean;
 }
 
 const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-	function TabButton({ id, label, selected, icon, onSelect, onKeyDown }, ref) {
+	function TabButton(
+		{ id, label, selected, icon, onSelect, onKeyDown, disabled = false },
+		ref,
+	) {
 		return (
 			<button
 				ref={ref}
@@ -875,11 +921,16 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
 				role="tab"
 				aria-selected={selected}
 				aria-controls={id.replace("tab-", "panel-")}
-				tabIndex={selected ? 0 : -1}
+				aria-disabled={disabled}
+				tabIndex={selected && !disabled ? 0 : -1}
 				onClick={onSelect}
 				onKeyDown={onKeyDown}
+				disabled={disabled}
 				className={
-					"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
+					"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
+					(disabled
+						? "cursor-not-allowed opacity-45 "
+						: "cursor-pointer ") +
 					(selected
 						? "bg-accent text-void shadow-sm"
 						: "text-text-muted hover:text-text")
@@ -897,18 +948,5 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
    ===================================================================== */
 
 export default function LoginPage() {
-	return (
-		<Suspense
-			fallback={
-				<div
-					className="flex min-h-[80vh] items-center justify-center"
-					aria-hidden="true"
-				>
-					<AuthSkeleton />
-				</div>
-			}
-		>
-			<LoginInner />
-		</Suspense>
-	);
+	return <LoginInner />;
 }

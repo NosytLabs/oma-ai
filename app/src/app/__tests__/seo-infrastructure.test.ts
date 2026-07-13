@@ -6,7 +6,8 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("returns a non-empty array", () => {
 		const result = sitemap();
 		expect(Array.isArray(result)).toBe(true);
-		expect(result.length).toBeGreaterThanOrEqual(17);
+		// Public product surface — keep this floor honest with real routes
+		expect(result.length).toBeGreaterThanOrEqual(12);
 	});
 
 	it("every entry has a valid https url under oma-ai.com", () => {
@@ -35,11 +36,28 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("includes /about, /faq, /pricing, /docs, /models (critical marketing pages)", () => {
+	it("includes critical marketing pages", () => {
 		const result = sitemap();
 		const urls = result.map((e) => e.url.replace("https://oma-ai.com", ""));
-		for (const required of ["/about", "/faq", "/pricing", "/docs", "/models"]) {
+		for (const required of ["/pricing", "/docs", "/models", "/chat", "/deposit"]) {
 			expect(urls).toContain(required);
+		}
+	});
+
+	it("excludes removed marketing routes", () => {
+		const result = sitemap();
+		const paths = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+		for (const dead of [
+			"/about",
+			"/blog",
+			"/faq",
+			"/status",
+			"/support",
+			"/signup",
+			"/disclosures",
+			"/provenance",
+		]) {
+			expect(paths).not.toContain(dead);
 		}
 	});
 

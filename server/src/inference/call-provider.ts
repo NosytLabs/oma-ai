@@ -1,5 +1,6 @@
 import * as venice from "./venice.js";
 import * as surplus from "./surplus.js";
+import * as gonka from "./gonka.js";
 import { reportProviderResult } from "./provider-health.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
@@ -54,9 +55,13 @@ export async function callProvider(
         resp = signal !== undefined
           ? await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0], signal)
           : await surplus.surplusChatCompletion(reqBody as Parameters<typeof surplus.surplusChatCompletion>[0]);
+      } else if (provider === "gonka") {
+        resp = signal !== undefined
+          ? await gonka.chatCompletion(reqBody as Parameters<typeof gonka.chatCompletion>[0], signal)
+          : await gonka.chatCompletion(reqBody as Parameters<typeof gonka.chatCompletion>[0]);
       } else {
-        // ponytail: only Venice-based providers are supported. Surface the
-        // unknown provider so the upstream error is visible in monitoring.
+        // All known providers failed — surface the source so monitoring
+        // can identify an unexpected provider value at a glance.
         throw Object.assign(
           new Error(`Unknown inference provider: ${String(provider)}`),
           { status: 500, provider, type: PROVIDER_ERROR_TYPES.UNKNOWN_ERROR }

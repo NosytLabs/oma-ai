@@ -197,14 +197,14 @@ export default function ObservabilityPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Live system</span>
+							<span className="block">System</span>
 							<span className="block text-accent">observability.</span>
 						</h1>
 
 						<p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
 							The operator&apos;s view of OMA. Request volume, latency
-							percentiles, error budget, and provider health — refreshed
-							every 30 seconds.
+							percentiles, error budget, and provider health shown in the same
+							format we expose publicly for operational review.
 						</p>
 
 						<div className="mt-6 inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-[11px] font-mono text-success">
@@ -212,7 +212,7 @@ export default function ObservabilityPage() {
 								className="h-1.5 w-1.5 rounded-full bg-success pulse-ring"
 								aria-hidden="true"
 							/>
-							all systems operational · last refresh 14s ago
+							operational reference view · public metrics format
 						</div>
 					</section>
 
@@ -484,13 +484,13 @@ export default function ObservabilityPage() {
 							/>
 							<div>
 								<p className="text-[13px] text-text-secondary leading-relaxed">
-									No incidents in the last 30 days. Full incident history is
-									published to the{" "}
+									No incidents in the last 30 days. Live status is available in
+									the{" "}
 									<Link
-										href="/status"
+										href="https://github.com/NosytLabs/oma-ai"
 										className="text-accent hover:text-accent-hover underline underline-offset-4"
 									>
-										status page
+										GitHub status board
 									</Link>{" "}
 									once the public launch ships.
 								</p>
@@ -516,14 +516,14 @@ export default function ObservabilityPage() {
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
 									href="/network"
-									className="inline-flex items-center gap-2 bg-accent text-[var(--color-accent-fg)] hover:bg-[var(--color-accent-hover)] px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Network primitives
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link
 									href="/docs#observability"
-									className="inline-flex items-center gap-2 bg-surface text-text border border-border hover:border-accent hover:text-accent px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

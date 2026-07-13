@@ -25,11 +25,21 @@ export function TrustStrip() {
 					</p>
 				</Reveal>
 				<Reveal>
-					<ul
-						className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-text-secondary font-medium text-base sm:text-lg tracking-tight"
-					>
-						{TRUST_NAMES.map((name) => (
-							<li key={name} className="text-text-primary">{name}</li>
+					<ul className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-text-secondary font-medium text-base sm:text-lg tracking-tight">
+						{TRUST_NAMES.map((name, i) => (
+							<li key={name} className="inline-flex items-center">
+								{i > 0 && (
+									<span
+										className="mx-2.5 text-text-tertiary select-none"
+										aria-hidden="true"
+									>
+										·
+									</span>
+								)}
+								<span className="text-text-bright/90 hover:text-accent transition-colors">
+									{name}
+								</span>
+							</li>
 						))}
 					</ul>
 				</Reveal>

@@ -381,8 +381,10 @@ function ModelsPageInner() {
 														<span className="text-accent" aria-hidden="true">
 															$
 															{typeof model.inputPricePer1M === "number"
-																? model.inputPricePer1M.toFixed(2)
-																: "\u2014"}
+																? model.inputPricePer1M < 0.01
+																	? model.inputPricePer1M.toFixed(4)
+																	: model.inputPricePer1M.toFixed(2)
+																: "—"}
 															/1M in
 														</span>
 														<span
@@ -397,8 +399,10 @@ function ModelsPageInner() {
 														>
 															$
 															{typeof model.outputPricePer1M === "number"
-																? model.outputPricePer1M.toFixed(2)
-																: "\u2014"}
+																? model.outputPricePer1M < 0.01
+																	? model.outputPricePer1M.toFixed(4)
+																	: model.outputPricePer1M.toFixed(2)
+																: "—"}
 															/1M out
 														</span>
 													</div>

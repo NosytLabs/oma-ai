@@ -1,6 +1,7 @@
 import { db } from "../db/client.js";
 import { providerHealth } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { config } from "../config.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { healthCheck } from "./provider-factory.js";
 import { surplusHealthCheck } from "./surplus.js";
@@ -392,6 +393,7 @@ function getProviderBaseUrl(provider: Provider): string {
   const baseUrls: Record<Provider, string> = {
     venice: "https://api.venice.ai",
     surplus: "https://api.surplusintelligence.ai",
+    gonka: config.GONKA_API_URL || "https://inference.dahl.global",
   };
   return baseUrls[provider];
 }
@@ -400,6 +402,8 @@ function getProviderHealthPath(provider: Provider): string {
   switch (provider) {
     case "surplus":
       return "/api/inference/v1/models";
+    case "gonka":
+      return "/v1/models";
     default:
       return "/v1/models";
   }

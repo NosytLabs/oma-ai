@@ -52,21 +52,21 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "Model Routing",
 		description:
-			"Circuit-breaker failover across your upstream keys. Latency-optimized routing when multiple providers are available.",
+			"Venice primary, Surplus fallback, Gonka budget — automatic circuit-breaker failover and latency-optimized routing across all providers.",
 		icon: GitBranch,
 		cell: "standard",
 	},
 	{
 		title: "Crypto-Native Billing",
 		description:
-			"USDC on Base. x402 pay-per-request supported on /v1/x402/* — no accounts, no subscriptions.",
+			"USDC on Base at 1:1 USD. x402 pay-per-request for agents — no pre-funding, no subscriptions. Also supports HoudiniSwap from 100+ assets.",
 		icon: Coins,
 		cell: "standard",
 	},
 	{
-		title: "Permissionless Auth",
+		title: "Wallet-Based Auth",
 		description:
-			"Sign in with any Ethereum wallet (SIWE). No email, no password, no card. Your wallet is your account.",
+			"Sign in with any Ethereum wallet (SIWE). Low-friction signup — no email, no password, no card. Your wallet is your account.",
 		icon: ShieldCheck,
 		cell: "standard",
 	},

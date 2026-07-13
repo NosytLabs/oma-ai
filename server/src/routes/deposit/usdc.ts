@@ -201,7 +201,7 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, depositRateLimit, async (c) => 
   // H-USDC-1: on-chain verification. Without this, a user can submit any
   // 64-hex txHash + valid EIP-191 signature and be credited. The function
   // exists and is fully tested at credits/verify-usdc-on-chain.ts.
-  const chainVerify = await verifyUsdcOnChain(txHash, amount);
+  const chainVerify = await verifyUsdcOnChain(txHash, amount, walletToVerify);
   if (!chainVerify.valid) {
     logger.warn({ txHash, amount, error: chainVerify.error }, "[deposit:usdc] on-chain verify rejected");
     return c.json({ error: { message: chainVerify.error ?? "On-chain verification failed", type: "on_chain_verification_failed" } }, 400);

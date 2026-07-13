@@ -4,12 +4,14 @@
 import {
 	AlertCircle,
 	BookOpen,
+	ArrowRight,
 	Check,
 	CheckCircle2,
 	ChevronRight,
 	Copy,
 	DollarSign,
 	Gauge,
+	GitBranch,
 	Key,
 	Lock,
 	Menu,
@@ -692,6 +694,68 @@ func main() {
 					</div>
 				</div>
 			</div>
+
+			{/* ── Wallet (SIWE) Auth ── */}
+			<div id="auth-wallet" className="mt-8 scroll-mt-24">
+				<h3 className="text-lg font-semibold text-text font-display flex items-center gap-2 mb-3">
+					<Shield className="h-5 w-5 text-accent" />
+					Wallet Auth (SIWE)
+				</h3>
+				<p className="text-sm text-text-muted mb-4">
+					Connect any EVM wallet using Sign-In with Ethereum (SIWE). No email, no
+					password. Your wallet address is your identity.
+				</p>
+				<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+					<h4 className="font-semibold text-accent text-sm mb-2">How it works</h4>
+					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
+						<li>Click &quot;Connect Wallet&quot; on the login page</li>
+						<li>Sign a SIWE message with your wallet (no gas cost)</li>
+						<li>Your API key is generated automatically on first sign-in</li>
+						<li>Use the key with any OpenAI-compatible SDK</li>
+					</ol>
+				</div>
+			</div>
+
+			{/* ── Account Number Login ── */}
+			<div id="auth-account" className="mt-8 scroll-mt-24">
+				<h3 className="text-lg font-semibold text-text font-display flex items-center gap-2 mb-3">
+					<Key className="h-5 w-5 text-accent" />
+					Account Number Login
+				</h3>
+				<p className="text-sm text-text-muted mb-4">
+					No wallet? No problem. Create an account with just a username — a unique
+					account number is issued and linked to your API key. Credits are managed
+					via USDC deposits to your on-chain address.
+				</p>
+				<div className="grid gap-4 sm:grid-cols-2 mb-4">
+					<div className="rounded-xl border border-border bg-surface/50 p-4">
+						<h4 className="font-semibold text-text text-sm mb-2">Flow</h4>
+						<ol className="list-decimal list-inside space-y-1 text-sm text-text-muted">
+							<li>Create an account via the login page</li>
+							<li>Receive a unique <code className="text-accent font-mono text-xs">oma-xxxx</code> account number</li>
+							<li>Deposit USDC on Base to your on-chain address</li>
+							<li>Use the generated API key with any OpenAI-compatible SDK</li>
+						</ol>
+					</div>
+					<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+						<h4 className="font-semibold text-accent text-sm mb-2">When to use</h4>
+						<ul className="space-y-1 text-sm text-text-muted">
+							<li className="flex items-start gap-2">
+								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+								AI agents running in server environments
+							</li>
+							<li className="flex items-start gap-2">
+								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+								Teams without crypto wallets
+							</li>
+							<li className="flex items-start gap-2">
+								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+								Automated CI/CD pipelines
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
 		</AnimatedSection>
 	);
 }
@@ -725,7 +789,7 @@ function EndpointsSection() {
 								<span
 									className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
 										ep.method === "GET"
-											? "bg-orange/10 text-orange"
+											? "bg-info/10 text-info"
 											: "bg-accent/10 text-accent"
 									}`}
 								>
@@ -838,7 +902,7 @@ function AvailableModelsSection() {
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
 					<div className="mb-2 flex items-center gap-2">
-						<Sparkles className="h-4 w-4 text-orange" />
+						<Sparkles className="h-4 w-4 text-accent" />
 						<span className="font-semibold text-text">Multimodal</span>
 					</div>
 					<p className="text-sm text-text-muted">
@@ -920,6 +984,110 @@ function AvailableModelsSection() {
 							code={`curl https://api.oma-ai.com/v1/models | jq '.data | length'`}
 							lang="bash"
 						/>
+					</div>
+				</div>
+			</div>
+		</AnimatedSection>
+	);
+}
+
+function ProviderRoutingSection() {
+	return (
+		<AnimatedSection delay={260}>
+			<SectionHeading
+				id="provider-routing"
+				icon={<GitBranch className="h-5 w-5" />}
+				title="Provider Routing"
+				subtitle="OMA routes each request through the best available provider — automatically."
+			/>
+
+			<div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-6">
+				<div className="flex items-start gap-3">
+					<GitBranch className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+					<div>
+						<h4 className="font-semibold text-accent">Intelligent Request Routing</h4>
+						<p className="mt-1 text-sm text-text-muted">
+							Every model id resolves to one or more upstream providers. OMA
+							selects the optimal provider based on your plan tier, latency,
+							and availability — with automatic circuit-breaker failover.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="mb-6 grid gap-4 sm:grid-cols-3">
+				<div className="rounded-xl border border-border bg-surface/50 p-4">
+					<div className="flex items-center gap-2 mb-2">
+						<span className="inline-flex items-center rounded-full bg-accent/20 text-accent px-2.5 py-0.5 text-xs font-medium">Primary</span>
+						<span className="font-semibold text-text text-sm">Venice</span>
+					</div>
+					<p className="text-sm text-text-muted">
+						Default provider for most model tiers. Venice handles chat, image,
+						video, and embedding workloads with low-latency inference.
+					</p>
+					<div className="mt-3 flex flex-wrap gap-1">
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">image</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">video</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">embeddings</span>
+					</div>
+				</div>
+				<div className="rounded-xl border border-border bg-surface/50 p-4">
+					<div className="flex items-center gap-2 mb-2">
+						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Fallback</span>
+						<span className="font-semibold text-text text-sm">Surplus</span>
+					</div>
+					<p className="text-sm text-text-muted">
+						Secondary provider that handles overflow and failover traffic when
+						Venice is at capacity or unavailable. Same model coverage.
+					</p>
+					<div className="mt-3 flex flex-wrap gap-1">
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">reasoning</span>
+					</div>
+				</div>
+				<div className="rounded-xl border border-border bg-surface/50 p-4">
+					<div className="flex items-center gap-2 mb-2">
+						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
+						<span className="font-semibold text-text text-sm">Gonka</span>
+					</div>
+					<p className="text-sm text-text-muted">
+						Ultra-low-cost provider for budget-tier models. Ideal for high-volume,
+						latency-tolerant workloads and prototyping.
+					</p>
+					<div className="mt-3 flex flex-wrap gap-1">
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">fast</span>
+					</div>
+				</div>
+			</div>
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<div className="rounded-xl border border-border bg-surface/50 p-4">
+					<h4 className="mb-2 font-semibold text-text text-sm">How Routing Works</h4>
+					<ol className="space-y-1.5 text-sm text-text-muted list-decimal list-inside">
+						<li>Request arrives with a model id and plan tier</li>
+						<li>OMA checks the model→provider mapping for that tier</li>
+						<li>Primary provider is tried first (Venice for most models)</li>
+						<li>On failure or rate-limit, circuit breaker triggers fallback (Surplus)</li>
+						<li>Budget-tier models route directly to Gonka</li>
+					</ol>
+				</div>
+				<div className="rounded-xl border border-border bg-surface/50 p-4">
+					<h4 className="mb-2 font-semibold text-text text-sm">Response Headers</h4>
+					<p className="text-sm text-text-muted mb-3">
+						Each response includes the provider that handled the request:
+					</p>
+					<div className="space-y-1 font-mono text-xs text-text-muted">
+						<div>
+							<span className="text-accent">x-provider</span>: venice | surplus | gonka
+						</div>
+						<div>
+							<span className="text-accent">x-routing-tier</span>: primary | fallback | budget
+						</div>
+						<div>
+							<span className="text-accent">x-provider-latency</span>: milliseconds
+						</div>
 					</div>
 				</div>
 			</div>
@@ -1348,11 +1516,11 @@ const json = await res.json();`;
 					<h4 className="mb-2 font-semibold text-text">Supported Networks</h4>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" />{" "}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Base mainnet (USDC)
 						</li>
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-orange mt-0.5 shrink-0" />{" "}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Base Sepolia (USDC, dev only)
 						</li>
 					</ul>
@@ -1669,7 +1837,7 @@ func main() {
 			{/* Streaming */}
 			<div className="mb-10">
 				<h3 className="mb-3 text-lg font-semibold text-text font-display flex items-center gap-2">
-					<Zap className="h-5 w-5 text-orange" />
+					<Zap className="h-5 w-5 text-accent" />
 					Streaming
 				</h3>
 				<p className="mb-4 text-sm text-text-muted">
@@ -1904,56 +2072,66 @@ function DocsContent() {
 	}, []);
 
 	return (
-		<div className="min-h-screen">
+		<div className="page-shell min-h-screen">
 			<Sidebar activeId={activeId} />
 
 			<div className="lg:pl-64">
-				<header className="sticky top-0 z-30 border-b border-border bg-void/80 backdrop-blur-xl">
-					<div className="flex items-center justify-between px-4 py-3">
-						<div className="flex items-center gap-3">
-							<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
-								<BookOpen className="h-4 w-4" />
-							</div>
-							<div className="flex flex-col">
-								<nav
-									aria-label="Breadcrumb"
-									className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5"
-								>
-									<Link href="/" className="hover:text-text transition-colors">
-										Home
-									</Link>
-									<span className="opacity-50">›</span>
-									<span className="text-text-secondary">Developer Portal</span>
-									<span className="opacity-50">›</span>
-									<span className="text-text">API Docs</span>
-								</nav>
-								<h1 className="font-semibold text-text text-sm">
-									OMA AI Gateway Documentation
+				<div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-10">
+					<div className="page-hero mb-10 rounded-[calc(var(--radius-lg)+4px)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.92)] sm:p-8">
+						<nav
+							aria-label="Breadcrumb"
+							className="flex items-center gap-1.5 text-xs text-text-muted mb-4 font-mono"
+						>
+							<Link href="/" className="hover:text-text transition-colors">
+								home
+							</Link>
+							<span className="opacity-50">/</span>
+							<span className="text-text-secondary">dev</span>
+							<span className="opacity-50">/</span>
+							<span className="text-text">docs</span>
+						</nav>
+						<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+							<div>
+								<span className="page-kicker">Developer reference</span>
+								<h1 className="display-headline mt-4 text-text-bright">
+									API Documentation
 								</h1>
+								<p className="page-intro mt-4 max-w-3xl">
+									OpenAI-compatible AI inference with wallet auth, x402
+									pay-per-request flows, and a catalog of {MODEL_COUNT}
+									models behind one endpoint.
+								</p>
+							</div>
+							<div className="flex flex-col gap-3 lg:min-w-[15rem] lg:items-end">
+								<DocsSearch />
+								<div className="meta-strip justify-start lg:justify-end">
+									<span>OpenAI-compatible</span>
+									<span>{MODEL_COUNT}+ models</span>
+									<span>x402 on Base</span>
+								</div>
 							</div>
 						</div>
-						<div className="flex items-center gap-2">
-							<DocsSearch />
+						<div className="mt-7 flex flex-wrap gap-3">
 							<Link
-								href="/chat"
-								className="btn-primary hidden sm:inline-flex items-center gap-2"
+								href="/login"
+								className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 							>
-								<Play className="h-4 w-4" />
-								Chat
+								Get API Key
+								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							</Link>
+							<Link
+								href="#quickstart"
+								className="btn-secondary inline-flex min-h-11 items-center px-5"
+							>
+								Quick Start
+							</Link>
+							<Link
+								href="/pricing"
+								className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface hover:text-text-bright"
+							>
+								View Pricing
 							</Link>
 						</div>
-					</div>
-				</header>
-
-				<div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-					<div className="mb-12">
-						<h2 className="text-4xl font-bold tracking-tight text-text font-display mb-3">
-							OMA API Documentation
-						</h2>
-						<p className="text-lg text-text-muted">
-							OpenAI-compatible AI inference gateway with crypto payments.
-							Access {MODEL_COUNT} models with unified API.
-						</p>
 					</div>
 
 					<div className="space-y-16">
@@ -1961,6 +2139,7 @@ function DocsContent() {
 						<AuthenticationSection />
 						<EndpointsSection />
 						<AvailableModelsSection />
+						<ProviderRoutingSection />
 						<StreamingSection />
 						<RateLimitsSection />
 						<PricingSection />

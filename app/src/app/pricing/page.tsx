@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MODELS } from "@/lib/models-data";
+import { formatPricePerMillion, MODELS } from "@/lib/models-data";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
 
@@ -28,6 +28,7 @@ interface PricedModel {
 
 const VENDOR_DISPLAY: Record<string, string> = {
 	Venice: "Venice",
+	Gonka: "Gonka",
 };
 
 const PRICED_MODELS: PricedModel[] = MODELS.map((m) => ({
@@ -39,6 +40,10 @@ const PRICED_MODELS: PricedModel[] = MODELS.map((m) => ({
 	outputPer1M: m.outputPricePer1M,
 	ctx: m.contextLength,
 }));
+
+const LOWEST_INPUT_PRICE = formatPricePerMillion(
+	Math.min(...PRICED_MODELS.map((model) => model.inputPer1M)),
+);
 
 const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "all", label: "All" },
@@ -111,7 +116,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What is x402 pay-per-request?",
-		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request.",
+		a: "x402 enables per-request AI inference payments on Base and Solana. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
 	},
 ];
 
@@ -188,100 +193,70 @@ export default function PricingPage() {
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 			</div>
 
-			<div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-				{/* ── Header ── */}
-				<div className="mb-12 animate-[fadeInUp_0.6s_ease-out_both]">
-					<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent-dim mb-6">
-						<span className="text-xs font-mono text-accent uppercase tracking-widest">
-							{"// pricing"}
-						</span>
-					</div>
-					<h1 className="h1-page text-text-bright">
-						AI API Pricing
-					</h1>
-					<p className="mt-4 text-base text-text-secondary max-w-2xl">
-						Credit-based billing. No subscriptions. No minimums. Pay per token
-						across {MODELS.length} models via unified OpenAI-compatible API.
+			<div className="container-page page-shell">
+				<div className="page-hero animate-[fadeInUp_0.6s_ease-out_both]">
+					<span className="page-kicker">AI API Pricing</span>
+					<h1 className="h1-page text-text-bright">Transparent usage pricing for every model.</h1>
+					<p className="page-intro">
+						See model costs first, then choose how to pay. OMA bills per token
+						or per request, with no subscriptions, no lock-in, and no hidden
+						platform fee layered on top of the quoted rates.
 					</p>
-				</div>
-
-				{/* ── Payment Methods ── */}
-				<div className="mb-12">
-					<div className="flex items-center gap-2 mb-6">
-						<div className="h-px flex-1 bg-border" />
-						<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
-							payment methods
-						</span>
-						<div className="h-px flex-1 bg-border" />
-					</div>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-						{PAYMENT_METHODS.map((method) => {
-							const Icon = method.icon;
-							return (
-								<div
-									key={method.title}
-									className="relative group"
-								>
-									<div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-									<div className="relative p-5 rounded-xl border border-border hover:border-accent/40 transition-colors duration-150">
-										<div className="flex items-start gap-3">
-											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated">
-												<Icon className="h-5 w-5 text-accent" />
-											</div>
-											<div className="flex-1 min-w-0">
-												<h3 className="text-sm font-semibold text-text-bright truncate">
-													{method.title}
-												</h3>
-												<p className="mt-1 text-xs text-text-secondary leading-relaxed">
-													{method.desc}
-												</p>
-											</div>
-										</div>
-										{method.tag && (
-											<div
-												className={`mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border ${method.tagStyle}`}
-											>
-												{method.tag}
-											</div>
-										)}
-									</div>
-								</div>
-							);
-						})}
+					<div className="meta-strip">
+						<span>{MODELS.length} live models</span>
+						<span>Usage-based billing</span>
+						<span>x402 native</span>
 					</div>
 				</div>
 
-				{/* ── x402 Banner (recommended highlight) ── */}
-				<div className="mb-12">
-					<div className="relative p-4 rounded-xl bg-accent-dim border border-accent/30">
-						<div className="flex items-start gap-3">
-							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
-							<div>
-								<div className="flex items-center gap-2">
-									<h4 className="text-sm font-semibold text-accent">
-										x402 Protocol
-									</h4>
-									<span className="inline-flex items-center rounded-full bg-accent text-void px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">
-										recommended
-									</span>
-								</div>
-								<p className="mt-1 text-xs text-text-secondary leading-relaxed">
-									Native x402 support lets applications integrate AI payments
-									without managing credit balances.
-									<Link
-										href="/docs#x402"
-										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
-									>
-										Learn more →
-									</Link>
-								</p>
-							</div>
-						</div>
+				<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+					<div className="surface-card p-5">
+						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+							Starts at
+						</p>
+						<p className="mt-3 text-3xl font-semibold text-text-bright">
+							{LOWEST_INPUT_PRICE}
+						</p>
+						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
+							Lowest displayed price tier per 1M input tokens across the current
+							catalog.
+						</p>
+					</div>
+					<div className="surface-card p-5">
+						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+							Pay your way
+						</p>
+						<p className="mt-3 text-3xl font-semibold text-text-bright">USDC or x402</p>
+						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
+							Top up credits with USDC or let agents settle each call directly on
+							Base.
+						</p>
+					</div>
+					<div className="surface-card p-5">
+						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+							No contract
+						</p>
+						<p className="mt-3 text-3xl font-semibold text-text-bright">No minimums</p>
+						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
+							Ship one request or one million. Credits deduct in real time with a
+							clear ledger.
+						</p>
 					</div>
 				</div>
 
-				{/* ── Model Table - Mobile Responsive ── */}
 				<div className="mb-16">
+					<div className="mb-5 flex items-end justify-between gap-4">
+						<div>
+							<p className="page-kicker">Model Costs</p>
+							<h2 className="mt-3 text-2xl font-semibold text-text-bright">
+								Compare prices before you deposit.
+							</h2>
+						</div>
+						<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text-secondary md:block">
+							Filter by tier to find the cheapest model that still fits your
+							latency and context needs.
+						</p>
+					</div>
 					<div className="rounded-xl border border-border bg-surface overflow-hidden">
 						<div className="border-b border-border px-4 py-4 sm:px-6">
 							<div className="flex flex-wrap gap-2 mb-4">
@@ -370,9 +345,11 @@ export default function PricingPage() {
 												<td className="px-4 py-3">
 													<span
 														className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
-														mm.provider === "Venice"
-															? "bg-accent/20 text-accent"
-															: "bg-secondary/20 text-secondary"
+															mm.provider === "Venice"
+																? "bg-accent/20 text-accent"
+																: mm.provider === "Gonka"
+																? "bg-accent/10 text-accent"
+																: "bg-secondary/20 text-secondary"
 														}`}
 													>
 														{mm.provider}
@@ -401,8 +378,78 @@ export default function PricingPage() {
 					</div>
 				</div>
 
-				{/* ── FAQ ── */}
 				<div className="mb-12">
+					<div className="mb-6 flex items-center gap-2">
+						<div className="h-px flex-1 bg-border" />
+						<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+							payment methods
+						</span>
+						<div className="h-px flex-1 bg-border" />
+					</div>
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+						{PAYMENT_METHODS.map((method) => {
+							const Icon = method.icon;
+							return (
+								<div key={method.title} className="relative group">
+									<div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+									<div className="relative p-5 rounded-xl border border-border hover:border-accent/40 transition-colors duration-150">
+										<div className="flex items-start gap-3">
+											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated">
+												<Icon className="h-5 w-5 text-accent" />
+											</div>
+											<div className="flex-1 min-w-0">
+												<h3 className="text-sm font-semibold text-text-bright truncate">
+													{method.title}
+												</h3>
+												<p className="mt-1 text-xs text-text-secondary leading-relaxed">
+													{method.desc}
+												</p>
+											</div>
+										</div>
+										{method.tag && (
+											<div
+												className={`mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border ${method.tagStyle}`}
+											>
+												{method.tag}
+											</div>
+										)}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				<div className="mb-12">
+					<div className="relative p-5 rounded-xl bg-accent-dim border border-accent/30">
+						<div className="flex items-start gap-3">
+							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+							<div>
+								<div className="flex items-center gap-2">
+									<h4 className="text-sm font-semibold text-accent">
+										x402 Protocol
+									</h4>
+									<span className="inline-flex items-center rounded-full bg-accent text-void px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">
+										recommended for agents
+									</span>
+								</div>
+								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
+									Native x402 support lets applications pay for inference call by
+									call, without maintaining a prepaid balance.
+									<Link
+										href="/docs#x402"
+										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
+									>
+										Learn more →
+									</Link>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* ── FAQ ── */}
+				<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
 						<h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">

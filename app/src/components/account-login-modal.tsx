@@ -461,14 +461,14 @@ export function AccountLoginModal({
 								{mode === "login"
 									? "Account Login"
 									: mode === "create"
-										? "Anonymous Account"
+										? "Private Account"
 										: "Account Created"}
 							</h3>
 							<p className="text-xs text-text-muted">
 								{mode === "login"
-									? "Sign in with your anonymous account number"
+									? "Sign in with your private account number"
 									: mode === "create"
-										? "No KYC, no email, no PII required"
+										? "No email, no password, no PII required"
 										: "Save your account number"}
 							</p>
 						</div>
@@ -615,7 +615,7 @@ export function AccountLoginModal({
 							</button>
 						</p>
 					<p className="mt-2 text-center text-[11px] text-text-muted/80">
-						Mullvad-style: no email, no KYC, no PII. Just a number to write
+						Mullvad-style: no email, no password, no PII. Just a number to write
 						down.
 					</p>
 						</form>
@@ -632,12 +632,12 @@ export function AccountLoginModal({
 								/>
 								<div>
 									<p className="text-sm font-medium text-text-bright mb-1">
-										Anonymous account number
+										Private account number
 									</p>
 									<p className="text-xs text-text-secondary leading-relaxed">
-										No email. No KYC. No PII. Generates a Mullvad-style account
-										number — write it down and use it to sign in on any device.
-										Completely anonymous.
+										No email. No password. No PII. Generates a Mullvad-style
+										account number — write it down and use it to sign in on any
+										device. Privacy-first by design.
 									</p>
 								</div>
 							</div>

@@ -1,87 +1,80 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "OMA · logo";
+export const alt = "OMA · Open Model Access";
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
 /**
- * Favicon / app icon.
- *
- * Renders the OMA wordmark on the graphite brand background using the
- * Edge runtime. The composition matches the inline navbar SVG (see
- * `OmaLogo`) so the icon and the in-page mark are visually identical.
+ * App icon — open-gateway emerald mark (matches favicon.svg / OmaLogo).
+ * Static assets: public/favicon.svg, public/logos/oma-icon-*.png
  */
-export default async function Icon() {
+export default function Icon() {
 	return new ImageResponse(
 		(
-			<svg
-				viewBox="0 0 40 40"
-				width={32}
-				height={32}
-				xmlns="http://www.w3.org/2000/svg"
+			<div
+				style={{
+					width: "100%",
+					height: "100%",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					background: "#07090a",
+					borderRadius: 8,
+					border: "1px solid #1c2822",
+					position: "relative",
+				}}
 			>
-				<rect
-					x={0.5}
-					y={0.5}
-					width={39}
-					height={39}
-					rx={6}
-					fill="#0a0a0f"
-					stroke="#27272a"
-					strokeWidth={1}
+				{/* Signal bars */}
+				<div
+					style={{
+						display: "flex",
+						alignItems: "flex-end",
+						gap: 2.5,
+						height: 15,
+						marginTop: 2,
+					}}
+				>
+					<div
+						style={{
+							width: 3.2,
+							height: 6,
+							background: "#46d39a",
+							borderRadius: 2,
+							opacity: 0.7,
+						}}
+					/>
+					<div
+						style={{
+							width: 3.2,
+							height: 10,
+							background: "#46d39a",
+							borderRadius: 2,
+							opacity: 0.88,
+						}}
+					/>
+					<div
+						style={{
+							width: 3.2,
+							height: 14,
+							background: "#46d39a",
+							borderRadius: 2,
+						}}
+					/>
+				</div>
+				{/* Status LED */}
+				<div
+					style={{
+						position: "absolute",
+						top: 5,
+						right: 5,
+						width: 4,
+						height: 4,
+						borderRadius: 999,
+						background: "#46d39a",
+					}}
 				/>
-				<line
-					x1={8}
-					y1={32}
-					x2={28}
-					y2={32}
-					stroke="#3f3f46"
-					strokeWidth={1}
-					strokeLinecap="round"
-				/>
-				<line
-					x1={8}
-					y1={11}
-					x2={8}
-					y2={28}
-					stroke="#10b981"
-					strokeWidth={2.4}
-					strokeLinecap="round"
-				/>
-				<line
-					x1={16}
-					y1={18}
-					x2={16}
-					y2={28}
-					stroke="#10b981"
-					strokeWidth={2.4}
-					strokeLinecap="round"
-					opacity={0.7}
-				/>
-				<line
-					x1={24}
-					y1={14}
-					x2={24}
-					y2={28}
-					stroke="#10b981"
-					strokeWidth={2.4}
-					strokeLinecap="round"
-					opacity={0.45}
-				/>
-				<line
-					x1={8}
-					y1={14}
-					x2={24}
-					y2={22}
-					stroke="#10b981"
-					strokeWidth={2}
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					opacity={0.85}
-				/>
-				<circle cx={32} cy={10} r={1.2} fill="#10b981" />
-			</svg>
+			</div>
 		),
 		{ ...size },
 	);

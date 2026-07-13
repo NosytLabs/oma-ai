@@ -10,8 +10,18 @@ import { DEFAULT_API_URL } from "@/lib/config";
  * - On the server (SSR): uses `NEXT_PUBLIC_API_URL` to reach the backend
  *   directly.
  */
+/**
+ * Browser paths always go through the Next.js `/api` proxy so the HttpOnly
+ * session cookie can be translated to `Authorization: Bearer` server-side.
+ * Direct browser→:3001 calls would 401 after a hard reload (in-memory JWT gone).
+ */
+function toBrowserPath(path: string): string {
+	if (path.startsWith("/api")) return path;
+	return `/api${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 function getBaseUrl(path: string): string {
-	// Browser: /api/* paths use relative URL → goes through Next.js proxy
+	// Browser: relative URL → same-origin Next.js API proxy
 	if (typeof window !== "undefined" && path.startsWith("/api")) return "";
 	return DEFAULT_API_URL;
 }
@@ -241,9 +251,12 @@ export async function request<T>(
 
 	const fetchPromise = (async () => {
 		try {
-			const res = await fetch(`${getBaseUrl(path)}${path}`, {
+			const resolvedPath =
+				typeof window !== "undefined" ? toBrowserPath(path) : path;
+			const res = await fetch(`${getBaseUrl(resolvedPath)}${resolvedPath}`, {
 				...fetchOpts,
 				headers,
+				credentials: "same-origin",
 				signal: controller.signal,
 			});
 

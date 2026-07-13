@@ -5,16 +5,22 @@ import { parseProviderWeights, parseModelWeights } from "../lib/router-utils.js"
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-export type Provider = "venice" | "surplus";
+export type Provider = "venice" | "surplus" | "gonka";
 
 // ponytail: Surplus x402 signer is broken (EIP-712 scheme wrong; see surplus.ts:303-311).
 // Only allow routing to surplus when the wallet key is set AND we're in development.
 // Disable in all other environments until the EIP-3009 / Permit2 signer lands.
 const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV === "development";
 
-export const ALL_PROVIDERS: Provider[] = SURPLUS_ENABLED
-  ? ["venice", "surplus"]
-  : ["venice"];
+// Gonka routes through the dahl community broker (free tier, ~100M tokens).
+// Enabled whenever GONKA_API_KEY is provisioned.
+const GONKA_ENABLED = !!config.GONKA_API_KEY;
+
+export const ALL_PROVIDERS: Provider[] = [
+  "venice",
+  ...(SURPLUS_ENABLED ? (["surplus"] as Provider[]) : []),
+  ...(GONKA_ENABLED ? (["gonka"] as Provider[]) : []),
+];
 
 function selectProviderWeighted(weights: Map<Provider, number>, available: Provider[]): Provider | null {
   const activeProviders = available.filter(p => weights.get(p) && weights.get(p)! > 0);
@@ -36,6 +42,7 @@ export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provi
   const idMap: Record<string, string> = {
     venice: modelDef.veniceId ?? modelDef.id,
     surplus: modelDef.surplusId ?? modelDef.id,
+    gonka: modelDef.gonkaId ?? modelDef.id,
   };
   return idMap[provider] ?? modelDef.id;
 }
@@ -43,7 +50,6 @@ export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provi
 function canUseProvider(modelDef: ModelDef | null, p: Provider): boolean {
   return !modelDef || modelDef.provider === "both" || modelDef.provider === "all" || modelDef.provider === p;
 }
-
 const availableCache: { providers: Provider[]; timestamp: number } = { providers: [], timestamp: 0 };
 const AVAILABLE_CACHE_TTL_MS = 60_000;
 

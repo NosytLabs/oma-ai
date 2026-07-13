@@ -5,7 +5,7 @@ const MODELS_DESC = `${MODEL_COUNT}+ AI models · one API key · pay in USDC`;
 
 export const metadata: Metadata = {
 	title: "Sign in",
-	description: `Sign in to OMA AI with your wallet (SIWE on Base) or a 16-digit anonymous account number. ${MODELS_DESC}. No email, no password, no KYC — crypto-native AI inference.`,
+	description: `Sign in to OMA AI with your wallet (SIWE on Base) or a 16-digit private account number. ${MODELS_DESC}. Low-friction signup — no email, no password. Crypto-native AI inference.`,
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 };

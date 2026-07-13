@@ -31,6 +31,7 @@ const USDC_TRANSFER_ABI = parseAbi([
 export async function verifyUsdcOnChain(
   txHash: string,
   claimedAmountUsd: number,
+  expectedPayer?: string,
 ): Promise<UsdcVerifyResult> {
   const hash = (txHash.startsWith("0x") ? txHash : `0x${txHash}`) as Hash;
   const treasury = config.TREASURY_BASE_ADDRESS;
@@ -43,7 +44,7 @@ export async function verifyUsdcOnChain(
   const treasuryAddr = treasury;
   const expectedRawAmount = BigInt(Math.round(claimedAmountUsd)) * 1_000_000n;
 
-  async function attempt(rpcUrl: string): Promise<UsdcVerifyResult> {
+  async function attempt(rpcUrl: string, expectedPayer?: string): Promise<UsdcVerifyResult> {
     const client = createPublicClient({ chain: base, transport: http(rpcUrl) });
 
     let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null = null;
@@ -66,6 +67,13 @@ export async function verifyUsdcOnChain(
 
     if (tx.to?.toLowerCase() !== USDC_BASE.toLowerCase()) {
       return { valid: false, error: "Transaction not to USDC contract" };
+    }
+
+    // H-Deposit-2: bind the on-chain sender to the authenticated depositing
+    // wallet so a third party cannot finalize a deposit credited to another
+    // account.
+    if (expectedPayer && tx.from && tx.from.toLowerCase() !== expectedPayer.toLowerCase()) {
+      return { valid: false, error: "Deposit sender does not match the authenticated wallet" };
     }
 
     if (!tx.input || tx.input.length < 10) {
@@ -105,7 +113,7 @@ export async function verifyUsdcOnChain(
   }
 
   try {
-    return await attempt(config.CHAIN_RPC_URL!);
+    return await attempt(config.CHAIN_RPC_URL!, expectedPayer);
   } catch (primaryErr: unknown) {
     const isNetworkError = primaryErr instanceof Error && (
       primaryErr.message.includes("fetch") ||
@@ -120,7 +128,7 @@ export async function verifyUsdcOnChain(
     }
     if (config.CHAIN_RPC_URL_FALLBACK) {
       try {
-        return await attempt(config.CHAIN_RPC_URL_FALLBACK);
+        return await attempt(config.CHAIN_RPC_URL_FALLBACK, expectedPayer);
       } catch {
         return { valid: false, error: "On-chain verification failed (fallback RPC also failed)" };
       }

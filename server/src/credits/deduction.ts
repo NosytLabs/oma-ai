@@ -8,7 +8,7 @@ export async function deductCredits(
   markupCents: number,
   totalCents: number,
   model: string,
-  provider: "venice" | "surplus" | "tinyfish",
+  provider: "venice" | "surplus" | "tinyfish" | "gonka",
   apiKeyId: string,
   inputTokens: number,
   outputTokens: number,

@@ -25,7 +25,7 @@ const STEPS: Step[] = [
 		n: "01",
 		title: "Sign in with wallet",
 		description:
-			"Connect any EVM wallet via SIWE. No email, no KYC, no password. Anonymous account number issued on first request.",
+			"Connect any EVM wallet via SIWE. Low-friction signup — no email, no password. A private account number is issued on first request.",
 		icon: Wallet,
 	},
 	{

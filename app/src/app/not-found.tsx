@@ -4,6 +4,7 @@ import { ArrowLeft, Home, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { OmaLogo } from "@/components/ui/oma-logo";
 import { log } from "@/lib/logger";
 
 /**
@@ -22,6 +23,7 @@ export default function NotFound() {
 	return (
 		<div className="min-h-[60dvh] flex flex-col items-center justify-center px-4 py-20">
 			<div className="w-full max-w-md text-center flex flex-col items-center gap-7">
+				<OmaLogo size="lg" className="mb-2 opacity-90" />
 				{/* Large 404 with accent-tinted digits */}
 				<div className="relative">
 					<div

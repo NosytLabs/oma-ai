@@ -3,7 +3,7 @@ import {
 	ArrowLeftRight,
 	Box,
 	FileText,
-	Info,
+	GitCompare,
 	type LucideIcon,
 	Network,
 	Newspaper,
@@ -26,40 +26,44 @@ export interface NavGroup {
 
 /** Primary nav — visible at all times on desktop, used in the mobile menu. */
 export const primaryLinks: NavItem[] = [
-	{ href: "/models", label: "models", icon: Box, desc: "browse models" },
-	{ href: "/chat", label: "chat", icon: Terminal, desc: "try it live" },
-	{ href: "/pricing", label: "pricing", icon: Tag, desc: "transparent cost" },
-	{ href: "/docs", label: "docs", icon: FileText, desc: "api reference" },
+	{ href: "/models", label: "Models", icon: Box, desc: "Browse the catalog" },
+	{ href: "/chat", label: "Chat", icon: Terminal, desc: "Try it live" },
+	{ href: "/pricing", label: "Pricing", icon: Tag, desc: "Transparent cost" },
+	{ href: "/docs", label: "Docs", icon: FileText, desc: "API reference" },
+	{
+		href: "/compare",
+		label: "Compare",
+		icon: GitCompare,
+		desc: "vs Portkey, LiteLLM, OpenRouter",
+	},
 ];
 
 /** Tools dropdown — secondary, off the primary path. */
 export const toolsLinks: NavItem[] = [
 	{
 		href: "/network",
-		label: "network",
+		label: "Network",
 		icon: Network,
-		desc: "programmable primitives",
+		desc: "Programmable primitives",
 	},
 	{
 		href: "/observability",
-		label: "observability",
+		label: "Observability",
 		icon: Activity,
-		desc: "live system metrics",
+		desc: "Live system metrics",
 	},
 	{
 		href: "/changelog",
-		label: "changelog",
+		label: "Changelog",
 		icon: Newspaper,
-		desc: "release notes",
+		desc: "Release notes",
 	},
 	{
 		href: "/swap",
-		label: "swap",
+		label: "Swap",
 		icon: ArrowLeftRight,
-		desc: "token exchange",
+		desc: "Token exchange",
 	},
-	{ href: "/blog", label: "blog", icon: Newspaper, desc: "engineering notes" },
-	{ href: "/about", label: "about", icon: Info, desc: "who we are" },
 ];
 
 /** Group definitions for the mobile menu cards. */

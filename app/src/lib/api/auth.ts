@@ -90,9 +90,11 @@ export const auth = {
 	},
 
 	listSessions() {
-		return request<{ sessions: Session[] }>(p("/auth/sessions")).then(
-			(res) => res.sessions,
-		);
+		// Backend does not expose a multi-session list yet. Keep the settings
+		// tab resilient: return [] instead of 404 hard-fail.
+		return request<{ sessions: Session[] }>(p("/auth/sessions"))
+			.then((res) => res.sessions ?? [])
+			.catch(() => [] as Session[]);
 	},
 
 	startDemo() {

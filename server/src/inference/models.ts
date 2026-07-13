@@ -7,8 +7,9 @@ export interface ModelDef {
   id: string;
   veniceId?: string;
   surplusId?: string;
-  provider: "venice" | "surplus" | "both" | "all";
-  primaryProvider: "venice" | "surplus";
+  gonkaId?: string;
+  provider: "venice" | "surplus" | "gonka" | "both" | "all";
+  primaryProvider: "venice" | "surplus" | "gonka";
   inputPricePer1M: number;
   outputPricePer1M: number;
   markupPercent: number;

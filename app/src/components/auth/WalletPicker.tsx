@@ -158,26 +158,38 @@ export function WalletPicker({
 						className="p-2"
 					>
 						{items.length === 0 ? (
-							<li className="px-3 py-4 text-xs text-text-muted text-center">
-								No wallet connectors available. Install a wallet like{" "}
-								<a
-									href="https://metamask.io"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-accent hover:underline underline-offset-2"
-								>
-									MetaMask
-								</a>{" "}
-								or{" "}
-								<a
-									href="https://www.coinbase.com/wallet"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-accent hover:underline underline-offset-2"
-								>
-									Coinbase Wallet
-								</a>{" "}
-								and refresh.
+							<li className="px-3 py-5 text-center space-y-3">
+								<p className="text-xs text-text-muted leading-relaxed">
+									No wallet connectors loaded. Refresh the page, or use{" "}
+									<strong className="text-text-secondary">account number</strong>{" "}
+									sign-in / x402 pay-per-request.
+								</p>
+								<div className="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+									<a
+										href="https://metamask.io"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-accent hover:underline underline-offset-2"
+									>
+										MetaMask
+									</a>
+									<span className="text-text-tertiary">·</span>
+									<a
+										href="https://www.coinbase.com/wallet"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-accent hover:underline underline-offset-2"
+									>
+										Coinbase Wallet
+									</a>
+									<span className="text-text-tertiary">·</span>
+									<a
+										href="/login?method=account"
+										className="text-accent hover:underline underline-offset-2"
+									>
+										Account number
+									</a>
+								</div>
 							</li>
 						) : (
 							items.map((c) => {

@@ -2071,6 +2071,66 @@
       "description": "Gemma 4 31B Instruct running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
       "creditsPerMillionInput": 17,
       "creditsPerMillionOutput": 54
+    },
+    "minimax-m2.7": {
+      "id": "minimax-m2.7",
+      "veniceId": "minimax-m2.7",
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7",
+      "provider": "gonka",
+      "primaryProvider": "gonka",
+      "inputPricePer1M": 0.0002,
+      "outputPricePer1M": 0.0008,
+      "markupPercent": 25,
+      "category": "budget",
+      "maxTokens": 131072,
+      "supportsStreaming": true,
+      "displayName": "MiniMax M2.7",
+      "capabilities": [
+        "chat"
+      ],
+      "description": "MiniMax M2.7 — budget language model served by Gonka/OpenBroker.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "kimi-k2.6": {
+      "id": "kimi-k2.6",
+      "veniceId": "kimi-k2.6",
+      "gonkaId": "moonshotai/Kimi-K2.6",
+      "provider": "gonka",
+      "primaryProvider": "gonka",
+      "inputPricePer1M": 0.0002,
+      "outputPricePer1M": 0.0008,
+      "markupPercent": 25,
+      "category": "budget",
+      "maxTokens": 131072,
+      "supportsStreaming": true,
+      "displayName": "Moonshot Kimi K2.6",
+      "capabilities": [
+        "chat"
+      ],
+      "description": "Moonshot Kimi K2.6 — budget language model served by Gonka/OpenBroker.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "glm-5.2-fp8": {
+      "id": "glm-5.2-fp8",
+      "veniceId": "glm-5.2-fp8",
+      "gonkaId": "zai-org/GLM-5.2-FP8",
+      "provider": "gonka",
+      "primaryProvider": "gonka",
+      "inputPricePer1M": 0.0002,
+      "outputPricePer1M": 0.0008,
+      "markupPercent": 25,
+      "category": "budget",
+      "maxTokens": 131072,
+      "supportsStreaming": true,
+      "displayName": "Zhipu GLM 5.2",
+      "capabilities": [
+        "chat"
+      ],
+      "description": "Zhipu GLM 5.2 (FP8) — budget language model served by Gonka/OpenBroker.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
     }
   },
   "VIDEO_MODELS": {

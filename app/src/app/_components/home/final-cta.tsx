@@ -8,7 +8,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/app/_components/home/reveal";
-import { Button } from "@/components/ui/button";
 
 export function FinalCTA() {
 	return (
@@ -31,29 +30,52 @@ export function FinalCTA() {
 								</span>
 							</h2>
 							<p className="text-lg text-text-secondary max-w-xl leading-relaxed">
-								Free tier, no card, no email. Your first request lands in under
-								a minute.
+								Wallet or account number, credits in USDC on Base, one
+								OpenAI-compatible API. First call in under a minute.
 							</p>
 						</div>
 
 						<div className="flex flex-col gap-3 lg:items-end">
-							<Button
-								asChild
-								size="lg"
-								rightIcon={<ArrowRight className="h-4 w-4" />}
-								className="self-start lg:self-end px-7 h-14 text-base"
-							>
-								<Link href="/login">Get your API key</Link>
-							</Button>
-							<div className="text-xs text-text-muted font-mono lg:text-right">
-								Or{" "}
+							<div className="flex flex-wrap items-center gap-3 self-start lg:self-end">
+								<Link
+									href="/login"
+									className="btn-primary inline-flex min-h-12 items-center gap-2 px-6 text-[15px]"
+								>
+									Get API key
+									<ArrowRight className="h-4 w-4" aria-hidden="true" />
+								</Link>
+								<Link
+									href="/login?method=account"
+									className="btn-secondary inline-flex min-h-12 items-center gap-2 px-5 text-[14px]"
+								>
+									Account number
+								</Link>
+							</div>
+							<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted font-mono lg:justify-end">
 								<Link
 									href="/docs"
 									className="text-accent hover:text-accent-hover underline-offset-4 hover:underline"
 								>
-									read the docs
-								</Link>{" "}
-								first — we don&apos;t mind.
+									docs
+								</Link>
+								<span className="text-text-tertiary" aria-hidden="true">
+									·
+								</span>
+								<Link
+									href="/chat"
+									className="hover:text-text-bright underline-offset-4 hover:underline"
+								>
+									playground
+								</Link>
+								<span className="text-text-tertiary" aria-hidden="true">
+									·
+								</span>
+								<Link
+									href="/pricing"
+									className="hover:text-text-bright underline-offset-4 hover:underline"
+								>
+									pricing
+								</Link>
 							</div>
 						</div>
 					</div>

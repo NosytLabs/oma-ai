@@ -19,6 +19,9 @@ const envSchema = z.object({
   // 0G.ai decentralized inference provider (zerog.ts). Optional — provider
   // returns 503 if requests target it and this key is unset.
   ZERO_G_API_KEY: z.string().min(1).optional(),
+  // Gonka decentralized provable-inference broker (optional).
+  GONKA_API_KEY: z.string().min(1).optional(),
+  GONKA_API_URL: z.string().url().optional().default("https://inference.dahl.global"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.

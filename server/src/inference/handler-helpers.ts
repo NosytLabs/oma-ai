@@ -12,7 +12,7 @@ export async function chargeAndTrack(
   userId: string,
   totalCents: number,
   model: string,
-  provider: "venice" | "surplus" | "tinyfish",
+  provider: "venice" | "surplus" | "tinyfish" | "gonka",
   apiKeyId: string,
   inputTokens: number,
 ): Promise<string> {

@@ -14,66 +14,56 @@ import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 const MAINNET_RPC = "/api/rpc/base";
 const TESTNET_RPC = "/api/rpc/base-sepolia";
 
-function getWagmiConfig() {
+function resolveWalletConnectProjectId(): string | undefined {
 	const rawProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
-	// Reject known placeholder values so the app doesn't send 403-bound
-	// requests to api.web3modal.org. A real project ID must be obtained from
-	// https://cloud.walletconnect.com and set in .env.local.
+	// Reject known placeholders so we never send 403-bound requests to
+	// api.web3modal.org. Real IDs come from https://cloud.walletconnect.com
 	const KNOWN_PLACEHOLDERS = new Set([
 		"your_walletconnect_project_id",
 		"dev-placeholder-project-id",
 	]);
-	const walletConnectProjectId =
-		rawProjectId && !KNOWN_PLACEHOLDERS.has(rawProjectId)
-			? rawProjectId
-			: undefined;
 
-	if (!walletConnectProjectId && rawProjectId) {
+	if (rawProjectId && KNOWN_PLACEHOLDERS.has(rawProjectId)) {
 		console.warn(
-			"[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set to the default placeholder. " +
+			"[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is a placeholder. " +
 				"WalletConnect connector will not be registered. " +
 				"Get a free project ID at https://cloud.walletconnect.com",
 		);
+		return undefined;
 	}
 
-	// Headless environments (preview browsers, embeds, server-side renders
-	// that get hydrated without a real window) cause wagmi's `getProvider`
-	// to throw inside `checkCrossOriginOpenerPolicy`. We gate the entire
-	// wagmi setup on the presence of an injected provider; the navbar
-	// `Connect Wallet` button already handles the "no wallet installed"
-	// state separately via its own empty-connector fallback.
-	const hasInjectedWallet =
-		typeof window !== "undefined" &&
-		Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+	return rawProjectId?.trim() || undefined;
+}
 
-	if (!hasInjectedWallet) {
-		// Return a stub config that doesn't bind real connectors. Components
-		// that read `useAccount().isConnected` etc. will simply report
-		// disconnected — which is the truth in this environment.
-		return createConfig({
-			chains: [base, baseSepolia],
-			connectors: [],
-			transports: {
-				[base.id]: http(MAINNET_RPC),
-				[baseSepolia.id]: http(TESTNET_RPC),
-			},
-			storage: createStorage({
-				storage: undefined,
-				key: "wagmi",
-			}),
-		});
-	}
+function getWagmiConfig() {
+	const walletConnectProjectId = resolveWalletConnectProjectId();
 
+	// Always register Coinbase Wallet (SDK popup / extension) so browsers
+	// without window.ethereum still get a connect path. Injected is always
+	// registered — MetaMask / Brave / Rabby attach when present.
+	// WalletConnect is optional (needs a real project ID).
+	//
+	// Previous behavior returned connectors: [] when ethereum was missing,
+	// which broke /login entirely for users without a browser extension
+	// (Safari, clean Chrome, mobile in-app browsers without WC).
 	const connectors = [
-		injected(),
-		coinbaseWallet({ appName: "OMA AI" }),
-		// WalletConnect is only registered when a valid project ID is configured.
+		injected({ shimDisconnect: true }),
+		coinbaseWallet({
+			appName: "OMA AI",
+			appLogoUrl: "https://oma-ai.com/logos/oma-icon-192.png",
+		}),
 		...(walletConnectProjectId
 			? [
 					walletConnect({
 						projectId: walletConnectProjectId,
 						showQrModal: true,
+						metadata: {
+							name: "OMA AI",
+							description: "Open Model Access — AI inference paid in USDC",
+							url: "https://oma-ai.com",
+							icons: ["https://oma-ai.com/logos/oma-icon-192.png"],
+						},
 					}),
 				]
 			: []),
@@ -98,6 +88,7 @@ function getWagmiConfig() {
 			storage: typeof window !== "undefined" ? window.localStorage : undefined,
 			key: "wagmi",
 		}),
+		ssr: true,
 	});
 }
 
@@ -108,4 +99,9 @@ export function getWagmiConfigSingleton() {
 		wagmiConfigSingleton = getWagmiConfig();
 	}
 	return wagmiConfigSingleton;
+}
+
+/** Test-only: drop the singleton so env / window changes re-bind connectors. */
+export function __resetWagmiConfigForTests() {
+	wagmiConfigSingleton = null;
 }

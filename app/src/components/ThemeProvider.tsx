@@ -1,25 +1,16 @@
 "use client";
 
 /**
- * ThemeProvider — 4 distinct themes (dark by default).
+ * ThemeProvider — 4 accent themes on a locked dark void.
  *
- * Provides a `useTheme()` hook and persists the user's choice to localStorage.
- * The companion inline `<script>` in `app/src/app/layout.tsx` (see HeadScript)
- * handles the synchronous, pre-hydration `data-theme` attribute set so we
- * never get a flash of the wrong theme on first paint.
+ *   emerald  — default OMA brand (terminal emerald)
+ *   amber    — warm CRT / mainframe
+ *   mono     — grayscale austere
+ *   synth    — violet network-op
  *
- * Themes:
- *   - "emerald"  — default, terminal-emerald accent on graphite (current OMA palette)
- *   - "amber"    — warm CRT amber accent on deep navy (retro mainframe)
- *   - "mono"     — pure grayscale, no accent (engineering austere)
- *   - "synth"    — cyber violet on near-black (synthwave / network op)
- *
- * Design constraints:
- *   - No system preference detection (OMA is dark-by-default).
- *   - "emerald" is the default for fresh users / cleared storage.
- *   - Setting is persisted under localStorage key `oma-theme`.
- *   - `data-theme="<name>"` is set on `<html>`. The default "emerald" sets nothing
- *     (so base palette wins). Other themes set their own attribute.
+ * Persistence: localStorage `oma-theme`
+ * DOM: `data-theme` on <html> (emerald removes attribute so :root wins)
+ * FOUC: layout.tsx inline script applies stored theme before paint
  */
 
 import {
@@ -34,25 +25,42 @@ import {
 
 export type Theme = "emerald" | "amber" | "mono" | "synth";
 
-export const THEME_LIST: ReadonlyArray<{ id: Theme; name: string; hint: string }> =
-	[
-		{ id: "emerald", name: "Emerald", hint: "default · terminal" },
-		{ id: "amber", name: "Amber", hint: "retro · CRT" },
-		{ id: "mono", name: "Mono", hint: "grayscale · austere" },
-		{ id: "synth", name: "Synth", hint: "violet · network op" },
-	];
+/** Canonical accent hex per theme — keep in sync with globals.css */
+export const THEME_ACCENTS: Readonly<Record<Theme, string>> = {
+	emerald: "#46d39a",
+	amber: "#f0b429",
+	mono: "#e8e8e6",
+	synth: "#a78bfa",
+};
+
+export const THEME_LIST: ReadonlyArray<{
+	id: Theme;
+	name: string;
+	hint: string;
+}> = [
+	{ id: "emerald", name: "Emerald", hint: "default · brand" },
+	{ id: "amber", name: "Amber", hint: "retro · CRT" },
+	{ id: "mono", name: "Mono", hint: "grayscale · austere" },
+	{ id: "synth", name: "Synth", hint: "violet · network" },
+];
 
 const STORAGE_KEY = "oma-theme";
 const DEFAULT_THEME: Theme = "emerald";
 
 function isValidTheme(value: string | null): value is Theme {
-	return value === "emerald" || value === "amber" || value === "mono" || value === "synth";
+	return (
+		value === "emerald" ||
+		value === "amber" ||
+		value === "mono" ||
+		value === "synth"
+	);
 }
 
 interface ThemeContextValue {
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
 	cycleTheme: () => void;
+	accent: string;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -63,7 +71,7 @@ function readStoredTheme(): Theme {
 		const stored = window.localStorage.getItem(STORAGE_KEY);
 		if (isValidTheme(stored)) return stored;
 	} catch {
-		// localStorage can throw in private mode / sandboxed iframes — fall through
+		// private mode / sandboxed — ignore
 	}
 	return DEFAULT_THEME;
 }
@@ -75,16 +83,20 @@ function applyTheme(theme: Theme): void {
 	} else {
 		document.documentElement.setAttribute("data-theme", theme);
 	}
+	// Keep browser chrome (mobile address bar) in sync
+	const meta = document.querySelector('meta[name="theme-color"]');
+	if (meta) {
+		meta.setAttribute("content", "#07090a");
+	}
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-	// Start as default on both server and client first render so SSR markup is stable.
 	const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
 
-	// On mount, reconcile React state with whatever the inline script applied.
 	useEffect(() => {
 		const current = readStoredTheme();
 		setThemeState(current);
+		applyTheme(current);
 	}, []);
 
 	const setTheme = useCallback((next: Theme) => {
@@ -92,7 +104,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		try {
 			window.localStorage.setItem(STORAGE_KEY, next);
 		} catch {
-			// best-effort persistence
+			// best-effort
 		}
 		applyTheme(next);
 	}, []);
@@ -100,7 +112,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 	const cycleTheme = useCallback(() => {
 		setThemeState((prev) => {
 			const idx = THEME_LIST.findIndex((t) => t.id === prev);
-			const next = THEME_LIST[(idx + 1) % THEME_LIST.length]?.id ?? DEFAULT_THEME;
+			const next =
+				THEME_LIST[(idx + 1) % THEME_LIST.length]?.id ?? DEFAULT_THEME;
 			try {
 				window.localStorage.setItem(STORAGE_KEY, next);
 			} catch {
@@ -112,7 +125,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const value = useMemo<ThemeContextValue>(
-		() => ({ theme, setTheme, cycleTheme }),
+		() => ({
+			theme,
+			setTheme,
+			cycleTheme,
+			accent: THEME_ACCENTS[theme],
+		}),
 		[theme, setTheme, cycleTheme],
 	);
 
@@ -128,12 +146,3 @@ export function useTheme(): ThemeContextValue {
 	}
 	return ctx;
 }
-
-/**
- * HeadScript — exported as a raw HTML string for use inside `<head>`.
- *
- * Runs synchronously BEFORE React hydrates, so it can set
- * `<html data-theme="...">` before the first paint. Without it, non-default
- * theme users would see a flash of the default theme on every page load (FOUC).
- */
-export const THEME_HEAD_SCRIPT = `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){document.documentElement.removeAttribute('data-theme');}else{document.documentElement.setAttribute('data-theme',t);}}}catch(e){}})();`;

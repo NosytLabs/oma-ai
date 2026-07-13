@@ -1,15 +1,12 @@
 "use client";
 
 /**
- * X402Banner — section 7 of the homepage.
- * Full-width accent-tinted banner. The ONE eyebrow reserved for this page.
+ * x402Banner — agent-native pay-per-request path.
  */
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Bot, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/app/_components/home/reveal";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/components/ui/utils";
 
 export function X402Banner() {
 	return (
@@ -19,58 +16,62 @@ export function X402Banner() {
 		>
 			<div className="container-page">
 				<Reveal>
-					<div
-						className={cn(
-							"surface-accent relative overflow-hidden",
-							"rounded-[var(--radius-lg)]",
-							"px-6 py-12 sm:px-12 sm:py-16 lg:px-16",
-						)}
-					>
+					<div className="relative overflow-hidden rounded-2xl border border-accent/25 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-accent)_10%,var(--color-panel)),var(--color-panel)_55%,var(--color-panel))] p-8 sm:p-10 lg:p-12">
 						<div
-							className="absolute inset-0 opacity-30 pointer-events-none"
-							style={{
-								backgroundImage:
-									"radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--color-accent) 30%, transparent) 1px, transparent 0)",
-								backgroundSize: "32px 32px",
-								maskImage:
-									"radial-gradient(ellipse at 50% 50%, black, transparent 70%)",
-							}}
 							aria-hidden="true"
+							className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/10 blur-3xl"
 						/>
-
-						<div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 lg:gap-12 items-center">
-							<div className="flex flex-col gap-5">
-								<span className="eyebrow">x402 Protocol</span>
+						<div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+							<div>
+								<span className="badge mb-5">
+									<Bot className="h-3 w-3" aria-hidden="true" />
+									x402 · agent billing
+								</span>
 								<h2
 									id="x402-headline"
-									className="section-headline text-text-bright text-balance"
+									className="h2-section max-w-xl text-text-bright"
+									style={{ textWrap: "balance" }}
 								>
 									Agents pay for themselves.
-									<br />
-									<span className="gradient-text-accent">
-										No accounts. No subscriptions.
-									</span>
 								</h2>
-								<p className="text-base sm:text-lg text-text-secondary leading-relaxed max-w-2xl">
-									OMA speaks the x402 protocol natively. Your agent sends a
-									request, gets a 402, signs a USDC micropayment on Base, and
-									gets the response — all in one round trip. Settled in seconds,
-									no human in the loop.
+								<p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
+									No accounts. No subscriptions. Attach an{" "}
+									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
+										X-PAYMENT
+									</code>{" "}
+									header and settle each inference call on Base — the gateway
+									verifies, routes, and returns the completion.
 								</p>
+								<div className="mt-7 flex flex-wrap gap-3">
+									<Link
+										href="/docs#x402"
+										className="btn-primary inline-flex h-11 items-center gap-2 px-5 text-sm"
+									>
+										x402 docs
+										<ArrowRight className="h-4 w-4" aria-hidden="true" />
+									</Link>
+									<Link
+										href="/pricing"
+										className="btn-secondary inline-flex h-11 items-center gap-2 px-4 text-sm"
+									>
+										<CreditCard className="h-4 w-4" aria-hidden="true" />
+										See rates
+									</Link>
+								</div>
 							</div>
 
-							<div className="flex flex-col gap-4 lg:items-end">
-								<Button
-									asChild
-									size="lg"
-									rightIcon={<ArrowRight className="h-4 w-4" />}
-									className="self-start lg:self-end"
-								>
-									<Link href="/docs">Read the docs</Link>
-								</Button>
-								<div className="text-xs text-text-muted font-mono lg:text-right">
-									Compatible with Coinbase x402 SDK · PayAI · thirdweb
-								</div>
+							<div className="rounded-xl border border-border bg-void/60 p-5 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
+								<p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-text-muted">
+									request shape
+								</p>
+								<pre className="overflow-x-auto whitespace-pre">
+									{`POST /v1/chat/completions
+X-PAYMENT: <base64 x402 receipt>
+Content-Type: application/json
+
+{ "model": "llama-3.3-70b",
+  "messages": [...] }`}
+								</pre>
 							</div>
 						</div>
 					</div>

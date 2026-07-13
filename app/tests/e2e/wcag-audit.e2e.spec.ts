@@ -29,13 +29,13 @@ const THRESHOLD_RANK = SEVERITY_RANK[SEVERITY_THRESHOLD] ?? 1;
 
 const PUBLIC_PAGES = [
 	{ name: "home", path: "/" },
-	{ name: "about", path: "/about" },
 	{ name: "pricing", path: "/pricing" },
 	{ name: "models", path: "/models" },
 	{ name: "docs", path: "/docs" },
-	{ name: "faq", path: "/faq" },
 	{ name: "chat", path: "/chat" },
 	{ name: "login", path: "/login" },
+	{ name: "network", path: "/network" },
+	{ name: "changelog", path: "/changelog" },
 ];
 
 test.describe("WCAG 2.1 AA audit (axe-core)", () => {

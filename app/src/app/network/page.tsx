@@ -275,7 +275,7 @@ export default function NetworkPage() {
 										<details className="group/details">
 											<summary className="cursor-pointer list-none text-[11px] font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-1.5 select-none">
 												<ArrowRight className="h-3 w-3 transition-transform group-open/details:rotate-90" aria-hidden="true" />
-												<span>details & example</span>
+												<span>{p.name} details</span>
 											</summary>
 											<div className="mt-3 pt-3 border-t border-border space-y-3">
 												<p className="text-[12px] text-text-secondary leading-relaxed">
@@ -409,14 +409,14 @@ export default function NetworkPage() {
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
 									href="/docs#network"
-									className="inline-flex items-center gap-2 bg-accent text-[var(--color-accent-fg)] hover:bg-[var(--color-accent-hover)] px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link
 									href="/observability"
-									className="inline-flex items-center gap-2 bg-surface text-text border border-border hover:border-accent hover:text-accent px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									See live observability
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

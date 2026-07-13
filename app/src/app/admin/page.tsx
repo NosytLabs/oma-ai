@@ -269,10 +269,10 @@ export default function AdminPage() {
 								aria-selected={activeTab === id}
 								aria-controls="admin-tabpanel"
 								onClick={() => setActiveTab(id)}
-								className={`px-4 py-3 text-xs font-medium font-mono uppercase tracking-wider transition-all border-b-2 whitespace-nowrap rounded-full ${
+								className={`px-4 py-3 text-xs font-medium font-mono uppercase tracking-wider transition-all whitespace-nowrap rounded-lg ${
 									activeTab === id
-										? "text-accent border-accent bg-accent-dim/30"
-										: "text-text-muted border-transparent hover:text-text-secondary hover:bg-surface"
+										? "text-accent bg-accent-dim/30 ring-1 ring-accent/30"
+										: "text-text-muted hover:text-text-secondary hover:bg-surface hover:ring-1 hover:ring-border"
 								}`}
 							>
 								<Icon

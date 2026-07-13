@@ -276,6 +276,7 @@ export function ChatErrorBanner({
 						{classification.type === "auth" && (
 							<Link
 								href={loginHref}
+								prefetch={false}
 								className="
                   inline-flex items-center gap-1 px-3 py-1.5
                   bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
@@ -292,6 +293,7 @@ export function ChatErrorBanner({
 							classification.action?.href && (
 								<Link
 									href={classification.action.href}
+									prefetch={false}
 									className="
                   inline-flex items-center gap-1 px-3 py-1.5
                   bg-warning text-void text-[10px] font-bold uppercase tracking-wider

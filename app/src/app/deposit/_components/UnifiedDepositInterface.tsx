@@ -88,7 +88,7 @@ export function UnifiedDepositInterface({
 
 	const detectRoute = useCallback((): RouteInfo => {
 		if (!selectedCoin) return ROUTES["usdc-base"];
-		return ROUTES["usdc-base"];
+		return ROUTES[selectedCoin.id] ?? ROUTES["usdc-base"];
 	}, [selectedCoin]);
 
 	const route = detectRoute();

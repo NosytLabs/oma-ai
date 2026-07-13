@@ -27,7 +27,8 @@ export type Provider =
 	| "Claude"
 	| "Gemini"
 	| "OpenRouter"
-	| "Together";
+	| "Together"
+	| "Gonka";
 
 export interface Model {
 	id: string;
@@ -86,6 +87,11 @@ export const PROVIDER_COLORS: Record<
 		bg: "bg-tertiary/20",
 		text: "text-tertiary",
 		border: "border-tertiary/30",
+	},
+	Gonka: {
+		bg: "bg-accent/10",
+		text: "text-accent",
+		border: "border-accent/30",
 	},
 };
 
@@ -212,7 +218,7 @@ function toModel(entry: RawEntry): Model {
 	return {
 		id: entry.id,
 		name: entry.displayName,
-		provider: "Venice",
+		provider: (entry.provider as Provider) || "Venice",
 		tier,
 		description: deriveDescription(entry.id, entry.displayName, entry.description),
 		contextLength: formatContextLength(entry.maxTokens),
@@ -389,6 +395,36 @@ const FALLBACK_CATALOG: RawCatalog = {
 			inputPricePer1M: 0.06,
 			outputPricePer1M: 0.3,
 			capabilities: ["chat", "fast"],
+		},
+		"minimax-m2.7": {
+			id: "minimax-m2.7",
+			displayName: "MiniMax M2.7",
+			provider: "Gonka",
+			category: "budget",
+			maxTokens: 131072,
+			inputPricePer1M: 0.0002,
+			outputPricePer1M: 0.0008,
+			capabilities: ["chat"],
+		},
+		"kimi-k2.6": {
+			id: "kimi-k2.6",
+			displayName: "Moonshot Kimi K2.6",
+			provider: "Gonka",
+			category: "budget",
+			maxTokens: 131072,
+			inputPricePer1M: 0.0002,
+			outputPricePer1M: 0.0008,
+			capabilities: ["chat"],
+		},
+		"glm-5.2-fp8": {
+			id: "glm-5.2-fp8",
+			displayName: "Zhipu GLM 5.2",
+			provider: "Gonka",
+			category: "budget",
+			maxTokens: 131072,
+			inputPricePer1M: 0.0002,
+			outputPricePer1M: 0.0008,
+			capabilities: ["chat"],
 		},
 	},
 };

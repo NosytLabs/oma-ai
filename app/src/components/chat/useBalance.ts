@@ -51,7 +51,7 @@ export function useBalance(): {
 	useEffect(() => {
 		if (query.error && isAuthError(query.error) && !shownRef.current) {
 			shownRef.current = true;
-			toast.error("Session expired — reconnect wallet");
+			toast.error("Session expired — sign in again");
 		}
 		// Reset when the auth error clears so the toast can fire again if a new
 		// auth error occurs (e.g. user reconnects then session expires again).

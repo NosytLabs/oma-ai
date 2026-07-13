@@ -79,7 +79,7 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
@@ -104,7 +104,7 @@ export abstract class BaseInferenceProvider {
             ? retryAfterParsed
             : undefined;
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           try {
@@ -169,7 +169,7 @@ export abstract class BaseInferenceProvider {
           });
         } catch (err) {
           if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           span.setAttribute("error.type", "connection_error");
@@ -194,7 +194,7 @@ export abstract class BaseInferenceProvider {
             ? retryAfterParsed
             : undefined;
           if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus", false, Date.now() - start);
+            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
           }
           span.setAttribute("error", true);
           try {

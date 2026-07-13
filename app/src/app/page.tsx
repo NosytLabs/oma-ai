@@ -5,13 +5,13 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { HomeView } from "./_components/home";
 
 export const metadata: Metadata = {
-	// absolute: bypasses layout.tsx template ("%s | OMA-AI") so the browser
-	// tab shows exactly this string instead of "Title | OMA-AI" doubled.
-	title: { absolute: "Open Model Access · One API for every model" },
-	description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions, no monthly bills.`,
+	title: {
+		absolute: "OMA · Open Model Access — AI inference paid in USDC",
+	},
+	description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT}+ models, wallet-based auth, and USDC pay-per-request on Base.`,
 	openGraph: {
-		title: "Open Model Access · One API for every model",
-		description: `Run any model, pay per request with USDC. ${MODEL_COUNT}+ AI models behind one OpenAI-compatible API. x402-native, no subscriptions.`,
+		title: "OMA · Open Model Access — AI inference paid in USDC",
+		description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT}+ models, wallet-based auth, and USDC pay-per-request on Base.`,
 	},
 };
 
@@ -21,7 +21,7 @@ export default function HomePage() {
 			<Suspense fallback={null}>
 				<AuthNotice />
 			</Suspense>
-			<HomeView modelCount={MODEL_COUNT} />
+			<HomeView />
 		</>
 	);
 }

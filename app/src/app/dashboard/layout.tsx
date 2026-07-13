@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 
 export const metadata: Metadata = {
 	title: "Dashboard",
@@ -25,10 +24,8 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<ConnectWalletWrapper>
-			<div className="min-h-[calc(100dvh-2.75rem)] bg-void text-text-secondary font-mono">
-				{children}
-			</div>
-		</ConnectWalletWrapper>
+		<div className="min-h-[calc(100dvh-2.75rem)] bg-void text-text-secondary font-mono">
+			{children}
+		</div>
 	);
 }

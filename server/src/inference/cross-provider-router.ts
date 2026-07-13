@@ -4,6 +4,7 @@ import type { Provider } from "./provider-selector.js";
 const PROVIDER_ID_FIELDS: ReadonlyArray<{ provider: Provider; field: keyof ModelDef }> = [
   { provider: "venice", field: "veniceId" },
   { provider: "surplus", field: "surplusId" },
+  { provider: "gonka", field: "gonkaId" },
 ];
 
 const ALIAS_MAP: Record<string, string> = {
@@ -32,6 +33,7 @@ export interface RouterStats {
 const STATS_BY_PROVIDER: Record<Provider, RouterProviderStat> = {
   venice: { attempts: 0, failovers: 0 },
   surplus: { attempts: 0, failovers: 0 },
+  gonka: { attempts: 0, failovers: 0 },
 };
 
 let totalRequests = 0;

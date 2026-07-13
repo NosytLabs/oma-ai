@@ -58,9 +58,9 @@ const RELEASES: Release[] = [
 		date: "2026-07-06",
 		codename: "Network Operator",
 		summary:
-			"Four-theme palette system, three new product surfaces (Network, Changelog, Observability), and 12 new models including Claude Opus 4.8 and Gemini 3.1 Pro.",
+			"Four-theme palette system, three new product surfaces (Network, Changelog, Observability), and a broader model catalog across flagship and open-weight tiers.",
 		highlights: [
-			`${MODEL_COUNT}+ models available — added Claude Opus 4.8, Gemini 3.1 Pro, Grok 4.3, Llama 4 70B`,
+			`${MODEL_COUNT}+ models available across the current public catalog`,
 			"Four-theme palette (Emerald, Amber, Mono, Synth) — one-click switcher in the navbar",
 			"New `/network` page — programmable network primitives inspired by GSMA OpenGateway",
 			"New `/observability` page — per-route latency, error budget, request volume",
@@ -348,20 +348,20 @@ export default function ChangelogPage() {
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
-									href="https://github.com/oma-ai/releases"
+									href="https://github.com/NosytLabs/oma-ai/releases"
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex items-center gap-2 bg-accent text-[var(--color-accent-fg)] hover:bg-[var(--color-accent-hover)] px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									<Rss className="h-4 w-4" aria-hidden="true" />
 									RSS feed
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link
-									href="https://github.com/oma-ai"
+									href="https://github.com/NosytLabs/oma-ai"
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex items-center gap-2 bg-surface text-text border border-border hover:border-accent hover:text-accent px-5 py-2.5 rounded-md font-medium transition-colors"
+									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Watch on GitHub
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

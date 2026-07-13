@@ -460,7 +460,6 @@ function ShellContent({
 						inputRef={inputRef}
 					/>
 
-					{(mediaMode === "text" || !isChat) && (
 						<div className="flex-none p-4 bg-void border-t border-border">
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner
@@ -493,7 +492,6 @@ function ShellContent({
 								</div>
 							</div>
 						</div>
-					)}
 				</section>
 
 				<ChatSettingsPanel

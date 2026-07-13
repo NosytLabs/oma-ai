@@ -31,7 +31,12 @@ export const depositTypeEnum = pgEnum("deposit_type", [
   "wrong_network_recovery",
 ]);
 
-export const providerEnum = pgEnum("provider", ["venice", "tinyfish", "surplus"]);
+export const providerEnum = pgEnum("provider", [
+	"venice",
+	"tinyfish",
+	"surplus",
+	"gonka",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),

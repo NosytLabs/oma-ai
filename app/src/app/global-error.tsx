@@ -34,8 +34,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 				style={{
 					minHeight: "100vh",
 					margin: 0,
-					backgroundColor: "var(--color-void, #0a0a0f)",
-					color: "var(--color-text, #e5e7eb)",
+					backgroundColor: "var(--color-void, #07090a)",
+					color: "var(--color-text, #d8dcd6)",
 					fontFamily: "system-ui, -apple-system, sans-serif",
 				}}
 			>
@@ -90,9 +90,9 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 						style={{
 							padding: "0.625rem 1.25rem",
 							borderRadius: "0.5rem",
-							border: "1px solid var(--color-accent, #10b981)",
-							background: "var(--color-accent, #10b981)",
-							color: "var(--color-void, #0a0a0f)",
+							border: "1px solid var(--color-accent, #46d39a)",
+							background: "var(--color-accent, #46d39a)",
+							color: "var(--color-void, #07090a)",
 							fontWeight: 600,
 							cursor: "pointer",
 						}}
