@@ -90,9 +90,9 @@ export const ROUTES: Record<string, RouteInfo> = {
 
 /**
  * Lightweight wrapper for the public payment-link info returned by
- * the Houdini / x402 facilitator endpoints. The dashboard's deposit
- * flow treats this as opaque metadata; the type only exists so
- * components can pass the value through without `any`.
+ * the x402 facilitator endpoints. The dashboard's deposit flow
+ * treats this as opaque metadata; the type only exists so components
+ * can pass the value through without `any`.
  */
 export interface PaymentLinkInfo {
 	/** Stable ID for the payment intent. */

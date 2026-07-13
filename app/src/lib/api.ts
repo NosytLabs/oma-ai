@@ -7,7 +7,7 @@
  *   - `./api/client.ts`   — `request()`, `ApiError`, `BackendUnavailableError`, cache helpers
  *   - `./api/types.ts`    — all response/request interfaces
  *   - `./api/auth.ts`     — `api.auth.*` (SIWE, Solana, sessions, keys)
- *   - `./api/deposit.ts`  — `api.deposit.*` (USDC, OMA, Houdini, status)
+ *   - `./api/deposit.ts`  — `api.deposit.*` (USDC, LI.FI / CCTP, status)
  *   - `./api/resources.ts`— `api.balance`, `api.usage`, `api.models`
  *   - `./api/inference.ts`— `api.health`
  *   - `./api/admin.ts`    — `api.admin.*`
