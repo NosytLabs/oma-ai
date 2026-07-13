@@ -106,6 +106,7 @@
 		--color-border-subtle: rgba(255, 255, 255, 0.04);
 		--color-border-bright: var(--color-border-hi);
 		--color-text-primary: var(--color-text-bright);
+		--color-text-inverse: var(--color-text-bright); /* for text on dark/accent backgrounds */
 		--color-accent-fg: var(--color-void);
 		--color-accent-hover: var(--color-accent-bright);
 		--color-accent-muted: var(--color-text-muted);
