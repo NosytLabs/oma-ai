@@ -115,6 +115,21 @@
 		--color-bg: var(--color-void);
 		--color-bg-elevated: var(--color-panel);
 		--color-accent-dim-soft: var(--color-accent-soft);
+
+		/* Dim variants — used for subtle glows, tints, and capability chips */
+		--color-secondary-dim: rgba(232, 196, 104, 0.12);
+		--color-tertiary-dim: rgba(110, 168, 254, 0.12);
+		--color-violet-dim: rgba(167, 139, 250, 0.12);
+		--color-warning-dim: rgba(240, 180, 41, 0.12);
+		--color-error-dim: rgba(248, 113, 113, 0.12);
+		--color-pink: #f472b6;
+		--color-pink-dim: rgba(244, 114, 182, 0.12);
+
+		/* Provider-specific colors (for charts, brand indicators, status dots) */
+		--color-provider-venice: #a78bfa;      /* violet */
+		--color-provider-antseed: #34d399;     /* emerald - same as success */
+		--color-provider-openrouter: #6ea8fe;  /* soft blue - same as tertiary */
+		--color-provider-together: #f472b6;    /* pink */
 	}
 
 	/* No light mode right now — the site is dark-first by design. */
