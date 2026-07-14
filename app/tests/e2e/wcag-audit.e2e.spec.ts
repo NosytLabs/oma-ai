@@ -36,6 +36,11 @@ const PUBLIC_PAGES = [
 	{ name: "login", path: "/login" },
 	{ name: "network", path: "/network" },
 	{ name: "changelog", path: "/changelog" },
+	{ name: "privacy", path: "/privacy" },
+	{ name: "terms", path: "/terms" },
+	{ name: "compare", path: "/compare" },
+	{ name: "observability", path: "/observability" },
+	{ name: "swap", path: "/swap" },
 ];
 
 // Gated userflows — demo cookie lets us render the real UI without auth.
@@ -46,10 +51,15 @@ const GATED_PAGES = [
 	{ name: "dashboard-api-keys", path: "/dashboard/api-keys" },
 	{ name: "settings", path: "/settings" },
 	{ name: "deposit", path: "/deposit" },
+	{ name: "image-generation", path: "/image-generation" },
+	{ name: "video-generation", path: "/video-generation" },
 ];
 
-	test.describe("WCAG 2.1 AA audit (axe-core)", () => {
-		test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
+test.describe("WCAG 2.1 AA audit (axe-core)", () => {
+	test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
+	// Run serially: parallel workers race the Next dev server's first-compile
+	// per route and trigger 30s timeouts. 1 worker = ~2.5min for 40 cases.
+	test.describe.configure({ mode: "serial" });
 
 		for (const { name, path } of PUBLIC_PAGES) {
 			test(`dark theme: ${name} (${path})`, async ({ page }) => {
