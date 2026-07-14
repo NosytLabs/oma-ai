@@ -40,20 +40,8 @@
  *     rate-limit / network-down come from `shapeAuthError`.
  *   - `useReducedMotion` honored globally; all entry animations gated.
  *
- * TODO(2FA)
- * ---------
- * Account-number login doesn't currently expose a TOTP step. When the
- * server-side flag (`users.two_factor_enabled`) lands and the
- * `/api/auth/account/login` endpoint starts returning
- * `{ requiresTwoFactor: true }` instead of issuing a session, this page
- * needs to:
- *   1. Catch that response shape in `AccountLoginModal.handleLogin`
- *      and surface a 6-digit TOTP input below the account-number field.
- *   2. Auto-advance each digit, paste-fill, and resubmit with
- *      `{ accountNumber, totpCode }`.
- *   3. On success, fall through to the existing cookie-set path.
- * Until the server supports it, leaving a hook here is wasteful — the
- * audit log is the source of truth.
+ * TODO(2FA) — moved to docs/roadmap.md#2fa-login-flow (2026-07-14).
+ * Track there when the server-side `users.two_factor_enabled` flag lands.
  *
  * See `app/src/components/auth/` for the shared primitives this page
  * composes.

@@ -110,7 +110,7 @@ export class ApiError extends Error {
 export class BackendUnavailableError extends Error {
 	constructor() {
 		super(
-			"Backend server is not running. Please ensure the API server is started on port 3001.",
+			"Backend server is not reachable. Please ensure the API server is started (configured via NEXT_PUBLIC_API_URL).",
 		);
 		this.name = "BackendUnavailableError";
 	}

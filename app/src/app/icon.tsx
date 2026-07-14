@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BRAND_COLORS } from "@/lib/brand";
 
 export const runtime = "edge";
 export const alt = "OMA · Open Model Access";
@@ -19,9 +20,9 @@ export default function Icon() {
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
-					background: "#07090a",
+					background: BRAND_COLORS.void,
 					borderRadius: 8,
-					border: "1px solid #1c2822",
+					border: `1px solid ${BRAND_COLORS.panel}`,
 					position: "relative",
 				}}
 			>
@@ -39,7 +40,7 @@ export default function Icon() {
 						style={{
 							width: 3.2,
 							height: 6,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 2,
 							opacity: 0.7,
 						}}
@@ -48,7 +49,7 @@ export default function Icon() {
 						style={{
 							width: 3.2,
 							height: 10,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 2,
 							opacity: 0.88,
 						}}
@@ -57,7 +58,7 @@ export default function Icon() {
 						style={{
 							width: 3.2,
 							height: 14,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 2,
 						}}
 					/>
@@ -71,7 +72,7 @@ export default function Icon() {
 						width: 4,
 						height: 4,
 						borderRadius: 999,
-						background: "#46d39a",
+						background: BRAND_COLORS.accent,
 					}}
 				/>
 			</div>

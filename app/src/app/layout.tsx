@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
+import { BRAND_COLORS } from "@/lib/brand";
 import { MotionProvider } from "@/components/motion-provider";
 import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -35,8 +36,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
 export const viewport: Viewport = {
 	themeColor: [
-		{ media: "(prefers-color-scheme: dark)", color: "#07090a" },
-		{ media: "(prefers-color-scheme: light)", color: "#07090a" },
+		{ media: "(prefers-color-scheme: dark)", color: BRAND_COLORS.void },
+		{ media: "(prefers-color-scheme: light)", color: BRAND_COLORS.void },
 	],
 	colorScheme: "dark",
 	width: "device-width",

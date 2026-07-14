@@ -315,7 +315,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 										Backend unavailable
 									</div>
 									<div className="text-xs text-text-muted mt-0.5">
-										Make sure the API server is running on port 3001.
+										Make sure the API server is reachable (configured via NEXT_PUBLIC_API_URL).
 									</div>
 								</div>
 							</>

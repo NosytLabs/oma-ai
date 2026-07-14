@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BRAND_COLORS } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
@@ -8,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
 			"One gateway. Every model. No lock-in. OpenAI-compatible inference paid in USDC.",
 		start_url: "/",
 		display: "standalone",
-		background_color: "#07090a",
-		theme_color: "#07090a",
+		background_color: BRAND_COLORS.void,
+		theme_color: BRAND_COLORS.void,
 		icons: [
 			{
 				src: "/favicon.svg",

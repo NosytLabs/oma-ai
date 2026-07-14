@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BRAND_COLORS } from "@/lib/brand";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
@@ -12,7 +13,7 @@ export default function AppleIcon() {
 		(
 			<div
 				style={{
-					background: "#07090a",
+					background: BRAND_COLORS.void,
 					width: "100%",
 					height: "100%",
 					display: "flex",
@@ -28,8 +29,8 @@ export default function AppleIcon() {
 						width: 148,
 						height: 148,
 						borderRadius: 34,
-						background: "#0f1512",
-						border: "2px solid #1c2822",
+						background: BRAND_COLORS.void,
+						border: `2px solid ${BRAND_COLORS.panel}`,
 						display: "flex",
 					}}
 				/>
@@ -40,7 +41,7 @@ export default function AppleIcon() {
 						width: 96,
 						height: 96,
 						borderRadius: 999,
-						border: "6px solid #46d39a",
+						border: `6px solid ${BRAND_COLORS.accent}`,
 						display: "flex",
 					}}
 				/>
@@ -57,7 +58,7 @@ export default function AppleIcon() {
 						style={{
 							width: 12,
 							height: 22,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 6,
 							opacity: 0.7,
 						}}
@@ -66,7 +67,7 @@ export default function AppleIcon() {
 						style={{
 							width: 12,
 							height: 36,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 6,
 							opacity: 0.88,
 						}}
@@ -75,7 +76,7 @@ export default function AppleIcon() {
 						style={{
 							width: 12,
 							height: 52,
-							background: "#46d39a",
+							background: BRAND_COLORS.accent,
 							borderRadius: 6,
 						}}
 					/>
@@ -88,8 +89,8 @@ export default function AppleIcon() {
 						width: 14,
 						height: 14,
 						borderRadius: 999,
-						background: "#46d39a",
-						boxShadow: "0 0 18px #46d39a",
+						background: BRAND_COLORS.accent,
+						boxShadow: `0 0 18px ${BRAND_COLORS.accent}`,
 					}}
 				/>
 			</div>
