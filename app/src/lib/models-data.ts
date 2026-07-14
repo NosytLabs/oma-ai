@@ -243,66 +243,6 @@ export function catalogFromRaw(catalog: RawCatalog): Model[] {
 // Lazy client loader
 // ---------------------------------------------------------------------------
 
-let catalogPromise: Promise<Model[]> | null = null;
-
-interface ApiModelsResponse {
-	data?: Array<{
-		id: string;
-		provider?: string;
-		displayName?: string;
-		maxTokens?: number;
-		inputPricePer1M?: number;
-		outputPricePer1M?: number;
-		category?: string;
-		veniceId?: string;
-		description?: string;
-		capabilities?: string[];
-	}>;
-}
-
-/**
- * Lazily load the full model catalog at runtime. Falls back to an empty
- * array if the request fails — callers should already be defensive
- * (e.g. `useLiveModels` falls back to `FALLBACK_MODELS`).
- *
- * Memoizes the promise so concurrent callers share one in-flight request.
- */
-export function loadModels(): Promise<Model[]> {
-	if (catalogPromise) return catalogPromise;
-	catalogPromise = (async () => {
-		try {
-			const res = await fetch("/v1/models", {
-				signal: AbortSignal.timeout(8_000),
-			});
-			if (!res.ok) return [];
-			const json = (await res.json()) as ApiModelsResponse;
-			const raw: RawCatalog = {
-				MODEL_CATALOG: Object.fromEntries(
-					(json.data ?? []).map((m) => [
-						m.id,
-						{
-							id: m.id,
-							displayName: m.displayName ?? m.id,
-							provider: m.provider ?? "Venice",
-							category: m.category ?? "mid",
-							maxTokens: m.maxTokens ?? 0,
-							inputPricePer1M: m.inputPricePer1M ?? 0,
-							outputPricePer1M: m.outputPricePer1M ?? 0,
-							veniceId: m.veniceId,
-							description: m.description,
-							capabilities: m.capabilities ?? [],
-						} satisfies RawEntry,
-					]),
-				),
-			};
-			return catalogFromRaw(raw);
-		} catch {
-			return [];
-		}
-	})();
-	return catalogPromise;
-}
-
 // ---------------------------------------------------------------------------
 // Synchronous SSR fallback
 // ---------------------------------------------------------------------------
@@ -401,9 +341,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "MiniMax M2.7",
 			provider: "Gonka",
 			category: "budget",
-			maxTokens: 131072,
-			inputPricePer1M: 0.0002,
-			outputPricePer1M: 0.0008,
+			maxTokens: 205000, // OpenBroker docs: 200-205k context
+			inputPricePer1M: 0.017, // verified Gonka base rate @ $0.017/1M (2026-07-14)
+			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
 		},
 		"kimi-k2.6": {
@@ -411,9 +351,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Moonshot Kimi K2.6",
 			provider: "Gonka",
 			category: "budget",
-			maxTokens: 131072,
-			inputPricePer1M: 0.0002,
-			outputPricePer1M: 0.0008,
+			maxTokens: 240000, // per v0.2.12 release notes
+			inputPricePer1M: 0.017, // Gonka base rate; INACTIVE on network
+			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
 		},
 		"glm-5.2-fp8": {
@@ -422,8 +362,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "Gonka",
 			category: "budget",
 			maxTokens: 131072,
-			inputPricePer1M: 0.0002,
-			outputPricePer1M: 0.0008,
+			inputPricePer1M: 0.017, // Gonka base rate; INACTIVE on network
+			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
 		},
 	},

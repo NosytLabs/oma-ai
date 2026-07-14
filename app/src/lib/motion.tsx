@@ -75,11 +75,6 @@ export const fadeUp: Variants = {
 	},
 };
 
-export const scaleIn: Variants = {
-	hidden: { opacity: 0, scale: 0.94 },
-	show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: EASE_OUT } },
-};
-
 export const scaleInSpring: Variants = {
 	hidden: { opacity: 0, scale: 0.92 },
 	show: { opacity: 1, scale: 1, transition: EASE_SPRING_SOFT },

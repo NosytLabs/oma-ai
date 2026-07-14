@@ -60,6 +60,9 @@ test.describe("WCAG 2.1 AA audit (axe-core)", () => {
 	// Run serially: parallel workers race the Next dev server's first-compile
 	// per route and trigger 30s timeouts. 1 worker = ~2.5min for 40 cases.
 	test.describe.configure({ mode: "serial" });
+	// Retry once on transient dev-server first-compile timeouts. axe itself
+	// is deterministic; retries only cover page.goto/page.reload waits.
+	test.describe.configure({ retries: 1 });
 
 		for (const { name, path } of PUBLIC_PAGES) {
 			test(`dark theme: ${name} (${path})`, async ({ page }) => {
