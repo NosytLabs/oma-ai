@@ -425,10 +425,10 @@ export default function CreditsPage() {
 							))}
 						</div>
 
-						<div>
-							<label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-text-muted">
+						<fieldset className="border-0 p-0 m-0">
+							<legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
 								Payment Method
-							</label>
+							</legend>
 							<div className="grid grid-cols-1 gap-3">
 								<m.button
 									onClick={() => setSelectedPayment("usdc")}
@@ -444,7 +444,7 @@ export default function CreditsPage() {
 									USDC
 								</m.button>
 							</div>
-						</div>
+						</fieldset>
 
 						<m.button
 							onClick={handleBuyCredits}
