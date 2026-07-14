@@ -164,7 +164,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 		together: "no",
 	},
 	lowest_input_price: {
-		oma: "$0.0002",
+		oma: "$0.017",
 		portkey: "$0.10",
 		litellm: "$0.10",
 		openrouter: "$0.05",
@@ -221,7 +221,7 @@ const summaryCards = [
 	},
 	{
 		title: "Free tier, structurally",
-		body: "Cheapest budget tier is $0.0002/M tokens via Gonka/OpenBroker. 10K free users costs ~$3/mo. No credit card.",
+		body: "Cheapest budget tier is $0.017/M tokens via Gonka/OpenBroker. 10K free users costs ~$50/mo at base rate (cheaper than most SaaS bills). No credit card.",
 	},
 	{
 		title: "Multi-provider + circuit breaker",
@@ -353,7 +353,7 @@ export default function ComparePage() {
 							<p className="text-sm text-text-secondary mb-3">
 Portkey is enterprise-grade but requires a credit card, account
 							signup, and offers no free tier. oma is privacy-first,
-							x402-native, and starts at $0.0002/M tokens.
+							x402-native, and starts at $0.017/M tokens.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">oma wins on:</strong> privacy,

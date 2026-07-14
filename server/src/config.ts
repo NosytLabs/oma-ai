@@ -20,8 +20,14 @@ const envSchema = z.object({
   // returns 503 if requests target it and this key is unset.
   ZERO_G_API_KEY: z.string().min(1).optional(),
   // Gonka decentralized provable-inference broker (optional).
+  // Gonka Labs OpenBroker: pilot markup zero, GNK-native billing, "no markup
+  // on top of network rates". Verified 2026-07-14 via:
+  //   https://openbroker.gonka.gg/register ("Pilot markup is zero.")
+  //   https://openbroker.gonka.gg/docs ("No markup on top of network rates")
+  // For self-hosted: use https://api.your-gateway.example/v1 instead.
+  // Override via GONKA_API_URL env var.
   GONKA_API_KEY: z.string().min(1).optional(),
-  GONKA_API_URL: z.string().url().optional().default("https://inference.dahl.global"),
+  GONKA_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg/v1"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.

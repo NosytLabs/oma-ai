@@ -9,12 +9,15 @@ const GONKA_HEALTH_TIMEOUT_MS = 5_000;
 
 /**
  * Gonka is a decentralized "provable inference" network. OMA reaches it
- * through a community broker (inference.dahl.global is one of the listed
- * Gonka brokers). From OMA's perspective a broker is just an
- * OpenAI-compatible endpoint: base_url + Bearer key + /v1/chat/completions.
+ * through a community broker — by default Gonka Labs OpenBroker
+ * (api.openbroker.gonka.gg), which has 0% markup and passes network rates
+ * through. Other community brokers (gate.joingonka.ai, inference.dahl.global,
+ * gonka-api.org, proxy.gonka.gg) also work — override via GONKA_API_URL.
+ * From OMA's perspective a broker is just an OpenAI-compatible endpoint:
+ * base_url + Bearer key + /v1/chat/completions.
  *
- * WAF note: the dahl broker sits behind a Cloudflare rule (error 1010) that
- * blocks requests without a browser-like User-Agent. We always send one.
+ * WAF note: some brokers (e.g. dahl) sit behind Cloudflare with bot-check
+ * (error 1010). We always send a browser-like User-Agent as a safety net.
  */
 function gonkaHeaders(): Record<string, string> {
   const key = config.GONKA_API_KEY;

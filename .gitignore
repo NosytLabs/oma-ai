@@ -63,3 +63,6 @@ server/models.json.bak
 *.swo
 *~
 
+
+# Hermes agent working directory
+.hermes/

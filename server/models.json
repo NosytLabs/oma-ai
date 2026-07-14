@@ -1695,7 +1695,7 @@
         "web-search",
         "function-calling"
       ],
-      "description": "Mercury 2 is a diffusion-based reasoning LLM from Inception, delivering over 1,000 tokens per second \u2014 5x faster than leading speed-optimized models \u2014 with strong reasoning, tool use, and structured o",
+      "description": "Mercury 2 is a diffusion-based reasoning LLM from Inception, delivering over 1,000 tokens per second — 5x faster than leading speed-optimized models — with strong reasoning, tool use, and structured o",
       "creditsPerMillionInput": 39,
       "creditsPerMillionOutput": 117
     },
@@ -2078,11 +2078,11 @@
       "gonkaId": "MiniMaxAI/MiniMax-M2.7",
       "provider": "gonka",
       "primaryProvider": "gonka",
-      "inputPricePer1M": 0.0002,
-      "outputPricePer1M": 0.0008,
+      "inputPricePer1M": 0.017,
+      "outputPricePer1M": 0.017,
       "markupPercent": 25,
       "category": "budget",
-      "maxTokens": 131072,
+      "maxTokens": 205000,
       "supportsStreaming": true,
       "displayName": "MiniMax M2.7",
       "capabilities": [
@@ -2090,7 +2090,8 @@
       ],
       "description": "MiniMax M2.7 — budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0
+      "creditsPerMillionOutput": 0,
+      "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source."
     },
     "kimi-k2.6": {
       "id": "kimi-k2.6",
@@ -2098,11 +2099,11 @@
       "gonkaId": "moonshotai/Kimi-K2.6",
       "provider": "gonka",
       "primaryProvider": "gonka",
-      "inputPricePer1M": 0.0002,
-      "outputPricePer1M": 0.0008,
+      "inputPricePer1M": 0.017,
+      "outputPricePer1M": 0.017,
       "markupPercent": 25,
       "category": "budget",
-      "maxTokens": 131072,
+      "maxTokens": 240000,
       "supportsStreaming": true,
       "displayName": "Moonshot Kimi K2.6",
       "capabilities": [
@@ -2110,7 +2111,8 @@
       ],
       "description": "Moonshot Kimi K2.6 — budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0
+      "creditsPerMillionOutput": 0,
+      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network as of 2026-07-14; kept for reactivation."
     },
     "glm-5.2-fp8": {
       "id": "glm-5.2-fp8",
@@ -2118,8 +2120,8 @@
       "gonkaId": "zai-org/GLM-5.2-FP8",
       "provider": "gonka",
       "primaryProvider": "gonka",
-      "inputPricePer1M": 0.0002,
-      "outputPricePer1M": 0.0008,
+      "inputPricePer1M": 0.017,
+      "outputPricePer1M": 0.017,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 131072,
@@ -2130,7 +2132,8 @@
       ],
       "description": "Zhipu GLM 5.2 (FP8) — budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0
+      "creditsPerMillionOutput": 0,
+      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network; preserved in catalog."
     }
   },
   "VIDEO_MODELS": {
