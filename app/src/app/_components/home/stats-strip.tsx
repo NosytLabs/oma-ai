@@ -2,16 +2,41 @@
 
 /**
  * StatsStrip — honest product metrics (no vanity counters).
+ * The "Models live" figure is fetched from the running API so the label
+ * is only ever true. Falls back to the build-time MODEL_COUNT if the
+ * backend is unreachable (honest: shows the catalog size, not a lie).
  */
 
+import { useEffect, useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
 import { MODEL_COUNT } from "@/lib/models-data";
 
-const STATS = [
+function useLiveModelCount() {
+	const [count, setCount] = useState<number | null>(null);
+	useEffect(() => {
+		let alive = true;
+		fetch("/api/v1/models")
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (!alive || !data?.data?.length) return;
+				setCount(data.data.length);
+			})
+			.catch(() => {
+				/* backend down — keep null → fall back to MODEL_COUNT */
+			});
+		return () => {
+			alive = false;
+		};
+	}, []);
+	return count;
+}
+
+const STATS: { label: string; value: string; hint: string; live?: boolean }[] = [
 	{
 		label: "Models live",
 		value: `${MODEL_COUNT}+`,
 		hint: "via Venice + routing",
+		live: true,
 	},
 	{
 		label: "From",
@@ -31,6 +56,12 @@ const STATS = [
 ] as const;
 
 export function StatsStrip() {
+	const liveCount = useLiveModelCount();
+	const stats = STATS.map((s) =>
+		s.live && liveCount != null
+			? { ...s, value: `${liveCount}+`, hint: "live now · Venice + routing" }
+			: s,
+	);
 	return (
 		<section
 			aria-labelledby="stats-headline"
@@ -46,13 +77,16 @@ export function StatsStrip() {
 					</p>
 				</Reveal>
 				<ul className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-8">
-					{STATS.map((stat) => (
+					{stats.map((stat) => (
 						<li key={stat.label} className="text-center sm:text-left">
 							<Reveal>
 								<p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-muted">
 									{stat.label}
 								</p>
-								<p className="mt-2 text-display text-3xl sm:text-4xl tracking-tight text-text-bright">
+								<p
+									aria-live="polite"
+									className="mt-2 text-display text-3xl sm:text-4xl tracking-tight text-text-bright"
+								>
 									{stat.value}
 								</p>
 								<p className="mt-1.5 text-sm text-text-secondary">{stat.hint}</p>
