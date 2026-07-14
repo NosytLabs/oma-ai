@@ -81,14 +81,21 @@ export async function middleware(request: NextRequest) {
 	const demoAllowed = DEMO_BYPASS_PATHS.some((path) => pathname.startsWith(path));
 	if (wantsDemo && demoAllowed) {
 		const res = NextResponse.next();
-		res.cookies.set({
-			name: DEMO_COOKIE_NAME,
+		const cookieOpts = {
 			value: "1",
 			maxAge: 60 * 60 * 24, // 24h
 			path: "/",
-			sameSite: "lax",
-			httpOnly: true,
+			sameSite: "lax" as const,
 			secure: process.env.NODE_ENV === "production",
+		};
+		// Authority copy — httpOnly so XSS can't read it.
+		res.cookies.set({ name: DEMO_COOKIE_NAME, httpOnly: true, ...cookieOpts });
+		// Public hint — JS-readable so the wallet provider can flip isDemo=true
+		// and bypass in-page auth gates (credits / api-keys / etc.).
+		res.cookies.set({
+			name: `${DEMO_COOKIE_NAME}-public`,
+			httpOnly: false,
+			...cookieOpts,
 		});
 		return res;
 	}

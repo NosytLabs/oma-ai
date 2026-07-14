@@ -256,7 +256,8 @@ export function DashboardHeader({
 
 			{/* Tab Navigation */}
 			{onTabChange && (
-				<nav
+				<div
+					role="tablist"
 					className="flex gap-px border-b border-border"
 					aria-label="Dashboard sections"
 				>
@@ -283,7 +284,7 @@ export function DashboardHeader({
 							</span>
 						</button>
 					))}
-				</nav>
+				</div>
 			)}
 		</div>
 	);

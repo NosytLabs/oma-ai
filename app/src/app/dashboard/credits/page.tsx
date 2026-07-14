@@ -280,6 +280,7 @@ export default function CreditsPage() {
 					<m.button
 						onClick={() => refetch()}
 						disabled={refreshing}
+						aria-label="Refresh"
 						className="btn-secondary flex items-center gap-2 py-2 px-4"
 						whileHover={{ scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}

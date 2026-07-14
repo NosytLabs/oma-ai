@@ -63,10 +63,12 @@ function deleteCookie(name: string) {
 }
 
 const DEMO_COOKIE_NAME = "oma-demo";
+const DEMO_PUBLIC_COOKIE_NAME = "oma-demo-public";
 
 function clearDemoCookie() {
 	if (typeof document === "undefined") return;
 	deleteCookie(DEMO_COOKIE_NAME);
+	deleteCookie(DEMO_PUBLIC_COOKIE_NAME);
 }
 
 interface StoredSession {
@@ -251,7 +253,9 @@ function InnerProvider({
 		let cancelled = false;
 		const hasDemoCookie =
 			typeof document !== "undefined" &&
-			document.cookie.split("; ").some((c) => c.startsWith("oma-demo="));
+			document.cookie
+				.split("; ")
+				.some((c) => c.startsWith(`${DEMO_PUBLIC_COOKIE_NAME}=`));
 		if (hasDemoCookie) setIsDemo(true);
 
 		// Hard-reload restore: the JWT lives only in the HttpOnly cookie, so the

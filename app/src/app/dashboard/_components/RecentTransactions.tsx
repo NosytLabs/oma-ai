@@ -62,7 +62,10 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 					<p className="text-sm text-text-secondary">No transactions yet</p>
 					<p className="text-[11px] text-text-muted">
 						Deposits, usage, and refunds will appear here.{" "}
-						<Link href="/deposit" className="text-accent hover:underline">
+						<Link
+							href="/deposit"
+							className="text-accent underline underline-offset-2 hover:no-underline"
+						>
 							Make your first deposit →
 						</Link>
 					</p>

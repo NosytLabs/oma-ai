@@ -17,6 +17,7 @@ const UnifiedDepositInterface = dynamic(
 		ssr: false,
 		loading: () => (
 			<div
+				role="status"
 				className="h-96 w-full animate-pulse rounded-lg bg-surface/40"
 				aria-label="Loading deposit interface"
 			/>

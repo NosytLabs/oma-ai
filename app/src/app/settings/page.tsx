@@ -97,7 +97,7 @@ const TABS: TabDef[] = [
 ];
 
 export default function SettingsPage() {
-	const { isAuthenticated, connectEvm, disconnect } = useWallet();
+	const { isAuthenticated, isDemo, connectEvm, disconnect } = useWallet();
 	const toast = useToast();
 
 	const [user, setUser] = useState<User | null>(null);
@@ -131,6 +131,31 @@ export default function SettingsPage() {
 	useEffect(() => {
 		if (!isAuthenticated) return;
 		let cancelled = false;
+		// Demo mode: isAuthenticated is true (isDemo || !!session) so the page
+		// renders, but there is no real backend session. Show mock data instead
+		// of firing API calls that 401.
+		if (isDemo) {
+			setUser({
+				id: "demo-user",
+				address: "0x0000…0000",
+				evmAddress: null,
+				accountNumber: null,
+				createdAt: new Date().toISOString(),
+				twoFactorEnabled: false,
+			});
+			setApiKeys([]);
+			setSessions([
+				{
+					id: "demo-session",
+					device: "Demo preview (mock data)",
+					ip: "—",
+					lastActive: new Date().toISOString(),
+					current: true,
+				},
+			]);
+			setLoading(false);
+			return;
+		}
 		const fetchData = async () => {
 			setLoading(true);
 			setError(null);
@@ -157,7 +182,7 @@ export default function SettingsPage() {
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthenticated]);
+	}, [isAuthenticated, isDemo]);
 
 	const handleCopy = useCallback(
 		(text: string, id: string) => {
@@ -347,6 +372,7 @@ export default function SettingsPage() {
 						<button
 							type="button"
 							onClick={() => setError(null)}
+							aria-label="Dismiss error"
 							className="ml-auto rounded p-1 text-text-secondary hover:bg-error/10 hover:text-text"
 						>
 							<X className="h-3.5 w-3.5" />
@@ -357,7 +383,7 @@ export default function SettingsPage() {
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
 				{/* Sidebar tabs */}
-				<nav className="flex flex-col gap-1" aria-label="Settings sections">
+				<div role="tablist" className="flex flex-col gap-1" aria-label="Settings sections">
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
@@ -389,7 +415,7 @@ export default function SettingsPage() {
 							</button>
 						);
 					})}
-				</nav>
+				</div>
 
 				{/* Tab panel */}
 				<div className="min-w-0">

@@ -38,6 +38,16 @@ const PUBLIC_PAGES = [
 	{ name: "changelog", path: "/changelog" },
 ];
 
+// Gated userflows — demo cookie lets us render the real UI without auth.
+// Middleware sets oma-demo=1 when ?demo=1 is on these paths.
+const GATED_PAGES = [
+	{ name: "dashboard", path: "/dashboard" },
+	{ name: "dashboard-credits", path: "/dashboard/credits" },
+	{ name: "dashboard-api-keys", path: "/dashboard/api-keys" },
+	{ name: "settings", path: "/settings" },
+	{ name: "deposit", path: "/deposit" },
+];
+
 	test.describe("WCAG 2.1 AA audit (axe-core)", () => {
 		test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
 
@@ -56,7 +66,26 @@ const PUBLIC_PAGES = [
 					document.documentElement.setAttribute("data-theme", "light");
 					localStorage.setItem("oma-theme", "light");
 				});
-				await page.reload({ waitUntil: "load" });
+				await page.reload({ waitUntil: "domcontentloaded" });
+				await page.waitForTimeout(2500);
+				await runAxe(page, `light:${name}`);
+			});
+		}
+
+		for (const { name, path } of GATED_PAGES) {
+			test(`dark theme: ${name} (${path}, demo)`, async ({ page }) => {
+				await page.goto(`${path}?demo=1`, { waitUntil: "load" });
+				await page.waitForTimeout(2500);
+				await runAxe(page, `dark:${name}`);
+			});
+
+			test(`light theme: ${name} (${path}, demo)`, async ({ page }) => {
+				await page.goto(`${path}?demo=1`, { waitUntil: "load" });
+				await page.evaluate(() => {
+					document.documentElement.setAttribute("data-theme", "light");
+					localStorage.setItem("oma-theme", "light");
+				});
+				await page.reload({ waitUntil: "domcontentloaded" });
 				await page.waitForTimeout(2500);
 				await runAxe(page, `light:${name}`);
 			});
