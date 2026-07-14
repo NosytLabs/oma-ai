@@ -11,7 +11,6 @@ import { useCallback } from "react";
 export type { Capability, Model, Provider, Tier } from "./models-data";
 export {
 	formatPricePerMillion,
-	formatPricePerToken,
 	getModelsByTier,
 	MODELS,
 	PROVIDER_COLORS,

@@ -17,7 +17,7 @@
 //     lazy loader returns the full catalog for anything that needs it.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
-// `formatPricePerMillion`, `formatPricePerToken`, `getModelsByTier`,
+// `formatPricePerMillion`, `getModelsByTier`,
 // `MODEL_COUNT`, `MODELS`, `PROVIDER_COLORS`, `TIER_COLORS`, `TIER_ORDER`.
 
 export type Tier = "budget" | "mid" | "premium" | "frontier";
@@ -443,9 +443,6 @@ export function formatPricePerMillion(pricePer1M: number): string {
 	if (pricePer1M < 1) return `$${pricePer1M.toFixed(3)}`;
 	return `$${pricePer1M.toFixed(2)}`;
 }
-
-/** @deprecated use formatPricePerMillion — kept as alias for back-compat. */
-export const formatPricePerToken = formatPricePerMillion;
 
 export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	const grouped: Record<Tier, Model[]> = {

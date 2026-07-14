@@ -122,18 +122,19 @@ export function RevealStagger({
 		return <Tag className={className}>{children}</Tag>;
 	}
 
-	if (className) {
-		return (
-			<MotionTag
-				variants={staggerParent}
-				initial="hidden"
-				whileInView="show"
-				viewport={{ once, amount }}
-			>
-				<div className={className}>{children}</div>
-			</MotionTag>
-		);
-	}
+		if (className) {
+			return (
+				<MotionTag
+					className={className}
+					variants={staggerParent}
+					initial="hidden"
+					whileInView="show"
+					viewport={{ once, amount }}
+				>
+					{children}
+				</MotionTag>
+			);
+		}
 
 	return (
 		<MotionTag

@@ -669,7 +669,7 @@ function LoginCard(p: LoginCardProps) {
 				</div>
 			)}
 
-			{csrfPreparing && !csrfError && !offline && (
+			{csrfPreparing && !csrfError && !offline && accountLoginAvailable && (
 				<p
 					role="status"
 					aria-live="polite"
@@ -683,7 +683,9 @@ function LoginCard(p: LoginCardProps) {
 			<div
 				role="tablist"
 				aria-label="Authentication method"
-				className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1"
+				className={`mb-5 grid gap-1 rounded-lg border border-border bg-surface p-1 ${
+					accountLoginAvailable ? "grid-cols-2" : "grid-cols-1"
+				}`}
 			>
 				<TabButton
 					id="tab-wallet"
@@ -694,25 +696,24 @@ function LoginCard(p: LoginCardProps) {
 					onSelect={() => setTab("wallet")}
 					onKeyDown={onTabKeyDown}
 				/>
-				<TabButton
-					id="tab-account"
-					ref={accountTabRef}
-					label="Account number"
-					selected={tab === "account"}
-					icon={
-						<span
-							className="font-mono text-[11px] font-bold leading-none"
-							aria-hidden="true"
-						>
-							#
-						</span>
-					}
-					onSelect={() => {
-						if (accountLoginAvailable) setTab("account");
-					}}
-					onKeyDown={onTabKeyDown}
-					disabled={!accountLoginAvailable}
-				/>
+				{accountLoginAvailable && (
+					<TabButton
+						id="tab-account"
+						ref={accountTabRef}
+						label="Account number"
+						selected={tab === "account"}
+						icon={
+							<span
+								className="font-mono text-[11px] font-bold leading-none"
+								aria-hidden="true"
+							>
+								#
+							</span>
+						}
+						onSelect={() => setTab("account")}
+						onKeyDown={onTabKeyDown}
+					/>
+				)}
 			</div>
 
 			<div

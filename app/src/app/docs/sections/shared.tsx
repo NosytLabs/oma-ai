@@ -427,9 +427,16 @@ export function CodeBlock({
 				</div>
 			)}
 			<CopyButton text={code} id={id} />
-			<pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed">
-				<SyntaxHighlighter code={code} lang={lang ?? "text"} />
-			</pre>
+			{/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+			<section
+				aria-label={title ?? "Code example"}
+				tabIndex={0}
+				className="overflow-x-auto p-4 text-sm leading-relaxed"
+			>
+				<pre id={id} className="m-0 leading-relaxed">
+					<SyntaxHighlighter code={code} lang={lang ?? "text"} />
+				</pre>
+			</section>
 		</div>
 	);
 }
@@ -457,12 +464,19 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 			</div>
 			<div className="relative">
 				<CopyButton text={tabs[active].code} id={id} />
-				<pre id={id} className="overflow-x-auto p-4 text-sm leading-relaxed">
-					<SyntaxHighlighter
-						code={tabs[active].code}
-						lang={tabs[active].lang}
-					/>
-				</pre>
+				{/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+				<section
+					aria-label={tabs[active].label}
+					tabIndex={0}
+					className="overflow-x-auto p-4 text-sm leading-relaxed"
+				>
+					<pre id={id} className="m-0 leading-relaxed">
+						<SyntaxHighlighter
+							code={tabs[active].code}
+							lang={tabs[active].lang}
+						/>
+					</pre>
+				</section>
 			</div>
 		</div>
 	);

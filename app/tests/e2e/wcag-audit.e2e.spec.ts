@@ -38,29 +38,30 @@ const PUBLIC_PAGES = [
 	{ name: "changelog", path: "/changelog" },
 ];
 
-test.describe("WCAG 2.1 AA audit (axe-core)", () => {
-	test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
+	test.describe("WCAG 2.1 AA audit (axe-core)", () => {
+		test.skip(SKIP, "Set OMA_SKIP_WCAG=0 to enable");
 
-	for (const { name, path } of PUBLIC_PAGES) {
-		test(`dark theme: ${name} (${path})`, async ({ page }) => {
-			await page.goto(path, { waitUntil: "domcontentloaded" });
-			// Wait for client-side hydration on dynamic pages.
-			await page.waitForSelector("main h1, main h2", { timeout: 25_000 });
-			await runAxe(page, `dark:${name}`);
-		});
-
-		test(`light theme: ${name} (${path})`, async ({ page }) => {
-			await page.goto(path, { waitUntil: "domcontentloaded" });
-			await page.evaluate(() => {
-				document.documentElement.setAttribute("data-theme", "light");
-				localStorage.setItem("oma-theme", "light");
+		for (const { name, path } of PUBLIC_PAGES) {
+			test(`dark theme: ${name} (${path})`, async ({ page }) => {
+				await page.goto(path, { waitUntil: "load" });
+				// Allow client-side hydration (framer-motion entrance, wagmi, etc.)
+				// without depending on a specific element being "visible".
+				await page.waitForTimeout(2500);
+				await runAxe(page, `dark:${name}`);
 			});
-			await page.reload({ waitUntil: "domcontentloaded" });
-			await page.waitForSelector("main h1, main h2", { timeout: 25_000 });
-			await runAxe(page, `light:${name}`);
-		});
-	}
-});
+
+			test(`light theme: ${name} (${path})`, async ({ page }) => {
+				await page.goto(path, { waitUntil: "load" });
+				await page.evaluate(() => {
+					document.documentElement.setAttribute("data-theme", "light");
+					localStorage.setItem("oma-theme", "light");
+				});
+				await page.reload({ waitUntil: "load" });
+				await page.waitForTimeout(2500);
+				await runAxe(page, `light:${name}`);
+			});
+		}
+	});
 
 async function runAxe(page: Page, label: string) {
 	const results = await new AxeBuilder({ page })

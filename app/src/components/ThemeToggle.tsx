@@ -71,7 +71,7 @@ export function ThemeToggle() {
 						}}
 					/>
 				</span>
-				<span className="text-xs font-mono lowercase tracking-tight hidden sm:inline">
+				<span className="text-xs font-mono lowercase tracking-tight text-text-secondary hidden sm:inline">
 					{theme}
 				</span>
 				<Palette className="h-3 w-3 opacity-50 sm:hidden" aria-hidden="true" />
