@@ -25,7 +25,7 @@ export const revalidate = 3600;
  */
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
-const MODEL_COUNT_LABEL = "95+";
+const MODEL_COUNT_LABEL = "97+";
 
 export async function GET() {
 	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;

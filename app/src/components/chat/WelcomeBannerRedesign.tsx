@@ -42,7 +42,7 @@ const STEPS = [
 	{
 		id: 1,
 		label: "Choose your model",
-		description: "Pick from 95+ models — frontier, budget, or specialized",
+		description: "Pick from 97+ models — frontier, budget, or specialized",
 		icon: Sparkles,
 		accent: "var(--color-accent)",
 	},

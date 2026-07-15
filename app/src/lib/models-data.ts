@@ -398,7 +398,7 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. The live catalog from
-// GET /v1/models is ~95+ models; the SSR fallback catalog (`MODELS`) only
+// GET /v1/models is ~97+ models; the SSR fallback catalog (`MODELS`) only
 // ships 11 hand-picked entries, so we use the real marketing number here
 // rather than `MODELS.length` (which would render "11+ models" everywhere).
-export const MODEL_COUNT = 95;
+export const MODEL_COUNT = 97;
