@@ -1,18 +1,18 @@
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN corepack enable && pnpm install --frozen-lockfile --prod
+COPY package*.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds --prod
 
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN corepack enable && pnpm install --frozen-lockfile
+COPY package*.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds
 COPY . .
 # Clear stale Next.js cache that can cause PageNotFoundError
 RUN rm -rf .next
 RUN pnpm run build
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 # Use standalone output — Next.js produces a minimal server bundle in

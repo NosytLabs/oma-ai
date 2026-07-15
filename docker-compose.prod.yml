@@ -45,34 +45,30 @@ services:
       - CSRF_SECRET=${CSRF_SECRET}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
-      # AI provider keys
+      # AI provider keys (required — must be in .env.prod)
       - VENICE_API_KEY=${VENICE_API_KEY}
-      - ZERO_G_API_KEY=${ZERO_G_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - TOGETHER_API_KEY=${TOGETHER_API_KEY}
       - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - MORPHEUS_API_KEY=${MORPHEUS_API_KEY}
-      - LITELLM_API_KEY=${LITELLM_API_KEY}
-      - LITELLM_PROXY_URL=${LITELLM_PROXY_URL}
-      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL}
-      - TINYFISH_API_KEY=${TINYFISH_API_KEY}
-      - OMMA_ALLOW_NON_PRIVATE_VENICE=${OMMA_ALLOW_NON_PRIVATE_VENICE}
+      # Optional provider keys omitted from env injection — compose turns
+      # "unset" into "" which fails zod .min(1).optional(). Leaving them
+      # undefined lets the schema's .optional() pass. Set in .env.prod only
+      # if you actually use them.
+      #   ZERO_G_API_KEY, MORPHEUS_API_KEY, LITELLM_API_KEY, LITELLM_PROXY_URL,
+      #   ANTSEED_PROXY_URL, TINYFISH_API_KEY, OMMA_ALLOW_NON_PRIVATE_VENICE,
+      #   TREASURY_SOLANA_ADDRESS, ADMIN_WALLET_ADDRESSES, SOLANA_RPC_URL_FALLBACK
       # Payment / treasury (LIVE for real USDC)
       - FACILITATOR_MODE=${FACILITATOR_MODE:-live}
       - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY}
       - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
-      - TREASURY_SOLANA_ADDRESS=${TREASURY_SOLANA_ADDRESS}
-      - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES}
       # Chain / RPC
       - CHAIN_RPC_URL=${CHAIN_RPC_URL}
       - CHAIN_RPC_URL_FALLBACK=${CHAIN_RPC_URL_FALLBACK}
       - SOLANA_RPC_URL=${SOLANA_RPC_URL}
-      - SOLANA_RPC_URL_FALLBACK=${SOLANA_RPC_URL_FALLBACK}
       - BASE_CHAIN_ID=${BASE_CHAIN_ID:-8453}
-      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,7 +86,7 @@ services:
     environment:
       - POSTGRES_DB=oma
       - POSTGRES_USER=oma
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=gfdaGd7NMceB4X7gqha9qgKejr8UMKeV
       # HDD tuning: favor throughput, less shared memory (15GB box)
       - POSTGRES_SHARED_BUFFERS=1GB
       - POSTGRES_EFFECTIVE_CACHE_SIZE=3GB
@@ -117,14 +113,18 @@ services:
       timeout: 5s
       retries: 5
 
-  # Public ingress — Cloudflare Tunnel. No WAN port open.
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
-    depends_on:
-      - app
-      - server
+  # Public ingress — Cloudflare Tunnel. Start AFTER creating the tunnel:
+  #   cloudflared tunnel create oma-ai  →  cloudflared tunnel token oma-ai  →  paste into .env.prod CLOUDFLARE_TUNNEL_TOKEN
+  #   then: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d cloudflared
+  # No WAN port is opened; Cloudflare terminates TLS and reaches app:3000 / server:3001 over the docker network.
+  # (Commented out by default so the core stack runs without a token.)
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+  #   depends_on:
+  #     - app
+  #     - server
 
 volumes:
   pgdata:
