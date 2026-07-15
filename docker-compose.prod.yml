@@ -1,0 +1,131 @@
+# =============================================================================
+# OMA-AI production compose — tuned for oldpc (Ryzen 5 1400 / 15GB RAM / HDD)
+# Public ingress: Cloudflare Tunnel (cloudflared) — NOT port 443 on WAN.
+# Admin ingress: Tailscale SSH only.
+# DB: local Postgres 16 (free) — Neon optional via DATABASE_URL override.
+# =============================================================================
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.oma-ai.com
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3001"
+    environment:
+      # Core infra — override DATABASE_URL with Neon for serverless prod
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - PORT=3001
+      - CORS_ORIGIN=https://oma-ai.com,https://api.oma-ai.com
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
+      # Auth / crypto secrets (inject via .env — gitignored)
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - CSRF_SECRET=${CSRF_SECRET}
+      - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}
+      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
+      # AI provider keys
+      - VENICE_API_KEY=${VENICE_API_KEY}
+      - ZERO_G_API_KEY=${ZERO_G_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - MORPHEUS_API_KEY=${MORPHEUS_API_KEY}
+      - LITELLM_API_KEY=${LITELLM_API_KEY}
+      - LITELLM_PROXY_URL=${LITELLM_PROXY_URL}
+      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL}
+      - TINYFISH_API_KEY=${TINYFISH_API_KEY}
+      - OMMA_ALLOW_NON_PRIVATE_VENICE=${OMMA_ALLOW_NON_PRIVATE_VENICE}
+      # Payment / treasury (LIVE for real USDC)
+      - FACILITATOR_MODE=${FACILITATOR_MODE:-live}
+      - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY}
+      - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY}
+      - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
+      - TREASURY_SOLANA_ADDRESS=${TREASURY_SOLANA_ADDRESS}
+      - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES}
+      # Chain / RPC
+      - CHAIN_RPC_URL=${CHAIN_RPC_URL}
+      - CHAIN_RPC_URL_FALLBACK=${CHAIN_RPC_URL_FALLBACK}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - SOLANA_RPC_URL_FALLBACK=${SOLANA_RPC_URL_FALLBACK}
+      - BASE_CHAIN_ID=${BASE_CHAIN_ID:-8453}
+      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=oma
+      - POSTGRES_USER=oma
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # HDD tuning: favor throughput, less shared memory (15GB box)
+      - POSTGRES_SHARED_BUFFERS=1GB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=3GB
+      - POSTGRES_RANDOM_PAGE_COST=2.0   # hint planner that disk is rotational
+      - POSTGRES_MAINTENANCE_WORK_MEM=256MB
+      - POSTGRES_WAL_BUFFERS=16MB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oma -d oma"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", "60", "1000", "--appendonly", "no"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Public ingress — Cloudflare Tunnel. No WAN port open.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    depends_on:
+      - app
+      - server
+
+volumes:
+  pgdata:
+  redisdata:

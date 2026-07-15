@@ -13,6 +13,7 @@ website/node_modules/
 .turbo/
 .env*
 !.env.example
+!.env.prod.example
 *.log
 .DS_Store
 Thumbs.db
@@ -66,3 +67,11 @@ server/models.json.bak
 
 # Hermes agent working directory
 .hermes/
+
+# Playwright artifacts
+playwright-report/
+app/playwright-report/
+
+# Local seed credentials / fixtures
+data/
+
