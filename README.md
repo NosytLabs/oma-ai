@@ -14,10 +14,11 @@ Self-hosted AI inference gateway with wallet-based auth, multi-provider routing,
 ## Features
 
 ### Payment Methods
-- **USDC on Base** - Direct deposit, instant crediting
-- **Solana SOL** - Cross-chain via Jupiter swap
-- **20+ Chains** - Any token via LI.FI / CCTP
-- **x402 Payments** - On-demand payment receipts for AI agents
+- **USDC on Base** - Direct deposit, settlement via the x402 facilitator
+- **Any token, 20+ chains** - Cross-chain via LI.FI / Circle CCTP into USDC on Base
+- **x402 Payments** - Per-request USDC receipts on Base for AI agents (Coinbase CDP facilitator)
+
+> **Solana note:** the README previously advertised "Solana SOL via Jupiter swap". That flow is not implemented (no Jupiter client, no Solana deposit route, `SOLANA_RPC_URL` is set but unused). USDC + LI.FI + CCTP + x402 are the real supported deposit methods.
 
 ### Developer Features
 - **OpenAI-Compatible API** - Drop-in replacement, change base URL
