@@ -1695,7 +1695,7 @@
         "web-search",
         "function-calling"
       ],
-      "description": "Mercury 2 is a diffusion-based reasoning LLM from Inception, delivering over 1,000 tokens per second — 5x faster than leading speed-optimized models — with strong reasoning, tool use, and structured o",
+      "description": "Mercury 2 is a diffusion-based reasoning LLM from Inception, delivering over 1,000 tokens per second \u2014 5x faster than leading speed-optimized models \u2014 with strong reasoning, tool use, and structured o",
       "creditsPerMillionInput": 39,
       "creditsPerMillionOutput": 117
     },
@@ -2088,7 +2088,7 @@
       "capabilities": [
         "chat"
       ],
-      "description": "MiniMax M2.7 — budget language model served by Gonka/OpenBroker.",
+      "description": "MiniMax M2.7 \u2014 budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
       "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source."
@@ -2109,7 +2109,7 @@
       "capabilities": [
         "chat"
       ],
-      "description": "Moonshot Kimi K2.6 — budget language model served by Gonka/OpenBroker.",
+      "description": "Moonshot Kimi K2.6 \u2014 budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
       "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network as of 2026-07-14; kept for reactivation."
@@ -2130,10 +2130,11 @@
       "capabilities": [
         "chat"
       ],
-      "description": "Zhipu GLM 5.2 (FP8) — budget language model served by Gonka/OpenBroker.",
+      "description": "Zhipu GLM 5.2 (FP8) \u2014 budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
-      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network; preserved in catalog."
+      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network; preserved in catalog.",
+      "enabled": false
     }
   },
   "VIDEO_MODELS": {

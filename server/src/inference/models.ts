@@ -21,6 +21,8 @@ export interface ModelDef {
   description: string;
   creditsPerMillionInput: number;
   creditsPerMillionOutput: number;
+  /** Set to false in models.json to hide a model from the live catalog without removing it. */
+  enabled?: boolean;
 }
 
 export const WHISPER_MODEL = "whisper-1";
@@ -331,16 +333,18 @@ export async function listModels(): Promise<Array<{
   description: string;
 }>> {
   await ensureCatalogLoaded();
-  return Object.values(MODEL_CATALOG).map((m) => ({
-    id: m.id,
-    category: m.category,
-    inputPricePer1M: m.inputPricePer1M,
-    outputPricePer1M: m.outputPricePer1M,
-    maxTokens: m.maxTokens,
-    displayName: m.displayName,
-    capabilities: m.capabilities,
-    description: m.description,
-  }));
+  return Object.values(MODEL_CATALOG)
+    .filter((m) => m.enabled !== false)
+    .map((m) => ({
+      id: m.id,
+      category: m.category,
+      inputPricePer1M: m.inputPricePer1M,
+      outputPricePer1M: m.outputPricePer1M,
+      maxTokens: m.maxTokens,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
 }
 
 export async function listVideoModels(): Promise<Array<{

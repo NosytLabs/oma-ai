@@ -393,7 +393,7 @@ function getProviderBaseUrl(provider: Provider): string {
   const baseUrls: Record<Provider, string> = {
     venice: "https://api.venice.ai",
     surplus: "https://api.surplusintelligence.ai",
-    gonka: config.GONKA_API_URL || "https://inference.dahl.global",
+    gonka: (config.GONKA_API_URL || "https://proxy.gonka.gg/v1").replace(/\/+$/, ""),
   };
   return baseUrls[provider];
 }
