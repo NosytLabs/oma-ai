@@ -1,50 +1,52 @@
 #!/usr/bin/env bash
 # =============================================================================
-# start-prod.sh — deploy OMA-AI on oldpc (or any Docker host)
-# Usage:  ./start-prod.sh          # uses .env.prod if present, else .env
-#         ./start-prod.sh down     # stop
-#         ./start-prod.sh logs     # follow logs
+# OMA-AI production launcher for oldpc
+#   Usage:  ./start-prod.sh           # build + up (detached)
+#           ./start-prod.sh down      # stop
+#           ./start-prod.sh logs      # follow logs
+#
+# Reads secrets from .env.prod (gitignored). Copy .env.prod.example -> .env.prod
+# and fill in real values. Secrets are NEVER committed.
 # =============================================================================
 set -euo pipefail
-MallocStackLogging=0
-
-COMPOSE_FILE="docker-compose.prod.yml"
-ENV_FILE="${OMA_ENV_FILE:-.env.prod}"
 
 cd "$(dirname "$0")"
 
 if [[ "${1:-}" == "down" ]]; then
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
+  docker compose -f docker-compose.prod.yml down
   exit 0
 fi
 
 if [[ "${1:-}" == "logs" ]]; then
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs -f
+  docker compose -f docker-compose.prod.yml logs -f
   exit 0
 fi
 
-# 1. preflight — treasury must have funds for x402 to credit
-if grep -q "FACILITATOR_MODE=live" "$ENV_FILE" 2>/dev/null; then
-  echo "[preflight] FACILITATOR_MODE=live — ensure TREASURY_BASE_ADDRESS has USDC + ETH for gas."
-  echo "           treasury: $(grep -E '^TREASURY_BASE_ADDRESS=' "$ENV_FILE" | cut -d= -f2)"
-  echo "           verify at https://basescan.org/address/$(grep -E '^TREASURY_BASE_ADDRESS=' "$ENV_FILE" | cut -d= -f2)"
-fi
-
-# 2. ensure Docker is up
-if ! docker info >/dev/null 2>&1; then
-  echo "Docker not running. Start it: sudo systemctl start docker" >&2
+# sanity: required secrets present
+REQUIRED=(POSTGRES_PASSWORD JWT_SECRET ENCRYPTION_KEY CSRF_SECRET RECEIPT_HMAC_SECRET \
+          VENICE_API_KEY OPENROUTER_API_KEY FACILITATOR_MODE FACILITATOR_PRIVATE_KEY \
+          TREASURY_BASE_ADDRESS CHAIN_RPC_URL)
+missing=0
+for v in "${REQUIRED[@]}"; do
+  if [[ -z "${!v:-}" ]]; then
+    echo "  MISSING: $v"
+    missing=1
+  fi
+done
+if [[ "$missing" -eq 1 ]]; then
+  echo "[fatal] Set the above in .env.prod (or your shell) before launching."
   exit 1
 fi
 
-# 3. build + launch
-echo "[deploy] building + starting OMA-AI (oldpc-tuned)..."
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
+# treasury funded check (Base mainnet) — warn, don't block
+if command -v cast >/dev/null 2>&1; then
+  bal=$(cast balance --rpc-url "$CHAIN_RPC_URL" "$TREASURY_BASE_ADDRESS" 2>/dev/null || echo "0")
+  echo "[check] treasury $TREASURY_BASE_ADDRESS balance: $bal ETH"
+fi
 
-# 4. wait for healthy
-echo "[deploy] waiting for services to be healthy..."
-sleep 15
-docker compose -f "$COMPOSE_FILE" ps
+echo "[start] building + launching OMA-AI (prod)..."
+docker compose -f docker-compose.prod.yml up -d --build
 
 echo ""
-echo "[deploy] done. App on :3000, Server on :3001 (both behind Cloudflare Tunnel)."
-echo "[deploy] check health:  curl -fsS http://localhost:3001/health"
+echo "[done] app on :3000, server on :3001 (reachable via Cloudflare Tunnel)"
+echo "        health: docker compose -f docker-compose.prod.yml exec server wget -qO- http://localhost:3001/health"

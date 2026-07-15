@@ -1,130 +1,148 @@
 # =============================================================================
-# OMA-AI production compose — tuned for oldpc (Ryzen 5 1400 / 15GB RAM / HDD)
-# Public ingress: Cloudflare Tunnel (cloudflared) — NOT port 443 on WAN.
-# Admin ingress: Tailscale SSH only.
-# DB: local Postgres 16 (free) — Neon optional via DATABASE_URL override.
+# OMA-AI — PRODUCTION compose for oldpc (Ryzen 5 1400 / 15GB RAM / 830GB free)
+# Tuned so the 4-core box never OOMs: Postgres + Redis buffers capped.
+# Public ingress is Cloudflare Tunnel (see DEPLOYMENT.md), NOT port 22/3000/3001.
 # =============================================================================
 services:
   app:
     build:
       context: ./app
       dockerfile: Dockerfile
-    restart: unless-stopped
-    expose:
-      - "3000"
+    # No host port publish — Cloudflare Tunnel reaches it over the docker network.
+    # If you need LAN access, uncomment:
+    # ports:
+    #   - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.oma-ai.com
+      - NEXT_PUBLIC_API_URL=http://server:3001
+      - NEXT_PUBLIC_SITE_URL=https://oma-ai.com
     depends_on:
       server:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+        reservations:
+          memory: 512m
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    restart: unless-stopped
-    expose:
-      - "3001"
     environment:
-      # Core infra — override DATABASE_URL with Neon for serverless prod
-      - DATABASE_URL=${DATABASE_URL}
+      # Core infra — local compose services (free, fast, no external dependency)
+      - DATABASE_URL=postgresql://oma:${POSTGRES_PASSWORD}@postgres:5432/oma
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - PORT=3001
-      - CORS_ORIGIN=https://oma-ai.com,https://api.oma-ai.com
-      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
-      # Auth / crypto secrets (inject via .env — gitignored)
+      - CORS_ORIGIN=https://oma-ai.com,https://www.oma-ai.com
+      - PUBLIC_API_URL=https://api.oma-ai.com
+      # Auth / crypto secrets (passed from host env / .env.prod)
       - JWT_SECRET=${JWT_SECRET}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - CSRF_SECRET=${CSRF_SECRET}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
-      # AI provider keys (required — must be in .env.prod)
+      # AI provider API keys
       - VENICE_API_KEY=${VENICE_API_KEY}
+      - ZERO_G_API_KEY=${ZERO_G_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - TOGETHER_API_KEY=${TOGETHER_API_KEY}
       - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      # Optional provider keys omitted from env injection — compose turns
-      # "unset" into "" which fails zod .min(1).optional(). Leaving them
-      # undefined lets the schema's .optional() pass. Set in .env.prod only
-      # if you actually use them.
-      #   ZERO_G_API_KEY, MORPHEUS_API_KEY, LITELLM_API_KEY, LITELLM_PROXY_URL,
-      #   ANTSEED_PROXY_URL, TINYFISH_API_KEY, OMMA_ALLOW_NON_PRIVATE_VENICE,
-      #   TREASURY_SOLANA_ADDRESS, ADMIN_WALLET_ADDRESSES, SOLANA_RPC_URL_FALLBACK
-      # Payment / treasury (LIVE for real USDC)
+      - MORPHEUS_API_KEY=${MORPHEUS_API_KEY}
+      - LITELLM_API_KEY=${LITELLM_API_KEY}
+      - LITELLM_PROXY_URL=${LITELLM_PROXY_URL}
+      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL}
+      - TINYFISH_API_KEY=${TINYFISH_API_KEY}
+      - OMMA_ALLOW_NON_PRIVATE_VENICE=${OMMA_ALLOW_NON_PRIVATE_VENICE}
+      # Payment / treasury (LIVE for real USDC deposits)
       - FACILITATOR_MODE=${FACILITATOR_MODE:-live}
       - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY}
       - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
+      - TREASURY_SOLANA_ADDRESS=${TREASURY_SOLANA_ADDRESS}
+      - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES}
       # Chain / RPC
       - CHAIN_RPC_URL=${CHAIN_RPC_URL}
       - CHAIN_RPC_URL_FALLBACK=${CHAIN_RPC_URL_FALLBACK}
       - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - SOLANA_RPC_URL_FALLBACK=${SOLANA_RPC_URL_FALLBACK}
       - BASE_CHAIN_ID=${BASE_CHAIN_ID:-8453}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+        reservations:
+          memory: 512m
 
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       - POSTGRES_DB=oma
       - POSTGRES_USER=oma
-      - POSTGRES_PASSWORD=gfdaGd7NMceB4X7gqha9qgKejr8UMKeV
-      # HDD tuning: favor throughput, less shared memory (15GB box)
-      - POSTGRES_SHARED_BUFFERS=1GB
-      - POSTGRES_EFFECTIVE_CACHE_SIZE=3GB
-      - POSTGRES_RANDOM_PAGE_COST=2.0   # hint planner that disk is rotational
-      - POSTGRES_MAINTENANCE_WORK_MEM=256MB
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # Tune for 15GB box: cap shared buffers + WAL so it can't eat RAM
+      - POSTGRES_SHARED_BUFFERS=512MB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=2GB
+      - POSTGRES_MAINTENANCE_WORK_MEM=128MB
       - POSTGRES_WAL_BUFFERS=16MB
+      - POSTGRES_MAX_CONNECTIONS=100
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U oma -d oma"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1g
+        reservations:
+          memory: 512m
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
-    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", "60", "1000", "--appendonly", "no"]
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru", "--appendonly", "yes"]
     volumes:
       - redisdata:/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # Public ingress — Cloudflare Tunnel. Start AFTER creating the tunnel:
-  #   cloudflared tunnel create oma-ai  →  cloudflared tunnel token oma-ai  →  paste into .env.prod CLOUDFLARE_TUNNEL_TOKEN
-  #   then: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d cloudflared
-  # No WAN port is opened; Cloudflare terminates TLS and reaches app:3000 / server:3001 over the docker network.
-  # (Commented out by default so the core stack runs without a token.)
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   restart: unless-stopped
-  #   command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
-  #   depends_on:
-  #     - app
-  #     - server
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 600m
+        reservations:
+          memory: 256m
 
 volumes:
   pgdata:

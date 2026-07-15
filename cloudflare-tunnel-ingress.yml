@@ -1,0 +1,22 @@
+# =============================================================================
+# Cloudflare Tunnel ingress for OMA-AI on oldpc
+# Add these rules to ~/.cloudflared/config.yml on oldpc, THEN:
+#   sudo systemctl restart cloudflared-nosytlabs
+#
+# DNS: in Cloudflare dashboard, point these hostnames at the tunnel:
+#   app.oma-ai.com   -> tunnel
+#   api.oma-ai.com   -> tunnel
+# (or use oma-ai.com + www.oma-ai.com if you want the apex)
+# =============================================================================
+
+ingress:
+  # --- OMA-AI ---
+  - hostname: app.oma-ai.com
+    service: http://127.0.0.1:3000
+  - hostname: api.oma-ai.com
+    service: http://127.0.0.1:3001
+  # --- existing ---
+  - hostname: lethometry.com
+    service: http://127.0.0.1:8099
+  # --- catch-all ---
+  - service: http_status:404
