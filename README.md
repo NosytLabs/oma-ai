@@ -7,7 +7,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth, multi-provider routing, cross-chain deposits, and native crypto payments (USDC on Base, x402).
 
-> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). Removed dead marketing routes (`/about`, `/blog`, `/faq`, …) with permanent redirects. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App: typecheck + lint clean, **127** tests green.
+> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). `/blog` and `/faq` permanently redirect (`/blog` → `/changelog`, `/faq` → `/pricing#faq`). `/swap` retired — fund via USDC deposit on Base (`/deposit`). `/about` is now a live E-E-A-T page. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App + server: typecheck + lint clean, **866** tests green (150 app + 716 server).
 
 ---
 
@@ -60,9 +60,9 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 # From oma root
 ./scripts/start-dev.sh
 
-# Or manually:
-cd app && pnpm dev       # Frontend :3000
-cd server && pnpm dev    # Backend (Hono API) :3001
+# Or manually (lockfiles are pnpm-managed; npm also works):
+cd app && npm run dev       # Frontend :3000
+cd server && npm run dev    # Backend (Hono API) :3001
 ```
 
 ---

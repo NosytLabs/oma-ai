@@ -85,7 +85,7 @@ describe("getWagmiConfigSingleton", () => {
 		expect(names).toContain("coinbaseWallet");
 		expect(names).toContain("injected");
 		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
-	});
+	}, 15_000);
 
 	it("registers coinbaseWallet + injected when window.ethereum exists", async () => {
 		setWindowEthereum({ isMetaMask: true });

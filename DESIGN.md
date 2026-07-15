@@ -13,7 +13,7 @@
 | Accent bright | `#6ee7b7` | Hover / LED |
 | Text bright | `#f5f7f3` | Headlines |
 | Text | `#d8dcd6` | Body |
-| Text muted | `#7b8278` | Meta / captions |
+| Text muted | `#9aa394` | Meta / captions (≥4.5:1 on void) |
 
 **Mark:** Open gateway — rounded badge, open emerald ring (gap = open access), three ascending signal bars, live LED at the gap.  
 **Assets:** `app/public/favicon.svg` (source), rasters under `app/public/`, React `OmaLogo`.
@@ -55,8 +55,11 @@ Rules:
 
 - Sticky header `h-14`, glass when scrolled.
 - Primary: Models · Chat · Pricing · Docs (Title Case).
-- Tools dropdown: Network · Observability · Changelog · Swap.
-- Account: Dashboard · Settings · Login (footer + mobile).
+- Tools dropdown: Network · Observability · Changelog.
+- Account: Dashboard · Settings · Sign in (footer + mobile).
+- Retired: `/swap` → `/deposit` (permanent redirect).
+- Agent session demos: OMA-themed terminal block inspired by [brainless](https://github.com/theswerd/brainless) (`AgentSessionDemo`) — marketing/docs only; live chat stays product-owned.
+
 
 ## Voice
 
@@ -81,7 +84,7 @@ After login: session is HttpOnly `oma_session` + client meta; all browser API ca
 
 ```bash
 ./scripts/local-db-up.sh
-# server/.env → DATABASE_URL=postgresql://oma:oma_dev_local@127.0.0.1:5432/oma
-cd server && pnpm dev   # :3001
-cd app && pnpm dev      # :3000
+# server/.env → DATABASE_URL=postgresql://oma:***@127.0.0.1:5432/oma
+cd server && npm run dev   # :3001
+cd app && npm run dev      # :3000
 ```
