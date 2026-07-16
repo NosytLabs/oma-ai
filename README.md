@@ -161,8 +161,8 @@ without an async fetch.
 |------|----------|-----------------------------------|
 | **Frontier** | `claude-opus-4-8`, `gemini-3-1-pro-preview` | ~$3.00 – $6.00 |
 | **Premium** | `qwen3-coder-480b-a35b-instruct-turbo`, `claude-opus-4-7` | ~$1.00 – $3.60 |
-| **Mid-Range** | `llama-3.3-70b`, `kimi-k2.6`, `mistral-small-3-2-24b-instruct` | ~$0.30 – $1.73 |
-| **Budget** | `zai-org-glm-4.7-flash`, `qwen3-5-9b`, `kimi-k2.6` | ~$0.01 – $0.70 |
+| **Mid-Range** | `llama-3.3-70b`, `mistral-small-3-2-24b-instruct` | ~$0.30 – $1.73 |
+| **Budget** | `zai-org-glm-4.7-flash`, `qwen3-5-9b`, `minimax-m2.7` (gonka) | ~$0.01 – $0.70 |
 
 See `GET /v1/models` for the live, complete catalog and current pricing.
 
