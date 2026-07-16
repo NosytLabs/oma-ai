@@ -104,6 +104,60 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   await next();
 }
 
+/**
+ * Accept either a session JWT (dashboard / SIWE / account-number) OR an API key.
+ * Dashboard pages send the session cookie as Bearer via the Next proxy; CLI and
+ * agents send `oma_sk_…` keys. Without this dual path, logged-in users hit
+ * "Invalid API key" on /v1/balance and /v1/credits/* while /v1/usage works
+ * (sessionAuth-only).
+ */
+export async function sessionOrBearerAuth(c: Context<OmaEnv>, next: Next) {
+  const authHeader = c.req.header("Authorization");
+  const cookieHeader = c.req.header("Cookie") || "";
+
+  let raw: string | null = null;
+  if (authHeader?.startsWith("Bearer ")) {
+    raw = authHeader.slice(7);
+  } else {
+    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
+    if (match) raw = decodeURIComponent(match[1]);
+  }
+
+  if (!raw) {
+    return c.json(
+      { error: { message: "Missing or invalid Authorization header", type: "authentication_error" } },
+      401,
+    );
+  }
+
+  // JWT-shaped tokens: try session verification first (HS256 session cookies).
+  if (raw.split(".").length === 3) {
+    try {
+      const session = (await verifySessionToken(raw)) as {
+        userId: string;
+        authMethod: string;
+      } | null;
+      if (session?.userId) {
+        c.set("userId", session.userId);
+        c.set(
+          "authMethod",
+          session.authMethod as "siwe" | "account-number" | "sso" | "neon-auth",
+        );
+        await next();
+        return;
+      }
+    } catch (err) {
+      logger.debug(
+        { err: err instanceof Error ? err.message : String(err) },
+        "[sessionOrBearerAuth] session verify failed; trying API key",
+      );
+    }
+  }
+
+  // Fall through to API key validation (oma_sk_… or opaque keys).
+  return bearerAuth(c, next);
+}
+
 export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

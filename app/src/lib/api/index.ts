@@ -30,14 +30,34 @@ export type {
 export * from "./types.js";
 
 /**
- * Export namespace — CSV/JSON downloads of usage, keys, and transactions.
- * The dashboard's export button streams the file via the request helper.
+ * Export namespace — CSV/JSON downloads of usage, deposits, withdrawals.
+ * Paths match server/src/routes/export.ts (`/v1/export/*`).
+ * Dashboard ExportDataButton also hits these via same-origin fetch.
  */
 export const exportData = {
 	usage(format: "csv" | "json" = "csv") {
-		return request<Blob>(`/v1/usage/export?format=${format}`, {
+		return request<Blob>(`/v1/export/usage?format=${format}`, {
 			method: "GET",
-		}) as unknown as Promise<Blob>;
+			responseType: "blob",
+		});
+	},
+	deposits(format: "csv" | "json" = "csv") {
+		return request<Blob>(`/v1/export/deposits?format=${format}`, {
+			method: "GET",
+			responseType: "blob",
+		});
+	},
+	withdrawals(format: "csv" | "json" = "csv") {
+		return request<Blob>(`/v1/export/withdrawals?format=${format}`, {
+			method: "GET",
+			responseType: "blob",
+		});
+	},
+	summary(format: "csv" | "json" = "csv") {
+		return request<Blob>(`/v1/export/summary?format=${format}`, {
+			method: "GET",
+			responseType: "blob",
+		});
 	},
 };
 

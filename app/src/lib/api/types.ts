@@ -95,13 +95,15 @@ export interface CreditBatch {
 	paymentMethod: string | null;
 }
 
+/** Response from POST /v1/credits/purchase — creates a *pending* deposit only. */
 export interface PurchaseCreditsResponse {
 	success: boolean;
-	creditsAdded: number;
-	expiresAt: string;
 	depositId: string;
+	status: string;
+	amountCents: number;
 	paymentMethod: string;
 	autoReloadEnabled: boolean;
+	message?: string;
 }
 
 export interface AutoReloadSettings {

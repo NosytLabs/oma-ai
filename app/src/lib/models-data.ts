@@ -372,8 +372,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 /**
  * Synchronous `MODELS` array for SSR metadata and the few places that
  * genuinely can't go async (Next.js `generateStaticParams`, page
- * metadata). This is the *fallback* catalog — the live 89-model list
- * is loaded lazily via `loadModels()`.
+ * metadata). This is the *fallback* catalog — the live catalog
+ * (91 chat + 5 video = 96) is loaded lazily via `loadModels()`.
  */
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
@@ -397,8 +397,8 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	return grouped;
 }
 
-// Marketing model count surfaced across the UI. The live catalog from
-// GET /v1/models is ~97+ models; the SSR fallback catalog (`MODELS`) only
-// ships 11 hand-picked entries, so we use the real marketing number here
-// rather than `MODELS.length` (which would render "11+ models" everywhere).
-export const MODEL_COUNT = 97;
+// Marketing model count surfaced across the UI. Must match live
+// GET /v1/models (91 active chat + 5 video). The SSR fallback catalog
+// (`MODELS`) is a smaller hand-picked set — never use MODELS.length for
+// marketing copy.
+export const MODEL_COUNT = 96;

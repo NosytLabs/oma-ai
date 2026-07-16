@@ -25,7 +25,7 @@ for attempt in range(5):
 			/>
 
 			<div className="mb-6 overflow-hidden rounded-xl border border-border">
-				<table className="w-full text-left text-sm">
+				<table className="w-full text-left text-sm" aria-label="API error codes">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
 							<th className="px-4 py-3 font-medium text-text-muted">Code</th>
@@ -50,7 +50,7 @@ for attempt in range(5):
 			</div>
 
 			<div className="relative rounded-xl border border-border bg-panel p-5">
-				<h4 className="mb-3 font-semibold text-text">Handling Rate Limits</h4>
+				<h3 className="mb-3 font-semibold text-text">Handling Rate Limits</h3>
 				<CodeBlock code={retryCode} lang="python" />
 			</div>
 		</AnimatedSection>

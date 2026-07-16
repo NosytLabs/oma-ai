@@ -13,9 +13,19 @@ import {
 	type UsageRecord,
 } from "@/lib/api";
 import { useBalance } from "@/components/chat/useBalance";
+import {
+	DEMO_API_KEYS,
+	DEMO_BALANCE,
+	DEMO_BATCHES,
+	DEMO_MODELS,
+	DEMO_TRANSACTIONS,
+	DEMO_USAGE,
+} from "@/lib/demo-fixtures";
 
 interface UseDashboardDataOptions {
 	isAuthenticated: boolean;
+	/** When true, return fixtures and skip all network calls. */
+	isDemo?: boolean;
 }
 
 interface UseDashboardDataResult {
@@ -26,11 +36,7 @@ interface UseDashboardDataResult {
 	models: Model[];
 	transactions: CreditTransaction[];
 	loading: boolean;
-	/** User-facing message for non-backend errors; null when the only error
-	 *  is a BackendUnavailableError (which renders its own banner). */
 	error: string | null;
-	/** True when at least one query failed because the backend is down. The
-	 *  dashboard renders a distinct banner + RETRY button in that case. */
 	backendUnavailable: boolean;
 	refresh: () => Promise<void>;
 }
@@ -39,16 +45,16 @@ const STALE_DEFAULT = 60_000;
 const STALE_MODELS = 300_000;
 
 /**
- * Aggregated dashboard data hook. Replaces the six inline `useQuery` calls
- * that used to live in `app/dashboard/page.tsx`. Same query keys, same
- * `staleTime`, same `enabled: isAuthenticated` gating — only the shape
- * is consolidated so the page component stays at orchestration level.
+ * Aggregated dashboard data hook.
+ * Real session: React Query against live APIs.
+ * Demo session: shared fixtures, zero network.
  */
 export function useDashboardData({
 	isAuthenticated,
+	isDemo = false,
 }: UseDashboardDataOptions): UseDashboardDataResult {
 	const queryClient = useQueryClient();
-	const enabled = isAuthenticated;
+	const enabled = isAuthenticated && !isDemo;
 
 	const { balance: balanceData, loading: balanceLoading } = useBalance();
 	const keysQuery = useQuery({
@@ -83,68 +89,77 @@ export function useDashboardData({
 	});
 
 	const apiKeys = useMemo<ApiKey[]>(
-		() => keysQuery.data ?? [],
-		[keysQuery.data],
+		() => (isDemo ? DEMO_API_KEYS : (keysQuery.data ?? [])),
+		[isDemo, keysQuery.data],
 	);
 	const usage = useMemo<UsageRecord[]>(
-		() => usageQuery.data?.records ?? [],
-		[usageQuery.data?.records],
+		() => (isDemo ? DEMO_USAGE : (usageQuery.data?.records ?? [])),
+		[isDemo, usageQuery.data?.records],
 	);
 	const creditBatches = useMemo<CreditBatch[]>(
-		() => batchesQuery.data?.activeBatches ?? [],
-		[batchesQuery.data?.activeBatches],
+		() => (isDemo ? DEMO_BATCHES : (batchesQuery.data?.activeBatches ?? [])),
+		[isDemo, batchesQuery.data?.activeBatches],
 	);
 	const models = useMemo<Model[]>(
-		() => modelsQuery.data?.data ?? [],
-		[modelsQuery.data?.data],
+		() => (isDemo ? DEMO_MODELS : (modelsQuery.data?.data ?? [])),
+		[isDemo, modelsQuery.data?.data],
 	);
 	const transactions = useMemo<CreditTransaction[]>(
-		() => transactionsQuery.data?.transactions ?? [],
-		[transactionsQuery.data?.transactions],
+		() =>
+			isDemo
+				? DEMO_TRANSACTIONS
+				: (transactionsQuery.data?.transactions ?? []),
+		[isDemo, transactionsQuery.data?.transactions],
 	);
 
-	const balance: BalanceResponse | null = balanceData;
-	const loading =
-		balanceLoading ||
-		keysQuery.isLoading ||
-		usageQuery.isLoading ||
-		batchesQuery.isLoading ||
-		modelsQuery.isLoading ||
-		transactionsQuery.isLoading;
+	const balance: BalanceResponse | null = isDemo
+		? DEMO_BALANCE
+		: balanceData;
+	const loading = isDemo
+		? false
+		: balanceLoading ||
+			keysQuery.isLoading ||
+			usageQuery.isLoading ||
+			batchesQuery.isLoading ||
+			modelsQuery.isLoading ||
+			transactionsQuery.isLoading;
 
-	const anyError =
-		keysQuery.error ||
-		usageQuery.error ||
-		batchesQuery.error ||
-		modelsQuery.error ||
-		transactionsQuery.error;
+	const anyError = isDemo
+		? null
+		: keysQuery.error ||
+			usageQuery.error ||
+			batchesQuery.error ||
+			modelsQuery.error ||
+			transactionsQuery.error;
 
-	const { error, backendUnavailable } = useMemo(() => {
-		if (!anyError)
-			return { error: null as string | null, backendUnavailable: false };
-		// Mirror the original page logic: BackendUnavailableError is surfaced
-		// separately (different banner + RETRY button), all other errors get a
-		// generic ERR: <message> treatment.
-		if (anyError instanceof BackendUnavailableError) {
-			return { error: null as string | null, backendUnavailable: true };
-		}
-		const message =
-			anyError instanceof Error
+	const backendUnavailable =
+		!isDemo &&
+		[
+			keysQuery.error,
+			usageQuery.error,
+			batchesQuery.error,
+			modelsQuery.error,
+			transactionsQuery.error,
+		].some((e) => e instanceof BackendUnavailableError);
+
+	const error =
+		backendUnavailable || !anyError
+			? null
+			: anyError instanceof Error
 				? anyError.message
 				: "Failed to load dashboard data";
-		return { error: message, backendUnavailable: false };
-	}, [anyError]);
 
 	const refresh = useCallback(async () => {
+		if (isDemo) return;
 		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: ["balance"] }),
 			queryClient.invalidateQueries({ queryKey: ["apiKeys"] }),
 			queryClient.invalidateQueries({ queryKey: ["usage"] }),
 			queryClient.invalidateQueries({ queryKey: ["creditBatches"] }),
-			queryClient.invalidateQueries({ queryKey: ["recentTransactions"] }),
 			queryClient.invalidateQueries({ queryKey: ["models"] }),
+			queryClient.invalidateQueries({ queryKey: ["recentTransactions"] }),
+			queryClient.invalidateQueries({ queryKey: ["balance"] }),
 		]);
-	}, [queryClient]);
+	}, [isDemo, queryClient]);
 
 	return {
 		balance,

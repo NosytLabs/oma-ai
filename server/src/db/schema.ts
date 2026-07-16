@@ -83,6 +83,26 @@ export const apiKeys = pgTable(
   (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId), index("idx_api_keys_user_active").on(t.userId, t.active)]
 );
 
+// User-scoped HMAC signing public keys (pinned via /v1/signing/pin).
+export const signingKeys = pgTable(
+  "signing_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    apiKeyId: uuid("api_key_id")
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    publicKey: text("public_key").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_signing_keys_user").on(t.userId),
+    index("idx_signing_keys_api_key").on(t.apiKeyId),
+  ]
+);
+
 export type ApiKey = Omit<typeof apiKeys.$inferSelect, "allowedModels"> & { expired?: boolean; ipAllowlist?: string[] | null; allowedModels?: string[] | null };
 
 // ponytail: 2FA backup codes (migration 0031). Plaintext shown once at

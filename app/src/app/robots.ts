@@ -14,6 +14,11 @@ export default function robots(): MetadataRoute.Robots {
 					"/login",
 					"/api-keys",
 					"/dashboard/api-keys",
+					// Auth-gated product surfaces (session required)
+					"/chat",
+					"/deposit",
+					"/image-generation",
+					"/video-generation",
 				],
 			},
 		],

@@ -54,12 +54,12 @@
 		--color-border-hi: rgba(255, 255, 255, 0.12);
 		--color-border-strong: rgba(255, 255, 255, 0.2);
 
-		/* Text */
+		/* Text — muted/tertiary tuned for ≥4.5:1 contrast on void (#07090a) */
 		--color-text-bright: #f5f7f3;
 		--color-text: #d8dcd6;
-		--color-text-secondary: #a8afa6;
-		--color-text-muted: #858c80;
-		--color-text-tertiary: #888d80;
+		--color-text-secondary: #b4bbb0;
+		--color-text-muted: #9aa394;
+		--color-text-tertiary: #9aa394;
 
 		/* Accent — emerald */
 		--color-accent: #46d39a;
@@ -137,6 +137,10 @@
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		text-rendering: optimizeLegibility;
+		/* Prevent long code lines / decorative blurs from causing page-level
+		   horizontal scroll on mobile (especially / and /docs). */
+		overflow-x: clip;
+		max-width: 100%;
 	}
 
 	body {
@@ -148,6 +152,18 @@
 		font-feature-settings: "ss01", "cv11";
 		min-height: 100dvh;
 		overflow-x: clip;
+		max-width: 100%;
+	}
+
+	/* Code blocks scroll internally instead of expanding the page. */
+	pre {
+		max-width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	code {
+		max-width: 100%;
 	}
 
 	* {
@@ -188,7 +204,7 @@
 	}
 
 	.container-page {
-		@apply mx-auto w-full px-4;
+		@apply mx-auto w-full min-w-0 px-4;
 		max-width: 72rem;
 	}
 	@media (min-width: 640px) {
@@ -223,10 +239,13 @@
 
 	.h1-hero {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(3.5rem, 7.5vw, 7rem);
+		/* Floor slightly lower on narrow phones so long titles don't force h-scroll */
+		font-size: clamp(2.25rem, 8.2vw, 7rem);
 		line-height: 0.94;
 		letter-spacing: -0.04em;
 		font-weight: 500;
+		max-width: 100%;
+		overflow-wrap: anywhere;
 	}
 
 	.h2-section {

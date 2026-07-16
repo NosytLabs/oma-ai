@@ -43,10 +43,22 @@ missingRoutes.all("/v1/api-keys", (c) =>
 missingRoutes.all("/v1/api-keys/*", (c) =>
 	gone(c, "/keys", "Use /keys (mounted in routes/auth.ts)."),
 );
+// Clients that invent `/v1/keys` (OpenAPI-style prefix) hit a hard 404
+// without this — same correct_path hint as /v1/api-keys.
+missingRoutes.all("/v1/keys", (c) =>
+	gone(c, "/keys", "Use /keys (mounted in routes/auth.ts)."),
+);
+missingRoutes.all("/v1/keys/*", (c) =>
+	gone(c, "/keys", "Use /keys (mounted in routes/auth.ts)."),
+);
 missingRoutes.all("/v1/x402/proxy", (c) =>
 	gone(
 		c,
 		"/v1/x402/proxy/chat/completions",
 		"Use POST /v1/x402/proxy/chat/completions for the x402 chat proxy.",
 	),
+);
+// Export lives under /v1/export/* (not /v1/usage/export).
+missingRoutes.all("/v1/usage/export", (c) =>
+	gone(c, "/v1/export/usage", "Use GET /v1/export/usage?format=csv|json."),
 );

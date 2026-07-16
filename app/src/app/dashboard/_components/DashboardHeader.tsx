@@ -148,13 +148,13 @@ export function DashboardHeader({
 			</nav>
 
 			{/* Title + Status Row */}
-			<div className="flex items-start justify-between gap-4 mb-4">
-				<div>
+			<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0">
 					<h1 className="h1-utility text-text-bright flex items-center gap-3">
-						<Zap className="h-5 w-5 text-accent" aria-hidden="true" />
+						<Zap className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
 						Dashboard
 					</h1>
-					<div className="mt-2 flex items-center gap-4 text-[11px] text-text-muted">
+					<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-text-muted">
 						<span className="flex items-center gap-1.5">
 							<span
 								aria-hidden="true"
@@ -168,7 +168,7 @@ export function DashboardHeader({
 						</span>
 						<SystemStatus />
 						<span
-							className="hidden items-center gap-1 text-text-muted/50 sm:flex"
+							className="hidden items-center gap-1 text-text-muted/50 md:flex"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
@@ -184,7 +184,7 @@ export function DashboardHeader({
 							</span>
 						)}
 						{hasAnyData && autoRefreshCountdown > 0 && (
-							<span className="flex items-center gap-1.5 text-text-muted/50">
+							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex">
 								<Clock className="h-3 w-3" aria-hidden="true" />
 								Next refresh in {autoRefreshCountdown}s
 							</span>
@@ -192,13 +192,13 @@ export function DashboardHeader({
 					</div>
 				</div>
 
-				{/* Action Buttons */}
-				<div className="flex items-center gap-2">
-					<NotificationBell className="mr-1" />
+				{/* Action Buttons — wrap on narrow viewports; no horizontal page overflow */}
+				<div className="flex max-w-full flex-wrap items-center gap-2">
+					<NotificationBell />
 					{onTimeRangeChange &&
 						(activeTab === "overview" || activeTab === "usage") && (
 							<div
-								className="flex border border-border bg-surface"
+								className="flex shrink-0 border border-border bg-surface"
 								role="radiogroup"
 								aria-label="Time range"
 							>
@@ -209,7 +209,7 @@ export function DashboardHeader({
 										role="radio"
 										aria-checked={timeRange === range.id}
 										onClick={() => onTimeRangeChange(range.id)}
-										className={`px-2.5 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all ${
+										className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all sm:px-2.5 ${
 											timeRange === range.id
 												? "bg-accent/10 text-accent"
 												: "text-text-muted hover:text-text-secondary"
@@ -222,7 +222,7 @@ export function DashboardHeader({
 						)}
 					<Link
 						href="/settings"
-						className="flex items-center gap-2 px-3 py-2 text-[11px] uppercase tracking-widest text-text-muted border border-border bg-surface hover:border-accent/40 hover:text-accent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
 						aria-label="Settings"
 					>
 						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
@@ -232,33 +232,35 @@ export function DashboardHeader({
 						onClick={handleRefresh}
 						disabled={isRefreshing}
 						aria-label="Refresh dashboard"
-						className="flex items-center gap-2 px-3 py-2 text-[11px] uppercase tracking-widest text-text-muted border border-border bg-surface hover:border-accent/40 hover:text-accent transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
 					>
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
 							aria-hidden="true"
 						/>
-						{isRefreshing ? "Syncing" : "Refresh"}
+						<span className="hidden xs:inline sm:inline">
+							{isRefreshing ? "Syncing" : "Refresh"}
+						</span>
 					</button>
 					{onExport && (activeTab === "usage" || activeTab === "overview") && (
 						<button
 							type="button"
 							onClick={onExport}
 							aria-label="Export usage data"
-							className="flex items-center gap-2 px-3 py-2 text-[11px] uppercase tracking-widest text-text-muted border border-border bg-surface hover:border-accent/40 hover:text-accent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
-							Export
+							<span className="hidden sm:inline">Export</span>
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Tab Navigation */}
+			{/* Tab Navigation — scrollable on mobile, no page overflow */}
 			{onTabChange && (
 				<div
 					role="tablist"
-					className="flex gap-px border-b border-border"
+					className="-mx-1 flex gap-px overflow-x-auto border-b border-border px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					aria-label="Dashboard sections"
 				>
 					{TABS.map((tab) => (
@@ -270,10 +272,10 @@ export function DashboardHeader({
 							aria-selected={activeTab === tab.id}
 							aria-controls={`panel-${tab.id}`}
 							onClick={() => onTabChange(tab.id)}
-							className={`px-4 py-3 text-[11px] uppercase tracking-widest font-medium transition-all border-b-2 -mb-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset ${
+							className={`shrink-0 border-b-2 -mb-px px-3 py-3 text-[11px] font-medium uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-4 ${
 								activeTab === tab.id
-									? "border-accent text-accent bg-accent/5"
-									: "border-transparent text-text-muted hover:text-text-secondary hover:border-border-bright"
+									? "border-accent bg-accent/5 text-accent"
+									: "border-transparent text-text-muted hover:border-border-bright hover:text-text-secondary"
 							}`}
 						>
 							<span className="flex items-center gap-1.5">
@@ -301,12 +303,14 @@ function SystemStatus() {
 	if (!data) return null;
 
 	const checks = Object.values(data.checks ?? {}) as Array<{ status?: string }>;
-	const hasOutage = checks.some(
-		(c) => c.status === "circuit_open" || c.status === "outage",
-	);
-	const hasDegraded = checks.some(
-		(c) => c.status === "degraded" || c.status === "rate_limited",
-	);
+	const hasOutage =
+		data.status === "outage" ||
+		checks.some((c) => c.status === "circuit_open" || c.status === "outage");
+	const hasDegraded =
+		data.status === "degraded" ||
+		checks.some(
+			(c) => c.status === "degraded" || c.status === "rate_limited",
+		);
 	const label = hasOutage
 		? "Outage"
 		: hasDegraded

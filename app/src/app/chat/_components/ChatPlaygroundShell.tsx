@@ -133,15 +133,19 @@ function ShellContent({
 	} = usePlaygroundState();
 
 	const toast = useToast();
-	const { isAuthenticated } = useWallet();
-	const { balance } = useBalance();
+	const { isAuthenticated, isDemo } = useWallet();
+	const { balance, loading: balanceLoading } = useBalance();
 	const balanceDollars = balanceToDollars(balance);
 	const LOW_BALANCE_THRESHOLD = 1;
+	// Only flag low balance after a real balance payload arrives — treating
+	// null/loading as $0 was flashing "LOW CREDITS — $0.00" on every cold load.
 	const isLowBalance =
 		isChat &&
 		isAuthenticated &&
-		balanceDollars < LOW_BALANCE_THRESHOLD &&
-		balanceDollars >= 0;
+		!isDemo &&
+		balance != null &&
+		!balanceLoading &&
+		balanceDollars < LOW_BALANCE_THRESHOLD;
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -349,7 +353,11 @@ function ShellContent({
 
 	return (
 		<div className="min-h-dvh h-dvh w-full flex flex-col bg-void text-text-secondary font-mono overflow-hidden">
-			<h1 className="sr-only">{isChat ? "OMA Chat" : "OMA API Playground"}</h1>
+			<h1 className="sr-only">
+				{isChat
+					? "OMA Chat — try models, stream responses, pay per token"
+					: "OMA API Playground"}
+			</h1>
 			<MemoizedChatToolbar
 				variant={variant}
 				model={model}
@@ -382,6 +390,22 @@ function ShellContent({
 					aria-label="Chat messages"
 					className="flex-1 flex flex-col min-w-0 border-r border-border relative"
 				>
+					{isDemo && (
+						<div
+							role="status"
+							className="flex-none flex items-center justify-between gap-3 px-4 md:px-8 py-2 bg-accent/10 border-b border-accent/25 text-[11px] text-accent font-mono"
+						>
+							<span className="uppercase tracking-wider">
+								Demo mode — mock data only. Sign in to run real inference.
+							</span>
+							<Link
+								href="/login?next=/chat"
+								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[10px] font-bold uppercase tracking-wider hover:bg-accent-bright transition-colors"
+							>
+								Sign in →
+							</Link>
+						</div>
+					)}
 					{isLowBalance && (
 						<div
 							role="status"

@@ -4,10 +4,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { m } from "framer-motion";
 import {
 	Activity,
+	Boxes,
+	CircleDollarSign,
 	DollarSign,
+	FileText,
 	Gauge,
 	Key,
 	RefreshCw,
+	RotateCcw,
+	ScrollText,
 	ShieldAlert,
 	Terminal,
 	TrendingUp,
@@ -15,14 +20,20 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { api } from "@/lib/api";
 import type { AdminUser } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/client";
+import AdminAuditLogsTab from "./_components/AdminAuditLogsTab";
+import AdminDlqTab from "./_components/AdminDlqTab";
+import AdminInvoicesTab from "./_components/AdminInvoicesTab";
 import AdminKeysTab from "./_components/AdminKeysTab";
 import AdminOverviewTab from "./_components/AdminOverviewTab";
+import AdminRefundsTab from "./_components/AdminRefundsTab";
 import AdminRevenueTab from "./_components/AdminRevenueTab";
+import AdminSurplusTab from "./_components/AdminSurplusTab";
 import AdminUsageTab from "./_components/AdminUsageTab";
 import AdminUsersTab from "./_components/AdminUsersTab";
 import type {
@@ -39,20 +50,32 @@ type Tab =
 	| "usage"
 	| "revenue"
 	| "keys"
+	| "audit-logs"
+	| "dlq"
+	| "refunds"
+	| "invoices"
+	| "surplus"
 	| "fees"
 	| "rate-limits";
 
-const TABS: { id: Tab; Icon: LucideIcon }[] = [
+const TABS: { id: Tab; Icon: LucideIcon; href?: string }[] = [
 	{ id: "overview", Icon: Activity },
 	{ id: "users", Icon: Users },
 	{ id: "usage", Icon: TrendingUp },
 	{ id: "revenue", Icon: DollarSign },
 	{ id: "keys", Icon: Key },
-	{ id: "fees", Icon: DollarSign },
-	{ id: "rate-limits", Icon: Gauge },
+	{ id: "audit-logs", Icon: ScrollText },
+	{ id: "dlq", Icon: RotateCcw },
+	{ id: "refunds", Icon: CircleDollarSign },
+	{ id: "invoices", Icon: FileText },
+	{ id: "surplus", Icon: Boxes },
+	// Full pages — navigate instead of empty stub panels
+	{ id: "fees", Icon: DollarSign, href: "/admin/fees" },
+	{ id: "rate-limits", Icon: Gauge, href: "/admin/rate-limits" },
 ];
 
 export default function AdminPage() {
+	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<Tab>("overview");
 	const [usersPage, setUsersPage] = useState(1);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +84,14 @@ export default function AdminPage() {
 
 	const queryClient = useQueryClient();
 
+	const selectTab = (id: Tab, href?: string) => {
+		if (href) {
+			router.push(href);
+			return;
+		}
+		setActiveTab(id);
+	};
+
 	const refreshStats = () => {
 		queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
 		queryClient.invalidateQueries({ queryKey: ["adminUsage"] });
@@ -68,26 +99,28 @@ export default function AdminPage() {
 		queryClient.invalidateQueries({ queryKey: ["adminKeys"] });
 	};
 
+	// Overview aggregates users + usage + revenue + keys. Enable those
+	// queries on overview as well as on their own tabs (previously overview
+	// stayed empty forever because nothing was fetched until tab switch).
 	const usersQuery = useQuery({
 		queryKey: ["adminUsers", usersPage],
 		queryFn: () => api.admin.getUsers(usersPage, 50),
 		staleTime: 30_000,
-		// ponytail: only fetch when the user actually opens the users tab.
-		enabled: activeTab === "users",
+		enabled: activeTab === "users" || activeTab === "overview",
 	});
 
 	const usageQuery = useQuery({
 		queryKey: ["adminUsage", usagePeriod],
 		queryFn: () => api.admin.getUsage(usagePeriod),
 		staleTime: 30_000,
-		enabled: activeTab === "usage",
+		enabled: activeTab === "usage" || activeTab === "overview",
 	});
 
 	const revenueQuery = useQuery({
 		queryKey: ["adminRevenue", revenuePeriod],
 		queryFn: () => api.admin.getRevenue(revenuePeriod),
 		staleTime: 30_000,
-		enabled: activeTab === "revenue",
+		enabled: activeTab === "revenue" || activeTab === "overview",
 	});
 
 	const keysQuery = useQuery({
@@ -97,7 +130,7 @@ export default function AdminPage() {
 				.getKeys(1, 100)
 				.then((data) => (data as { keys?: ApiKey[] })?.keys ?? []),
 		staleTime: 30_000,
-		enabled: activeTab === "keys",
+		enabled: activeTab === "keys" || activeTab === "overview",
 	});
 
 	const users = useMemo(
@@ -260,17 +293,17 @@ export default function AdminPage() {
 						aria-label="Admin sections"
 						className="flex gap-0.5 overflow-x-auto scrollbar-none"
 					>
-						{TABS.map(({ id, Icon }) => (
+						{TABS.map(({ id, Icon, href }) => (
 							<button
 								type="button"
 								key={id}
 								role="tab"
 								id={`admin-tab-${id}`}
-								aria-selected={activeTab === id}
-								aria-controls="admin-tabpanel"
-								onClick={() => setActiveTab(id)}
+								aria-selected={!href && activeTab === id}
+								aria-controls={href ? undefined : "admin-tabpanel"}
+								onClick={() => selectTab(id, href)}
 								className={`px-4 py-3 text-xs font-medium font-mono uppercase tracking-wider transition-all whitespace-nowrap rounded-lg ${
-									activeTab === id
+									!href && activeTab === id
 										? "text-accent bg-accent-dim/30 ring-1 ring-accent/30"
 										: "text-text-muted hover:text-text-secondary hover:bg-surface hover:ring-1 hover:ring-border"
 								}`}
@@ -332,38 +365,21 @@ export default function AdminPage() {
 					/>
 				)}
 
-				{activeTab === "keys" && (
-					<AdminKeysTab apiKeys={apiKeys} exportCSV={exportCSV} />
-				)}
+			{activeTab === "keys" && (
+				<AdminKeysTab apiKeys={apiKeys} exportCSV={exportCSV} />
+			)}
 
-				{activeTab === "fees" && (
-					<div className="rounded border border-border bg-surface p-8 text-center">
-						<DollarSign className="w-12 h-12 text-text-muted mx-auto mb-4" />
-						<p className="text-text-muted font-mono">Fee configuration</p>
-						<Link
-							href="/admin/fees"
-							className="text-accent hover:underline mt-2 inline-block font-mono text-sm"
-						>
-							Open Fee Configuration →
-						</Link>
-					</div>
-				)}
+			{activeTab === "audit-logs" && <AdminAuditLogsTab />}
 
-				{activeTab === "rate-limits" && (
-					<div className="rounded border border-border bg-surface p-8 text-center">
-						<Gauge className="w-12 h-12 text-text-muted mx-auto mb-4" />
-						<p className="text-text-muted font-mono">
-							Rate limit configuration
-						</p>
-						<Link
-							href="/admin/rate-limits"
-							className="text-accent hover:underline mt-2 inline-block font-mono text-sm"
-						>
-							Open Rate Limits →
-						</Link>
-					</div>
-				)}
-			</div>
+			{activeTab === "dlq" && <AdminDlqTab />}
+
+			{activeTab === "refunds" && <AdminRefundsTab />}
+
+			{activeTab === "invoices" && <AdminInvoicesTab />}
+
+			{activeTab === "surplus" && <AdminSurplusTab />}
+
+		</div>
 		</div>
 	);
 

@@ -68,41 +68,43 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				initial={{ scale: 0.9, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				transition={{ duration: 0.3 }}
-				className="w-14 h-14 flex items-center justify-center mb-6 border border-border"
+				className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl border border-accent/25 bg-accent/8 shadow-[0_0_24px_-10px_var(--color-accent-glow)]"
 			>
-				<span className="text-xl text-success font-mono">{">"}_</span>
+				<span className="text-xl font-mono text-accent" aria-hidden="true">
+					{">"}_
+				</span>
 			</m.div>
 
 			<m.h2
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ delay: 0.1 }}
-				className="text-xl font-mono font-bold text-text mb-2 tracking-tight"
+				className="mb-2 text-xl font-semibold tracking-tight text-text-bright"
 			>
-				OMA PLAYGROUND
+				Chat with any model
 			</m.h2>
 			<m.p
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ delay: 0.15 }}
-				className="text-text-muted text-xs font-mono max-w-md mb-1"
+				className="mb-1 max-w-md font-mono text-xs text-text-muted"
 			>
-				{"// QUERY THE GATEWAY"}
+				OpenAI-compatible · metered in USDC
 			</m.p>
 			<m.p
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ delay: 0.2 }}
-				className="text-text-muted/60 text-[10px] font-mono max-w-md mb-6"
+				className="mb-6 max-w-md text-sm text-text-secondary"
 			>
-				Pick a quick prompt below, or just start typing
+				Pick a starter prompt, or type below. Responses stream live.
 			</m.p>
 
 			<m.div
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ delay: 0.25 }}
-				className="grid grid-cols-2 gap-2 w-full max-w-md"
+				className="grid w-full max-w-md grid-cols-2 gap-2"
 			>
 				{PRESETS.map((preset, i) => {
 					const Icon = preset.icon;
@@ -110,6 +112,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 					return (
 						<m.button
 							key={preset.id}
+							type="button"
 							initial={{ opacity: 0, y: 8 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3 + i * 0.04 }}
@@ -117,37 +120,36 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							onMouseLeave={() => setHoveredId(null)}
 							onClick={() => onPreset(preset.prompt, preset.model)}
 							className="
-                flex items-start gap-2.5 px-3 py-3 bg-void border border-border
-                text-left transition-all duration-200
-                hover:border-success/40 hover:bg-surface
+                flex min-h-[48px] items-start gap-2.5 rounded-lg border border-border
+                bg-surface/60 px-3 py-3 text-left transition-all duration-200
+                hover:border-accent/40 hover:bg-surface
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-void
-                min-h-[44px]
               "
 						>
 							<Icon
-								className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors duration-200 ${
-									isHovered ? "text-success" : "text-text-muted"
+								className={`mt-0.5 h-3.5 w-3.5 shrink-0 transition-colors duration-200 ${
+									isHovered ? "text-accent" : "text-text-muted"
 								}`}
 							/>
-							<div className="flex-1 min-w-0">
+							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1">
 									<span
-										className={`text-[11px] font-mono font-bold transition-colors duration-200 ${
-											isHovered ? "text-text" : "text-text-secondary"
+										className={`text-[11px] font-semibold transition-colors duration-200 ${
+											isHovered ? "text-text-bright" : "text-text-secondary"
 										}`}
 									>
 										{preset.label}
 									</span>
 									<ChevronRight
-										className={`w-2.5 h-2.5 transition-all duration-200 ${
+										className={`h-2.5 w-2.5 transition-all duration-200 ${
 											isHovered
-												? "text-success opacity-100 translate-x-0"
-												: "text-text-muted opacity-0 -translate-x-1"
+												? "translate-x-0 text-accent opacity-100"
+												: "-translate-x-1 text-text-muted opacity-0"
 										}`}
 									/>
 								</div>
-								<span className="text-[9px] font-mono text-text-muted leading-tight block mt-0.5">
+								<span className="mt-0.5 block text-[10px] leading-tight text-text-muted">
 									{preset.description}
 								</span>
 							</div>
@@ -160,10 +162,10 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ delay: 0.5 }}
-				className="flex items-center gap-1 mt-4 text-[9px] font-mono text-text-muted/50"
+				className="mt-4 flex items-center gap-1.5 text-[10px] text-text-muted"
 			>
-				<Coins className="w-2.5 h-2.5" />
-				Quick prompts use budget models — cost is negligible
+				<Coins className="h-2.5 w-2.5 text-accent" aria-hidden="true" />
+				Starters route to budget models — cost stays tiny
 			</m.div>
 		</div>
 	);

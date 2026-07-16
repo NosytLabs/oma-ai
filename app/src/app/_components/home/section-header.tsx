@@ -14,6 +14,8 @@ export interface SectionHeaderProps {
 	align?: "left" | "center";
 	className?: string;
 	headlineClassName?: string;
+	/** Optional id on the h2 for aria-labelledby on parent sections. */
+	id?: string;
 }
 
 export function SectionHeader({
@@ -23,6 +25,7 @@ export function SectionHeader({
 	align = "left",
 	className,
 	headlineClassName,
+	id,
 }: SectionHeaderProps) {
 	return (
 		<div
@@ -34,6 +37,7 @@ export function SectionHeader({
 		>
 			{eyebrow && <span className="eyebrow">{eyebrow}</span>}
 			<h2
+				id={id}
 				className={cn(
 					"section-headline text-text-bright text-balance max-w-3xl",
 					headlineClassName,

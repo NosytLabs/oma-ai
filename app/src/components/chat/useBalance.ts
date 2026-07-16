@@ -22,13 +22,14 @@ export function useBalance(): {
 	loading: boolean;
 	refresh: () => Promise<void>;
 } {
-	const { isAuthenticated } = useWallet();
+	const { isAuthenticated, isDemo } = useWallet();
 	const toast = useToast();
 
 	const query = useQuery({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
-		enabled: isAuthenticated,
+		// Demo mode is authenticated for UI gates but has no real session.
+		enabled: isAuthenticated && !isDemo,
 		// Slower polling (120s instead of 30s) and stop on auth errors —
 		// the old 30s + auto-refetch-on-fail created an infinite 401 loop.
 		refetchInterval: (data) => {
@@ -60,11 +61,29 @@ export function useBalance(): {
 		}
 	}, [query.error, toast]);
 
-	const balance: BalanceResponse | null = isAuthenticated
-		? (query.data ?? null)
-		: null;
-	const loading = isAuthenticated ? query.isPending : false;
+	// Lazy import avoided: fixtures are tiny and only used for the demo path.
+	const balance: BalanceResponse | null = (() => {
+		if (!isAuthenticated) return null;
+		if (isDemo) {
+			// Inline shape matches DEMO_BALANCE without a circular import risk
+			// into the chat tree; dashboard uses demo-fixtures.ts for the rest.
+			return {
+				balanceCents: "1250",
+				totalDepositedCents: "2500",
+				totalUsedCents: "1250",
+				lastActivityAt: new Date().toISOString(),
+			};
+		}
+		return query.data ?? null;
+	})();
+	// isPending is true only with no data; isFetching covers refetches too.
+	// Prefer isLoading (pending + no data) so we don't thrash low-balance UI.
+	const loading =
+		isAuthenticated && !isDemo
+			? query.isLoading || (query.isFetching && !query.data)
+			: false;
 	const refresh = async () => {
+		if (isDemo) return;
 		await query.refetch();
 	};
 

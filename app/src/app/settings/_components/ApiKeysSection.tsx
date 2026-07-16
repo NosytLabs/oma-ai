@@ -6,7 +6,6 @@ import {
 	Clock,
 	Key as KeyIcon,
 	Loader2,
-	LogOut,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -19,8 +18,9 @@ interface ApiKeysSectionProps {
 	apiKeys: ApiKey[];
 	onCopy: (text: string, id: string) => void;
 	copied: string | null;
-	onLogout: () => Promise<void>;
-	loggingOut: boolean;
+	/** @deprecated logout lives on the settings page header */
+	onLogout?: () => Promise<void>;
+	loggingOut?: boolean;
 	onRevokeKey?: (keyId: string) => Promise<void>;
 }
 
@@ -28,8 +28,6 @@ export function ApiKeysSection({
 	apiKeys,
 	onCopy,
 	copied,
-	onLogout,
-	loggingOut,
 	onRevokeKey,
 }: ApiKeysSectionProps) {
 	const toast = useToast();
@@ -55,27 +53,12 @@ export function ApiKeysSection({
 
 	return (
 		<div>
-			<div className="mb-1 flex items-start justify-between gap-4">
-				<div>
-					<h2 className="text-lg font-semibold text-text-bright">API keys</h2>
-					<p className="mt-1 text-sm text-text-muted">
-						Use these keys to call the OMA gateway programmatically. Keep them
-						secret.
-					</p>
-				</div>
-				<button
-					type="button"
-					onClick={onLogout}
-					disabled={loggingOut}
-					className="inline-flex items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-all hover:border-amber/30 hover:text-amber disabled:opacity-40"
-				>
-					{loggingOut ? (
-						<Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-					) : (
-						<LogOut className="h-3 w-3" aria-hidden="true" />
-					)}
-					Logout
-				</button>
+			<div className="mb-1">
+				<h2 className="text-lg font-semibold text-text-bright">API keys</h2>
+				<p className="mt-1 text-sm text-text-muted">
+					Use these keys to call the OMA gateway programmatically. Keep them
+					secret. Manage create / revoke on the dashboard for rate limits.
+				</p>
 			</div>
 
 			<div className="mt-6 space-y-2">
@@ -111,7 +94,7 @@ export function ApiKeysSection({
 									)}
 								</div>
 								<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-									<span className="font-mono">{key.prefix}***</span>
+									<span className="font-mono">{key.prefix ? `${key.prefix}***` : "••••***"}</span>
 									<span className="flex items-center gap-1">
 										<Clock className="h-2.5 w-2.5" aria-hidden="true" />
 										{formatDateTime(key.createdAt)}

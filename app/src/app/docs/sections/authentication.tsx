@@ -68,7 +68,7 @@ func main() {
 				<div className="flex items-start gap-3">
 					<Shield className="h-5 w-5 text-warning mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-warning">API Key Security</h4>
+						<h3 className="font-semibold text-warning">API Key Security</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Keys use the{" "}
 							<code className="text-warning font-mono">oma_sk_</code> prefix.
@@ -90,7 +90,7 @@ func main() {
 					password. Your wallet address is your identity.
 				</p>
 				<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
-					<h4 className="font-semibold text-accent text-sm mb-2">How it works</h4>
+					<h3 className="font-semibold text-accent text-sm mb-2">How it works</h3>
 					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
 						<li>Click &quot;Connect Wallet&quot; on the login page</li>
 						<li>Sign a SIWE message with your wallet (no gas cost)</li>
@@ -113,7 +113,7 @@ func main() {
 				</p>
 				<div className="grid gap-4 sm:grid-cols-2 mb-4">
 					<div className="rounded-xl border border-border bg-surface/50 p-4">
-						<h4 className="font-semibold text-text text-sm mb-2">Flow</h4>
+						<h3 className="font-semibold text-text text-sm mb-2">Flow</h3>
 						<ol className="list-decimal list-inside space-y-1 text-sm text-text-muted">
 							<li>Create an account via the login page</li>
 							<li>Receive a unique <code className="text-accent font-mono text-xs">oma-xxxx</code> account number</li>
@@ -122,7 +122,7 @@ func main() {
 						</ol>
 					</div>
 					<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
-						<h4 className="font-semibold text-accent text-sm mb-2">When to use</h4>
+						<h3 className="font-semibold text-accent text-sm mb-2">When to use</h3>
 						<ul className="space-y-1 text-sm text-text-muted">
 							<li className="flex items-start gap-2">
 								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />

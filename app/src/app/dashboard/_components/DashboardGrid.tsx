@@ -3,7 +3,6 @@
 import { AnimatePresence, m } from "framer-motion";
 import {
 	Activity,
-	BarChart3,
 	Inbox,
 	KeyRound,
 	type LucideIcon,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense, useMemo, useState } from "react";
+import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -81,13 +81,6 @@ function EmptyState({
 		</m.div>
 	);
 }
-const LazyCreditBalanceCard = dynamic(
-	() =>
-		import("@/components/dashboard/CreditBalanceCard").then(
-			(mod) => mod.CreditBalanceCard,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-32 w-full" /> },
-);
 const LazyExpiringCreditsWarning = dynamic(
 	() =>
 		import("@/components/dashboard/ExpiringCreditsWarning").then(
@@ -101,7 +94,20 @@ const LazyProviderHealthSummary = dynamic(
 		import("@/components/dashboard/ProviderHealthSummary").then(
 			(mod) => mod.ProviderHealthSummary,
 		),
-	{ ssr: false, loading: () => <Skeleton className="h-32 w-full" /> },
+	{
+		ssr: false,
+		loading: () => (
+			<div className="flex min-h-[12rem] flex-col bg-void p-6">
+				<Skeleton className="mb-2 h-4 w-28" />
+				<Skeleton className="mb-6 h-3 w-40" />
+				<Skeleton className="mb-2 h-4 w-32" />
+				<div className="space-y-2 border border-border p-2">
+					<Skeleton className="h-8 w-full" />
+					<Skeleton className="h-8 w-full" />
+				</div>
+			</div>
+		),
+	},
 );
 const LazyUsageChart = dynamic(
 	() =>
@@ -356,93 +362,73 @@ export function DashboardGrid(props: DashboardGridProps) {
 			<AnimatePresence mode="wait">
 				{/* Overview Tab */}
 				{activeTab === "overview" && (
-					<m.div
+					// No opacity-0 entrance on overview — first paint must never be a
+					// blank void while data is still syncing (looked broken in screenshots).
+					<div
 						key="overview"
 						id="panel-overview"
 						role="tabpanel"
 						aria-labelledby="tab-overview"
 						aria-label="Overview"
-						variants={tabContentVariants}
-						initial="hidden"
-						animate="visible"
-						exit="exit"
 					>
-						{!loading && (!usage || usage.length === 0) && !balance ? (
-							<EmptyState
-								icon={Activity}
-								title="No data yet"
-								description="Once you start making API requests, your usage data will appear here."
-								action={
-									<a
-										href="/docs"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="inline-flex items-center gap-1.5 text-accent hover:text-accent/80 text-sm font-medium transition-colors"
-									>
-										Read the docs →
-									</a>
-								}
+						{/* Onboarding checklist for new users */}
+						{!loading && (
+							<OnboardingChecklist
+								walletConnected={true}
+								hasApiKey={apiKeys.length > 0}
+								hasUsage={usage.length > 0}
+								onNavigateToApiKeys={onNavigateToApiKeys}
 							/>
-						) : (
-							<>
-								{/* Onboarding checklist for new users */}
-								<OnboardingChecklist
-									walletConnected={true}
-									hasApiKey={apiKeys.length > 0}
-									hasUsage={usage.length > 0}
-									onNavigateToApiKeys={onNavigateToApiKeys}
-								/>
-
-								{creditBatches && creditBatches.length > 0 && (
-									<div className="mb-4">
-										<WidgetErrorBoundary title="Expiring credits">
-											<LazyExpiringCreditsWarning
-												creditBatches={creditBatches}
-											/>
-										</WidgetErrorBoundary>
-									</div>
-								)}
-
-								<div className="mb-6 grid grid-cols-1 gap-px bg-border lg:grid-cols-3">
-									<WidgetErrorBoundary title="Balance">
-										<LazyCreditBalanceCard
-											balance={balance}
-											loading={loading}
-											recentUsage={usage}
-										/>
-									</WidgetErrorBoundary>
-									<WidgetErrorBoundary title="Today's stats">
-										<QuickStatsCard
-											loading={loading}
-											todayRequests={todayRequests}
-											todayCost={todayCost}
-											totalTokens={totalTokens}
-											avgLatencyMs={avgLatencyMs}
-											errorCount={errorCount}
-											activeModels={activeModels}
-										/>
-									</WidgetErrorBoundary>
-									<WidgetErrorBoundary title="Provider health">
-										<LazyProviderHealthSummary />
-									</WidgetErrorBoundary>
-								</div>
-
-								<div className="mb-6">
-									<WidgetErrorBoundary title="Usage charts">
-										<LazyUsageChart
-											usageData={usageData}
-											modelData={modelData}
-											timeRange={timeRange}
-										/>
-									</WidgetErrorBoundary>
-								</div>
-
-								<QuickActions />
-
-								<RecentTransactions transactions={transactions} />
-							</>
 						)}
-					</m.div>
+
+						{creditBatches && creditBatches.length > 0 && (
+							<div className="mb-4">
+								<WidgetErrorBoundary title="Expiring credits">
+									<LazyExpiringCreditsWarning creditBatches={creditBatches} />
+								</WidgetErrorBoundary>
+							</div>
+						)}
+
+						<div className="mb-6 grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-h-[12rem] [&>*]:bg-void">
+							<WidgetErrorBoundary title="Balance">
+								<CreditBalanceCard
+									balance={balance}
+									loading={loading}
+									recentUsage={usage}
+								/>
+							</WidgetErrorBoundary>
+							<WidgetErrorBoundary title="Today's stats">
+								<QuickStatsCard
+									loading={loading}
+									todayRequests={todayRequests}
+									todayCost={todayCost}
+									totalTokens={totalTokens}
+									avgLatencyMs={avgLatencyMs}
+									errorCount={errorCount}
+									activeModels={activeModels}
+								/>
+							</WidgetErrorBoundary>
+							<div className="sm:col-span-2 lg:col-span-1">
+								<WidgetErrorBoundary title="Provider health">
+									<LazyProviderHealthSummary />
+								</WidgetErrorBoundary>
+							</div>
+						</div>
+
+						<div className="mb-6">
+							<WidgetErrorBoundary title="Usage charts">
+								<LazyUsageChart
+									usageData={usageData}
+									modelData={modelData}
+									timeRange={timeRange}
+								/>
+							</WidgetErrorBoundary>
+						</div>
+
+						<QuickActions />
+
+						<RecentTransactions transactions={transactions} />
+					</div>
 				)}
 
 				{/* Usage Tab */}
@@ -462,7 +448,15 @@ export function DashboardGrid(props: DashboardGridProps) {
 							<EmptyState
 								icon={Activity}
 								title="No usage data"
-								description="Connect your wallet and start making requests to see usage analytics."
+								description="Start making API or chat requests — usage charts and request history will show up here."
+								action={
+									<a
+										href="/chat"
+										className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent/80"
+									>
+										Open chat playground →
+									</a>
+								}
 							/>
 						) : (
 							<>
@@ -557,7 +551,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 					</m.div>
 				)}
 
-				{/* Health Tab */}
+				{/* Health Tab — always show live readiness; does not require usage */}
 				{activeTab === "health" && (
 					<m.div
 						key="health"
@@ -571,17 +565,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 						animate="visible"
 						exit="exit"
 					>
-						{!loading && (!usage || usage.length === 0) ? (
-							<EmptyState
-								icon={BarChart3}
-								title="No provider data"
-								description="Provider health metrics will appear once you've made requests through the gateway."
-							/>
-						) : (
-							<WidgetErrorBoundary title="Provider health">
-								<LazyProviderHealthCard />
-							</WidgetErrorBoundary>
-						)}
+						<WidgetErrorBoundary title="Provider health">
+							<LazyProviderHealthCard />
+						</WidgetErrorBoundary>
 					</m.div>
 				)}
 			</AnimatePresence>

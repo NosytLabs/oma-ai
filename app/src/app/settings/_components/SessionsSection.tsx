@@ -24,6 +24,9 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 				{sessions.length === 0 ? (
 					<div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
 						<p className="text-sm text-text-muted">No active sessions.</p>
+						<p className="mt-1 text-xs text-text-muted">
+							You&apos;re signed in — refresh if this looks wrong.
+						</p>
 					</div>
 				) : (
 					sessions.map((session) => (
@@ -31,7 +34,7 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 							key={session.id}
 							className="flex items-center gap-3 rounded-lg border border-border bg-void px-4 py-3"
 						>
-							<div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/20 bg-accent/5">
+							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/5">
 								{session.current ? (
 									<Monitor className="h-4 w-4 text-accent" />
 								) : (
@@ -39,7 +42,7 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 								)}
 							</div>
 							<div className="min-w-0 flex-1">
-								<div className="flex items-center gap-2">
+								<div className="flex flex-wrap items-center gap-2">
 									<span className="text-sm font-semibold text-text">
 										{session.device}
 									</span>
@@ -50,9 +53,11 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 									)}
 								</div>
 								<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-									<span className="font-mono">{session.ip}</span>
+									{session.ip && session.ip !== "—" && (
+										<span className="font-mono">{session.ip}</span>
+									)}
 									<span className="flex items-center gap-1">
-										<Clock className="h-2.5 w-2.5" />
+										<Clock className="h-2.5 w-2.5" aria-hidden="true" />
 										Active {formatDateTime(session.lastActive)}
 									</span>
 								</div>
@@ -61,6 +66,10 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 					))
 				)}
 			</div>
+			<p className="mt-4 text-[11px] leading-relaxed text-text-muted">
+				Multi-device session management is limited today. Sign out from the
+				Settings header to end this browser session.
+			</p>
 		</div>
 	);
 }

@@ -19,7 +19,12 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 export const PUBLIC_BACKEND_PATHS = new Set([
 	"/v1/models",
 	"/v1/health",
+	"/v1/ping",
 	"/health",
+	"/ready",
+	"/live",
+	"/ping",
+	"/version",
 ]);
 
 export interface ProxyRequestOptions {

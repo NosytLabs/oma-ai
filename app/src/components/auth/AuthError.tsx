@@ -190,8 +190,10 @@ export function AuthError({ error, onRetry, onDismiss }: AuthErrorProps) {
 		<m.div
 			role="alert"
 			aria-live="assertive"
-			initial={reduceMotion ? false : { opacity: 0, y: -4 }}
-			animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+			// Prefer undefined over `false` so reduced-motion never leaks a
+			// boolean `initial`/`animate` prop into the DOM (jsdom / strict a11y).
+			initial={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+			animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
 			transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
 			className="flex items-start gap-3 rounded-lg border border-red/30 bg-red/10 px-3.5 py-3"
 		>

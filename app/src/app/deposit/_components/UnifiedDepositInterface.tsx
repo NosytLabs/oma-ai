@@ -51,7 +51,13 @@ export function UnifiedDepositInterface({
 }) {
 	const [step, setStep] = useState<DepositStep>("select");
 	const [selectedCoin, setSelectedCoin] = useState<CoinOption | null>(null);
-	const [amount, setAmount] = useState("");
+	// Prefill from ?amount= when users arrive from dashboard/credits "Buy".
+	const [amount, setAmount] = useState(() => {
+		if (typeof window === "undefined") return "";
+		const raw = new URLSearchParams(window.location.search).get("amount");
+		if (!raw) return "";
+		return /^\d*\.?\d*$/.test(raw) && parseFloat(raw) > 0 ? raw : "";
+	});
 	const [processingStep, setProcessingStep] = useState("");
 	const [txHash, setTxHash] = useState("");
 	const [error, setError] = useState("");
@@ -319,43 +325,58 @@ export function UnifiedDepositInterface({
 			{step !== "error" && (
 				<nav
 					aria-label="Deposit progress"
-					className="flex items-center justify-center gap-0"
+					className="flex items-start justify-center gap-0 px-2"
 				>
 					{STEPS.map((s, i) => (
-						<div
-							key={s.key}
-							className="flex flex-col items-center gap-1.5"
-							aria-current={i === currentStepIdx ? "step" : undefined}
-						>
+						<div key={s.key} className="flex items-start min-w-0">
 							<div
-								className={`relative flex h-8 w-8 items-center justify-center rounded-full border text-xs font-mono font-semibold transition-colors duration-300 ${
-									i === currentStepIdx
-										? "border-accent bg-accent/10 text-accent"
-										: i < currentStepIdx
-											? "border-success/40 bg-success/10 text-success"
-											: "border-border-bright bg-surface text-text-muted"
-								}`}
+								className="flex w-[5.5rem] sm:w-28 shrink-0 flex-col items-center gap-1.5"
+								aria-current={i === currentStepIdx ? "step" : undefined}
 							>
-								{i < currentStepIdx ? <Check className="h-4 w-4" /> : i + 1}
-								{i === currentStepIdx && (
-									<m.div
-										className="absolute inset-0 rounded-full border border-accent"
-										layoutId="step-indicator"
-										transition={{ type: "spring", stiffness: 380, damping: 30 }}
-									/>
-								)}
+								<div
+									className={`relative flex h-8 w-8 items-center justify-center rounded-full border text-xs font-mono font-semibold transition-colors duration-300 ${
+										i === currentStepIdx
+											? "border-accent bg-accent/10 text-accent"
+											: i < currentStepIdx
+												? "border-success/40 bg-success/10 text-success"
+												: "border-border-bright bg-surface text-text-muted"
+									}`}
+								>
+									{i < currentStepIdx ? <Check className="h-4 w-4" /> : i + 1}
+									{i === currentStepIdx && (
+										<m.div
+											className="absolute inset-0 rounded-full border border-accent"
+											layoutId="step-indicator"
+											transition={{
+												type: "spring",
+												stiffness: 380,
+												damping: 30,
+											}}
+										/>
+									)}
+								</div>
+								<span
+									className={`max-w-full text-center text-[10px] font-mono uppercase tracking-wider leading-tight px-0.5 ${
+										i === currentStepIdx
+											? "text-accent"
+											: i < currentStepIdx
+												? "text-success"
+												: "text-text-muted"
+									}`}
+								>
+									{s.label}
+								</span>
 							</div>
-							<span
-								className={`text-[10px] font-mono uppercase tracking-wider ${
-									i === currentStepIdx
-										? "text-accent"
-										: i < currentStepIdx
-											? "text-success"
-											: "text-text-muted"
-								}`}
-							>
-								{s.label}
-							</span>
+							{i < STEPS.length - 1 && (
+								<div
+									aria-hidden="true"
+									className={`mt-4 h-px w-6 sm:w-10 shrink-0 ${
+										i < currentStepIdx
+											? "bg-success/40"
+											: "bg-border-bright"
+									}`}
+								/>
+							)}
 						</div>
 					))}
 				</nav>

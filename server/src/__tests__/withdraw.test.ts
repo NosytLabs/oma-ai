@@ -53,6 +53,11 @@ vi.mock("../auth/middleware.js", () => ({
     c.set("authMethod", "siwe");
     await next();
   },
+  sessionOrBearerAuth: async (c: any, next: any) => {
+    c.set("userId", "user-1");
+    c.set("authMethod", "siwe");
+    await next();
+  },
 }));
 
 vi.mock("../auth/siwe.js", () => ({

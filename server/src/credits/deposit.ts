@@ -1,4 +1,5 @@
 import { db } from "../db/client.js";
+import { emitDepositMatched } from "../lib/deposit-events.js";
 
 // Drizzle's PgTransaction is a subset of NeonHttpDatabase (no $withAuth/batch).
 // Both support .select/.insert/.update/.delete used in deposit helpers.
@@ -101,6 +102,18 @@ export async function processUsdcDeposit(userId: string, amountUsd: number, txHa
 
     await createDepositAndCreditBatch(tx, userId, creditsCents, deposit.id);
 
+    emitDepositMatched({
+      id: deposit.id,
+      userId,
+      type: "usdc_direct",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+      status: "completed",
+      createdAt: new Date(),
+      completedAt: new Date(),
+    });
+
     return { creditsCents, depositId: deposit.id };
   });
 }
@@ -161,6 +174,18 @@ export async function processCctpDeposit(
 
     await createDepositAndCreditBatch(tx, userId, creditsCents, deposit.id);
 
+    emitDepositMatched({
+      id: deposit.id,
+      userId,
+      type: "cctp_crosschain",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+      status: "completed",
+      createdAt: new Date(),
+      completedAt: new Date(),
+    });
+
     return { creditsCents, depositId: deposit.id, method: "cctp" as const };
   });
 }
@@ -217,6 +242,18 @@ export async function processLifiDeposit(
 
     await createDepositAndCreditBatch(tx, userId, creditsCents, deposit.id);
 
+    emitDepositMatched({
+      id: deposit.id,
+      userId,
+      type: "lifi_swap",
+      amountUsd: String(amountUsd),
+      creditsIssued: String(creditsCents / 100),
+      txHash,
+      status: "completed",
+      createdAt: new Date(),
+      completedAt: new Date(),
+    });
+
     return { creditsCents, depositId: deposit.id, method: "lifi" as const };
   });
 }
@@ -263,6 +300,18 @@ export async function processPaymentLinkDeposit(
     await createDepositAndCreditBatch(tx, deposit.userId, creditsCents, deposit.id);
 
     return { creditsCents };
+  });
+
+  emitDepositMatched({
+    id: depositId,
+    userId: userId ?? "",
+    type: "payment_link",
+    amountUsd: String(amountUsd),
+    creditsIssued: String(result.creditsCents / 100),
+    txHash,
+    status: "completed",
+    createdAt: new Date(),
+    completedAt: new Date(),
   });
 
   return { creditsCents: result.creditsCents, depositId };

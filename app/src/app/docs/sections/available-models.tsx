@@ -83,7 +83,10 @@ export function AvailableModelsSection() {
 						<div className="p-4">
 							<p className="mb-4 text-sm text-text-muted">{tier.desc}</p>
 							<div className="overflow-x-auto">
-								<table className="w-full text-left text-sm">
+								<table
+									className="w-full text-left text-sm"
+									aria-label={`${tier.name} tier models`}
+								>
 									<thead>
 										<tr className="border-b border-border/50">
 											<th className="pb-2 font-medium text-text-muted">Model</th>
@@ -132,7 +135,7 @@ export function AvailableModelsSection() {
 				<div className="flex items-start gap-3">
 					<Terminal className="h-5 w-5 text-accent mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-accent">List All Models</h4>
+						<h3 className="font-semibold text-accent">List All Models</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Use the <code className="font-mono">GET /v1/models</code> endpoint to fetch the
 							current model catalog with pricing and capabilities.

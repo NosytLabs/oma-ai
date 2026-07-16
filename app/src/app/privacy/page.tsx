@@ -29,12 +29,14 @@ export const metadata: Metadata = {
 		title: "Privacy · OMA",
 		description:
 			"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
-			},
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Privacy" }],
+	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Privacy · OMA",
 		description:
 			"Minimal data collection policy. No prompt or completion logging, ever.",
+		images: ["/og-image.png"],
 	},
 };
 
@@ -56,7 +58,13 @@ const SECTIONS = [
 		title: "Third parties",
 		meta: "who sees what",
 	},
-	{ idx: "07", id: "rights", title: "Your rights", meta: "what you control" },
+	{
+		idx: "07",
+		id: "subprocessors",
+		title: "Sub-processors",
+		meta: "DPA list",
+	},
+	{ idx: "08", id: "rights", title: "Your rights", meta: "what you control" },
 ] as const;
 
 function StatusDot({
@@ -525,6 +533,51 @@ export default function PrivacyPage() {
 							We do not sell, rent, or share any personal data with advertisers
 							or analytics services.
 						</p>
+					</section>
+
+					{/* ===== SUB-PROCESSORS (DPA disclosure) ===== */}
+					<section
+						id="subprocessors"
+						aria-labelledby="subprocessors-heading"
+						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+					>
+						<SectionHeading title="Sub-processors" meta="DPA list" />
+						<h3 id="subprocessors-heading" className="sr-only">
+							Sub-processors
+						</h3>
+						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
+							Vendors that process limited operational data on our behalf. None
+							receive prompt or completion content. Contact{" "}
+							<a
+								href="mailto:privacy@oma-ai.com"
+								className="text-accent underline underline-offset-2"
+							>
+								privacy@oma-ai.com
+							</a>{" "}
+							for a signed DPA.
+						</p>
+						<ul className="border border-border bg-surface divide-y divide-border">
+							{[
+								["Neon", "Database hosting", "account metadata, usage meters"],
+								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
+								["Sentry", "Error telemetry", "stack traces (no prompt bodies)"],
+								["WalletConnect / Coinbase", "Wallet connect", "session handshake only"],
+								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
+							].map(([name, role, note]) => (
+								<li
+									key={name}
+									className="grid grid-cols-[minmax(0,1fr)_7rem] sm:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 py-3"
+								>
+									<span className="text-[13px] sm:text-sm text-text-bright">
+										{name}
+									</span>
+									<span className="text-[12.5px] text-text-muted">{role}</span>
+									<span className="hidden sm:inline text-[11px] sm:text-xs text-text-muted">
+										{note}
+									</span>
+								</li>
+							))}
+						</ul>
 					</section>
 
 					{/* ===== YOUR RIGHTS ===== */}

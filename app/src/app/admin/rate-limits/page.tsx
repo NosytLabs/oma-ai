@@ -13,6 +13,7 @@ import {
 	Terminal,
 	Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
 type RateLimitTier = {
@@ -242,6 +243,12 @@ export default function AdminRateLimitsPage() {
 						<Terminal className="w-4 h-4 text-amber" />
 					</div>
 					<div>
+						<Link
+							href="/admin"
+							className="text-[10px] font-mono uppercase tracking-widest text-text-muted hover:text-accent transition-colors"
+						>
+							← Admin
+						</Link>
 						<h1 className="text-lg font-bold font-display tracking-tight text-text-bright">
 							Rate Limits
 						</h1>

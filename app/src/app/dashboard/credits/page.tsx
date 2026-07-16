@@ -2,10 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { CHART_PALETTE } from "@/components/ui/charts/shared";
+import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { api, type BalanceResponse, type CreditTransaction } from "@/lib/api";
+import { DEMO_BALANCE, DEMO_TRANSACTIONS } from "@/lib/demo-fixtures";
 
 const BarChartComponent = dynamic(
 	() => import("@/components/ui/charts").then((m) => m.BarChartComponent),
@@ -71,14 +73,14 @@ function mapCreditTransaction(tx: CreditTransaction): CreditHistoryItem {
 }
 
 export default function CreditsPage() {
-	const { isConnected, connectEvm } = useWallet();
+	const { isAuthenticated, isDemo, connectEvm, isReady } = useWallet();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 
 	const balanceQuery = useQuery({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
-		enabled: isConnected,
+		enabled: isAuthenticated && !isDemo,
 		staleTime: 60_000,
 	});
 
@@ -88,25 +90,26 @@ export default function CreditsPage() {
 			const res = await api.creditHistory.list(50);
 			return res.transactions.map(mapCreditTransaction);
 		},
-		enabled: isConnected,
+		enabled: isAuthenticated && !isDemo,
 		staleTime: 60_000,
 	});
 
-	const balance: BalanceResponse | null = balanceQuery.data ?? null;
-	const loading = balanceQuery.isLoading;
-	const refreshing = balanceQuery.isFetching && !balanceQuery.isLoading;
-	const error =
-		balanceQuery.error instanceof Error
+	const balance: BalanceResponse | null = isDemo
+		? DEMO_BALANCE
+		: (balanceQuery.data ?? null);
+	const loading = isDemo ? false : balanceQuery.isLoading;
+	const refreshing =
+		!isDemo && balanceQuery.isFetching && !balanceQuery.isLoading;
+	const error = isDemo
+		? null
+		: balanceQuery.error instanceof Error
 			? balanceQuery.error.message
 			: balanceQuery.error
 				? "Failed to load credits data"
 				: null;
 
 	const [buyAmount, setBuyAmount] = useState("");
-	const [selectedPayment, setSelectedPayment] = useState<"usdc">(
-		"usdc",
-	);
-	const [processing, setProcessing] = useState(false);
+	const [selectedPayment, setSelectedPayment] = useState<"usdc">("usdc");
 
 	const [autoReload, setAutoReload] = useState(false);
 	const [autoReloadThreshold, setAutoReloadThreshold] = useState("");
@@ -123,7 +126,7 @@ export default function CreditsPage() {
 	const autoReloadQuery = useQuery({
 		queryKey: ["autoReload"],
 		queryFn: () => api.credits.getAutoReload(),
-		enabled: isConnected,
+		enabled: isAuthenticated && !isDemo,
 		staleTime: 60_000,
 	});
 	useEffect(() => {
@@ -143,11 +146,14 @@ export default function CreditsPage() {
 	}, [autoReloadQuery.data]);
 
 	const history: CreditHistoryItem[] = useMemo(
-		() => historyQuery.data ?? [],
-		[historyQuery.data],
+		() =>
+			isDemo
+				? DEMO_TRANSACTIONS.map(mapCreditTransaction)
+				: (historyQuery.data ?? []),
+		[isDemo, historyQuery.data],
 	);
-	const historyLoading = historyQuery.isLoading;
-	const historyHasResolved = historyQuery.isFetched;
+	const historyLoading = isDemo ? false : historyQuery.isLoading;
+	const historyHasResolved = isDemo ? true : historyQuery.isFetched;
 
 	const costData = useMemo(() => {
 		if (history.length === 0) return [];
@@ -187,27 +193,28 @@ export default function CreditsPage() {
 		queryClient.invalidateQueries({ queryKey: ["creditHistory"] });
 	}, [queryClient]);
 
-	const handleBuyCredits = async () => {
+	const handleBuyCredits = () => {
 		if (!buyAmount || parseFloat(buyAmount) <= 0) return;
-		setProcessing(true);
-		try {
-			const amountCents = Math.round(parseFloat(buyAmount) * 100);
-			const result = await api.credits.purchase(
-				amountCents,
-				selectedPayment,
-			);
-			toast.success(`Successfully purchased ${result.creditsAdded} credits!`);
-			setBuyAmount("");
-			refetch();
-		} catch (e: unknown) {
-			const msg = e instanceof Error ? e.message : "Failed to process payment";
-			toast.error(msg);
-		} finally {
-			setProcessing(false);
+		if (isDemo) {
+			toast.error("Demo mode is read-only — sign in to deposit credits");
+			return;
 		}
+		// Credits settle only after on-chain USDC confirmation on /deposit.
+		// The old /v1/credits/purchase call created a pending row and claimed
+		// success without payment — route users to the real deposit flow.
+		const amount = encodeURIComponent(buyAmount);
+		window.location.assign(`/deposit?amount=${amount}`);
 	};
 
-	if (!isConnected) {
+	if (!isReady && !isAuthenticated) {
+		return (
+			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+				<AuthSkeleton />
+			</div>
+		);
+	}
+
+	if (!isAuthenticated) {
 		return (
 			<m.div
 				className="flex min-h-[calc(100vh-4rem)] items-center justify-center"
@@ -222,19 +229,25 @@ export default function CreditsPage() {
 					>
 						<Wallet className="h-10 w-10 text-accent" />
 					</m.div>
-					<h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
+					<h2 className="mb-3 text-2xl font-bold">Sign in to view credits</h2>
 					<p className="mb-6 text-text-muted">
-						Connect your wallet to view your credit balance and history.
+						Wallet or account number — both work for deposits and history.
 					</p>
-					<m.button
-						onClick={() => connectEvm()}
-						className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-					>
-						<Zap className="h-4 w-4" />
-						Connect Wallet
-					</m.button>
+					<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+						<a href="/login?next=/dashboard/credits" className="btn-primary py-3 px-8">
+							Sign in
+						</a>
+						<m.button
+							type="button"
+							onClick={() => connectEvm()}
+							className="btn-secondary flex items-center gap-2 py-3 px-8"
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+						>
+							<Zap className="h-4 w-4" />
+							Connect wallet
+						</m.button>
+					</div>
 				</div>
 			</m.div>
 		);
@@ -242,7 +255,7 @@ export default function CreditsPage() {
 
 	return (
 		<m.div
-			className="mx-auto max-w-6xl px-4 py-8"
+			className="mx-auto max-w-6xl min-w-0 px-4 py-8"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 		>
@@ -448,17 +461,20 @@ export default function CreditsPage() {
 
 						<m.button
 							onClick={handleBuyCredits}
-							disabled={!buyAmount || parseFloat(buyAmount) <= 0 || processing}
+							disabled={!buyAmount || parseFloat(buyAmount) <= 0}
 							className="btn-primary w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed"
 							whileHover={{ scale: 1.01 }}
 							whileTap={{ scale: 0.99 }}
 						>
-							{processing ? (
-								<Loader2 className="h-5 w-5 animate-spin" />
+							{!buyAmount || parseFloat(buyAmount) <= 0 ? (
+								<>
+									<Zap className="h-5 w-5 mr-2" />
+									Enter amount
+								</>
 							) : (
 								<>
 									<Zap className="h-5 w-5 mr-2" />
-									Buy ${buyAmount || "0"} Credits
+									Deposit ${buyAmount} USDC
 								</>
 							)}
 						</m.button>
@@ -664,7 +680,7 @@ export default function CreditsPage() {
 			</div>
 
 			<m.div
-				className="rounded-2xl border border-border/50 bg-surface overflow-hidden"
+				className="max-w-full min-w-0 rounded-2xl border border-border/50 bg-surface overflow-hidden"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.5 }}
@@ -675,8 +691,8 @@ export default function CreditsPage() {
 						Credit History
 					</h3>
 				</div>
-				<div className="overflow-x-auto">
-					<table className="w-full text-left">
+				<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+					<table className="w-full min-w-[36rem] text-left">
 						<thead>
 							<tr className="border-b border-border/50 bg-surface-elevated">
 								<th className="px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-wider">

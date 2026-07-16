@@ -56,11 +56,47 @@ depositStatusRoutes.get("/v1/deposit/status", sessionAuth, async (c) => {
   });
 });
 
+/** Map deposit notification rows to the dashboard bell payload. */
+function mapDepositNotifications(
+  rows: Array<typeof depositNotifications.$inferSelect>,
+) {
+  return rows.map((n) => ({
+    id: n.id,
+    depositId: n.depositId,
+    type: n.type,
+    status: n.status,
+    amountUsd: n.amountUsd,
+    creditsIssued: n.creditsIssued,
+    txHash: n.txHash,
+    method: n.method,
+    createdAt: n.createdAt,
+    notifiedAt: n.notifiedAt,
+  }));
+}
+
+// Must be registered before /v1/deposit/:depositId so "notifications" is not
+// treated as a deposit UUID (Postgres rejects non-UUIDs with a 500).
+depositStatusRoutes.get("/v1/deposit/notifications", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+
+  const notifications = await db
+    .select()
+    .from(depositNotifications)
+    .where(eq(depositNotifications.userId, userId))
+    .orderBy(desc(depositNotifications.createdAt))
+    .limit(100);
+
+  return c.json({ notifications: mapDepositNotifications(notifications) });
+});
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 depositStatusRoutes.get("/v1/deposit/:depositId", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const depositId = c.req.param("depositId");
 
-  if (!depositId) {
+  if (!depositId || !UUID_RE.test(depositId)) {
     return c.json({ error: { message: "Invalid deposit ID", type: "validation_error" } }, 400);
   }
 
@@ -228,6 +264,8 @@ depositStatusRoutes.get("/v1/recoveries/scan", sessionAuth, async (c) => {
   }
 });
 
+// Canonical path used by older clients / OpenAPI; same payload as
+// GET /v1/deposit/notifications.
 depositStatusRoutes.get("/v1/notifications", sessionAuth, async (c) => {
   const userId = c.get("userId");
 
@@ -238,18 +276,5 @@ depositStatusRoutes.get("/v1/notifications", sessionAuth, async (c) => {
     .orderBy(desc(depositNotifications.createdAt))
     .limit(100);
 
-  return c.json({
-    notifications: notifications.map((n) => ({
-      id: n.id,
-      depositId: n.depositId,
-      type: n.type,
-      status: n.status,
-      amountUsd: n.amountUsd,
-      creditsIssued: n.creditsIssued,
-      txHash: n.txHash,
-      method: n.method,
-      createdAt: n.createdAt,
-      notifiedAt: n.notifiedAt,
-    })),
-  });
+  return c.json({ notifications: mapDepositNotifications(notifications) });
 });

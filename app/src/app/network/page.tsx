@@ -27,14 +27,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-	title: "Network · OMA",
+	title: "Network Primitives — agent infrastructure APIs",
 	description:
-		"Programmable network primitives for AI agents. Rate limits, request signing, audit log, telemetry, deposit feeds — exposed as composable APIs.",
+		"Programmable network primitives for AI agents: rate limits, request signing, audit log, telemetry, and deposit feeds as composable APIs.",
 	alternates: { canonical: "/network" },
 	openGraph: {
-		title: "Network · OMA",
+		title: "Network Primitives — OMA",
 		description:
-			"Programmable network primitives for AI agents. Rate limits, signing, audit log, telemetry, deposit feeds.",
+			"Programmable network primitives for AI agents: rate limits, signing, audit log, telemetry, deposit feeds.",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Network" }],
 	},
 };
 
@@ -193,7 +194,7 @@ export default function NetworkPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Programmable network</span>
+							<span className="block">Programmable network{" "}</span>
 							<span className="block text-accent">primitives for agents.</span>
 						</h1>
 
@@ -408,7 +409,7 @@ export default function NetworkPage() {
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
-									href="/network"
+									href="/docs"
 									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs

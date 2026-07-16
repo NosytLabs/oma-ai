@@ -64,6 +64,12 @@ export function ConnectWalletView({ onConnect }: ConnectWalletViewProps) {
 					>
 						Full login options →
 					</Link>
+					<Link
+						href="/dashboard?demo=1"
+						className="text-[12px] text-text-muted hover:text-accent transition-colors"
+					>
+						Preview dashboard (demo) →
+					</Link>
 				</div>
 				<p className="mt-8 inline-flex items-center gap-1.5 text-[11px] text-text-muted">
 					<Sparkles className="h-3 w-3 text-accent" aria-hidden="true" />

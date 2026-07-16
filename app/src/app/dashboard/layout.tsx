@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Dashboard",
+	title: "Dashboard — keys, usage & credits",
 	description:
 		"Manage your API keys, view usage statistics, and deposit credits.",
 	alternates: { canonical: "/dashboard" },
+	robots: { index: false, follow: false },
 	openGraph: {
 		title: "Dashboard | OMA AI",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",
-			},
+	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Dashboard | OMA AI",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",
-			},
+	},
 };
 
 export default function DashboardLayout({

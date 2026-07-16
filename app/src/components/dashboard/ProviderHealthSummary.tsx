@@ -20,19 +20,19 @@ export function ProviderHealthSummary() {
 				<div className="mb-6 flex items-start justify-between">
 					<div>
 						<h2 className="text-sm font-semibold text-text-bright">
-							Providers
+							System health
 						</h2>
 						<p className="mt-0.5 text-[11px] text-text-muted">
-							Live health across all routes
+							API readiness &amp; dependencies
 						</p>
 					</div>
 					<div className="flex h-8 w-8 items-center justify-center border border-accent/20 bg-accent/10 text-accent">
 						<Activity className="h-3.5 w-3.5" aria-hidden="true" />
 					</div>
 				</div>
-				<div className="flex-1 flex items-center gap-2 py-2 text-xs text-text-muted">
-					<span className="inline-block h-1.5 w-1.5 rounded-full bg-text-muted animate-pulse" />
-					Polling providers…
+				<div className="flex flex-1 items-center gap-2 py-2 text-xs text-text-muted">
+					<span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-text-muted" />
+					Checking readiness…
 				</div>
 			</div>
 		);
@@ -66,9 +66,9 @@ export function ProviderHealthSummary() {
 		<div className="flex flex-col p-6 bg-void">
 			<div className="mb-6 flex items-start justify-between">
 				<div>
-					<h2 className="text-sm font-semibold text-text-bright">Providers</h2>
+					<h2 className="text-sm font-semibold text-text-bright">System health</h2>
 					<p className="mt-0.5 text-[11px] text-text-muted">
-						Live health across all routes
+						API readiness &amp; dependencies
 					</p>
 				</div>
 				<div
@@ -97,7 +97,9 @@ export function ProviderHealthSummary() {
 						label: "Rate limited",
 						count: counts.orange,
 					},
-					{ tone: "red" as const, label: "Outage", count: counts.red },
+					// Use "Down" not "Outage" — the word "Outage" in a zero-count
+					// row was reading as an active incident in audits/screenshots.
+					{ tone: "red" as const, label: "Down", count: counts.red },
 				].map((row) => (
 					<div
 						key={row.tone}

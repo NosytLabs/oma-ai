@@ -15,8 +15,11 @@ import {
 	X,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, api, type Session, type User } from "@/lib/api";
@@ -27,7 +30,6 @@ const AccountLoginModal = dynamic(
 	{ ssr: false },
 );
 
-// Lazy-load each section so only the active tab pulls its code in.
 const ProfileSection = dynamic(() =>
 	import("./_components/ProfileSection").then((m) => ({
 		default: m.ProfileSection,
@@ -74,7 +76,7 @@ const TABS: TabDef[] = [
 		id: "wallets",
 		label: "Wallets",
 		icon: Wallet,
-		description: "Connected wallets & account number",
+		description: "Wallets & account number",
 	},
 	{
 		id: "api-keys",
@@ -96,9 +98,47 @@ const TABS: TabDef[] = [
 	},
 ];
 
+/** Compact labels for the mobile horizontal tab strip (avoid truncation). */
+const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
+	profile: "Profile",
+	wallets: "Wallets",
+	"api-keys": "Keys",
+	sessions: "Sessions",
+	danger: "Danger",
+};
+
+/** Accept short aliases in ?tab= (e.g. keys → api-keys). */
+function parseSettingsTab(raw: string | null): SettingsTab | null {
+	if (!raw) return null;
+	if (raw === "keys") return "api-keys";
+	if (TABS.some((tab) => tab.id === raw)) return raw as SettingsTab;
+	return null;
+}
+
+function currentSessionFallback(): Session {
+	const ua =
+		typeof navigator !== "undefined" ? navigator.userAgent : "This browser";
+	let device = "This browser";
+	if (/Edg\//i.test(ua)) device = "Microsoft Edge";
+	else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) device = "Chrome";
+	else if (/Firefox\//i.test(ua)) device = "Firefox";
+	else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) device = "Safari";
+	if (/Mobile|Android|iPhone/i.test(ua)) device = `${device} (mobile)`;
+
+	return {
+		id: "current",
+		device,
+		ip: "—",
+		lastActive: new Date().toISOString(),
+		current: true,
+	};
+}
+
 export default function SettingsPage() {
-	const { isAuthenticated, isDemo, connectEvm, disconnect } = useWallet();
+	const { isAuthenticated, isDemo, connectEvm, disconnect, isReady } =
+		useWallet();
 	const toast = useToast();
+	const searchParams = useSearchParams();
 
 	const [user, setUser] = useState<User | null>(null);
 	const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -114,6 +154,12 @@ export default function SettingsPage() {
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
 	const [showAccountLogin, setShowAccountLogin] = useState(false);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+
+	// Deep-link: /settings?tab=wallets | ?tab=keys (alias for api-keys)
+	useEffect(() => {
+		const parsed = parseSettingsTab(searchParams.get("tab"));
+		if (parsed) setActiveTab(parsed);
+	}, [searchParams]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -131,9 +177,6 @@ export default function SettingsPage() {
 	useEffect(() => {
 		if (!isAuthenticated) return;
 		let cancelled = false;
-		// Demo mode: isAuthenticated is true (isDemo || !!session) so the page
-		// renders, but there is no real backend session. Show mock data instead
-		// of firing API calls that 401.
 		if (isDemo) {
 			setUser({
 				id: "demo-user",
@@ -168,11 +211,17 @@ export default function SettingsPage() {
 				if (!cancelled) {
 					setUser(userData);
 					setApiKeys(keysData);
-					setSessions(sessionsData);
+					// Backend multi-session list is not shipped yet — always show
+					// at least the current browser session so the tab is useful.
+					const list = sessionsData?.length
+						? sessionsData
+						: [currentSessionFallback()];
+					setSessions(list);
 				}
 			} catch (e: unknown) {
 				if (!cancelled) {
 					setError(e instanceof Error ? e.message : "Failed to load settings");
+					setSessions([currentSessionFallback()]);
 				}
 			} finally {
 				if (!cancelled) setLoading(false);
@@ -252,9 +301,17 @@ export default function SettingsPage() {
 		setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
 	};
 
+	if (!isReady && !isAuthenticated) {
+		return (
+			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
+				<AuthSkeleton />
+			</div>
+		);
+	}
+
 	if (!isAuthenticated) {
 		return (
-			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
 				<m.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -282,7 +339,7 @@ export default function SettingsPage() {
 								className="flex items-start gap-2 rounded-lg border border-border bg-surface/50 px-3 py-2 text-xs"
 							>
 								<Icon
-									className="h-3.5 w-3.5 mt-0.5 text-text-muted shrink-0"
+									className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-muted"
 									aria-hidden="true"
 								/>
 								<div>
@@ -316,7 +373,7 @@ export default function SettingsPage() {
 					<div className="mt-4 flex flex-col items-center gap-2 text-center">
 						<a
 							href="/login?method=account&next=/settings"
-							className="text-xs text-accent hover:underline underline-offset-2"
+							className="text-xs text-accent underline-offset-2 hover:underline"
 						>
 							Open full login →
 						</a>
@@ -341,23 +398,30 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-8">
-			<m.div
-				initial={{ opacity: 0, y: -10 }}
-				animate={{ opacity: 1, y: 0 }}
-				className="mb-8"
-			>
-				<h1 className="text-2xl font-bold tracking-tight text-text-bright">
-					Settings
-				</h1>
-				<p className="mt-1 text-sm text-text-muted">
-					{loading
-						? "Syncing…"
-						: error
-							? "Some sections may be stale"
-							: "Up to date"}
-				</p>
-			</m.div>
+		<div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+			{/* Page header */}
+			<div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+				<m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+					<h1 className="text-2xl font-bold tracking-tight text-text-bright">
+						Settings
+					</h1>
+					<p className="mt-1 text-sm text-text-muted">
+						{loading
+							? "Syncing…"
+							: error
+								? "Some sections may be stale"
+								: "Up to date"}
+					</p>
+				</m.div>
+				<button
+					type="button"
+					onClick={handleLogout}
+					disabled={loggingOut}
+					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-all hover:border-amber/30 hover:text-amber disabled:opacity-40"
+				>
+					{loggingOut ? "Signing out…" : "Sign out"}
+				</button>
+			</div>
 
 			<AnimatePresence>
 				{error && (
@@ -381,9 +445,13 @@ export default function SettingsPage() {
 				)}
 			</AnimatePresence>
 
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
-				{/* Sidebar tabs */}
-				<div role="tablist" className="flex flex-col gap-1" aria-label="Settings sections">
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8 min-w-0">
+				{/* Tabs: equal-width chip row on mobile (all 5 visible), sidebar on lg+ */}
+				<div
+					role="tablist"
+					aria-label="Settings sections"
+					className="grid w-full min-w-0 grid-cols-5 gap-1 pb-1 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+				>
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
@@ -395,8 +463,15 @@ export default function SettingsPage() {
 								role="tab"
 								aria-selected={isActive}
 								aria-controls={`panel-${tab.id}`}
-								onClick={() => setActiveTab(tab.id)}
-								className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+								onClick={() => {
+									setActiveTab(tab.id);
+									if (typeof window !== "undefined") {
+										const url = new URL(window.location.href);
+										url.searchParams.set("tab", tab.id);
+										window.history.replaceState({}, "", url.toString());
+									}
+								}}
+								className={`group flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 text-center text-[11px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
 									isActive
 										? "border-accent/30 bg-accent/10 text-text-bright"
 										: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
@@ -407,8 +482,11 @@ export default function SettingsPage() {
 									aria-hidden="true"
 								/>
 								<div className="min-w-0">
-									<div className="font-medium">{tab.label}</div>
-									<div className="text-[11px] text-text-muted truncate">
+									<div className="truncate font-medium lg:hidden">
+										{MOBILE_TAB_LABEL[tab.id]}
+									</div>
+									<div className="hidden font-medium lg:block">{tab.label}</div>
+									<div className="hidden truncate text-[11px] text-text-muted lg:block">
 										{tab.description}
 									</div>
 								</div>
@@ -417,58 +495,70 @@ export default function SettingsPage() {
 					})}
 				</div>
 
-				{/* Tab panel */}
+				{/* Tab panel — section titles live inside each panel (no duplicate mobile label) */}
 				<div className="min-w-0">
-					<AnimatePresence mode="wait">
-						<m.div
-							key={activeTab}
-							id={`panel-${activeTab}`}
-							role="tabpanel"
-							aria-labelledby={`tab-${activeTab}`}
-							initial={{ opacity: 0, y: 8 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: -8 }}
-							transition={{ duration: 0.2 }}
-						>
-							{activeTab === "profile" && (
-								<ProfileSection
-									user={user}
-									onUserChange={setUser}
-									onError={setError}
-								/>
-							)}
-							{activeTab === "wallets" && (
-								<WalletsSection
-									user={user}
-									onCopy={handleCopy}
-									copied={copied}
-									onGenerateAccountNumber={handleGenerateAccountNumber}
-									generatingAccount={generatingAccount}
-									onUnlinkEvm={handleUnlinkEvm}
-									unlinkingEvm={unlinkingEvm}
-								/>
-							)}
-							{activeTab === "api-keys" && (
-								<ApiKeysSection
-									apiKeys={apiKeys}
-									onCopy={handleCopy}
-									copied={copied}
-									onLogout={handleLogout}
-									loggingOut={loggingOut}
-									onRevokeKey={handleRevokeKey}
-								/>
-							)}
-							{activeTab === "sessions" && (
-								<SessionsSection sessions={sessions} />
-							)}
-							{activeTab === "danger" && (
-								<DangerZoneSection
-									onDeleteAccount={handleDeleteAccount}
-									deleting={deleting}
-								/>
-							)}
-						</m.div>
-					</AnimatePresence>
+					{loading && !user ? (
+						<div className="space-y-3" aria-busy="true" aria-label="Loading settings">
+							<Skeleton className="h-6 w-32" />
+							<Skeleton className="h-4 w-64" />
+							<div className="mt-4 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+								<Skeleton className="h-24 w-full rounded-none" />
+								<Skeleton className="h-24 w-full rounded-none" />
+								<Skeleton className="h-24 w-full rounded-none" />
+							</div>
+						</div>
+					) : (
+						<AnimatePresence mode="wait">
+							<m.div
+								key={activeTab}
+								id={`panel-${activeTab}`}
+								role="tabpanel"
+								aria-labelledby={`tab-${activeTab}`}
+								initial={{ opacity: 0, y: 8 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -8 }}
+								transition={{ duration: 0.2 }}
+							>
+								{activeTab === "profile" && (
+									<ProfileSection
+										user={user}
+										onUserChange={setUser}
+										onError={setError}
+									/>
+								)}
+								{activeTab === "wallets" && (
+									<WalletsSection
+										user={user}
+										onCopy={handleCopy}
+										copied={copied}
+										onGenerateAccountNumber={handleGenerateAccountNumber}
+										generatingAccount={generatingAccount}
+										onUnlinkEvm={handleUnlinkEvm}
+										unlinkingEvm={unlinkingEvm}
+									/>
+								)}
+								{activeTab === "api-keys" && (
+									<ApiKeysSection
+										apiKeys={apiKeys}
+										onCopy={handleCopy}
+										copied={copied}
+										onLogout={handleLogout}
+										loggingOut={loggingOut}
+										onRevokeKey={handleRevokeKey}
+									/>
+								)}
+								{activeTab === "sessions" && (
+									<SessionsSection sessions={sessions} />
+								)}
+								{activeTab === "danger" && (
+									<DangerZoneSection
+										onDeleteAccount={handleDeleteAccount}
+										deleting={deleting}
+									/>
+								)}
+							</m.div>
+						</AnimatePresence>
+					)}
 				</div>
 			</div>
 		</div>

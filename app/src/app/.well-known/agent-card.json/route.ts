@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -17,15 +18,12 @@ export const revalidate = 3600;
  *     settles to. Falls back to the production treasury address when the
  *     env is absent (e.g. when this file is statically rendered at build
  *     time on a host that does not load server-side env).
- *   - MODEL_COUNT_LABEL is the marketing claim surfaced in this card.
- *     The static fallback catalog in `lib/models-data.ts` only ships a
- *     small SSR snapshot (~11 hand-picked entries) so `MODEL_COUNT` would
- *     understate the live `/v1/models` catalog. Keep this label in sync
- *     with the upstream provider count when the catalog grows.
+ *   - MODEL_COUNT is the marketing claim (live /v1/models size). Keep
+ *     `lib/models-data.ts` in sync when the catalog changes.
  */
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
-const MODEL_COUNT_LABEL = "97+";
+const MODEL_COUNT_LABEL = `${MODEL_COUNT}+`;
 
 export async function GET() {
 	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;

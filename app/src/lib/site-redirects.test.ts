@@ -34,12 +34,17 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		const bySource = Object.fromEntries(
 			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
 		);
-		expect(bySource["/about"]).toBe("/");
+		// /about is a live E-E-A-T page (not redirected)
+		expect(bySource["/about"]).toBeUndefined();
 		expect(bySource["/faq"]).toBe("/pricing#faq");
 		expect(bySource["/blog"]).toBe("/changelog");
 		expect(bySource["/status"]).toBe("/network");
+		expect(bySource["/support"]).toBe("/contact");
 		expect(bySource["/signup"]).toBe("/login");
 		expect(bySource["/playground"]).toBe("/chat");
+		expect(bySource["/swap"]).toBe("/deposit");
+		expect(bySource["/credits"]).toBe("/dashboard/credits");
+		expect(bySource["/account"]).toBe("/settings");
 	});
 });
 

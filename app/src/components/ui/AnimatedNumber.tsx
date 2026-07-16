@@ -17,7 +17,10 @@ export function AnimatedNumber({
 	prefix?: string;
 }) {
 	const prefersReducedMotion = useReducedMotion();
-	const count = useRef(motionValue(0));
+	// Start at the real value so first paint never shows $0.00 → mid-tween
+	// garbage (e.g. $44.40 while settling on $50.00).
+	const count = useRef(motionValue(value));
+	const prev = useRef(value);
 	const display = useTransform(count.current, (latest) => {
 		return `${prefix}${latest.toLocaleString(undefined, {
 			minimumFractionDigits: 2,
@@ -26,8 +29,9 @@ export function AnimatedNumber({
 	});
 
 	useEffect(() => {
-		if (prefersReducedMotion) {
+		if (prefersReducedMotion || prev.current === value) {
 			count.current.set(value);
+			prev.current = value;
 			return;
 		}
 		const controls = animate(count.current, value, {
@@ -37,6 +41,7 @@ export function AnimatedNumber({
 			mass: 0.9,
 			restSpeed: 0.5,
 		});
+		prev.current = value;
 		return () => controls.stop();
 	}, [value, prefersReducedMotion]);
 

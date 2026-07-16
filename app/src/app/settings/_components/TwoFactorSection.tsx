@@ -165,8 +165,8 @@ export function TwoFactorSection({
 	return (
 		<>
 			<div className="mt-4 rounded-lg border border-border bg-void p-4">
-				<div className="flex items-center justify-between gap-4">
-					<div>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<div className="min-w-0 flex-1">
 						<div className="text-sm font-medium text-text-bright">
 							Two-factor authentication
 						</div>
@@ -176,7 +176,7 @@ export function TwoFactorSection({
 								: "Add an extra layer of security to your account."}
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex shrink-0 items-center gap-2">
 						<span
 							className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
 								enabled

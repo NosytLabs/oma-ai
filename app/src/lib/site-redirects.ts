@@ -8,24 +8,28 @@ export type SiteRedirect = {
 };
 
 export const SITE_REDIRECTS: readonly SiteRedirect[] = [
-	{ source: "/about", destination: "/" },
-	{ source: "/about/:path*", destination: "/" },
+	// /about restored as a live E-E-A-T page (no longer redirects)
 	{ source: "/faq", destination: "/pricing#faq" },
 	{ source: "/faq/:path*", destination: "/pricing#faq" },
 	{ source: "/blog", destination: "/changelog" },
 	{ source: "/blog/:path*", destination: "/changelog" },
 	{ source: "/status", destination: "/network" },
-	{ source: "/support", destination: "/docs" },
+	{ source: "/support", destination: "/contact" },
 	{ source: "/signup", destination: "/login" },
-	{ source: "/disclosures", destination: "/terms" },
+	{ source: "/disclosures", destination: "/privacy#subprocessors" },
 	{ source: "/provenance", destination: "/docs" },
 	{ source: "/playground", destination: "/chat" },
 	{ source: "/playground/:path*", destination: "/chat/:path*" },
+	// Swap provider retired — fund via direct USDC deposit
+	{ source: "/swap", destination: "/deposit" },
+	{ source: "/swap/:path*", destination: "/deposit" },
+	// Legacy account/credits shortcuts (also handled in middleware)
+	{ source: "/credits", destination: "/dashboard/credits" },
+	{ source: "/account", destination: "/settings" },
 ] as const;
 
 /** Exact legacy paths that must never appear as live sitemap URLs. */
 export const REMOVED_PUBLIC_PATHS = [
-	"/about",
 	"/blog",
 	"/faq",
 	"/status",
@@ -34,4 +38,7 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/disclosures",
 	"/provenance",
 	"/playground",
+	"/swap",
+	"/credits",
+	"/account",
 ] as const;

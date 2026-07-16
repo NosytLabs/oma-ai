@@ -119,8 +119,8 @@ function DocsContent() {
 		<div className="page-shell min-h-screen">
 			<Sidebar activeId={activeId} />
 
-			<div className="lg:pl-64">
-				<div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-10">
+			<div className="min-w-0 lg:pl-64">
+				<div className="mx-auto max-w-5xl min-w-0 overflow-x-clip px-4 py-4 sm:px-6 lg:px-10">
 					<div className="page-hero mb-10 rounded-[calc(var(--radius-lg)+4px)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.92)] sm:p-8">
 						<nav
 							aria-label="Breadcrumb"

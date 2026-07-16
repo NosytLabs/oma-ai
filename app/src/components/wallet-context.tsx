@@ -30,7 +30,6 @@ interface WalletContextValue {
 	activeWallet: WalletKind;
 	hasEvmWallet: boolean;
 	canDepositBase: boolean;
-	canUseSwap: boolean;
 	refreshUser: () => Promise<void>;
 }
 
@@ -52,7 +51,6 @@ export const WalletContext = createContext<WalletContextValue>({
 	activeWallet: "none",
 	hasEvmWallet: false,
 	canDepositBase: false,
-	canUseSwap: false,
 	refreshUser: async () => {},
 });
 

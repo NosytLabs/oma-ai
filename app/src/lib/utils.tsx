@@ -37,7 +37,10 @@ export function formatTime(iso: string): string {
 	return d.toLocaleDateString();
 }
 
-export function maskKey(prefix: string): string {
+export function maskKey(prefix: string | null | undefined): string {
+	// Server historically returned `keyPrefix`; listKeys normalizes to `prefix`.
+	// Guard so stale cache / partial objects never render as "undefined****".
+	if (!prefix) return "••••****";
 	return `${prefix}****`;
 }
 

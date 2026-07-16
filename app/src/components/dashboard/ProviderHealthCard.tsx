@@ -30,39 +30,54 @@ function formatRelativeTime(timestamp: number | undefined): string {
 export function ProviderHealthCard() {
 	const { data: health, isLoading, isError, dataUpdatedAt } = useHealthQuery();
 
-	const checks: CheckEntry[] = useMemo(() => health?.checks
-		? Object.entries(health.checks).map(([id, raw]) => {
-				const entry = (raw ?? {}) as {
-					status?: CheckStatus;
-					latency?: number;
-					cooldownMs?: number;
-				};
-				return {
-					id,
-					name: humanize(id),
-					status: entry.status ?? "outage",
-					latency: entry.latency,
-					cooldownMs: entry.cooldownMs,
-				};
-			})
-		: [], [health]);
+	const checks: CheckEntry[] = useMemo(() => {
+		if (!health?.checks || Object.keys(health.checks).length === 0) {
+			// Fallback row when only top-level status is available
+			if (health?.status) {
+				return [
+					{
+						id: "api",
+						name: "API",
+						status: (health.status === "ok" ? "ok" : health.status) as CheckStatus,
+					},
+				];
+			}
+			return [];
+		}
+		return Object.entries(health.checks).map(([id, raw]) => {
+			const entry = (raw ?? {}) as {
+				status?: CheckStatus;
+				latency?: number;
+				cooldownMs?: number;
+			};
+			return {
+				id,
+				name: humanize(id),
+				status: entry.status ?? "outage",
+				latency: entry.latency,
+				cooldownMs: entry.cooldownMs,
+			};
+		});
+	}, [health]);
 
 	return (
 		<div className="flex flex-col p-6">
 			<div className="mb-6 flex items-center justify-between border-b border-border pb-4">
 				<div>
 					<h2 className="text-sm font-semibold text-text-bright">
-						Provider health
+						System health
 					</h2>
 					<p className="mt-0.5 text-[11px] text-text-muted">
-						Live status across all upstream routes
+						Live readiness checks for API dependencies
 					</p>
 				</div>
 				{!isLoading &&
 					!isError &&
 					health &&
 					(() => {
-						const overall = getStatusLabel(health.status as CheckStatus);
+						const overall = getStatusLabel(
+							(health.status as CheckStatus) || "ok",
+						);
 						return (
 							<div
 								aria-live="polite"
@@ -83,8 +98,8 @@ export function ProviderHealthCard() {
 
 			{isLoading ? (
 				<div className="flex items-center gap-2 p-4 text-xs text-text-muted">
-					<span className="inline-block h-2 w-2 bg-text-muted animate-pulse" />
-					Polling providers…
+					<span className="inline-block h-2 w-2 animate-pulse bg-text-muted" />
+					Checking readiness…
 				</div>
 			) : isError ? (
 				<div className="border border-error-bg bg-error-bg p-4 text-xs text-pink">
@@ -92,7 +107,7 @@ export function ProviderHealthCard() {
 				</div>
 			) : checks.length === 0 ? (
 				<div className="p-4 text-xs text-text-muted">
-					No provider signals available.
+					No readiness signals available.
 				</div>
 			) : (
 				<>

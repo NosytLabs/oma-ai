@@ -40,7 +40,8 @@ const PUBLIC_PAGES = [
 	{ name: "terms", path: "/terms" },
 	{ name: "compare", path: "/compare" },
 	{ name: "observability", path: "/observability" },
-	{ name: "swap", path: "/swap" },
+	{ name: "about", path: "/about" },
+	{ name: "contact", path: "/contact" },
 ];
 
 // Gated userflows — demo cookie lets us render the real UI without auth.

@@ -38,10 +38,10 @@ export function Hero() {
 				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 			</div>
 
-			<div className="container-page pt-16 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
-				<div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+			<div className="container-page min-w-0 pt-16 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
+				<div className="grid min-w-0 items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
 					{/* Copy column */}
-					<div>
+					<div className="min-w-0 max-w-full">
 						<m.div {...reveal(0)} className="mb-6">
 							<span className="badge">
 								<span
@@ -54,7 +54,7 @@ export function Hero() {
 
 						<m.h1
 							{...reveal(1)}
-							className="h1-hero max-w-3xl text-text-bright"
+							className="h1-hero max-w-full break-words text-text-bright sm:max-w-3xl"
 							style={{ textWrap: "balance" }}
 						>
 							AI inference,{" "}
@@ -144,8 +144,8 @@ export function Hero() {
 									200 OK · 142ms
 								</span>
 							</div>
-							<pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
-								<code>
+							<pre className="max-w-full overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
+								<code className="block w-max min-w-full">
 									<span className="text-info">curl</span> https://api.oma-ai.com
 									/v1/chat/completions \{"\n"}
 									{"  "}

@@ -44,6 +44,7 @@ export function CodeExample({ modelCount }: CodeExampleProps) {
 			<div className="container-page">
 				<Reveal>
 					<SectionHeader
+						id="code-example-headline"
 						headline={
 							<>
 								One import.
@@ -79,9 +80,9 @@ function TerminalExample({ code }: { code: string }) {
 	};
 
 	return (
-		<div className="relative">
+		<div className="relative max-w-full min-w-0">
 			<div
-				className="absolute -inset-px rounded-[var(--radius-md)] opacity-50 pointer-events-none"
+				className="pointer-events-none absolute -inset-px rounded-[var(--radius-md)] opacity-50"
 				style={{
 					background:
 						"linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 40%, transparent), transparent 50%, color-mix(in srgb, var(--color-accent) 30%, transparent))",
@@ -90,20 +91,20 @@ function TerminalExample({ code }: { code: string }) {
 				aria-hidden="true"
 			/>
 
-			<div className="relative surface-code overflow-hidden border-border bg-[var(--color-surface-elevated)]">
-				<div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-[var(--color-surface)]">
-					<span className="h-2.5 w-2.5 rounded-full bg-error" aria-hidden="true" />
-					<span className="h-2.5 w-2.5 rounded-full bg-warning" aria-hidden="true" />
-					<span className="h-2.5 w-2.5 rounded-full bg-success" aria-hidden="true" />
-					<span className="ml-3 inline-flex items-center gap-1.5 text-[11px] text-text-muted font-mono">
-						<Terminal className="h-3 w-3" aria-hidden="true" />
-						~/projects/agent/index.ts
+			<div className="relative max-w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] surface-code">
+				<div className="flex min-w-0 items-center gap-2 border-b border-border bg-[var(--color-surface)] px-4 py-3">
+					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-error" aria-hidden="true" />
+					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
+					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
+					<span className="ml-3 inline-flex min-w-0 items-center gap-1.5 truncate font-mono text-[11px] text-text-muted">
+						<Terminal className="h-3 w-3 shrink-0" aria-hidden="true" />
+						<span className="truncate">~/projects/agent/index.ts</span>
 					</span>
 					<button
 						type="button"
 						onClick={handleCopy}
 						className={cn(
-							"ml-auto inline-flex items-center gap-1.5 px-2.5 py-1",
+							"ml-auto inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1",
 							"rounded text-[11px] font-mono",
 							"border border-border-bright text-text-secondary",
 							"hover:border-accent hover:text-accent",
@@ -134,8 +135,8 @@ function TerminalExample({ code }: { code: string }) {
 						)}
 					</button>
 				</div>
-				<pre className="p-6 sm:p-8 text-text-secondary overflow-x-auto leading-relaxed whitespace-pre">
-					<code className="font-mono text-[13px] sm:text-[14px]">
+				<pre className="max-w-full overflow-x-auto whitespace-pre p-4 text-text-secondary leading-relaxed sm:p-8">
+					<code className="block w-max min-w-full font-mono text-[12px] sm:text-[14px]">
 						<TokenizedCode code={code} />
 					</code>
 				</pre>

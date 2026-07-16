@@ -15,10 +15,12 @@ import {
 	Zap,
 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
+import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
+import { DEMO_API_KEYS } from "@/lib/demo-fixtures";
 import { formatTime, maskKey } from "@/lib/utils";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
@@ -28,21 +30,23 @@ interface RateLimit {
 }
 
 export default function ApiKeysPage() {
-	const { isConnected, connectEvm } = useWallet();
+	const { isAuthenticated, isDemo, connectEvm, isReady } = useWallet();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 
 	const keysQuery = useQuery({
 		queryKey: ["apiKeys"],
 		queryFn: () => api.auth.listKeys(),
-		enabled: isConnected,
+		// Account-number sessions are authenticated without isConnected.
+		enabled: isAuthenticated && !isDemo,
 		staleTime: 60_000,
 	});
 
-	const keys: ApiKey[] = keysQuery.data ?? [];
-	const loading = keysQuery.isLoading;
-	const error =
-		keysQuery.error instanceof Error
+	const keys: ApiKey[] = isDemo ? DEMO_API_KEYS : (keysQuery.data ?? []);
+	const loading = isDemo ? false : keysQuery.isLoading;
+	const error = isDemo
+		? null
+		: keysQuery.error instanceof Error
 			? keysQuery.error.message
 			: keysQuery.error
 				? "Failed to load API keys"
@@ -73,6 +77,10 @@ export default function ApiKeysPage() {
 
 	const handleCreateKey = useCallback(async () => {
 		if (!newKeyName.trim()) return;
+		if (isDemo) {
+			toast.error("Demo mode is read-only — sign in to create keys");
+			return;
+		}
 		setCreating(true);
 		try {
 			const key = await api.auth.createKey(newKeyName.trim());
@@ -99,7 +107,7 @@ export default function ApiKeysPage() {
 		} finally {
 			setCreating(false);
 		}
-	}, [newKeyName, queryClient, toast]);
+	}, [isDemo, newKeyName, queryClient, toast]);
 
 	const requestRevoke = useCallback((keyId: string) => {
 		setConfirmRevokeId(keyId);
@@ -111,6 +119,10 @@ export default function ApiKeysPage() {
 
 	const handleRevokeKey = useCallback(
 		async (keyId: string) => {
+			if (isDemo) {
+				toast.error("Demo mode is read-only — sign in to manage keys");
+				return;
+			}
 			setRevokingId(keyId);
 			setConfirmRevokeId(null);
 			try {
@@ -126,12 +138,16 @@ export default function ApiKeysPage() {
 				setRevokingId(null);
 			}
 		},
-		[queryClient, toast],
+		[isDemo, queryClient, toast],
 	);
 
 	const handleSaveLimits = useCallback(
 		async (keyId: string) => {
 			if (!keyId || !rateLimits[keyId]) return;
+			if (isDemo) {
+				toast.error("Demo mode is read-only — sign in to edit limits");
+				return;
+			}
 			// biome-ignore lint/style/noNonNullAssertion: checked above
 			const limits = rateLimits[keyId]!;
 			try {
@@ -145,10 +161,18 @@ export default function ApiKeysPage() {
 			}
 			setEditingLimits(null);
 		},
-		[rateLimits, toast],
+		[isDemo, rateLimits, toast],
 	);
 
-	if (!isConnected) {
+	if (!isReady && !isAuthenticated) {
+		return (
+			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+				<AuthSkeleton />
+			</div>
+		);
+	}
+
+	if (!isAuthenticated) {
 		return (
 			<m.div
 				className="flex min-h-[calc(100vh-4rem)] items-center justify-center"
@@ -163,19 +187,26 @@ export default function ApiKeysPage() {
 					>
 						<Wallet className="h-10 w-10 text-accent" />
 					</m.div>
-					<h2 className="mb-3 text-2xl font-bold">Connect Your Wallet</h2>
+					<h2 className="mb-3 text-2xl font-bold">Sign in to manage keys</h2>
 					<p className="mb-6 text-text-muted">
-						Connect your wallet to manage API keys.
+						Use your wallet or account number — no wallet required for
+						account-number sessions.
 					</p>
-					<m.button
-						onClick={() => connectEvm()}
-						className="btn-primary flex items-center gap-2 mx-auto py-3 px-8"
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-					>
-						<Zap className="h-4 w-4" />
-						Connect Wallet
-					</m.button>
+					<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+						<a href="/login?next=/dashboard/api-keys" className="btn-primary py-3 px-8">
+							Sign in
+						</a>
+						<m.button
+							type="button"
+							onClick={() => connectEvm()}
+							className="btn-secondary flex items-center gap-2 py-3 px-8"
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+						>
+							<Zap className="h-4 w-4" />
+							Connect wallet
+						</m.button>
+					</div>
 				</div>
 			</m.div>
 		);

@@ -16,9 +16,13 @@
 - [Docs home](https://oma-ai.com/docs): full API reference
 - [Model catalog](https://oma-ai.com/models): models, prices, capabilities
 - [Pricing](https://oma-ai.com/pricing): per-token cost breakdown (+ FAQ)
+- [Compare](https://oma-ai.com/compare): OMA vs Portkey / LiteLLM / OpenRouter
 - [Changelog](https://oma-ai.com/changelog): product updates
-- [Network](https://oma-ai.com/network): provider / chain status
+- [Network](https://oma-ai.com/network): programmable network primitives
+- [Observability](https://oma-ai.com/observability): live health + sample ops dashboard
+- [About](https://oma-ai.com/about) · [Contact](https://oma-ai.com/contact)
 - [Privacy](https://oma-ai.com/privacy) · [Terms](https://oma-ai.com/terms)
+- [Chat playground](https://oma-ai.com/chat): try models (sign-in or demo)
 
 ## Endpoints
 | Endpoint | Method | Purpose |
@@ -55,9 +59,10 @@ Three modes, all served by the same endpoints:
    pre-funded account required for single-shot agent calls.
 
 ## Pricing model
-Pay-as-you-go credits denominated in USDC. Deposit USDC on Base, SOL via
-cross-chain routes, or 20+ chains via LI.FI / CCTP. Per-model input/output
-rates are listed on `/models` and `GET /v1/models`.
+Pay-as-you-go credits denominated in USDC. Deposit USDC on Base, or bridge
+from 20+ chains via LI.FI / CCTP. x402 supports agent-native pay-per-request
+on Base. Per-model input/output rates are listed on `/models` and
+`GET /v1/models`.
 
 ## Source
 - GitHub: https://github.com/NosytLabs/oma-ai

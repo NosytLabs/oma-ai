@@ -3,18 +3,19 @@ import Link from "next/link";
 import { Check, X, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
-	title: "oma vs Portkey vs LiteLLM vs OpenRouter — comparison",
+	title: "OMA vs Portkey vs LiteLLM vs OpenRouter — comparison",
 	description:
-		"Detailed feature comparison between oma and other LLM gateways: Portkey, LiteLLM, OpenRouter, Together, OpenAI. Pricing, privacy, free tier, x402 support.",
+		"Detailed feature comparison between OMA and other LLM gateways: Portkey, LiteLLM, OpenRouter, Together. Pricing, privacy, free tier, x402 support.",
 	openGraph: {
-		title: "oma vs Portkey vs LiteLLM vs OpenRouter",
+		title: "OMA vs Portkey vs LiteLLM vs OpenRouter",
 		description:
-			"Feature-by-feature comparison. oma is the only agent-native LLM gateway with x402, a genuine free tier, privacy-first accounts, and circuit-breaker failover.",
+			"Feature-by-feature comparison. OMA is the agent-native LLM gateway with x402, a genuine free tier, privacy-first accounts, and circuit-breaker failover.",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA comparison" }],
 	},
 };
 
 const competitors: { key: string; name: string; tagline: string; ours?: boolean }[] = [
-	{ key: "oma", name: "oma", tagline: "Agent-native inference", ours: true },
+	{ key: "oma", name: "OMA", tagline: "Agent-native inference", ours: true },
 	{ key: "portkey", name: "Portkey", tagline: "Enterprise AI gateway" },
 	{ key: "litellm", name: "LiteLLM", tagline: "Open-source proxy" },
 	{ key: "openrouter", name: "OpenRouter", tagline: "Model router" },
@@ -213,7 +214,7 @@ function CellView({ value, ours }: { value: Cell; ours: boolean }) {
 const summaryCards = [
 	{
 		title: "x402 + crypto-native",
-		body: "Only oma speaks x402 natively. Agents pay per request on Base in USDC — no monthly contract, no API key leaks.",
+		body: "Only OMA speaks x402 natively. Agents pay per request on Base in USDC — no monthly contract, no API key leaks.",
 	},
 	{
 		title: "Privacy-first by default",
@@ -232,7 +233,8 @@ const summaryCards = [
 export default function ComparePage() {
 	return (
 		<div className="min-h-screen bg-void text-text-primary">
-			<main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
+			{/* Use a div — root layout already provides the single <main id="main-content"> landmark. */}
+			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
 				{/* Hero */}
 				<section className="py-16 text-center">
 					<div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-mono">
@@ -240,7 +242,7 @@ export default function ComparePage() {
 						<span>feature comparison</span>
 					</div>
 					<h1 className="text-4xl sm:text-5xl font-bold mb-4">
-						oma vs every other gateway
+						OMA vs every other gateway
 					</h1>
 					<p className="text-text-secondary text-lg max-w-2xl mx-auto">
 						Detailed feature comparison across the LLM gateway landscape. Data
@@ -255,7 +257,7 @@ export default function ComparePage() {
 							key={card.title}
 							className="rounded-lg border border-border bg-surface p-5"
 						>
-							<h3 className="font-semibold mb-2 text-accent">{card.title}</h3>
+							<h2 className="font-semibold mb-2 text-accent text-base">{card.title}</h2>
 							<p className="text-sm text-text-secondary leading-relaxed">
 								{card.body}
 							</p>
@@ -265,8 +267,8 @@ export default function ComparePage() {
 
 				{/* Comparison matrix */}
 				<section>
-					<div className="overflow-x-auto rounded-lg border border-border">
-						<table className="w-full">
+					<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-lg border border-border [-webkit-overflow-scrolling:touch]">
+						<table className="w-full min-w-[40rem]">
 							<thead className="bg-surface-2 border-b border-border">
 								<tr>
 									<th className="text-left p-4 font-mono text-xs uppercase tracking-wider text-text-muted">
@@ -348,15 +350,15 @@ export default function ComparePage() {
 					<div className="grid md:grid-cols-2 gap-6">
 						<div className="rounded-lg border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
-								oma vs Portkey
+								OMA vs Portkey
 							</h3>
 							<p className="text-sm text-text-secondary mb-3">
 Portkey is enterprise-grade but requires a credit card, account
-							signup, and offers no free tier. oma is privacy-first,
+							signup, and offers no free tier. OMA is privacy-first,
 							x402-native, and starts at $0.017/M tokens.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">oma wins on:</strong> privacy,
+								<strong className="text-accent">OMA wins on:</strong> privacy,
 								crypto-native billing, free tier, account numbers.
 							</p>
 							<p className="text-sm text-text-secondary">
@@ -368,15 +370,15 @@ Portkey is enterprise-grade but requires a credit card, account
 
 						<div className="rounded-lg border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
-								oma vs LiteLLM
+								OMA vs LiteLLM
 							</h3>
 							<p className="text-sm text-text-secondary mb-3">
 								LiteLLM is a self-hosted proxy — you run it, you manage it, you
-								pay your own infra. oma is fully managed with x402 + USDC +
+								pay your own infra. OMA is fully managed with x402 + USDC +
 								private accounts out of the box.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">oma wins on:</strong> managed
+								<strong className="text-accent">OMA wins on:</strong> managed
 								infrastructure, payment rails, free tier, account privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
@@ -388,16 +390,16 @@ Portkey is enterprise-grade but requires a credit card, account
 
 						<div className="rounded-lg border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
-								oma vs OpenRouter
+								OMA vs OpenRouter
 							</h3>
 							<p className="text-sm text-text-secondary mb-3">
 								OpenRouter is the closest competitor. Same multi-provider model.
-								OpenRouter wins on brand recognition and provider breadth. oma
+								OpenRouter wins on brand recognition and provider breadth. OMA
 								wins on price (250× lower-cost budget tier), privacy (Venice
 								routing), and payment (x402 + USDC).
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">oma wins on:</strong> privacy,
+								<strong className="text-accent">OMA wins on:</strong> privacy,
 								x402, price, account model.
 							</p>
 							<p className="text-sm text-text-secondary">
@@ -408,16 +410,16 @@ Portkey is enterprise-grade but requires a credit card, account
 
 						<div className="rounded-lg border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
-								oma vs Together AI
+								OMA vs Together AI
 							</h3>
 							<p className="text-sm text-text-secondary mb-3">
 								Together is a direct inference provider, not a gateway. They
-								own GPUs and serve models directly. oma is a routing layer on
+								own GPUs and serve models directly. OMA is a routing layer on
 								top of multiple providers — you get failover, mix-and-match,
 								and Gonka cost-effective routes Together can&apos;t match.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">oma wins on:</strong>{" "}
+								<strong className="text-accent">OMA wins on:</strong>{" "}
 								multi-provider, failover, free tier, privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
@@ -458,7 +460,7 @@ Portkey is enterprise-grade but requires a credit card, account
 						</Link>
 					</div>
 				</section>
-			</main>
+			</div>
 		</div>
 	);
 }

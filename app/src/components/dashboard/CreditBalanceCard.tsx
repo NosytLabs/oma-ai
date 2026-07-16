@@ -54,11 +54,19 @@ function CreditBalanceCardComponent({
 
 			<div className="mb-4">
 				<div className="text-4xl font-light tracking-tight text-text mb-2">
-					{loading && !balance ? (
+					{!balance && loading ? (
+						// Never flash a fake $0.00 while the balance query is in flight.
+						<span
+							className="inline-block h-10 w-36 animate-pulse rounded bg-surface-elevated/60"
+							aria-label="Loading balance"
+							aria-busy="true"
+						/>
+					) : !balance ? (
+						// Settled with no payload (error / empty) — show zero, not a lie mid-load.
 						<span className="text-text-muted">$0.00</span>
 					) : (
 						<AnimatedNumber
-							value={parseFloat(formatCents(balance?.balanceCents ?? "0"))}
+							value={parseFloat(formatCents(balance.balanceCents))}
 						/>
 					)}
 				</div>
@@ -69,7 +77,9 @@ function CreditBalanceCardComponent({
 					/>
 					{balance
 						? `Total deposited: $${formatCents(balance.totalDepositedCents)}`
-						: "Total deposited: $0.00"}
+						: loading
+							? "Loading balance…"
+							: "Total deposited: $0.00"}
 				</div>
 			</div>
 

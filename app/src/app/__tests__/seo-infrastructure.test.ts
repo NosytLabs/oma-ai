@@ -6,8 +6,8 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("returns a non-empty array", () => {
 		const result = sitemap();
 		expect(Array.isArray(result)).toBe(true);
-		// Public product surface — keep this floor honest with real routes
-		expect(result.length).toBeGreaterThanOrEqual(12);
+		// Public product surface — auth-gated routes intentionally excluded
+		expect(result.length).toBeGreaterThanOrEqual(10);
 	});
 
 	it("every entry has a valid https url under oma-ai.com", () => {
@@ -36,11 +36,36 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("includes critical marketing pages", () => {
+	it("includes critical public marketing pages", () => {
 		const result = sitemap();
-		const urls = result.map((e) => e.url.replace("https://oma-ai.com", ""));
-		for (const required of ["/pricing", "/docs", "/models", "/chat", "/deposit"]) {
+		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+		for (const required of [
+			"/",
+			"/pricing",
+			"/docs",
+			"/models",
+			"/compare",
+			"/about",
+			"/contact",
+		]) {
 			expect(urls).toContain(required);
+		}
+	});
+
+	it("excludes auth-gated product surfaces", () => {
+		const result = sitemap();
+		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+		for (const gated of [
+			"/chat",
+			"/deposit",
+			"/dashboard",
+			"/settings",
+			"/admin",
+			"/image-generation",
+			"/video-generation",
+			"/login",
+		]) {
+			expect(urls).not.toContain(gated);
 		}
 	});
 
@@ -48,7 +73,6 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		const result = sitemap();
 		const paths = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
 		for (const dead of [
-			"/about",
 			"/blog",
 			"/faq",
 			"/status",

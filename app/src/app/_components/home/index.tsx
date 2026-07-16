@@ -5,6 +5,7 @@
  * Renders all sections in conversion order.
  */
 
+import { AgentDemoSection } from "@/app/_components/home/agent-demo";
 import { CapabilitiesGrid } from "@/app/_components/home/capabilities-grid";
 import { CodeExample } from "@/app/_components/home/code-example";
 import { FinalCTA } from "@/app/_components/home/final-cta";
@@ -24,6 +25,7 @@ export function HomeView() {
 			<CapabilitiesGrid />
 			<HowItWorks />
 			<CodeExample modelCount={MODEL_COUNT} />
+			<AgentDemoSection />
 			<X402Banner />
 			<FinalCTA />
 		</div>

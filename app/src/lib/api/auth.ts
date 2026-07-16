@@ -77,8 +77,13 @@ export const auth = {
 		return request<void>(p(`/auth/wallet/${type}`), { method: "DELETE" });
 	},
 
+	/**
+	 * Returns the signed-in user, or `null` when there is no session.
+	 * The Next proxy responds 204 for anonymous callers (avoids console
+	 * 401 noise on every public page). The core client maps 204 → undefined.
+	 */
 	getUser() {
-		return request<User>(p("/user"));
+		return request<User | undefined>(p("/user")).then((u) => u ?? null);
 	},
 
 	deleteAccount() {
@@ -86,21 +91,37 @@ export const auth = {
 	},
 
 	listKeys() {
-		return request<{ keys: ApiKey[] }>(p("/keys")).then((res) => res.keys);
+		// Server returns `keyPrefix`; UI/types use `prefix`. Normalize here.
+		return request<{
+			keys: Array<ApiKey & { keyPrefix?: string; active?: boolean }>;
+		}>(p("/keys")).then((res) =>
+			(res.keys ?? []).map((k) => ({
+				id: k.id,
+				name: k.name,
+				prefix: k.prefix || k.keyPrefix || "",
+				createdAt: k.createdAt,
+				lastUsedAt: k.lastUsedAt ?? null,
+			})),
+		);
 	},
 
 	listSessions() {
-		// Backend does not expose a multi-session list yet. Keep the settings
-		// tab resilient: return [] instead of 404 hard-fail.
-		return request<{ sessions: Session[] }>(p("/auth/sessions"))
-			.then((res) => res.sessions ?? [])
-			.catch(() => [] as Session[]);
+		// Backend multi-session list is not shipped yet. Avoid a guaranteed
+		// 404 round-trip that only shows up as console noise; settings builds
+		// a "this device" fallback client-side.
+		return Promise.resolve([] as Session[]);
 	},
 
+	/**
+	 * Enter read-only demo mode. There is no backend `/auth/demo` endpoint —
+	 * demo is a middleware cookie set when the user lands on a protected path
+	 * with `?demo=1` (see `src/middleware.ts`). This helper just navigates.
+	 */
 	startDemo() {
-		return request<{ success: boolean; expiresIn: number }>(p("/auth/demo"), {
-			method: "POST",
-		});
+		if (typeof window !== "undefined") {
+			window.location.assign("/dashboard?demo=1");
+		}
+		return Promise.resolve({ success: true as const, expiresIn: 86_400 });
 	},
 
 	createKey(name: string) {

@@ -1,6 +1,5 @@
 import {
 	Activity,
-	ArrowLeftRight,
 	Box,
 	FileText,
 	GitCompare,
@@ -57,12 +56,6 @@ export const toolsLinks: NavItem[] = [
 		label: "Changelog",
 		icon: Newspaper,
 		desc: "Release notes",
-	},
-	{
-		href: "/swap",
-		label: "Swap",
-		icon: ArrowLeftRight,
-		desc: "Token exchange",
 	},
 ];
 

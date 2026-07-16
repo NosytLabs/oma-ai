@@ -67,7 +67,7 @@ for await (const chunk of stream) {
 				<div className="flex items-start gap-3">
 					<Zap className="h-5 w-5 text-accent mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-accent">Why Stream?</h4>
+						<h3 className="font-semibold text-accent">Why Stream?</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Streaming provides real-time output as tokens are generated, reducing
 							perceived latency from seconds to milliseconds. Essential for chat
@@ -78,7 +78,7 @@ for await (const chunk of stream) {
 			</div>
 
 			<div className="mb-6">
-				<h4 className="mb-3 text-sm font-semibold text-text">Enable Streaming</h4>
+				<h3 className="mb-3 text-sm font-semibold text-text">Enable Streaming</h3>
 				<p className="mb-4 text-sm text-text-muted">
 					Add <code className="font-mono text-accent">&quot;stream&quot;: true</code> to your request body.
 					Responses arrive as Server-Sent Events (SSE) with <code className="font-mono text-accent">Content-Type: text/event-stream</code>.
@@ -87,7 +87,7 @@ for await (const chunk of stream) {
 			</div>
 
 			<div className="mb-6">
-				<h4 className="mb-3 text-sm font-semibold text-text">Stream Response Format</h4>
+				<h3 className="mb-3 text-sm font-semibold text-text">Stream Response Format</h3>
 				<p className="mb-4 text-sm text-text-muted">
 					Each event contains a <code className="font-mono text-accent">chat.completion.chunk</code> with
 					a <code className="font-mono text-accent">delta</code> field containing partial content.
@@ -97,7 +97,7 @@ for await (const chunk of stream) {
 			</div>
 
 			<div className="rounded-xl border border-border bg-surface/50 p-5">
-				<h4 className="mb-3 font-semibold text-text">SDK Examples</h4>
+				<h3 className="mb-3 font-semibold text-text">SDK Examples</h3>
 				<TabbedCode
 					tabs={[
 						{ label: "Python", lang: "python", code: pythonStreamCode },
@@ -108,7 +108,7 @@ for await (const chunk of stream) {
 
 			<div className="mt-6 grid gap-4 sm:grid-cols-2">
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Streaming Headers</h4>
+					<h3 className="mb-2 font-semibold text-text">Streaming Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
 							<span className="text-accent">Content-Type</span>: text/event-stream
@@ -125,7 +125,7 @@ for await (const chunk of stream) {
 					</div>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Response Headers</h4>
+					<h3 className="mb-2 font-semibold text-text">Response Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
 							<span className="text-accent">x-provider</span>: Provider handling the request

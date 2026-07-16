@@ -201,6 +201,10 @@ function InnerProvider({
 	const { disconnect: evmDisconnect } = useDisconnect();
 	const { signMessageAsync } = useSignMessage();
 
+	// Always start null so SSR HTML matches the first client paint. Reading
+	// document.cookie in useState() caused widespread hydration mismatches
+	// (Next "1 Issue" badge) when oma_session_meta was present. Meta is still
+	// applied synchronously in the mount effect below before paint settles.
 	const [session, setSession] = useState<StoredSession | null>(null);
 	const [user, setUser] = useState<User | null>(null);
 	const [isReady, setIsReady] = useState(false);
@@ -243,7 +247,7 @@ function InnerProvider({
 	const refreshUser = useCallback(async () => {
 		try {
 			const userData = await api.auth.getUser();
-			setUser(userData);
+			setUser(userData ?? null);
 		} catch {
 			setUser(null);
 		}
@@ -271,6 +275,24 @@ function InnerProvider({
 			.getUser()
 			.then((userData) => {
 				if (cancelled) return;
+				// 204 / null = anonymous (no valid HttpOnly session). Clear meta hint.
+				if (!userData) {
+					if (stored) {
+						// Only drop the JS meta cookie — do not wipe UI if we merely
+						// got an empty body during a race; treat as logged-out.
+						setSession(null);
+						setUser(null);
+						try {
+							document.cookie =
+								"oma_session_meta=; Max-Age=0; path=/; SameSite=Strict";
+						} catch {
+							/* ignore */
+						}
+					} else {
+						setUser(null);
+					}
+					return;
+				}
 				setUser(userData);
 				const method =
 					(userData as { authMethod?: AuthMethod }).authMethod ||
@@ -284,14 +306,27 @@ function InnerProvider({
 					7,
 				);
 			})
-			.catch(() => {
+			.catch((err) => {
 				if (cancelled) return;
-				// No valid session cookie — clear any stale meta and UI state.
-				if (stored) {
-					clearSession();
+				// Transient network / 429 / 5xx must NOT log the user out.
+				// Keep the meta-session so the dashboard stays mounted; data
+				// hooks will retry. Only clear on explicit auth failures.
+				const msg = err instanceof Error ? err.message : String(err);
+				const isAuthFail =
+					/\b401\b|\b403\b|unauthorized|unauthenticated|invalid.?session|jwt/i.test(
+						msg,
+					);
+				if (isAuthFail) {
 					setSession(null);
+					setUser(null);
+					try {
+						document.cookie =
+							"oma_session_meta=; Max-Age=0; path=/; SameSite=Strict";
+					} catch {
+						/* ignore */
+					}
 				}
-				setUser(null);
+				// else: keep stored session; isAuthenticated stays true
 			})
 			.finally(() => {
 				if (!cancelled) setIsReady(true);
@@ -446,7 +481,6 @@ function InnerProvider({
 
 	const hasEvmWallet = !!evmConnected;
 	const canDepositBase = !!evmConnected || !!accountNumber;
-	const canUseSwap = !!evmConnected;
 
 	const value = useMemo(
 		() => ({
@@ -467,7 +501,6 @@ function InnerProvider({
 			activeWallet,
 			hasEvmWallet,
 			canDepositBase,
-			canUseSwap,
 			refreshUser,
 		}),
 		[
@@ -489,7 +522,6 @@ function InnerProvider({
 			activeWallet,
 			hasEvmWallet,
 			canDepositBase,
-			canUseSwap,
 			refreshUser,
 		],
 	);

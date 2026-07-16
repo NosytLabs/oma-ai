@@ -31,6 +31,7 @@ import { usageRoutes } from "./routes/usage.js";
 import { adminObservabilityRoutes } from "./routes/admin-observability.js";
 import { logRoutes } from "./routes/log.js";
 import { missingRoutes } from "./routes/missing-routes.js";
+import { networkRoutes } from "./routes/network.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { reloadModelCatalog } from "./inference/models.js";
@@ -172,6 +173,9 @@ app.route("/", fetchRoutes);
 app.route("/", withdrawalRoutes);
 app.route("/", refundRoutes);
 app.route("/", exportRoutes);
+// Network primitives — audit stream, rate-limit inspection, signing pin,
+// upstream health, and the live deposit feed WebSocket.
+app.route("/", networkRoutes);
 
 // Admin observability — must be mounted under /v1/admin path so its internal
 // `.use("/admin/*", sessionAuth)` / `.use("/v1/admin/*", sessionAuth)` wildcards

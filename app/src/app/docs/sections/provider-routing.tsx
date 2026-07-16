@@ -15,7 +15,7 @@ export function ProviderRoutingSection() {
 				<div className="flex items-start gap-3">
 					<GitBranch className="h-5 w-5 text-accent mt-0.5 shrink-0" />
 					<div>
-						<h4 className="font-semibold text-accent">Intelligent Request Routing</h4>
+						<h3 className="font-semibold text-accent">Intelligent Request Routing</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Every model id resolves to one or more upstream providers. OMA
 							selects the optimal provider based on your plan tier, latency,
@@ -74,7 +74,7 @@ export function ProviderRoutingSection() {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text text-sm">How Routing Works</h4>
+					<h3 className="mb-2 font-semibold text-text text-sm">How Routing Works</h3>
 					<ol className="space-y-1.5 text-sm text-text-muted list-decimal list-inside">
 						<li>Request arrives with a model id and plan tier</li>
 						<li>OMA checks the model→provider mapping for that tier</li>
@@ -84,7 +84,7 @@ export function ProviderRoutingSection() {
 					</ol>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text text-sm">Response Headers</h4>
+					<h3 className="mb-2 font-semibold text-text text-sm">Response Headers</h3>
 					<p className="text-sm text-text-muted mb-3">
 						Each response includes the provider that handled the request:
 					</p>

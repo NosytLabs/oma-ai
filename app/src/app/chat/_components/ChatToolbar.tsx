@@ -125,54 +125,93 @@ export function ChatToolbar({
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
+
+	const creditsPill =
+		isChat && isAuthenticated ? (
+			balance ? (
+				<Link
+					href="/deposit"
+					aria-label={`Credit balance: ${balanceDollars.toFixed(2)} dollars. Click to add credits.`}
+					data-state={isLowBalance ? "low" : "ok"}
+					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10`}
+					title="Credits balance — click to deposit"
+				>
+					{isLowBalance ? (
+						<AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+					) : (
+						<Coins className="h-3.5 w-3.5 shrink-0" />
+					)}
+					<span className="tabular-nums text-[10px] sm:text-[11px]">
+						{formatCreditsShort(balanceDollars)}
+					</span>
+				</Link>
+			) : (
+				<span
+					className={`${btnBase} shrink-0 opacity-60`}
+					aria-label="Loading credit balance"
+					title="Loading balance…"
+				>
+					<Coins className="h-3.5 w-3.5 shrink-0" />
+					<span className="tabular-nums text-[10px] sm:text-[11px]">…</span>
+				</span>
+			)
+		) : null;
+
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex-none h-12 border-b border-border flex items-center justify-between px-4 bg-void/95"
+			className="flex h-12 flex-none items-center gap-2 border-b border-border bg-void/95 px-2 sm:px-4"
 		>
-			<div className="flex items-center gap-4">
+			{/* Left cluster: brand (md+) + model + params */}
+			<div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
 				<div
-					className={`flex items-center gap-2 mr-4 ${isChat ? "text-accent" : "text-warning"}`}
+					className={`mr-1 hidden shrink-0 items-center gap-2 sm:flex ${isChat ? "text-accent" : "text-warning"}`}
 				>
-					<TerminalSquare className="w-4 h-4" />
-					<span className="text-[11px] font-bold tracking-widest uppercase">
+					<TerminalSquare className="h-4 w-4" />
+					<span className="text-[11px] font-bold uppercase tracking-widest">
 						OMA.WB
 					</span>
 				</div>
 
-				<div className="h-4 w-px bg-border hidden md:block" />
+				<div className="hidden h-4 w-px shrink-0 bg-border md:block" />
 
-				<LazyModelSelector model={model} setModel={setModel} />
+				<div className="min-w-0 flex-1 sm:flex-none">
+					<LazyModelSelector model={model} setModel={setModel} />
+				</div>
 
 				<button
 					type="button"
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="Toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
 				>
-					<Settings2 className="w-3.5 h-3.5" />
+					<Settings2 className="h-3.5 w-3.5" />
 					<span className="hidden sm:inline">PARAMS</span>
 				</button>
+
+				{/* Credits pinned left of the scrollable actions on mobile so they never clip */}
+				<div className="ml-auto shrink-0 sm:hidden">{creditsPill}</div>
 			</div>
 
-			<div className="flex items-center gap-2">
+			{/* Right cluster: secondary tools — scrollable on narrow viewports */}
+			<div className="hidden max-w-[55%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:flex sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden md:max-w-none">
 				<button
 					type="button"
 					onClick={() => setWebSearchEnabled(!webSearchEnabled)}
 					aria-label="Toggle web search"
 					aria-pressed={webSearchEnabled}
-					className={`${btnBase} ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Web Search (Tinyfish MCP)"
 				>
-					<Search className="w-3.5 h-3.5" />
+					<Search className="h-3.5 w-3.5" />
 					<span className="hidden sm:inline">WEB</span>
 				</button>
 
 				{isChat && setMediaMode && (
 					<div
-						className="flex items-center gap-0.5 border border-border bg-surface"
+						className="hidden shrink-0 items-center gap-0.5 border border-border bg-surface md:flex"
 						role="group"
 						aria-label="Chat mode"
 					>
@@ -183,7 +222,7 @@ export function ChatToolbar({
 							title="Text chat"
 							className={`${btnBase} !border-0 ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 						>
-							<MessageSquare className="w-3.5 h-3.5" />
+							<MessageSquare className="h-3.5 w-3.5" />
 							<span className="hidden md:inline">TEXT</span>
 						</button>
 						<button
@@ -193,7 +232,7 @@ export function ChatToolbar({
 							title="Image generation"
 							className={`${btnBase} !border-0 ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 						>
-							<ImageIcon className="w-3.5 h-3.5" />
+							<ImageIcon className="h-3.5 w-3.5" />
 							<span className="hidden md:inline">IMG</span>
 						</button>
 						<button
@@ -203,59 +242,41 @@ export function ChatToolbar({
 							title="Video generation"
 							className={`${btnBase} !border-0 ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 						>
-							<Film className="w-3.5 h-3.5" />
+							<Film className="h-3.5 w-3.5" />
 							<span className="hidden md:inline">VID</span>
 						</button>
 					</div>
 				)}
 
 				{searching && (
-					<div className="flex items-center gap-2 px-3 py-1.5 text-[10px] text-accent uppercase tracking-widest border border-accent/20 bg-accent/10">
-						<span className="w-1.5 h-1.5 bg-accent animate-pulse" />
+					<div className="flex shrink-0 items-center gap-2 border border-accent/20 bg-accent/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-accent">
+						<span className="h-1.5 w-1.5 animate-pulse bg-accent" />
 						NET_REQ
 					</div>
 				)}
 
-				<div className="h-4 w-px bg-border mx-2 hidden md:block" />
-				<div className="hidden md:block">
+				<div className="mx-1 hidden h-4 w-px shrink-0 bg-border md:block" />
+				<div className="hidden shrink-0 md:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>
-				<div className="md:hidden">
+				<div className="hidden shrink-0 sm:block md:hidden">
 					<LazyMobileStatsBar messages={deferredMessages} model={model} />
 				</div>
-				<div className="h-4 w-px bg-border mx-2 hidden md:block" />
+				<div className="mx-1 hidden h-4 w-px shrink-0 bg-border md:block" />
 
-				{/* Credits pill — visible only in chat when authenticated. Warns (warning
-            palette) under $1 so the user knows to top up before a big call. */}
-				{isChat && isAuthenticated && balance && (
-					<Link
-						href="/deposit"
-						aria-label={`Credit balance: ${balanceDollars.toFixed(2)} dollars. Click to add credits.`}
-						data-state={isLowBalance ? "low" : "ok"}
-						className={`${btnBase} data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10`}
-						title="Credits balance — click to deposit"
-					>
-						{isLowBalance ? (
-							<AlertTriangle className="w-3.5 h-3.5" />
-						) : (
-							<Coins className="w-3.5 h-3.5" />
-						)}
-						<span className="hidden sm:inline tabular-nums">
-							{formatCreditsShort(balanceDollars)}
-						</span>
-					</Link>
-				)}
+				{/* Desktop credits (mobile uses pinned pill above) */}
+				<div className="hidden sm:block">{creditsPill}</div>
 
 				<button
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
-					<Columns2 className="w-3.5 h-3.5" />
-					<span className="hidden sm:inline">COMPARE</span>
+					<Columns2 className="h-3.5 w-3.5" />
+					<span className="hidden lg:inline">COMPARE</span>
 				</button>
 
 				<button
@@ -263,33 +284,33 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} focus-ring data-[state=success]:text-success data-[state=success]:border-success/30 data-[state=success]:bg-success/10`}
+					className={`${btnBase} hidden shrink-0 focus-ring data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success sm:inline-flex`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="Copy a link that opens this chat with the current model pre-selected"
 				>
 					{shareStatus === "success" ? (
-						<CheckCircle2 className="w-3.5 h-3.5" />
+						<CheckCircle2 className="h-3.5 w-3.5" />
 					) : shareStatus === "error" ? (
-						<AlertCircle className="w-3.5 h-3.5" />
+						<AlertCircle className="h-3.5 w-3.5" />
 					) : (
-						<Share2 className="w-3.5 h-3.5" />
+						<Share2 className="h-3.5 w-3.5" />
 					)}
-					<span className="hidden sm:inline">SHARE</span>
+					<span className="hidden lg:inline">SHARE</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} focus-ring`}
+					className={`${btnBase} hidden shrink-0 focus-ring sm:inline-flex`}
 					title="Keyboard shortcuts (?)"
 					aria-label="Show keyboard shortcuts"
 				>
-					<Keyboard className="w-3.5 h-3.5" />
-					<span className="hidden sm:inline">?</span>
+					<Keyboard className="h-3.5 w-3.5" />
+					<span className="hidden lg:inline">?</span>
 				</button>
 
 				{messageCount > 0 && (
-					<div className="flex items-center gap-1">
+					<div className="flex shrink-0 items-center gap-1">
 						<button
 							type="button"
 							onClick={exportConversation}
@@ -300,24 +321,47 @@ export function ChatToolbar({
 							title="Export"
 						>
 							{exportStatus === "success" ? (
-								<CheckCircle2 className="w-3.5 h-3.5" />
+								<CheckCircle2 className="h-3.5 w-3.5" />
 							) : exportStatus === "error" ? (
-								<AlertCircle className="w-3.5 h-3.5" />
+								<AlertCircle className="h-3.5 w-3.5" />
 							) : (
-								<Download className="w-3.5 h-3.5" />
+								<Download className="h-3.5 w-3.5" />
 							)}
 						</button>
 						<button
 							type="button"
 							onClick={clearChat}
 							aria-label="Clear conversation"
-							className={`${btnBase} hover:!text-error hover:!border-error/20 hover:!bg-error/10 focus-ring`}
+							className={`${btnBase} hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring`}
 							title="Clear"
 						>
-							<Trash2 className="w-3.5 h-3.5" />
+							<Trash2 className="h-3.5 w-3.5" />
 						</button>
 					</div>
 				)}
+			</div>
+
+			{/* Mobile-only secondary actions (web + compare) — keep strip short */}
+			<div className="flex shrink-0 items-center gap-1 sm:hidden">
+				<button
+					type="button"
+					onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+					aria-label="Toggle web search"
+					aria-pressed={webSearchEnabled}
+					className={`${btnBase} ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					title="Toggle Web Search"
+				>
+					<Search className="h-3.5 w-3.5" />
+				</button>
+				<button
+					type="button"
+					onClick={() => setCompareMode(!compareMode)}
+					aria-label="Compare models"
+					aria-pressed={compareMode}
+					className={`${btnBase} ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+				>
+					<Columns2 className="h-3.5 w-3.5" />
+				</button>
 			</div>
 		</header>
 	);

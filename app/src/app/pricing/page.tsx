@@ -80,7 +80,7 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
-		title: "USDC on Base / Solana",
+		title: "USDC on Base",
 		desc: "Direct USDC transfers at 1:1 USD rate. Settlement is immediate on confirmation.",
 		tag: null,
 		tagStyle: "",
@@ -88,14 +88,14 @@ const PAYMENT_METHODS = [
 	{
 		icon: Coins,
 		title: "LI.FI / CCTP",
-		desc: "Swap 100+ cryptocurrencies to USDC credits on Base via LI.FI / CCTP. Rate varies by asset.",
+		desc: "Bridge or convert assets to USDC credits on Base via LI.FI / CCTP. Rate varies by asset.",
 		tag: "100+ assets",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
 	{
 		icon: Rocket,
 		title: "x402 Pay-Per-Request",
-		desc: "Gasless payments on Solana and Base. Each API request deducts fees automatically.",
+		desc: "Agent-native payments on Base. Each API request can settle fees without pre-funding credits.",
 		tag: "no pre-fund",
 		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
@@ -104,7 +104,7 @@ const PAYMENT_METHODS = [
 const FAQ_ITEMS = [
 	{
 		q: "How do I add credits?",
-		a: "Deposit USDC on Base or Solana, or swap from 100+ cryptocurrencies via LI.FI / CCTP. Instant settlement.",
+		a: "Deposit USDC on Base, or bridge/convert from 100+ cryptocurrencies via LI.FI / CCTP. Settlement is immediate on confirmation.",
 	},
 	{
 		q: "Do credits expire?",
@@ -112,11 +112,11 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC (Direct) on Base or Solana for 1:1 USD credits, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
+		a: "USDC (Direct) on Base for 1:1 USD credits, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
 	},
 	{
 		q: "What is x402 pay-per-request?",
-		a: "x402 enables per-request AI inference payments on Base and Solana. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
+		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
 	},
 ];
 
@@ -288,8 +288,11 @@ export default function PricingPage() {
 							{/* Right gradient hint for scrollable content */}
 							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
 
-							<div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-								<table className="w-full text-left">
+							<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]">
+								<table
+									className="w-full min-w-[36rem] text-left"
+									aria-label="Model pricing by tier"
+								>
 									<thead>
 										<tr className="border-b border-border bg-surface-elevated">
 											<th
@@ -426,9 +429,9 @@ export default function PricingPage() {
 							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
 							<div>
 								<div className="flex items-center gap-2">
-									<h4 className="text-sm font-semibold text-accent">
+									<h3 className="text-sm font-semibold text-accent">
 										x402 Protocol
-									</h4>
+									</h3>
 									<span className="inline-flex items-center rounded-full bg-accent text-void px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">
 										recommended for agents
 									</span>
@@ -502,9 +505,9 @@ export default function PricingPage() {
 
 				{/* ── Billing Notes ── */}
 				<div className="p-4 rounded-xl border border-amber/20 bg-amber/5">
-					<h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-3">
+					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-3">
 						Billing
-					</h4>
+					</h3>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
 							"Credits are 1:1 USD, non-redeemable, non-transferable",

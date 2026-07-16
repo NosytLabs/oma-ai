@@ -18,14 +18,15 @@ import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
 
 export const metadata: Metadata = {
-	title: "Changelog",
+	title: "Product Changelog — releases & fixes",
 	description:
-		"Every release, every commit-worthy change to OMA AI. New models, fixes, network primitives.",
+		"Every release and commit-worthy change to OMA AI: new models, gateway fixes, payment rails, and network primitives.",
 	alternates: { canonical: "/changelog" },
 	openGraph: {
-		title: "OMA Changelog",
+		title: "Product Changelog — OMA",
 		description:
-			"Every release, every commit-worthy change to OMA AI — new models, fixes, network primitives.",
+			"Release notes for OMA AI: new models, gateway fixes, payment rails, and network primitives.",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Changelog" }],
 	},
 };
 
@@ -53,6 +54,27 @@ const KIND_STYLES: Record<ChangeKind, { label: string; color: string; icon: type
 };
 
 const RELEASES: Release[] = [
+	{
+		version: "2.1.1",
+		date: "2026-07-14",
+		codename: "Site Hardening",
+		summary:
+			"Marketing/product honesty pass: SEO sitemap cleanup, agent session demos, live observability counters, and retirement of the dead swap surface.",
+		highlights: [
+			"Public sitemap lists marketing routes only (no auth soft-404s)",
+			"Agent session demo on homepage + docs (terminal UI for OpenAI baseURL story)",
+			"Observability page shows live /health + /metrics counters",
+			"Retired /swap → /deposit (direct USDC funding)",
+		],
+		changes: [
+			{ kind: "feature", text: "AgentSessionDemo marketing block (brainless-inspired, OMA-themed)" },
+			{ kind: "feature", text: "Live ops snapshot on /observability from Prometheus /metrics" },
+			{ kind: "feature", text: "About + Contact trust pages; sub-processor disclosure in Privacy" },
+			{ kind: "fix", text: "Anonymous /api/user returns 204 (no console 401 spam)" },
+			{ kind: "fix", text: "CSP frame-ancestors none; prod drops unsafe-eval" },
+			{ kind: "deprecation", text: "Remove standalone /swap — fund via USDC deposit on Base" },
+		],
+	},
 	{
 		version: "2.1.0",
 		date: "2026-07-06",
@@ -92,13 +114,13 @@ const RELEASES: Release[] = [
 			"x402 pay-per-request — USDC settlement on every request without pre-funding",
 			"Wallet-only authentication (SIWE) — no email, no password, no card",
 			"Continuous deposit watcher — USDC credits within ~12 seconds of confirmation",
-			"Multi-chain routing via HoudiniSwap (20+ chains)",
+			"Multi-chain deposits via LI.FI / CCTP into USDC on Base",
 		],
 		changes: [
 			{ kind: "feature", text: "x402 Payment Required flow on /v1/x402/* endpoints" },
 			{ kind: "feature", text: "SIWE sign-in replaces email/password auth" },
 			{ kind: "feature", text: "Deposit watcher runs as a continuous cron (was on-demand)" },
-			{ kind: "feature", text: "HoudiniSwap integration for 20+ chains" },
+			{ kind: "feature", text: "Multi-chain deposit routing into USDC on Base (LI.FI / CCTP)" },
 			{ kind: "perf", text: "3x throughput on chat completions via connection pooling" },
 			{ kind: "fix", text: "Fix race condition between deposit watcher and manual settlement" },
 		],
@@ -189,7 +211,7 @@ export default function ChangelogPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Every release,</span>
+							<span className="block">Every release,{" "}</span>
 							<span className="block text-accent">every shipped change.</span>
 						</h1>
 

@@ -41,28 +41,28 @@ export function ProfileSection({
 				</p>
 			</div>
 
-			<div className="mt-6 grid grid-cols-1 gap-px sm:grid-cols-3 border border-border bg-border">
-				<div className="flex flex-col gap-1 p-4 bg-void">
+			<div className="mt-6 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
 					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
-						<Fingerprint className="h-3.5 w-3.5" aria-hidden="true" />
+						<Fingerprint className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						User ID
 					</div>
-					<div className="font-mono text-sm text-text break-all">
+					<div className="break-all font-mono text-sm text-text">
 						{user?.id || "—"}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1 p-4 bg-void">
+				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
 					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
-						<Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+						<Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Account created
 					</div>
 					<div className="text-sm text-text">
 						{user?.createdAt ? formatDateTime(user.createdAt) : "—"}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1 p-4 bg-void">
+				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
 					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
-						<Shield className="h-3.5 w-3.5" aria-hidden="true" />
+						<Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Authentication
 					</div>
 					<div className="text-sm text-text">{authMethodLabel(authMethod)}</div>

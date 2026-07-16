@@ -10,6 +10,15 @@
 > - `7748e79` — docs cleanup (test count 867, dropped Solana contradiction, real model IDs in tiers).
 > - `5e6988d` — **billing:** tiered markup externalized to `OMA_TIERED_MARKUP` (budget=40/mid=30/premium=22/frontier=15), `MIN_DEPOSIT_USD=10` floor on all deposit routes, usage/deposit/withdrawal export surfaced in UI (`/dashboard/export`).
 > - `aafa5e8` — AUDIT.md post-audit correction.
+> - **2026-07-15 full re-audit + fix pass:**
+>   - Pricing/BRAND/llms.txt Solana claims removed (Base + LI.FI/CCTP + x402 only).
+>   - `/v1/keys` → 410 Gone with `correct_path: /keys` (was hard 404).
+>   - Export client path fixed: `/v1/export/*` + blob responseType (was `/v1/usage/export` 404).
+>   - Credits “Buy” routes to `/deposit?amount=` (no longer fake-success on pending purchase).
+>   - Dead client paths removed (`deposit.oma`, `/auth/demo` fake call); demo = `?demo=1` cookie.
+>   - Payment method enums restricted to `usdc`; Jupiter CSP/preconnect stripped.
+>   - Permanent redirects for `/credits` → dashboard/credits, `/account` → settings.
+>   - Validate: app 151 + server 716 tests green.
 >
 > The "97 models" count below reflects the audit-time state (before `b63813a`). Current live catalog = **96 models** (91 chat + 5 video).
 

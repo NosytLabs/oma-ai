@@ -1,7 +1,7 @@
 import { request } from "./client.js";
 
 export const deposit = {
-	/** USDC deposit — fetch deposit address for a given amount. */
+	/** USDC deposit — submit an on-chain transfer for credit settlement. */
 	async usdc(amount: number, txHash: string) {
 		return request("/v1/deposit/usdc", {
 			method: "POST",
@@ -9,17 +9,14 @@ export const deposit = {
 		});
 	},
 
-	/** OMA token deposit. */
-	async oma(amount: number, txHash: string) {
-		return request("/v1/deposit/oma", {
-			method: "POST",
-			body: JSON.stringify({ amount, txHash }),
-		});
+	/** Deposit status by ID — path param (query `?id=` is ignored by the server). */
+	async status(id: string) {
+		return request(`/v1/deposit/status/${id}`);
 	},
 
-	/** Deposit status by ID. */
-	async status(id: string) {
-		return request(`/v1/deposit/status?id=${id}`);
+	/** Recent deposits for the signed-in user. */
+	async list() {
+		return request<{ deposits: unknown[] }>("/v1/deposit/status");
 	},
 
 	/** Notifications related to deposits. */

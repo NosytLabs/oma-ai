@@ -2,8 +2,9 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { ConnectWalletView } from "@/components/dashboard/ConnectWalletView";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/ui/Toast";
@@ -41,7 +42,7 @@ const DashboardGrid = dynamic(
 const RECENT_REQUESTS_LIMIT = 20;
 
 export default function DashboardPage() {
-	const { isAuthenticated, connectEvm } = useWallet();
+	const { isAuthenticated, isDemo, connectEvm, isReady } = useWallet();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
@@ -49,7 +50,8 @@ export default function DashboardPage() {
 	// Sync the active tab with ?tab=... in the URL. Validates against the
 	// TABS list so unknown values fall back to "overview" instead of
 	// showing a blank page. Allows deep-links like /dashboard?tab=health.
-	const validTabIds = TABS.map((t) => t.id);
+	// TABS is a module-level constant — memoize once so the effect deps are stable.
+	const validTabIds = useMemo(() => TABS.map((t) => t.id), []);
 	const initialTab: TabId =
 		(searchParams.get("tab") &&
 		validTabIds.includes(searchParams.get("tab") as TabId))
@@ -67,7 +69,7 @@ export default function DashboardPage() {
 		error,
 		backendUnavailable,
 		refresh,
-	} = useDashboardData({ isAuthenticated });
+	} = useDashboardData({ isAuthenticated, isDemo });
 
 	const [page, setPage] = useState(1);
 	const [creating, setCreating] = useState(false);
@@ -79,6 +81,23 @@ export default function DashboardPage() {
 	const [refreshTick, setRefreshTick] = useState(0);
 	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
+
+	// Keep tab state in sync with ?tab= (back/forward + deep links).
+	useEffect(() => {
+		const raw = searchParams.get("tab");
+		const next =
+			raw && validTabIds.includes(raw as TabId) ? (raw as TabId) : "overview";
+		setActiveTab(next);
+	}, [searchParams, validTabIds]);
+
+	const handleTabChange = useCallback((tab: TabId) => {
+		setActiveTab(tab);
+		if (typeof window === "undefined") return;
+		const url = new URL(window.location.href);
+		if (tab === "overview") url.searchParams.delete("tab");
+		else url.searchParams.set("tab", tab);
+		window.history.replaceState({}, "", url.toString());
+	}, []);
 
 	// All dashboard aggregates (today/month deltas, filtered ranges, error
 	// counts, latency avg, etc.) are derived in this hook so the page can
@@ -99,7 +118,7 @@ export default function DashboardPage() {
 	}, [refresh]);
 
 	useDashboardKeyboard({
-		setActiveTab,
+		setActiveTab: handleTabChange,
 		setPage,
 		activeTab,
 		page,
@@ -145,6 +164,10 @@ export default function DashboardPage() {
 
 	const handleCreateKey = useCallback(async () => {
 		if (!newKeyName.trim()) return;
+		if (isDemo) {
+			toast.error("Demo mode is read-only — sign in to create API keys");
+			return;
+		}
 		setCreating(true);
 		try {
 			const key = await api.auth.createKey(newKeyName.trim());
@@ -167,10 +190,14 @@ export default function DashboardPage() {
 		} finally {
 			setCreating(false);
 		}
-	}, [newKeyName, queryClient, toast]);
+	}, [isDemo, newKeyName, queryClient, toast]);
 
 	const handleRevokeKey = useCallback(
 		async (keyId: string) => {
+			if (isDemo) {
+				toast.error("Demo mode is read-only — sign in to manage keys");
+				return;
+			}
 			setRevokingId(keyId);
 			try {
 				await api.auth.deleteKey(keyId);
@@ -184,17 +211,27 @@ export default function DashboardPage() {
 				setRevokingId(null);
 			}
 		},
-		[queryClient, toast],
+		[isDemo, queryClient, toast],
 	);
 
 	const hasAnyData = Boolean(balance) || apiKeys.length > 0 || usage.length > 0;
 
 	const handleNavigateToApiKeys = useCallback(() => {
-		setActiveTab("api-keys");
+		handleTabChange("api-keys");
 		setShowCreateForm(true);
-	}, []);
+	}, [handleTabChange]);
 
-	const content = !isAuthenticated ? (
+	// Wait for session restore before the sign-in wall. If meta/session is
+	// already known (middleware seeds oma_session_meta), show the app even
+	// while /api/user is still finishing — only block when we truly don't know.
+	const content = !isReady && !isAuthenticated ? (
+		<>
+			<h1 className="sr-only">Dashboard</h1>
+			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+				<AuthSkeleton />
+			</div>
+		</>
+	) : !isAuthenticated ? (
 		<>
 			<h1 className="sr-only">Dashboard</h1>
 			<ConnectWalletView onConnect={connectEvm} />
@@ -205,6 +242,22 @@ export default function DashboardPage() {
 				id="dashboard-content"
 				className="bg-void text-text-secondary selection:bg-surface selection:text-text"
 			>
+				{isDemo && (
+					<div
+						role="status"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
+					>
+						<span className="uppercase tracking-wider">
+							Demo mode — mock data only. Sign in to use real credits &amp; keys.
+						</span>
+						<a
+							href="/login?next=/dashboard"
+							className="shrink-0 rounded bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
+						>
+							Sign in →
+						</a>
+					</div>
+				)}
 				<div className="p-4 md:p-8 pt-4">
 					<DashboardHeader
 						loading={loading}
@@ -214,7 +267,7 @@ export default function DashboardPage() {
 						onRefresh={handleRefresh}
 						onExport={handleExport}
 						activeTab={activeTab}
-						onTabChange={setActiveTab}
+						onTabChange={handleTabChange}
 						timeRange={timeRange}
 						onTimeRangeChange={setTimeRange}
 					/>

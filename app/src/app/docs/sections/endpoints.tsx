@@ -57,9 +57,9 @@ export function EndpointsSection() {
 
 								{ep.body && (
 									<div>
-										<h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+										<h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
 											Request Body
-										</h4>
+										</h3>
 										<div className="rounded-lg border border-border/50 bg-panel p-4 space-y-2">
 											{Object.entries(ep.body).map(([key, val]) => (
 												<div key={key} className="flex gap-3 font-mono text-sm">
@@ -72,9 +72,9 @@ export function EndpointsSection() {
 								)}
 
 								<div>
-									<h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+									<h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
 										Response
-									</h4>
+									</h3>
 									<CodeBlock code={ep.response} lang="json" />
 								</div>
 							</div>

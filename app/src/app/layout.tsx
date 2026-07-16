@@ -116,11 +116,10 @@ export default function RootLayout({
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://eth.coinbase.com" />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
-				<link rel="preconnect" href="https://api.jup.ag" />
 				<link rel="preconnect" href="https://verify.walletconnect.com" />
 				<link rel="dns-prefetch" href="https://*.walletconnect.com" />
 				<link rel="dns-prefetch" href="https://*.coinbase.com" />
-				<link rel="canonical" href={BASE_URL} />
+				{/* Canonicals come from per-page metadata.alternates — do not hardcode homepage here. */}
 			</head>
 			<body className="min-h-screen bg-void text-text font-sans antialiased">
 				<a
@@ -140,7 +139,7 @@ export default function RootLayout({
 									<Navbar />
 									<main
 										id="main-content"
-										className="pt-14 page-enter"
+										className="min-w-0 max-w-[100vw] overflow-x-clip pt-14 page-enter"
 										tabIndex={-1}
 									>
 										<ErrorBoundary>{children}</ErrorBoundary>

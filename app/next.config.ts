@@ -104,18 +104,59 @@ const nextConfig: NextConfig = {
 };
 
 function generateContentSecurityPolicy(): string {
+	// 'unsafe-eval' only in development (Next HMR / React Refresh). Production
+	// drops it; wallet connectors work without eval in modern browsers.
+	const isDev = process.env.NODE_ENV !== "production";
+	const scriptSrc = [
+		"'self'",
+		isDev ? "'unsafe-eval'" : null,
+		"'unsafe-inline'", // Next.js inline bootstraps + theme FOUC script
+		"https://verify.walletconnect.com",
+		"https://*.walletconnect.com",
+		"https://*.coinbase.com",
+		"https://*.coinbasewallet.com",
+	]
+		.filter(Boolean)
+		.join(" ");
+
+	const connectSrc = [
+		"'self'",
+		// Local API only needed in dev; harmless if present in prod builds used locally
+		...(isDev ? ["http://localhost:3001", "ws://localhost:3001", "http://127.0.0.1:3001"] : []),
+		"https://*.walletconnect.com",
+		"https://api.web3modal.org",
+		"https://*.coinbase.com",
+		"https://*.coinbasewallet.com",
+		"https://*.infura.io",
+		"https://*.alchemy.com",
+		"wss://*.walletconnect.com",
+		"wss://*.ws.alchemy.com",
+		"https://eth.coinbase.com",
+		"https://base-rpc.publicnode.com",
+		"https://api.alchemy.com",
+		"https://*.lens.dev",
+		"https://viem.sh",
+		"https://*.ingest.sentry.io",
+		"https://*.sentry.io",
+		// Production API host (same-origin /api proxy is preferred; allow direct too)
+		"https://api.oma-ai.com",
+		"https://oma-ai.com",
+	].join(" ");
+
 	const directives = [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-eval' 'unsafe-inline' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
+		`script-src ${scriptSrc}`,
 		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data: https: blob:",
 		"font-src 'self'",
 		"frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
-		"connect-src 'self' http://localhost:3001 ws://localhost:3001 https://api.jup.ag https://*.walletconnect.com https://api.web3modal.org https://*.coinbase.com https://*.coinbasewallet.com https://*.infura.io https://*.alchemy.com wss://*.walletconnect.com wss://*.ws.alchemy.com https://eth.coinbase.com https://base-rpc.publicnode.com https://api.alchemy.com https://*.lens.dev https://viem.sh https://*.infura.io https://*.ingest.sentry.io https://*.sentry.io",
-		"frame-ancestors 'self'",
+		`connect-src ${connectSrc}`,
+		// Align with X-Frame-Options: DENY — block all framing (clickjacking).
+		"frame-ancestors 'none'",
 		"object-src 'none'",
 		"base-uri 'self'",
 		"form-action 'self'",
+		"upgrade-insecure-requests",
 	];
 	return directives.join("; ");
 }

@@ -37,29 +37,36 @@ export const creditHistory = {
  * The legacy `oma.getCreditBatches()` alias still works through the
  * composite `api` object in `./index.ts`.
  */
-export interface PurchaseCreditsResponse {
-	creditsAdded: number;
-	balanceCents: string;
-}
-
 export const credits = {
 	getBatches() {
+		// Batches live on GET /v1/credits/balance (there is no /v1/credits/batches).
 		return request<{
-			activeBatches: Array<{
+			activeBatches?: Array<{
 				id: string;
 				amountCents: string;
 				remainingCents: string;
 				expiresAt: string;
 				paymentMethod: string | null;
 			}>;
-		}>("/v1/credits/balance");
+		}>("/v1/credits/balance").then((data) => ({
+			activeBatches: data.activeBatches ?? [],
+		}));
 	},
 
-	purchase(
-		amountCents: number,
-		paymentMethod: "usdc" | "sol" | "oma" = "usdc",
-	) {
-		return request<PurchaseCreditsResponse>("/v1/credits/purchase", {
+	/**
+	 * Create a pending deposit intent. Credits are NOT issued until on-chain
+	 * USDC confirmation — real funding is via `/deposit` (USDC on Base).
+	 * Prefer routing users to `/deposit` instead of relying on this for UX.
+	 */
+	purchase(amountCents: number, paymentMethod: "usdc" = "usdc") {
+		return request<{
+			success: boolean;
+			depositId: string;
+			status: string;
+			amountCents: number;
+			paymentMethod: string;
+			message?: string;
+		}>("/v1/credits/purchase", {
 			method: "POST",
 			body: JSON.stringify({ amountCents, paymentMethod }),
 		});

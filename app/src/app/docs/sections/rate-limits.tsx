@@ -12,7 +12,7 @@ export function RateLimitsSection() {
 			/>
 
 			<div className="mb-6 overflow-hidden rounded-xl border border-border">
-				<table className="w-full text-left text-sm">
+				<table className="w-full text-left text-sm" aria-label="Rate limits by plan">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
 							<th className="px-4 py-3 font-medium text-text-muted">Plan</th>
@@ -57,14 +57,14 @@ export function RateLimitsSection() {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Burst Handling</h4>
+					<h3 className="mb-2 font-semibold text-text">Burst Handling</h3>
 					<p className="text-sm text-text-muted">
 						Token bucket algorithm allows short bursts above the sustained rate.
 						Excess tokens are spilled into the next window.
 					</p>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Rate Limit Headers</h4>
+					<h3 className="mb-2 font-semibold text-text">Rate Limit Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
 							<span className="text-accent">X-RateLimit-Limit</span> - Requests

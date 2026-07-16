@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Video Generation API",
+	title: "Video generation playground",
 	description:
-		"Generate videos with AI using the OMA API. Support for Seedance, Kling, and more. Pay with crypto.",
-	keywords: [
-		"AI video generation",
-		"text to video",
-		"AI video",
-		"Seedance",
-		"Kling",
-		"AI API",
-	],
+		"Generate short videos from text or image prompts. Charged per second in OMA credits.",
 	alternates: { canonical: "/video-generation" },
+	robots: { index: false, follow: false },
 };
 
 export default function VideoGenerationLayout({

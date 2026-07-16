@@ -53,6 +53,7 @@ export function HowItWorks() {
 			<div className="container-page">
 				<Reveal>
 					<SectionHeader
+						id="how-it-works-headline"
 						headline={
 							<>
 								Ship in three

@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Deposit Credits",
+	title: "Deposit USDC credits",
 	description:
-		"Deposit funds to your OMA AI account. USDC on Base supported.",
+		"Deposit funds to your OMA AI account. USDC on Base supported for pay-per-request inference.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
-		title: "Deposit Credits | OMA AI",
+		title: "Deposit USDC credits | OMA AI",
 		description:
-			"Deposit funds to your OMA AI account. USDC on Base supported.",
-			},
+			"Deposit funds to your OMA AI account. USDC on Base supported for pay-per-request inference.",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Deposit" }],
+	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Deposit Credits | OMA AI",
+		title: "Deposit USDC credits | OMA AI",
 		description:
 			"Deposit funds to your OMA AI account. USDC on Base supported.",
-			},
-	robots: {
-		index: true,
-		follow: true,
+		images: ["/og-image.png"],
 	},
+	// Session-gated — keep out of the public index.
+	robots: { index: false, follow: false },
 };
 
 export default function DepositLayout({

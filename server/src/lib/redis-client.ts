@@ -38,8 +38,15 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
       },
     });
     
-    client.on("error", () => {
-      connectionFailed = true;
+    client.on("error", (err) => {
+      // Only fatal connection-level errors should mark the client as failed.
+      // Transient command errors (e.g. a rejected Lua script) must NOT poison
+      // the whole client — otherwise one bad EVAL permanently 503s every
+      // inference request until restart.
+      const msg = String(err?.message ?? err);
+      if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket closed|Connection is closed|NOAUTH|denied/i.test(msg)) {
+        connectionFailed = true;
+      }
     });
     client.on("ready", () => {
       redisReady = true;

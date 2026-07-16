@@ -58,7 +58,7 @@ Do not invent a second mark. Live site may lag until deploy; local `app/public` 
 
 - **Primary (homepage / hero):** *"Open Model Access for AI builders."* Route prompts across private, open, and commercial models through one OpenAI-compatible API.
 - **Privacy angle:** *"Private AI inference powered by Venice. Zero data retention on prompt content."* Self-hosted deployment option for maximum data control; wallet-based auth (no account required).
-- **Payment angle:** *"Crypto-friendly credits. Pay with crypto, build with one API."* USDC on Base, SOL on Solana, 20+ chains via LI.FI / CCTP, x402 for agent-native billing.
+- **Payment angle:** *"Crypto-friendly credits. Pay with crypto, build with one API."* USDC on Base, 20+ chains via LI.FI / CCTP, x402 for agent-native billing.
 
 ### What OMA IS vs. IS NOT
 

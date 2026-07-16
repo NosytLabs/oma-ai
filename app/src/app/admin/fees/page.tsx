@@ -9,6 +9,7 @@ import {
 	Save,
 	Terminal,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useId, useState } from "react";
 
 type FeeConfig = {
@@ -118,6 +119,12 @@ export default function AdminFeesPage() {
 						<Terminal className="w-4 h-4 text-success" />
 					</div>
 					<div>
+						<Link
+							href="/admin"
+							className="text-[10px] font-mono uppercase tracking-widest text-text-muted hover:text-accent transition-colors"
+						>
+							← Admin
+						</Link>
 						<h1 className="text-lg font-bold font-display tracking-tight text-text-bright">
 							Fee Configuration
 						</h1>

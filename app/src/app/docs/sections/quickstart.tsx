@@ -1,5 +1,20 @@
+import dynamic from "next/dynamic";
 import { Play, Terminal } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { AnimatedSection, CodeBlock, SectionHeading, QUICK_START_STEPS } from "./shared";
+
+const AgentSessionDemo = dynamic(
+	() =>
+		import("@/components/marketing/AgentSessionDemo").then(
+			(m) => m.AgentSessionDemo,
+		),
+	{
+		ssr: false,
+		loading: () => (
+			<Skeleton className="h-[320px] w-full rounded-xl border border-border" />
+		),
+	},
+);
 
 export function QuickStartSection() {
 	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
@@ -58,6 +73,14 @@ export function QuickStartSection() {
 					<div className="text-xs text-text-muted mb-1">SDK Install</div>
 					<code className="text-sm text-accent">npm install openai</code>
 				</div>
+			</div>
+
+			{/* Brainless-inspired agent session — OMA-themed marketing demo */}
+			<div className="mt-10">
+				<p className="mb-3 text-xs font-mono uppercase tracking-widest text-text-muted">
+					Agent session · visual demo
+				</p>
+				<AgentSessionDemo />
 			</div>
 		</AnimatedSection>
 	);

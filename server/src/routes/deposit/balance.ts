@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { bearerAuth } from "../../auth/middleware.js";
+import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { getBalance } from "../../credits/index.js";
 import { db } from "../../db/client.js";
 import { usageRecords, deposits } from "../../db/schema.js";
@@ -10,13 +10,19 @@ import { logger } from "../../lib/logger.js";
 
 export const balanceRoutes = new Hono<OmaEnv>();
 
-balanceRoutes.get("/v1/balance", bearerAuth, async (c) => {
+balanceRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const balance = await getBalance(userId);
-  return c.json({ balanceCents: balance.balanceCents });
+  // Match dashboard BalanceResponse shape (frontend expects full object).
+  return c.json({
+    balanceCents: balance.balanceCents,
+    totalDepositedCents: balance.totalDepositedCents,
+    totalUsedCents: balance.totalUsedCents,
+    lastActivityAt: balance.lastActivityAt,
+  });
 });
 
-balanceRoutes.get("/v1/usage", bearerAuth, async (c) => {
+balanceRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const records = await db.select().from(usageRecords)
     .where(eq(usageRecords.userId, userId))
@@ -25,7 +31,7 @@ balanceRoutes.get("/v1/usage", bearerAuth, async (c) => {
   return c.json({ usage: records });
 });
 
-balanceRoutes.get("/v1/circuit-breaker", bearerAuth, async (c) => {
+balanceRoutes.get("/v1/circuit-breaker", sessionOrBearerAuth, async (c) => {
   try {
     const breaker = await checkCircuitBreaker();
     return c.json(breaker);
@@ -35,7 +41,7 @@ balanceRoutes.get("/v1/circuit-breaker", bearerAuth, async (c) => {
   }
 });
 
-balanceRoutes.get("/v1/deposit/status/:id", bearerAuth, async (c) => {
+balanceRoutes.get("/v1/deposit/status/:id", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const depositId = c.req.param("id");
   if (!depositId) {

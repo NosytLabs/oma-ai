@@ -160,11 +160,14 @@ export function DocsSearch() {
 					setTimeout(() => inputRef.current?.focus(), 50);
 				}}
 				className="flex items-center gap-2 rounded-lg border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-all hover:border-border-bright hover:text-text hover:bg-surface"
-				aria-label="Search documentation"
+				aria-label="Search docs"
 			>
-				<Search className="h-3.5 w-3.5" />
+				<Search className="h-3.5 w-3.5" aria-hidden="true" />
 				<span className="hidden sm:inline">Search docs</span>
-				<kbd className="ml-2 hidden rounded border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline">
+				<kbd
+					className="ml-2 hidden rounded border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline"
+					aria-hidden="true"
+				>
 					⌘K
 				</kbd>
 			</button>

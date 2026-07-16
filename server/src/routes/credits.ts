@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { bearerAuth } from "../auth/middleware.js";
+import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { getBalance, addCredits } from "../credits/index.js";
 import {
   getBudgetAlertConfig,
@@ -24,7 +24,9 @@ export const creditRoutes = new Hono<OmaEnv>();
 
 const purchaseSchema = z.object({
   amountCents: z.number().positive().min(100),
-  paymentMethod: z.enum(["usdc", "sol", "oma"]).default("usdc"),
+  // Only USDC on Base is wired for settlement. Legacy "sol"/"oma" enums
+  // were never backed by deposit routes — reject them at validation.
+  paymentMethod: z.enum(["usdc"]).default("usdc"),
   autoReload: z.boolean().optional(),
 });
 
@@ -33,7 +35,7 @@ const autoReloadSchema = z.object({
   thresholdCents: z.number().positive().optional(),
   reloadAmountCents: z.number().positive().optional(),
   spendLimitCents: z.number().positive().optional(),
-  paymentMethod: z.enum(["usdc", "sol", "oma"]).optional(),
+  paymentMethod: z.enum(["usdc"]).optional(),
 });
 
 const budgetAlertSchema = z.object({
@@ -44,7 +46,7 @@ const budgetAlertSchema = z.object({
   webhookUrl: z.string().url().optional().nullable(),
 });
 
-creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
+creditRoutes.post("/v1/credits/purchase", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
     const parsed = purchaseSchema.safeParse(await c.req.json());
@@ -96,7 +98,7 @@ creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
   }
 });
 
-  creditRoutes.get("/v1/credits/balance", bearerAuth, async (c) => {
+  creditRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
 
@@ -130,7 +132,7 @@ creditRoutes.post("/v1/credits/purchase", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/transactions", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
     const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
@@ -173,7 +175,7 @@ creditRoutes.get("/v1/credits/transactions", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/usage", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
     const limit = Math.min(Number(c.req.query("limit") ?? 20), 100);
@@ -215,7 +217,7 @@ creditRoutes.get("/v1/credits/usage", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.post("/v1/credits/auto-reload", bearerAuth, async (c) => {
+creditRoutes.post("/v1/credits/auto-reload", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
     const parsed = autoReloadSchema.safeParse(await c.req.json());
@@ -259,7 +261,7 @@ creditRoutes.post("/v1/credits/auto-reload", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.get("/v1/credits/auto-reload", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/auto-reload", sessionOrBearerAuth, async (c) => {
   try {
     const userId = c.get("userId");
 
@@ -288,7 +290,7 @@ creditRoutes.get("/v1/credits/auto-reload", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
+creditRoutes.post("/v1/credits/refund/:usageId", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const usageId = c.req.param("usageId");
 
@@ -323,7 +325,7 @@ creditRoutes.post("/v1/credits/refund/:usageId", bearerAuth, async (c) => {
   return c.json({ success: true, creditsRefunded: Number(usage.totalCents) });
 });
 
-creditRoutes.get("/v1/credits/price-estimate", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/price-estimate", sessionOrBearerAuth, async (c) => {
   const model = c.req.query("model");
   const inputTokens = Number(c.req.query("inputTokens") ?? 0);
   const outputTokens = Number(c.req.query("outputTokens") ?? 0);
@@ -348,7 +350,7 @@ creditRoutes.get("/v1/credits/price-estimate", bearerAuth, async (c) => {
   }
 });
 
-creditRoutes.post("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+creditRoutes.post("/v1/credits/budget-alerts", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const parsed = budgetAlertSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
@@ -386,7 +388,7 @@ creditRoutes.post("/v1/credits/budget-alerts", bearerAuth, async (c) => {
   });
 });
 
-creditRoutes.get("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/budget-alerts", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const alertConfig = await getBudgetAlertConfig(userId);
 
@@ -409,7 +411,7 @@ creditRoutes.get("/v1/credits/budget-alerts", bearerAuth, async (c) => {
   });
 });
 
-creditRoutes.delete("/v1/credits/budget-alerts", bearerAuth, async (c) => {
+creditRoutes.delete("/v1/credits/budget-alerts", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
 
   await db.delete(budgetAlerts).where(eq(budgetAlerts.userId, userId));
@@ -417,7 +419,7 @@ creditRoutes.delete("/v1/credits/budget-alerts", bearerAuth, async (c) => {
   return c.json({ success: true });
 });
 
-creditRoutes.get("/v1/credits/budget-alerts/history", bearerAuth, async (c) => {
+creditRoutes.get("/v1/credits/budget-alerts/history", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
 

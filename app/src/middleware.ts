@@ -64,6 +64,11 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(new URL("/settings", request.url));
 	}
 
+	// /swap retired — external swap provider gone; fund via USDC deposit
+	if (pathname === "/swap" || pathname.startsWith("/swap/")) {
+		return NextResponse.redirect(new URL("/deposit", request.url));
+	}
+
 	const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 	if (!isProtected) return NextResponse.next();
 
@@ -134,13 +139,35 @@ export async function middleware(request: NextRequest) {
 		// ponytail: H1 — pin HS256 explicitly + 5s clock skew. Without `algorithms`,
 		// jose accepts any algorithm the token claims, which lets a token forged
 		// with `alg: "none"` or `alg: "RS256"` slip past verification (CVE-class).
-		await jwtVerify(session, secret, {
+		const { payload } = await jwtVerify(session, secret, {
 			issuer: ISSUER,
 			audience: AUDIENCE,
 			algorithms: ["HS256"],
 			clockTolerance: 5,
 		});
-		return NextResponse.next();
+
+		// Seed the JS-readable meta cookie when only the HttpOnly session is
+		// present (e.g. Playwright seeds, hard reloads after cookie-only login).
+		// wallet-provider uses meta to flip isAuthenticated before /api/user
+		// returns, so the dashboard never flashes the sign-in wall.
+		const res = NextResponse.next();
+		const hasMeta = request.cookies.get("oma_session_meta")?.value;
+		if (!hasMeta) {
+			const authMethod =
+				typeof payload.authMethod === "string" && payload.authMethod
+					? payload.authMethod
+					: "account-number";
+			res.cookies.set({
+				name: "oma_session_meta",
+				value: JSON.stringify({ authMethod }),
+				path: "/",
+				maxAge: 60 * 60 * 24 * 7,
+				sameSite: "strict",
+				httpOnly: false,
+				secure: process.env.NODE_ENV === "production",
+			});
+		}
+		return res;
 	} catch {
 		// Expired / invalid token — send the user to /login?next=<path> as well
 		// so they see the same context-preserving redirect as the no-session case.
@@ -161,5 +188,10 @@ export const config = {
 		"/playground/:path*",
 		"/image-generation/:path*",
 		"/video-generation/:path*",
+		// Legacy / marketing redirects handled above
+		"/account",
+		"/credits",
+		"/swap",
+		"/swap/:path*",
 	],
 };

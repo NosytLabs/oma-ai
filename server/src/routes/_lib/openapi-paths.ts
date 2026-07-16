@@ -496,7 +496,7 @@ export const openapiPaths = {
                 required: ["amountCents"],
                 properties: {
                   amountCents: { type: "integer", minimum: 100, description: "Amount in cents (min $1)" },
-                  paymentMethod: { type: "string", enum: ["usdc", "sol", "oma"], default: "usdc" },
+                  paymentMethod: { type: "string", enum: ["usdc"], default: "usdc" },
                   autoReload: { type: "boolean", description: "Enable auto-reload for this deposit" },
                 },
               },
@@ -639,7 +639,7 @@ export const openapiPaths = {
                   thresholdCents: { type: "number" },
                   reloadAmountCents: { type: "number" },
                   spendLimitCents: { type: "number" },
-                  paymentMethod: { type: "string", enum: ["usdc", "sol", "oma"] },
+                  paymentMethod: { type: "string", enum: ["usdc"] },
                 },
               },
             },

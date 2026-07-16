@@ -52,6 +52,10 @@ vi.mock('../auth/middleware.js', () => ({
     c.set('userId', 'user-1');
     await next();
   },
+  sessionOrBearerAuth: async (c: any, next: () => void) => {
+    c.set('userId', 'user-1');
+    await next();
+  },
   optionalAuth: async (_c: any, next: () => void) => next(),
   requireTeamRole: () => async (_c: any, next: () => void) => next(),
   requireAdmin: () => async (_c: any, next: () => void) => next(),

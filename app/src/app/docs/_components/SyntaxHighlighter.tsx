@@ -343,7 +343,7 @@ export function SyntaxHighlighter({
 	const tokens = useMemo(() => tokenize(code, lang), [code, lang]);
 
 	return (
-		<code className="font-mono text-[13px] leading-relaxed whitespace-pre">
+		<code className="block w-max min-w-full max-w-none font-mono text-[13px] leading-relaxed whitespace-pre">
 			{tokens.map((t, i) =>
 				t.type === "plain" ? (
 					<span key={i}>{t.value}</span>

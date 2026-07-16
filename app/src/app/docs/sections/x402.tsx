@@ -66,7 +66,7 @@ const json = await res.json();`;
 				<div className="flex items-start gap-3">
 					<Zap className="h-5 w-5 text-warning mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-warning">x402 — Per-Request Payments</h4>
+						<h3 className="font-semibold text-warning">x402 — Per-Request Payments</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Agents can call any OMA endpoint without pre-funding credits.
 							When the request has no usable balance, the API returns HTTP
@@ -80,14 +80,14 @@ const json = await res.json();`;
 			</div>
 
 			<div className="mb-6">
-				<h4 className="mb-3 text-sm font-semibold text-text">
+				<h3 className="mb-3 text-sm font-semibold text-text">
 					402 Payment Flow
-				</h4>
+				</h3>
 				<CodeBlock code={flowCode} lang="bash" />
 			</div>
 
 			<div className="rounded-xl border border-border bg-surface/50 p-5">
-				<h4 className="mb-3 font-semibold text-text">For AI Agents</h4>
+				<h3 className="mb-3 font-semibold text-text">For AI Agents</h3>
 				<p className="text-sm text-text-muted mb-4">
 					Use <code className="text-accent font-mono">viem</code> or{" "}
 					<code className="text-accent font-mono">ethers</code> directly to
@@ -100,7 +100,7 @@ const json = await res.json();`;
 
 			<div className="mt-6 grid gap-4 sm:grid-cols-2">
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Benefits</h4>
+					<h3 className="mb-2 font-semibold text-text">Benefits</h3>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
@@ -117,7 +117,7 @@ const json = await res.json();`;
 					</ul>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
-					<h4 className="mb-2 font-semibold text-text">Supported Networks</h4>
+					<h3 className="mb-2 font-semibold text-text">Supported Networks</h3>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}

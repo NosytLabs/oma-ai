@@ -21,16 +21,21 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { fetchOpsSnapshot, formatUptime } from "@/lib/ops-snapshot";
+
+/** Revalidate live health/metrics every 30s */
+export const revalidate = 30;
 
 export const metadata: Metadata = {
-	title: "Observability · OMA",
+	title: "System Observability — latency & health",
 	description:
-		"Live system observability: request volume, latency percentiles, error budget, provider health. The operator's view of OMA.",
+		"Gateway health and Prometheus counters for OMA AI, plus an illustrative operator dashboard for latency, error budget, and provider health.",
 	alternates: { canonical: "/observability" },
 	openGraph: {
-		title: "Observability · OMA",
+		title: "System Observability — OMA",
 		description:
-			"Live system observability for OMA AI — request volume, latency, error budget, provider health.",
+			"Live gateway health plus sample operator metrics for the OMA AI inference gateway.",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Observability" }],
 	},
 };
 
@@ -168,9 +173,11 @@ const STATUS_STYLES = {
 	},
 } as const;
 
-export default function ObservabilityPage() {
+export default async function ObservabilityPage() {
+	const live = await fetchOpsSnapshot();
 	const errorBudgetRemaining = 99.4;
-	const totalRequests = REQUEST_VOLUME_24H.reduce((a, b) => a + b, 0);
+	const sampleVolume = REQUEST_VOLUME_24H.reduce((a, b) => a + b, 0);
+	const liveOk = live.apiStatus === "ok";
 
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
@@ -197,40 +204,117 @@ export default function ObservabilityPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">System</span>
+							<span className="block">System{" "}</span>
 							<span className="block text-accent">observability.</span>
 						</h1>
 
 						<p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
-							The operator&apos;s view of OMA. Request volume, latency
-							percentiles, error budget, and provider health shown in the same
-							format we expose publicly for operational review.
+							Live gateway health from{" "}
+							<code className="rounded bg-surface px-1 py-0.5 text-accent">
+								/health
+							</code>{" "}
+							+{" "}
+							<code className="rounded bg-surface px-1 py-0.5 text-accent">
+								/metrics
+							</code>
+							. Charts below show the operator-dashboard shape (sample data).
 						</p>
 
-						<div className="mt-6 inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-[11px] font-mono text-success">
-							<span
-								className="h-1.5 w-1.5 rounded-full bg-success pulse-ring"
-								aria-hidden="true"
-							/>
-							operational reference view · public metrics format
+						<div className="mt-6 flex flex-wrap items-center gap-2">
+							<div
+								className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono ${
+									liveOk
+										? "border-success/30 bg-success/10 text-success"
+										: "border-error/30 bg-error/10 text-error"
+								}`}
+							>
+								<span
+									className={`h-1.5 w-1.5 rounded-full ${liveOk ? "bg-success pulse-ring" : "bg-error"}`}
+									aria-hidden="true"
+								/>
+								{liveOk ? "API live" : "API unreachable"}
+								{live.version !== "—" ? ` · v${live.version}` : ""}
+								{live.uptimeSec != null
+									? ` · up ${formatUptime(live.uptimeSec)}`
+									: ""}
+							</div>
+							<div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/50 px-3 py-1.5 text-[11px] font-mono text-text-muted">
+								charts · sample shape
+							</div>
 						</div>
 					</section>
 
-					{/* ===== TOP STATS BENTO ===== */}
+					{/* ===== LIVE COUNTERS ===== */}
+					<section
+						aria-label="Live gateway counters"
+						className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pb-8"
+					>
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+							{[
+								{
+									label: "HTTP requests",
+									value: live.httpRequestsTotal.toLocaleString(),
+								},
+								{
+									label: "HTTP errors",
+									value: live.httpErrorsTotal.toLocaleString(),
+								},
+								{
+									label: "Chat completions",
+									value: live.chatCompletionsTotal.toLocaleString(),
+								},
+								{
+									label: "Tokens",
+									value: live.chatTokensTotal.toLocaleString(),
+								},
+								{
+									label: "Rate-limit hits",
+									value: live.rateLimitHits.toLocaleString(),
+								},
+								{
+									label: "DB latency",
+									value:
+										live.dbLatencyMs != null ? `${live.dbLatencyMs}ms` : "—",
+								},
+							].map((c) => (
+								<article
+									key={c.label}
+									className="rounded-lg border border-border bg-surface/40 px-3 py-3"
+								>
+									<p className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
+										{c.label}
+									</p>
+									<p className="mt-1 font-display text-xl font-bold tabular-nums text-text-bright">
+										{c.value}
+									</p>
+								</article>
+							))}
+						</div>
+						{live.error && (
+							<p className="mt-3 text-[11px] font-mono text-warning">
+								Live fetch warning: {live.error}
+							</p>
+						)}
+					</section>
+
+					{/* ===== TOP STATS BENTO (sample shape) ===== */}
 					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+						<p className="mb-3 text-[10px] font-mono uppercase tracking-widest text-text-muted">
+							Sample dashboard shape · not production time-series
+						</p>
 						<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 							<article className="col-span-2 border border-border rounded-lg bg-surface/40 p-5">
 								<header className="flex items-center justify-between mb-2">
 									<div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted">
 										<TrendingUp className="h-3 w-3" aria-hidden="true" />
-										Request volume · 24h
+										Request volume · sample 24h
 									</div>
 									<span className="text-[10px] font-mono tabular-nums text-text-muted">
-										total {totalRequests.toLocaleString()}
+										live HTTP {live.httpRequestsTotal.toLocaleString()}
 									</span>
 								</header>
 								<p className="font-display text-3xl sm:text-4xl font-bold text-accent tabular-nums">
-									{(totalRequests / 1000).toFixed(1)}k
+									{(sampleVolume / 1000).toFixed(1)}k
 								</p>
 								<div className="mt-3">
 									<Sparkline values={REQUEST_VOLUME_24H} />
@@ -522,7 +606,7 @@ export default function ObservabilityPage() {
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link
-									href="/observability"
+									href="/docs"
 									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"
 								>
 									Read the docs

@@ -42,6 +42,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaLogo } from "@/components/ui/oma-logo";
 import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/motion";
+import { useWallet } from "@/components/wallet-provider";
 import { ApiStatus } from "./api-status";
 
 type FooterLink = {
@@ -62,6 +63,7 @@ const PRODUCT: FooterSection = {
 		{ label: "Chat", href: "/chat", icon: Terminal },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
+		{ label: "About", href: "/about" },
 	],
 };
 
@@ -74,24 +76,31 @@ const TOOLS: FooterSection = {
 	],
 };
 
-const ACCOUNT: FooterSection = {
-	title: "Account",
-	links: [
-		{ label: "Dashboard", href: "/dashboard" },
-		{ label: "Settings", href: "/settings" },
-		{ label: "Login", href: "/login" },
-	],
-};
+function accountSection(isAuthenticated: boolean): FooterSection {
+	return {
+		title: "Account",
+		links: isAuthenticated
+			? [
+					{ label: "Dashboard", href: "/dashboard" },
+					{ label: "Settings", href: "/settings" },
+					{ label: "Credits", href: "/dashboard/credits" },
+				]
+			: [
+					{ label: "Dashboard", href: "/dashboard" },
+					{ label: "Settings", href: "/settings" },
+					{ label: "Sign in to OMA", href: "/login" },
+				],
+	};
+}
 
 const LEGAL: FooterSection = {
 	title: "Legal",
 	links: [
 		{ label: "Terms", href: "/terms", icon: Gavel },
 		{ label: "Privacy", href: "/privacy", icon: ShieldCheck },
+		{ label: "Contact", href: "/contact" },
 	],
 };
-
-const FOOTER_SECTIONS: FooterSection[] = [PRODUCT, TOOLS, ACCOUNT, LEGAL];
 
 const SOCIAL_LINKS = [
 	{
@@ -109,10 +118,17 @@ const SOCIAL_LINKS = [
 ];
 
 const CURRENT_YEAR = 2026;
-const LAST_DEPLOY = "2026-07-11";
+const LAST_DEPLOY = "2026-07-15";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";
+	const { isAuthenticated } = useWallet();
+	const FOOTER_SECTIONS: FooterSection[] = [
+		PRODUCT,
+		TOOLS,
+		accountSection(isAuthenticated),
+		LEGAL,
+	];
 
 	return (
 		<footer

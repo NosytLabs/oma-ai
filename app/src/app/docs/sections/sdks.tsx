@@ -349,7 +349,7 @@ func main() {
 				<div className="flex items-start gap-3">
 					<Key className="h-5 w-5 text-accent mt-0.5" />
 					<div>
-						<h4 className="font-semibold text-accent">Base URL</h4>
+						<h3 className="font-semibold text-accent">Base URL</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							All examples use the same base URL. Just swap your API key and you&apos;re ready:
 						</p>
@@ -362,10 +362,10 @@ func main() {
 
 			{/* Vercel AI SDK */}
 			<div className="rounded-xl border border-border bg-surface/50 p-5">
-				<h4 className="mb-3 font-semibold text-text flex items-center gap-2">
+				<h3 className="mb-3 font-semibold text-text flex items-center gap-2">
 					<Package className="h-4 w-4 text-accent" />
 					Vercel AI SDK
-				</h4>
+				</h3>
 				<p className="mb-4 text-sm text-text-muted">
 					For Next.js and React apps, use the Vercel AI SDK with OMA as the provider:
 				</p>

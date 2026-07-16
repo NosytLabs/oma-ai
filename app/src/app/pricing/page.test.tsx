@@ -28,7 +28,7 @@ describe("PricingPage", () => {
 
 	it("renders payment methods section", () => {
 		render(<PricingPage />);
-		expect(screen.getByText("USDC on Base / Solana")).toBeInTheDocument();
+		expect(screen.getByText("USDC on Base")).toBeInTheDocument();
 		expect(screen.getByText("LI.FI / CCTP")).toBeInTheDocument();
 	});
 

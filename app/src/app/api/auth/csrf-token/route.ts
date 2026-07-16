@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
-import { authLimiter } from "@/lib/rate-limiter";
+import { generalLimiter } from "@/lib/rate-limiter";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,9 @@ export const runtime = "nodejs";
  * The CSRF cookie is set by the backend in the Set-Cookie response;
  * we forward it to the browser under our own origin so subsequent
  * same-origin requests (like the account login POST) include it.
+ *
+ * Uses generalLimiter (not authLimiter): every settings/login page
+ * pre-fetches CSRF, and 5/15min was starving real SPA navigation with 429s.
  */
 export const GET = withRateLimit(
 	async (_req: NextRequest) => {
@@ -39,5 +42,5 @@ export const GET = withRateLimit(
 			);
 		}
 	},
-	{ limiter: authLimiter, route: "/api/auth/csrf-token" },
+	{ limiter: generalLimiter, route: "/api/auth/csrf-token" },
 );

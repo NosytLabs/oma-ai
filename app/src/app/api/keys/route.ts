@@ -12,8 +12,9 @@ import { generalLimiter } from "@/lib/rate-limiter";
  *
  * Both methods require an authenticated session. The session HttpOnly cookie
  * is translated into a Bearer token by `proxyRequest` before forwarding to
- * the Hono backend at /v1/keys. Unauthenticated callers get 401 — the
- * dashboard renders the "Sign in to manage keys" empty state on top of that.
+ * the Hono backend at /keys (not /v1/keys — that path returns 410 Gone).
+ * Unauthenticated callers get 401 — the dashboard renders the "Sign in to
+ * manage keys" empty state on top of that.
  *
  * Defects this handler fixes (audit 2026-07-15):
  *   - /dashboard/api-keys was stuck on its loading skeleton because the
@@ -26,7 +27,7 @@ import { generalLimiter } from "@/lib/rate-limiter";
 export const runtime = "nodejs";
 
 const proxy = (request: NextRequest) =>
-  proxyRequest(request, { backendPath: "/v1/keys", timeoutMs: 10_000 });
+  proxyRequest(request, { backendPath: "/keys", timeoutMs: 10_000 });
 
 export const GET = withRateLimit(
   async (request: NextRequest) => {

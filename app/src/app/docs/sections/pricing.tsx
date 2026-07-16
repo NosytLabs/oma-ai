@@ -12,7 +12,7 @@ export function PricingSection() {
 			/>
 
 			<div className="mb-6 rounded-xl border border-border overflow-hidden">
-				<table className="w-full text-left text-sm">
+				<table className="w-full text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
 							<th className="px-4 py-3 font-medium text-text-muted">Model</th>
@@ -50,7 +50,7 @@ export function PricingSection() {
 			</div>
 
 			<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
-				<h4 className="font-semibold text-accent">Credit Deduction</h4>
+				<h3 className="font-semibold text-accent">Credit Deduction</h3>
 				<div className="mt-2 grid gap-2 sm:grid-cols-2">
 					<div className="flex items-start gap-2">
 						<CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />

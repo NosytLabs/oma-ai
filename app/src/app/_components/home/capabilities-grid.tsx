@@ -81,6 +81,7 @@ export function CapabilitiesGrid() {
 			<div className="container-page">
 				<Reveal>
 					<SectionHeader
+						id="capabilities-headline"
 						eyebrow="Capabilities"
 						headline={
 							<>

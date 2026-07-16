@@ -423,9 +423,9 @@ function BrandPitch() {
 						<OmaLogo size="md" />
 					</span>
 				</div>
-				<h1 className="text-2xl font-bold text-text-bright">
+				<p className="text-2xl font-bold text-text-bright">
 					Sign in to <span className="text-accent">oma</span>
-				</h1>
+				</p>
 				<p className="mt-2 text-sm text-text-secondary">
 					Open Model Access — USDC-metered inference for builders.
 				</p>
@@ -447,8 +447,8 @@ function BrandPitch() {
 						id="brand-heading"
 						className="display-headline max-w-xl text-[clamp(2.6rem,4.8vw,4.6rem)] text-text-bright"
 					>
-						Sign in once.
-						<br />
+						Sign in once.{" "}
+						<br className="hidden sm:block" />
 						<span className="gradient-text-accent">Ship without friction.</span>
 					</h1>
 					<p className="mt-5 max-w-xl text-[1.03rem] leading-relaxed text-text-secondary">
@@ -558,13 +558,18 @@ function LoginCard(p: LoginCardProps) {
 
 	const isWrongChain = evmChain !== undefined && evmChain.id !== baseChain.id;
 	const reduceMotion = useReducedMotion();
-	const accountLoginAvailable = !offline && !csrfError && !!csrfToken;
+	// Tab stays visible while CSRF is loading so the layout does not jump and
+	// early clicks are not force-reset to Wallet (previous race: user taps
+	// Account number before getCsrfToken resolves → kicked back to Wallet).
+	const accountTabVisible = !offline && !csrfError;
+	const accountLoginReady = accountTabVisible && !!csrfToken;
 
 	useEffect(() => {
-		if (!accountLoginAvailable && tab === "account") {
+		// Only hard-reset on offline / CSRF failure — never while preparing.
+		if (tab === "account" && (offline || csrfError)) {
 			setTab("wallet");
 		}
-	}, [accountLoginAvailable, setTab, tab]);
+	}, [offline, csrfError, setTab, tab]);
 
 	return (
 		<div
@@ -581,7 +586,7 @@ function LoginCard(p: LoginCardProps) {
 				</div>
 				<h2 className="text-xl font-bold text-text-bright">Sign in</h2>
 				<p className="mt-1 text-xs text-text-muted">
-					{accountLoginAvailable
+					{accountTabVisible
 						? "Wallet or private account number. SIWE on Base mainnet."
 						: "Wallet sign-in is live now. Private account numbers return when auth bootstrap is healthy."}
 				</p>
@@ -593,7 +598,7 @@ function LoginCard(p: LoginCardProps) {
 					Choose how to sign in
 				</h2>
 				<p className="mt-1 text-xs text-text-muted">
-					{accountLoginAvailable
+					{accountTabVisible
 						? "Wallet or private account number. SIWE on Base mainnet."
 						: "Wallet sign-in is available. Private account numbers re-enable automatically when auth bootstrap recovers."}
 				</p>
@@ -657,7 +662,7 @@ function LoginCard(p: LoginCardProps) {
 				</div>
 			)}
 
-			{csrfPreparing && !csrfError && !offline && accountLoginAvailable && (
+			{csrfPreparing && !csrfError && !offline && (
 				<p
 					role="status"
 					aria-live="polite"
@@ -672,7 +677,7 @@ function LoginCard(p: LoginCardProps) {
 				role="tablist"
 				aria-label="Authentication method"
 				className={`mb-5 grid gap-1 rounded-lg border border-border bg-surface p-1 ${
-					accountLoginAvailable ? "grid-cols-2" : "grid-cols-1"
+					accountTabVisible ? "grid-cols-2" : "grid-cols-1"
 				}`}
 			>
 				<TabButton
@@ -684,7 +689,7 @@ function LoginCard(p: LoginCardProps) {
 					onSelect={() => setTab("wallet")}
 					onKeyDown={onTabKeyDown}
 				/>
-				{accountLoginAvailable && (
+				{accountTabVisible && (
 					<TabButton
 						id="tab-account"
 						ref={accountTabRef}
@@ -700,6 +705,7 @@ function LoginCard(p: LoginCardProps) {
 						}
 						onSelect={() => setTab("account")}
 						onKeyDown={onTabKeyDown}
+						disabled={csrfPreparing && !csrfToken}
 					/>
 				)}
 			</div>
@@ -811,10 +817,10 @@ function LoginCard(p: LoginCardProps) {
 						)}
 						<div className="flex flex-col gap-2 sm:flex-row">
 							<button
-							type="button"
-							onClick={onSwitchWallet}
-							className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-						>
+								type="button"
+								onClick={onSwitchWallet}
+								className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+							>
 								<WalletIcon className="h-3.5 w-3.5" aria-hidden="true" />
 								Switch wallet
 							</button>
@@ -844,16 +850,29 @@ function LoginCard(p: LoginCardProps) {
 				aria-labelledby="tab-account"
 				hidden={tab !== "account"}
 			>
-				<AccountLoginModal
-					onClose={() => {}}
-					inline
-					initialCsrfToken={csrfToken}
-					skipCsrfFetch
-				/>
+				{!accountLoginReady ? (
+					<div
+						className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-void/40 px-4 py-10 text-center"
+						aria-busy="true"
+						aria-label="Preparing account login"
+					>
+						<Loader2 className="h-5 w-5 animate-spin text-accent" />
+						<p className="text-sm text-text-muted">
+							Preparing secure account-number sign-in…
+						</p>
+					</div>
+				) : (
+					<AccountLoginModal
+						onClose={() => {}}
+						inline
+						initialCsrfToken={csrfToken}
+						skipCsrfFetch
+					/>
+				)}
 			</div>
 
 			<p className="mt-6 text-center text-xs text-text-muted">
-				{accountLoginAvailable ? (
+				{accountTabVisible ? (
 					<>
 						Wallet auth &amp; account-number auth share the same JWT — switch
 						methods anytime from{" "}

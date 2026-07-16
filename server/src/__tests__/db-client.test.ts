@@ -70,6 +70,8 @@ describe('db/client fail-fast behavior', () => {
 
   it('process.exit(1) when neon() throws in production', async () => {
     process.env.NODE_ENV = 'production'
+    // Must be a Neon host — local Postgres uses the `pg` driver and never calls neon().
+    configState.DATABASE_URL = 'postgresql://ep-example.us-east-1.aws.neon.tech/oma'
 
     const mod = await loadFresh()
     neonMock.mockImplementationOnce(() => {
@@ -91,6 +93,7 @@ describe('db/client fail-fast behavior', () => {
 
   it('throws when neon() throws in test (no exit)', async () => {
     process.env.NODE_ENV = 'test'
+    configState.DATABASE_URL = 'postgresql://ep-example.us-east-1.aws.neon.tech/oma'
 
     const mod = await loadFresh()
     neonMock.mockImplementationOnce(() => {
@@ -102,6 +105,7 @@ describe('db/client fail-fast behavior', () => {
 
   it('returns null after a previous init failure in test (no exit)', async () => {
     process.env.NODE_ENV = 'test'
+    configState.DATABASE_URL = 'postgresql://ep-example.us-east-1.aws.neon.tech/oma'
 
     const mod = await loadFresh()
     neonMock.mockImplementationOnce(() => {

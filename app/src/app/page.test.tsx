@@ -167,6 +167,13 @@ describe("HomePage", () => {
 		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});
 
+	it("renders the agent session demo section", async () => {
+		renderWithQueryClient(<HomePage />);
+		await waitFor(() => {
+			expect(screen.getByText(/looks like a coding agent/i)).toBeInTheDocument();
+		});
+	});
+
 	it("renders the stats section with honest metrics", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {

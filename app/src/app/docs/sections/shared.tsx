@@ -418,7 +418,7 @@ export function CodeBlock({
 }) {
 	const id = useId();
 	return (
-		<div className="group relative overflow-hidden rounded-xl border border-border bg-panel">
+		<div className="group relative max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-panel">
 			{title && (
 				<div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
 					<span className="text-xs font-medium text-text-muted font-mono">
@@ -427,13 +427,12 @@ export function CodeBlock({
 				</div>
 			)}
 			<CopyButton text={code} id={id} />
-			{/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
 			<section
 				aria-label={title ?? "Code example"}
 				tabIndex={0}
-				className="overflow-x-auto p-4 text-sm leading-relaxed"
+				className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 			>
-				<pre id={id} className="m-0 leading-relaxed">
+				<pre id={id} className="m-0 max-w-full overflow-x-auto leading-relaxed">
 					<SyntaxHighlighter code={code} lang={lang ?? "text"} />
 				</pre>
 			</section>
@@ -445,14 +444,14 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 	const [active, setActive] = useState(0);
 	const id = useId();
 	return (
-		<div className="overflow-hidden rounded-xl border border-border bg-panel">
-			<div className="flex border-b border-border/50">
+		<div className="max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-panel">
+			<div className="flex max-w-full overflow-x-auto border-b border-border/50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				{tabs.map((t, i) => (
 					<button
 						type="button"
 						key={t.label}
 						onClick={() => setActive(i)}
-						className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
+						className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
 							i === active
 								? "text-accent border-accent"
 								: "text-text-muted border-transparent hover:text-text-secondary"
@@ -462,15 +461,14 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 					</button>
 				))}
 			</div>
-			<div className="relative">
+			<div className="relative min-w-0 max-w-full">
 				<CopyButton text={tabs[active].code} id={id} />
-				{/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
 				<section
 					aria-label={tabs[active].label}
 					tabIndex={0}
-					className="overflow-x-auto p-4 text-sm leading-relaxed"
+					className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 				>
-					<pre id={id} className="m-0 leading-relaxed">
+					<pre id={id} className="m-0 max-w-full overflow-x-auto leading-relaxed">
 						<SyntaxHighlighter
 							code={tabs[active].code}
 							lang={tabs[active].lang}

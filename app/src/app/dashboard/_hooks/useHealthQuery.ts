@@ -26,7 +26,9 @@ export function useHealthQuery(options: UseHealthQueryOptions = {}) {
 		enabled = true,
 	} = options;
 	return useQuery({
-		queryKey: ["health"],
+		// Bump key when the probe path/shape changes so stale /api/health
+		// web-liveness responses never leave the dashboard stuck empty.
+		queryKey: ["health", "ready-v2"],
 		queryFn: () => api.health(),
 		staleTime,
 		refetchInterval,
