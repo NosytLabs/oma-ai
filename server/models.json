@@ -2092,49 +2092,6 @@
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
       "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source."
-    },
-    "kimi-k2.6": {
-      "id": "kimi-k2.6",
-      "veniceId": "kimi-k2.6",
-      "gonkaId": "moonshotai/Kimi-K2.6",
-      "provider": "gonka",
-      "primaryProvider": "gonka",
-      "inputPricePer1M": 0.017,
-      "outputPricePer1M": 0.017,
-      "markupPercent": 25,
-      "category": "budget",
-      "maxTokens": 240000,
-      "supportsStreaming": true,
-      "displayName": "Moonshot Kimi K2.6",
-      "capabilities": [
-        "chat"
-      ],
-      "description": "Moonshot Kimi K2.6 \u2014 budget language model served by Gonka/OpenBroker.",
-      "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0,
-      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network as of 2026-07-14; kept for reactivation."
-    },
-    "glm-5.2-fp8": {
-      "id": "glm-5.2-fp8",
-      "veniceId": "glm-5.2-fp8",
-      "gonkaId": "zai-org/GLM-5.2-FP8",
-      "provider": "gonka",
-      "primaryProvider": "gonka",
-      "inputPricePer1M": 0.017,
-      "outputPricePer1M": 0.017,
-      "markupPercent": 25,
-      "category": "budget",
-      "maxTokens": 131072,
-      "supportsStreaming": true,
-      "displayName": "Zhipu GLM 5.2",
-      "capabilities": [
-        "chat"
-      ],
-      "description": "Zhipu GLM 5.2 (FP8) \u2014 budget language model served by Gonka/OpenBroker.",
-      "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0,
-      "pricingNote": "wholesale at Gonka network dynamic base rate. INACTIVE on network; preserved in catalog.",
-      "enabled": false
     }
   },
   "VIDEO_MODELS": {
