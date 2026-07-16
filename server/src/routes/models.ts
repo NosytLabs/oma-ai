@@ -1,7 +1,46 @@
+/**
+ * /v1/models — public catalog.
+ *
+ * Pricing format: per-token USD strings in `prompt` / `completion` keys,
+ * matching the OpenAI model catalog convention. Numbers include the resolved
+ * markup (per-model > tiered > OMA_MARKUP_PCT) so customers see what they
+ * actually pay, NOT the wholesale rate.
+ *
+ * WHOLESALE LEAK BUG (audit 2026-07-16): previous implementation divided
+ * models.json `inputPricePer1M` by 1M to get per-token WITHOUT applying
+ * markup, leaking wholesale and giving customers a 99.99% discount. Now
+ * delegated to billing-service.getModelPricing().
+ */
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
 import { listModels, getModel, listVideoModels } from "../inference/models.js";
+import { getModelPricing } from "../inference/billing-service.js";
 import type { OmaEnv } from "../types.js";
+
+/**
+ * Returns customer-facing per-token USD strings for a model.
+ * Falls back to wholesale-per-token (no markup) ONLY if the billing service
+ * throws — defensive, never expected in normal flow.
+ */
+async function customerPricePerToken(
+  modelId: string,
+  wholesaleInput: number,
+  wholesaleOutput: number,
+): Promise<{ prompt: string; completion: string }> {
+  try {
+    const p = await getModelPricing(modelId);
+    // p.inputPer1k is USD per 1K input tokens (with markup).
+    return {
+      prompt: (p.inputPer1k / 1000).toFixed(8),
+      completion: (p.outputPer1k / 1000).toFixed(8),
+    };
+  } catch {
+    return {
+      prompt: (wholesaleInput / 1_000_000).toFixed(8),
+      completion: (wholesaleOutput / 1_000_000).toFixed(8),
+    };
+  }
+}
 
 export const modelRoutes = new Hono<OmaEnv>();
 
@@ -13,21 +52,29 @@ modelRoutes.get("/v1/models", async (c) => {
   const created = Math.floor(Date.now() / 1000);
 
   const data = [
-    ...catalog.map((m) => ({
-      id: m.id,
-      object: "model" as const,
-      created,
-      owned_by: "oma",
-      permission: [],
-      root: m.id,
-      parent: null,
-      pricing: {
-        prompt: (m.inputPricePer1M / 1_000_000).toFixed(8),
-        completion: (m.outputPricePer1M / 1_000_000).toFixed(8),
-      },
-      category: m.category,
-      context_length: m.maxTokens,
-    })),
+    ...(
+      await Promise.all(
+        catalog.map(async (m) => {
+          const pricing = await customerPricePerToken(
+            m.id,
+            m.inputPricePer1M,
+            m.outputPricePer1M,
+          );
+          return {
+            id: m.id,
+            object: "model" as const,
+            created,
+            owned_by: "oma",
+            permission: [],
+            root: m.id,
+            parent: null,
+            pricing,
+            category: m.category,
+            context_length: m.maxTokens,
+          };
+        }),
+      )
+    ),
     ...videoCatalog.map((m) => ({
       id: m.id,
       object: "model" as const,
@@ -63,10 +110,11 @@ modelRoutes.get("/v1/models/:model", async (c) => {
     permission: [],
     root: modelInfo.id,
     parent: null,
-    pricing: {
-      prompt: (modelInfo.inputPricePer1M / 1_000_000).toFixed(8),
-      completion: (modelInfo.outputPricePer1M / 1_000_000).toFixed(8),
-    },
+    pricing: await customerPricePerToken(
+      modelInfo.id,
+      modelInfo.inputPricePer1M,
+      modelInfo.outputPricePer1M,
+    ),
     category: modelInfo.category,
     context_length: modelInfo.maxTokens,
     supports_streaming: modelInfo.supportsStreaming,

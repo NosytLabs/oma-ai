@@ -346,26 +346,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
 		},
-		"kimi-k2.6": {
-			id: "kimi-k2.6",
-			displayName: "Moonshot Kimi K2.6",
-			provider: "Gonka",
-			category: "budget",
-			maxTokens: 240000, // per v0.2.12 release notes
-			inputPricePer1M: 0.017, // Gonka base rate; INACTIVE on network
-			outputPricePer1M: 0.017,
-			capabilities: ["chat"],
-		},
-		"glm-5.2-fp8": {
-			id: "glm-5.2-fp8",
-			displayName: "Zhipu GLM 5.2",
-			provider: "Gonka",
-			category: "budget",
-			maxTokens: 131072,
-			inputPricePer1M: 0.017, // Gonka base rate; INACTIVE on network
-			outputPricePer1M: 0.017,
-			capabilities: ["chat"],
-		},
+		
+		
 	},
 };
 
@@ -401,4 +383,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // GET /v1/models (91 active chat + 5 video). The SSR fallback catalog
 // (`MODELS`) is a smaller hand-picked set — never use MODELS.length for
 // marketing copy.
-export const MODEL_COUNT = 96;
+export const MODEL_COUNT = 95; // updated 2026-07-16: removed kimi-k2.6 + glm-5.2-fp8 from disk; live = 90 chat + 5 video
