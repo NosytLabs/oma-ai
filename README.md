@@ -7,7 +7,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth, multi-provider routing, cross-chain deposits, and native crypto payments (USDC on Base, x402).
 
-> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). `/blog` and `/faq` permanently redirect (`/blog` → `/changelog`, `/faq` → `/pricing#faq`). `/swap` retired — fund via USDC deposit on Base (`/deposit`). `/about` is now a live E-E-A-T page. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App + server: typecheck + lint clean, **866** tests green (150 app + 716 server).
+> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). `/blog` and `/faq` permanently redirect (`/blog` → `/changelog`, `/faq` → `/pricing#faq`). `/swap` retired — fund via USDC deposit on Base (`/deposit`). `/about` is now a live E-E-A-T page. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App + server: typecheck + lint clean, **867** tests green (151 app + 716 server).
 
 ---
 
@@ -159,10 +159,10 @@ without an async fetch.
 
 | Tier | Examples | Price range (input / 1M tokens) |
 |------|----------|-----------------------------------|
-| **Frontier** | `claude-opus-4-1` | ~$3.00 – $6.00 |
-| **Premium** | `gemini-2.5-pro`, `qwen3-coder-480b-a35b-instruct` | ~$1.00 – $3.60 |
-| **Mid-Range** | `llama-3.3-70b`, `kimi-k2.6`, `mistral-31-24b` | ~$0.30 – $1.73 |
-| **Budget** | `deepseek-v3.2-exp`, `llama-3.2-3b`, `glm-5.2-fp8` | ~$0.01 – $0.70 |
+| **Frontier** | `claude-opus-4-8`, `gemini-3-1-pro-preview` | ~$3.00 – $6.00 |
+| **Premium** | `qwen3-coder-480b-a35b-instruct-turbo`, `claude-opus-4-7` | ~$1.00 – $3.60 |
+| **Mid-Range** | `llama-3.3-70b`, `kimi-k2.6`, `mistral-small-3-2-24b-instruct` | ~$0.30 – $1.73 |
+| **Budget** | `zai-org-glm-4.7-flash`, `qwen3-5-9b`, `kimi-k2.6` | ~$0.01 – $0.70 |
 
 See `GET /v1/models` for the live, complete catalog and current pricing.
 
@@ -176,7 +176,7 @@ See `GET /v1/models` for the live, complete catalog and current pricing.
 | Backend | Hono.js, Node.js 22 | API server |
 | Database | PostgreSQL (Drizzle ORM) | Users, credits, deposits |
 | Cache | Redis | Rate limiting, sessions |
-| Blockchain | Base (EVM), Solana | Deposits, staking |
+| Blockchain | Base (EVM) | USDC deposits, x402 settlement |
 
 ---
 
@@ -185,7 +185,7 @@ See `GET /v1/models` for the live, complete catalog and current pricing.
 | Service | Free Tier | Production |
 |---------|-----------|------------|
 | Neon PostgreSQL | 0.5GB | ~$10/mo |
-| Upstash Redis | 10K ops/day | ~$10/mo |
+| Redis | Local / self-host | ~$0 (bundled) |
 | Coolify hosting | Self-hosted | ~$5-20/mo |
 | Venice API | Pay-per-token | Usage-based |
 | Domain | $12/yr | ~$1/mo |

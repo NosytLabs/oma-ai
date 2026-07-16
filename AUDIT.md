@@ -4,6 +4,11 @@
 **Method:** Direct reads + curl + grep + Playwright. **No subagent fanout** (kept inline due to 125-file WIP).
 **Head:** `127ae9a` · **branch:** main · **state:** 125 dirty (user WIP), 14 untracked, 0 unpushed.
 
+> **Post-audit updates (2026-07-15):** Two fixes landed after this audit snapshot —
+> `b63813a` (gonka broker URL → `proxy.gonka.gg`, hid dead `glm-5.2-fp8` model from live
+> catalog → **96 active models**, was 97) and `51bcca3` (rate-limiter Lua `math.floor` fix —
+> inference no longer 503s). The "97 models" count below reflects the audit-time state.
+
 ---
 
 ## 1. Honest concept summary
