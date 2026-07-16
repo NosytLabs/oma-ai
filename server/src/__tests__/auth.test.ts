@@ -121,7 +121,6 @@ vi.mock('../config.js', () => ({
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',
-    HOUDINI_WEBHOOK_SECRET: 'test-webhook-secret',
   },
 }))
 

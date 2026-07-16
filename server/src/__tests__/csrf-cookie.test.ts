@@ -155,7 +155,6 @@ vi.mock("../config.js", () => ({
     NODE_ENV: "test",
     DATABASE_URL: "postgresql://localhost:5432/oma_test",
     REDIS_URL: "redis://localhost:6379",
-    HOUDINI_WEBHOOK_SECRET: "test-webhook-secret",
     CSRF_SECRET: "test-csrf-secret-that-is-32-chars-long-yes",
     SESSION_COOKIE_TTL_MS: 60 * 60 * 1000,
   },

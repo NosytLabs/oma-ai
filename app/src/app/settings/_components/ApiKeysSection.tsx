@@ -18,9 +18,6 @@ interface ApiKeysSectionProps {
 	apiKeys: ApiKey[];
 	onCopy: (text: string, id: string) => void;
 	copied: string | null;
-	/** @deprecated logout lives on the settings page header */
-	onLogout?: () => Promise<void>;
-	loggingOut?: boolean;
 	onRevokeKey?: (keyId: string) => Promise<void>;
 }
 

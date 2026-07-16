@@ -542,8 +542,6 @@ export default function SettingsPage() {
 										apiKeys={apiKeys}
 										onCopy={handleCopy}
 										copied={copied}
-										onLogout={handleLogout}
-										loggingOut={loggingOut}
 										onRevokeKey={handleRevokeKey}
 									/>
 								)}

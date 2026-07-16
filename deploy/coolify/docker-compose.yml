@@ -8,9 +8,7 @@ services:
       - NEXT_PUBLIC_API_URL=https://api.oma-ai.com
       - NEXT_PUBLIC_APP_URL=https://oma-ai.com
       - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=${WALLETCONNECT_PROJECT_ID}
-      - NEXT_PUBLIC_BASE_TREASURY=${BASE_TREASURY}
-      - NEXT_PUBLIC_SOLANA_TREASURY=${SOLANA_TREASURY}
-      - NEXT_PUBLIC_TREASURY_BASE_ADDRESS=${NEXT_PUBLIC_TREASURY_BASE_ADDRESS:-${BASE_TREASURY}}
+      - NEXT_PUBLIC_TREASURY_BASE_ADDRESS=${NEXT_PUBLIC_TREASURY_BASE_ADDRESS:-${TREASURY_BASE_ADDRESS}}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
@@ -35,32 +33,17 @@ services:
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET:-}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - FACILITATOR_MODE=${FACILITATOR_MODE:-mock}
-      - BASE_TREASURY=${BASE_TREASURY}
-      - SOLANA_TREASURY=${SOLANA_TREASURY}
+      - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
       - CHAIN_RPC_URL=${CHAIN_RPC_URL:-https://mainnet.base.org}
-      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
-      # AI Provider keys (set the ones you have)
+      # AI Provider keys (active providers only — see server/src/config.ts)
       - VENICE_API_KEY=${VENICE_API_KEY:-}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - TOGETHER_API_KEY=${TOGETHER_API_KEY:-}
-      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY:-}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - ZERO_G_API_KEY=${ZERO_G_API_KEY:-}
-      - MORPHEUS_API_KEY=${MORPHEUS_API_KEY:-}
-      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
-      - LITELLM_PROXY_URL=${LITELLM_PROXY_URL:-}
-      - ANTSEED_PROXY_URL=${ANTSEED_PROXY_URL:-}
+      - GONKA_API_KEY=${GONKA_API_KEY:-}
+      - GONKA_API_URL=${GONKA_API_URL:-}
       - TINYFISH_API_KEY=${TINYFISH_API_KEY:-}
       # Payment & wallet
-      # SURPLUS_WALLET_PRIVATE_KEY — facilitator key for Surplus provider settlement.
-      # Only needed when Surplus is enabled. The server uses FACILITATOR_PRIVATE_KEY
-      # as its primary signing key (see server/src/config.ts). Remove TREASURY_PRIVATE_KEY:
-      # this var was never read by the server and is not defined in the config schema.
+      - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY:-}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY:-}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET:-}
-      - OMA_API_KEY=${OMA_API_KEY:-}
-      - OMA_AGENT_KEY=${OMA_AGENT_KEY:-}
       # Admin
       - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES:-}
     healthcheck:

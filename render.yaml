@@ -91,13 +91,11 @@ services:
       # =========================================================================
       # ADDITIONAL API KEYS
       # =========================================================================
-      - key: ZERO_G_API_KEY
-        sync: false  # 0G.ai decentralized inference (optional)
-      - key: QUICKNODE_API_KEY
-        sync: false  # QuickNode RPC access
+      - key: GONKA_API_KEY
+        sync: false  # Gonka decentralized inference broker (optional)
 
       # =========================================================================
-      # CHAIN RPC URLs
+      # CHAIN RPC URLs (Base mainnet)
       # =========================================================================
       - key: CHAIN_RPC_URL
         sync: false  # Base mainnet RPC (e.g. https://base-rpc.publicnode.com)
@@ -107,18 +105,12 @@ services:
         sync: false  # QuickNode Base mainnet endpoint
       - key: QUICKNODE_RPC_URL_FALLBACK
         sync: false
-      - key: SOLANA_RPC_URL
-        value: https://api.mainnet-beta.solana.com
-      - key: SOLANA_RPC_URL_FALLBACK
-        sync: false
 
       # =========================================================================
       # WALLET & TREASURY ADDRESSES
       # =========================================================================
       - key: FACILITATOR_PRIVATE_KEY
         sync: false  # Hex-encoded private key for x402 settlement (0x...)
-      - key: TREASURY_SOLANA_ADDRESS
-        sync: false  # Solana treasury address
       - key: TREASURY_BASE_ADDRESS
         sync: false  # Base treasury address (0x...)
       - key: PRIMARY_DOMAIN
@@ -157,13 +149,7 @@ services:
       # =========================================================================
       # CREDIT SYSTEM
       # =========================================================================
-      - key: CREDIT_VALUE_PER_DOLLAR
-        value: "1"
-      - key: CREDIT_PRICE_PER_TOKEN
-        value: "0.000001"
       - key: CREDIT_EXPIRY_DAYS
-        value: "90"
-      - key: CREDIT_BATCH_EXPIRY_DAYS
         value: "90"
       - key: DEFAULT_KEY_EXPIRY_DAYS
         value: "90"
@@ -227,8 +213,6 @@ services:
         value: http://localhost:4318
       - key: OTEL_SERVICE_NAME
         value: oma-server
-      - key: OTEL_EXPORTER_PROMETHEUS_PORT
-        value: "9464"
 
       # =========================================================================
       # PROVIDER LOAD BALANCING
@@ -245,12 +229,8 @@ services:
         sync: false  # Path to models.json (for Docker/K8s)
 
       # =========================================================================
-      # CROSS-CHAIN SETTINGS
+      # PROXY / CCTP / CHEAPTOKENS
       # =========================================================================
-      - key: CROSSCHAIN_SLIPPAGE_TOLERANCE
-        value: "0.02"
-      - key: CROSSCHAIN_BLOCK_CONFIRMATIONS
-        value: "6"
       - key: TRUSTED_PROXY_IPS
         sync: false  # Comma-separated trusted proxy IPs
       - key: CHAIN_RPC_URL_PER_CHAIN
@@ -277,15 +257,13 @@ services:
         value: "0"
 
       # =========================================================================
-      # SESSION & INVOICE
+      # SESSION
       # =========================================================================
       - key: SESSION_COOKIE_TTL_MS
         value: "3600000"  # 1 hour
-      - key: INVOICE_DEFAULT_DUE_DAYS
-        value: "30"
 
       # =========================================================================
-      # ONRAMP CREDITS CONVERSION
+      # ONRAMP
       # =========================================================================
       - key: CREDITS_PER_USD
         value: "100"

@@ -1,6 +1,6 @@
 /**
  * Admin API namespace.
- * Server: /Users/tyson/Desktop/Code/OMA-AI/app/server/src/routes/admin/
+ * Server routes: `server/src/routes/admin/`.
  */
 import { getCached, request, setCache } from "./client.js";
 import type { User as ApiUser } from "./types.js";

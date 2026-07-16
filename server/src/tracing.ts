@@ -115,7 +115,7 @@ const traceExporter = new OTLPTraceExporter({
 // Initialize SDK before other imports
 const sdk = new NodeSDK({
    resource: resourceFromAttributes({
-     [ATTR_SERVICE_NAME]: "oma-server",
+     [ATTR_SERVICE_NAME]: config.OTEL_SERVICE_NAME ?? "oma-server",
      [ATTR_SERVICE_VERSION]: "0.1.0",
      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.NODE_ENV,
    }),

@@ -97,7 +97,6 @@ const { mockConfig } = vi.hoisted(() => ({
     FACILITATOR_MODE: 'mock',
     CHAIN_RPC_URL: 'https://base-rpc.publicnode.com',
     RECEIPT_HMAC_SECRET: 'test-receipt-hmac-secret-at-least-32-chars!',
-    HOUDINI_ADDRESS_TO: '0xPayee',
   },
 }))
 

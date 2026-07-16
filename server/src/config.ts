@@ -16,9 +16,6 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
-  // 0G.ai decentralized inference provider (zerog.ts). Optional — provider
-  // returns 503 if requests target it and this key is unset.
-  ZERO_G_API_KEY: z.string().min(1).optional(),
   // Gonka decentralized provable-inference broker (optional).
   // proxy.gonka.gg is the open OpenAI-compatible gateway; it serves the
   // live Gonka network models (currently MiniMaxAI/MiniMax-M2.7 + moonshotai/Kimi-K2.6)
@@ -42,16 +39,12 @@ const envSchema = z.object({
   // production endpoint). Set to https://base-rpc.publicnode.com or another
   // provider for dev/test environments.
   // SECURITY (A12): No empty-string default. Callers must handle undefined.
-  // The production startup guard below requires either CHAIN_RPC_URL or
-  // QUICKNODE_RPC_URL to be set.
+  // Production requires CHAIN_RPC_URL (or the QUICKNODE_RPC_URL alias below).
   CHAIN_RPC_URL: z.string().min(1).optional(),
   CHAIN_RPC_URL_FALLBACK: z.string().optional(),
-  // Explicit QuickNode overrides. Set in render.yaml via QUICKNODE_RPC_URL when
-  // you want the URL to live in a single named env var (vs. CHAIN_RPC_URL).
-  // QUICKNODE_RPC_URL takes precedence over CHAIN_RPC_URL when both are set.
+  // QuickNode aliases — folded into CHAIN_RPC_URL* after parse (alias wins).
   QUICKNODE_RPC_URL: z.string().url().optional(),
   QUICKNODE_RPC_URL_FALLBACK: z.string().url().optional(),
-  QUICKNODE_API_KEY: z.string().min(1).optional(),
   FACILITATOR_MODE: z.enum(["mock", "live"]).default("mock"),
   FACILITATOR_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
   // SECURITY (A14): No placeholder default. Must be explicitly set in
@@ -66,7 +59,7 @@ const envSchema = z.object({
   JWT_SECRET_PREVIOUS: z.string().min(32).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3001"),
-  // Canonical production domain. Used as the SIWE/SIWS `domain` bind target
+  // Canonical production domain. Used as the SIWE `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
   // and dev default to a permissive value.
   PRIMARY_DOMAIN: z.string().min(1).default("oma.ai"),
@@ -85,11 +78,8 @@ const envSchema = z.object({
   OMA_PRICE_OVERRIDE: z.coerce.number().positive().optional(),
   SPEND_LIMIT_DAILY_CENTS: z.coerce.number().positive().default(10000),
 
-  // Credit system: $1 = $1 (1 dollar = 1 dollar, no conversion math)
-  CREDIT_VALUE_PER_DOLLAR: z.coerce.number().default(1),
-  CREDIT_PRICE_PER_TOKEN: z.coerce.number().default(0.000001),
+  // Credit ledger expiry (days). Used by credits/preflight for batch windows.
   CREDIT_EXPIRY_DAYS: z.coerce.number().positive().default(CREDIT_EXPIRY_DAYS),
-  CREDIT_BATCH_EXPIRY_DAYS: z.coerce.number().positive().default(CREDIT_EXPIRY_DAYS),
 
   // API key expiration (0 = never expires)
   DEFAULT_KEY_EXPIRY_DAYS: z.coerce.number().min(0).default(90),
@@ -149,7 +139,6 @@ const envSchema = z.object({
   // OpenTelemetry configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
-  OTEL_EXPORTER_PROMETHEUS_PORT: z.coerce.number().positive().default(9464).optional(),
 
   TINYFISH_API_KEY: z.string().optional(),
 
@@ -171,10 +160,6 @@ const envSchema = z.object({
 
   // Path to models.json config file (supports absolute paths, useful for Docker/K8s deployments)
   MODELS_CONFIG_PATH: z.string().optional(),
-
-  // Cross-chain security settings
-  CROSSCHAIN_SLIPPAGE_TOLERANCE: z.coerce.number().min(0).max(0.5).default(0.02),
-  CROSSCHAIN_BLOCK_CONFIRMATIONS: z.coerce.number().int().min(1).max(100).default(6),
 
   // Trusted proxy IPs for X-Forwarded-For validation (comma-separated)
   // Only trust X-Forwarded-For headers from these known proxy IPs
@@ -213,9 +198,6 @@ const envSchema = z.object({
   // Session / auth: cookie lifetime in milliseconds. Default 1h.
   SESSION_COOKIE_TTL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
 
-  // Invoice: default due-date offset in days from creation. Default 30.
-  INVOICE_DEFAULT_DUE_DAYS: z.coerce.number().int().positive().default(30),
-
   // Onramp: USD → credits conversion rate and per-quote USD bounds.
   // CREDITS_PER_USD is multiplied against net USD to produce credits (cents).
   // ONRAMP_MIN_USD / ONRAMP_MAX_USD bound a single quote's amountUsd.
@@ -230,7 +212,7 @@ const envSchema = z.object({
   // x402 facilitator provider selection.
   //
   // "coinbase-cdp" (default) — verify/settle locally using viem + CHAIN_RPC_URL,
-  //                            settlement to BASE_TREASURY via FACILITATOR_PRIVATE_KEY.
+  //                            settlement to TREASURY_BASE_ADDRESS via FACILITATOR_PRIVATE_KEY.
   // "quicknode"            — delegate verify/settle to QuickNode's hosted x402
   //                            facilitator (marketplace addon). Requires
   //                            QUICKNODE_X402_URL + QUICKNODE_X402_API_KEY.
@@ -247,7 +229,7 @@ const envSchema = z.object({
   // When NEON_AUTH_URL is set, sessionAuth() in auth/middleware.ts falls
   // back to verifying tokens against the JWKS at NEON_AUTH_JWKS_URL after
   // the local HS256 check fails. The two paths are independent — setting
-  // these does NOT change how SIWE / Solana / account-number / API-key
+  // these does NOT change how SIWE / account-number / API-key
   // tokens are issued or verified. Provision via the Neon MCP:
   //   mcp__neon__provision_neon_auth → mcp__neon__get_neon_auth_config
   // ===========================================================================
@@ -258,7 +240,15 @@ const envSchema = z.object({
 
 export type Config = z.infer<typeof envSchema>;
 
-export const config: Config = envSchema.parse(process.env);
+// Parse, then fold QuickNode RPC aliases into CHAIN_RPC_URL so every consumer
+// only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK.
+const _parsed = envSchema.parse(process.env);
+export const config: Config = {
+  ..._parsed,
+  CHAIN_RPC_URL: _parsed.QUICKNODE_RPC_URL ?? _parsed.CHAIN_RPC_URL,
+  CHAIN_RPC_URL_FALLBACK:
+    _parsed.QUICKNODE_RPC_URL_FALLBACK ?? _parsed.CHAIN_RPC_URL_FALLBACK,
+};
 
 // Cached set of admin wallet addresses for O(1) lookup in requireAdmin()
 const ADMIN_WALLET_ADDRESSES_SET: Set<string> = new Set(
@@ -337,9 +327,11 @@ if (config.JWT_SECRET_PREVIOUS) {
   }
 }
 
-// SECURITY (A12): Require at least one RPC endpoint in production.
-if (isProductionEnv && !config.CHAIN_RPC_URL && !config.QUICKNODE_RPC_URL) {
-  throw new Error("FATAL: Either CHAIN_RPC_URL or QUICKNODE_RPC_URL must be set in production.");
+// SECURITY (A12): Require a Base RPC endpoint in production.
+if (isProductionEnv && !config.CHAIN_RPC_URL) {
+  throw new Error(
+    "FATAL: CHAIN_RPC_URL (or QUICKNODE_RPC_URL alias) must be set in production.",
+  );
 }
 if (isProductionEnv && INSECURE_DEFAULTS.includes(config.ENCRYPTION_KEY)) {
   console.error("[FATAL] ENCRYPTION_KEY must not be a known insecure default in production. Set a strong secret (>= 32 chars).");

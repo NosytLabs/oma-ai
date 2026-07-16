@@ -16,7 +16,7 @@ const mockFacilitator = {
 vi.mock("../lib/dlq.js", () => mockDlq);
 vi.mock("../x402/facilitator.js", () => mockFacilitator);
 vi.mock("../config.js", () => ({
-  config: { HOUDINI_ADDRESS_TO: "0xpayee" },
+  config: { TREASURY_BASE_ADDRESS: "0xpayee" },
 }));
 
 const { processSettlementDLQ, retrySettlementById, discardSettlementFromDlq, getSettlementDlqStatus } = await import("../lib/settlement-retry.js");

@@ -1,11 +1,15 @@
 // axe-core a11y audit for OMA-AI public pages
 // Usage: node scripts/axe-audit.mjs
-// Uses playwright (CJS) + axe-core (transitive dep already installed in app/node_modules)
+// Uses playwright + axe-core from the app workspace.
 
-import pkg from '/Users/tyson/Desktop/Code/OMA-AI/app/node_modules/playwright/index.js';
-const { chromium } = pkg;
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(join(__dirname, "../app/package.json"));
+const { chromium } = require("playwright");
 
 const PAGES = [
   { url: '/', name: 'home' },

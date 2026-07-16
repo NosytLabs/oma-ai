@@ -22,7 +22,7 @@
  * Tokens issued by Neon Auth use the standard OIDC subject claim
  * (`payload.sub`) to identify the user. We expose that as `neonAuthUserId`
  * in the session context so downstream middleware / routes can distinguish
- * a Neon-Auth-authenticated request from a SIWE/Solana one.
+ * a Neon-Auth-authenticated request from a SIWE/account-number one.
  */
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { config } from "../config.js";

@@ -19,12 +19,6 @@ if (!process.env.SURPLUS_WALLET_PRIVATE_KEY) {
   process.env.SURPLUS_WALLET_PRIVATE_KEY = '0x' + 'a1'.repeat(31) + 'b1'; // valid hex format for test
 }
 
-// Required for config.ts schema parse — has min(1) constraint and tests
-// mutate it to "" to exercise the "not configured" code path.
-if (!process.env.OPENROUTER_API_KEY) {
-  process.env.OPENROUTER_API_KEY = 'sk-or-test-key-for-local-dev-only'
-}
-
 // Required by config.ts validation. Tests that need different values
 // override these per-file via vi.stubEnv().
 if (!process.env.DATABASE_URL) {

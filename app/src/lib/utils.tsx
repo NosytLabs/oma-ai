@@ -52,7 +52,7 @@ export function formatUsd(amount: number, decimals = 2): string {
 }
 
 /**
- * Shorten an EVM/Solana address for table display.
+ * Shorten an EVM address for table display.
  * Examples:
  *   "0x1234567890abcdef1234567890abcdef12345678" → "0x1234…5678"
  *   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpniT33q5op" → "9xQe…5op"

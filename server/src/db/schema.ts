@@ -50,7 +50,7 @@ export const users = pgTable("users", {
   // Neon Auth (managed Better Auth) linkage. Set when the user signs in
   // via the Neon Auth host so we can join on the OMA users row from
   // /auth/middleware.ts's sessionAuth() Neon Auth path. Nullable: SIWE /
-  // Solana / account-number users never have this set.
+  // account-number users never have this set.
   neonAuthUserId: text("neon_auth_user_id"),
   neonAuthLinkedAt: timestamp("neon_auth_linked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

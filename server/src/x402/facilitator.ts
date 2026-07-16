@@ -1487,7 +1487,7 @@ x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
 });
 
-// crosschain.ts (Houdini flow) removed — /v1/x402/proxy/chat/completions no longer exists.
+// Houdini/crosschain deposit flow removed — /v1/x402/proxy/chat/completions no longer exists.
 
 // =============================================================================
 // x402 SPEC NOTE (post-2026-07-02 audit fix):

@@ -165,7 +165,7 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
   }
   const token = authHeader.slice(7);
 
-  // Path 1: local HS256 session token (SIWE / Solana / account-number / sso).
+  // Path 1: local HS256 session token (SIWE / account-number / sso).
   let session: { userId: string; authMethod: string } | null;
   try {
     session = (await verifySessionToken(token)) as { userId: string; authMethod: string } | null;

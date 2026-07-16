@@ -112,7 +112,6 @@ const ATTACKER = '0x' + 'bb'.repeat(20)
 const { mockConfig } = vi.hoisted(() => ({
   mockConfig: {
     TREASURY_BASE_ADDRESS: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
-    HOUDINI_ADDRESS_TO: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
     // ponytail: must be 'live' (not 'mock') so the verify path actually runs
     // and dispatches to verifyEip3009Payment / verifyUsdcTransferReceipt.
     // The viem RPC calls are mocked below, so no real network access.

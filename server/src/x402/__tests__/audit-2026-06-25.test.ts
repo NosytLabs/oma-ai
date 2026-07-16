@@ -10,14 +10,11 @@
  * Audit findings covered:
  *   AUDIT-1 — parseUsdcAtomic accepts negative/non-numeric input
  *             (CRITICAL: lets a malicious payload bypass insufficient-payment)
- *   AUDIT-2 — Houdini cross-chain flow fabricates payment sigs without
- *             a nonce; real-mode verify fails with "Replay protection: invalid_nonce"
  *   AUDIT-3 — /x402/pay-req-test had no rate limit (DoS vector)
  *
- * AUDIT-4 (V2 route mounting) is no longer relevant: the V2 surface
- * (server/src/x402/v2.ts) was removed in 2026-07-02 because V2 settlement
- * requires EIP-3009 + facilitator private key, neither of which are
- * available. See .audit/server-fixes-2026-07-02.md for the removal rationale.
+ * AUDIT-2 (Houdini cross-chain nonce) and AUDIT-4 (V2 route mounting) are
+ * no longer relevant: Houdini/crosschain and x402 v2 were removed. See
+ * facilitator.ts comment near x402Routes for history.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -95,7 +92,6 @@ const { mockConfig, TREASURY } = vi.hoisted(() => ({
   TREASURY: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
   mockConfig: {
     TREASURY_BASE_ADDRESS: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
-    HOUDINI_ADDRESS_TO: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
     X402_FACILITATOR_PROVIDER: 'coinbase-cdp',
     FACILITATOR_MODE: 'mock',
     PORT: 3001,
@@ -265,43 +261,6 @@ describe('AUDIT-1 (integration): /x402/verify rejects negative-amount payload', 
     // also acceptable (valid=true with the negative amount carried through).
     // The strict fix is: parseUsdcAtomic now throws → real-mode returns 422.
     expect([200, 422]).toContain(res.status)
-  })
-})
-
-// ============================================================================
-// AUDIT-2: Houdini cross-chain payment sig includes a nonce
-// ============================================================================
-describe('AUDIT-2: Houdini flow fabricates payment sigs with a valid nonce', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    resetChain()
-    mockRedis.set.mockResolvedValue('OK')
-    mockRedis.get.mockResolvedValue(null)
-    mockRedis.del.mockResolvedValue(1)
-  })
-
-  it('constructs a paymentSig with a 16-128 char nonce (consumeNonce contract)', () => {
-    // Re-implement the nonce-construction logic from crosschain.ts and
-    // assert the result satisfies the consumeNonce gate. This pins the
-    // contract without spinning up the full cross-chain flow.
-    const orderId = 'order_audit_2026_06_25'
-    const txHash = '0x' + 'cc'.repeat(32)
-    const nonce = `houdini:${orderId}:${txHash}`.padEnd(32, '0').slice(0, 64)
-
-    expect(nonce.length).toBeGreaterThanOrEqual(16)
-    expect(nonce.length).toBeLessThanOrEqual(128)
-    // Starts with the houdini: namespace — the consumeNonce gate is
-    // length + string type only, but the namespace prefix makes it
-    // impossible for an attacker to guess/replay Houdini nonces.
-    expect(nonce.startsWith('houdini:')).toBe(true)
-  })
-
-  it('handles missing transactionHash by falling back to orderId (proxy route)', () => {
-    const orderId = 'order_audit_no_tx'
-    const txHash = undefined
-    const nonce = `houdini:${orderId}:${txHash ?? orderId}`.padEnd(32, '0').slice(0, 64)
-    expect(nonce.length).toBeGreaterThanOrEqual(16)
-    expect(nonce.length).toBeLessThanOrEqual(128)
   })
 })
 
