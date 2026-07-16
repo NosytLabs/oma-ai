@@ -7,7 +7,7 @@ local refill_rate = tonumber(ARGV[2]) -- tokens per second
 local requested = tonumber(ARGV[3])
 
 local time_result = redis.call('TIME')
-local now = tonumber(time_result[1]) * 1000 + math.floor(tonumber(time_result[2]) / 1000)
+local now = math.floor(tonumber(time_result[1]) * 1000 + tonumber(time_result[2]) / 1000)
 
 local bucket = redis.call('HMGET', key, 'tokens', 'last_refill')
 local tokens = tonumber(bucket[1])
@@ -20,7 +20,7 @@ end
 
 local elapsed = (now - last_refill) / 1000
 local new_tokens = elapsed * refill_rate
-tokens = math.min(bucket_size, tokens + new_tokens)
+tokens = math.floor(math.min(bucket_size, tokens + new_tokens))
 
 last_refill = now
 
@@ -47,15 +47,15 @@ local window = tonumber(ARGV[2]) -- window in milliseconds
 local requested = tonumber(ARGV[3])
 
 local time_result = redis.call('TIME')
-local now = tonumber(time_result[1]) * 1000 + math.floor(tonumber(time_result[2]) / 1000)
+local now = math.floor(tonumber(time_result[1]) * 1000 + tonumber(time_result[2]) / 1000)
 
-redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+redis.call('ZREMRANGEBYSCORE', key, 0, math.floor(now - window))
 
 local count = redis.call('ZCARD', key)
 
 if count + requested <= limit then
   for i = 1, requested do
-    redis.call('ZADD', key, now, now + i)
+    redis.call('ZADD', key, now, math.floor(now + i))
   end
   redis.call('EXPIRE', key, math.ceil(window / 1000) + 1)
   return {1, count + requested, 0}
