@@ -17,12 +17,15 @@ const envSchema = z.object({
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
   // Gonka decentralized provable-inference broker (optional).
-  // proxy.gonka.gg is the open OpenAI-compatible gateway; it serves the
-  // live Gonka network models (currently MiniMaxAI/MiniMax-M2.7 + moonshotai/Kimi-K2.6)
-  // at network rates. Pass an API key via GONKA_API_KEY (register at proxy.gonka.gg).
+  // PRIMARY PATH (2026-07-16): api.openbroker.gonka.gg — your dedicated broker
+  // account, devshard-backed, GNK-settled, ~$0.0000008 per 500-token request.
+  // Falls back to proxy.gonka.gg (open community proxy) if API key missing.
   // Override via GONKA_API_URL env var to point at a different community broker.
+  // OPENBROKER_* aliases are optional — if both set, GONKA_* wins.
   GONKA_API_KEY: z.string().min(1).optional(),
-  GONKA_API_URL: z.string().url().optional().default("https://proxy.gonka.gg/v1"),
+  GONKA_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
+  OPENBROKER_API_KEY: z.string().min(1).optional(),
+  OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.
