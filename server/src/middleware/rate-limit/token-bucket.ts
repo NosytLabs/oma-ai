@@ -29,14 +29,17 @@ export async function checkTokenBucket(
   requested: number = 1
 ): Promise<RateLimitResult> {
   try {
-    const result = await (redis.eval as (script: string, count: number, key: string, ...args: number[]) => Promise<unknown>)(
-      TOKEN_BUCKET_SCRIPT,
-      1,
-      key,
-      config.bucketSize,
-      config.refillRate,
-      requested
-    ) as RedisEvalResult;
+    // node-redis v4+ requires eval({ keys, arguments }) with string ARGV.
+    // The legacy (script, numKeys, key, ...args) form fails at runtime with
+    // "Lua redis lib command arguments must be strings or integers".
+    const result = (await redis.eval(TOKEN_BUCKET_SCRIPT, {
+      keys: [key],
+      arguments: [
+        String(config.bucketSize),
+        String(config.refillRate),
+        String(requested),
+      ],
+    })) as RedisEvalResult;
     return {
       allowed: result[0] === 1,
       remaining: Math.floor(result[1]),

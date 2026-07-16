@@ -15,14 +15,11 @@ export async function checkRpmLimit(
   const windowMs = windowSec * 1000;
 
   try {
-    const result = await (redis.eval as (script: string, count: number, key: string, ...args: number[]) => Promise<unknown>)(
-      RPM_LIMIT_SCRIPT,
-      1,
-      key,
-      limit,
-      windowMs,
-      requested
-    ) as RedisEvalResult;
+    // node-redis v4+ requires eval({ keys, arguments }) with string ARGV.
+    const result = (await redis.eval(RPM_LIMIT_SCRIPT, {
+      keys: [key],
+      arguments: [String(limit), String(windowMs), String(requested)],
+    })) as RedisEvalResult;
     return {
       allowed: result[0] === 1,
       remaining: Math.max(0, limit - result[1]),

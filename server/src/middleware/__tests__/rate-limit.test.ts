@@ -106,11 +106,10 @@ describe('rate-limit middleware', () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.any(String),
-        1,
-        'tb:user:123',
-        60,
-        20,
-        1
+        {
+          keys: ['tb:user:123'],
+          arguments: ['60', '20', '1'],
+        },
       )
     })
 
@@ -186,11 +185,10 @@ describe('rate-limit middleware', () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.any(String),
-        1,
-        "tb:key-123",
-        expect.any(Number),
-        expect.any(Number),
-        expect.any(Number)
+        {
+          keys: ["tb:key-123"],
+          arguments: [expect.any(String), expect.any(String), expect.any(String)],
+        },
       );
     })
 
@@ -206,11 +204,10 @@ describe('rate-limit middleware', () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.any(String),
-        1,
-        "tb:user-456",
-        expect.any(Number),
-        expect.any(Number),
-        expect.any(Number)
+        {
+          keys: ["tb:user-456"],
+          arguments: [expect.any(String), expect.any(String), expect.any(String)],
+        },
       )
     })
 
@@ -228,11 +225,10 @@ describe('rate-limit middleware', () => {
 
       expect(mockRedisClient.eval).toHaveBeenCalledWith(
         expect.any(String),
-        1,
-        "tb:ip:1.2.3.4",
-        expect.any(Number),
-        expect.any(Number),
-        expect.any(Number)
+        {
+          keys: ["tb:ip:1.2.3.4"],
+          arguments: [expect.any(String), expect.any(String), expect.any(String)],
+        },
       )
     })
 

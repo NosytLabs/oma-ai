@@ -144,10 +144,14 @@ describe("checkTokenBucket", () => {
       15
     );
 
-    const args = mockRedis.eval.mock.calls[0];
-    expect(args[3]).toBe(60); // bucketSize
-    expect(args[4]).toBe(20); // refillRate
-    expect(args[5]).toBe(15); // requested
+    // node-redis v4+ eval(script, { keys, arguments })
+    expect(mockRedis.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      {
+        keys: ["tb:user1"],
+        arguments: ["60", "20", "15"],
+      },
+    );
   });
 
   it("should default requested to 1", async () => {
@@ -158,7 +162,10 @@ describe("checkTokenBucket", () => {
       refillRate: 20,
     });
 
-    expect(mockRedis.eval.mock.calls[0][5]).toBe(1);
+    expect(mockRedis.eval.mock.calls[0][1]).toEqual({
+      keys: ["tb:user1"],
+      arguments: ["60", "20", "1"],
+    });
   });
 
   it("should throw and log on Redis error", async () => {

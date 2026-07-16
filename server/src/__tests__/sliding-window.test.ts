@@ -103,14 +103,12 @@ describe("checkRpmLimit", () => {
       limit: 60,
     });
     expect(mockRedis.eval).toHaveBeenCalledOnce();
-    const [script, numKeys, key, limit, windowMs, requested] =
-      mockRedis.eval.mock.calls[0];
+    const [script, opts] = mockRedis.eval.mock.calls[0];
     expect(script).toContain("ZREMRANGEBYSCORE");
-    expect(numKeys).toBe(1);
-    expect(key).toBe("rl:key1");
-    expect(limit).toBe(60);
-    expect(windowMs).toBe(60_000);
-    expect(requested).toBe(1);
+    expect(opts).toEqual({
+      keys: ["rl:key1"],
+      arguments: ["60", "60000", "1"],
+    });
   });
 
   it("should return allowed=false when over the RPM limit", async () => {
@@ -139,8 +137,11 @@ describe("checkRpmLimit", () => {
 
     await checkRpmLimit(mockRedis as never, "rl:key1", 60, 60, 5);
 
-    const args = mockRedis.eval.mock.calls[0];
-    expect(args[5]).toBe(5); // requested=5
+    const opts = mockRedis.eval.mock.calls[0][1] as {
+      keys: string[];
+      arguments: string[];
+    };
+    expect(opts.arguments[2]).toBe("5");
   });
 
   it("should throw and log when Redis eval fails", async () => {
@@ -162,8 +163,11 @@ describe("checkRpmLimit", () => {
 
     await checkRpmLimit(mockRedis as never, "rl:key1", 100);
 
-    const windowMs = mockRedis.eval.mock.calls[0][4]; // ARGV[2]
-    expect(windowMs).toBe(60_000);
+    const opts = mockRedis.eval.mock.calls[0][1] as {
+      keys: string[];
+      arguments: string[];
+    };
+    expect(opts.arguments[1]).toBe("60000"); // windowMs
   });
 });
 
