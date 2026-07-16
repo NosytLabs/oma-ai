@@ -4,10 +4,13 @@
 **Method:** Direct reads + curl + grep + Playwright. **No subagent fanout** (kept inline due to 125-file WIP).
 **Head:** `127ae9a` · **branch:** main · **state:** 125 dirty (user WIP), 14 untracked, 0 unpushed.
 
-> **Post-audit updates (2026-07-15):** Two fixes landed after this audit snapshot —
-> `b63813a` (gonka broker URL → `proxy.gonka.gg`, hid dead `glm-5.2-fp8` model from live
-> catalog → **96 active models**, was 97) and `51bcca3` (rate-limiter Lua `math.floor` fix —
-> inference no longer 503s). The "97 models" count below reflects the audit-time state.
+> **Post-audit updates:**
+> - `b63813a` — gonka broker URL → `proxy.gonka.gg`, hid dead `glm-5.2-fp8` model (enabled:false). Catalog = 92 entries, **91 active** (live `/v1/models`).
+> - `51bcca3` — rate-limiter Lua `math.floor` fix; inference no longer 503s.
+> - `7748e79` — docs cleanup (test count 867, dropped Solana contradiction, real model IDs in tiers).
+> - `5e6988d` — **billing:** tiered markup externalized to `OMA_TIERED_MARKUP` (budget=40/mid=30/premium=22/frontier=15), `MIN_DEPOSIT_USD=10` floor on all deposit routes, usage/deposit/withdrawal export surfaced in UI (`/dashboard/export`).
+>
+> The "97 models" count below reflects the audit-time state (before `b63813a`). Current live catalog = **91 active models**.
 
 ---
 
