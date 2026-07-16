@@ -2,13 +2,15 @@
  * Full-page UX capture for authenticated + public surfaces.
  * Writes screenshots + DOM metrics to /tmp/oma-ux-audit/
  */
-import { chromium } from "../app/node_modules/@playwright/test/index.mjs";
+import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
+const require = createRequire(join(__dirname, "../app/package.json"));
+const { chromium } = require("playwright");
 const JWT = readFileSync(
 	existsSync(resolve(root, "data/seed/session.jwt"))
 		? resolve(root, "data/seed/session.jwt")

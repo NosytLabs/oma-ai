@@ -9,9 +9,13 @@
 // in plaintext to stdout. Do NOT commit it, paste it into chat, or screenshot
 // the terminal. Save it directly to your password manager.
 
-// Resolve viem from the server workspace (it's listed in server/package.json).
-// This script is meant to be run from the repo root.
-import { generatePrivateKey, privateKeyToAccount } from "../server/node_modules/viem/_esm/accounts/index.js";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(join(__dirname, "../server/package.json"));
+const { generatePrivateKey, privateKeyToAccount } = require("viem/accounts");
 
 const privateKey = generatePrivateKey();
 const account = privateKeyToAccount(privateKey);

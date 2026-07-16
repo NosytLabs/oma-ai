@@ -1,7 +1,21 @@
 import * as Sentry from "@sentry/nextjs";
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// Client Sentry init lives here (Next.js + Sentry recommend instrumentation-client.ts
+// over the legacy sentry.client.config.ts convention, especially with Turbopack).
+Sentry.init({
+	dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-// Note: Sentry.init() is handled by sentry.client.config.ts for the client
-// and sentry.server.config.ts for the server. Calling it here too causes
-// a double-init warning. Only init once per runtime.
+	// Capture 10% of transactions for performance monitoring.
+	tracesSampleRate: 0.1,
+
+	// Session Replay — disabled by default to avoid bundle bloat.
+	replaysSessionSampleRate: 0,
+	replaysOnErrorSampleRate: 0,
+
+	debug: process.env.NODE_ENV === "development",
+
+	// Disable Sentry when DSN is not configured
+	enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+});
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

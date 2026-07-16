@@ -10,28 +10,35 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, "../app/package.json"));
 const { chromium } = require("playwright");
+// Prefer axe.min.js; fall back to package main if the min build path shifts.
+const AXE_PATH =
+	(() => {
+		try {
+			return require.resolve("axe-core/axe.min.js");
+		} catch {
+			return require.resolve("axe-core");
+		}
+	})();
+const axeSource = readFileSync(AXE_PATH, "utf8");
 
 const PAGES = [
-  { url: '/', name: 'home' },
-  { url: '/models', name: 'models' },
-  { url: '/pricing', name: 'pricing' },
-  { url: '/docs', name: 'docs' },
-  { url: '/privacy', name: 'privacy' },
-  { url: '/terms', name: 'terms' },
-  { url: '/login', name: 'login' },
-  { url: '/chat', name: 'chat' },
-  { url: '/network', name: 'network' },
-  { url: '/changelog', name: 'changelog' },
-  { url: '/dashboard', name: 'dashboard', demo: true },
-  { url: '/settings', name: 'settings', demo: true },
-  { url: '/deposit', name: 'deposit', demo: true },
-  { url: '/admin', name: 'admin', demo: true },
-  { url: '/image-generation', name: 'image-generation' },
-  { url: '/video-generation', name: 'video-generation' },
+	{ url: "/", name: "home" },
+	{ url: "/models", name: "models" },
+	{ url: "/pricing", name: "pricing" },
+	{ url: "/docs", name: "docs" },
+	{ url: "/privacy", name: "privacy" },
+	{ url: "/terms", name: "terms" },
+	{ url: "/login", name: "login" },
+	{ url: "/chat", name: "chat" },
+	{ url: "/network", name: "network" },
+	{ url: "/changelog", name: "changelog" },
+	{ url: "/dashboard", name: "dashboard", demo: true },
+	{ url: "/settings", name: "settings", demo: true },
+	{ url: "/deposit", name: "deposit", demo: true },
+	{ url: "/admin", name: "admin", demo: true },
+	{ url: "/image-generation", name: "image-generation" },
+	{ url: "/video-generation", name: "video-generation" },
 ];
-
-const AXE_PATH = join(process.cwd(), 'app/node_modules/axe-core/axe.min.js');
-const axeSource = readFileSync(AXE_PATH, 'utf8');
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const STANDARDS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];

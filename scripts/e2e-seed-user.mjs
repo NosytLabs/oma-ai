@@ -3,13 +3,15 @@
  * Usage: node scripts/e2e-seed-user.mjs
  * Prefers data/seed/session.jwt + account-number.txt, falls back to /tmp.
  */
-import { chromium } from "../app/node_modules/@playwright/test/index.mjs";
+import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
+const require = createRequire(join(__dirname, "../app/package.json"));
+const { chromium } = require("playwright");
 
 function readFirst(...paths) {
 	for (const p of paths) {
