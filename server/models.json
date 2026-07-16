@@ -1662,7 +1662,7 @@
       "outputPricePer1M": 1.5,
       "markupPercent": 25,
       "category": "budget",
-      "maxTokens": 32768,
+      "maxTokens": 204800,
       "supportsStreaming": true,
       "displayName": "MiniMax M2.7",
       "capabilities": [
@@ -2082,16 +2082,20 @@
       "outputPricePer1M": 0.017,
       "markupPercent": 25,
       "category": "budget",
-      "maxTokens": 205000,
+      "maxTokens": 204800,
       "supportsStreaming": true,
       "displayName": "MiniMax M2.7",
       "capabilities": [
-        "chat"
+        "chat",
+        "tools",
+        "function-calling",
+        "agentic"
       ],
       "description": "MiniMax M2.7 \u2014 budget language model served by Gonka/OpenBroker.",
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
-      "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source."
+      "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source.",
+      "supportsTools": true
     }
   },
   "VIDEO_MODELS": {
