@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { config } from "../../config.js";
 import { processLifiDeposit } from "../../credits/deposit.js";
 import { sessionAuth } from "../../auth/middleware.js";
 import { auditLog } from "../../middleware/audit.js";
@@ -12,7 +13,7 @@ import type { OmaEnv } from "../../types.js";
 import { validationError } from "../../lib/validation.js";
 
 const lifiDepositSchema = z.object({
-  amount: z.number().positive().max(1000000),
+  amount: z.number().positive().max(1000000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
   fromChain: z.string().min(1),
   fromToken: z.string().min(1),

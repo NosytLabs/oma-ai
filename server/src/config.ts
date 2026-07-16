@@ -109,11 +109,24 @@ const envSchema = z.object({
   // Applied per-model via ModelPricing.markup in billing-service.ts.
   OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
 
+  // Tiered markup strategy (best practice: higher margin on cheap models,
+  // lower on frontier — price-sensitive buyers absorb cost on budget tiers,
+  // frontier buyers are inelastic and won't tolerate steep markup).
+  // Format: "budget=40,mid=30,premium=22,frontier=15". Falls back to
+  // OMA_MARKUP_PCT for any missing tier. Keyed off ModelDef.category.
+  OMA_TIERED_MARKUP: z.string().optional(),
+
   // Operator-expected markup floor per model, used by the price-drift audit at
   // catalog load. Format: "model-a=25,model-b=10". If a catalog entry's actual
   // markupPercent is below its expected floor, OMA logs a WARN (likely selling
   // at a loss — sync models.json with upstream pricing). Optional.
   OMA_MODEL_MARKUP_OVERRIDES: z.string().optional(),
+
+  // Minimum deposit floor (USD). Prevents spam/dust deposits that cost more in
+  // on-chain verification + DB writes than they're worth. Research (Flexprice,
+  // OpenRouter) shows a $10 floor is the sweet spot — blocks abuse without
+  // friction for real users. Applied to all deposit routes (usdc/cctp/lifi).
+  MIN_DEPOSIT_USD: z.coerce.number().min(0).max(100000).default(10),
 
   // Withdraw route fee configuration (moved from hardcoded literals in routes/withdraw.ts)
   // 0.1% = 0.001 default for protocol fee percent; $0.01 default for network fee USD estimate.

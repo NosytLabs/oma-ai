@@ -4,6 +4,42 @@ import { config } from '../config.js';
 
 export { estimateTokens };
 
+/**
+ * Resolve the effective markup % for a model.
+ *
+ * Precedence (highest → lowest):
+ *   1. models.json `markupPercent` if > 0 (explicit per-model override)
+ *   2. Tiered strategy from OMA_TIERED_MARKUP keyed by ModelDef.category
+ *      (budget=40, mid=30, premium=22, frontier=15 — higher on cheap models
+ *      where buyers are price-sensitive but the absolute $ delta is tiny,
+ *      lower on frontier where buyers are inelastic to sticker but will
+ *      churn on steep markup)
+ *   3. OMA_MARKUP_PCT env (global fallback)
+ */
+function resolveMarkup(modelDef: { markupPercent?: number; category?: string } | null): number {
+  if (modelDef?.markupPercent && modelDef.markupPercent > 0) {
+    return modelDef.markupPercent;
+  }
+  if (config.OMA_TIERED_MARKUP && modelDef?.category) {
+    const tiers = parseTieredMarkup(config.OMA_TIERED_MARKUP);
+    const tierVal = tiers[modelDef.category as keyof typeof tiers];
+    if (tierVal !== undefined) return tierVal;
+  }
+  return config.OMA_MARKUP_PCT;
+}
+
+function parseTieredMarkup(raw: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of raw.split(",")) {
+    const [k, v] = part.split("=");
+    if (k && v !== undefined) {
+      const n = Number(v.trim());
+      if (!Number.isNaN(n)) out[k.trim()] = n;
+    }
+  }
+  return out;
+}
+
 export interface CostCalculation {
   costCents: string;
   markupCents: string;
@@ -18,10 +54,9 @@ export async function getModelPricing(modelId: string): Promise<ModelPricing> {
       inputPer1k: modelDef.inputPricePer1M / 1000,
       outputPer1k: modelDef.outputPricePer1M / 1000,
       provider: modelDef.primaryProvider,
-      // Fix B5: precedence is catalog value > OMA_MARKUP_PCT env default.
-      // Operators can override per-model markups in models.json; the env var
-      // is the global fallback used when a catalog entry is missing or 0.
-      markup: modelDef.markupPercent > 0 ? modelDef.markupPercent : config.OMA_MARKUP_PCT,
+      // Fix B5: precedence is catalog value > tiered strategy > OMA_MARKUP_PCT env default.
+      // Operators can tune per-tier margins in OMA_TIERED_MARKUP without editing models.json.
+      markup: resolveMarkup(modelDef),
     };
   }
 

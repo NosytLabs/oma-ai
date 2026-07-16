@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { config } from "../../config.js";
 import { processUsdcDeposit } from "../../credits/deposit.js";
 import { verifyUsdcOnChain } from "../../credits/verify-usdc-on-chain.js";
 import { sessionAuth } from "../../auth/middleware.js";
@@ -27,12 +28,12 @@ function generateDepositNonce(): string {
 }
 
 const depositNonceSchema = z.object({
-  amount: z.number().positive().max(100000),
+  amount: z.number().positive().max(100000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
   walletAddress: z.string().regex(EVM_ADDRESS_RE, "Invalid EVM address format").optional(),
 });
 
 const verifyDepositSignatureSchema = z.object({
-  amount: z.number().positive().max(100000),
+  amount: z.number().positive().max(100000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
   txHash: z.string().regex(EVM_TX_HASH_RE, "Invalid EVM transaction hash format"),
   signature: z.string().min(130, "Signature must be 130 hex chars (65 bytes r + s + v)"),
   nonce: z.string().min(1),
@@ -41,7 +42,7 @@ const verifyDepositSignatureSchema = z.object({
 });
 
 const usdcDepositSchema = z.object({
-  amount: z.number().positive().max(100000),
+  amount: z.number().positive().max(100000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
   txHash: z.string().regex(EVM_TX_HASH_RE, "Invalid EVM transaction hash format"),
   signature: z.string().min(130, "Signature must be 130 hex chars (65 bytes r + s + v)"),
   nonce: z.string().min(1),
