@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { playToastCue } from "@/lib/sound";
 
 type ToastType = "success" | "error" | "info";
 
@@ -68,6 +69,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 			// Use cryptographically secure ID generation
 			const id = `${uniqueId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 			setToasts((prev) => [...prev, { id, message, type }]);
+			// Subtle cue sound (respects the sound-cues toggle in localStorage).
+			playToastCue(type);
 
 			// Auto-dismiss after 4 seconds (timer tracked so manual dismiss can cancel it)
 			const timeoutId = setTimeout(() => {

@@ -5,6 +5,7 @@ import { useWallet } from "@/components/wallet-provider";
 import type { User } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 import { TwoFactorSection } from "./TwoFactorSection";
+import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
 
 function authMethodLabel(
 	authMethod: ReturnType<typeof useWallet>["authMethod"],
@@ -66,6 +67,29 @@ export function ProfileSection({
 						Authentication
 					</div>
 					<div className="text-sm text-text">{authMethodLabel(authMethod)}</div>
+				</div>
+			</div>
+
+			<div className="mt-6 rounded-lg border border-border bg-void p-4">
+				<div className="flex items-center justify-between gap-4">
+					<div>
+						<div className="text-sm font-medium text-text-bright">
+							Sound cues
+						</div>
+						<div className="mt-0.5 text-xs text-text-muted">
+							Subtle chime when a task succeeds or fails.
+						</div>
+					</div>
+					<label className="relative inline-flex cursor-pointer items-center">
+						<input
+							type="checkbox"
+							className="peer sr-only"
+							defaultChecked={isSoundEnabled()}
+							onChange={(e) => setSoundEnabled(e.target.checked)}
+						/>
+						<div className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
+						<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
+					</label>
 				</div>
 			</div>
 
