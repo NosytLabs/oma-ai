@@ -28,7 +28,7 @@ console.log("Address:     ", account.address);
 console.log("Private Key: ", privateKey);
 console.log("");
 console.log("Next steps:");
-console.log("  1. Copy the Address into MetaMask (see docs/OWNER-ONBOARDING.md §3)");
+console.log("  1. Copy the Address into MetaMask (Base mainnet)");
 console.log("  2. Save the Private Key in 1Password / Vault (never commit it)");
 console.log("  3. Set TREASURY_BASE_ADDRESS = address in server/.env");
 console.log("  4. Set FACILITATOR_PRIVATE_KEY = private key in server/.env (live mode)");
