@@ -15,8 +15,9 @@ import { USDC_BASE } from "../constants.js";
 const DAILY_WITHDRAWAL_LIMIT_CENTS = config.WITHDRAW_DAILY_LIMIT_CENTS;
 const WEEKLY_WITHDRAWAL_LIMIT_CENTS = config.WITHDRAW_WEEKLY_LIMIT_CENTS;
 
-async function getRecentWithdrawalSum(userId: string, since: Date): Promise<number> {
-  const result = await db
+async function getRecentWithdrawalSum(userId: string, since: Date, tx?: typeof db): Promise<number> {
+  const client = tx ?? db;
+  const result = await client
     .select({
       total: sql<number>`COALESCE(SUM(${withdrawals.amountCents}::numeric), 0)`,
     })
@@ -30,7 +31,11 @@ async function getRecentWithdrawalSum(userId: string, since: Date): Promise<numb
   return parseInt(String(result[0]?.total ?? 0), 10);
 }
 
-async function checkWithdrawalLimits(userId: string, amountCents: number): Promise<{
+async function checkWithdrawalLimits(
+  userId: string,
+  amountCents: number,
+  tx?: typeof db
+): Promise<{
   allowed: boolean;
   reason?: string;
   dailyLimit?: number;
@@ -43,15 +48,16 @@ async function checkWithdrawalLimits(userId: string, amountCents: number): Promi
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   const [dailySum, weeklySum] = await Promise.all([
-    getRecentWithdrawalSum(userId, dayAgo),
-    getRecentWithdrawalSum(userId, weekAgo),
+    getRecentWithdrawalSum(userId, dayAgo, tx),
+    getRecentWithdrawalSum(userId, weekAgo, tx),
   ]);
 
   const dailyRemaining = DAILY_WITHDRAWAL_LIMIT_CENTS - dailySum;
   const weeklyRemaining = WEEKLY_WITHDRAWAL_LIMIT_CENTS - weeklySum;
 
   if (dailySum + amountCents > DAILY_WITHDRAWAL_LIMIT_CENTS) {
-    return {
+    const err = new Error("WITHDRAWAL_LIMIT_EXCEEDED") as Error & { details: typeof limitDetails };
+    const limitDetails = {
       allowed: false,
       reason: `Daily withdrawal limit exceeded. You have $${(dailyRemaining / 100).toFixed(2)} remaining for today.`,
       dailyLimit: DAILY_WITHDRAWAL_LIMIT_CENTS,
@@ -59,10 +65,13 @@ async function checkWithdrawalLimits(userId: string, amountCents: number): Promi
       dailyUsed: dailySum,
       weeklyUsed: weeklySum,
     };
+    err.details = limitDetails;
+    throw err;
   }
 
   if (weeklySum + amountCents > WEEKLY_WITHDRAWAL_LIMIT_CENTS) {
-    return {
+    const err = new Error("WITHDRAWAL_LIMIT_EXCEEDED") as Error & { details: typeof limitDetails };
+    const limitDetails = {
       allowed: false,
       reason: `Weekly withdrawal limit exceeded. You have $${(weeklyRemaining / 100).toFixed(2)} remaining for this week.`,
       dailyLimit: DAILY_WITHDRAWAL_LIMIT_CENTS,
@@ -70,6 +79,8 @@ async function checkWithdrawalLimits(userId: string, amountCents: number): Promi
       dailyUsed: dailySum,
       weeklyUsed: weeklySum,
     };
+    err.details = limitDetails;
+    throw err;
   }
 
   return {
@@ -176,22 +187,6 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60
     }, 400);
   }
 
-  const limitCheck = await checkWithdrawalLimits(userId, amountCents);
-  if (!limitCheck.allowed) {
-    return c.json({
-      error: {
-        message: limitCheck.reason,
-        type: "withdrawal_limit_exceeded",
-        details: {
-          dailyLimit: limitCheck.dailyLimit! / 100,
-          weeklyLimit: limitCheck.weeklyLimit! / 100,
-          dailyUsed: limitCheck.dailyUsed! / 100,
-          weeklyUsed: limitCheck.weeklyUsed! / 100,
-        },
-      },
-    }, 400);
-  }
-
   // M5: hardcoded fees moved to config.ts (env-tunable)
   const protocolFeePercent = config.WITHDRAW_PROTOCOL_FEE_PERCENT / 100; // 0.1% → 0.001
   const protocolFee = amountCents * protocolFeePercent;
@@ -209,7 +204,8 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60
 
   try {
     // C1: Wrap insert + balance deduction in a transaction with row-level lock
-    // to prevent double-spend race conditions.
+    // to prevent double-spend race conditions. Check withdrawal limits INSIDE
+    // the transaction after acquiring the row lock to prevent TOCTOU race.
     const withdrawal = await db.transaction(async (tx) => {
       // Lock the balance row to prevent concurrent withdrawals from reading stale data
       const [lockedBalance] = await tx.select()
@@ -220,6 +216,11 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60
       if (!lockedBalance || parseInt(lockedBalance.balanceCents, 10) < amountCents) {
         throw new Error("INSUFFICIENT_BALANCE");
       }
+
+      // Check withdrawal limits inside the transaction (after row lock) to prevent
+      // TOCTOU race where concurrent withdrawals could exceed limits between
+      // the check and the insert.
+      await checkWithdrawalLimits(userId, amountCents, tx);
 
       const [w] = await tx.insert(withdrawals).values({
         userId,
@@ -270,10 +271,29 @@ withdrawalRoutes.post("/v1/withdraw/usdc", sessionAuth, rateLimit({ windowMs: 60
   } catch (err: unknown) {
     // M4: Log full error server-side but return generic message to client
     logger.error({ err, userId, amount }, "[withdraw] Withdrawal failed:");
-    const message = err instanceof Error && err.message === "INSUFFICIENT_BALANCE"
-      ? "Insufficient balance for withdrawal"
-      : "Withdrawal failed. Please try again later.";
-    return c.json({ error: { message, type: "withdrawal_error" } }, 500);
+    if (err instanceof Error && err.message === "INSUFFICIENT_BALANCE") {
+      return c.json({ error: { message: "Insufficient balance for withdrawal", type: "withdrawal_error" } }, 400);
+    }
+    if (err instanceof Error && err.message === "WITHDRAWAL_LIMIT_EXCEEDED") {
+      const details = (err as Error & { details?: unknown }).details;
+      if (details && typeof details === "object" && details !== null) {
+        const d = details as Record<string, unknown>;
+        return c.json({
+          error: {
+            message: String(d.reason ?? "Withdrawal limit exceeded"),
+            type: "withdrawal_limit_exceeded",
+            details: {
+              dailyLimit: Number(d.dailyLimit ?? 0) / 100,
+              weeklyLimit: Number(d.weeklyLimit ?? 0) / 100,
+              dailyUsed: Number(d.dailyUsed ?? 0) / 100,
+              weeklyUsed: Number(d.weeklyUsed ?? 0) / 100,
+            },
+          },
+        }, 400);
+      }
+      return c.json({ error: { message: "Withdrawal limit exceeded", type: "withdrawal_limit_exceeded" } }, 400);
+    }
+    return c.json({ error: { message: "Withdrawal failed. Please try again later.", type: "withdrawal_error" } }, 500);
   }
 });
 
