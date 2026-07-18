@@ -15,12 +15,21 @@ import { logger } from './logger.js';
  * timeout) is treated as `safe: false` rather than allowing the request
  * through. (2) For server-side fetches that we own (cctp-client,
  * lifi-client, oracle, cheaptokens), the caller MUST
- * additionally pin the resolved IP at fetch time by constructing a
- * custom `http.Agent`/`https.Agent` and using `lookup: () => pinnedIp`
- * (see {@link resolvePublicIp} + {@link createPinnedLookup}). The static
- * check below is best-effort against a small TOCTOU window and must
- * be combined with IP pinning in the fetch path.
+ * additionally pin the resolved IP at fetch time by using a custom
+ * `dispatcher` with undici that forces connection to the pinned IP
+ * (see {@link resolvePublicIp}). The static check below is best-effort
+ * against a small TOCTOU window and must be combined with IP pinning
+ * in the fetch path.
  */
+
+/**
+ * Result of a safe URL check with optional pinned IP for DNS rebinding protection.
+ */
+export interface SafeUrlResult {
+  safe: boolean;
+  reason?: string;
+  pinnedIp?: string;
+}
 
 const PRIVATE_IP_RANGES: ReadonlyArray<{ cidr: string; test: (ip: string) => boolean }> = [
   { cidr: '0.0.0.0/8', test: (ip) => ip.startsWith('0.') },
@@ -64,7 +73,7 @@ function isPrivateIp(ip: string): boolean {
 
 /**
  * Validate a URL for safe outbound fetch (webhooks, fetch route, etc.).
- * Returns `{ safe: true }` on success, otherwise `{ safe: false, reason }`.
+ * Returns `{ safe: true, pinnedIp }` on success, otherwise `{ safe: false, reason }`.
  *
  * In production, only `https:` is allowed. In development/test, `http:` is
  * permitted so localhost testing works.
@@ -74,11 +83,15 @@ function isPrivateIp(ip: string): boolean {
  * "allow on resolve error" into a hard-fail that protects against
  * rebinding timing where the host resolves to a private IP at fetch
  * time.
+ *
+ * The returned `pinnedIp` (when safe) is the first public IPv4 address
+ * resolved, or the first public IPv6 if no IPv4. Callers MUST use this
+ * pinned IP at fetch time (via undici dispatcher) to close the TOCTOU window.
  */
 export async function isWebhookUrlSafe(
   url: string,
   options: { allowHttp?: boolean; strictDns?: boolean } = {},
-): Promise<{ safe: true } | { safe: false; reason: string }> {
+): Promise<SafeUrlResult> {
   const allowHttp = options.allowHttp ?? process.env.NODE_ENV !== 'production';
   // Default strictDns to ON in production; in dev keep the legacy
   // soft-fail so local debugging with /etc/hosts still works.
@@ -111,12 +124,14 @@ export async function isWebhookUrlSafe(
   }
 
   // Resolve DNS and reject any private address in the result.
+  let firstPublicIp: string | undefined;
   try {
     const v4 = await dns.resolve4(hostname).catch(() => [] as string[]);
     for (const addr of v4) {
       if (isPrivateIp(addr)) {
         return { safe: false, reason: 'Hostname resolves to a private/reserved IPv4 address' };
       }
+      if (!firstPublicIp) firstPublicIp = addr;
     }
     if (strictDns && v4.length === 0) {
       // No IPv4 addresses — try IPv6 before failing.
@@ -134,6 +149,7 @@ export async function isWebhookUrlSafe(
       if (isPrivateIp(addr)) {
         return { safe: false, reason: 'Hostname resolves to a private/reserved IPv6 address' };
       }
+      if (!firstPublicIp) firstPublicIp = addr;
     }
     if (strictDns) {
       // H3: under strict mode, if we found neither v4 nor v6 public
@@ -154,5 +170,5 @@ export async function isWebhookUrlSafe(
     }
   }
 
-  return { safe: true };
+  return { safe: true, pinnedIp: firstPublicIp };
 }
