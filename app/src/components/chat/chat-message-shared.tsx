@@ -168,7 +168,7 @@ export function LiveModelsProvider({ children }: LiveModelsProviderProps) {
  */
 export function useSharedLiveModels(): ModelOption[] {
 	const context = useContext(LiveModelsContext);
-	if (context !== null) return context;
-	// Fallback to standalone hook for backwards compatibility
-	return useLiveModels();
+	// Always call the hook to satisfy rules-of-hooks, then return conditionally.
+	const fallback = useLiveModels();
+	return context !== null ? context : fallback;
 }
