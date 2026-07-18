@@ -527,39 +527,61 @@ authRoutes.post("/auth/account/login", async (c) => {
     return c.json({ error: { message: "Service temporarily unavailable", type: "rate_limit_error", code: "service_unavailable" } }, 503);
   }
 
-  // H6: Use SET NX EX to avoid the INCR+EXPIRE race (crash between INCR and
-  // EXPIRE leaves the key without a TTL). Only the first request creates the
-  // key with a 60-second expiry; subsequent requests atomically INCR it.
-  let current: number;
-  try {
-    const nxSet = await redis.set(key, "1", { NX: true, EX: 60 });
-    if (nxSet === "OK") {
-      current = 1;
-    } else {
-      current = await redis.incr(key);
-    }
-  } catch {
-    // If SET NX fails (e.g. WRONGTYPE), fall through to the existing incr path
-    current = await redis.incr(key);
-    if (current === 1) await redis.expire(key, 60);
-  }
-  const ttl = await redis.ttl(key);
+  // Sliding window rate limiting using Redis sorted set (ZSET).
+  // This provides true sliding window behavior vs the previous fixed window.
+  // Algorithm: ZREMRANGEBYSCORE (remove expired) -> ZADD (add current) -> ZCARD (count)
+  const windowMs = 60_000; // 60 seconds
+  const maxRequests = 5;
+  const now = Date.now();
+  const windowStart = now - windowMs;
 
-  if (current > 5) {
+  try {
+    // 1. Remove expired entries outside the sliding window
+    await redis.zRemRangeByScore(key, 0, windowStart);
+
+    // 2. Count current requests in window
+    const currentCount = await redis.zCard(key);
+
+    if (currentCount >= maxRequests) {
+      // Use fixed retry-after for simplicity (the window is 60s)
+      const retryAfter = 60;
+
       await db.insert(auditLogs).values({
         userId: null,
         action: "ACCOUNT_LOGIN_RATE_LIMITED",
         resource: "auth",
         resourceId: null,
         ipAddress: ip,
-        metadata: JSON.stringify({ ip, count: current - 1 }),
+        metadata: JSON.stringify({ ip, count: currentCount }),
         createdAt: new Date(),
       }).catch((err) => {
         logger.warn({ err, ip }, "Failed to write ACCOUNT_LOGIN_RATE_LIMITED audit log");
       });
-      c.header("Retry-After", String(Math.max(ttl, 1)));
-       return c.json({ error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } }, 429);
-     }
+
+      c.header("Retry-After", String(Math.max(retryAfter, 1)));
+      return c.json(
+        { error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+        429,
+      );
+    }
+
+    // 3. Add current request with timestamp as score and unique member
+    const member = `${now}:${Math.random().toString(36).slice(2)}`;
+    await redis.zAdd(key, { score: now, value: member });
+    // Set expiry to windowMs + buffer to clean up abandoned keys
+    await redis.expire(key, Math.ceil(windowMs / 1000) + 10);
+
+    const remaining = maxRequests - currentCount - 1;
+    c.header("X-RateLimit-Limit", String(maxRequests));
+    c.header("X-RateLimit-Remaining", String(remaining));
+    c.header("X-RateLimit-Reset", String(Math.ceil((now + windowMs) / 1000)));
+  } catch (err) {
+    logger.error({ err, ip }, "Sliding window rate limit error for account login");
+    return c.json(
+      { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "service_unavailable" } },
+      503,
+    );
+  }
 
   const csrfToken = c.req.header("x-csrf-token");
   const cookieHeader = c.req.header("Cookie") || "";
