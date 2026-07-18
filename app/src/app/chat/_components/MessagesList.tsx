@@ -273,7 +273,7 @@ export function MessagesList({
 								if (classification.kind === "a2ui") {
 									return (
 										<div
-											key={`${msg.role}-${msg.timestamp}`}
+											key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 											className="flex gap-4"
 										>
 											<A2UIRenderer payload={classification.payload} />
@@ -282,7 +282,7 @@ export function MessagesList({
 								}
 								return (
 									<LazyChatMessage
-										key={`${msg.role}-${msg.timestamp}`}
+										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
 										loading={loading}
 										onCopy={handleCopy}
