@@ -144,7 +144,7 @@ async function rotateNonceAndInvalidateCache(normalized: string, lookupField: "a
  */
 function getAllowedSiweDomains(): string[] {
   const out = new Set<string>([config.PRIMARY_DOMAIN]);
-  const extra = process.env.ALLOWED_SIWE_DOMAINS?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+  const extra = config.ALLOWED_SIWE_DOMAINS?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
   for (const d of extra) out.add(d);
   return [...out];
 }

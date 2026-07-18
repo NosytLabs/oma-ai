@@ -9,6 +9,7 @@ import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
+import { config } from "../config.js";
 import { SERVICE_VERSION } from "../constants.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
@@ -23,8 +24,8 @@ healthRoutes.get("/v1/ping", (c) => {
   return c.json({ pong: true, ts: Date.now() });
 });
 
-const BUILD_SHA = process.env.BUILD_SHA ?? "dev";
-const BUILD_TIME = process.env.BUILD_TIME ?? new Date().toISOString();
+const BUILD_SHA = config.BUILD_SHA ?? "dev";
+const BUILD_TIME = config.BUILD_TIME ?? new Date().toISOString();
 const START_TIME = new Date();
 
 // Cheap, safe liveness probe: process is up and the event loop is responsive.
@@ -45,7 +46,7 @@ healthRoutes.get("/ready", async (c) => {
     await db.execute(sql`SELECT 1`);
     checks.database = { ok: true, latencyMs: Date.now() - dbStart };
   } catch (err) {
-    const errMsg = process.env.NODE_ENV === "production"
+    const errMsg = config.NODE_ENV === "production"
       ? "database_connection_failed"
       : (err as Error).message;
     checks.database = { ok: false, error: errMsg };
@@ -62,7 +63,7 @@ healthRoutes.get("/ready", async (c) => {
       checks.redis = { ok: true, error: "not_configured" };
     }
   } catch (err) {
-    checks.redis = { ok: false, error: process.env.NODE_ENV === "production" ? "redis_connection_failed" : (err as Error).message };
+    checks.redis = { ok: false, error: config.NODE_ENV === "production" ? "redis_connection_failed" : (err as Error).message };
     // Redis is best-effort; don't fail readiness.
   }
 
@@ -101,7 +102,7 @@ healthRoutes.get("/health", async (c) => {
         version: SERVICE_VERSION,
         service: "oma-ai",
         uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
-        error: process.env.NODE_ENV === "production" ? "database_connection_failed" : (err as Error).message,
+        error: config.NODE_ENV === "production" ? "database_connection_failed" : (err as Error).message,
       },
       503
     );
@@ -115,7 +116,7 @@ healthRoutes.get("/version", (c) => {
     version: SERVICE_VERSION,
     buildSha: BUILD_SHA,
     buildTime: BUILD_TIME,
-    nodeEnv: process.env.NODE_ENV ?? "unknown",
+    nodeEnv: config.NODE_ENV ?? "unknown",
     startedAt: START_TIME.toISOString(),
     uptimeSec: Math.floor((Date.now() - START_TIME.getTime()) / 1000),
   });

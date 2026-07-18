@@ -80,6 +80,8 @@ const envSchema = z.object({
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
   DEBUG_STREAM: z.coerce.boolean().default(false),
+  // Log level for the server logger (trace, debug, info, warn, error, fatal)
+  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
   AUTO_RELOAD_THRESHOLD: z.coerce.number().positive().default(50000),
   AUTO_RELOAD_AMOUNT: z.coerce.number().positive().default(1000000),
   AUTO_RELOAD_SPEND_LIMIT: z.coerce.number().positive().default(1000000),
@@ -175,9 +177,6 @@ const envSchema = z.object({
 
   // Additional SIWE allowed domains (comma-separated)
   ALLOWED_SIWE_DOMAINS: z.string().optional(),
-
-  // Log level override (debug, info, warn, error)
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
 
   // Build metadata (injected at build time)
   BUILD_SHA: z.string().optional().default("dev"),

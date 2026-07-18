@@ -1,5 +1,6 @@
 import dns from 'node:dns/promises';
 import { logger } from './logger.js';
+import { config } from '../config.js';
 
 /**
  * SSRF guard for user-supplied URLs (webhooks, fetch route, search result
@@ -92,10 +93,10 @@ export async function isWebhookUrlSafe(
   url: string,
   options: { allowHttp?: boolean; strictDns?: boolean } = {},
 ): Promise<SafeUrlResult> {
-  const allowHttp = options.allowHttp ?? process.env.NODE_ENV !== 'production';
+  const allowHttp = options.allowHttp ?? config.NODE_ENV !== 'production';
   // Default strictDns to ON in production; in dev keep the legacy
   // soft-fail so local debugging with /etc/hosts still works.
-  const strictDns = options.strictDns ?? process.env.NODE_ENV === 'production';
+  const strictDns = options.strictDns ?? config.NODE_ENV === 'production';
 
   let parsed: URL;
   try {
@@ -165,7 +166,7 @@ export async function isWebhookUrlSafe(
     }
   } catch (err) {
     logger.debug({ err }, "IPv6 DNS resolution failed during webhook safety check");
-    if (process.env.NODE_ENV === 'production') {
+    if (config.NODE_ENV === 'production') {
       return { safe: false, reason: 'Could not resolve hostname' };
     }
   }

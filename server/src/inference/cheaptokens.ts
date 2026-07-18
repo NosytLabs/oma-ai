@@ -174,7 +174,7 @@ class CheapTokensClient {
 const client = new CheapTokensClient();
 
 export function getActiveVeniceKey(forceRefresh: boolean = false): string | null {
-  if (process.env.CHEAPTOKENS_FORCE_DISABLE === "true") {
+  if (config.CHEAPTOKENS_FORCE_DISABLE) {
     return null;
   }
   const now = Date.now();
