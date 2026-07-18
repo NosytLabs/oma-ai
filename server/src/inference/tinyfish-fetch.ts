@@ -27,23 +27,18 @@ function createPinnedAgent(pinnedIps: PinnedIpMap): Agent {
     connections: 10,
     pipelining: 10,
     connect: {
-      // Custom DNS resolver that returns pinned IPs for known hostnames
-      // For hostnames not in the map, fall back to system DNS
-      resolver: {
-        resolve: async (hostname: string) => {
-          const pinned = pinnedIps[hostname];
-          if (pinned) {
-            return [{ address: pinned, family: pinned.includes(':') ? 6 : 4 }];
-          }
-          // Fall back to system resolver for non-pinned hostnames
-          const dns = await import('node:dns/promises');
-          const v4 = await dns.resolve4(hostname).catch(() => [] as string[]);
-          const v6 = await dns.resolve6(hostname).catch(() => [] as string[]);
-          return [
-            ...v4.map((address) => ({ address, family: 4 as const })),
-            ...v6.map((address) => ({ address, family: 6 as const })),
-          ];
-        },
+      // Custom DNS lookup that returns pinned IPs for known hostnames,
+      // falling back to the system resolver otherwise. undici/Node accept a
+      // `lookup` function here (matches dns.lookup signature).
+      lookup: (hostname: string, options: any, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+        const pinned = pinnedIps[hostname];
+        if (pinned) {
+          callback(null, pinned, pinned.includes(":") ? 6 : 4);
+          return;
+        }
+        // Fall back to system resolver for non-pinned hostnames
+        const dns = require("node:dns") as typeof import("node:dns");
+        dns.lookup(hostname, options, callback);
       },
     },
   });
