@@ -96,12 +96,8 @@ export function FileUpload({
 
 	return (
 		<div className={className}>
-			<div
-				role="button"
-				tabIndex={0}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
-				}}
+			<button
+				type="button"
 				onDragOver={(e) => {
 					e.preventDefault();
 					setDragOver(true);
@@ -126,7 +122,7 @@ export function FileUpload({
 						PNG, JPG, WebP up to {maxSizeMB}MB
 					</p>
 				</div>
-			</div>
+			</button>
 			<input
 				ref={inputRef}
 				type="file"
