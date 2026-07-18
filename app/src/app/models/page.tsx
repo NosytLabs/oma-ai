@@ -19,7 +19,7 @@ import {
 	TIER_COLORS,
 	TIER_ORDER,
 	type Model,
-} from "@/lib/crypto-prices";
+} from "@/lib/models-data";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import { Button } from "@/components/ui/button";
