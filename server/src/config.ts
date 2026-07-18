@@ -72,6 +72,10 @@ const envSchema = z.object({
   // (e.g. staging environments).
   PUBLIC_API_URL: z.string().url().default("https://api.oma-ai.com"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // LI.FI deposit webhook HMAC secret. Required for production LI.FI webhook verification.
+  LIFI_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // CCTP deposit webhook HMAC secret. Required for production CCTP webhook verification.
+  CCTP_WEBHOOK_SECRET: z.string().min(1).optional(),
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
   DEBUG_STREAM: z.coerce.boolean().default(false),
@@ -330,6 +334,14 @@ if (config.JWT_SECRET_PREVIOUS) {
   }
 }
 
+// SECURITY: Warn when JWT_SECRET_PREVIOUS is retained in production after rotation grace period.
+// Previous key can still verify attacker-minted tokens until all tokens signed with it expire.
+if (isProductionEnv && config.JWT_SECRET_PREVIOUS) {
+  logger.warn(
+    "[SECURITY] JWT_SECRET_PREVIOUS is set in production — unset after rotation grace period completes. Previous key can still verify attacker-minted tokens."
+  );
+}
+
 // SECURITY (A12): Require a Base RPC endpoint in production.
 if (isProductionEnv && !config.CHAIN_RPC_URL) {
   throw new Error(
@@ -371,6 +383,14 @@ if (isProductionEnv && (config.DATABASE_URL.includes("localhost") || !config.DAT
 
 if (isProductionEnv && !config.ONRAMP_WEBHOOK_SECRET) {
   console.warn("[ONRAMP] WARNING: ONRAMP_WEBHOOK_SECRET is not set. Webhook verification will fail unless ONRAMP_WEBHOOK_SECRET is explicitly configured.");
+}
+
+if (isProductionEnv && !config.LIFI_WEBHOOK_SECRET) {
+  console.warn("[LI.FI] WARNING: LIFI_WEBHOOK_SECRET is not set. LI.FI webhook verification will fail unless LIFI_WEBHOOK_SECRET is explicitly configured.");
+}
+
+if (isProductionEnv && !config.CCTP_WEBHOOK_SECRET) {
+  console.warn("[CCTP] WARNING: CCTP_WEBHOOK_SECRET is not set. CCTP webhook verification will fail unless CCTP_WEBHOOK_SECRET is explicitly configured.");
 }
 
 function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean {

@@ -406,9 +406,7 @@ export function useStreamingChat(
 				inputTokens: estimateTokens(promptText),
 			};
 
-			const currentMessages = opts.messagesRef.current;
-			const allMessages = [...currentMessages, userMessage];
-			opts.setMessages(allMessages);
+			opts.setMessages((prev) => [...prev, userMessage]);
 			opts.setInput("");
 			opts.setLoading(true);
 			opts.setError(null);
@@ -419,15 +417,14 @@ export function useStreamingChat(
 				content: "",
 				timestamp: Date.now(),
 			};
-			opts.setMessages([...allMessages, assistantMessage]);
+			opts.setMessages((prev) => [...prev, assistantMessage]);
 
 			// Build compare side: add user message + empty assistant message so the
 			// panel mirrors the conversation shape.
-			let compareAllMessages: Message[] = [];
 			if (opts.compareMode) {
-				compareAllMessages = [...opts.compareMessagesRef.current, userMessage];
-				opts.setCompareMessages([
-					...compareAllMessages,
+				opts.setCompareMessages((prev) => [
+					...prev,
+					userMessage,
 					{
 						id: `compare-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 						role: "assistant",
@@ -440,6 +437,16 @@ export function useStreamingChat(
 			const abortController = new AbortController();
 			abortRef.current = abortController;
 			opts.isNearBottomRef.current = true;
+
+			// Build history for streaming: refs already have previous messages,
+			// and we just appended user+assistant messages via functional updates.
+			// The refs will be updated after the next render, so we construct
+			// the history manually here to include the new messages.
+			const primaryHistory = [
+				...opts.messagesRef.current,
+				userMessage,
+				assistantMessage,
+			];
 
 			try {
 				// Run web search once per prompt. In compare mode we reuse the
@@ -458,7 +465,7 @@ export function useStreamingChat(
 				// failing doesn't leave the other running as a zombie.
 				const primaryPromise = streamChatCompletion({
 					model: opts.model,
-					history: allMessages,
+					history: primaryHistory,
 					setMessages: opts.setMessages,
 					searchContext: primarySearch.contextMessage,
 					searchResults: primarySearch.results,
@@ -468,7 +475,16 @@ export function useStreamingChat(
 				const comparePromise = opts.compareMode
 					? streamChatCompletion({
 							model: opts.compareModel,
-							history: compareAllMessages,
+							history: [
+								...opts.compareMessagesRef.current,
+								userMessage,
+								{
+									id: `compare-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+									role: "assistant",
+									content: "",
+									timestamp: Date.now(),
+								},
+							],
 							setMessages: opts.setCompareMessages,
 							searchContext: compareSearch.contextMessage,
 							searchResults: compareSearch.results,

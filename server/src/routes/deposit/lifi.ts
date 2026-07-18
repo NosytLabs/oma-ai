@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import crypto from "node:crypto";
 import { config } from "../../config.js";
 import { processLifiDeposit } from "../../credits/deposit.js";
 import { sessionAuth } from "../../auth/middleware.js";
@@ -11,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { getQuoteForSwap, getRouteStatus, checkPossibleRoutes, getSupportedChains } from "../../credits/lifi-client.js";
 import type { OmaEnv } from "../../types.js";
 import { validationError } from "../../lib/validation.js";
+import { addToDlq } from "../../lib/dlq.js";
 
 const lifiDepositSchema = z.object({
   amount: z.number().positive().max(1000000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
@@ -134,5 +136,52 @@ lifiRoutes.get("/v1/deposit/lifi/chains", async (c) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { message, type: "error" } }, 500);
+  }
+});
+
+lifiRoutes.post("/v1/deposit/lifi/webhook", async (c) => {
+  const rawBody = await c.req.raw.text();
+  const signature = c.req.header("X-Lifi-Signature") || "";
+
+  if (!config.LIFI_WEBHOOK_SECRET) {
+    logger.error("[LI.FI] FATAL: LIFI_WEBHOOK_SECRET is not set. Webhook secrets must not fall back to JWT_SECRET.");
+    return c.json({ error: { message: "LI.FI webhook not configured", type: "config_error" } }, 503);
+  }
+  const secret = config.LIFI_WEBHOOK_SECRET;
+  const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  if (signature.length !== expectedSig.length) {
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
+  }
+  if (!crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expectedSig, "utf8"))) {
+    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
+  }
+
+  try {
+    const body = JSON.parse(rawBody);
+    if (!body.txHash || !body.fromChain) {
+      return c.json({ error: { message: "Missing txHash or fromChain", type: "validation" } }, 400);
+    }
+
+    // Verify the deposit on-chain before crediting
+    const routeStatus = await getRouteStatus(body.txHash, body.fromChain, "base");
+    if (!routeStatus || routeStatus.status !== "DONE") {
+      return c.json({ error: { message: "Route transaction has not completed", type: "verification_error", routeStatus: routeStatus?.status } }, 400);
+    }
+
+    const onChainAmountUsd = Number(routeStatus.toAmount) / 1e6;
+    if (!Number.isFinite(onChainAmountUsd) || onChainAmountUsd <= 0) {
+      return c.json({ error: { message: "Invalid on-chain amount", type: "verification_error" } }, 400);
+    }
+
+    // Note: This webhook doesn't have userId - it would need to be resolved from the deposit record
+    // or passed in the webhook payload. For now, we just acknowledge receipt.
+    // Actual credit processing would happen via the user-initiated deposit endpoint.
+    logger.info({ txHash: body.txHash, fromChain: body.fromChain, amountUsd: onChainAmountUsd }, "LI.FI webhook received and verified");
+
+    return c.json({ status: "verified", amountUsd: onChainAmountUsd });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    await addToDlq("lifi", rawBody, message);
+    return c.json({ error: { message, type: "webhook_error" } }, 500);
   }
 });

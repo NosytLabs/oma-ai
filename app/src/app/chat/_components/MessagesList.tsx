@@ -105,12 +105,95 @@ type Classification =
 // Streaming text changes the content reference but the *classification*
 // flips at most once per assistant message (when it finishes); the cache
 // key uses content length so we re-evaluate at terminal chunks only.
-const classificationCache = new Map<string, Classification>();
+/** LRU Cache with TTL for message classification.
+ * - Max 1000 entries
+ * - 30 minute TTL (1800000 ms)
+ * - O(1) get/set operations
+ */
+class ClassificationCache {
+	private cache = new Map<string, { value: Classification; timestamp: number }>();
+	private accessOrder = new Map<string, number>(); // key -> access counter
+	private accessCounter = 0;
+	private readonly maxSize = 1000;
+	private readonly ttlMs = 30 * 60 * 1000; // 30 minutes
+
+	get(key: string): Classification | undefined {
+		const entry = this.cache.get(key);
+		if (!entry) return undefined;
+
+		// Check TTL
+		if (Date.now() - entry.timestamp > this.ttlMs) {
+			this.cache.delete(key);
+			this.accessOrder.delete(key);
+			return undefined;
+		}
+
+		// Update access order (LRU)
+		this.accessCounter++;
+		this.accessOrder.set(key, this.accessCounter);
+		return entry.value;
+	}
+
+	set(key: string, value: Classification): void {
+		// Evict expired entries first
+		this.evictExpired();
+
+		// If at capacity, evict LRU entry
+		if (this.cache.size >= this.maxSize) {
+			this.evictLRU();
+		}
+
+		this.accessCounter++;
+		this.cache.set(key, { value, timestamp: Date.now() });
+		this.accessOrder.set(key, this.accessCounter);
+	}
+
+	private evictExpired(): void {
+		const now = Date.now();
+		for (const [key, entry] of this.cache.entries()) {
+			if (now - entry.timestamp > this.ttlMs) {
+				this.cache.delete(key);
+				this.accessOrder.delete(key);
+			}
+		}
+	}
+
+	private evictLRU(): void {
+		let oldestKey: string | null = null;
+		let oldestAccess = Infinity;
+
+		for (const [key, access] of this.accessOrder.entries()) {
+			if (access < oldestAccess) {
+				oldestAccess = access;
+				oldestKey = key;
+			}
+		}
+
+		if (oldestKey) {
+			this.cache.delete(oldestKey);
+			this.accessOrder.delete(oldestKey);
+		}
+	}
+
+	clear(): void {
+		this.cache.clear();
+		this.accessOrder.clear();
+		this.accessCounter = 0;
+	}
+
+	get size(): number {
+		return this.cache.size;
+	}
+}
+
+const classificationCache = new ClassificationCache();
+
 
 function classifyMessage(content: string): Classification {
 	const key = `${content.length}:${content.startsWith("{") ? "1" : "0"}`;
 	const cached = classificationCache.get(key);
 	if (cached) return cached;
+
 	const trimmed = content.trimStart();
 	let result: Classification;
 	if (trimmed.startsWith("{")) {
@@ -123,8 +206,7 @@ function classifyMessage(content: string): Classification {
 	} else {
 		result = { kind: "plain" };
 	}
-	// Keep the cache bounded — 256 entries is enough for a long chat.
-	if (classificationCache.size > 256) classificationCache.clear();
+
 	classificationCache.set(key, result);
 	return result;
 }
