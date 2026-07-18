@@ -137,38 +137,55 @@ creditRoutes.get("/v1/credits/transactions", sessionOrBearerAuth, async (c) => {
     const userId = c.get("userId");
     const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
 
-    const [depositsResult, usageResult] = await Promise.all([
-      db.select().from(deposits)
-        .where(eq(deposits.userId, userId))
-        .orderBy(desc(deposits.createdAt))
-        .limit(limit),
-      db.select().from(usageRecords)
-        .where(eq(usageRecords.userId, userId))
-        .orderBy(desc(usageRecords.createdAt))
-        .limit(limit),
-    ]);
+    // Single query with UNION ALL — eliminates N+1 and JS merge/sort
+    const rows = await db.execute(sql`
+      WITH normalized_transactions AS (
+        -- Deposits
+        SELECT
+          id,
+          'deposit' as type,
+          (amount_usd * 100)::bigint as amount_cents,
+          (credits_issued * 100)::bigint as credits_issued,
+          status,
+          NULL as model,
+          created_at,
+          tx_hash
+        FROM deposits
+        WHERE user_id = ${userId}
 
-    const transactions = [
-      ...depositsResult.map((d: typeof deposits.$inferSelect) => ({
-        id: d.id,
-        type: "deposit" as const,
-        amountCents: Math.round(Number(d.amountUsd) * 100),
-        creditsIssued: Math.round(Number(d.creditsIssued) * 100),
-        status: d.status,
-        createdAt: d.createdAt,
-        txHash: d.txHash,
-      })),
-      ...usageResult.map((u: typeof usageRecords.$inferSelect) => ({
-        id: u.id,
-        type: "usage" as const,
-        model: u.model,
-        amountCents: Number(u.totalCents),
-        status: "completed" as const,
-        createdAt: u.createdAt,
-      })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        UNION ALL
 
-    return c.json({ transactions: transactions.slice(0, limit) });
+        -- Usage records
+        SELECT
+          id,
+          'usage' as type,
+          total_cents::bigint as amount_cents,
+          0 as credits_issued,
+          'completed' as status,
+          model,
+          created_at,
+          NULL as tx_hash
+        FROM usage_records
+        WHERE user_id = ${userId}
+      )
+      SELECT id, type, amount_cents, credits_issued, status, model, created_at, tx_hash
+      FROM normalized_transactions
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+    `);
+
+    const transactions = (rows.rows as any[]).map((r: any) => ({
+      id: r.id,
+      type: r.type,
+      amountCents: Number(r.amount_cents),
+      creditsIssued: Number(r.credits_issued),
+      status: r.status,
+      model: r.model,
+      createdAt: r.created_at,
+      txHash: r.tx_hash,
+    }));
+
+    return c.json({ transactions });
   } catch (err) {
     logger.error({ err }, "[credits] Transactions error:");
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
