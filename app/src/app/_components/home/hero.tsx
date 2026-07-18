@@ -39,7 +39,7 @@ export function Hero() {
 			</div>
 
 			<div className="container-page min-w-0 pt-16 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
-				<div className="grid min-w-0 items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+				<div className="grid min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
 					{/* Copy column */}
 					<div className="min-w-0 max-w-full">
 						<m.div {...reveal(0)} className="mb-6">

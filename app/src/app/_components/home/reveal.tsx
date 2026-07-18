@@ -16,7 +16,8 @@
  */
 
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
-import type { MotionProps, Variants } from "@/lib/framer-motion-client";
+import type { Variants } from "@/lib/framer-motion-client";
+import { useRevealInView } from "@/lib/use-reveal-in-view";
 import { useEffect, useState, type ReactNode } from "react";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -89,6 +90,7 @@ export function Reveal({
 }: RevealProps) {
 	const prefersReduced = useReducedMotion();
 	const mountAnim = useHasBeenInView();
+	const { ref, show } = useRevealInView({ amount, once });
 
 	if (prefersReduced) {
 		const Tag = as;
@@ -103,24 +105,20 @@ export function Reveal({
 	}
 
 	const MotionTag = m[as];
-	const motionProps: MotionProps = {
-		variants,
-		initial: "hidden",
-		whileInView: "show",
-		viewport: { once, amount },
-		transition: delay ? { delay } : undefined,
-	};
 
-	if (className) {
-		return (
-			<MotionTag {...motionProps}>
-				<div className={className}>{children}</div>
-			</MotionTag>
-		);
-	}
-
+	// className goes on the MotionTag itself — wrapping in an inner div would
+	// break grid placement (e.g. `bento-span-2` must sit on the grid item).
+	// `animate` is controlled via useRevealInView so content can never get
+	// stuck hidden when the user jumps past it (End key / Page Down).
 	return (
-		<MotionTag {...motionProps}>
+		<MotionTag
+			ref={ref as never}
+			className={className}
+			variants={variants}
+			initial="hidden"
+			animate={show ? "show" : "hidden"}
+			transition={delay ? { delay } : undefined}
+		>
 			{children}
 		</MotionTag>
 	);
@@ -143,6 +141,7 @@ export function RevealStagger({
 }: RevealStaggerProps) {
 	const prefersReduced = useReducedMotion();
 	const mountAnim = useHasBeenInView();
+	const { ref, show } = useRevealInView({ amount, once });
 
 	if (prefersReduced) {
 		const Tag = as;
@@ -156,26 +155,13 @@ export function RevealStagger({
 
 	const MotionTag = m[as];
 
-	if (className) {
-		return (
-			<MotionTag
-				className={className}
-				variants={staggerParent}
-				initial="hidden"
-				whileInView="show"
-				viewport={{ once, amount }}
-			>
-				{children}
-			</MotionTag>
-		);
-	}
-
 	return (
 		<MotionTag
+			ref={ref as never}
+			className={className}
 			variants={staggerParent}
 			initial="hidden"
-			whileInView="show"
-			viewport={{ once, amount }}
+			animate={show ? "show" : "hidden"}
 		>
 			{children}
 		</MotionTag>

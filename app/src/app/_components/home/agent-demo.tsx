@@ -29,7 +29,7 @@ export function AgentDemoSection() {
 			className="relative border-t border-border-subtle py-16 sm:py-20"
 		>
 			<div className="container-page">
-				<div className="grid items-start gap-10 lg:grid-cols-[1fr_1.15fr] lg:gap-14">
+				<div className="grid min-w-0 grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_1.15fr] lg:gap-14">
 					<Reveal>
 						<SectionHeader
 							id="agent-demo-headline"

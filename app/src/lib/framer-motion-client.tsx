@@ -36,9 +36,10 @@ import {
 	useSpring,
 	useScroll,
 	useReducedMotion,
+	useInView,
 } from "framer-motion";
 
-export { m, LazyMotion, MotionConfig, domAnimation, useMotionValue, useSpring, useScroll, useReducedMotion };
+export { m, LazyMotion, MotionConfig, domAnimation, useMotionValue, useSpring, useScroll, useReducedMotion, useInView };
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration
 export type {

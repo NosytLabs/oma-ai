@@ -56,6 +56,9 @@ vi.mock("@/lib/framer-motion-client", () => {
 		useMotionValue: () => ({ get: () => 0 }),
 		useReducedMotion: () => true,
 		useSpring: () => ({ get: () => 0 }),
+		// useRevealInView reads useInView; always-truthy keeps content rendered
+		// in tests without scroll/observer mocks.
+		useInView: () => true,
 	};
 });
 

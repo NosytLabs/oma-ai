@@ -21,7 +21,7 @@ export function X402Banner() {
 							aria-hidden="true"
 							className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/10 blur-3xl"
 						/>
-						<div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+						<div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
 							<div>
 								<span className="badge mb-5">
 									<Bot className="h-3 w-3" aria-hidden="true" />

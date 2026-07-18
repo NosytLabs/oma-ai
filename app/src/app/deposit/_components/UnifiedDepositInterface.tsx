@@ -24,7 +24,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
 import { Magnetic, scaleInSpring } from "@/lib/motion";
-import { calculateUsdValue, useCryptoPrices } from "@/lib/prices";
+import { calculateUsdValue, useCryptoPrices } from "@/lib/crypto-prices";
 import {
 	type CoinOption,
 	type DepositStep,

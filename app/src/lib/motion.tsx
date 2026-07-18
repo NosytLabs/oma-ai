@@ -22,6 +22,7 @@ import {
 	useSpring,
 } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
+import { useRevealInView } from "@/lib/use-reveal-in-view";
 
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
@@ -127,6 +128,7 @@ export function StaggerReveal({
 	once = true,
 }: StaggerRevealProps) {
 	const prefersReduced = useReducedMotion();
+	const { ref, show } = useRevealInView({ amount: 0.15, once });
 	const MotionTag = m[as];
 
 	if (prefersReduced) {
@@ -136,11 +138,11 @@ export function StaggerReveal({
 
 	return (
 		<MotionTag
+			ref={ref as never}
 			className={className}
 			variants={staggerContainer(stagger, delayChildren)}
 			initial="hidden"
-			whileInView="show"
-			viewport={{ once, margin: "-60px 0px -60px 0px" }}
+			animate={show ? "show" : "hidden"}
 		>
 			{children}
 		</MotionTag>

@@ -38,6 +38,81 @@
 }
 
 /* ============================================================================
+   Theme color registration (Tailwind v4)
+   ----------------------------------------------------------------------------
+   Registering the palette in @theme makes Tailwind generate the matching
+   utilities (bg-*, text-*, border-*, ring-*) on demand — with full variant
+   (hover:, focus:, md:) and opacity-modifier (/10, /50) support. This is the
+   single source that fixes previously-unresolved classes used across the app
+   (text-text-bright, border-border-bright, hover:bg-accent-hover, bg-violet/10…).
+   Values mirror the :root tokens below; the [data-theme] variants still
+   override at runtime because utilities resolve through var(--color-*).
+   ========================================================================== */
+
+@theme {
+	/* Core palette */
+	--color-void: #07090a;
+	--color-void-deep: #04060a;
+	--color-panel: #0d1110;
+	--color-surface: #11161a;
+	--color-surface-elevated: #161c22;
+	--color-surface-hi: #1d242c;
+	--color-surface-2: #161c22;
+	--color-border: rgba(255, 255, 255, 0.06);
+	--color-border-hi: rgba(255, 255, 255, 0.12);
+	--color-border-strong: rgba(255, 255, 255, 0.2);
+	--color-border-bright: rgba(255, 255, 255, 0.12);
+	--color-border-subtle: rgba(255, 255, 255, 0.04);
+
+	/* Text */
+	--color-text-bright: #f5f7f3;
+	--color-text: #d8dcd6;
+	--color-text-secondary: #b4bbb0;
+	--color-text-muted: #9aa394;
+	--color-text-tertiary: #9aa394;
+	--color-text-primary: #f5f7f3;
+	--color-text-inverse: #07090a;
+
+	/* Accent + secondary ramps */
+	--color-accent: #46d39a;
+	--color-accent-bright: #6ee7b7;
+	--color-accent-hover: #6ee7b7;
+	--color-accent-fg: #07090a;
+	--color-accent-dim: rgba(70, 211, 154, 0.1);
+	--color-accent-soft: rgba(70, 211, 154, 0.06);
+	--color-accent-glow: rgba(70, 211, 154, 0.5);
+	--color-accent-shadow: rgba(70, 211, 154, 0.15);
+	--color-secondary: #e8c468;
+	--color-tertiary: #6ea8fe;
+	--color-violet: #a78bfa;
+	--color-info: #58a6ff;
+	--color-warning: #f0b429;
+	--color-error: #f87171;
+	--color-success: #34d399;
+	--color-pink: #f472b6;
+
+	/* Dim variants */
+	--color-secondary-dim: rgba(232, 196, 104, 0.12);
+	--color-tertiary-dim: rgba(110, 168, 254, 0.12);
+	--color-violet-dim: rgba(167, 139, 250, 0.12);
+	--color-warning-dim: rgba(240, 180, 41, 0.12);
+	--color-error-dim: rgba(248, 113, 113, 0.12);
+	--color-error-bg: rgba(248, 113, 113, 0.12);
+	--color-success-dim: rgba(52, 211, 153, 0.12);
+	--color-pink-dim: rgba(244, 114, 182, 0.12);
+	--color-info-dim: rgba(96, 165, 250, 0.12);
+
+	/* Provider brand colors */
+	--color-provider-venice: #a78bfa;
+	--color-provider-antseed: #34d399;
+	--color-provider-openrouter: #6ea8fe;
+	--color-provider-together: #f472b6;
+
+	/* Shadows (registers shadow-overlay utility) */
+	--shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* ============================================================================
    Design tokens
    ========================================================================== */
 
@@ -106,7 +181,9 @@
 		--color-border-subtle: rgba(255, 255, 255, 0.04);
 		--color-border-bright: var(--color-border-hi);
 		--color-text-primary: var(--color-text-bright);
-		--color-text-inverse: var(--color-text-bright); /* for text on dark/accent backgrounds */
+		/* Text placed ON accent/error/success fills must be dark (void), not
+		   bright — matches every text-text-inverse usage in the app. */
+		--color-text-inverse: var(--color-void);
 		--color-accent-fg: var(--color-void);
 		--color-accent-hover: var(--color-accent-bright);
 		--color-accent-muted: var(--color-text-muted);
@@ -709,6 +786,64 @@
 
 	.ring-accent { --tw-ring-color: var(--color-accent); }
 	.shadow-accent { box-shadow: 0 0 30px var(--color-accent-shadow); }
+}
+
+/* ============================================================================
+   Custom utilities (@utility = variant-capable in Tailwind v4)
+   ----------------------------------------------------------------------------
+
+   glass / glass-strong — frosted surfaces. Used by the navbar scrolled state
+   (glass-strong), the chat model selector dropdown (glass-strong), and the
+   deposit flow cards (glass). Without these, those surfaces render fully
+   transparent and content bleeds through.
+
+   sheen / tilt-card — deposit card hover micro-interactions.
+   ========================================================================== */
+
+@utility glass {
+	background: color-mix(in srgb, var(--color-panel) 80%, transparent);
+	backdrop-filter: blur(12px) saturate(1.4);
+	-webkit-backdrop-filter: blur(12px) saturate(1.4);
+}
+
+@utility glass-strong {
+	background: color-mix(in srgb, var(--color-void) 86%, transparent);
+	backdrop-filter: blur(18px) saturate(1.5);
+	-webkit-backdrop-filter: blur(18px) saturate(1.5);
+}
+
+@utility sheen {
+	position: relative;
+	overflow: hidden;
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			105deg,
+			transparent 40%,
+			rgba(255, 255, 255, 0.07) 50%,
+			transparent 60%
+		);
+		transform: translateX(-120%);
+		transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+		pointer-events: none;
+	}
+	&:hover::before {
+		transform: translateX(120%);
+	}
+}
+
+@utility tilt-card {
+	transition:
+		transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
+		box-shadow 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
+		border-color 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	&:hover {
+		transform: translateY(-2px);
+		border-color: var(--color-border-hi);
+		box-shadow: var(--shadow-md);
+	}
 }
 
 /* ============================================================================
