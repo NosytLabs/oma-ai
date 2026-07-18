@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
+import { invalidateModelsCache } from "../routes/models.js";
 
 export interface ModelDef {
   id: string;
@@ -158,6 +159,7 @@ export async function reloadModelCatalog(): Promise<void> {
   // see the same warnings no matter which catalog got loaded.
   auditMarkupSanity(MODEL_CATALOG);
   runExpectedMarkupAudit(MODEL_CATALOG);
+  await invalidateModelsCache();
 }
 
 /**

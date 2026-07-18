@@ -13,9 +13,13 @@
  */
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
-import { listModels, getModel, listVideoModels } from "../inference/models.js";
+import { listModels, getModel, listVideoModels, reloadModelCatalog } from "../inference/models.js";
 import { getModelPricing } from "../inference/billing-service.js";
+import { getRedisClient } from "../lib/redis-client.js";
 import type { OmaEnv } from "../types.js";
+
+const MODELS_CACHE_KEY = "cache:models:catalog:v1";
+const MODELS_CACHE_TTL = 3600; // 1 hour in seconds
 
 /**
  * Returns customer-facing per-token USD strings for a model.
@@ -42,11 +46,10 @@ async function customerPricePerToken(
   }
 }
 
-export const modelRoutes = new Hono<OmaEnv>();
-
-modelRoutes.use("/v1/models/*", optionalAuth);
-
-modelRoutes.get("/v1/models", async (c) => {
+async function buildModelsResponse(): Promise<{
+  object: string;
+  data: unknown[];
+}> {
   const catalog = await listModels();
   const videoCatalog = await listVideoModels();
   const created = Math.floor(Date.now() / 1000);
@@ -91,9 +94,46 @@ modelRoutes.get("/v1/models", async (c) => {
     })),
   ];
 
+  return { object: "list", data };
+}
+
+export const modelRoutes = new Hono<OmaEnv>();
+
+modelRoutes.use("/v1/models/*", optionalAuth);
+
+modelRoutes.get("/v1/models", async (c) => {
+  // Try Redis cache first
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      const cached = await redis.get(MODELS_CACHE_KEY);
+      if (cached) {
+        c.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=1800");
+        c.header("Vary", "Accept-Encoding");
+        c.header("X-Cache", "HIT");
+        return c.json(JSON.parse(cached));
+      }
+    } catch {
+      // Cache miss or error - fall through to rebuild
+    }
+  }
+
+  // Build fresh response
+  const response = await buildModelsResponse();
+
+  // Store in Redis cache
+  if (redis) {
+    try {
+      await redis.setEx(MODELS_CACHE_KEY, MODELS_CACHE_TTL, JSON.stringify(response));
+    } catch {
+      // Ignore cache write errors
+    }
+  }
+
   c.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=1800");
   c.header("Vary", "Accept-Encoding");
-  return c.json({ object: "list", data });
+  c.header("X-Cache", "MISS");
+  return c.json(response);
 });
 
 modelRoutes.get("/v1/models/:model", async (c) => {
@@ -121,3 +161,21 @@ modelRoutes.get("/v1/models/:model", async (c) => {
     provider: modelInfo.provider,
   });
 });
+
+/**
+ * Invalidate the models cache. Called when model catalog is reloaded.
+ * Exported for use by admin tooling / tests.
+ */
+export async function invalidateModelsCache(): Promise<void> {
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      await redis.del(MODELS_CACHE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
+}
+
+// Re-export reloadModelCatalog with cache invalidation hook
+export { reloadModelCatalog };
