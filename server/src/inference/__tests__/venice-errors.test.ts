@@ -23,6 +23,7 @@ vi.mock("../../config.js", () => ({
     VENICE_API_KEY: "test-venice-key",
     VENICE_API_URL: "https://api.venice.ai",
     NODE_ENV: "test",
+    JWT_SECRET: "test-jwt-secret-must-be-at-least-32-chars-long",
   },
 }));
 

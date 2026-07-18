@@ -520,12 +520,47 @@ authRoutes.post("/auth/account/login", async (c) => {
   const ip = extractClientIp(c);
   const key = `rl:account-login:ip:${ip}`;
 
+  // In-memory sliding window fallback for when Redis is unavailable.
+  // Bounded at 10000 IPs to prevent memory exhaustion. Trade-off: per-process
+  // limits (not shared across replicas), small window of accuracy loss during
+  // the eviction cleanup. This matches the pattern used elsewhere in the
+  // rate-limit middleware for graceful degradation.
+  const memoryLoginAttempts = (globalThis as unknown as {
+    __omaMemoryLoginAttempts?: Map<string, number[]>;
+  }).__omaMemoryLoginAttempts;
+  const memStore = memoryLoginAttempts ?? new Map<string, number[]>();
+  if (!memoryLoginAttempts) {
+    (globalThis as unknown as { __omaMemoryLoginAttempts?: Map<string, number[]> }).__omaMemoryLoginAttempts = memStore;
+  }
+
   const redis = await getRedisClient();
   const ready = isRedisReady();
 
   if (!redis || !ready) {
-    return c.json({ error: { message: "Service temporarily unavailable", type: "rate_limit_error", code: "service_unavailable" } }, 503);
-  }
+    // Fallback to in-memory sliding window when Redis is unavailable.
+    const windowMs = 60_000;
+    const maxRequests = 5;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    const timestamps = (memStore.get(ip) ?? []).filter((t) => t > windowStart);
+    if (timestamps.length >= maxRequests) {
+      c.header("Retry-After", "60");
+      return c.json(
+        { error: { message: "Too many login attempts. Try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+        429,
+      );
+    }
+    timestamps.push(now);
+    memStore.set(ip, timestamps);
+    // Bound the map size
+    if (memStore.size > 10000) {
+      const firstKey = memStore.keys().next().value;
+      if (firstKey !== undefined) memStore.delete(firstKey);
+    }
+    c.header("X-RateLimit-Limit", String(maxRequests));
+    c.header("X-RateLimit-Remaining", String(maxRequests - timestamps.length));
+    // Fall through to CSRF + login logic
+  } else {
 
   // Sliding window rate limiting using Redis sorted set (ZSET).
   // This provides true sliding window behavior vs the previous fixed window.
@@ -581,6 +616,7 @@ authRoutes.post("/auth/account/login", async (c) => {
       { error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "service_unavailable" } },
       503,
     );
+  }
   }
 
   const csrfToken = c.req.header("x-csrf-token");

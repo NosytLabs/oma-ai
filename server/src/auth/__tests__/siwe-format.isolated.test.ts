@@ -19,6 +19,7 @@ const DUMMY_SIG = "0x" + "01".repeat(32) + "01".repeat(32) + "1b";
 vi.mock("../../config.js", () => ({
   config: {
     PRIMARY_DOMAIN: "oma.ai",
+    NODE_ENV: "test",
   },
 }));
 

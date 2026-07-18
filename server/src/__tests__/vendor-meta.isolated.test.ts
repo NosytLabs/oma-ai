@@ -39,6 +39,7 @@ vi.mock("../config.js", () => ({
   config: {
     VENICE_API_KEY: "venice-secret-DO-NOT-LEAK",
     SURPLUS_WALLET_PRIVATE_KEY: "0x" + "a".repeat(64), // looks like a 64-hex private key
+    NODE_ENV: "test",
   },
 }));
 

@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { Agent, request } from "undici";
+import * as dns from "node:dns";
 
 export interface TinyFishFetchResult {
   url: string;
@@ -37,7 +38,6 @@ function createPinnedAgent(pinnedIps: PinnedIpMap): Agent {
           return;
         }
         // Fall back to system resolver for non-pinned hostnames
-        const dns = require("node:dns") as typeof import("node:dns");
         dns.lookup(hostname, options, callback);
       },
     },
@@ -56,7 +56,7 @@ export async function fetchWebPages(urls: string[], pinnedIps: PinnedIpMap = {})
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
         // Use undici's request function which accepts a dispatcher option
-        const { statusCode, headers, body } = await request(url, {
+        const { statusCode, headers: _headers, body } = await request(url, {
           method: 'GET',
           headers: {
             'User-Agent': 'OMA-AI-Fetch/1.0',

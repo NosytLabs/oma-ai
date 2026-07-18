@@ -7,6 +7,8 @@ vi.mock("../../config.js", () => ({
     get OMMA_ALLOW_NON_PRIVATE_VENICE() {
       return allowNonPrivateState.value;
     },
+    NODE_ENV: "test",
+    JWT_SECRET: "test-jwt-secret-must-be-at-least-32-chars-long",
   },
 }));
 

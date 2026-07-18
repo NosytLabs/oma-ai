@@ -12,6 +12,7 @@ const mockConfig = vi.hoisted(() => ({
   VENICE_API_URL: "https://api.venice.ai",
   NODE_ENV: "test",
   RECEIPT_HMAC_SECRET: "test-receipt-secret-at-least-32-chars!",
+  JWT_SECRET: "test-jwt-secret-must-be-at-least-32-chars-long",
 }));
 
 vi.mock("../../config.js", () => ({

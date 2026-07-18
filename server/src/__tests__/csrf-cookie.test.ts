@@ -107,6 +107,9 @@ vi.mock("../lib/redis-client.js", () => ({
     incr: vi.fn(async () => 1),
     expire: vi.fn(async () => 1),
     ttl: vi.fn(async () => 60),
+    zRemRangeByScore: vi.fn(async () => 0),
+    zCard: vi.fn(async () => 0),
+    zAdd: vi.fn(async () => 1),
   })),
   isRedisReady: vi.fn(() => true),
 }));

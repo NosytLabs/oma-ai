@@ -19,20 +19,6 @@ const SIWE_FAILED_ATTEMPTS_WINDOW_SECONDS = 600; // 10 minutes
 // In-memory fallback for failed attempts when Redis is unavailable
 const siweFailedAttemptsMemory = new Map<string, { count: number; resetAt: number }>();
 
-async function getFailedAttemptsRedis(normalized: string): Promise<{ count: number; resetAt: number } | null> {
-  const redis = await getRedisClient();
-  const ready = isRedisReady();
-  if (!redis || !ready) return null;
-  const key = `siwe:failed:${normalized}`;
-  const data = await redis.get(key);
-  if (!data) return null;
-  try {
-    return JSON.parse(data);
-  } catch {
-    return null;
-  }
-}
-
 async function incrementFailedAttemptsRedis(normalized: string): Promise<{ count: number; resetAt: number }> {
   const redis = await getRedisClient();
   const ready = isRedisReady();
@@ -67,16 +53,6 @@ async function resetFailedAttemptsRedis(normalized: string): Promise<void> {
   await redis.del(key);
 }
 
-function getFailedAttemptsMemory(normalized: string): { count: number; resetAt: number } | null {
-  const entry = siweFailedAttemptsMemory.get(normalized);
-  if (!entry) return null;
-  if (entry.resetAt < Date.now()) {
-    siweFailedAttemptsMemory.delete(normalized);
-    return null;
-  }
-  return entry;
-}
-
 function incrementFailedAttemptsMemory(normalized: string): { count: number; resetAt: number } {
   const now = Date.now();
   const existing = siweFailedAttemptsMemory.get(normalized);
@@ -92,12 +68,6 @@ function incrementFailedAttemptsMemory(normalized: string): { count: number; res
 
 function resetFailedAttemptsMemory(normalized: string): void {
   siweFailedAttemptsMemory.delete(normalized);
-}
-
-async function getFailedAttempts(normalized: string): Promise<{ count: number; resetAt: number } | null> {
-  const redisResult = await getFailedAttemptsRedis(normalized);
-  if (redisResult) return redisResult;
-  return getFailedAttemptsMemory(normalized);
 }
 
 async function incrementFailedAttempts(normalized: string): Promise<{ count: number; resetAt: number }> {

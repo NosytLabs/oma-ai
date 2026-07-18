@@ -1,10 +1,46 @@
-import pino from 'pino';
+import pino, { type Logger } from 'pino';
 import { config } from '../config.js';
 
-const isDevelopment = config.NODE_ENV !== 'production' && config.NODE_ENV !== 'staging';
+// IMPORTANT: logger.ts and config.ts have a circular dependency (config
+// imports logger for its validation messages). To avoid a circular-import
+// trap, do NOT access `config` at module top level — config may still be
+// `undefined` while loading. Read from process.env first; only consult
+// `config` lazily through a getter that fires after the import cycle
+// completes (i.e. on first use, never at module-init time).
 
-export const logger = pino({
-  level: config.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
+type LoggerConfig = {
+  nodeEnv: string;
+  logLevel: string | undefined;
+};
+
+let cachedConfig: LoggerConfig | undefined;
+function readConfig(): LoggerConfig {
+  if (cachedConfig) return cachedConfig;
+  const cfg = config as { NODE_ENV?: string; LOG_LEVEL?: string };
+  cachedConfig = {
+    nodeEnv: cfg.NODE_ENV ?? process.env.NODE_ENV ?? 'production',
+    logLevel: cfg.LOG_LEVEL ?? process.env.LOG_LEVEL,
+  };
+  return cachedConfig;
+}
+
+function resolveIsDevelopment(): boolean {
+  return readConfig().nodeEnv !== 'production' && readConfig().nodeEnv !== 'staging';
+}
+
+function resolveLevel(): string {
+  const c = readConfig();
+  return c.logLevel || (resolveIsDevelopment() ? 'debug' : 'info');
+}
+
+// Resolve initial values from process.env only. Reading `config` at
+// module-init time would crash on circular import — defer to first call.
+const initialNodeEnv = process.env.NODE_ENV ?? 'production';
+const isDevelopment = initialNodeEnv !== 'production' && initialNodeEnv !== 'staging';
+const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
+
+export const logger: Logger = pino({
+  level: initialLevel,
   transport: isDevelopment
     ? {
         target: 'pino-pretty',
@@ -28,3 +64,11 @@ export const logger = pino({
   },
 });
 
+// Re-export for callers that need to inspect resolved config (e.g., a
+// runtime health check). Avoids leaking the lazy proxy.
+export function getLoggerEnv(): { isDevelopment: boolean; level: string } {
+  return {
+    isDevelopment: resolveIsDevelopment(),
+    level: resolveLevel(),
+  };
+}

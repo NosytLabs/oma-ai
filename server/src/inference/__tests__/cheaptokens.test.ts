@@ -28,6 +28,7 @@ vi.mock("../../config.js", () => ({
     CT_DAILY_USDC_CENTS_MAX: 0, // 0 = no cap (don't gate the test)
     CHEAPTOKENS_ADDRESS: undefined,
     TREASURY_BASE_ADDRESS: "0x0000000000000000000000000000000000000000",
+    NODE_ENV: "test",
   },
 }));
 

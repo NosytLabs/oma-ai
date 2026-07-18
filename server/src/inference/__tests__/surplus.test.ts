@@ -13,6 +13,7 @@ vi.mock("../../config.js", () => ({
     SURPLUS_VERIFIER_CONTRACT: undefined,
     SURPLUS_MIN_DISCOUNT_PCT: 0,
     SURPLUS_DEFAULT_SCHEME: "upto",
+    NODE_ENV: "test",
   },
 }));
 

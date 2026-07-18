@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Must mock config before importing encryption so config.ENCRYPTION_KEY is controlled.
 const ENCRYPTION_KEY = "test-encryption-key-32-chars-ok!";
 vi.mock("../../config.js", () => ({
-  config: { ENCRYPTION_KEY },
+  config: { ENCRYPTION_KEY, NODE_ENV: "test" },
 }));
 
 const { encryptSecret, decryptSecret } = await import("../encryption.js");

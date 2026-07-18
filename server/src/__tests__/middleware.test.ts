@@ -23,6 +23,7 @@ vi.mock("../db/schema.js", () => ({
 vi.mock("../config.js", () => ({
   config: {
     SPEND_LIMIT_DAILY_CENTS: 10000,
+    NODE_ENV: "test",
   },
 }));
 
