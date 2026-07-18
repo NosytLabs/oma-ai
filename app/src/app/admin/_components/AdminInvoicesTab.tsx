@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, FileText, Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
@@ -305,19 +305,22 @@ function Field({
 	placeholder?: string;
 	type?: string;
 }) {
+	const inputId = useId();
+
 	return (
-		<label className="flex flex-col gap-1">
-			<span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+		<div className="flex flex-col gap-1">
+			<label htmlFor={inputId} className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
 				{label}
-			</span>
+			</label>
 			<input
+				id={inputId}
 				type={type ?? "text"}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder}
 				className="px-3 py-2 rounded border border-border bg-surface text-text text-sm focus:outline-none focus:border-accent/50"
 			/>
-		</label>
+		</div>
 	);
 }
 

@@ -56,10 +56,11 @@ export default function AdminAuditLogsTab() {
 				<FilterInput label="Action" value={action} onChange={setAction} />
 				<FilterInput label="Resource" value={resource} onChange={setResource} />
 				<div className="flex flex-col gap-1">
-					<label className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+					<label htmlFor="audit-start-date" className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
 						Start
 					</label>
 					<input
+						id="audit-start-date"
 						type="date"
 						value={startDate}
 						onChange={(e) => setStartDate(e.target.value)}
@@ -67,10 +68,11 @@ export default function AdminAuditLogsTab() {
 					/>
 				</div>
 				<div className="flex flex-col gap-1">
-					<label className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+					<label htmlFor="audit-end-date" className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
 						End
 					</label>
 					<input
+						id="audit-end-date"
 						type="date"
 						value={endDate}
 						onChange={(e) => setEndDate(e.target.value)}

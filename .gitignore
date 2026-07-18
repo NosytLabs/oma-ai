@@ -75,3 +75,4 @@ app/playwright-report/
 # Local seed credentials / fixtures
 data/
 
+app/scripts-screenshots.mjs

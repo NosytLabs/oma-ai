@@ -74,15 +74,16 @@ function ApiKeyManagerComponent({
 				{showCreateForm && (
 					<div className="mb-6 border border-success/20 bg-success/5 p-4">
 						<div className="flex flex-col sm:flex-row gap-3">
-							<input
-								type="text"
-								value={newKeyName}
-								onChange={(e) => setNewKeyName(e.target.value)}
-								onKeyDown={(e) => e.key === "Enter" && onCreateKey()}
-								placeholder="Production, Staging, Dev..."
-								className="flex-1 border border-border bg-void px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
-								disabled={creating}
-							/>
+<input
+							type="text"
+							value={newKeyName}
+							onChange={(e) => setNewKeyName(e.target.value)}
+							onKeyDown={(e) => e.key === "Enter" && onCreateKey()}
+							placeholder="Production, Staging, Dev..."
+							aria-label="API key name"
+							className="flex-1 border border-border bg-void px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+							disabled={creating}
+						/>
 							<div className="flex gap-2">
 								<button
 									type="button"
