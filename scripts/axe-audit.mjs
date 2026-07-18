@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, "../app/package.json"));
-const { chromium } = require("playwright");
+// @playwright/test re-exports playwright's chromium — works without a top-level
+// `playwright` dep (we only depend on `@playwright/test` in the app).
+const { chromium } = require("@playwright/test");
 // Prefer axe.min.js; fall back to package main if the min build path shifts.
 const AXE_PATH =
 	(() => {
