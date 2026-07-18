@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { type LiveModelRaw, mapLiveModel } from "@/lib/model-utils";
 import { MODELS } from "@/lib/models-data";
@@ -139,4 +139,36 @@ export function useLiveModels(): ModelOption[] {
 	}, []);
 
 	return models;
+}
+
+/**
+ * LiveModelsContext — shares a single useLiveModels fetch across all consumers.
+ * Wrap the component tree (or a subtree) with <LiveModelsProvider> to avoid
+ * duplicate fetches on every render of ModelSelector, CostEstimate, etc.
+ */
+const LiveModelsContext = createContext<ModelOption[] | null>(null);
+
+interface LiveModelsProviderProps {
+	children: React.ReactNode;
+}
+
+export function LiveModelsProvider({ children }: LiveModelsProviderProps) {
+	const models = useLiveModels();
+	return (
+		<LiveModelsContext.Provider value={models}>
+			{children}
+		</LiveModelsContext.Provider>
+	);
+}
+
+/**
+ * Hook to consume shared live models. Must be used within a LiveModelsProvider.
+ * Falls back to the standalone useLiveModels() if no provider is present
+ * (useful for components that might render outside the provider).
+ */
+export function useSharedLiveModels(): ModelOption[] {
+	const context = useContext(LiveModelsContext);
+	if (context !== null) return context;
+	// Fallback to standalone hook for backwards compatibility
+	return useLiveModels();
 }

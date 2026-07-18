@@ -13,7 +13,7 @@
  */
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
-import { listModels, getModel, listVideoModels, reloadModelCatalog } from "../inference/models.js";
+import { listModels, getModel, listVideoModels } from "../inference/models.js";
 import { getModelPricing } from "../inference/billing-service.js";
 import { getRedisClient } from "../lib/redis-client.js";
 import type { OmaEnv } from "../types.js";
@@ -176,6 +176,3 @@ export async function invalidateModelsCache(): Promise<void> {
     }
   }
 }
-
-// Re-export reloadModelCatalog with cache invalidation hook
-export { reloadModelCatalog };

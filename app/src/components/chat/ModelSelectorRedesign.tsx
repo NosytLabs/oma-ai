@@ -16,7 +16,7 @@ import { AnimatePresence, m } from "framer-motion";
 import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { displayName } from "@/lib/model-utils";
-import { type TierFilter, useLiveModels } from "./chat-message-shared";
+import { type TierFilter, useSharedLiveModels } from "./chat-message-shared";
 
 interface ModelSelectorProps {
 	model: string;
@@ -118,7 +118,7 @@ export function ModelSelector({
 	const [search, setSearch] = useState("");
 	const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 	const dropdownRef = useRef<HTMLDivElement>(null);
-	const MODELS = useLiveModels();
+	const MODELS = useSharedLiveModels();
 
 	useEffect(() => {
 		if (!open) return;
