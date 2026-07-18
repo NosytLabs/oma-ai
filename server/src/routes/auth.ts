@@ -514,7 +514,6 @@ const csrfTokenHandler: MiddlewareHandler<OmaEnv> = async (c) => {
   return c.json({ token });
 };
 
-authRoutes.get("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
 authRoutes.post("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
 
 authRoutes.post("/auth/account/login", async (c) => {
