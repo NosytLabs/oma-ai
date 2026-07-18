@@ -173,6 +173,19 @@ const envSchema = z.object({
   // Only trust X-Forwarded-For headers from these known proxy IPs
   TRUSTED_PROXY_IPS: z.string().optional().default(""),
 
+  // Additional SIWE allowed domains (comma-separated)
+  ALLOWED_SIWE_DOMAINS: z.string().optional(),
+
+  // Log level override (debug, info, warn, error)
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
+
+  // Build metadata (injected at build time)
+  BUILD_SHA: z.string().optional().default("dev"),
+  BUILD_TIME: z.string().optional().default(() => new Date().toISOString()),
+
+  // CheapTokens: force disable provider
+  CHEAPTOKENS_FORCE_DISABLE: z.coerce.boolean().default(false),
+
   // ===========================================================================
   // M5: Hardcoded business constants moved from inline literals into the
   // schema. Defaults preserve the previous hardcoded behavior so deployments

@@ -1,8 +1,9 @@
 import type { Context } from "hono";
 import type { OmaEnv } from "../../types.js";
+import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 
-const TRUSTED_PROXIES_ENV = process.env.TRUSTED_PROXY_IPS || "";
+const TRUSTED_PROXIES_ENV = config.TRUSTED_PROXY_IPS || "";
 const TRUSTED_PROXIES: Set<string> = new Set(
   TRUSTED_PROXIES_ENV.split(",")
     .map((ip) => ip.trim())
@@ -10,7 +11,7 @@ const TRUSTED_PROXIES: Set<string> = new Set(
 );
 
 // C3: Production warning when no trusted proxies are configured
-if (TRUSTED_PROXIES.size === 0 && process.env.NODE_ENV === "production") {
+if (TRUSTED_PROXIES.size === 0 && config.NODE_ENV === "production") {
   logger.warn("[SECURITY] TRUSTED_PROXY_IPS is empty in production. Rate limiting by IP may be bypassed via x-forwarded-for spoofing. Set TRUSTED_PROXY_IPS to your reverse proxy IPs.");
 }
 

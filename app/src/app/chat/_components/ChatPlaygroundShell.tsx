@@ -22,6 +22,7 @@ import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
+import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 import { ChatErrorBanner } from "./ChatErrorBanner";
 import { ChatSettingsPanel } from "./ChatSettingsPanel";
 import { MemoizedChatToolbar } from "./ChatToolbar";
@@ -585,7 +586,9 @@ function ShellLoadingFallback() {
 export function ChatPlaygroundShell(props: ChatPlaygroundShellProps) {
 	return (
 		<Suspense fallback={<ShellLoadingFallback />}>
-			<ShellContent {...props} />
+			<LiveModelsProvider>
+				<ShellContent {...props} />
+			</LiveModelsProvider>
 		</Suspense>
 	);
 }
