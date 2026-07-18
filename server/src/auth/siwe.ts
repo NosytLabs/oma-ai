@@ -11,6 +11,129 @@ import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { NONCE_TTL_MS, NONCE_REDIS_TTL_SECONDS } from "../constants.js";
 import { logger } from "../lib/logger.js";
 
+// Constants for SIWE failed attempt tracking
+const SIWE_MAX_FAILED_ATTEMPTS = 5;
+const SIWE_FAILED_ATTEMPTS_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const SIWE_FAILED_ATTEMPTS_WINDOW_SECONDS = 600; // 10 minutes
+
+// In-memory fallback for failed attempts when Redis is unavailable
+const siweFailedAttemptsMemory = new Map<string, { count: number; resetAt: number }>();
+
+async function getFailedAttemptsRedis(normalized: string): Promise<{ count: number; resetAt: number } | null> {
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  if (!redis || !ready) return null;
+  const key = `siwe:failed:${normalized}`;
+  const data = await redis.get(key);
+  if (!data) return null;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+async function incrementFailedAttemptsRedis(normalized: string): Promise<{ count: number; resetAt: number }> {
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  if (!redis || !ready) {
+    throw new Error("Redis unavailable");
+  }
+  const key = `siwe:failed:${normalized}`;
+  const now = Date.now();
+  const existing = await redis.get(key);
+  let count = 1;
+  let resetAt = now + SIWE_FAILED_ATTEMPTS_WINDOW_MS;
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing);
+      if (parsed.resetAt > now) {
+        count = parsed.count + 1;
+        resetAt = parsed.resetAt;
+      }
+    } catch {
+      // Corrupted data, start fresh
+    }
+  }
+  await redis.setex(key, SIWE_FAILED_ATTEMPTS_WINDOW_SECONDS, JSON.stringify({ count, resetAt }));
+  return { count, resetAt };
+}
+
+async function resetFailedAttemptsRedis(normalized: string): Promise<void> {
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  if (!redis || !ready) return;
+  const key = `siwe:failed:${normalized}`;
+  await redis.del(key);
+}
+
+function getFailedAttemptsMemory(normalized: string): { count: number; resetAt: number } | null {
+  const entry = siweFailedAttemptsMemory.get(normalized);
+  if (!entry) return null;
+  if (entry.resetAt < Date.now()) {
+    siweFailedAttemptsMemory.delete(normalized);
+    return null;
+  }
+  return entry;
+}
+
+function incrementFailedAttemptsMemory(normalized: string): { count: number; resetAt: number } {
+  const now = Date.now();
+  const existing = siweFailedAttemptsMemory.get(normalized);
+  if (existing && existing.resetAt > now) {
+    const updated = { count: existing.count + 1, resetAt: existing.resetAt };
+    siweFailedAttemptsMemory.set(normalized, updated);
+    return updated;
+  }
+  const fresh = { count: 1, resetAt: now + SIWE_FAILED_ATTEMPTS_WINDOW_MS };
+  siweFailedAttemptsMemory.set(normalized, fresh);
+  return fresh;
+}
+
+function resetFailedAttemptsMemory(normalized: string): void {
+  siweFailedAttemptsMemory.delete(normalized);
+}
+
+async function getFailedAttempts(normalized: string): Promise<{ count: number; resetAt: number } | null> {
+  const redisResult = await getFailedAttemptsRedis(normalized);
+  if (redisResult) return redisResult;
+  return getFailedAttemptsMemory(normalized);
+}
+
+async function incrementFailedAttempts(normalized: string): Promise<{ count: number; resetAt: number }> {
+  try {
+    return await incrementFailedAttemptsRedis(normalized);
+  } catch {
+    return incrementFailedAttemptsMemory(normalized);
+  }
+}
+
+async function resetFailedAttempts(normalized: string): Promise<void> {
+  await resetFailedAttemptsRedis(normalized);
+  resetFailedAttemptsMemory(normalized);
+}
+
+async function rotateNonceAndInvalidateCache(normalized: string, lookupField: "address" | "evmAddress"): Promise<void> {
+  const newNonce = nanoid(32);
+  if (lookupField === "evmAddress") {
+    await db
+      .update(users)
+      .set({ nonce: newNonce, updatedAt: new Date() })
+      .where(eq(users.evmAddress, normalized));
+  } else {
+    await db
+      .update(users)
+      .set({ nonce: newNonce, updatedAt: new Date() })
+      .where(eq(users.address, normalized));
+  }
+  // Invalidate Redis nonce cache so next getNonce() fetches the new one
+  const redis = await getRedisClient();
+  const ready = isRedisReady();
+  if (redis && ready) {
+    await redis.del(`nonce:${normalized}`);
+  }
+}
+
 /**
  * Allowed SIWE `domain` values. EIP-4361 §4 requires the verifier to bind
  * the message to a known domain — without this, an attacker can lure a
@@ -117,7 +240,39 @@ export async function verifySiweMessage(message: string, signature: string) {
       break;
     }
   }
+  // Rotate nonce on EVERY verification attempt (success or failure) to prevent replay.
+  // This ensures a nonce can only be used once, regardless of outcome.
+  await rotateNonceAndInvalidateCache(normalized, lookupField);
+
   if (!result || !result.success) {
+    // Track failed attempts; if threshold exceeded, nullify the nonce to force re-fetch
+    const failed = await incrementFailedAttempts(normalized);
+    if (failed.count >= SIWE_MAX_FAILED_ATTEMPTS) {
+      logger.warn(
+        { address: normalized, count: failed.count },
+        "[siwe] Max failed attempts reached — nullifying nonce to force re-fetch",
+      );
+      // Set nonce to empty string to force getNonce() to generate a fresh one
+      if (lookupField === "evmAddress") {
+        await db
+          .update(users)
+          .set({ nonce: "", updatedAt: new Date() })
+          .where(eq(users.evmAddress, normalized));
+      } else {
+        await db
+          .update(users)
+          .set({ nonce: "", updatedAt: new Date() })
+          .where(eq(users.address, normalized));
+      }
+      // Invalidate Redis cache
+      const redis = await getRedisClient();
+      const ready = isRedisReady();
+      if (redis && ready) {
+        await redis.del(`nonce:${normalized}`);
+      }
+      // Reset failed attempts counter since we've taken action
+      await resetFailedAttempts(normalized);
+    }
     return null;
   }
   // Belt-and-braces explicit re-check: the siwe library returns success:false
@@ -126,19 +281,8 @@ export async function verifySiweMessage(message: string, signature: string) {
     logger.warn({ claimed: siweMessage.domain }, "[siwe] rejected — domain not in allowlist");
     return null;
   }
-  // Rotate the nonce on the correct lookup field so the same message can't
-  // be replayed. Post-0030 users are keyed by evmAddress.
-  if (lookupField === "evmAddress") {
-    await db
-      .update(users)
-      .set({ nonce: nanoid(32), updatedAt: new Date() })
-      .where(eq(users.evmAddress, normalized));
-  } else {
-    await db
-      .update(users)
-      .set({ nonce: nanoid(32), updatedAt: new Date() })
-      .where(eq(users.address, normalized));
-  }
+  // Success: reset failed attempts counter
+  await resetFailedAttempts(normalized);
   return result.data;
 }
 
