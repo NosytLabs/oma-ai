@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PLACEHOLDER_ADDRESSES, CREDIT_EXPIRY_DAYS } from "./constants.js";
+import { logger } from "./lib/logger.js";
 
 const INSECURE_DEFAULTS = [
   "dev-secret-change-me-in-prod-32ch",
