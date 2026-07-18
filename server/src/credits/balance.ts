@@ -3,7 +3,7 @@ import { creditBalances } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 import { getRedisClient } from '../lib/redis-client.js'
 
-const BALANCE_CACHE_TTL = 30
+const BALANCE_CACHE_TTL = 10
 
 export async function getBalance(userId: string) {
   const redis = await getRedisClient()

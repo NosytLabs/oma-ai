@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 
 // Lazy-load the 569-line chat shell (framer-motion + wallet hooks).
 const ChatPlaygroundShell = dynamic(
@@ -49,11 +50,13 @@ export default function ChatPage() {
 			}
 		>
 			<Suspense fallback={<ChatLoadingFallback />}>
-				<ChatPlaygroundShell
-					variant="chat"
-					storageKey="oma_chat_conversation"
-					systemPromptKey="oma_chat_system_prompt"
-				/>
+				<LiveModelsProvider>
+					<ChatPlaygroundShell
+						variant="chat"
+						storageKey="oma_chat_conversation"
+						systemPromptKey="oma_chat_system_prompt"
+					/>
+				</LiveModelsProvider>
 			</Suspense>
 		</ErrorBoundary>
 	);
