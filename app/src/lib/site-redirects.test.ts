@@ -63,8 +63,9 @@ describe("sitemap excludes removed marketing routes", () => {
 });
 
 describe("brand assets on disk (public/)", () => {
-	// favicon.ico is served by Next.js from `src/app/favicon.ico` (App Router
-	// convention), not from `public/`. SVG + PNG variants cover every browser.
+	// The app icon is generated dynamically by `src/app/icon.tsx` (next/og),
+	// and the tab favicon is served from `public/favicon.svg` + the PNG
+	// variants. SVG + PNG cover every modern browser; no static .ico needed.
 	const required = [
 		"favicon.svg",
 		"favicon-16x16.png",
