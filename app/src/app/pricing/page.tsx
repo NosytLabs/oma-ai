@@ -442,8 +442,9 @@ export default function PricingPage() {
 									<Link
 										href="/docs#x402"
 										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
+										aria-label="Learn more about the x402 payment protocol"
 									>
-										Learn more →
+										Learn more about x402 →
 									</Link>
 								</p>
 							</div>

@@ -21,7 +21,7 @@ export function generateStaticParams() {
 	return MODELS.map((m) => ({ slug: m.id }));
 }
 
-/** Allow non-pre-rendered slugs (the 80+ long-tail models served by
+/** Allow non-pre-rendered slugs (the long-tail models served by
  *  `/v1/models`) to render on demand instead of 404'ing. The page body
  *  falls back to a minimal view for slugs that aren't in the static
  *  curated catalog. */
@@ -117,7 +117,7 @@ export default async function ModelDetailPage({
 	}
 
 	// Long-tail model from the live catalog. Fall back to a minimal page
-	// rather than 404 — `/v1/models` returns 90+ entries, all of which the
+	// rather than 404 — `/v1/models` returns 95+ entries, all of which the
 	// /models listing links to detail pages for.
 	const live = await fetchLiveModel(slug);
 	if (!live) notFound();

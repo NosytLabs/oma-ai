@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 const STORAGE_KEY = "oma-chat-welcome-dismissed";
 const TIPS_KEY = "oma-chat-tips-seen";
@@ -42,7 +43,7 @@ const STEPS = [
 	{
 		id: 1,
 		label: "Choose your model",
-		description: "Pick from 96+ models — frontier, budget, or specialized",
+		description: `Pick from ${MODEL_COUNT}+ models — frontier, budget, or specialized`,
 		icon: Sparkles,
 		accent: "var(--color-accent)",
 	},
