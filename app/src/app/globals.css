@@ -409,6 +409,40 @@
 	.btn-primary:active {
 		transform: scale(0.98);
 	}
+	/* Sheen — animatedbuttons #25 pattern adapted to --color-accent.
+	   Pure CSS, GPU-composited transform, prefers-reduced-motion safe. */
+	.btn-primary {
+		position: relative;
+		isolation: isolate;
+		overflow: hidden;
+	}
+	.btn-primary::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			115deg,
+			transparent 35%,
+			rgba(255, 255, 255, 0.35) 50%,
+			transparent 65%
+		);
+		transform: translateX(-110%);
+		transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+		pointer-events: none;
+		z-index: 1;
+	}
+	.btn-primary:hover::before {
+		transform: translateX(110%);
+	}
+	.btn-primary > * {
+		position: relative;
+		z-index: 2;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.btn-primary::before {
+			display: none;
+		}
+	}
 	.btn-primary:disabled,
 	.btn-primary[aria-disabled="true"] {
 		opacity: 0.5;
@@ -446,6 +480,40 @@
 	}
 	.btn-secondary:active {
 		transform: scale(0.98);
+	}
+	/* Sheen — animatedbuttons #25 adapted for the elevated surface.
+	   Subtler than primary (white at 18%) since the surface is already light. */
+	.btn-secondary {
+		position: relative;
+		isolation: isolate;
+		overflow: hidden;
+	}
+	.btn-secondary::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			115deg,
+			transparent 35%,
+			rgba(255, 255, 255, 0.18) 50%,
+			transparent 65%
+		);
+		transform: translateX(-110%);
+		transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+		pointer-events: none;
+		z-index: 1;
+	}
+	.btn-secondary:hover::before {
+		transform: translateX(110%);
+	}
+	.btn-secondary > * {
+		position: relative;
+		z-index: 2;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.btn-secondary::before {
+			display: none;
+		}
 	}
 	.btn-secondary:disabled,
 	.btn-secondary[aria-disabled="true"] {
@@ -928,6 +996,52 @@
 		transform: translateY(-2px);
 		border-color: var(--color-border-hi);
 		box-shadow: var(--shadow-md);
+	}
+}
+
+/* ============================================================================
+   PulseLines — Originkit-inspired animated grid background.
+   Consumed by <PulseLines /> in components/pulse-lines.tsx. The component sets
+   --pl-color/--pl-gap/--pl-speed/--pl-line-opacity/--pl-sweep-opacity/--pl-axis
+   via inline CSS variables; the keyframes below read them.
+   Pure CSS, GPU-composited, respects prefers-reduced-motion.
+   ========================================================================== */
+.pulse-lines-bg {
+	background-image:
+		linear-gradient(
+			var(--pl-sweep-axis, 110deg),
+			transparent 35%,
+			color-mix(in srgb, var(--pl-color) calc(var(--pl-sweep-opacity) * 100%), transparent) 50%,
+			transparent 65%
+		),
+		repeating-linear-gradient(
+			var(--pl-axis, to right),
+			color-mix(in srgb, var(--pl-color) calc(var(--pl-line-opacity) * 100%), transparent) 0 1px,
+			transparent 1px
+		);
+	background-size:
+		220% 100%,
+		var(--pl-gap) 100%;
+	background-repeat: no-repeat, repeat;
+	background-position: -120% 0, 0 0;
+	animation: pl-sweep var(--pl-speed, 7s) linear infinite;
+	will-change: background-position;
+}
+.pulse-lines-bg--static {
+	animation: none;
+}
+@keyframes pl-sweep {
+	from {
+		background-position: -120% 0, 0 0;
+	}
+	to {
+		background-position: 220% 0, 0 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.pulse-lines-bg {
+		animation: none;
+		opacity: 0.55;
 	}
 }
 

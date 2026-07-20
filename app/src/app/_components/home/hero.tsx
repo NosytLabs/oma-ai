@@ -11,6 +11,8 @@ import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
 import { m } from "framer-motion";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { PulseLines } from "@/components/pulse-lines";
+import { ScrambleText } from "@/components/scramble-text";
 
 function reveal(index: number) {
 	return {
@@ -33,6 +35,15 @@ export function Hero() {
 				className="pointer-events-none absolute inset-0 -z-10"
 			>
 				<div className="absolute inset-0 bg-grid opacity-[0.28] mask-radial" />
+				{/* PulseLines — Originkit-inspired sweep. Sits beneath the
+				    radial blobs; reads as ambient depth, never competes with copy. */}
+				<PulseLines
+					gap={42}
+					speed={9}
+					lineOpacity={0.06}
+					sweepOpacity={0.32}
+					style={{ opacity: 0.7 }}
+				/>
 				<div className="absolute -left-40 top-8 h-[32rem] w-[32rem] rounded-full bg-accent/[0.09] blur-[140px]" />
 				<div className="absolute right-[-10rem] top-32 h-[26rem] w-[26rem] rounded-full bg-tertiary/[0.07] blur-[140px]" />
 				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
@@ -81,7 +92,12 @@ export function Hero() {
 								className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px]"
 							>
 								<KeyRound className="h-4 w-4" aria-hidden="true" />
-								Get API key
+								<ScrambleText
+									text="Get API key"
+									trigger="hover"
+									as="span"
+									className="inline-block"
+								/>
 								<ArrowRight className="h-4 w-4" aria-hidden="true" />
 							</Link>
 							<Link
@@ -89,7 +105,12 @@ export function Hero() {
 								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"
 							>
 								<Sparkles className="h-4 w-4" aria-hidden="true" />
-								Try chat
+								<ScrambleText
+									text="Try chat"
+									trigger="hover"
+									as="span"
+									className="inline-block"
+								/>
 							</Link>
 							<Link
 								href="/docs#x402"
