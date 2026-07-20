@@ -13,6 +13,9 @@ import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { PulseLines } from "@/components/pulse-lines";
 import { ScrambleText } from "@/components/scramble-text";
+import { FloatingIcons } from "@/components/floating-icons";
+import { ElectricBorder } from "@/components/electric-border";
+import { JuiceButton } from "@/components/juice-button";
 
 function reveal(index: number) {
 	return {
@@ -35,6 +38,8 @@ export function Hero() {
 				className="pointer-events-none absolute inset-0 -z-10"
 			>
 				<div className="absolute inset-0 bg-grid opacity-[0.28] mask-radial" />
+				{/* FloatingIcons — subtly drifting crypto symbols in the background */}
+				<FloatingIcons count={6} opacity={0.06} speed={20} />
 				{/* PulseLines — Originkit-inspired sweep. Sits beneath the
 				    radial blobs; reads as ambient depth, never competes with copy. */}
 				<PulseLines
@@ -87,19 +92,32 @@ export function Hero() {
 							{...reveal(3)}
 							className="mt-9 flex flex-wrap items-center gap-3"
 						>
-							<Link
-								href="/login"
-								className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px]"
+							<JuiceButton
+								color="var(--color-accent)"
+								size={160}
+								opacity={0.15}
+								className="rounded-full"
 							>
-								<KeyRound className="h-4 w-4" aria-hidden="true" />
-								<ScrambleText
-									text="Get API key"
-									trigger="hover"
-									as="span"
-									className="inline-block"
-								/>
-								<ArrowRight className="h-4 w-4" aria-hidden="true" />
-							</Link>
+								<ElectricBorder
+									borderRadius="9999px"
+									borderWidth={1}
+									active={true}
+								>
+									<Link
+										href="/login"
+										className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px]"
+									>
+										<KeyRound className="h-4 w-4" aria-hidden="true" />
+										<ScrambleText
+											text="Get API key"
+											trigger="hover"
+											as="span"
+											className="inline-block"
+										/>
+										<ArrowRight className="h-4 w-4" aria-hidden="true" />
+									</Link>
+								</ElectricBorder>
+							</JuiceButton>
 							<Link
 								href="/chat"
 								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"

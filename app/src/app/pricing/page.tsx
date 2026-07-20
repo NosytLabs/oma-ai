@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { FloatingIcons } from "@/components/floating-icons";
+import { JuiceButton } from "@/components/juice-button";
+import { ElectricBorder } from "@/components/electric-border";
 import { formatPricePerMillion, MODELS, MODEL_COUNT } from "@/lib/models-data";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
@@ -191,6 +194,7 @@ export default function PricingPage() {
 			{/* ── Ambient background ── */}
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
+				<FloatingIcons count={6} />
 			</div>
 
 			<div className="container-page page-shell">
@@ -475,25 +479,51 @@ export default function PricingPage() {
 
 				{/* ── CTA ── */}
 				<div className="relative mb-12 overflow-hidden rounded-2xl py-10">
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-0 -z-10"
+					>
+						<div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+					</div>
 					<div className="flex flex-col items-center gap-4">
 						<h2 className="h2-page text-text-bright text-center">
 							Start building today
 						</h2>
-						<Link
-							href="/dashboard"
-							className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+						<JuiceButton
+							color="var(--color-accent)"
+							size={180}
+							opacity={0.15}
+							className="rounded-full"
 						>
-							<Zap className="h-4 w-4 mr-2" />
-							Start AI Inference
-							<ArrowRight className="h-4 w-4 ml-2" />
-						</Link>
-						<Link
-							href="/deposit"
-							className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+							<ElectricBorder
+								borderRadius="9999px"
+								borderWidth={1}
+								active={true}
+							>
+								<Link
+									href="/dashboard"
+									className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+								>
+									<Zap className="h-4 w-4 mr-2" />
+									Start AI Inference
+									<ArrowRight className="h-4 w-4 ml-2" />
+								</Link>
+							</ElectricBorder>
+						</JuiceButton>
+						<JuiceButton
+							color="var(--color-accent)"
+							size={120}
+							opacity={0.12}
+							className="rounded-full"
 						>
-							<Coins className="h-4 w-4 mr-2" />
-							Deposit Crypto
-						</Link>
+							<Link
+								href="/deposit"
+								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+							>
+								<Coins className="h-4 w-4 mr-2" />
+								Deposit Crypto
+							</Link>
+						</JuiceButton>
 						<Link
 							href="/models"
 							className="text-sm text-text-secondary hover:text-accent transition-colors px-4 py-3 text-center"

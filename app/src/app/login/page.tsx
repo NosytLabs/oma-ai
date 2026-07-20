@@ -80,6 +80,9 @@ import {
 	WalletPicker,
 	WalletStatus,
 } from "@/components/auth";
+import { ElectricBorder } from "@/components/electric-border";
+import { FloatingIcons } from "@/components/floating-icons";
+import { JuiceButton } from "@/components/juice-button";
 import { OmaLogo } from "@/components/ui/oma-logo";
 import { useWallet } from "@/components/wallet-provider";
 import { api } from "@/lib/api";
@@ -290,6 +293,7 @@ function LoginInner() {
 				className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
 			>
 				<div className="absolute inset-0 bg-grid opacity-[0.18] mask-radial" />
+				<FloatingIcons count={5} />
 				<div className="absolute -left-24 top-8 h-80 w-80 rounded-full bg-accent/12 blur-[120px]" />
 				<div className="absolute right-[-4rem] top-1/3 h-72 w-72 rounded-full bg-tertiary/10 blur-[120px]" />
 				<div className="absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-secondary/8 blur-[140px]" />
@@ -731,29 +735,42 @@ function LoginCard(p: LoginCardProps) {
 
 				{walletPanelState === "disconnected" && (
 					<>
-						<button
-							ref={triggerRef}
-							type="button"
-							onClick={() => setPickerOpen(true)}
-							disabled={offline}
-							aria-haspopup="dialog"
-							aria-expanded={pickerOpen}
-							aria-controls="wallet-picker"
-							title={offline ? "API is offline" : undefined}
-							className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+						<JuiceButton
+							color="var(--color-accent)"
+							size={160}
+							opacity={0.12}
+							className="rounded-full w-full"
 						>
-							{isConnecting && pendingConnectorId ? (
-								<>
-									<Loader2 className="h-4 w-4 animate-spin" />
-									Connecting…
-								</>
-							) : (
-								<>
-									<WalletIcon className="h-4 w-4" aria-hidden="true" />
-									Connect Wallet
-								</>
-							)}
-						</button>
+							<ElectricBorder
+								borderRadius="9999px"
+								borderWidth={1}
+								active={true}
+							>
+								<button
+									ref={triggerRef}
+									type="button"
+									onClick={() => setPickerOpen(true)}
+									disabled={offline}
+									aria-haspopup="dialog"
+									aria-expanded={pickerOpen}
+									aria-controls="wallet-picker"
+									title={offline ? "API is offline" : undefined}
+									className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									{isConnecting && pendingConnectorId ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Connecting…
+										</>
+									) : (
+										<>
+											<WalletIcon className="h-4 w-4" aria-hidden="true" />
+											Connect Wallet
+										</>
+									)}
+								</button>
+							</ElectricBorder>
+						</JuiceButton>
 						<p className="text-center text-[11px] text-text-muted">
 							A SIWE signature proves wallet ownership. No transaction, no fee.
 						</p>
@@ -762,15 +779,22 @@ function LoginCard(p: LoginCardProps) {
 
 				{walletPanelState === "authenticating" && (
 					<>
-						<button
-							type="button"
-							disabled
-							aria-busy="true"
-							className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+						<JuiceButton
+							color="var(--color-accent)"
+							size={160}
+							opacity={0.12}
+							className="rounded-full w-full"
 						>
-							<Loader2 className="h-4 w-4 animate-spin" />
-							Signing message…
-						</button>
+							<button
+								type="button"
+								disabled
+								aria-busy="true"
+								className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+							>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Signing message…
+							</button>
+						</JuiceButton>
 						{evmAddress && <SiwePreview message={previewMessage} isSigning />}
 					</>
 				)}

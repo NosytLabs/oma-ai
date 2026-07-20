@@ -1046,6 +1046,48 @@
 }
 
 /* ============================================================================
+   Originkit-inspired effects
+   ----------------------------------------------------------------------------
+   Shared keyframes for FloatingIcons, ElectricBorder, and similar components.
+   ========================================================================== */
+
+/* FloatingIcons — slow vertical drift with horizontal wobble */
+@keyframes float-icon {
+	0%,
+	100% {
+		translate: 0 0;
+	}
+	25% {
+		translate: var(--float-wobble, 6px) -8px;
+	}
+	50% {
+		translate: calc(var(--float-wobble, 6px) * -1) -16px;
+	}
+	75% {
+		translate: var(--float-wobble, 6px) -8px;
+	}
+}
+
+/* ElectricBorder — conic-gradient rotation for the running-light pseudo */
+@keyframes electric-spin {
+	to {
+		--eb-angle: 360deg;
+	}
+}
+@property --eb-angle {
+	syntax: "<angle>";
+	initial-value: 0deg;
+	inherits: false;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.float-icon,
+	.electric-spin {
+		animation: none !important;
+	}
+}
+
+/* ============================================================================
    Theme variants
    ----------------------------------------------------------------------------
    ThemeProvider sets [data-theme="..."] on <html>. Default emerald has no

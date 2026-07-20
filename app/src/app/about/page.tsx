@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { FloatingIcons } from "@/components/floating-icons";
+import { JuiceButton } from "@/components/juice-button";
 
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
@@ -36,7 +38,13 @@ const PILLARS = [
 
 export default function AboutPage() {
 	return (
-		<div className="min-h-screen bg-void text-text">
+		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+			{/* ── Ambient background ── */}
+			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
+				<FloatingIcons count={5} />
+			</div>
+
 			<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
 				<Link
 					href="/"
@@ -83,13 +91,15 @@ export default function AboutPage() {
 				</ul>
 
 				<div className="flex flex-wrap gap-3">
-					<Link
-						href="/login"
-						className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-void hover:bg-accent-bright transition-colors"
-					>
-						Get an API key
-						<ArrowRight className="h-4 w-4" aria-hidden="true" />
-					</Link>
+					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-lg">
+						<Link
+							href="/login"
+							className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-void hover:bg-accent-bright transition-colors"
+						>
+							Get an API key
+							<ArrowRight className="h-4 w-4" aria-hidden="true" />
+						</Link>
+					</JuiceButton>
 					<Link
 						href="/docs"
 						className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text-bright hover:border-accent/40 transition-colors"
