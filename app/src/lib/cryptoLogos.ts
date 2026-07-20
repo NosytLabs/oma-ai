@@ -10,7 +10,10 @@ interface CryptoLogoConfig {
 	coingeckoId: string;
 	primaryUrl: string;
 	fallbackUrl: string;
+	/** Local-first SVG path served from /public/logos/. */
 	svgUrl?: string;
+	/** CDN backup for the SVG (cryptologos.cc) — used if local SVG is missing. */
+	svgFallbackUrl?: string;
 }
 
 // CoinGecko logo URL patterns
@@ -28,7 +31,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "1",
 		primaryUrl: `${COINGECKO_BASE}/1/large/bitcoin.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/1/small/bitcoin.png`,
-		svgUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.svg",
+		svgUrl: "/logos/bitcoin-btc-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.svg",
 	},
 	XMR: {
 		symbol: "XMR",
@@ -43,7 +47,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "279",
 		primaryUrl: `${COINGECKO_BASE}/279/large/ethereum.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/279/small/ethereum.png`,
-		svgUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.svg",
+		svgUrl: "/logos/ethereum-eth-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.svg",
 	},
 	DOGE: {
 		symbol: "DOGE",
@@ -51,7 +56,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "5",
 		primaryUrl: `${COINGECKO_BASE}/5/large/dogecoin.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/5/small/dogecoin.png`,
-		svgUrl: "https://cryptologos.cc/logos/dogecoin-doge-logo.svg",
+		svgUrl: "/logos/dogecoin-doge-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/dogecoin-doge-logo.svg",
 	},
 	USDC: {
 		symbol: "USDC",
@@ -59,7 +65,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "6319",
 		primaryUrl: `${COINGECKO_BASE}/6319/large/USD_Coin_icon.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/6319/small/USD_Coin_icon.png`,
-		svgUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg",
+		svgUrl: "/logos/usd-coin-usdc-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg",
 	},
 	OMA: {
 		symbol: "OMA",
@@ -75,7 +82,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "2",
 		primaryUrl: `${COINGECKO_BASE}/2/large/litecoin.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/2/small/litecoin.png`,
-		svgUrl: "https://cryptologos.cc/logos/litecoin-ltc-logo.svg",
+		svgUrl: "/logos/litecoin-ltc-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/litecoin-ltc-logo.svg",
 	},
 	XRP: {
 		symbol: "XRP",
@@ -83,7 +91,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "44",
 		primaryUrl: `${COINGECKO_BASE}/44/large/xrp-symbol-white-src.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/44/small/xrp-symbol-white-src.png`,
-		svgUrl: "https://cryptologos.cc/logos/xrp-xrp-logo.svg",
+		svgUrl: "/logos/xrp-xrp-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/xrp-xrp-logo.svg",
 	},
 	MATIC: {
 		symbol: "MATIC",
@@ -91,7 +100,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "4713",
 		primaryUrl: `${COINGECKO_BASE}/4713/large/polygon.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/4713/small/polygon.png`,
-		svgUrl: "https://cryptologos.cc/logos/polygon-matic-logo.svg",
+		svgUrl: "/logos/polygon-matic-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/polygon-matic-logo.svg",
 	},
 	// Additional common tokens for future expansion
 	BNB: {
@@ -100,7 +110,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "1839",
 		primaryUrl: `${COINGECKO_BASE}/1839/large/bnb-icon2_2.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/1839/small/bnb-icon2_2.png`,
-		svgUrl: "https://cryptologos.cc/logos/bnb-bnb-logo.svg",
+		svgUrl: "/logos/bnb-bnb-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/bnb-bnb-logo.svg",
 	},
 	ADA: {
 		symbol: "ADA",
@@ -108,7 +119,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "975",
 		primaryUrl: `${COINGECKO_BASE}/975/large/cardano.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/975/small/cardano.png`,
-		svgUrl: "https://cryptologos.cc/logos/cardano-ada-logo.svg",
+		svgUrl: "/logos/cardano-ada-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/cardano-ada-logo.svg",
 	},
 	DOT: {
 		symbol: "DOT",
@@ -116,7 +128,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "12171",
 		primaryUrl: `${COINGECKO_BASE}/12171/large/polkadot.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/12171/small/polkadot.png`,
-		svgUrl: "https://cryptologos.cc/logos/polkadot-new-dot-logo.svg",
+		svgUrl: "/logos/polkadot-new-dot-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/polkadot-new-dot-logo.svg",
 	},
 	LINK: {
 		symbol: "LINK",
@@ -124,7 +137,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "877",
 		primaryUrl: `${COINGECKO_BASE}/877/large/chainlink-new-logo.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/877/small/chainlink-new-logo.png`,
-		svgUrl: "https://cryptologos.cc/logos/chainlink-link-logo.svg",
+		svgUrl: "/logos/chainlink-link-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/chainlink-link-logo.svg",
 	},
 	AVAX: {
 		symbol: "AVAX",
@@ -132,7 +146,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "12559",
 		primaryUrl: `${COINGECKO_BASE}/12559/large/Avalanche_C_Red_Positive_RGB.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/12559/small/Avalanche_C_Red_Positive_RGB.png`,
-		svgUrl: "https://cryptologos.cc/logos/avalanche-avax-logo.svg",
+		svgUrl: "/logos/avalanche-avax-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/avalanche-avax-logo.svg",
 	},
 	TRX: {
 		symbol: "TRX",
@@ -140,7 +155,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "1094",
 		primaryUrl: `${COINGECKO_BASE}/1094/large/tron-logo.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/1094/small/tron-logo.png`,
-		svgUrl: "https://cryptologos.cc/logos/tron-trx-logo.svg",
+		svgUrl: "/logos/tron-trx-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/tron-trx-logo.svg",
 	},
 	USDT: {
 		symbol: "USDT",
@@ -148,7 +164,8 @@ export const CRYPTO_LOGOS: Record<string, CryptoLogoConfig> = {
 		coingeckoId: "325",
 		primaryUrl: `${COINGECKO_BASE}/325/large/Tether.png`,
 		fallbackUrl: `${COINGECKO_THUMB}/325/small/Tether.png`,
-		svgUrl: "https://cryptologos.cc/logos/tether-usdt-logo.svg",
+		svgUrl: "/logos/tether-usdt-logo.svg",
+		svgFallbackUrl: "https://cryptologos.cc/logos/tether-usdt-logo.svg",
 	},
 };
 
@@ -176,9 +193,13 @@ export function getCryptoLogoUrl(
 		return config.primaryUrl;
 	}
 
-	// Prefer SVG if available and requested
-	if (useSvg && config.svgUrl) {
-		return config.svgUrl;
+	// Prefer SVG if available and requested — local first, CDN fallback.
+	// The deposit/coin-selector flow used to depend on cryptologos.cc at
+	// runtime; we now bundle the SVGs in /public/logos/ and only fall back
+	// to the CDN if the local file is somehow missing.
+	if (useSvg) {
+		if (config.svgUrl) return config.svgUrl;
+		if (config.svgFallbackUrl) return config.svgFallbackUrl;
 	}
 
 	// Return appropriate size
