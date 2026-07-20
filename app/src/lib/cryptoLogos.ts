@@ -164,8 +164,9 @@ export function getCryptoLogoUrl(
 	const config = CRYPTO_LOGOS[normalizedSymbol];
 
 	if (!config) {
-		// Return placeholder for unknown tokens
-		return `/logos/unknown.svg`;
+		// Unknown token — no image asset. Callers (CryptoLogo) render a
+		// text-initials fallback instead of an external placeholder file.
+		return "";
 	}
 
 	const { useSvg = false, size = "large" } = options;

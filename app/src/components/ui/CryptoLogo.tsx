@@ -59,8 +59,9 @@ export function CryptoLogo({
 			setError(false);
 			setLoaded(false);
 		} else {
-			// Use unknown logo for unsupported symbols
-			setSrc("/logos/unknown.svg");
+			// Unsupported symbol — no image source; the component renders the
+			// text-initials fallback instead of depending on an external asset.
+			setSrc("");
 			setError(false);
 			setLoaded(false);
 		}
@@ -94,8 +95,8 @@ export function CryptoLogo({
 		setLoaded(true);
 	}, []);
 
-	// Loading skeleton
-	if (loading || !loaded) {
+	// Loading skeleton (only while a real image src is pending)
+	if (loading || (src && !loaded)) {
 		return (
 			<div
 				className={`flex-shrink-0 animate-pulse bg-surface ${className}`}
