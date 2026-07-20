@@ -18,9 +18,10 @@
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
 import { useRevealInView } from "@/lib/use-reveal-in-view";
+// Shared easing source-of-truth — kept in sync with @/lib/motion so the
+// two motion primitive systems never drift apart.
+import { EASE_OUT } from "@/lib/motion";
 import { useEffect, useState, type ReactNode } from "react";
-
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 const fadeUpVariant: Variants = {
 	hidden: { opacity: 0, y: 28 },
