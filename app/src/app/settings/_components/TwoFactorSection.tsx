@@ -13,6 +13,7 @@ import {
 	X,
 } from "lucide-react";
 import { useState } from "react";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { useToast } from "@/components/ui/Toast";
 import { api, type User } from "@/lib/api";
 
@@ -269,8 +270,10 @@ function TwoFactorModal({
 	onCopyCodes,
 	onCopiedChange,
 }: TwoFactorModalProps) {
+	const trapRef = useFocusTrap(true);
 	return (
 		<m.div
+			ref={trapRef}
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
@@ -329,6 +332,7 @@ function TwoFactorModal({
 						<button
 							type="button"
 							onClick={onScanComplete}
+							autoFocus
 							className="w-full rounded-md border border-accent bg-accent px-4 py-2 text-sm font-semibold text-void transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							I&apos;ve scanned the code
@@ -347,6 +351,7 @@ function TwoFactorModal({
 							inputMode="numeric"
 							pattern="[0-9]{6}"
 							maxLength={6}
+							autoFocus
 							value={state.code}
 							onChange={(e) =>
 								onCodeChange(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -418,6 +423,7 @@ function TwoFactorModal({
 							<button
 								type="button"
 								onClick={onCopyCodes}
+								autoFocus
 								className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-void px-4 py-2 text-xs font-medium text-text-muted transition-colors hover:bg-surface hover:text-text"
 							>
 								{state.copied ? (
@@ -471,8 +477,10 @@ function DisableModal({
 	onSubmit,
 	onClose,
 }: DisableModalProps) {
+	const trapRef = useFocusTrap(true);
 	return (
 		<m.div
+			ref={trapRef}
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
@@ -515,6 +523,7 @@ function DisableModal({
 					inputMode="numeric"
 					pattern="[0-9]{6}"
 					maxLength={6}
+					autoFocus
 					value={code}
 					onChange={(e) =>
 						onCodeChange(e.target.value.replace(/\D/g, "").slice(0, 6))

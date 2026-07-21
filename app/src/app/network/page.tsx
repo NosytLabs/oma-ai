@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ElectricBorder } from "@/components/electric-border";
+import { FloatingIcons } from "@/components/floating-icons";
+import { JuiceButton } from "@/components/juice-button";
 
 export const metadata: Metadata = {
 	title: "Network Primitives — agent infrastructure APIs",
@@ -165,6 +168,7 @@ const METHOD_COLOR: Record<Primitive["method"], string> = {
 export default function NetworkPage() {
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
+			<FloatingIcons />
 			{/* Background — animated grid mask for "infrastructure" feel */}
 			<div
 				aria-hidden="true"
@@ -408,13 +412,22 @@ export default function NetworkPage() {
 								rate limits, and webhook delivery guarantees.
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
-								<Link
-									href="/docs"
-									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
+								<JuiceButton
+									color="var(--color-accent)"
+									size={140}
+									opacity={0.15}
+									className="rounded-lg"
 								>
-									Read the docs
-									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-								</Link>
+									<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
+										<Link
+											href="/docs"
+											className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
+										>
+											Read the docs
+											<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+										</Link>
+									</ElectricBorder>
+								</JuiceButton>
 								<Link
 									href="/observability"
 									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"

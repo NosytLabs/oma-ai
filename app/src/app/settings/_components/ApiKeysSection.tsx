@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import type { ApiKey } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export function ApiKeysSection({
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 
 	const keyToRevoke = apiKeys.find((k) => k.id === confirmKeyId);
+	const revokeTrapRef = useFocusTrap(!!confirmKeyId && !!keyToRevoke);
 	const primaryKey = apiKeys[0];
 
 	const handleConfirmRevoke = async () => {
@@ -151,6 +153,7 @@ export function ApiKeysSection({
 			<AnimatePresence>
 				{confirmKeyId && keyToRevoke && (
 					<m.div
+						ref={revokeTrapRef}
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -201,6 +204,7 @@ export function ApiKeysSection({
 									type="button"
 									onClick={() => setConfirmKeyId(null)}
 									disabled={revokingId !== null}
+									autoFocus
 									className="rounded-md border border-border bg-transparent px-4 py-2 text-xs font-medium text-text-muted transition-colors hover:bg-surface hover:text-text-secondary disabled:opacity-40"
 								>
 									Cancel

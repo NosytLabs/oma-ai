@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
+import { FloatingIcons } from "@/components/floating-icons";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",
@@ -42,6 +44,13 @@ const CHANNELS = [
 export default function ContactPage() {
 	return (
 		<div className="min-h-screen bg-void text-text">
+			<BreadcrumbListJsonLd
+				items={[
+					{ name: "Home", url: "/" },
+					{ name: "Contact", url: "/contact" },
+				]}
+			/>
+			<FloatingIcons />
 			<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
 				<Link
 					href="/"

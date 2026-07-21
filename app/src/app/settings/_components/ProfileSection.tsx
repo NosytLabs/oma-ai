@@ -84,7 +84,7 @@ export function ProfileSection({
 						<input
 							type="checkbox"
 							className="peer sr-only"
-							defaultChecked={isSoundEnabled()}
+							checked={isSoundEnabled()}
 							onChange={(e) => setSoundEnabled(e.target.checked)}
 						/>
 						<div className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />

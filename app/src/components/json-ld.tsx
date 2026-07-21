@@ -61,4 +61,89 @@ export function SoftwareApplicationJsonLd() {
 	);
 }
 
+/** BreadcrumbList for deep pages (docs, pricing, models, about, contact). */
+export function BreadcrumbListJsonLd({
+	items,
+}: {
+	items: { name: string; url: string }[];
+}) {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "BreadcrumbList",
+		itemListElement: items.map((item, i) => ({
+			"@type": "ListItem",
+			position: i + 1,
+			name: item.name,
+			item: `${BASE_URL}${item.url}`,
+		})),
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+		/>
+	);
+}
+
+/** Product + AggregateOffer for a pricing tier. */
+export function ProductJsonLd({
+	name,
+	description,
+	price,
+	priceCurrency = "USD",
+}: {
+	name: string;
+	description: string;
+	price: string;
+	priceCurrency?: string;
+}) {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "Product",
+		name,
+		description,
+		offers: {
+			"@type": "Offer",
+			price,
+			priceCurrency,
+			availability: "https://schema.org/InStock",
+		},
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+		/>
+	);
+}
+
+/** FAQPage for structured Q&A sections. */
+export function FAQPageJsonLd({
+	questions,
+}: {
+	questions: { question: string; answer: string }[];
+}) {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		mainEntity: questions.map((q) => ({
+			"@type": "Question",
+			name: q.question,
+			acceptedAnswer: {
+				"@type": "Answer",
+				text: q.answer,
+			},
+		})),
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+		/>
+	);
+}
+
 

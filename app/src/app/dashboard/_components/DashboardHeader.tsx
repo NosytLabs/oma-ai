@@ -105,7 +105,9 @@ export function DashboardHeader({
 			if (remaining === 0 && !refreshInFlightRef.current) {
 				refreshInFlightRef.current = true;
 				Promise.resolve(onRefresh())
-					.catch(() => {})
+					.catch((err) => {
+								console.warn("Auto-refresh failed:", err);
+							})
 					.finally(() => {
 						nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
 						refreshInFlightRef.current = false;

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
@@ -39,6 +41,12 @@ const PILLARS = [
 export default function AboutPage() {
 	return (
 		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+			<BreadcrumbListJsonLd
+				items={[
+					{ name: "Home", url: "/" },
+					{ name: "About", url: "/about" },
+				]}
+			/>
 			{/* ── Ambient background ── */}
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
@@ -92,13 +100,15 @@ export default function AboutPage() {
 
 				<div className="flex flex-wrap gap-3">
 					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-lg">
-						<Link
-							href="/login"
-							className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-void hover:bg-accent-bright transition-colors"
-						>
-							Get an API key
-							<ArrowRight className="h-4 w-4" aria-hidden="true" />
-						</Link>
+						<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
+							<Link
+								href="/login"
+								className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-void hover:bg-accent-bright transition-colors"
+							>
+								Get an API key
+								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							</Link>
+						</ElectricBorder>
 					</JuiceButton>
 					<Link
 						href="/docs"

@@ -16,6 +16,11 @@ import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 import { ElectricBorder } from "@/components/electric-border";
 import { formatPricePerMillion, MODELS, MODEL_COUNT } from "@/lib/models-data";
+import {
+	BreadcrumbListJsonLd,
+	ProductJsonLd,
+	FAQPageJsonLd,
+} from "@/components/json-ld";
 
 type Category = "all" | "frontier" | "premium" | "mid" | "budget";
 
@@ -191,6 +196,23 @@ export default function PricingPage() {
 
 	return (
 		<div className="relative min-h-screen overflow-hidden bg-void">
+			<BreadcrumbListJsonLd
+				items={[
+					{ name: "Home", url: "/" },
+					{ name: "Pricing", url: "/pricing" },
+				]}
+			/>
+			<ProductJsonLd
+				name="OMA AI API Inference"
+				description="Pay-per-request AI inference across 200+ models. No monthly fees, no lock-in."
+				price="0.01"
+			/>
+			<FAQPageJsonLd
+				questions={FAQ_ITEMS.map((item) => ({
+					question: item.q,
+					answer: item.a,
+				}))}
+			/>
 			{/* ── Ambient background ── */}
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />

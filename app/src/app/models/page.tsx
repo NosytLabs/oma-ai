@@ -11,6 +11,7 @@ import {
 	Trophy,
 	Zap,
 } from "lucide-react";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { Suspense, useMemo, useState } from "react";
 import {
 	getModelsByTier,
@@ -440,10 +441,17 @@ function ModelsPageInner() {
 
 export default function ModelsPage() {
 	return (
-		<Suspense
-			fallback={
-				<div className="min-h-screen bg-void">
-					<div className="mx-auto max-w-7xl px-4 py-12">
+		<>
+			<BreadcrumbListJsonLd
+				items={[
+					{ name: "Home", url: "/" },
+					{ name: "Models", url: "/models" },
+				]}
+			/>
+			<Suspense
+				fallback={
+					<div className="min-h-screen bg-void">
+						<div className="mx-auto max-w-7xl px-4 py-12">
 						<div className="h-8 w-32 bg-panel rounded animate-pulse mb-8" />
 						<div className="h-10 w-64 bg-panel rounded animate-pulse mb-4" />
 						<div className="h-4 w-48 bg-panel rounded animate-pulse mb-6" />
@@ -458,5 +466,6 @@ export default function ModelsPage() {
 		>
 			<ModelsPageInner />
 		</Suspense>
+		</>
 	);
 }

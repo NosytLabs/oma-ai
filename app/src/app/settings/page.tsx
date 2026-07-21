@@ -168,7 +168,9 @@ export default function SettingsPage() {
 			.then((res) => {
 				if (!cancelled && res.token) setCsrfToken(res.token);
 			})
-			.catch(() => {});
+			.catch(() => {
+							console.warn("CSRF token fetch failed — mutations may 403");
+						});
 		return () => {
 			cancelled = true;
 		};

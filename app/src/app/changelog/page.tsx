@@ -16,6 +16,9 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { ElectricBorder } from "@/components/electric-border";
+import { FloatingIcons } from "@/components/floating-icons";
+import { JuiceButton } from "@/components/juice-button";
 
 export const metadata: Metadata = {
 	title: "Product Changelog — releases & fixes",
@@ -54,6 +57,28 @@ const KIND_STYLES: Record<ChangeKind, { label: string; color: string; icon: type
 };
 
 const RELEASES: Release[] = [
+	{
+		version: "2.1.2",
+		date: "2026-07-20",
+		codename: "Polish & Accessibility",
+		summary:
+			"Comprehensive debug/audit sweep: focus traps on critical modals, structured JSON-LD on every deep page, and codebase hygiene pass that retired three stale docs and four webpack cache artifacts.",
+		highlights: [
+			"Modal focus traps: 2FA setup, 2FA disable, and API key revoke dialogs now trap Tab focus and restore on close",
+			"JSON-LD structured data: BreadcrumbList on 5 deep pages, Product + FAQPage on /pricing",
+			"Retired 3 stale root docs (DEPLOYMENT.md, CLOUDFLARE-TUNNEL.md, docs/roadmap.md)",
+		],
+		changes: [
+			{ kind: "feature", text: "useFocusTrap hook (lib/hooks/useFocusTrap.ts) for accessible modal focus management" },
+			{ kind: "feature", text: "BreadcrumbListJsonLd component on /pricing, /about, /contact, /docs, /models" },
+			{ kind: "feature", text: "ProductJsonLd + FAQPageJsonLd on /pricing" },
+			{ kind: "fix", text: "CSRF token fetch errors now log a warning instead of silently swallowing" },
+			{ kind: "fix", text: "ProfileSection sound toggle now stays in sync with the persisted store (was mixed controlled/uncontrolled)" },
+			{ kind: "fix", text: "Dashboard auto-refresh errors now log a warning instead of silently swallowing" },
+			{ kind: "deprecation", text: "Remove DEPLOYMENT.md and CLOUDFLARE-TUNNEL.md — superseded by Cloudflare Pages direct deploys" },
+			{ kind: "deprecation", text: "Remove docs/roadmap.md — moved to GitHub Projects" },
+		],
+	},
 	{
 		version: "2.1.1",
 		date: "2026-07-14",
@@ -188,6 +213,7 @@ export default function ChangelogPage() {
 
 	return (
 		<div className="min-h-dvh bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
+			<FloatingIcons />
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
@@ -369,16 +395,25 @@ export default function ChangelogPage() {
 								ones that touch the public API or add a model. No marketing.
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
-								<Link
-									href="https://github.com/NosytLabs/oma-ai/releases"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
+								<JuiceButton
+									color="var(--color-accent)"
+									size={140}
+									opacity={0.15}
+									className="rounded-lg"
 								>
-									<Rss className="h-4 w-4" aria-hidden="true" />
-									RSS feed
-									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-								</Link>
+									<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
+										<Link
+											href="https://github.com/NosytLabs/oma-ai/releases"
+											target="_blank"
+											rel="noopener noreferrer"
+											className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
+										>
+											<Rss className="h-4 w-4" aria-hidden="true" />
+											RSS feed
+											<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+										</Link>
+									</ElectricBorder>
+								</JuiceButton>
 								<Link
 									href="https://github.com/NosytLabs/oma-ai"
 									target="_blank"
