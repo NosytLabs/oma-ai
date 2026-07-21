@@ -30,6 +30,18 @@ const purchaseSchema = z.object({
   autoReload: z.boolean().optional(),
 });
 
+// Row shape for the UNION ALL credits + usage query.
+interface UnifiedTransactionRow {
+  id: string;
+  type: string;
+  amount_cents: string | number;
+  credits_issued: string | number | null;
+  status: string;
+  model: string | null;
+  created_at: Date | string;
+  tx_hash: string | null;
+}
+
 const autoReloadSchema = z.object({
   enabled: z.boolean(),
   thresholdCents: z.number().positive().optional(),
@@ -138,7 +150,7 @@ creditRoutes.get("/v1/credits/transactions", sessionOrBearerAuth, async (c) => {
     const limit = Math.min(Number(c.req.query("limit") ?? 50), 100);
 
     // Single query with UNION ALL — eliminates N+1 and JS merge/sort
-    const rows = await db.execute(sql`
+    const rows = await db.execute(sql<UnifiedTransactionRow>`
       WITH normalized_transactions AS (
         -- Deposits
         SELECT
@@ -174,7 +186,7 @@ creditRoutes.get("/v1/credits/transactions", sessionOrBearerAuth, async (c) => {
       LIMIT ${limit}
     `);
 
-    const transactions = (rows.rows as any[]).map((r: any) => ({
+    const transactions = rows.rows.map((r) => ({
       id: r.id,
       type: r.type,
       amountCents: Number(r.amount_cents),
