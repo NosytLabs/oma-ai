@@ -10,12 +10,13 @@ import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { verifyHmacSha256Hex, hmacSha256Hex } from "../lib/hmac.js";
 import { db } from "../db/client.js";
 import { users, apiKeys, subscriptions, auditLogs, rateLimitOverrides } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { validationError } from "../lib/validation.js";
 import type { OmaEnv } from "../types.js";
-import { randomBytes, createHmac, timingSafeEqual } from "crypto";
+import { randomBytes, timingSafeEqual } from "crypto";
 import {
   setupTwoFactor,
   enableTwoFactor,
@@ -34,9 +35,7 @@ function generateCsrfToken(): string {
     throw new Error("FATAL: CSRF_SECRET environment variable must be set. CSRF protection is disabled without it.");
   }
   const randomPart = randomBytes(32).toString('hex');
-  const signature = createHmac('sha256', secret)
-    .update(randomPart)
-    .digest('hex');
+  const signature = hmacSha256Hex(secret, randomPart);
   return `${randomPart}:${signature}`;
 }
 
@@ -48,18 +47,9 @@ function validateCsrfToken(token: string, secret?: string): boolean {
   }
   const parts = token.split(':');
   if (parts.length !== 2) return false;
-  
+
   const [randomPart, signature] = parts;
-  const expectedSignature = createHmac('sha256', csrfSecret)
-    .update(randomPart)
-    .digest('hex');
-  
-  const sigBuf = Buffer.from(signature);
-  const expectedBuf = Buffer.from(expectedSignature);
-  
-  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return false;
-  
-  return true;
+  return verifyHmacSha256Hex(csrfSecret, randomPart, signature);
 }
 
 function createCsrfCookieHeader(token: string): string {
