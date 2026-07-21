@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import crypto from "node:crypto";
 import { config } from "../../config.js";
 import { processLifiDeposit } from "../../credits/deposit.js";
 import { sessionAuth } from "../../auth/middleware.js";
@@ -13,6 +12,7 @@ import { getQuoteForSwap, getRouteStatus, checkPossibleRoutes, getSupportedChain
 import type { OmaEnv } from "../../types.js";
 import { validationError } from "../../lib/validation.js";
 import { addToDlq } from "../../lib/dlq.js";
+import { verifyHmacSha256Hex } from "../../lib/hmac.js";
 
 const lifiDepositSchema = z.object({
   amount: z.number().positive().max(1000000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
@@ -148,11 +148,7 @@ lifiRoutes.post("/v1/deposit/lifi/webhook", async (c) => {
     return c.json({ error: { message: "LI.FI webhook not configured", type: "config_error" } }, 503);
   }
   const secret = config.LIFI_WEBHOOK_SECRET;
-  const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  if (signature.length !== expectedSig.length) {
-    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
-  }
-  if (!crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expectedSig, "utf8"))) {
+  if (!verifyHmacSha256Hex(secret, rawBody, signature)) {
     return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 

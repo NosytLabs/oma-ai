@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import crypto from "node:crypto";
 import { addCredits } from "../credits/index.js";
 import { bearerAuth } from "../auth/middleware.js";
 import { config } from "../config.js";
@@ -10,6 +9,7 @@ import type { OmaEnv } from "../types.js";
 import { QuoteCache } from "../lib/quote-cache.js";
 import { addToDlq } from "../lib/dlq.js";
 import { logger } from "../lib/logger.js";
+import { verifyHmacSha256Hex } from "../lib/hmac.js";
 
 export const onrampRoutes = new Hono<OmaEnv>();
 
@@ -119,11 +119,7 @@ onrampRoutes.post("/v1/onramp/webhook", rateLimit({ windowMs: 60_000, maxRequest
     return c.json({ error: { message: "Onramp webhook not configured", type: "config_error" } }, 503);
   }
   const secret = config.ONRAMP_WEBHOOK_SECRET;
-  const expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  if (signature.length !== expectedSig.length) {
-    return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
-  }
-  if (!crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expectedSig, "utf8"))) {
+  if (!verifyHmacSha256Hex(secret, rawBody, signature)) {
     return c.json({ error: { message: "Invalid signature", type: "authentication_error" } }, 401);
   }
 
