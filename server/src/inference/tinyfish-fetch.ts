@@ -31,7 +31,15 @@ function createPinnedAgent(pinnedIps: PinnedIpMap): Agent {
       // Custom DNS lookup that returns pinned IPs for known hostnames,
       // falling back to the system resolver otherwise. undici/Node accept a
       // `lookup` function here (matches dns.lookup signature).
-      lookup: (hostname: string, options: any, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+      lookup: (
+        hostname: string,
+        options: dns.LookupOneOptions | dns.LookupAllOptions | dns.LookupOptions,
+        callback: (
+          err: NodeJS.ErrnoException | null,
+          address: string | dns.LookupAddress[],
+          family: number,
+        ) => void,
+      ) => {
         const pinned = pinnedIps[hostname];
         if (pinned) {
           callback(null, pinned, pinned.includes(":") ? 6 : 4);
