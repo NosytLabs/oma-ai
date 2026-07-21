@@ -11,11 +11,11 @@ import {
 	Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 import { ElectricBorder } from "@/components/electric-border";
-import { formatPricePerMillion, MODELS, MODEL_COUNT } from "@/lib/models-data";
+import { formatPricePerMillion, loadModels, type Model, MODELS } from "@/lib/models-data";
 import {
 	BreadcrumbListJsonLd,
 	ProductJsonLd,
@@ -39,19 +39,17 @@ const VENDOR_DISPLAY: Record<string, string> = {
 	Gonka: "Gonka",
 };
 
-const PRICED_MODELS: PricedModel[] = MODELS.map((m) => ({
-	id: m.id,
-	name: m.name,
-	category: m.tier as Category,
-	provider: VENDOR_DISPLAY[m.provider] ?? m.provider,
-	inputPer1M: m.inputPricePer1M,
-	outputPer1M: m.outputPricePer1M,
-	ctx: m.contextLength,
-}));
-
-const LOWEST_INPUT_PRICE = formatPricePerMillion(
-	Math.min(...PRICED_MODELS.map((model) => model.inputPer1M)),
-);
+function toPricedModel(m: Model): PricedModel {
+	return {
+		id: m.id,
+		name: m.name,
+		category: m.tier as Category,
+		provider: VENDOR_DISPLAY[m.provider] ?? m.provider,
+		inputPer1M: m.inputPricePer1M,
+		outputPer1M: m.outputPricePer1M,
+		ctx: m.contextLength,
+	};
+}
 
 const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "all", label: "All" },
@@ -185,13 +183,38 @@ function AccordionItem({
 export default function PricingPage() {
 	const [category, setCategory] = useState<Category>("all");
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
+	const [models, setModels] = useState<Model[]>(MODELS);
+
+	useEffect(() => {
+		let cancelled = false;
+		loadModels()
+			.then((live) => {
+				if (!cancelled) setModels(live);
+			})
+			.catch(() => {
+				// keep static fallback
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
+	const lowestInputPrice = useMemo(
+		() =>
+			formatPricePerMillion(
+				Math.min(...pricedModels.map((m) => m.inputPer1M)),
+			),
+		[pricedModels],
+	);
+	const modelCount = models.length;
 
 	const filtered = useMemo(
 		() =>
-			PRICED_MODELS.filter(
+			pricedModels.filter(
 				(m) => category === "all" || m.category === category,
 			),
-		[category],
+		[category, pricedModels],
 	);
 
 	return (
@@ -229,7 +252,7 @@ export default function PricingPage() {
 						platform fee layered on top of the quoted rates.
 					</p>
 					<div className="meta-strip">
-							<span>{MODEL_COUNT} live models</span>
+							<span>{modelCount} live models</span>
 						<span>Usage-based billing</span>
 						<span>x402 native</span>
 					</div>
@@ -241,7 +264,7 @@ export default function PricingPage() {
 							Starts at
 						</p>
 						<p className="mt-3 text-3xl font-semibold text-text-bright">
-							{LOWEST_INPUT_PRICE}
+							{lowestInputPrice}
 						</p>
 						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
 							Lowest displayed price tier per 1M input tokens across the current

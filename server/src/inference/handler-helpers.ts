@@ -35,12 +35,15 @@ export async function chargeAndTrack(
 /**
  * Fire-and-forget API-key spend tracking.
  * Wraps the `if (apiKey) trackSpend(...)` pattern.
+ *
+ * trackSpend() catches and queues all failures internally (never rejects),
+ * so the discarded Promise here is safe — no redundant catch needed (L6).
  */
 export function trackApiKeySpend(
   keyHash: string | undefined,
   cents: number,
 ): void {
-  if (keyHash) trackSpend(keyHash, cents).catch(() => {});
+  if (keyHash) void trackSpend(keyHash, cents);
 }
 
 /**

@@ -47,6 +47,7 @@ vi.mock('../auth/middleware.js', () => ({
   requireAdmin: () => async (_c: any, next: any) => next(),
   requireTeamRole: () => async (_c: any, next: any) => next(),
   optionalAuth: async (_c: any, next: any) => next(),
+  initAuth: () => {},
 }))
 
 // Bypass rate-limit middleware — the route uses rateLimit({windowMs:60_000,

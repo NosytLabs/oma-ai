@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { EASE_OUT, staggerContainer } from "@/lib/motion";
 import { ApiStatus } from "../api-status";
-import { useFocusTrap } from "./_hooks/useFocusTrap";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { accountHrefs, isCurrentPath, mobileGroups } from "./_lib/nav-links";
 
 interface NavbarMobileMenuProps {

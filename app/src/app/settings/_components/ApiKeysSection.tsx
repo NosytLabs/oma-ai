@@ -9,7 +9,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import type { ApiKey } from "@/lib/api";
@@ -33,7 +33,8 @@ export function ApiKeysSection({
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 
 	const keyToRevoke = apiKeys.find((k) => k.id === confirmKeyId);
-	const revokeTrapRef = useFocusTrap(!!confirmKeyId && !!keyToRevoke);
+	const revokeTrapRef = useRef<HTMLDivElement>(null);
+	useFocusTrap({ active: !!confirmKeyId && !!keyToRevoke, containerRef: revokeTrapRef });
 	const primaryKey = apiKeys[0];
 
 	const handleConfirmRevoke = async () => {

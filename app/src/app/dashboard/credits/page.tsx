@@ -777,7 +777,7 @@ export default function CreditsPage() {
 											>
 												{item.amount > 0 ? "+" : ""}
 												{item.amount > 0 ? "$" : "-$"}
-												{Math.abs(item.amount / 100).toFixed(2)}
+												{formatCents(Math.abs(item.amount))}
 											</span>
 										</td>
 										<td className="px-6 py-4">

@@ -38,6 +38,31 @@ else
 end
 `;
 
+// Lua script for atomic daily spend-limit check-and-increment.
+// Prevents the TOCTOU race where two concurrent trackSpend calls both
+// read `spent < limit` and collectively overspend. The script:
+//   1. reads the current counter,
+//   2. refuses the increment if `current + cost > limit` (returns -1),
+//   3. otherwise INCRBYFLOATs atomically and sets the TTL on key creation.
+// Returns: new counter value (>= cost on success), or -1 if the increment
+// would exceed the daily limit.
+export const SPEND_LIMIT_SCRIPT = `
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local cost = tonumber(ARGV[2])
+local ttl = tonumber(ARGV[3])
+
+local current = tonumber(redis.call('GET', key) or '0')
+if current + cost > limit then
+  return -1
+end
+local newval = redis.call('INCRBYFLOAT', key, cost)
+if tonumber(newval) == cost then
+  redis.call('EXPIRE', key, ttl)
+end
+return tonumber(newval)
+`;
+
 // Lua script for checking RPM limits (sliding window counter)
 // Returns: [allowed (0/1), current_count, ms_until_reset]
 export const RPM_LIMIT_SCRIPT = `

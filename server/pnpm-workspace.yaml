@@ -7,3 +7,9 @@ overrides:
   elliptic: '>=6.6.1'
   ws: '>=8.21.0'
   '@opentelemetry/core': '>=2.8.0'
+  # CVE GHSA-j3f2-48v5-ccww — protobufjs via @grpc/proto-loader
+  protobufjs: '>=7.6.5'
+  # CVE GHSA-3jxr-9vmj-r5cp — brace-expansion DoS via @opentelemetry gcp-metadata
+  brace-expansion: '>=5.0.7'
+  # CVE GHSA-52cp-r559-cp3m — js-yaml YAML merge-key quadratic CPU via @eslint/eslintrc
+  js-yaml: '>=4.3.0'

@@ -29,7 +29,8 @@ vi.mock('../auth/middleware', () => ({
     // Mock requires DB interaction - set teamRole directly for test
     c.set('teamRole', 'owner')
     await next()
-  }
+  },
+  initAuth: () => {}
 }))
 
 vi.mock('../config', () => ({

@@ -111,6 +111,7 @@ vi.mock('../auth/middleware.js', () => ({
     }
     await next()
   },
+  initAuth: () => {},
 }))
 
 // ── Import AFTER mocks ───────────────────────────────────────

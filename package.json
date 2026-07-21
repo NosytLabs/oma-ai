@@ -10,5 +10,10 @@
     "validate:typecheck": "cd app && npm run typecheck && cd ../server && npm run typecheck",
     "validate:lint": "cd app && npm run lint && cd ../server && npm run lint",
     "validate:test": "cd app && npm test && cd ../server && npm test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NosytLabs/oma-ai.git"
   }
 }

@@ -35,8 +35,15 @@ function validateAdminAddresses(): void {
 
 const validProductionEnvironments = ["production", "staging", "preview"];
 const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
-if (isProductionEnv) {
-  validateAdminAddresses();
+
+// Fail-fast startup validation moved off module top-level so importing this
+// module (e.g. in tests, or in route files loaded before the server starts)
+// does not trigger process.exit. Call initAuth() from the server entry point
+// at startup instead (M2).
+export function initAuth(): void {
+  if (isProductionEnv) {
+    validateAdminAddresses();
+  }
 }
 
 // SEC-7: singleflight dedup. Concurrent requests for the same key share

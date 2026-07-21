@@ -243,6 +243,102 @@ export function catalogFromRaw(catalog: RawCatalog): Model[] {
 // Lazy client loader
 // ---------------------------------------------------------------------------
 
+/**
+ * Interface matching the OpenAI-style models returned by GET /v1/models.
+ * The live API returns 90+ models with pricing, category, and context_length
+ * but NOT displayName, description, or capabilities — those are derived here.
+ */
+interface ApiModelEntry {
+	id: string;
+	pricing: { prompt: string; completion: string | null };
+	category: string;
+	context_length: number | null;
+}
+
+interface ApiModelsResponse {
+	object: "list";
+	data: ApiModelEntry[];
+}
+
+function deriveNameFromId(id: string): string {
+	// Convert model IDs like "qwen3-235b-a22b-instruct-2507" to display names
+	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
+	return cleaned
+		.split(/[-_]/)
+		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+		.filter(Boolean)
+		.join(" ");
+}
+
+/**
+ * Load the full model catalog from the live API.
+ *
+ * Returns chat models with derived display names, descriptions,
+ * capabilities, and provider assignment. Video models (category "video")
+ * are excluded: they are priced per-generation/per-second (surfaced on
+ * `/video-generation`), not per-token, so mixing them into the per-token
+ * catalog produced `$NaN` output prices and `$850000/1M` input prices.
+ * Falls back to the static `MODELS` array if the network request fails.
+ *
+ * Results are cached in a module-level variable so repeated calls during
+ * the same session do not re-fetch.
+ */
+let _liveModels: Model[] | null = null;
+let _loadPromise: Promise<Model[]> | null = null;
+
+export async function loadModels(): Promise<Model[]> {
+	if (_liveModels) return _liveModels;
+	if (_loadPromise) return _loadPromise;
+
+	_loadPromise = (async () => {
+		try {
+			const res = await fetch("/api/v1/models");
+			if (!res.ok) throw new Error(`API returned ${res.status}`);
+			const json: ApiModelsResponse = await res.json();
+			const models: Model[] = json.data
+				.filter((entry: ApiModelEntry) => entry.category !== "video")
+				.map((entry: ApiModelEntry) => {
+					const name = deriveNameFromId(entry.id);
+					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");
+					const completionRaw = parseFloat(entry.pricing?.completion ?? "");
+					const inputPrice = Number.isFinite(promptRaw)
+						? promptRaw * 1_000_000
+						: 0;
+					const outputPrice = Number.isFinite(completionRaw)
+						? completionRaw * 1_000_000
+						: 0;
+					const tier: Tier =
+						entry.category === "budget" ||
+						entry.category === "mid" ||
+						entry.category === "premium" ||
+						entry.category === "frontier"
+							? entry.category
+							: "mid";
+					return {
+						id: entry.id,
+						name,
+						provider: "Venice" as Provider,
+						tier,
+						description: deriveDescription(entry.id, name, undefined),
+						contextLength: formatContextLength(entry.context_length ?? 0),
+						inputPricePer1M: inputPrice,
+						outputPricePer1M: outputPrice,
+						capabilities: deriveCapabilities(entry.id, name, undefined, undefined),
+						modelId: entry.id,
+					};
+				});
+			_liveModels = models;
+			return models;
+		} catch {
+			// Network failure — return the static SSR fallback so the
+			// page still renders something useful.
+			return MODELS;
+		}
+	})();
+
+	return _loadPromise;
+}
+
 // ---------------------------------------------------------------------------
 // Synchronous SSR fallback
 // ---------------------------------------------------------------------------

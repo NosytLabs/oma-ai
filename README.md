@@ -7,7 +7,7 @@
 
 Self-hosted AI inference gateway with wallet-based auth, multi-provider routing, cross-chain deposits, and native crypto payments (USDC on Base, x402).
 
-> **Site revamp (2026-07-11):** Brand assets regenerated from `favicon.svg` (icons, OG, lockup). `/blog` and `/faq` permanently redirect (`/blog` → `/changelog`, `/faq` → `/pricing#faq`). `/swap` retired — fund via USDC deposit on Base (`/deposit`). `/about` is now a live E-E-A-T page. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice. App + server: typecheck + lint clean, **892** tests green (170 app + 722 server; a few skipped).
+> **Routing changes:** `/blog` and `/faq` permanently redirect (`/blog` → `/changelog`, `/faq` → `/pricing#faq`). `/swap` retired — fund via USDC deposit on Base (`/deposit`). `/about` is a live E-E-A-T page. Homepage, footer, sitemap, `llms.txt` / `agents.md` aligned to brand voice (see `BRAND.md`).
 
 ---
 

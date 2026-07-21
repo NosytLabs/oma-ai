@@ -35,6 +35,7 @@ vi.mock('../auth/middleware', () => ({
   requireAdmin: () => async (_c: any, next: any) => next(),
   requireTeamRole: () => async (_c: any, next: any) => next(),
   optionalAuth: async (_c: any, next: any) => next(),
+  initAuth: () => {},
 }))
 
 // Replace config with a no-op stub so middleware that imports it does not

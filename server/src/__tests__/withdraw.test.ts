@@ -58,6 +58,7 @@ vi.mock("../auth/middleware.js", () => ({
     c.set("authMethod", "siwe");
     await next();
   },
+  initAuth: () => {},
 }));
 
 vi.mock("../auth/siwe.js", () => ({

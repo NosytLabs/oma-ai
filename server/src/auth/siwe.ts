@@ -41,7 +41,7 @@ async function incrementFailedAttemptsRedis(normalized: string): Promise<{ count
       // Corrupted data, start fresh
     }
   }
-  await redis.setex(key, SIWE_FAILED_ATTEMPTS_WINDOW_SECONDS, JSON.stringify({ count, resetAt }));
+  await redis.setEx(key, SIWE_FAILED_ATTEMPTS_WINDOW_SECONDS, JSON.stringify({ count, resetAt }));
   return { count, resetAt };
 }
 
@@ -279,7 +279,7 @@ export async function getNonce(address: string) {
     if (age < NONCE_TTL_MS) {
       if (redis && redisReady) {
         const redisKey = `nonce:${normalized}`;
-        await redis.setex(redisKey, NONCE_REDIS_TTL_SECONDS, existing[0].nonce);
+        await redis.setEx(redisKey, NONCE_REDIS_TTL_SECONDS, existing[0].nonce);
       }
       return existing[0].nonce;
     }
@@ -294,7 +294,7 @@ export async function getNonce(address: string) {
       if (age < NONCE_TTL_MS) {
         if (redis && redisReady) {
           const redisKey = `nonce:${normalized}`;
-          await redis.setex(redisKey, NONCE_REDIS_TTL_SECONDS, evmExisting[0].nonce);
+          await redis.setEx(redisKey, NONCE_REDIS_TTL_SECONDS, evmExisting[0].nonce);
         }
         return evmExisting[0].nonce;
       }
@@ -313,7 +313,7 @@ export async function getNonce(address: string) {
 
   if (redis && redisReady) {
     const redisKey = `nonce:${normalized}`;
-    await redis.setex(redisKey, NONCE_REDIS_TTL_SECONDS, nonce);
+    await redis.setEx(redisKey, NONCE_REDIS_TTL_SECONDS, nonce);
   }
 
   return nonce;

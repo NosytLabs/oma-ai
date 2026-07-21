@@ -40,8 +40,6 @@ export function FloatingIcons({
 }: FloatingIconsProps) {
 	const prefersReduced = useReducedMotion();
 
-	if (prefersReduced) return null;
-
 	// Generate deterministic-but-distinct seeds per icon
 	const items = Array.from({ length: count }, (_, i) => {
 		const sym = symbols[i % symbols.length];
@@ -55,6 +53,9 @@ export function FloatingIcons({
 		return { sym, seed, x, y, sz, spd, delay, wobble };
 	});
 
+	// Always render the container to avoid hydration mismatch (useReducedMotion
+	// returns false on server, true on client). When reduced motion is preferred,
+	// render symbols statically without animation.
 	return (
 		<div
 			aria-hidden="true"
@@ -68,10 +69,14 @@ export function FloatingIcons({
 					fontSize: `${item.sz}px`,
 					opacity,
 					color: "var(--color-accent)",
-					animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
 					["--float-wobble" as string]: `${item.wobble}px`,
 					transform: `rotate(${item.seed}deg)`,
-					willChange: "transform",
+					...(prefersReduced
+						? {}
+						: {
+								animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
+								willChange: "transform" as const,
+							}),
 				};
 				return (
 					<span key={i} style={style}>

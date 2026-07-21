@@ -10,7 +10,7 @@ import {
 } from "react";
 import { SiweMessage } from "siwe";
 import {
-	useAccount,
+	useConnection,
 	useConnect,
 	useDisconnect,
 	useSignMessage,
@@ -196,7 +196,7 @@ function InnerProvider({
 		isConnected: evmConnected,
 		chainId,
 		isConnecting: evmConnecting,
-	} = useAccount();
+	} = useConnection();
 	const { connect, connectors } = useConnect();
 	const { disconnect: evmDisconnect } = useDisconnect();
 	const { signMessageAsync } = useSignMessage();

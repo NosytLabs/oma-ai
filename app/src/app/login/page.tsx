@@ -40,8 +40,8 @@
  *     rate-limit / network-down come from `shapeAuthError`.
  *   - `useReducedMotion` honored globally; all entry animations gated.
  *
- * TODO(2FA) — moved to docs/roadmap.md#2fa-login-flow (2026-07-14).
- * Track there when the server-side `users.two_factor_enabled` flag lands.
+ * TODO(2FA) — tracked on GitHub Projects.
+ * Enable when the server-side `users.two_factor_enabled` flag lands.
  *
  * See `app/src/components/auth/` for the shared primitives this page
  * composes.

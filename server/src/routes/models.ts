@@ -16,6 +16,7 @@ import { optionalAuth } from "../auth/middleware.js";
 import { listModels, getModel, listVideoModels } from "../inference/models.js";
 import { getModelPricing } from "../inference/billing-service.js";
 import { getRedisClient } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 import type { OmaEnv } from "../types.js";
 
 const MODELS_CACHE_KEY = "cache:models:catalog:v1";
@@ -38,7 +39,8 @@ async function customerPricePerToken(
       prompt: (p.inputPer1k / 1000).toFixed(8),
       completion: (p.outputPer1k / 1000).toFixed(8),
     };
-  } catch {
+  } catch (err) {
+    logger.debug({ err }, "[models] pricing conversion failed, falling back to wholesale");
     return {
       prompt: (wholesaleInput / 1_000_000).toFixed(8),
       completion: (wholesaleOutput / 1_000_000).toFixed(8),

@@ -6,23 +6,40 @@
 // /ping, /v1/ping - cheap uptime-monitor endpoints
 
 import { Hono } from "hono";
+import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { SERVICE_VERSION } from "../constants.js";
+import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
+import { checkRpmLimit } from "../middleware/rate-limit/sliding-window.js";
+import { extractClientIp } from "../middleware/rate-limit/utils.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
 
 // ── Ping (uptime monitors) ────────────────────────────────────────────────
-healthRoutes.get("/ping", (c) => {
+// Rate-limited to prevent abuse, but FAILS OPEN on any Redis error so
+// monitoring tools are never blocked by a Redis outage (H2).
+const PING_RPM_LIMIT = 300; // 5/sec — generous for monitoring probes
+async function pingHandler(c: Context<OmaEnv>) {
   c.header("Cache-Control", "no-store");
+  try {
+    const redis = await getRedisClient();
+    if (redis && isRedisReady()) {
+      const ip = extractClientIp(c);
+      const result = await checkRpmLimit(redis, `rl:ping:ip:${ip}`, PING_RPM_LIMIT, 60);
+      if (!result.allowed) {
+        return c.json({ error: "rate_limited" }, 429);
+      }
+    }
+  } catch {
+    // Fail open: monitoring must never break on Redis errors.
+  }
   return c.json({ pong: true, ts: Date.now() });
-});
-healthRoutes.get("/v1/ping", (c) => {
-  c.header("Cache-Control", "no-store");
-  return c.json({ pong: true, ts: Date.now() });
-});
+}
+healthRoutes.get("/ping", pingHandler);
+healthRoutes.get("/v1/ping", pingHandler);
 
 const BUILD_SHA = config.BUILD_SHA ?? "dev";
 const BUILD_TIME = config.BUILD_TIME ?? new Date().toISOString();

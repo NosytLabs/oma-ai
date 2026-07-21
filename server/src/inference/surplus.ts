@@ -1,4 +1,5 @@
 import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { randomBytes } from "node:crypto";
 import { createWalletClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
@@ -344,14 +345,8 @@ async function buildPaymentPayload(
 
   if (selected.scheme === "upto") {
     // build Permit2 witness + transferDetails for PermitWitnessTransferFrom signing
-    const nonce = BigInt(
-      "0x" +
-        Array.from({ length: 32 }, () =>
-          Math.floor(Math.random() * 256)
-            .toString(16)
-            .padStart(2, "0")
-        ).join("")
-    );
+    // nonce must be cryptographically random — on-chain replay protection
+    const nonce = BigInt("0x" + randomBytes(32).toString("hex"));
     const deadline =
       BigInt(Math.floor(Date.now() / 1000)) +
       BigInt(selected.maxTimeoutSeconds);
@@ -525,14 +520,8 @@ async function signPayment(
     if (payload.selectedScheme === "exact") {
       // EIP-3009 TransferWithAuthorization
       const now = Math.floor(Date.now() / 1000);
-      const nonceHex =
-        "0x" +
-        Array.from({ length: 32 }, () =>
-          Math.floor(Math.random() * 256)
-            .toString(16)
-            .padStart(2, "0")
-        ).join("");
-      const nonce = nonceHex as `0x${string}`;
+      // nonce must be cryptographically random — on-chain replay protection
+      const nonce = ("0x" + randomBytes(32).toString("hex")) as `0x${string}`;
       const validAfter = BigInt(now - 60); // allow 60s clock skew
       const validBefore = BigInt(now + payload.maxTimeoutSeconds);
 

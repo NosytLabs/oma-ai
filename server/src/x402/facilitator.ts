@@ -15,7 +15,7 @@ import {
 } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
@@ -28,12 +28,21 @@ import { getRedisClient } from "../lib/redis-client.js";
 import {
   USDC_BASE,
   USDC_DECIMALS,
-  USDC_MAX_ATOMIC,
   CACHE_TTL_MS,
-  RECEIPT_EXPIRY_SECONDS,
   NONCE_REDIS_TTL_SECONDS,
 } from "../constants.js";
 import { logger } from "../lib/logger.js";
+import {
+  createReceiptPayload,
+  parseUsdcAtomic,
+  signReceipt,
+  verifyReceipt,
+} from "./facilitator-signing.js";
+
+// Re-export parseUsdcAtomic for the existing public surface
+// (x402/__tests__/audit-2026-06-25.test.ts imports it from
+// "../facilitator.js"). The definition lives in facilitator-signing.ts.
+export { parseUsdcAtomic };
 
 const LOCK_TTL_SECONDS = 30;
 // ponytail: in tests TREASURY_BASE_ADDRESS may be unset;
@@ -361,70 +370,10 @@ setInterval(cleanExpiredCache, 300_000).unref();
 // ============================================================
 // Signing Utilities
 // ============================================================
-
-const RECEIPT_VERSION = "1";
-
-function signReceipt(data: string): string {
-  const secret = config.RECEIPT_HMAC_SECRET;
-  if (!secret) {
-    throw new Error("RECEIPT_HMAC_SECRET is not configured");
-  }
-  const hmac = createHmac("sha256", secret);
-  hmac.update(data);
-  return hmac.digest("hex");
-}
-
-function verifyReceipt(
-  data: string,
-  receipt: string,
-  receiptExpiry?: number
-): boolean {
-  if (receiptExpiry !== undefined && Date.now() > receiptExpiry * 1000) {
-    return false;
-  }
-  const expected = signReceipt(data);
-  const expectedBuf = Buffer.from(expected, "utf8");
-  const receiptBuf = Buffer.from(receipt, "utf8");
-  const len = Math.max(expectedBuf.length, receiptBuf.length);
-  const aPadded = Buffer.alloc(len);
-  const bPadded = Buffer.alloc(len);
-  expectedBuf.copy(aPadded);
-  receiptBuf.copy(bPadded);
-  return timingSafeEqual(aPadded, bPadded);
-}
-
-function createReceiptPayload(
-  txHash: string,
-  amount: string,
-  networkId: string,
-  payee: string,
-  settledAt: number,
-): string {
-  const expiryTime = Math.floor(settledAt / 1000) + RECEIPT_EXPIRY_SECONDS;
-  return `${RECEIPT_VERSION}:${txHash}:${amount}:${networkId}:${payee}:${settledAt}:${expiryTime}`;
-}
-
-export function parseUsdcAtomic(s: string): bigint {
-  // Reject leading/trailing whitespace silently — padded input is malformed.
-  if (s !== s.trim()) throw new Error("Invalid USDC amount: leading or trailing whitespace");
-  if (!s) throw new Error("Invalid USDC amount: empty string");
-  if (/[eE]/.test(s)) throw new Error("Invalid USDC amount: scientific notation not allowed");
-  if (/[^0-9.]/.test(s)) throw new Error("Invalid USDC amount: non-numeric characters");
-  if (s.startsWith("-")) throw new Error("Invalid USDC amount: negative values not allowed");
-  if (s.startsWith("+")) throw new Error("Invalid USDC amount: sign-prefixed values not allowed");
-  const parts = s.split(".");
-  if (parts.length > 2) throw new Error("Invalid USDC amount: multi-dot format");
-  if (parts[1] && parts[1].length > USDC_DECIMALS) {
-    throw new Error(`Invalid USDC amount: max ${USDC_DECIMALS} decimal places`);
-  }
-  const [whole = "0", frac = ""] = parts;
-  const padded = (frac + "0".repeat(USDC_DECIMALS)).slice(0, USDC_DECIMALS);
-  const result = BigInt(whole) * 1_000_000n + BigInt(padded || "0");
-  if (result > USDC_MAX_ATOMIC) {
-    throw new Error("Invalid USDC amount: exceeds maximum supply");
-  }
-  return result;
-}
+//
+// signReceipt / verifyReceipt / createReceiptPayload / parseUsdcAtomic live
+// in "./facilitator-signing.js" (extracted to keep the payment verification
+// core focused on the verify/settle hot path). They are imported above.
 
 // ============================================================
 // EIP-3009 transferWithAuthorization (Base USDC)

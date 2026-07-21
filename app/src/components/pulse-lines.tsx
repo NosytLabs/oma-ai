@@ -36,7 +36,7 @@ interface PulseLinesProps {
 }
 
 export function PulseLines({
-	color = "rgba(70, 211, 154, 1)",
+	color = "var(--color-accent)",
 	gap = 36,
 	speed = 7,
 	lineOpacity = 0.08,

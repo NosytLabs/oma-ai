@@ -176,7 +176,12 @@ export function AgentSessionDemo({ className }: { className?: string }) {
 				</span>
 			</div>
 
-			<div className="max-h-[min(420px,55vh)] overflow-y-auto py-1">
+			<div
+				className="max-h-[min(420px,55vh)] overflow-y-auto py-1"
+				role="region"
+				aria-label="Agent session demo transcript"
+				tabIndex={0}
+			>
 				{DEMO_LINES.map((line, i) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: static demo transcript
 					<LineRow key={i} line={line} />

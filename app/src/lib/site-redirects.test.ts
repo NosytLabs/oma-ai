@@ -63,9 +63,10 @@ describe("sitemap excludes removed marketing routes", () => {
 });
 
 describe("brand assets on disk (public/)", () => {
-	// The app icon is generated dynamically by `src/app/icon.tsx` (next/og),
-	// and the tab favicon is served from `public/favicon.svg` + the PNG
-	// variants. SVG + PNG cover every modern browser; no static .ico needed.
+	// The tab favicon + apple touch icon are served from static files in
+	// `public/` (declared in `src/app/layout.tsx` metadata.icons). SVG + PNG
+	// cover every modern browser; `app/favicon.ico` is the legacy /favicon.ico
+	// fallback for older crawlers.
 	const required = [
 		"favicon.svg",
 		"favicon-16x16.png",

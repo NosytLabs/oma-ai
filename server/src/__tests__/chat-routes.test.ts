@@ -59,6 +59,7 @@ vi.mock('../auth/middleware.js', () => ({
   optionalAuth: async (_c: any, next: () => void) => next(),
   requireTeamRole: () => async (_c: any, next: () => void) => next(),
   requireAdmin: () => async (_c: any, next: () => void) => next(),
+  initAuth: () => {},
 }))
 
 vi.mock('../auth/siwe.js', () => ({

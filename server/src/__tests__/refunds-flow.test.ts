@@ -121,6 +121,7 @@ vi.mock('../auth/middleware.js', () => ({
   },
   requireTeamRole: () => async (_c: any, next: any) => next(),
   optionalAuth: async (_c: any, next: any) => next(),
+  initAuth: () => {},
 }))
 
 vi.mock('../config.js', () => ({

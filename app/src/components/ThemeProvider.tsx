@@ -23,6 +23,8 @@ import {
 	useState,
 } from "react";
 
+import { BRAND_COLORS } from "@/lib/brand";
+
 export type Theme = "emerald" | "amber" | "mono" | "synth";
 
 /** Canonical accent hex per theme — keep in sync with globals.css */
@@ -86,7 +88,7 @@ function applyTheme(theme: Theme): void {
 	// Keep browser chrome (mobile address bar) in sync
 	const meta = document.querySelector('meta[name="theme-color"]');
 	if (meta) {
-		meta.setAttribute("content", "#07090a");
+		meta.setAttribute("content", BRAND_COLORS.void);
 	}
 }
 

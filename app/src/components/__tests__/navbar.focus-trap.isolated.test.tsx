@@ -99,6 +99,7 @@ vi.mock("@ant-design/web3", () => ({
 vi.mock("wagmi", () => ({
 	useEnsName: () => ({ data: undefined }),
 	useAccount: () => ({ address: undefined, isConnected: false }),
+	useConnection: () => ({ address: undefined, isConnected: false, chainId: undefined, isConnecting: false }),
 	useConnect: () => ({ connect: vi.fn(), connectors: [], isPending: false }),
 	useDisconnect: () => ({ disconnect: vi.fn() }),
 	useChainId: () => 1,
@@ -135,12 +136,15 @@ function openMenu() {
 }
 
 describe("Navbar — mobile menu focus trap", () => {
-	it("moves focus to the first focusable element when the menu opens", () => {
+	it("moves focus to the first focusable element when the menu opens", async () => {
 		render(<Navbar />);
 		openMenu();
 		const menu = screen.getByRole("dialog", { name: /mobile navigation/i });
 		const firstLink = menu.querySelectorAll<HTMLElement>("a[href]")[0];
-		expect(document.activeElement).toBe(firstLink);
+		// The trap defers initial focus to a requestAnimationFrame so the animated
+		// menu's DOM is ready before focusing; wait for it rather than asserting
+		// synchronously (jsdom fires rAF asynchronously).
+		await waitFor(() => expect(document.activeElement).toBe(firstLink));
 	});
 
 	it("exposes the menu as a modal dialog (role=dialog, aria-modal=true)", () => {

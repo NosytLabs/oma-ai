@@ -12,9 +12,10 @@ import {
 	Zap,
 } from "lucide-react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
 	getModelsByTier,
+	loadModels,
 	MODELS,
 	PROVIDER_COLORS,
 	TIER_COLORS,
@@ -90,8 +91,25 @@ function ModelsPageInner() {
 	const [sortBy, setSortBy] = useState<SortKey>(urlSort as SortKey);
 	const [copied, setCopied] = useState(false);
 	const [sortOpen, setSortOpen] = useState(false);
+	const [isLoadingModels, setIsLoadingModels] = useState(true);
+	const [liveModels, setLiveModels] = useState<Model[] | null>(null);
 
-	const safeModels = useMemo(() => (Array.isArray(MODELS) ? MODELS : []), []);
+	// Load the full model catalog from the API on mount.
+	useEffect(() => {
+		let cancelled = false;
+		loadModels().then((models) => {
+			if (!cancelled) {
+				setLiveModels(models);
+				setIsLoadingModels(false);
+			}
+		});
+		return () => { cancelled = true; };
+	}, []);
+
+	const safeModels = useMemo(
+		() => (Array.isArray(liveModels) ? liveModels : Array.isArray(MODELS) ? MODELS : []),
+		[liveModels],
+	);
 
 	const filtered = useMemo(() => {
 		let result = [...safeModels];
@@ -180,6 +198,9 @@ function ModelsPageInner() {
 						</h1>
 						<p className="text-text-secondary mt-1 font-mono text-sm">
 							{totalModels} models available
+							{isLoadingModels && (
+								<span className="text-text-muted ml-2">(loading full catalog…)</span>
+							)}
 							{visibleModels < totalModels && (
 								<span className="text-text-muted">
 									{" "}&middot;{" "}

@@ -17,14 +17,22 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 /** Routes that don't require auth, mapped from the path *after* `/api`. */
 export const PUBLIC_BACKEND_PATHS = new Set([
-	"/v1/models",
-	"/v1/health",
-	"/v1/ping",
+	// Pre-auth + public health
 	"/health",
 	"/ready",
 	"/live",
 	"/ping",
 	"/version",
+	"/v1/health",
+	"/v1/ping",
+	"/v1/models",
+	// SIWE / account-number login — these MUST be reachable without a
+	// session, otherwise the catch-all proxy short-circuits them to 401
+	// and users can't start the auth flow at all. CSRF protection still
+	// applies via the dedicated /api/auth/* routes.
+	"/auth/nonce",
+	"/auth/verify",
+	"/auth/wallet",
 ]);
 
 export interface ProxyRequestOptions {

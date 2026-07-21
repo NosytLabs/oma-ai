@@ -4,6 +4,7 @@ import type { OmaEnv } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { checkBudgetThresholds, getBudgetAlertConfig, processBudgetAlert } from "../credits/budget-alerts.js";
 import { logger } from "../lib/logger.js";
+import { SPEND_LIMIT_SCRIPT } from "./rate-limit/lua-scripts.js";
 
 interface SpendEntry {
   keyHash: string;
@@ -37,7 +38,10 @@ async function processQueue(): Promise<void> {
       if (typeof val === "number" && val === entry.costCents) {
         await redis.expire(key, 86400);
       }
-    } catch {
+    } catch (err) {
+      // Surface retry-queue persistence failures so silent spend loss is
+      // visible in logs (M5). The entry stays queued for the next drain.
+      logger.warn({ err, keyHash: entry.keyHash, costCents: entry.costCents }, "spend retry queue: redis write failed");
       remaining.push(entry);
     }
   }
@@ -62,8 +66,25 @@ export async function trackSpend(
     });
 
     const key = todayKey(keyHash);
-    const val = await redis.incrByFloat(key, costCents);
-    await redis.set(key, val, { EX: 86400 });
+    const limit = config.SPEND_LIMIT_DAILY_CENTS;
+    // Atomic check-and-increment via Lua. Prevents the TOCTOU race where two
+    // concurrent requests both read `spent < limit` and collectively overspend.
+    // Returns the new counter value, or -1 if the increment would exceed the
+    // daily limit. node-redis v4+ requires eval({ keys, arguments }) with
+    // string ARGV (mirrors sliding-window.ts).
+    const result = (await redis.eval(SPEND_LIMIT_SCRIPT, {
+      keys: [key],
+      arguments: [String(limit), String(costCents), "86400"],
+    })) as number;
+    if (result === -1) {
+      // The hard atomic gate refused this increment — the daily limit has
+      // been hit even though the soft middleware check may have let it through.
+      // Log for observability; the request itself already completed.
+      logger.warn(
+        { keyHash, costCents, limit },
+        "trackSpend: daily spend limit reached, increment refused (atomic guard)",
+      );
+    }
   } catch (err) {
     logger.error({ err, keyHash }, "trackSpend failed, queuing for retry");
     if (spendRetryQueue.length < MAX_QUEUE_SIZE) {

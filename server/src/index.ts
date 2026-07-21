@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
 import { authRoutes } from "./routes/auth.js";
+import { initAuth } from "./auth/middleware.js";
 import { chatRoutes } from "./routes/chat/index.js";
 import { modelRoutes } from "./routes/models.js";
 import { depositRoutes } from "./routes/deposit/index.js";
@@ -88,6 +89,10 @@ if (config.NODE_ENV === "production" && (!config.CSRF_SECRET || config.CSRF_SECR
   logger.fatal(`[SECURITY] ${msg} Refusing to start.`);
   process.exit(1);
 }
+
+// Fail-fast auth validation (admin addresses). Runs at startup, not at module
+// import, so test imports of the auth middleware don't exit the process.
+initAuth();
 
 if (config.NODE_ENV !== "test") {
   startBackgroundDbSync();
@@ -197,7 +202,14 @@ app.onError((err, c) => {
   if (status >= 500) {
     return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
   }
-  return c.json({ error: { message: err.message, type: "client_error" } }, status);
+  // Only expose err.message to clients for known-safe 4xx statuses (L3).
+  // Any other status (including unknown 4xx) could leak internals like DB
+  // driver errors or stack traces via err.message.
+  const safeClientStatuses: ContentfulStatusCode[] = [400, 401, 403, 404, 409, 422, 429];
+  if (safeClientStatuses.includes(status)) {
+    return c.json({ error: { message: err.message, type: "client_error" } }, status);
+  }
+  return c.json({ error: { message: "Client error", type: "client_error" } }, status);
 });
 
 const server = serve({

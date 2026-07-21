@@ -12,7 +12,7 @@ import {
 	Smartphone,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { useToast } from "@/components/ui/Toast";
 import { api, type User } from "@/lib/api";
@@ -270,7 +270,8 @@ function TwoFactorModal({
 	onCopyCodes,
 	onCopiedChange,
 }: TwoFactorModalProps) {
-	const trapRef = useFocusTrap(true);
+	const trapRef = useRef<HTMLDivElement>(null);
+	useFocusTrap({ active: true, containerRef: trapRef });
 	return (
 		<m.div
 			ref={trapRef}
@@ -477,7 +478,8 @@ function DisableModal({
 	onSubmit,
 	onClose,
 }: DisableModalProps) {
-	const trapRef = useFocusTrap(true);
+	const trapRef = useRef<HTMLDivElement>(null);
+	useFocusTrap({ active: true, containerRef: trapRef });
 	return (
 		<m.div
 			ref={trapRef}

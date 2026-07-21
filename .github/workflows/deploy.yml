@@ -31,10 +31,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const ref = context.payload.inputs?.environment === 'preview'
-              ? context.ref
-              : context_sha;
-
             const { data: runs } = await github.rest.actions.listWorkflowRunsForBranch({
               owner: context.repo.owner,
               repo: context.repo.repo,

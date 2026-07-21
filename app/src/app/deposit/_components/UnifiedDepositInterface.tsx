@@ -18,13 +18,14 @@ import {
 	useState,
 } from "react";
 import { parseUnits } from "viem";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
 import { Magnetic, scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/crypto-prices";
+import { formatCents } from "@/lib/utils";
 import {
 	type CoinOption,
 	type DepositStep,
@@ -84,7 +85,7 @@ export function UnifiedDepositInterface({
 	const { writeContractAsync } = useWriteContract();
 	const publicClient = usePublicClient();
 	const { prices } = useCryptoPrices();
-	const { address: walletAddress } = useAccount();
+	const { address: walletAddress } = useConnection();
 	const { signMessage } = useWallet();
 
 	const usdValue =
@@ -108,7 +109,7 @@ export function UnifiedDepositInterface({
 			try {
 				const bal = await api.balance.get();
 				const balanceCents = parseInt(bal.balanceCents || "0", 10);
-				setCoinBalance((balanceCents / 100).toFixed(2));
+				setCoinBalance(formatCents(balanceCents));
 			} catch {
 				setCoinBalance(null);
 			}

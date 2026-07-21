@@ -189,7 +189,8 @@ authRoutes.post("/auth/verify", rateLimit({ windowMs: 60_000, maxRequests: 20 })
   let accountNumber: string;
   try {
     accountNumber = await ensureAccountNumber(user);
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, "[auth] Failed to allocate account number");
     return c.json({ error: { message: "Failed to generate unique account number", type: "internal_error" } }, 500);
   }
 
@@ -480,7 +481,8 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
     try {
       const accountNumber = await ensureAccountNumber(user);
       return c.json({ accountNumber, authMethod: session.authMethod });
-    } catch {
+    } catch (err) {
+      logger.warn({ err }, "[auth] Failed to allocate account number");
       return c.json({ error: { message: "Failed to generate unique account number", type: "internal_error" } }, 500);
     }
   }
@@ -488,7 +490,8 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
   let accountNumber: string;
   try {
     accountNumber = await allocateAccountNumber();
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, "[auth] Failed to allocate account number");
     return c.json({ error: { message: "Failed to generate unique account number", type: "internal_error" } }, 500);
   }
 
@@ -515,6 +518,9 @@ const csrfTokenHandler: MiddlewareHandler<OmaEnv> = async (c) => {
 };
 
 authRoutes.post("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
+// Allow GET so the frontend proxy /api/auth/csrf-token (which defaults to GET
+// via the shared `request()` helper) doesn't 404 the entire account-login flow.
+authRoutes.get("/auth/csrf-token", rateLimit({ windowMs: 60_000, maxRequests: 60 }), csrfTokenHandler);
 
 authRoutes.post("/auth/account/login", async (c) => {
   const ip = extractClientIp(c);
@@ -656,15 +662,17 @@ authRoutes.post("/auth/account/login", async (c) => {
   if (!newAccountNumber) {
     try {
       newAccountNumber = await allocateAccountNumber();
-    } catch {
+    } catch (err) {
+      logger.warn({ err }, "[auth] Failed to allocate account number");
       return c.json({ error: { message: "Failed to generate unique account number", type: "internal_error" } }, 500);
     }
     const newHash = hashAccountNumber(newAccountNumber);
     await db.update(users).set({ accountNumber: newAccountNumber, accountNumberHash: newHash }).where(eq(users.id, user.id));
   }
   
+  const existingKeys = await listApiKeys(user.id);
   const token = await generateSessionToken(user.id, "account-number");
-  return c.json({ token, address: user.address, accountNumber: newAccountNumber, authMethod: "account-number", hasApiKey: true });
+  return c.json({ token, address: user.address, accountNumber: newAccountNumber, authMethod: "account-number", hasApiKey: existingKeys.length > 0 });
 });
 
 authRoutes.get("/keys", sessionAuth, async (c) => {

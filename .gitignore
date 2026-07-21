@@ -51,7 +51,6 @@ server/models.json.bak
 # opencode + tool working dirs
 .opencode/
 .vibedoctor/
-.dbg/
 
 # Transient audit/working artifacts (screenshots, scratch output)
 .tmp/
@@ -74,5 +73,3 @@ app/playwright-report/
 
 # Local seed credentials / fixtures
 data/
-
-app/scripts-screenshots.mjs

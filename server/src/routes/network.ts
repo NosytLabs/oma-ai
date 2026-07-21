@@ -67,7 +67,7 @@ networkRoutes.get("/rate-limits/:key", authed, async (c) => {
   if (isRedisReady()) {
     const redis = await getRedisClient();
     if (redis) {
-      const h = (await redis.hmget(`tb:${key}`, "tokens", "last_refill")) as (string | null)[] | null;
+      const h = (await redis.hMGet(`tb:${key}`, "tokens", "last_refill")) as (string | null)[] | null;
       if (h && h[0] !== null && h[0] !== undefined) {
         live = { tokens: Number(h[0]), lastRefill: Number(h[1] ?? "0") };
       }

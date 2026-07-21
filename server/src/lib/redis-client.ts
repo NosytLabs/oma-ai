@@ -52,12 +52,17 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
       redisReady = true;
     });
     
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const connectPromise = client.connect();
+    // Swallow any late rejection so a timeout win never leaves an
+    // unhandledRejection behind (and vice versa for the timer below).
+    connectPromise.catch(() => {});
     await Promise.race([
-      client.connect(),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("timeout")), 2000)
-      ),
-    ]);
+      connectPromise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), 2000);
+      }),
+    ]).finally(() => clearTimeout(timer));
     
     return client;
   } catch {

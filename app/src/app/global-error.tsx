@@ -57,7 +57,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 							fontSize: "0.75rem",
 							letterSpacing: "0.1em",
 							textTransform: "uppercase",
-							color: "var(--color-text-muted, #9ca3af)",
+							color: "var(--color-text-muted, #9aa394)",
 							fontFamily: "monospace",
 							marginBottom: "0.5rem",
 						}}
@@ -75,7 +75,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 					</h1>
 					<p
 						style={{
-							color: "var(--color-text-secondary, #d1d5db)",
+							color: "var(--color-text-secondary, #b4bbb0)",
 							maxWidth: "32rem",
 							lineHeight: 1.6,
 							margin: "0 0 1.5rem",

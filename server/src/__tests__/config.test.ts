@@ -32,6 +32,7 @@ vi.mock('../auth/middleware.js', () => ({
     _c.set('teamRole', 'owner')
     await next()
   },
+  initAuth: () => {},
 }))
 
 vi.mock('../middleware/rate-limit.js', () => ({
