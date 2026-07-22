@@ -6,6 +6,7 @@
 
 import { ArrowRight, Bot, CreditCard } from "lucide-react";
 import Link from "next/link";
+import { BorderBeam } from "border-beam";
 import { Reveal } from "@/app/_components/home/reveal";
 
 export function X402Banner() {
@@ -17,6 +18,9 @@ export function X402Banner() {
 			<div className="container-page">
 				<Reveal>
 					<div className="relative overflow-hidden rounded-2xl border border-accent/25 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-accent)_10%,var(--color-panel)),var(--color-panel)_55%,var(--color-panel))] p-8 sm:p-10 lg:p-12">
+						<BorderBeam size="sm" duration={6} theme="auto" className="pointer-events-none rounded-2xl">
+							<div className="h-full w-full" />
+						</BorderBeam>
 						<div
 							aria-hidden="true"
 							className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/10 blur-3xl"

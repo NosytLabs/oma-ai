@@ -16,6 +16,8 @@ import { ScrambleText } from "@/components/scramble-text";
 import { FloatingIcons } from "@/components/floating-icons";
 import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
+import { ImageGeneration } from "img-fx";
+import Image from "next/image";
 
 function reveal(index: number) {
 	return {
@@ -172,6 +174,25 @@ export function Hero() {
 							className="absolute -inset-4 rounded-2xl bg-accent/[0.04] blur-2xl"
 						/>
 						<div className="relative overflow-hidden rounded-xl border border-border-hi bg-surface-elevated/90 shadow-xl backdrop-blur-sm">
+							<div className="border-b border-border p-3">
+								<ImageGeneration
+									images="/og-image.png"
+									autoReveal
+									revealDelayRange={[5, 8]}
+									strength={0.35}
+									preset="pixels-organic"
+									theme="auto"
+									className="overflow-hidden rounded-lg"
+								>
+									<Image
+										src="/og-image.png"
+										alt="OMA AI inference gateway preview"
+										width={1280}
+										height={720}
+										className="h-auto w-full"
+									/>
+								</ImageGeneration>
+							</div>
 							<div className="flex items-center gap-2 border-b border-border px-4 py-3">
 								<span className="h-2 w-2 rounded-full bg-error/80" />
 								<span className="h-2 w-2 rounded-full bg-warning/80" />
