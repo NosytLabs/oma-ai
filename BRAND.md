@@ -23,16 +23,21 @@
 |-------|------|
 | UI component | `app/src/components/ui/oma-logo.tsx` |
 | Vector favicon (source of truth) | `app/public/favicon.svg` |
-| Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (SVG is source of truth) |
+| Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (regenerate from SVG) |
 | App icon 192 / 512 | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` |
+| Glow marketing icon | `app/public/logos/oma-icon-glow-512.png` (social / press; not PWA source) |
 | Lockup SVG | `app/public/logos/oma-logo.svg` |
+| OG lockup PNG | `app/public/logos/oma-og-lockup.png` |
 | Apple touch | `app/public/apple-touch-icon.png` |
 | Open Graph 1280×720 | `app/public/og-image.png` |
 
-Regenerate rasters from SVG:
+Regenerate PWA/tab rasters from SVG (always after mark edits):
 
 ```bash
+rsvg-convert -w 16 -h 16 app/public/favicon.svg -o app/public/favicon-16x16.png
 rsvg-convert -w 32 -h 32 app/public/favicon.svg -o app/public/favicon-32x32.png
+rsvg-convert -w 180 -h 180 app/public/favicon.svg -o app/public/apple-touch-icon.png
+rsvg-convert -w 192 -h 192 app/public/favicon.svg -o app/public/logos/oma-icon-192.png
 rsvg-convert -w 512 -h 512 app/public/favicon.svg -o app/public/logos/oma-icon-512.png
 ```
 
@@ -43,10 +48,12 @@ rsvg-convert -w 512 -h 512 app/public/favicon.svg -o app/public/logos/oma-icon-5
 | `favicon.svg` | Browser tab (preferred) |
 | `favicon-16x16.png` / `favicon-32x32.png` | Fallback tabs (SVG preferred) |
 | `apple-touch-icon.png` | iOS home screen |
-| `logos/oma-icon-192.png` / `oma-icon-512.png` | PWA / manifest |
-| `logos/oma-logo.svg` | Marketing lockup |
-| `og-image.png` | Social / Open Graph 1280×720 |
-| `oma-logo.tsx` | In-app React mark (CSS tokens) |
+| `logos/oma-icon-192.png` / `oma-icon-512.png` | PWA / manifest (flat SVG-derived) |
+| `logos/oma-icon-glow-512.png` | Press / marketing glow variant |
+| `logos/oma-logo.svg` | Marketing lockup (vector) |
+| `logos/oma-og-lockup.png` | Social lockup still |
+| `og-image.png` | Open Graph 1280×720 (slogan, no hex codes) |
+| `oma-logo.tsx` | In-app React mark (CSS tokens / theme accents) |
 
 Do not invent a second mark. Live site may lag until deploy; local `app/public` is source of truth.
 

@@ -301,7 +301,13 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 	const [errorDismissed, setErrorDismissed] = useState(false);
 
-	const usageData = useMemo(() => mapUsageToChartData(usage ?? []), [usage]);
+	// `usage` is already time-range filtered by the page (`filteredUsage`).
+	// Pass `null` so mapUsageToChartData does not re-slice to a hard-coded 7d
+	// window (which would break the 30d / all-time range selectors).
+	const usageData = useMemo(
+		() => mapUsageToChartData(usage ?? [], null),
+		[usage],
+	);
 	const modelData = useMemo(() => mapUsageToModelData(usage ?? []), [usage]);
 
 	return (

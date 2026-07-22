@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { m } from "framer-motion";
 import { useId } from "react";
 import {
@@ -13,6 +13,17 @@ import {
 	YAxis,
 } from "recharts";
 import { ChartEmptyState, makeGradientId } from "./shared";
+
+/** Parse chart day keys (YYYY-MM-DD) as local dates — avoids UTC day-shift. */
+function formatChartDay(value: string, pattern: string): string {
+	try {
+		const d = parse(value, "yyyy-MM-dd", new Date());
+		if (Number.isNaN(d.getTime())) return value;
+		return format(d, pattern);
+	} catch {
+		return value;
+	}
+}
 
 export interface DataPoint {
 	date: string;
@@ -146,7 +157,7 @@ export function AreaChartComponent({
 						fontSize={11}
 						tickLine={false}
 						axisLine={false}
-						tickFormatter={(value) => format(new Date(value), "EEE")}
+						tickFormatter={(value) => formatChartDay(String(value), "EEE")}
 					/>
 					<YAxis
 						stroke="var(--color-text-tertiary)"

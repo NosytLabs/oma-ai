@@ -73,3 +73,6 @@ app/playwright-report/
 
 # Local seed credentials / fixtures
 data/
+
+# Local UX audit screenshot dump (not product assets)
+.screenshots/

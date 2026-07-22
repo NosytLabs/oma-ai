@@ -14,8 +14,18 @@
 export const BRAND_COLORS = {
 	/** Deep near-black background. Matches `--color-void`. */
 	void: "#07090a",
-	/** Primary accent (acid green). Matches `--color-accent`. */
+	/** Elevated panel / card surface. Matches `--color-panel`. */
+	panel: "#0d1110",
+	/** Primary accent (emerald). Matches `--color-accent`. */
 	accent: "#46d39a",
+	/** Hover / glow accent. Matches `--color-accent-bright`. */
+	accentBright: "#6ee7b7",
+	/** Headlines. Matches `--color-text-bright`. */
+	textBright: "#f5f7f3",
+	/** Body text. Matches `--color-text`. */
+	text: "#d8dcd6",
+	/** Meta / captions. Matches `--color-text-muted`. */
+	textMuted: "#9aa394",
 } as const;
 
 export type BrandColor = (typeof BRAND_COLORS)[keyof typeof BRAND_COLORS];

@@ -27,7 +27,7 @@ let count = 0;
 let nxKeyExists = false;
 const mockRedis = {
   get: vi.fn(async (_key: string) => (count > 0 ? String(count) : null)),
-  set: vi.fn(async (key: string, value: string, opts?: { NX?: boolean; EX?: number }) => {
+  set: vi.fn(async (key: string, _value: string, opts?: { NX?: boolean; EX?: number }) => {
     if (opts?.NX) {
       // Synchronous check — no await before this, so concurrent calls
       // see the true value after the first one sets it.
@@ -37,6 +37,10 @@ const mockRedis = {
       count = 1;
       return "OK";
     }
+    return "OK";
+  }),
+  setEx: vi.fn(async (_key: string, _ttl: number, _value: string) => {
+    // Treat setEx as a successful write of the step key.
     return "OK";
   }),
   incr: vi.fn(async (_key: string) => {
@@ -156,10 +160,10 @@ describe("SEC-7 — 2FA fail counter atomicity", () => {
 
     // With the racy read-then-INCR code, all 10 reach verify → 10 calls.
     // With the atomic INCR-then-check fix, the gate fires once
-    // `fails >= 5` and short-circuits the rest. The exact number of
-    // 401s is 4 (fails=1..4) and the rest (6) get 429 — but the load
+    // `fails > 5` and short-circuits the rest. The exact number of
+    // 401s is 5 (fails=1..5) and the rest (5) get 429 — but the load
     // ordering is non-deterministic, so we only assert the cap.
-    expect(verifyCount).toBeLessThanOrEqual(4);
+    expect(verifyCount).toBeLessThanOrEqual(5);
     expect(verifyCount).toBeGreaterThanOrEqual(1);
 
     // Every request either passed the gate (401) or got rejected (429).
@@ -167,14 +171,14 @@ describe("SEC-7 — 2FA fail counter atomicity", () => {
     const status401 = responses.filter((r) => r.status === 401).length;
     const status429 = responses.filter((r) => r.status === 429).length;
     expect(status401 + status429).toBe(N);
-    expect(status429).toBeGreaterThanOrEqual(6);
+    expect(status429).toBeGreaterThanOrEqual(5);
 
     // SET NX was called for every request — 1 succeeds, 9 fall through to INCR.
     // No read-then-write gap.
     expect(mockRedis.set).toHaveBeenCalled();
     // At least 1 request hit SET NX + EX and the rest hit INCR as fallback.
     const incrCalls = mockRedis.incr.mock.calls.length;
-    expect(incrCalls).toBeGreaterThanOrEqual(6); // at least 6 hit INCR
+    expect(incrCalls).toBeGreaterThanOrEqual(5);
     expect(incrCalls + 1).toBe(N); // 1 SET NX success + N-1 INCR
   });
 

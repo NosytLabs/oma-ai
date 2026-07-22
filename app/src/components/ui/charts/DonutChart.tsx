@@ -2,6 +2,7 @@
 
 import { m } from "framer-motion";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { formatUsd } from "@/lib/utils";
 
 export interface ModelData {
 	name: string;
@@ -12,14 +13,23 @@ export interface ModelData {
 interface DonutChartProps {
 	data: ModelData[];
 	label?: string;
+	/** When true (default), values are USD costs and render with `$`. */
+	currency?: boolean;
+}
+
+function formatValue(value: number, currency: boolean): string {
+	if (currency) return formatUsd(value);
+	return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 const CustomTooltip = ({
 	active,
 	payload,
+	currency,
 }: {
 	active?: boolean;
 	payload?: Array<{ payload: ModelData }>;
+	currency?: boolean;
 }) => {
 	if (active && payload?.length) {
 		const data = payload[0].payload;
@@ -27,7 +37,7 @@ const CustomTooltip = ({
 			<div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">
 				<p className="text-xs text-text-muted">{data.name}</p>
 				<p className="text-sm font-semibold text-text-bright">
-					{data.value.toLocaleString()}
+					{formatValue(data.value, currency ?? true)}
 				</p>
 			</div>
 		);
@@ -35,9 +45,13 @@ const CustomTooltip = ({
 	return null;
 };
 
-export function DonutChart({ data, label = "Total" }: DonutChartProps) {
+export function DonutChart({
+	data,
+	label = "Total",
+	currency = true,
+}: DonutChartProps) {
 	const total = data.reduce((sum, item) => sum + item.value, 0);
-	const chartDescription = `Donut chart showing ${data.map((d) => `${d.name}: ${d.value.toLocaleString()}`).join(", ")}. Total: ${total.toLocaleString()}`;
+	const chartDescription = `Donut chart showing ${data.map((d) => `${d.name}: ${formatValue(d.value, currency)}`).join(", ")}. Total: ${formatValue(total, currency)}`;
 
 	return (
 		<m.div
@@ -45,7 +59,7 @@ export function DonutChart({ data, label = "Total" }: DonutChartProps) {
 			animate={{ opacity: 1, scale: 1 }}
 			className="relative h-[280px] w-full"
 		>
-			<ResponsiveContainer width="100%" height="100%">
+			<ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
 				<PieChart role="img" aria-label={chartDescription}>
 					<Pie
 						data={data}
@@ -58,10 +72,10 @@ export function DonutChart({ data, label = "Total" }: DonutChartProps) {
 						animationDuration={800}
 					>
 						{data.map((entry, index) => (
-							<Cell key={`cell-${index}`} fill={entry.color} />
+							<Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />
 						))}
 					</Pie>
-					<Tooltip content={<CustomTooltip />} />
+					<Tooltip content={<CustomTooltip currency={currency} />} />
 				</PieChart>
 			</ResponsiveContainer>
 			<div
@@ -69,7 +83,7 @@ export function DonutChart({ data, label = "Total" }: DonutChartProps) {
 				className="absolute inset-0 flex flex-col items-center justify-center"
 			>
 				<span className="text-3xl font-bold text-text-bright">
-					{total.toLocaleString()}
+					{formatValue(total, currency)}
 				</span>
 				<span className="text-xs text-text-muted uppercase tracking-wider">
 					{label}

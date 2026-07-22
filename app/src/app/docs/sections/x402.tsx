@@ -3,22 +3,24 @@ import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 
 export function X402Section() {
 	const flowCode = `# 1. Request without credits — API returns 402
-curl https://api.oma-ai.com/v1/chat/completions \\
+curl -i https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Response: 402 Payment Required
-# WWW-Authenticate: X-PAYMENT pay-Req: {"x402Version":"1","scheme":"evm","networkId":"base","asset":"0x8335...","amount":"0.00025","payee":"0x..."}
+# Header: PAYMENT-REQUIRED: {"x402Version":"1","scheme":"exact","network":"base",
+#   "asset":"0x8335...","amount":"250","payTo":"0x...","maxTimeoutSeconds":300,...}
+# (amount is USDC base units; 250 = $0.00025 when USDC has 6 decimals)
 
-# 2. Pay USDC on Base (signed with your wallet), then retry with the receipt header
-# Use viem, ethers, or any EIP-3009 signer to construct transferWithAuthorization
+# 2. Sign a USDC transferWithAuthorization (EIP-3009) on Base for payTo/amount
+#    using viem, ethers, or any EIP-3009 signer.
 
-# 3. Retry with PAYMENT-SIGNATURE header — SUCCESS
+# 3. Retry with PAYMENT-SIGNATURE (JSON PaymentSignature envelope) — SUCCESS
 curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_agent_key" \\
   -H "Content-Type: application/json" \\
-  -H "PAYMENT-SIGNATURE: <base64-json-signature>" \\
+  -H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}' \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`;
 
 	const agentCode = `import { privateKeyToAccount } from 'viem/accounts';
@@ -28,14 +30,15 @@ import { base } from 'viem/chains';
 const account = privateKeyToAccount(process.env.AGENT_KEY);
 const publicClient = createPublicClient({ chain: base, transport: http() });
 
-// 1) Call the API; if it returns 402, the WWW-Authenticate header
-//    carries the payment requirements (payee, asset, amount, network).
-// 2) Sign a USDC transferWithAuthorization (EIP-3009) to the payee.
-// 3) Retry the original request with PAYMENT-SIGNATURE: <base64>.
+// 1) Call the API; if it returns 402, the PAYMENT-REQUIRED header
+//    carries the payment requirements (payTo, asset, amount, network).
+// 2) Sign a USDC transferWithAuthorization (EIP-3009) to payTo.
+// 3) Retry the original request with:
+//      PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}
 //
-// The OMA server verifies the signature against the on-chain USDC
-// contract and settles the request when the authorization is valid.
-// See the open x402 spec (https://x402.org) for the request shape.
+// The OMA server verifies the signature (or CDP facilitator) and settles
+// the request when the authorization is valid.
+// See https://x402.org for the protocol shape.
 
 const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
   method: 'POST',
@@ -47,8 +50,9 @@ const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
 });
 
 if (res.status === 402) {
-  const payReq = parsePayReq(res.headers.get('www-authenticate'));
-  // sign + retry omitted for brevity
+  const payReq = JSON.parse(res.headers.get('PAYMENT-REQUIRED') ?? '{}');
+  // sign EIP-3009 authorization + retry with PAYMENT-SIGNATURE (omitted)
+  console.log(payReq.payTo, payReq.amount, payReq.network);
 }
 
 const json = await res.json();`;
@@ -70,10 +74,12 @@ const json = await res.json();`;
 						<p className="mt-1 text-sm text-text-muted">
 							Agents can call any OMA endpoint without pre-funding credits.
 							When the request has no usable balance, the API returns HTTP
-							402 with payment requirements (payee, asset, amount, chain).
-							Sign a USDC transferWithAuthorization (EIP-3009) on Base and
-							retry with the receipt. The server verifies the signature and
-							settles the request — no human in the loop.
+							402 with a <code className="text-accent font-mono">PAYMENT-REQUIRED</code>{" "}
+							header (payTo, asset, amount, network). Sign a USDC
+							transferWithAuthorization (EIP-3009) on Base and retry with{" "}
+							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>.
+							The server verifies the signature and settles the request —
+							no human in the loop.
 						</p>
 					</div>
 				</div>

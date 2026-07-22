@@ -115,19 +115,25 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 		}
 	});
 
-	it("disallows /api/, /admin, /dashboard, /settings, /login, /api-keys", () => {
+	it("disallows /api/, /admin, /dashboard, /settings, /login and product gates", () => {
 		const result = robots();
 		for (const rule of rulesArray(result)) {
 			if (rule.userAgent === "*") {
+				const disallow = Array.isArray(rule.disallow)
+					? rule.disallow
+					: rule.disallow
+						? [rule.disallow]
+						: [];
 				for (const path of [
 					"/api/",
 					"/admin",
 					"/dashboard",
 					"/settings",
 					"/login",
-					"/api-keys",
+					"/chat",
+					"/deposit",
 				]) {
-					expect(rule.disallow).toContain(path);
+					expect(disallow).toContain(path);
 				}
 			}
 		}

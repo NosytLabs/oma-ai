@@ -135,4 +135,36 @@ describe('verifyUsdcOnChain — isolated', () => {
     expect(result.valid).toBe(false)
     expect(result.error).toMatch(/USDC/i)
   })
+
+  it('uses token units for fractional-dollar claims', async () => {
+    const rawAmount = 10_250_000n;
+    mocks.getTransactionReceipt.mockResolvedValue({ status: 'success', blockNumber: 1n });
+    mocks.getTransaction.mockResolvedValue({
+      to: USDC, from: '0xSENDER7777777777777777777777777777777777',
+      input: '0x' + 'a'.repeat(128), value: 0n,
+    });
+    mocks.decodeFunctionData.mockReturnValue({
+      functionName: 'transfer', args: [TREASURY, rawAmount],
+    });
+
+    const result = await verifyUsdcOnChain(VALID_TX_HASH, 10.25);
+    expect(result.valid).toBe(true);
+  });
+
+  it('binds transferFrom deposits to the calldata payer, not only the transaction sender', async () => {
+    const expectedPayer = '0x' + '1'.repeat(40);
+    const differentPayer = '0x' + '2'.repeat(40);
+    mocks.getTransactionReceipt.mockResolvedValue({ status: 'success', blockNumber: 1n });
+    mocks.getTransaction.mockResolvedValue({
+      to: USDC, from: expectedPayer,
+      input: '0x' + 'a'.repeat(128), value: 0n,
+    });
+    mocks.decodeFunctionData.mockReturnValue({
+      functionName: 'transferFrom', args: [differentPayer, TREASURY, 100_000_000n],
+    });
+
+    const result = await verifyUsdcOnChain(VALID_TX_HASH, 100, expectedPayer);
+    expect(result.valid).toBe(false);
+    expect(result.error).toMatch(/payer/i);
+  });
 })

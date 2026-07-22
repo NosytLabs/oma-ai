@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
 import { OrganizationJsonLd, SoftwareApplicationJsonLd } from "@/components/json-ld";
 import "./globals.css";
+import "@/styles/transitions.css";
 
 const display = Instrument_Serif({
 	subsets: ["latin"],

@@ -35,12 +35,15 @@ export function X402Banner() {
 									Agents pay for themselves.
 								</h2>
 								<p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
-									No accounts. No subscriptions. Attach an{" "}
+									No accounts. No subscriptions. On 402, read{" "}
 									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
-										X-PAYMENT
+										PAYMENT-REQUIRED
+									</code>
+									, sign USDC on Base, retry with{" "}
+									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
+										PAYMENT-SIGNATURE
 									</code>{" "}
-									header and settle each inference call on Base — the gateway
-									verifies, routes, and returns the completion.
+									— the gateway verifies, routes, and returns the completion.
 								</p>
 								<div className="mt-7 flex flex-wrap gap-3">
 									<Link
@@ -66,7 +69,7 @@ export function X402Banner() {
 								</p>
 								<pre className="overflow-x-auto whitespace-pre">
 									{`POST /v1/chat/completions
-X-PAYMENT: <base64 x402 receipt>
+PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
 Content-Type: application/json
 
 { "model": "llama-3.3-70b",

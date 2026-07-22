@@ -35,31 +35,57 @@ export interface ChartModelDatum {
 }
 
 /**
- * Group usage records by ISO date (YYYY-MM-DD) and aggregate request count +
- * total cost (cents → dollars) per day. Returns the last `windowDays` of
- * the date-sorted series so the chart always shows a stable trailing window
- * even when the API returns a longer history.
+ * Local calendar day (YYYY-MM-DD) for a timestamp. Avoids UTC day-shift that
+ * `toISOString().slice(0, 10)` causes for evening times in negative offsets.
+ */
+export function localDayKey(isoOrDate: string | Date): string {
+	const d = typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate;
+	if (Number.isNaN(d.getTime())) return "";
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
+/**
+ * Group usage records by local calendar date (YYYY-MM-DD) and aggregate
+ * request count + total cost (cents → dollars) per day.
+ *
+ * When `windowDays` is a positive number, returns the last N day-buckets of
+ * the sorted series (useful if the caller passes unfiltered history).
+ * When `windowDays` is `null` or `<= 0`, no trailing slice is applied —
+ * callers that already filter by time range (dashboard `filteredUsage`)
+ * should pass `null` so 30d / all-time selections are not re-truncated to 7d.
  *
  * Empty input → empty output. The chart components render a zero-state in
  * that case (or show the loading skeleton via `LazyUsageChart`).
  */
 export function mapUsageToChartData(
 	usage: readonly UsageRecordLike[],
-	windowDays = 7,
+	windowDays: number | null = 7,
 ): ChartDataPoint[] {
 	if (usage.length === 0) return [];
 	const byDay = new Map<string, { requests: number; cost: number }>();
 	for (const u of usage) {
-		const day = new Date(u.createdAt).toISOString().slice(0, 10);
+		const day = localDayKey(u.createdAt);
+		if (!day) continue;
 		const prev = byDay.get(day) ?? { requests: 0, cost: 0 };
 		prev.requests += 1;
 		prev.cost += toDollars(u.costCents);
 		byDay.set(day, prev);
 	}
-	return Array.from(byDay.entries())
-		.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-		.slice(-windowDays)
-		.map(([date, v]) => ({ date, requests: v.requests, cost: v.cost }));
+	const sorted = Array.from(byDay.entries()).sort(([a], [b]) =>
+		a < b ? -1 : a > b ? 1 : 0,
+	);
+	const windowed =
+		windowDays == null || windowDays <= 0
+			? sorted
+			: sorted.slice(-windowDays);
+	return windowed.map(([date, v]) => ({
+		date,
+		requests: v.requests,
+		cost: v.cost,
+	}));
 }
 
 /**
@@ -76,7 +102,8 @@ export function mapUsageToModelData(
 	if (usage.length === 0) return [];
 	const byModel = new Map<string, number>();
 	for (const u of usage) {
-		byModel.set(u.model, (byModel.get(u.model) ?? 0) + toDollars(u.costCents));
+		const model = u.model?.trim() || "unknown";
+		byModel.set(model, (byModel.get(model) ?? 0) + toDollars(u.costCents));
 	}
 	return Array.from(byModel.entries())
 		.sort(([, a], [, b]) => b - a)

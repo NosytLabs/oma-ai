@@ -15,6 +15,9 @@ const USDC_TRANSFER_ABI = parseAbi([
   "function transferFrom(address from, address to, uint256 amount) returns (bool)",
 ]);
 
+const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
+const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
 /**
  * H-USDC-1: Verify a USDC deposit's on-chain transfer before crediting the
  * user. Rejects:
@@ -33,7 +36,17 @@ export async function verifyUsdcOnChain(
   claimedAmountUsd: number,
   expectedPayer?: string,
 ): Promise<UsdcVerifyResult> {
-  const hash = (txHash.startsWith("0x") ? txHash : `0x${txHash}`) as Hash;
+  if (!EVM_TX_HASH_RE.test(txHash)) {
+    return { valid: false, error: "Invalid transaction hash format" };
+  }
+  if (!Number.isFinite(claimedAmountUsd) || claimedAmountUsd <= 0) {
+    return { valid: false, error: "Invalid claimed amount" };
+  }
+  if (expectedPayer && !EVM_ADDRESS_RE.test(expectedPayer)) {
+    return { valid: false, error: "Invalid expected payer address" };
+  }
+
+  const hash = txHash as Hash;
   const treasury = config.TREASURY_BASE_ADDRESS;
   if (!treasury) {
     return { valid: false, error: "Treasury address not configured" };
@@ -42,7 +55,7 @@ export async function verifyUsdcOnChain(
   // `attempt` captures it in a closure, so TS doesn't narrow. Use the
   // definite assignment assertion since we've already handled the undefined case.
   const treasuryAddr = treasury;
-  const expectedRawAmount = BigInt(Math.round(claimedAmountUsd)) * 1_000_000n;
+  const expectedRawAmount = BigInt(Math.round(claimedAmountUsd * 10 ** USDC_DECIMALS));
 
   async function attempt(rpcUrl: string, expectedPayer?: string): Promise<UsdcVerifyResult> {
     const client = createPublicClient({ chain: base, transport: http(rpcUrl) });
@@ -72,7 +85,7 @@ export async function verifyUsdcOnChain(
     // H-Deposit-2: bind the on-chain sender to the authenticated depositing
     // wallet so a third party cannot finalize a deposit credited to another
     // account.
-    if (expectedPayer && tx.from && tx.from.toLowerCase() !== expectedPayer.toLowerCase()) {
+    if (expectedPayer && (!tx.from || tx.from.toLowerCase() !== expectedPayer.toLowerCase())) {
       return { valid: false, error: "Deposit sender does not match the authenticated wallet" };
     }
 
@@ -99,7 +112,10 @@ export async function verifyUsdcOnChain(
     }
 
     if (decoded.functionName === "transferFrom") {
-      const [, recipient, rawAmount] = decoded.args as [string, string, bigint];
+      const [payer, recipient, rawAmount] = decoded.args as [string, string, bigint];
+      if (expectedPayer && payer.toLowerCase() !== expectedPayer.toLowerCase()) {
+        return { valid: false, error: "Transfer payer does not match the authenticated wallet" };
+      }
       if (recipient.toLowerCase() !== treasuryAddr.toLowerCase()) {
         return { valid: false, error: "Recipient mismatch: not treasury" };
       }
@@ -112,8 +128,13 @@ export async function verifyUsdcOnChain(
     return { valid: false, error: "Unrecognized USDC transfer method" };
   }
 
+  const primaryRpc = config.CHAIN_RPC_URL;
+  if (!primaryRpc) {
+    return { valid: false, error: "Chain RPC URL is not configured" };
+  }
+
   try {
-    return await attempt(config.CHAIN_RPC_URL!, expectedPayer);
+    return await attempt(primaryRpc, expectedPayer);
   } catch (primaryErr: unknown) {
     const isNetworkError = primaryErr instanceof Error && (
       primaryErr.message.includes("fetch") ||

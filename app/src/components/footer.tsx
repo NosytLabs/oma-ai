@@ -63,6 +63,7 @@ const PRODUCT: FooterSection = {
 		{ label: "Chat", href: "/chat", icon: Terminal },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
+		{ label: "Compare", href: "/compare" },
 		{ label: "About", href: "/about" },
 	],
 };

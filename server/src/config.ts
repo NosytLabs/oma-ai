@@ -12,6 +12,17 @@ const INSECURE_DEFAULTS = [
   "dev-encryption-key-change-me-in-prod-32ch",
 ];
 
+/** Parse human-friendly environment booleans without Boolean("false") surprises. */
+export function parseBooleanEnv(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const normalized = value.trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(normalized)) return true;
+  if (["false", "0", "no", "off", ""].includes(normalized)) return false;
+  return value;
+}
+
+const envBoolean = z.preprocess(parseBooleanEnv, z.boolean());
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1).optional().default("postgresql://localhost:5432/oma"),
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
@@ -31,7 +42,7 @@ const envSchema = z.object({
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.
   // Production should leave this unset (defaults to false).
-  OMMA_ALLOW_NON_PRIVATE_VENICE: z.coerce.boolean().default(false),
+  OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
   // ponytail: Non-private providers (OpenRouter, Together, DeepInfra, Claude,
   // Gemini, Morpheus, AntSeed, LiteLLM) removed. OMA routes exclusively through
   // Venice-based providers (Venice direct, Surplus, CheapTokens) to guarantee
@@ -79,7 +90,7 @@ const envSchema = z.object({
   CCTP_WEBHOOK_SECRET: z.string().min(1).optional(),
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
-  DEBUG_STREAM: z.coerce.boolean().default(false),
+  DEBUG_STREAM: envBoolean.default(false),
   // Log level for the server logger (trace, debug, info, warn, error, fatal)
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
   AUTO_RELOAD_THRESHOLD: z.coerce.number().positive().default(50000),
@@ -183,7 +194,7 @@ const envSchema = z.object({
   BUILD_TIME: z.string().optional().default(() => new Date().toISOString()),
 
   // CheapTokens: force disable provider
-  CHEAPTOKENS_FORCE_DISABLE: z.coerce.boolean().default(false),
+  CHEAPTOKENS_FORCE_DISABLE: envBoolean.default(false),
 
   // ===========================================================================
   // M5: Hardcoded business constants moved from inline literals into the
@@ -255,7 +266,7 @@ const envSchema = z.object({
   // ===========================================================================
   NEON_AUTH_URL: z.string().url().optional(),
   NEON_AUTH_JWKS_URL: z.string().url().optional(),
-  NEON_AUTH_ENABLED: z.coerce.boolean().default(true),
+  NEON_AUTH_ENABLED: envBoolean.default(true),
 });
 
 export type Config = z.infer<typeof envSchema>;

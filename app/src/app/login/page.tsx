@@ -24,8 +24,9 @@
  *      identifier. Server stores a SHA-256 hash, no PII. Reuses the
  *      existing `AccountLoginModal` in `inline` mode.
  *
- *   3. x402 (no account) — any OMA endpoint accepts an `X-PAYMENT`
- *      header on Base. Linked from the callout; not a form on this page.
+ *   3. x402 (no account) — any OMA endpoint accepts a `PAYMENT-SIGNATURE`
+ *      header on Base after a 402 + `PAYMENT-REQUIRED` challenge. Linked
+ *      from the callout; not a form on this page.
  *
  * Cross-cutting concerns
  * ----------------------
@@ -374,9 +375,9 @@ function X402Callout() {
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Call any OMA endpoint with an{" "}
-						<code className="font-mono text-text-secondary">X-PAYMENT</code>{" "}
-						header on Base. Agent-native USDC settlement — no pre-funded
+						Call any OMA endpoint; on 402, settle with{" "}
+						<code className="font-mono text-text-secondary">PAYMENT-SIGNATURE</code>{" "}
+						on Base. Agent-native USDC settlement — no pre-funded
 						credits or session cookie required.
 					</p>
 					<a

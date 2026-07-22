@@ -75,11 +75,12 @@ export const mobileGroups: NavGroup[] = [
 
 /** Mobile-menu "account" card links. Treated as active when the current
  *  pathname is any of these (used to highlight the card outline). */
+/** Mobile account card — only true account surfaces (not docs). */
 export const accountHrefs = [
 	"/dashboard",
 	"/deposit",
 	"/settings",
-	"/docs",
+	"/login",
 ] as const;
 
 export function isCurrentPath(pathname: string, href: string): boolean {
