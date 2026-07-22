@@ -20,16 +20,9 @@
  */
 
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { ThinkingOrb } from "thinking-orbs";
 import {
-	Bot,
-	Brain,
-	Check,
-	ChevronDown,
-	ChevronUp,
-	Clock,
-	Copy,
-	Search,
-	User,
+	AlertTriangle, ChevronDown, ChevronUp, Clock, Copy, Search, User,
 } from "lucide-react";
 import Image from "next/image";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -274,7 +267,9 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 									aria-hidden="true"
 								/>
 							)}
-							{isWaitingForFirstToken && <StreamingIndicator />}
+							{isWaitingForFirstToken && (
+							<ThinkingOrb state="composing" size={20} />
+						)}
 						</div>
 					)}
 				</div>
@@ -325,35 +320,6 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 		</m.div>
 	);
 });
-
-// ═══════════════════════════════════════════════════════════════════
-// STREAMING INDICATOR — Animated pulse dots
-// ═══════════════════════════════════════════════════════════════════
-
-function StreamingIndicator() {
-	return (
-		<span
-			className="inline-flex items-center gap-1.5 py-1"
-			role="status"
-			aria-label="Generating"
-		>
-			{[0, 0.15, 0.3].map((delay, i) => (
-				<m.span
-					key={i}
-					className="block w-1.5 h-1.5 bg-accent rounded-full"
-					animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-					transition={{
-						duration: 0.9,
-						repeat: Infinity,
-						ease: "easeInOut",
-						delay,
-					}}
-				/>
-			))}
-		</span>
-	);
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // REASONING BLOCK — Collapsible thinking section
 // ═══════════════════════════════════════════════════════════════════

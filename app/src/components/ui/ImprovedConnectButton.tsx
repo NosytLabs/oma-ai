@@ -12,11 +12,12 @@ import {
 	Wifi,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { MetalFx } from "metal-fx";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { log } from "@/lib/logger";
 import { useEnsName } from "wagmi";
-import { useWallet } from "@/components/wallet-context";
+import { useWallet } from "@/components/wallet-provider";
 import { api } from "@/lib/api";
 
 const AccountLoginModal = dynamic(
@@ -340,37 +341,30 @@ export function ImprovedConnectButton({
 
 	return (
 		<div className="relative" ref={ref}>
-			<button
-				type="button"
-				onClick={() => setOpen(!open)}
-				disabled={isConnecting}
-					className={`group relative inline-flex items-center gap-2 overflow-hidden rounded-[var(--radius-sm)] font-semibold text-[var(--color-accent-fg)] transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+			<MetalFx
+				variant="button"
+				preset="chromatic"
+				strength={0.8}
+				theme="auto"
+			>
+				<button
+					type="button"
+					onClick={() => setOpen(!open)}
+					disabled={isConnecting}
+					className={`group relative inline-flex items-center gap-2 rounded-[var(--radius-sm)] font-semibold text-[var(--color-accent-fg)] transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
 						compact ? "px-3.5 py-2 text-xs sm:px-4 sm:text-sm" : "px-5 py-2.5 text-sm"
 					}`}
-			>
-				<div
-					className="absolute inset-0 rounded-sm"
-					style={{
-						background:
-							"conic-gradient(var(--color-accent), var(--color-accent-hover), var(--color-accent-dim), var(--color-accent))",
-						animation: "spin 4s linear infinite",
-						padding: "1.5px",
-						WebkitMask:
-							"linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-						WebkitMaskComposite: "xor",
-						maskComposite: "exclude",
-						opacity: 0.6,
-					}}
-				/>
-				<span className="relative z-10 flex items-center gap-2">
-					{isConnecting ? (
-						<Loader2 className="h-4 w-4 animate-spin" />
-					) : (
-						<Wallet className="h-4 w-4" />
-					)}
-					{isConnecting ? "Connecting..." : compact ? "Wallet" : "Connect Wallet"}
-				</span>
-			</button>
+				>
+					<span className="relative z-10 flex items-center gap-2">
+						{isConnecting ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Wallet className="h-4 w-4" />
+						)}
+						{isConnecting ? "Connecting..." : compact ? "Wallet" : "Connect Wallet"}
+					</span>
+				</button>
+			</MetalFx>
 
 			{open && (
 				<>

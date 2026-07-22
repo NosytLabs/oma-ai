@@ -20,6 +20,8 @@
 
 import { AnimatePresence, m } from "framer-motion";
 import { Loader2, Send, Sparkles } from "lucide-react";
+import { MetalFx } from "metal-fx";
+import { BorderBeam } from "border-beam";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { EASE_SPRING, Magnetic } from "@/lib/motion";
@@ -186,6 +188,7 @@ export const MessageInputRedesigned = forwardRef<
 						</Magnetic>
 					) : (
 						<Magnetic strength={6}>
+							<MetalFx variant="circle" preset="chromatic" strength={0.7}>
 							<m.button
 								onClick={onSubmit}
 								disabled={!hasInput}
@@ -208,6 +211,7 @@ export const MessageInputRedesigned = forwardRef<
 							>
 								<Send className="w-4 h-4" />
 							</m.button>
+							</MetalFx>
 						</Magnetic>
 					)}
 				</div>

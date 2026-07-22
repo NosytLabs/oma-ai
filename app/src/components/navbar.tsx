@@ -1,12 +1,13 @@
 "use client";
 
+import { BorderBeam } from "border-beam";
 import { m, useReducedMotion } from "framer-motion";
 import { Github, Menu, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OmaLogo } from "@/components/ui/oma-logo";
-import { useWallet } from "@/components/wallet-context";
+import { useWallet } from "@/components/wallet-provider";
 import { EASE_SPRING, Magnetic } from "@/lib/motion";
 import { ApiStatus } from "./api-status";
 import {
@@ -71,18 +72,30 @@ export function Navbar() {
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
 					<div className="flex min-w-0 items-center gap-2 sm:gap-4">
 						<Magnetic strength={6}>
-							<Link
-								href="/"
-								className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-								aria-label="oma home"
-							>
-								<span className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)]">
-									<OmaLogo size="sm" />
-								</span>
-								<span className="text-sm font-semibold text-text-bright tracking-tight group-hover:text-accent transition-colors">
-									oma
-								</span>
-							</Link>
+							<div className="relative inline-block">
+								<Link
+									href="/"
+									className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									aria-label="oma home"
+								>
+									<span className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)]">
+										<OmaLogo size="sm" />
+									</span>
+									<span className="text-sm font-semibold text-text-bright tracking-tight group-hover:text-accent transition-colors">
+										oma
+									</span>
+								</Link>
+								{!isConnected && (
+									<BorderBeam
+										size="sm"
+										duration={3}
+										theme="auto"
+										className="absolute inset-0 rounded-full pointer-events-none"
+									>
+										<div className="h-full w-full rounded-full" />
+									</BorderBeam>
+								)}
+							</div>
 						</Magnetic>
 
 						<span

@@ -10,6 +10,7 @@ import {
 	Lightbulb,
 } from "lucide-react";
 import { useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 
 interface Preset {
 	id: string;
@@ -99,6 +100,18 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			>
 				Pick a starter prompt, or type below. Responses stream live.
 			</m.p>
+
+			{/* Thinking-orb hint — subtle composing-state dot above the starter grid. */}
+			<m.div
+				initial={{ opacity: 0, scale: 0.9 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ delay: 0.22, duration: 0.4 }}
+				className="mb-3 flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted"
+				aria-hidden="true"
+			>
+				<ThinkingOrb state="composing" size={64} theme="auto" />
+				<span>ready to compose</span>
+			</m.div>
 
 			<m.div
 				initial={{ y: 16, opacity: 0 }}

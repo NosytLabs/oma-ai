@@ -3,6 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 
@@ -18,10 +19,9 @@ const ChatPlaygroundShell = dynamic(
 function ChatLoadingFallback() {
 	return (
 		<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-			<div className="space-y-4">
-				<div className="animate-shimmer h-8 w-48 rounded bg-surface-elevated" />
-				<div className="animate-shimmer h-20 w-full max-w-2xl rounded bg-surface-elevated" />
-				<div className="animate-shimmer h-16 w-full max-w-2xl rounded bg-surface-elevated" />
+			<div className="flex flex-col items-center gap-5">
+				<ThinkingOrb state="searching" size={64} theme="auto" aria-label="Loading chat" />
+				<div className="animate-shimmer h-3 w-64 max-w-full rounded-full bg-surface-elevated" />
 			</div>
 		</div>
 	);
