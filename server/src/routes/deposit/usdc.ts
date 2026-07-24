@@ -11,6 +11,7 @@ import { deposits } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import crypto from "crypto";
+import { verifyMessage } from "viem";
 import { logger } from "../../lib/logger.js";
 
 const EVM_TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
@@ -33,6 +34,7 @@ const depositNonceSchema = z.object({
 const usdcDepositSchema = z.object({
   amount: z.number().positive().max(100000).min(config.MIN_DEPOSIT_USD, `Minimum deposit is $${config.MIN_DEPOSIT_USD}`),
   txHash: z.string().regex(EVM_TX_HASH_RE, "Invalid EVM transaction hash format"),
+  signature: z.string().min(130, "Signature must be 130 hex chars (65 bytes r + s + v)"),
   nonce: z.string().min(1),
   walletAddress: z.string().regex(EVM_ADDRESS_RE, "Invalid EVM address format").optional(),
   chainId: z.number().int().positive().optional(),
@@ -83,7 +85,7 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, depositRateLimit, async (c) => 
   const userId = c.get("userId");
   const parsed = usdcDepositSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: { message: "Invalid request", type: "validation_error", details: parsed.error.flatten() } }, 400);
-  const { amount, txHash, nonce, walletAddress: providedWallet, chainId } = parsed.data;
+  const { amount, txHash, signature, nonce, walletAddress: providedWallet, chainId } = parsed.data;
 
   const nonceData = depositNonces.get(`${userId}:${nonce}`);
   if (!nonceData) {
@@ -102,9 +104,28 @@ usdcRoutes.post("/v1/deposit/usdc", sessionAuth, depositRateLimit, async (c) => 
 
   const walletToVerify = providedWallet || nonceData.walletAddress;
 
-  // Wallet address required for on-chain verification
+  // Wallet address required for signature + on-chain verification
   if (!walletToVerify) {
-    return c.json({ error: { message: "Wallet address required for on-chain verification", type: "validation_error" } }, 400);
+    return c.json({ error: { message: "Wallet address required for deposit verification", type: "validation_error" } }, 400);
+  }
+
+  // Verify the EIP-191 signature proves the caller owns the wallet.
+  // Without this, anyone with a session could claim someone else's on-chain deposit.
+  const chainIdToUse = chainId || 8453;
+  const messageToSign = `Deposit ${amount} USDC to OMA\nTx: ${txHash}\nChain: ${chainIdToUse}\nNonce: ${nonce}\nWallet: ${walletToVerify}\n\nSigning this message confirms the deposit.`;
+
+  try {
+    const isValid = verifyMessage({
+      address: walletToVerify as `0x${string}`,
+      message: messageToSign,
+      signature: signature as `0x${string}`,
+    });
+    if (!isValid) {
+      return c.json({ error: { message: "Invalid signature. The signature does not match the expected signer.", type: "authentication_error" } }, 401);
+    }
+  } catch (verifyErr) {
+    logger.error({ err: verifyErr }, "[deposit:usdc] Signature verification error:");
+    return c.json({ error: { message: "Signature verification failed", type: "authentication_error" } }, 401);
   }
 
   depositNonces.delete(`${userId}:${nonce}`);

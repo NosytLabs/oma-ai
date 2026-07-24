@@ -22,6 +22,7 @@ import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
+import { useWallet } from "@/components/wallet-provider";
 import { Magnetic, scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/crypto-prices";
 import { formatCents } from "@/lib/utils";
@@ -85,6 +86,7 @@ export function UnifiedDepositInterface({
 	const publicClient = usePublicClient();
 	const { prices } = useCryptoPrices();
 	const { address: walletAddress } = useConnection();
+	const { signMessage } = useWallet();
 
 	const usdValue =
 		selectedCoin && amount
@@ -157,7 +159,7 @@ export function UnifiedDepositInterface({
 					body: JSON.stringify({
 						amount: parseFloat(amount),
 						walletAddress,
-						chainId,
+						chainId: chainId ?? 8453,
 					}),
 				});
 
@@ -185,6 +187,21 @@ export function UnifiedDepositInterface({
 
 				await publicClient.waitForTransactionReceipt({ hash: tx });
 
+				setProcessingStep("Signing deposit confirmation...");
+
+				const messageToSign = `Deposit ${String(parseFloat(amount))} USDC to OMA\nTx: ${tx}\nChain: ${chainId ?? 8453}\nNonce: ${nonce}\nWallet: ${walletAddress}\n\nSigning this message confirms the deposit.`;
+
+				let signature: string;
+				try {
+					signature = await signMessage(messageToSign);
+				} catch (signErr) {
+					const signError = signErr instanceof Error ? signErr.message : "Signing failed";
+					if (signError.includes("User denied") || signError.includes("rejected")) {
+						throw new Error("Signature denied. Please sign to confirm your deposit.");
+					}
+					throw new Error(`Failed to sign deposit message: ${signError}`);
+				}
+
 				setProcessingStep("Verifying deposit and crediting account...");
 
 				const result = await fetch("/api/v1/deposit/usdc", {
@@ -196,9 +213,10 @@ export function UnifiedDepositInterface({
 					body: JSON.stringify({
 						amount: parseFloat(amount),
 						txHash: tx,
+						signature,
 						nonce,
 						walletAddress,
-						chainId,
+						chainId: chainId ?? 8453,
 					}),
 				}).then(async (res) => {
 					if (!res.ok) {
@@ -241,6 +259,7 @@ export function UnifiedDepositInterface({
 		onDeposit,
 		toast,
 		writeContractAsync,
+		signMessage,
 	]);
 
 	const handleReset = () => {
