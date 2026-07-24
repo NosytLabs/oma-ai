@@ -60,8 +60,8 @@ export async function getCandidateProviders(
 ): Promise<{ primary: Provider; alternates: Provider[] }> {
   if (!modelDef) {
     // Mirror the legacy selectProvider inference for catalog-unknown models.
-    // All unknown models now route through Venice.
-    return { primary: "venice", alternates: [] };
+    // All unknown models now route through Gonka/OpenBroker (free tier).
+    return { primary: "gonka", alternates: ["venice"] };
   }
   const all = await findProvidersForModel(modelId, modelDef);
   const primary = modelDef.primaryProvider;

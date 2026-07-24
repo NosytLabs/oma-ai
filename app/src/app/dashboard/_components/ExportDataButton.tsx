@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
 /**
- * ExportDataButton — surfaces OMA's existing usage/deposit/withdrawal export
- * endpoints (server/src/routes/export.ts: /v1/export/usage|deposits|withdrawals|summary)
+ * ExportDataButton — surfaces OMA's existing usage/deposit export
+ * endpoints (server/src/routes/export.ts: /v1/export/usage|deposits|summary)
  * in the dashboard UI. This is the #1 trust driver for credit-based billing
  * (Flexprice): users need to SEE where their credits went, not just a balance.
  *
@@ -14,7 +14,7 @@ import { Download, Loader2 } from "lucide-react";
  * server-side (matches the rest of the client — see lib/api/client.ts).
  */
 
-type ExportKind = "usage" | "deposits" | "withdrawals" | "summary";
+type ExportKind = "usage" | "deposits" | "summary";
 
 interface ExportDataButtonProps {
   kind: ExportKind;
@@ -26,7 +26,6 @@ interface ExportDataButtonProps {
 const DEFAULT_LABELS: Record<ExportKind, string> = {
   usage: "Export usage",
   deposits: "Export deposits",
-  withdrawals: "Export withdrawals",
   summary: "Export summary",
 };
 

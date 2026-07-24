@@ -42,6 +42,10 @@ vi.mock('../inference/venice.js', () => ({
   chatCompletion: vi.fn(),
 }))
 
+vi.mock('../inference/gonka.js', () => ({
+  chatCompletion: vi.fn(),
+}))
+
 vi.mock('../inference/surplus.js', () => ({
   surplusChatCompletion: vi.fn(),
 }))
@@ -61,9 +65,9 @@ vi.mock('../config.js', () => ({
 
 describe('Router', () => {
   describe('selectProvider', () => {
-    it('selects venice for known venice model', async () => {
+    it('selects gonka as default provider', async () => {
       const result = await router.selectProvider('llama-3.3-70b')
-      expect(result.provider).toBe('venice')
+      expect(result.provider).toBe('gonka')
     })
 
     it('throws 503 when all providers unavailable', async () => {
@@ -93,7 +97,7 @@ describe('Router', () => {
         headers: { 'Content-Type': 'application/json' },
       })
 
-      const { chatCompletion } = await import('../inference/venice.js')
+      const { chatCompletion } = await import('../inference/gonka.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
 
       const { refundCredits } = await import('../credits/index.js')
@@ -122,12 +126,12 @@ describe('Router', () => {
         headers: { 'Content-Type': 'text/event-stream' },
       })
 
-      const { chatCompletion } = await import('../inference/venice.js')
+      const { chatCompletion } = await import('../inference/gonka.js')
       vi.mocked(chatCompletion).mockResolvedValue(mockResp)
 
       const result = await router.handleChatCompletion('user-1', 'key-1', { ...mockBody, stream: true })
 
-      expect(result.provider).toBe('venice')
+      expect(result.provider).toBe('gonka')
       expect(result.response).toBeInstanceOf(Response)
       expect(result.response.headers.get('Content-Type')).toContain('text/event-stream')
     })

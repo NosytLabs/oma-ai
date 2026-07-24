@@ -20,13 +20,16 @@ const GONKA_HEALTH_TIMEOUT_MS = 5_000;
  * (error 1010). We always send a browser-like User-Agent as a safety net.
  */
 function gonkaHeaders(): Record<string, string> {
-  const key = config.GONKA_API_KEY;
-  return {
-    Authorization: `Bearer ${key}`,
+  const key = config.GONKA_API_KEY || config.OPENBROKER_API_KEY;
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent":
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
   };
+  if (key) {
+    headers.Authorization = `Bearer ${key}`;
+  }
+  return headers;
 }
 
 const mapGonkaError = createGonkaErrorMapper();
@@ -77,14 +80,9 @@ function createGonkaErrorMapper(): (status: number, body: string) => never {
 }
 
 function checkGonkaConfig(): void {
-  if (!config.GONKA_API_KEY) {
-    throw Object.assign(new Error("Gonka API key not configured"), {
-      status: 503,
-      code: "gonka_config_missing",
-      retryable: false,
-      type: "gonka_config_missing",
-    }) as InferenceError;
-  }
+  // OpenBroker (api.openbroker.gonka.gg) is a free community broker —
+  // works without an API key. Only warn if explicitly configured but empty.
+  // No-op: keyless access is the default free-tier path.
 }
 
 class GonkaProvider extends BaseInferenceProvider {
@@ -135,14 +133,7 @@ export async function chatCompletion(
 }
 
 export async function gonkaModels(): Promise<unknown[]> {
-  if (!config.GONKA_API_KEY) {
-    throw Object.assign(new Error("Gonka API key not configured"), {
-      status: 503,
-      code: "gonka_config_missing",
-      retryable: false,
-      type: "gonka_config_missing",
-    }) as InferenceError;
-  }
+  // OpenBroker works keyless — no config gate needed.
   const resp = await fetch(`${config.GONKA_API_URL.replace(/\/+$/, "")}/v1/models`, {
     headers: gonkaHeaders(),
     signal: AbortSignal.timeout(GONKA_HEALTH_TIMEOUT_MS),

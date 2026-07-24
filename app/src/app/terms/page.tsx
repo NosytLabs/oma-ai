@@ -509,7 +509,7 @@ export default function TermsPage() {
 								<ul className="space-y-3">
 									<RulePoint detail="Delete your account at any time from the dashboard." />
 									<RulePoint detail="Outstanding usage is settled before deletion." />
-									<RulePoint detail="On-chain deposits and withdrawals are not reversible." />
+									<RulePoint detail="On-chain deposits are not reversible." />
 								</ul>
 							</div>
 						</div>

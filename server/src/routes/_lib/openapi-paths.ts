@@ -1635,15 +1635,6 @@ export const openapiPaths = {
         responses: { "200": { description: "Nonce" } },
       },
     },
-    "/v1/deposit/usdc/signature": {
-      post: {
-        tags: ["Deposits"],
-        summary: "Submit USDC EIP-3009 transferWithAuthorization signature",
-        security: [],
-        operationId: "submitDepositSignature",
-        responses: { "200": { description: "Deposit submitted" } },
-      },
-    },
     "/v1/deposit/balance": {
       get: {
         tags: ["Deposits"],

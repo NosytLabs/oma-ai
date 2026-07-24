@@ -3,7 +3,7 @@
 import { ExportDataButton } from "../_components/ExportDataButton";
 
 /**
- * Standalone export page — surfaces OMA's usage/deposit/withdrawal export
+ * Standalone export page — surfaces OMA's usage/deposit export
  * endpoints in the dashboard UI. This is the #1 trust driver for credit-based
  * billing (Flexprice): users need to SEE where their credits went, not just a
  * balance number.
@@ -11,7 +11,6 @@ import { ExportDataButton } from "../_components/ExportDataButton";
  * Endpoints (server/src/routes/export.ts):
  *   GET /v1/export/usage        — per-request spend (model, tokens, cost, markup)
  *   GET /v1/export/deposits     — deposit history
- *   GET /v1/export/withdrawals  — withdrawal history
  *   GET /v1/export/summary      — aggregated balance + totals
  */
 
@@ -48,17 +47,6 @@ export default function ExportPage() {
           <div className="flex flex-wrap gap-3">
             <ExportDataButton kind="deposits" format="csv" label="Deposits (CSV)" />
             <ExportDataButton kind="deposits" format="json" label="Deposits (JSON)" />
-          </div>
-        </div>
-
-        <div className="border border-border bg-void p-5">
-          <h2 className="text-sm font-semibold text-text-bright">Withdrawals</h2>
-          <p className="mt-1 mb-4 text-[11px] text-text-muted">
-            USDC withdrawal history with fees and destination addresses.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <ExportDataButton kind="withdrawals" format="csv" label="Withdrawals (CSV)" />
-            <ExportDataButton kind="withdrawals" format="json" label="Withdrawals (JSON)" />
           </div>
         </div>
 

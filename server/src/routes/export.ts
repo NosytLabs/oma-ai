@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { sessionAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
-import { deposits, withdrawals, usageRecords, creditBalances } from "../db/schema.js";
+import { deposits, usageRecords, creditBalances } from "../db/schema.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 
@@ -58,40 +58,6 @@ exportRoutes.get("/v1/export/deposits", sessionAuth, rateLimit({ windowMs: 60_00
   const csv = formatCSV(formatted, ["id", "type", "amount_usd", "credits_issued", "status", "tx_hash", "created_at", "completed_at"]);
   c.header("Content-Type", "text/csv");
   c.header("Content-Disposition", `attachment; filename="deposits-${Date.now()}.csv"`);
-  return c.body(csv);
-});
-
-exportRoutes.get("/v1/export/withdrawals", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
-  const userId = c.get("userId");
-  const format = c.req.query("format") || "csv";
-
-  const withdrawalsData = await db.select().from(withdrawals)
-    .where(eq(withdrawals.userId, userId))
-    .orderBy(desc(withdrawals.createdAt))
-    .limit(100);
-
-  const formatted = withdrawalsData.map(w => ({
-    id: w.id,
-    type: w.type,
-    amount_cents: w.amountCents,
-    net_amount_cents: w.netAmountCents,
-    fee_cents: w.feeCents,
-    to_address: w.toAddress,
-    status: w.status,
-    tx_hash: w.txHash || "",
-    created_at: w.createdAt.toISOString(),
-    completed_at: w.completedAt?.toISOString() || "",
-  }));
-
-  if (format === "json") {
-    c.header("Content-Type", "application/json");
-    c.header("Content-Disposition", `attachment; filename="withdrawals-${Date.now()}.json"`);
-    return c.body(formatJSON(formatted));
-  }
-
-  const csv = formatCSV(formatted, ["id", "type", "amount_cents", "net_amount_cents", "fee_cents", "to_address", "status", "tx_hash", "created_at", "completed_at"]);
-  c.header("Content-Type", "text/csv");
-  c.header("Content-Disposition", `attachment; filename="withdrawals-${Date.now()}.csv"`);
   return c.body(csv);
 });
 

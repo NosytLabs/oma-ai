@@ -218,7 +218,7 @@ function toModel(entry: RawEntry): Model {
 	return {
 		id: entry.id,
 		name: entry.displayName,
-		provider: (entry.provider as Provider) || "Venice",
+		provider: (entry.provider as Provider) || "Gonka",
 		tier,
 		description: deriveDescription(entry.id, entry.displayName, entry.description),
 		contextLength: formatContextLength(entry.maxTokens),
@@ -317,7 +317,7 @@ export async function loadModels(): Promise<Model[]> {
 					return {
 						id: entry.id,
 						name,
-						provider: "Venice" as Provider,
+						provider: "Gonka" as Provider,
 						tier,
 						description: deriveDescription(entry.id, name, undefined),
 						contextLength: formatContextLength(entry.context_length ?? 0),

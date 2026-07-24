@@ -113,7 +113,7 @@ const envSchema = z.object({
   CCTP_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche"),
   CCTP_BASE_DOMAIN: z.coerce.number().default(6),
 
-  // Base mainnet chain ID (used by withdraw route as default chainId)
+  // Base mainnet chain ID
   BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
 
   // Markup percentage applied to inference billing (e.g. 25 = 25% markup on cost)
@@ -138,14 +138,6 @@ const envSchema = z.object({
   // OpenRouter) shows a $10 floor is the sweet spot — blocks abuse without
   // friction for real users. Applied to all deposit routes (usdc/cctp/lifi).
   MIN_DEPOSIT_USD: z.coerce.number().min(0).max(100000).default(10),
-
-  // Withdraw route fee configuration (moved from hardcoded literals in routes/withdraw.ts)
-  // 0.1% = 0.001 default for protocol fee percent; $0.01 default for network fee USD estimate.
-  WITHDRAW_PROTOCOL_FEE_PERCENT: z.coerce.number().min(0).max(50).default(0.1), // 0.1% — value is in PERCENT not fraction
-  WITHDRAW_NETWORK_FEE_ESTIMATE_USD: z.coerce.number().nonnegative().default(0.01),
-  WITHDRAW_DAILY_LIMIT_CENTS: z.coerce.number().int().positive().default(5_000_000), // $50,000
-  WITHDRAW_WEEKLY_LIMIT_CENTS: z.coerce.number().int().positive().default(20_000_000), // $200,000
-  WITHDRAW_NETWORK_FEE_CENTS: z.coerce.number().int().nonnegative().default(100), // $1.00
   AFFINITY_TTL_MS: z.coerce.number().int().positive().default(300_000),
 
   // Onramp configuration (moved from hardcoded literals in routes/onramp.ts)

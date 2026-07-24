@@ -21,7 +21,6 @@ import { configRoutes } from "./routes/config.js";
 import { analyticsRoutes } from "./routes/analytics.js";
 import { adminAnalyticsRoutes } from "./routes/analytics-admin.js";
 import { fetchRoutes } from "./routes/fetch.js";
-import { withdrawalRoutes } from "./routes/withdraw.js";
 import { refundRoutes } from "./routes/refunds.js";
 import { exportRoutes } from "./routes/export.js";
 import { healthRoutes } from "./routes/health.js";
@@ -175,7 +174,6 @@ app.route("/", configRoutes);
 app.route("/", analyticsRoutes);
 app.route("/", adminAnalyticsRoutes);
 app.route("/", fetchRoutes);
-app.route("/", withdrawalRoutes);
 app.route("/", refundRoutes);
 app.route("/", exportRoutes);
 // Network primitives — audit stream, rate-limit inspection, signing pin,

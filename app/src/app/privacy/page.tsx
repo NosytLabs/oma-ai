@@ -606,7 +606,7 @@ export default function PrivacyPage() {
 								{
 									icon: Eye,
 									title: "Export your data",
-									body: "Download deposits, withdrawals, and usage as CSV or JSON from the dashboard.",
+									body: "Download deposits and usage as CSV or JSON from the dashboard.",
 								},
 								{
 									icon: CheckCircle2,

@@ -10,7 +10,6 @@ import { keysRoutes } from "./keys.js";
 import { invoicesRoutes } from "./invoices.js";
 import { dlqRoutes } from "./dlq.js";
 import { auditLogsRoutes } from "./audit-logs.js";
-import { byokRoutes } from "./byok.js";
 import { surplusRoutes } from "./surplus.js";
 import { adminRefundRoutes } from "./refunds.js";
 
@@ -24,7 +23,7 @@ adminRoutes.use("/admin/*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
 adminRoutes.use("/v1/admin/*", rateLimit({ windowMs: 60_000, maxRequests: 100 }));
 
 // H-ADMIN-1: TOTP step-up on the highest-blast-radius admin routes. Money
-// movement (sweep, refund grant/deny, BYOK) requires a fresh 2FA code in
+// movement (sweep, refund grant/deny) requires a fresh 2FA code in
 // addition to a valid session. The middleware is opt-in — admins without 2FA
 // enabled pass through unchanged. This blocks a stolen admin JWT from
 // draining the treasury on its own.
@@ -45,8 +44,6 @@ adminRoutes.use("/admin/refunds/:id/grant", requireFreshTotp());
 adminRoutes.use("/v1/admin/refunds/:id/grant", requireFreshTotp());
 adminRoutes.use("/admin/refunds/:id/deny", requireFreshTotp());
 adminRoutes.use("/v1/admin/refunds/:id/deny", requireFreshTotp());
-adminRoutes.use("/admin/byok", requireFreshTotp());
-adminRoutes.use("/v1/admin/byok", requireFreshTotp());
 
 adminRoutes.route("/", adminRefundRoutes);
 adminRoutes.route("/", usersRoutes);
@@ -56,5 +53,4 @@ adminRoutes.route("/", keysRoutes);
 adminRoutes.route("/", invoicesRoutes);
 adminRoutes.route("/", dlqRoutes);
 adminRoutes.route("/", auditLogsRoutes);
-adminRoutes.route("/", byokRoutes);
 adminRoutes.route("/", surplusRoutes);

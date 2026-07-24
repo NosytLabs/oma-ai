@@ -30,7 +30,7 @@ export type {
 export * from "./types.js";
 
 /**
- * Export namespace — CSV/JSON downloads of usage, deposits, withdrawals.
+ * Export namespace — CSV/JSON downloads of usage, deposits.
  * Paths match server/src/routes/export.ts (`/v1/export/*`).
  * Dashboard ExportDataButton also hits these via same-origin fetch.
  */
@@ -43,12 +43,6 @@ export const exportData = {
 	},
 	deposits(format: "csv" | "json" = "csv") {
 		return request<Blob>(`/v1/export/deposits?format=${format}`, {
-			method: "GET",
-			responseType: "blob",
-		});
-	},
-	withdrawals(format: "csv" | "json" = "csv") {
-		return request<Blob>(`/v1/export/withdrawals?format=${format}`, {
 			method: "GET",
 			responseType: "blob",
 		});

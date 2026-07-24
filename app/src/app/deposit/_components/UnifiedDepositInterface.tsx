@@ -21,7 +21,6 @@ import { parseUnits } from "viem";
 import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
 import { Magnetic, scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/crypto-prices";
@@ -86,7 +85,6 @@ export function UnifiedDepositInterface({
 	const publicClient = usePublicClient();
 	const { prices } = useCryptoPrices();
 	const { address: walletAddress } = useConnection();
-	const { signMessage } = useWallet();
 
 	const usdValue =
 		selectedCoin && amount
@@ -189,51 +187,6 @@ export function UnifiedDepositInterface({
 
 				setProcessingStep("Verifying deposit and crediting account...");
 
-				const messageToSign = `Deposit ${amount} USDC to OMA\nTx: ${tx}\nChain: ${chainId}\nNonce: ${nonce}\nWallet: ${walletAddress}\n\nSigning this message confirms the deposit.`;
-
-				let signature: string;
-				try {
-					signature = await signMessage(messageToSign);
-				} catch (signErr) {
-					const signError =
-						signErr instanceof Error ? signErr.message : "Signing failed";
-					if (
-						signError.includes("User denied") ||
-						signError.includes("rejected")
-					) {
-						throw new Error(
-							"Signature denied. Please sign the message to confirm your deposit.",
-						);
-					}
-					throw new Error(`Failed to sign deposit message: ${signError}`);
-				}
-
-				const signatureResponse = await fetch(
-					"/api/v1/deposit/usdc/signature",
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${sessionToken}`,
-						},
-						body: JSON.stringify({
-							amount: parseFloat(amount),
-							txHash: tx,
-							signature,
-							nonce,
-							walletAddress,
-							chainId,
-						}),
-					},
-				);
-
-				if (!signatureResponse.ok) {
-					const errorData = await signatureResponse.json().catch(() => ({}));
-					throw new Error(
-						errorData.error?.message || "Signature verification failed",
-					);
-				}
-
 				const result = await fetch("/api/v1/deposit/usdc", {
 					method: "POST",
 					headers: {
@@ -243,7 +196,6 @@ export function UnifiedDepositInterface({
 					body: JSON.stringify({
 						amount: parseFloat(amount),
 						txHash: tx,
-						signature,
 						nonce,
 						walletAddress,
 						chainId,
@@ -289,7 +241,6 @@ export function UnifiedDepositInterface({
 		onDeposit,
 		toast,
 		writeContractAsync,
-		signMessage,
 	]);
 
 	const handleReset = () => {

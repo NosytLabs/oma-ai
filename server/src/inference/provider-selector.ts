@@ -12,14 +12,14 @@ export type Provider = "venice" | "surplus" | "gonka";
 // Disable in all other environments until the EIP-3009 / Permit2 signer lands.
 const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV === "development";
 
-// Gonka routes through the dahl community broker (free tier, ~100M tokens).
-// Enabled whenever GONKA_API_KEY is provisioned.
-const GONKA_ENABLED = !!config.GONKA_API_KEY;
+// Gonka routes through OpenBroker (api.openbroker.gonka.gg) — free community
+// broker with 0% markup. Always enabled; works with or without an API key.
+const GONKA_ENABLED = true;
 
 export const ALL_PROVIDERS: Provider[] = [
+  "gonka",
   "venice",
   ...(SURPLUS_ENABLED ? (["surplus"] as Provider[]) : []),
-  ...(GONKA_ENABLED ? (["gonka"] as Provider[]) : []),
 ];
 
 function selectProviderWeighted(weights: Map<Provider, number>, available: Provider[]): Provider | null {
@@ -78,7 +78,7 @@ function logAndReturn(model: string, result: { provider: Provider; providerModel
 
 export async function selectProvider(model: string): Promise<{ provider: Provider; providerModelId: string }> {
   const modelDef = await getModel(model);
-  const preferred = modelDef?.primaryProvider ?? "venice";
+  const preferred = modelDef?.primaryProvider ?? "gonka";
   const providerModelId = getModelIdForProvider(modelDef, preferred, model);
   const modelWeights = parseModelWeights(config.MODEL_WEIGHTS);
   const globalWeights = parseProviderWeights(config.PROVIDER_WEIGHTS);
