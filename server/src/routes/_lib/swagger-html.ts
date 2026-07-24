@@ -3,7 +3,7 @@
  *
  * Served at `/v1/docs` and `/docs` by `server/src/routes/openapi.ts`.
  * The page loads the OpenAPI spec from `/v1/openapi.json` and the
- * Swagger UI assets from unpkg.
+ * Swagger UI bundle from unpkg.
  *
  * Kept in a separate file so the openapi route file stays focused on
  * the spec itself rather than embedding a large HTML template.

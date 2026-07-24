@@ -21,7 +21,6 @@
 import { AnimatePresence, m } from "framer-motion";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { MetalFx } from "metal-fx";
-import { BorderBeam } from "border-beam";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { EASE_SPRING, Magnetic } from "@/lib/motion";

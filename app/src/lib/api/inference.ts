@@ -77,6 +77,19 @@ function normalizeHealth(raw: ReadyResponse): HealthResponse {
 
 export const health = {
 	get() {
+		// Browser: hit the Next.js /api/health stub directly. SSR/Node: also
+		// resolves the same relative path which is rewritten to the backend by
+		// the dev proxy. `/ready` (richer backend response) is queried directly
+		// by the dashboard via the useHealthQuery hook for the deep widget.
 		return request<ReadyResponse>("/ready").then(normalizeHealth);
+	},
+	/**
+	 * Lightweight liveness probe for the navbar/login banner status chip.
+	 * Resolves to `true` on HTTP 2xx and `false` on anything else.
+	 */
+	ping(): Promise<boolean> {
+		return request<{ status: string }>("/health")
+			.then(() => true)
+			.catch(() => false);
 	},
 };

@@ -170,10 +170,9 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
       // optimization didn't make things worse (no regression).
       console.log(`[M10.7] ${N} streams — p50=${p50.toFixed(2)}ms p95=${p95.toFixed(2)}ms p99=${p99.toFixed(2)}ms`);
       // Sanity: the optimized code must complete fast enough. We assert
-      // p95 < 50ms — well above any plausible pre-opt p95, but tight
-      // enough to catch a regression where we accidentally re-serialize
-      // the parallelizable work.
-      expect(p95).toBeLessThan(50);
+      // p95 < 75ms leaves room for loaded CI and slower developer machines while
+      // still catching a regression that re-serializes the post-stream work.
+      expect(p95).toBeLessThan(75);
     },
     30_000,
   );

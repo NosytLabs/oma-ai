@@ -73,6 +73,7 @@ export const api = {
 	models,
 	deposit,
 	health: health.get,
+	healthPing: health.ping,
 	creditHistory,
 	credits,
 	exportData,

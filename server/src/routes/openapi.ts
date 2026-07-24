@@ -309,7 +309,8 @@ openapiRoutes.get("/v1/openapi.yaml", (c) =>
   c.text("See /v1/openapi.json for the machine-readable spec.\n", 200, { "Content-Type": "text/plain" }),
 );
 
-// Swagger UI template lives in `./_lib/swagger-html.ts` to keep this file
+// Docs renderer: serves Swagger UI at /v1/docs and /docs.
+// The HTML template lives in `./_lib/swagger-html.ts` to keep this file
 // focused on the OpenAPI spec itself.
 
 openapiRoutes.get("/v1/docs", (c) =>

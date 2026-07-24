@@ -208,7 +208,10 @@ function LoginInner() {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 
 	const { status: apiStatus, refresh: refreshApiHealth } = useApiHealth();
-	const offline = apiStatus === "offline";
+	// Don't treat the initial "checking" state as offline. The hook now shares
+	// its query with the rest of the app, so the dashboard / navbar status
+	// chip and the login banner can't disagree about whether the API is up.
+	const offline: boolean = apiStatus === "offline";
 
 	const onTabKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLButtonElement>) => {

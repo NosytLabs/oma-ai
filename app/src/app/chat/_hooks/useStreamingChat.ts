@@ -15,6 +15,20 @@ const MAX_MESSAGE_LENGTH = 100 * 1024;
 const BATCH_INTERVAL_MS = 250;
 
 /**
+ * Unique message IDs that don't collide under rapid concurrent sends.
+ * Math.random + Date.now is not enough — two clicks in the same ms can
+ * collide. Counter + crypto-random suffix eliminates that.
+ */
+function newMessageId(prefix: string): string {
+	const n =
+		typeof performance !== "undefined" && typeof performance.now === "function"
+			? Math.floor(performance.now() * 1000)
+			: Date.now() * 1000;
+	const rand = Math.random().toString(36).slice(2, 10);
+	return `${prefix}-${n.toString(36)}-${rand}`;
+}
+
+/**
  * ponytail: SSE events end with \n\n. A single event can have multiple
  * `data:` lines that must be concatenated. Per the SSE spec, ignore lines
  * starting with `:` (comment). A bare `data:` line is treated as the string
@@ -301,6 +315,11 @@ export function useStreamingChat(
 						if (delta) {
 							if (accumulated.length < MAX_MESSAGE_LENGTH) {
 								accumulated += delta;
+							} else if (!accumulated.endsWith("[response truncated at 100 KB]")) {
+								// Surface truncation exactly once so the user
+								// knows the response was capped, instead of
+								// silently dropping content.
+								accumulated += "\n\n…[response truncated at 100 KB]";
 							}
 							flushToState();
 						}
@@ -332,29 +351,39 @@ export function useStreamingChat(
 						processData(d);
 					}
 				};
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-					sseBuffer += decoder.decode(value, { stream: true });
-					if (sseBuffer.length > SSE_BUFFER_MAX_BYTES) {
-						throw new Error(
-							"SSE buffer exceeded 1 MB limit — connection may be stalled or sending non-SSE data",
-						);
-					}
+				try {
+					while (true) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						sseBuffer += decoder.decode(value, { stream: true });
+						if (sseBuffer.length > SSE_BUFFER_MAX_BYTES) {
+							throw new Error(
+								"SSE buffer exceeded 1 MB limit — connection may be stalled or sending non-SSE data",
+							);
+						}
 
-					// Per the SSE spec, events are delimited by a blank line. Normalize
-					// CRLF to LF so a single `\n\n` split handles all line endings.
-					const normalized = sseBuffer.replace(/\r\n/g, "\n");
-					const parts = normalized.split("\n\n");
-					sseBuffer = parts.pop() ?? "";
-					for (const block of parts) handleBlock(block);
+						// Per the SSE spec, events are delimited by a blank line. Normalize
+						// CRLF to LF so a single `\n\n` split handles all line endings.
+						const normalized = sseBuffer.replace(/\r\n/g, "\n");
+						const parts = normalized.split("\n\n");
+						sseBuffer = parts.pop() ?? "";
+						for (const block of parts) handleBlock(block);
+					}
+					if (sseBuffer.trim()) {
+						handleBlock(sseBuffer);
+						sseBuffer = "";
+					}
+					flushToState(true);
+				} finally {
+					// Always release the underlying stream — otherwise the
+					// connection lingers in the browser's pool until GC.
+					try {
+						reader.cancel();
+					} catch {
+						// already closed / aborted — nothing to do
+					}
 				}
-				if (sseBuffer.trim()) {
-					handleBlock(sseBuffer);
-					sseBuffer = "";
-				}
-				flushToState(true);
-			} else {
+				} else {
 				const data = await response.json();
 				const content = data.choices?.[0]?.message?.content || "";
 				const reasoning = data.choices?.[0]?.message?.reasoning_content || "";
@@ -399,7 +428,7 @@ export function useStreamingChat(
 			if (!promptText || opts.loading) return;
 
 			const userMessage: Message = {
-				id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+				id: newMessageId("user"),
 				role: "user",
 				content: promptText,
 				timestamp: Date.now(),
@@ -412,7 +441,7 @@ export function useStreamingChat(
 			opts.setError(null);
 
 			const assistantMessage: Message = {
-				id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+				id: newMessageId("assistant"),
 				role: "assistant",
 				content: "",
 				timestamp: Date.now(),
@@ -426,7 +455,7 @@ export function useStreamingChat(
 					...prev,
 					userMessage,
 					{
-						id: `compare-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+						id: newMessageId("compare"),
 						role: "assistant",
 						content: "",
 						timestamp: Date.now(),
@@ -479,7 +508,7 @@ export function useStreamingChat(
 								...opts.compareMessagesRef.current,
 								userMessage,
 								{
-									id: `compare-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+									id: newMessageId("compare"),
 									role: "assistant",
 									content: "",
 									timestamp: Date.now(),

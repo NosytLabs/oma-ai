@@ -287,8 +287,8 @@ describe('background probing', () => {
     // past the 60-second idle threshold so they actually get probed.
     recordTraffic('venice')
     recordTraffic('surplus')
-    startBackgroundProbing(1)
-    await vi.advanceTimersByTimeAsync(61000)
+    startBackgroundProbing(61_000)
+    await vi.advanceTimersByTimeAsync(61_000)
 
     expect(vi.mocked(healthCheck)).toHaveBeenCalledWith(
       'venice',

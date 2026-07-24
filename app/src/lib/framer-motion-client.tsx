@@ -29,6 +29,7 @@
 // tree-shaking and loads the full framer-motion bundle (~150KB waste).
 import {
 	m,
+	AnimatePresence,
 	LazyMotion,
 	MotionConfig,
 	domAnimation,
@@ -39,7 +40,18 @@ import {
 	useInView,
 } from "framer-motion";
 
-export { m, LazyMotion, MotionConfig, domAnimation, useMotionValue, useSpring, useScroll, useReducedMotion, useInView };
+export {
+	m,
+	AnimatePresence,
+	LazyMotion,
+	MotionConfig,
+	domAnimation,
+	useMotionValue,
+	useSpring,
+	useScroll,
+	useReducedMotion,
+	useInView,
+};
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration
 export type {

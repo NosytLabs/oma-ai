@@ -22,7 +22,7 @@
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { ThinkingOrb } from "thinking-orbs";
 import {
-	AlertTriangle, Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, Search, User,
+	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, Search, User,
 } from "lucide-react";
 import Image from "next/image";
 import { memo, useCallback, useEffect, useRef, useState } from "react";

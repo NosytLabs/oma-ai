@@ -76,7 +76,6 @@ export function Navbar() {
 								<Link
 									href="/"
 									className="group inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-									aria-label="oma home"
 								>
 									<span className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)]">
 										<OmaLogo size="sm" />

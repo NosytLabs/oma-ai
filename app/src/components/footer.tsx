@@ -154,7 +154,6 @@ export function Footer() {
 						<Link
 							href="/"
 							prefetch={false}
-							aria-label="oma — home"
 							className="group inline-flex items-center gap-2.5 w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
 						>
 							<m.span

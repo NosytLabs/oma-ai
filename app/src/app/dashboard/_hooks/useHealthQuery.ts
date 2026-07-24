@@ -8,30 +8,30 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 interface UseHealthQueryOptions {
-	/** Override the 30s default refetch interval. */
-	refetchInterval?: number;
-	/** Override the 25s default staleTime. */
-	staleTime?: number;
-	/** Disable polling entirely (e.g. for static SSR shells). */
-	enabled?: boolean;
+  /** Override the 30s default refetch interval. */
+  refetchInterval?: number;
+  /** Override the 25s default staleTime. */
+  staleTime?: number;
+  /** Disable polling entirely (e.g. for static SSR shells). */
+  enabled?: boolean;
 }
 
 const DEFAULT_REFETCH_MS = 30_000;
 const DEFAULT_STALE_MS = 25_000;
 
 export function useHealthQuery(options: UseHealthQueryOptions = {}) {
-	const {
-		refetchInterval = DEFAULT_REFETCH_MS,
-		staleTime = DEFAULT_STALE_MS,
-		enabled = true,
-	} = options;
-	return useQuery({
-		// Bump key when the probe path/shape changes so stale /api/health
-		// web-liveness responses never leave the dashboard stuck empty.
-		queryKey: ["health", "ready-v2"],
-		queryFn: () => api.health(),
-		staleTime,
-		refetchInterval,
-		enabled,
-	});
+  const {
+    refetchInterval = DEFAULT_REFETCH_MS,
+    staleTime = DEFAULT_STALE_MS,
+    enabled = true,
+  } = options;
+  return useQuery({
+    // Shared key with `useApiHealth` so the navbar/login banner and the
+    // dashboard widget can't disagree about the API state.
+    queryKey: ["health", "ready-v2"],
+    queryFn: () => api.health(),
+    staleTime,
+    refetchInterval,
+    enabled,
+  });
 }
