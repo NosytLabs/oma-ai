@@ -32,7 +32,7 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">Venice</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Default provider for most model tiers. Venice handles chat, image,
+						Primary provider for 87 models. Handles chat, image,
 						video, and embedding workloads with low-latency inference.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
@@ -44,12 +44,12 @@ export function ProviderRoutingSection() {
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
 					<div className="flex items-center gap-2 mb-2">
-						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Fallback</span>
+						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Failover</span>
 						<span className="font-semibold text-text text-sm">Surplus</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Secondary provider that handles overflow and failover traffic when
-						Venice is at capacity or unavailable. Same model coverage.
+						Failover provider for models with surplusId mappings.
+						Activated automatically when the primary provider is unavailable.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
@@ -58,16 +58,16 @@ export function ProviderRoutingSection() {
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
 					<div className="flex items-center gap-2 mb-2">
-						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
-						<span className="font-semibold text-text text-sm">Gonka</span>
+						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Free</span>
+						<span className="font-semibold text-text text-sm">Gonka / OpenBroker</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Ultra-low-cost provider for budget-tier models. Ideal for high-volume,
-						latency-tolerant workloads and prototyping.
+						Free-tier provider via OpenBroker. Hosts MiniMax-M2.7 and
+						Kimi-K2.6. No API key required — ideal for prototyping.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
-						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">fast</span>
+						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">tools</span>
 					</div>
 				</div>
 			</div>
@@ -76,11 +76,11 @@ export function ProviderRoutingSection() {
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
 					<h3 className="mb-2 font-semibold text-text text-sm">How Routing Works</h3>
 					<ol className="space-y-1.5 text-sm text-text-muted list-decimal list-inside">
-						<li>Request arrives with a model id and plan tier</li>
-						<li>OMA checks the model→provider mapping for that tier</li>
-						<li>Primary provider is tried first (Venice for most models)</li>
-						<li>On failure or rate-limit, circuit breaker triggers fallback (Surplus)</li>
-						<li>Budget-tier models route directly to Gonka</li>
+						<li>Request arrives with a model id</li>
+						<li>OMA looks up the model→provider mapping in the catalog</li>
+						<li>The model's primary provider handles the request</li>
+						<li>On failure, circuit breaker triggers failover to alternates</li>
+						<li>Each model maps to exactly one or more upstream providers</li>
 					</ol>
 				</div>
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
@@ -91,12 +91,6 @@ export function ProviderRoutingSection() {
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
 							<span className="text-accent">x-provider</span>: venice | surplus | gonka
-						</div>
-						<div>
-							<span className="text-accent">x-routing-tier</span>: primary | fallback | budget
-						</div>
-						<div>
-							<span className="text-accent">x-provider-latency</span>: milliseconds
 						</div>
 					</div>
 				</div>

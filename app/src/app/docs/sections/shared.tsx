@@ -206,7 +206,7 @@ export const ENDPOINTS: EndpointInfo[] = [
   "category": "chat",
   "context_length": 200000,
   "supports_streaming": true,
-  "provider": "anthropic"
+  "provider": "venice"
 }`,
 	},
 	{

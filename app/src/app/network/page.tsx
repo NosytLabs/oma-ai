@@ -100,8 +100,8 @@ const PRIMITIVES: Primitive[] = [
 		method: "GET",
 		status: "stable",
 		description:
-			"Inspect the circuit-breaker state for each upstream (Venice, AntSeed, OpenRouter, Together). Includes 5-minute rolling error rate, average latency, and time-to-recovery.",
-		example: 'GET /v1/upstream/health → { "venice": "closed", "antseed": "half-open", "openrouter": "closed" }',
+			"Inspect the circuit-breaker state for each upstream (Venice, Gonka). Includes 5-minute rolling error rate, average latency, and time-to-recovery.",
+		example: 'GET /v1/upstream/health → { "venice": "closed", "gonka": "closed" }',
 	},
 	{
 		id: "deposit",
@@ -369,23 +369,7 @@ export default function NetworkPage() {
 									<span className="text-text-muted">,</span>
 									{"\n"}
 									{"  "}
-									<span className="text-accent">&quot;antseed&quot;</span>
-									<span className="text-text-muted">:</span>{" "}
-									<span className="text-[var(--color-secondary)]">
-										&quot;half-open&quot;
-									</span>
-									<span className="text-text-muted">,</span>
-									{"\n"}
-									{"  "}
-									<span className="text-accent">&quot;openrouter&quot;</span>
-									<span className="text-text-muted">:</span>{" "}
-									<span className="text-[var(--color-secondary)]">
-										&quot;closed&quot;
-									</span>
-									<span className="text-text-muted">,</span>
-									{"\n"}
-									{"  "}
-									<span className="text-accent">&quot;together&quot;</span>
+									<span className="text-accent">&quot;gonka&quot;</span>
 									<span className="text-text-muted">:</span>{" "}
 									<span className="text-[var(--color-secondary)]">
 										&quot;closed&quot;

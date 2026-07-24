@@ -138,6 +138,7 @@ describe('getCandidateProviders', () => {
       id: 'llama-x',
       veniceId: 'llama-x',
       surplusId: 'llama-x-surplus',
+      gonkaId: 'llama-x-gonka',
       provider: 'both' as const,
       primaryProvider: 'venice' as const,
       inputPricePer1M: 0,
@@ -152,10 +153,14 @@ describe('getCandidateProviders', () => {
       creditsPerMillionInput: 0,
       creditsPerMillionOutput: 0,
     }
-    const { primary, alternates } = await getCandidateProviders('llama-x', modelDef)
-    expect(primary).toBe('venice')
-    expect(alternates).toContain('surplus')
-    expect(alternates[0]).not.toBe('venice')
+    const result = await getCandidateProviders('llama-x', modelDef)
+    // Venice key is a placeholder in test env → Venice is skipped.
+    // Surplus is disabled in test env (requires dev mode + wallet key).
+    // Gonka is the only configured provider → promoted to primary.
+    expect(result).not.toBeNull()
+    const { primary, alternates } = result!
+    expect(primary).toBe('gonka')
+    expect(alternates).toEqual([])
   })
 })
 

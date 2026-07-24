@@ -11,10 +11,29 @@ export type Provider = "venice" | "surplus" | "gonka";
 // Only allow routing to surplus when the wallet key is set AND we're in development.
 // Disable in all other environments until the EIP-3009 / Permit2 signer lands.
 const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV === "development";
+export { SURPLUS_ENABLED };
 
 // Gonka routes through OpenBroker (api.openbroker.gonka.gg) — free community
 // broker with 0% markup. Always enabled; works with or without an API key.
 const GONKA_ENABLED = true;
+
+/** Detect placeholder / truncated API keys that will always 401. */
+function isPlaceholderKey(key: string | undefined): boolean {
+  if (!key) return true;
+  if (key.length < 20) return true;
+  if (key.includes("...") || key.includes("placeholder") || key.includes("changeme")) return true;
+  return false;
+}
+
+export const VENICE_CONFIGURED = !isPlaceholderKey(config.VENICE_API_KEY);
+
+if (!VENICE_CONFIGURED) {
+  logger.warn(
+    "[startup] VENICE_API_KEY is missing or looks like a placeholder — Venice routing disabled. " +
+    "87 venice-hosted models will return 503 until a real key is set. " +
+    "Gonka models (MiniMax-M2.7, Kimi-K2.6) remain available.",
+  );
+}
 
 export const ALL_PROVIDERS: Provider[] = [
   "gonka",

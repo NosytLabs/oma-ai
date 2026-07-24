@@ -1,5 +1,6 @@
 import type { ModelDef } from "./models.js";
 import type { Provider } from "./provider-selector.js";
+import { VENICE_CONFIGURED, SURPLUS_ENABLED } from "./provider-selector.js";
 
 const PROVIDER_ID_FIELDS: ReadonlyArray<{ provider: Provider; field: keyof ModelDef }> = [
   { provider: "venice", field: "veniceId" },
@@ -54,19 +55,40 @@ export async function findProvidersForModel(
   return out;
 }
 
+/** Check if a provider is actually configured (has valid credentials). */
+function isProviderConfigured(p: Provider): boolean {
+  if (p === "venice") return VENICE_CONFIGURED;
+  if (p === "surplus") return SURPLUS_ENABLED;
+  return true; // gonka works without a key
+}
+
 export async function getCandidateProviders(
   modelId: string,
   modelDef: ModelDef | null,
-): Promise<{ primary: Provider; alternates: Provider[] }> {
+): Promise<{ primary: Provider; alternates: Provider[] } | null> {
   if (!modelDef) {
     // Mirror the legacy selectProvider inference for catalog-unknown models.
     // All unknown models now route through Gonka/OpenBroker (free tier).
-    return { primary: "gonka", alternates: ["venice"] };
+    return { primary: "gonka", alternates: [] };
   }
   const all = await findProvidersForModel(modelId, modelDef);
-  const primary = modelDef.primaryProvider;
+  let primary = modelDef.primaryProvider;
   const alternates = all.filter((p) => p !== primary);
-  return { primary, alternates };
+
+  // Skip providers with placeholder/missing credentials — avoids wasted
+  // 401 round-trips and circuit-breaker noise. If the primary is
+  // unconfigured, promote the first configured alternate.
+  if (!isProviderConfigured(primary)) {
+    const promoted = alternates.find(isProviderConfigured);
+    if (promoted) {
+      alternates.splice(alternates.indexOf(promoted), 1);
+      primary = promoted;
+    } else {
+      // No configured provider for this model — router returns 503.
+      return null;
+    }
+  }
+  return { primary, alternates: alternates.filter(isProviderConfigured) };
 }
 
 export async function resolveModelAlias(modelId: string): Promise<string> {
