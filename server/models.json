@@ -430,7 +430,7 @@
       "id": "qwen3-235b-a22b-instruct-2507",
       "veniceId": "qwen3-235b-a22b-instruct-2507",
       "provider": "venice",
-      "primaryProvider": "venice",
+      "primaryProvider": "gonka",
       "inputPricePer1M": 0.15,
       "outputPricePer1M": 0.75,
       "markupPercent": 25,
@@ -446,7 +446,8 @@
       ],
       "description": "Built for in-depth research and handling long, complex documents. Ideal for technical work, multimodal input, and high-precision tasks.",
       "creditsPerMillionInput": 19,
-      "creditsPerMillionOutput": 94
+      "creditsPerMillionOutput": 94,
+      "gonkaId": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8"
     },
     "qwen3-next-80b": {
       "id": "qwen3-next-80b",
@@ -1140,7 +1141,7 @@
       "id": "kimi-k2-6",
       "veniceId": "kimi-k2-6",
       "provider": "venice",
-      "primaryProvider": "venice",
+      "primaryProvider": "gonka",
       "inputPricePer1M": 0.85,
       "outputPricePer1M": 4.655,
       "markupPercent": 25,
@@ -1158,7 +1159,8 @@
       ],
       "description": "Kimi K2.6 is an open-source, native multimodal agentic model from Moonshot AI with 1T total parameters and 32B active parameters. It excels at long-horizon coding, coding-driven design, agent swarm or",
       "creditsPerMillionInput": 106,
-      "creditsPerMillionOutput": 582
+      "creditsPerMillionOutput": 582,
+      "gonkaId": "moonshotai/Kimi-K2.6"
     },
     "kimi-k2-5": {
       "id": "kimi-k2-5",
@@ -1657,7 +1659,7 @@
       "id": "minimax-m27",
       "veniceId": "minimax-m27",
       "provider": "venice",
-      "primaryProvider": "venice",
+      "primaryProvider": "gonka",
       "inputPricePer1M": 0.375,
       "outputPricePer1M": 1.5,
       "markupPercent": 25,
@@ -1674,7 +1676,8 @@
       ],
       "description": "MiniMax-M2.7 is a next-generation large language model designed for autonomous, real-world productivity with advanced agentic capabilities through multi-agent collaboration.",
       "creditsPerMillionInput": 47,
-      "creditsPerMillionOutput": 188
+      "creditsPerMillionOutput": 188,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "mercury-2": {
       "id": "mercury-2",

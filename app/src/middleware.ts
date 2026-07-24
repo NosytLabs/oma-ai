@@ -69,6 +69,11 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(new URL("/deposit", request.url));
 	}
 
+	// /design/* — internal motion/component reference pages. Never public.
+	if (pathname.startsWith("/design")) {
+		return new NextResponse(null, { status: 404 });
+	}
+
 	const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 	if (!isProtected) return NextResponse.next();
 
@@ -193,5 +198,7 @@ export const config = {
 		"/credits",
 		"/swap",
 		"/swap/:path*",
+		// Internal-only pages (blocked above)
+		"/design/:path*",
 	],
 };
