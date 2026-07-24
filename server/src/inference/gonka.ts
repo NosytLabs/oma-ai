@@ -85,6 +85,34 @@ function checkGonkaConfig(): void {
   // No-op: keyless access is the default free-tier path.
 }
 
+/**
+ * vLLM strict tool-format fix: OpenBroker's vLLM backend rejects string
+ * `content` on `role: "tool"` messages. It requires an array of
+ * `{name, type, text}` objects. This normalizer converts tool messages
+ * with string content to the required array format before sending.
+ * See: gonka skill → "vLLM strict tool-format bug"
+ */
+function normalizeToolMessages(
+  messages: ChatMessage[],
+): ChatMessage[] {
+  return messages.map((msg) => {
+    if (msg.role === "tool" && typeof msg.content === "string") {
+      const name = (msg as unknown as Record<string, unknown>).name;
+      return {
+        ...msg,
+        content: [
+          {
+            type: "text" as const,
+            text: msg.content,
+            name: typeof name === "string" ? name : "tool",
+          },
+        ],
+      };
+    }
+    return msg;
+  });
+}
+
 class GonkaProvider extends BaseInferenceProvider {
   protected readonly config: ProviderConfig;
 
@@ -102,7 +130,11 @@ class GonkaProvider extends BaseInferenceProvider {
     signal?: AbortSignal,
   ): Promise<Response> {
     checkGonkaConfig();
-    return this.chatCompletionInternal(body, undefined, signal);
+    const normalizedBody = {
+      ...body,
+      messages: normalizeToolMessages(body.messages),
+    };
+    return this.chatCompletionInternal(normalizedBody, undefined, signal);
   }
 }
 

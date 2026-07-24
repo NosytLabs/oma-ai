@@ -3,7 +3,6 @@ import { SpanKind } from "@opentelemetry/api";
 import { bearerAuth } from "../../auth/middleware.js";
 import { handleChatCompletion } from "../../inference/router.js";
 import { getModel } from "../../inference/models.js";
-import { getBalance } from "../../credits/index.js";
 import { tokenBucket, modelRateLimit } from "../../middleware/rate-limit.js";
 import { requestTimeout } from "../../middleware/timeout.js";
 import { spendLimit } from "../../middleware/spend-limit.js";
@@ -18,7 +17,6 @@ import {
   chatCompletionSchema,
   checkRequestBodySizeLimit,
 } from "./validation.js";
-import { createInsufficientCreditsPayReq } from "../../credits/insufficient-credits.js";
 import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
 
 export const chatCompletionsRouter = new Hono<OmaEnv>();
@@ -109,13 +107,6 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
             403,
           );
         }
-      }
-
-      const bal = await getBalance(userId);
-      if (Number(bal.balanceCents) <= 0) {
-        span?.setAttribute("error", true);
-        span?.setAttribute("error.type", "insufficient_credits");
-        return createInsufficientCreditsPayReq(c, 1, Number(bal.balanceCents));
       }
 
       const payload = { model, messages, stream: !!stream, ...rest };

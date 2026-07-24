@@ -52,8 +52,11 @@ export function validateMessages(messages: unknown): boolean {
   let totalBytes = 0;
   for (const msg of messages) {
     if (!msg || typeof msg !== "object") return false;
-    const m = msg as { role?: unknown; content?: unknown };
-    if (!m.role || !m.content) return false;
+    const m = msg as { role?: unknown; content?: unknown; tool_calls?: unknown };
+    if (!m.role) return false;
+    // Assistant messages with tool_calls have content: null — that's valid.
+    // Tool messages have content but no tool_calls. Both are fine.
+    if (m.content === undefined && !m.tool_calls) return false;
 
     if (typeof m.content === "string") {
       totalBytes += new TextEncoder().encode(m.content).length;
@@ -80,7 +83,15 @@ export function validateMessages(messages: unknown): boolean {
 export const messageSchema = z
   .object({
     role: z.enum(["system", "user", "assistant", "tool"]),
-    content: z.union([z.string(), z.array(z.any())]),
+    content: z.union([z.string(), z.array(z.any())]).nullable().optional(),
+    // Multi-turn tool calling: assistant messages carry tool_calls, tool
+    // messages carry tool_call_id. Without these, Zod strips them and
+    // the provider never sees the tool results.
+    tool_calls: z.array(z.any()).optional(),
+    tool_call_id: z.string().optional(),
+    name: z.string().optional(),
+    // Legacy function calling (OpenAI compat)
+    function_call: z.any().optional(),
   })
   .refine(validateMessageContent, {
     message: `Message content exceeds maximum size of ${MAX_MESSAGE_CONTENT_BYTES} bytes`,
@@ -99,7 +110,18 @@ export const chatCompletionSchema = z.object({
   max_tokens: z.number().int().positive().optional(),
   stream: z.boolean().optional(),
   tools: z.array(z.any()).optional(),
+  tool_choice: z.union([z.enum(["none", "auto", "required"]), z.any()]).optional(),
+  parallel_tool_calls: z.boolean().optional(),
   response_format: z.any().optional(),
+  // Standard OpenAI-compatible sampling params — previously stripped by Zod
+  top_p: z.number().min(0).max(1).optional(),
+  stop: z.union([z.string(), z.array(z.string())]).optional(),
+  frequency_penalty: z.number().min(-2).max(2).optional(),
+  presence_penalty: z.number().min(-2).max(2).optional(),
+  seed: z.number().int().optional(),
+  n: z.number().int().positive().max(10).optional(),
+  logit_bias: z.record(z.number()).optional(),
+  user: z.string().max(500).optional(),
 });
 
 export const completionSchema = z.object({

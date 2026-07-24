@@ -430,7 +430,7 @@
       "id": "qwen3-235b-a22b-instruct-2507",
       "veniceId": "qwen3-235b-a22b-instruct-2507",
       "provider": "venice",
-      "primaryProvider": "gonka",
+      "primaryProvider": "venice",
       "inputPricePer1M": 0.15,
       "outputPricePer1M": 0.75,
       "markupPercent": 25,
@@ -446,8 +446,7 @@
       ],
       "description": "Built for in-depth research and handling long, complex documents. Ideal for technical work, multimodal input, and high-precision tasks.",
       "creditsPerMillionInput": 19,
-      "creditsPerMillionOutput": 94,
-      "gonkaId": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8"
+      "creditsPerMillionOutput": 94
     },
     "qwen3-next-80b": {
       "id": "qwen3-next-80b",
