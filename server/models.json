@@ -21,7 +21,9 @@
       ],
       "description": "GLM-5.1 is the next-generation large language model developed by Zhiyuan AI, featuring significantly enhanced reasoning capabilities, improved instruction following, and support for multiple languages",
       "creditsPerMillionInput": 219,
-      "creditsPerMillionOutput": 688
+      "creditsPerMillionOutput": 688,
+      "contextWindow": 24000,
+      "maxOutputTokens": 8192
     },
     "zai-org-glm-5": {
       "id": "zai-org-glm-5",
@@ -44,7 +46,9 @@
       ],
       "description": "GLM-5 is the next-generation large language model developed by Zhiyuan AI, featuring significantly enhanced reasoning capabilities, improved instruction following, and support for multiple languages. ",
       "creditsPerMillionInput": 125,
-      "creditsPerMillionOutput": 400
+      "creditsPerMillionOutput": 400,
+      "contextWindow": 32000,
+      "maxOutputTokens": 8192
     },
     "z-ai-glm-5-turbo": {
       "id": "z-ai-glm-5-turbo",
@@ -67,7 +71,9 @@
       ],
       "description": "GLM-5 Turbo is a fast inference model from Z.ai tuned for strong performance in agent-driven environments and production coding workflows.",
       "creditsPerMillionInput": 150,
-      "creditsPerMillionOutput": 500
+      "creditsPerMillionOutput": 500,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "z-ai-glm-5v-turbo": {
       "id": "z-ai-glm-5v-turbo",
@@ -91,7 +97,9 @@
       ],
       "description": "GLM-5V-Turbo is Z.ai's first native multimodal agent foundation model, built for vision-based coding and agent-driven tasks with image, video, and text inputs.",
       "creditsPerMillionInput": 188,
-      "creditsPerMillionOutput": 625
+      "creditsPerMillionOutput": 625,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "olafangensan-glm-4.7-flash-heretic": {
       "id": "olafangensan-glm-4.7-flash-heretic",
@@ -114,7 +122,9 @@
       ],
       "description": "GLM-4.7-Flash-Heretic is an uncensored experimental variant of GLM-4.7-Flash, optimized for creative freedom and unfiltered dialogue with fast inference speed.",
       "creditsPerMillionInput": 18,
-      "creditsPerMillionOutput": 100
+      "creditsPerMillionOutput": 100,
+      "contextWindow": 24000,
+      "maxOutputTokens": 4096
     },
     "zai-org-glm-4.7-flash": {
       "id": "zai-org-glm-4.7-flash",
@@ -137,7 +147,9 @@
       ],
       "description": "GLM-4.7-Flash is a fast inference variant of GLM-4.7, optimized for speed while maintaining strong reasoning capabilities. Ideal for applications requiring quick responses with good quality.",
       "creditsPerMillionInput": 16,
-      "creditsPerMillionOutput": 62
+      "creditsPerMillionOutput": 62,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "zai-org-glm-4.6": {
       "id": "zai-org-glm-4.6",
@@ -160,7 +172,9 @@
       ],
       "description": "GLM-4.6 is a large language model developed by Zhiyuan AI, featuring strong reasoning capabilities and support for multiple languages. Supports the largest context window for processing extensive text",
       "creditsPerMillionInput": 68,
-      "creditsPerMillionOutput": 274
+      "creditsPerMillionOutput": 274,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "zai-org-glm-4.7": {
       "id": "zai-org-glm-4.7",
@@ -183,7 +197,9 @@
       ],
       "description": "GLM-4.7 is a large language model developed by Zhiyuan AI, featuring strong reasoning capabilities and support for multiple languages. Supports the largest context window for processing extensive text",
       "creditsPerMillionInput": 69,
-      "creditsPerMillionOutput": 331
+      "creditsPerMillionOutput": 331,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "venice-uncensored-1-2": {
       "id": "venice-uncensored-1-2",
@@ -206,7 +222,9 @@
       ],
       "description": "Venice Uncensored 1.2 is designed for maximum creative freedom and authentic interaction. Built for open-ended exploration, roleplay, and unfiltered dialogue with improved capabilities over 1.1.",
       "creditsPerMillionInput": 25,
-      "creditsPerMillionOutput": 112
+      "creditsPerMillionOutput": 112,
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
     },
     "venice-uncensored-role-play": {
       "id": "venice-uncensored-role-play",
@@ -229,7 +247,9 @@
       ],
       "description": "Optimized for creative roleplay scenarios with maximum freedom. Designed for immersive storytelling, character interactions, and open-ended creative writing.",
       "creditsPerMillionInput": 62,
-      "creditsPerMillionOutput": 250
+      "creditsPerMillionOutput": 250,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "qwen-3-7-max": {
       "id": "qwen-3-7-max",
@@ -252,7 +272,9 @@
       ],
       "description": "Qwen 3.7 Max is the largest model in the Qwen 3.7 series, offering a text-only interface with deep thinking, function calling, and prompt caching. It excels at programming, office and productivity tas",
       "creditsPerMillionInput": 338,
-      "creditsPerMillionOutput": 1006
+      "creditsPerMillionOutput": 1006,
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192
     },
     "qwen-3-7-plus": {
       "id": "qwen-3-7-plus",
@@ -277,7 +299,9 @@
       ],
       "description": "Qwen 3.7 Plus is Alibaba's latest flagship reasoning model with exceptional performance across coding, reasoning, and general knowledge tasks. Features mixed reasoning, function calling, and multimoda",
       "creditsPerMillionInput": 62,
-      "creditsPerMillionOutput": 250
+      "creditsPerMillionOutput": 250,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "qwen-3-6-plus": {
       "id": "qwen-3-6-plus",
@@ -302,7 +326,9 @@
       ],
       "description": "Qwen 3.6 Plus Uncensored is Alibaba's latest flagship reasoning model with exceptional performance across coding, reasoning, and general knowledge tasks. Features mixed reasoning, function calling, an",
       "creditsPerMillionInput": 78,
-      "creditsPerMillionOutput": 469
+      "creditsPerMillionOutput": 469,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "qwen3-6-27b": {
       "id": "qwen3-6-27b",
@@ -327,7 +353,9 @@
       ],
       "description": "The Qwen 3.6 27B native vision-language dense model builds upon the 3.5-27B version, with key improvements in agentic coding capabilities and enhanced STEM reasoning and inference skills. In the visio",
       "creditsPerMillionInput": 41,
-      "creditsPerMillionOutput": 406
+      "creditsPerMillionOutput": 406,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "qwen3-5-9b": {
       "id": "qwen3-5-9b",
@@ -351,7 +379,9 @@
       ],
       "description": "A 9B dense model with 262K native context window (extendable to 1M). Features Gated DeltaNet hybrid attention architecture for efficient long-context processing. Supports 201 languages, thinking/reaso",
       "creditsPerMillionInput": 12,
-      "creditsPerMillionOutput": 19
+      "creditsPerMillionOutput": 19,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "qwen3-5-397b-a17b": {
       "id": "qwen3-5-397b-a17b",
@@ -376,7 +406,9 @@
       ],
       "description": "Qwen 3.5 is Alibaba flagship reasoning model featuring a 397B parameter Mixture-of-Experts architecture with 17B active parameters. It excels at complex reasoning, coding, and general knowledge tasks.",
       "creditsPerMillionInput": 94,
-      "creditsPerMillionOutput": 562
+      "creditsPerMillionOutput": 562,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "qwen3-5-35b-a3b": {
       "id": "qwen3-5-35b-a3b",
@@ -401,7 +433,9 @@
       ],
       "description": "Qwen 3.5 35B A3B is a highly efficient MoE model with 35B total parameters and only 3B active parameters. It surpasses the larger Qwen3-235B-A22B while being 6.7x smaller, excelling at reasoning, codi",
       "creditsPerMillionInput": 39,
-      "creditsPerMillionOutput": 156
+      "creditsPerMillionOutput": 156,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "qwen3-235b-a22b-thinking-2507": {
       "id": "qwen3-235b-a22b-thinking-2507",
@@ -424,7 +458,9 @@
       ],
       "description": "Built for in-depth research and handling long, complex documents. Ideal for technical work, multimodal input, and high-precision tasks.",
       "creditsPerMillionInput": 56,
-      "creditsPerMillionOutput": 438
+      "creditsPerMillionOutput": 438,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "qwen3-235b-a22b-instruct-2507": {
       "id": "qwen3-235b-a22b-instruct-2507",
@@ -446,7 +482,9 @@
       ],
       "description": "Built for in-depth research and handling long, complex documents. Ideal for technical work, multimodal input, and high-precision tasks.",
       "creditsPerMillionInput": 19,
-      "creditsPerMillionOutput": 94
+      "creditsPerMillionOutput": 94,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "qwen3-next-80b": {
       "id": "qwen3-next-80b",
@@ -468,7 +506,9 @@
       ],
       "description": "Optimized for speed and efficiency.",
       "creditsPerMillionInput": 44,
-      "creditsPerMillionOutput": 238
+      "creditsPerMillionOutput": 238,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "qwen3-vl-235b-a22b": {
       "id": "qwen3-vl-235b-a22b",
@@ -491,7 +531,9 @@
       ],
       "description": "Qwen3-VL 235B vision-language model with MoE architecture. The most powerful VL model in the Qwen series with superior visual perception, OCR, and multimodal reasoning.",
       "creditsPerMillionInput": 31,
-      "creditsPerMillionOutput": 188
+      "creditsPerMillionOutput": 188,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "qwen3-coder-480b-a35b-instruct-turbo": {
       "id": "qwen3-coder-480b-a35b-instruct-turbo",
@@ -513,7 +555,9 @@
       ],
       "description": "Turbo variant of Qwen3 Coder 480B, optimized for faster inference on code tasks.",
       "creditsPerMillionInput": 44,
-      "creditsPerMillionOutput": 188
+      "creditsPerMillionOutput": 188,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "google-gemma-4-26b-a4b-it": {
       "id": "google-gemma-4-26b-a4b-it",
@@ -538,7 +582,9 @@
       ],
       "description": "Gemma 4 26B A4B is a Mixture-of-Experts model from Google DeepMind with 26B total parameters and only 4B active per token, offering fast inference at high quality. It handles text, image, and video in",
       "creditsPerMillionInput": 20,
-      "creditsPerMillionOutput": 62
+      "creditsPerMillionOutput": 62,
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
     },
     "google-gemma-4-31b-it": {
       "id": "google-gemma-4-31b-it",
@@ -563,7 +609,9 @@
       ],
       "description": "Gemma 4 31B is a dense model from Google DeepMind with 31B parameters, delivering frontier-level reasoning performance. It handles text, image, and video input, supports 256K context, function calling",
       "creditsPerMillionInput": 15,
-      "creditsPerMillionOutput": 45
+      "creditsPerMillionOutput": 45,
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
     },
     "gemma-4-uncensored": {
       "id": "gemma-4-uncensored",
@@ -586,7 +634,9 @@
       ],
       "description": "Gemma 4 Uncensored is an uncensored variant of Google Gemma 4 26B, a Mixture-of-Experts model with 26B total parameters and only 4B active per token. Fine-tuned for uncensored chat without content fil",
       "creditsPerMillionInput": 20,
-      "creditsPerMillionOutput": 62
+      "creditsPerMillionOutput": 62,
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
     },
     "google-gemma-3-27b-it": {
       "id": "google-gemma-3-27b-it",
@@ -609,7 +659,9 @@
       ],
       "description": "Gemma 3 introduces multimodality, supporting vision-language input and text outputs. It handles context windows up to 128k tokens, understands over 140 languages, and offers improved math, reasoning, ",
       "creditsPerMillionInput": 15,
-      "creditsPerMillionOutput": 25
+      "creditsPerMillionOutput": 25,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "arcee-trinity-large-thinking": {
       "id": "arcee-trinity-large-thinking",
@@ -632,7 +684,9 @@
       ],
       "description": "Trinity Large Thinking is a reasoning-optimized variant of Arcee AI's Trinity-Large family, a 398B-parameter sparse Mixture-of-Experts model with approximately 13B active parameters per token, post-tr",
       "creditsPerMillionInput": 39,
-      "creditsPerMillionOutput": 141
+      "creditsPerMillionOutput": 141,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "grok-4-3": {
       "id": "grok-4-3",
@@ -656,7 +710,9 @@
       ],
       "description": "Grok 4.3 is xAI's most intelligent and fastest reasoning model with function calling, structured outputs, and a 1M-token context window. Suited for agentic workflows, instruction-following tasks, and ",
       "creditsPerMillionInput": 178,
-      "creditsPerMillionOutput": 354
+      "creditsPerMillionOutput": 354,
+      "contextWindow": 32000,
+      "maxOutputTokens": 8192
     },
     "grok-4-20": {
       "id": "grok-4-20",
@@ -680,7 +736,9 @@
       ],
       "description": "Grok 4.20 is xAI's latest multimodal reasoning model with strong tool use, structured output support, and a 2M-token context window.",
       "creditsPerMillionInput": 178,
-      "creditsPerMillionOutput": 354
+      "creditsPerMillionOutput": 354,
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
     },
     "grok-4-20-multi-agent": {
       "id": "grok-4-20-multi-agent",
@@ -703,7 +761,9 @@
       ],
       "description": "Grok 4.20 Multi-Agent is a variant of xAI Grok 4.20 designed for collaborative, agent-based workflows. Multiple agents operate in parallel to conduct deep research, coordinate tool use, and synthesize",
       "creditsPerMillionInput": 178,
-      "creditsPerMillionOutput": 354
+      "creditsPerMillionOutput": 354,
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
     },
     "grok-build-0-1": {
       "id": "grok-build-0-1",
@@ -727,7 +787,9 @@
       ],
       "description": "xAI's fast coding model trained specifically for agentic coding, currently in early access.",
       "creditsPerMillionInput": 125,
-      "creditsPerMillionOutput": 250
+      "creditsPerMillionOutput": 250,
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192
     },
     "mistral-small-3-2-24b-instruct": {
       "id": "mistral-small-3-2-24b-instruct",
@@ -749,7 +811,9 @@
       ],
       "description": "Mistral Small 3.2 is a 24B parameter model optimized for efficiency and performance. Ideal for general-purpose tasks with balanced speed and capability.",
       "creditsPerMillionInput": 12,
-      "creditsPerMillionOutput": 31
+      "creditsPerMillionOutput": 31,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "mistral-small-2603": {
       "id": "mistral-small-2603",
@@ -773,7 +837,9 @@
       ],
       "description": "Mistral Small 4 unifies instruction following, reasoning, coding, and vision in a single 119B MoE model with 256K context and configurable reasoning effort.",
       "creditsPerMillionInput": 23,
-      "creditsPerMillionOutput": 94
+      "creditsPerMillionOutput": 94,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "hermes-3-llama-3.1-405b": {
       "id": "hermes-3-llama-3.1-405b",
@@ -794,7 +860,9 @@
       ],
       "description": "Hermes 3 405B is a frontier level, full parameter finetune of the Llama-3.1 405B foundation model, focused on aligning LLMs to the user, with powerful steering capabilities and control given to the en",
       "creditsPerMillionInput": 138,
-      "creditsPerMillionOutput": 375
+      "creditsPerMillionOutput": 375,
+      "contextWindow": 16384,
+      "maxOutputTokens": 8192
     },
     "gemini-3-1-pro-preview": {
       "id": "gemini-3-1-pro-preview",
@@ -820,7 +888,9 @@
       ],
       "description": "Gemini 3.1 Pro is the latest evolution of Google flagship frontier model with 1M context, advancing high-precision multimodal reasoning across text, image, and code.",
       "creditsPerMillionInput": 312,
-      "creditsPerMillionOutput": 1875
+      "creditsPerMillionOutput": 1875,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "gemini-3-5-flash": {
       "id": "gemini-3-5-flash",
@@ -846,7 +916,9 @@
       ],
       "description": "Gemini 3.5 Flash is a high speed, high value thinking model with 1M context, designed for agentic workflows, multi-turn chat, and coding assistance. It delivers near Pro level reasoning with substanti",
       "creditsPerMillionInput": 194,
-      "creditsPerMillionOutput": 1181
+      "creditsPerMillionOutput": 1181,
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192
     },
     "gemini-3-flash-preview": {
       "id": "gemini-3-flash-preview",
@@ -872,7 +944,9 @@
       ],
       "description": "Gemini 3 Flash Preview is a high speed, high value thinking model designed for agentic workflows, multi-turn chat, and coding assistance. It delivers near Pro level reasoning with substantially lower ",
       "creditsPerMillionInput": 88,
-      "creditsPerMillionOutput": 469
+      "creditsPerMillionOutput": 469,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "claude-fable-5": {
       "id": "claude-fable-5",
@@ -896,7 +970,9 @@
       ],
       "description": "Claude Fable 5 is Anthropic's most capable widely released model, designed for demanding reasoning and long-horizon agentic work. It features a 1M token context window, 128K max output tokens, always-",
       "creditsPerMillionInput": 1500,
-      "creditsPerMillionOutput": 7500
+      "creditsPerMillionOutput": 7500,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-8": {
       "id": "claude-opus-4-8",
@@ -920,7 +996,9 @@
       ],
       "description": "Claude Opus 4.8 is Anthropic's most capable generally available model in the Opus family. It supports long-horizon agentic work, complex multi-step coding, and memory-driven tasks where coherence over",
       "creditsPerMillionInput": 750,
-      "creditsPerMillionOutput": 3750
+      "creditsPerMillionOutput": 3750,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-8-fast": {
       "id": "claude-opus-4-8-fast",
@@ -944,7 +1022,9 @@
       ],
       "description": "Claude Opus 4.8 (Fast) is a speed-optimized variant of Anthropic's most capable generally available Opus model, offering the same 1M token context window and strong performance across long-horizon age",
       "creditsPerMillionInput": 1500,
-      "creditsPerMillionOutput": 7500
+      "creditsPerMillionOutput": 7500,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-7": {
       "id": "claude-opus-4-7",
@@ -968,7 +1048,9 @@
       ],
       "description": "Claude Opus 4.7 is Anthropic's most capable generally available model for complex reasoning and agentic coding. It features a 1M token context window, 128K max output tokens, adaptive thinking, and st",
       "creditsPerMillionInput": 750,
-      "creditsPerMillionOutput": 3750
+      "creditsPerMillionOutput": 3750,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-6": {
       "id": "claude-opus-4-6",
@@ -992,7 +1074,9 @@
       ],
       "description": "Claude Opus 4.6 is Anthropic's most capable reasoning model, building on Opus 4.5 with enhanced performance across complex software engineering, agentic workflows, and long-horizon tasks. It features ",
       "creditsPerMillionInput": 750,
-      "creditsPerMillionOutput": 3750
+      "creditsPerMillionOutput": 3750,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-6-fast": {
       "id": "claude-opus-4-6-fast",
@@ -1016,7 +1100,9 @@
       ],
       "description": "Claude Opus 4.6 (Fast) is a speed-optimized variant of Anthropic's most capable reasoning model, offering the same 1M token context window and strong performance across complex software engineering, a",
       "creditsPerMillionInput": 4500,
-      "creditsPerMillionOutput": 22500
+      "creditsPerMillionOutput": 22500,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "claude-opus-4-5": {
       "id": "claude-opus-4-5",
@@ -1040,7 +1126,9 @@
       ],
       "description": "Claude Opus 4.5 is Anthropic's frontier reasoning model optimized for complex software engineering, agentic workflows, and long-horizon computer use. It offers strong multimodal capabilities, competit",
       "creditsPerMillionInput": 750,
-      "creditsPerMillionOutput": 3750
+      "creditsPerMillionOutput": 3750,
+      "contextWindow": 32768,
+      "maxOutputTokens": 16384
     },
     "claude-sonnet-4-6": {
       "id": "claude-sonnet-4-6",
@@ -1064,7 +1152,9 @@
       ],
       "description": "Claude Sonnet 4.6 is Anthropic's best combination of speed and intelligence, offering strong performance on coding, reasoning, and general tasks with excellent speed and cost efficiency. It features a",
       "creditsPerMillionInput": 450,
-      "creditsPerMillionOutput": 2250
+      "creditsPerMillionOutput": 2250,
+      "contextWindow": 64000,
+      "maxOutputTokens": 16384
     },
     "claude-sonnet-4-5": {
       "id": "claude-sonnet-4-5",
@@ -1088,7 +1178,9 @@
       ],
       "description": "Claude Sonnet 4.5 is Anthropic's balanced model offering strong performance on coding, reasoning, and general tasks with good speed and cost efficiency.",
       "creditsPerMillionInput": 469,
-      "creditsPerMillionOutput": 2344
+      "creditsPerMillionOutput": 2344,
+      "contextWindow": 64000,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-oss-120b": {
       "id": "openai-gpt-oss-120b",
@@ -1111,7 +1203,9 @@
       ],
       "description": "gpt-oss-120b is an open-weight, 117B-parameter Mixture-of-Experts (MoE) language model from OpenAI designed for high-reasoning, agentic, and general-purpose production use cases. The model supports co",
       "creditsPerMillionInput": 9,
-      "creditsPerMillionOutput": 38
+      "creditsPerMillionOutput": 38,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "tencent-hy3-preview": {
       "id": "tencent-hy3-preview",
@@ -1134,7 +1228,9 @@
       ],
       "description": "Hy3 preview is a 295B-parameter Mixture-of-Experts model with 21B active parameters from Tencent Hy Team. It excels at complex reasoning, instruction following, context learning, coding, and agent tas",
       "creditsPerMillionInput": 8,
-      "creditsPerMillionOutput": 26
+      "creditsPerMillionOutput": 26,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "kimi-k2-6": {
       "id": "kimi-k2-6",
@@ -1159,7 +1255,9 @@
       "description": "Kimi K2.6 is an open-source, native multimodal agentic model from Moonshot AI with 1T total parameters and 32B active parameters. It excels at long-horizon coding, coding-driven design, agent swarm or",
       "creditsPerMillionInput": 106,
       "creditsPerMillionOutput": 582,
-      "gonkaId": "moonshotai/Kimi-K2.6"
+      "gonkaId": "moonshotai/Kimi-K2.6",
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "kimi-k2-5": {
       "id": "kimi-k2-5",
@@ -1183,7 +1281,9 @@
       ],
       "description": "Kimi K2.5 is Moonshot AIs most advanced open reasoning model, featuring trillion-parameter Mixture-of-Experts architecture with 32B active parameters and 256K context windows.",
       "creditsPerMillionInput": 70,
-      "creditsPerMillionOutput": 438
+      "creditsPerMillionOutput": 438,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "xiaomi-mimo-v2-5": {
       "id": "xiaomi-mimo-v2-5",
@@ -1209,7 +1309,9 @@
       ],
       "description": "MiMo-V2.5 is Xiaomi's native omnimodal model with strong agentic capabilities, supporting text, image, video, and audio understanding in a unified architecture. Built on a sparse Mixture-of-Experts ba",
       "creditsPerMillionInput": 22,
-      "creditsPerMillionOutput": 44
+      "creditsPerMillionOutput": 44,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "deepseek-v4-pro": {
       "id": "deepseek-v4-pro",
@@ -1232,7 +1334,9 @@
       ],
       "description": "DeepSeek V4 Pro is a 1.6T-parameter Mixture-of-Experts model with 49B active parameters and a 1M-token context window. Built for advanced reasoning, coding, and long-horizon agentic workflows with a h",
       "creditsPerMillionInput": 216,
-      "creditsPerMillionOutput": 474
+      "creditsPerMillionOutput": 474,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "deepseek-v4-flash": {
       "id": "deepseek-v4-flash",
@@ -1255,7 +1359,9 @@
       ],
       "description": "DeepSeek V4 Flash is an efficiency-optimized 284B-parameter Mixture-of-Experts model with 13B active parameters and a 1M-token context window. Tuned for fast inference and high-throughput workloads wh",
       "creditsPerMillionInput": 21,
-      "creditsPerMillionOutput": 44
+      "creditsPerMillionOutput": 44,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "deepseek-v3.2": {
       "id": "deepseek-v3.2",
@@ -1278,7 +1384,9 @@
       ],
       "description": "DeepSeek-V3.2 is an efficient large language model with DeepSeek Sparse Attention (DSA) for long contexts. It features strong reasoning and tool-use skills, achieving top results on the 2025 IMO and I",
       "creditsPerMillionInput": 41,
-      "creditsPerMillionOutput": 60
+      "creditsPerMillionOutput": 60,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "aion-labs-aion-2-0": {
       "id": "aion-labs-aion-2-0",
@@ -1300,7 +1408,9 @@
       ],
       "description": "Aion 2.0 is a DeepSeek V3.2-based model fine-tuned for immersive roleplaying and long-form storytelling. It excels at introducing tension, crises, and meaningful conflict into narratives, keeping stor",
       "creditsPerMillionInput": 125,
-      "creditsPerMillionOutput": 250
+      "creditsPerMillionOutput": 250,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "llama-3.2-3b": {
       "id": "llama-3.2-3b",
@@ -1322,7 +1432,9 @@
       ],
       "description": "",
       "creditsPerMillionInput": 19,
-      "creditsPerMillionOutput": 75
+      "creditsPerMillionOutput": 75,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "llama-3.3-70b": {
       "id": "llama-3.3-70b",
@@ -1344,7 +1456,9 @@
       ],
       "description": "",
       "creditsPerMillionInput": 88,
-      "creditsPerMillionOutput": 350
+      "creditsPerMillionOutput": 350,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "openai-gpt-52": {
       "id": "openai-gpt-52",
@@ -1367,7 +1481,9 @@
       ],
       "description": "GPT-5.2 is the latest frontier-grade model in the GPT-5 series, offering stronger agentic and long context performance compared to GPT-5.1. It uses adaptive reasoning to allocate computation dynamical",
       "creditsPerMillionInput": 274,
-      "creditsPerMillionOutput": 2188
+      "creditsPerMillionOutput": 2188,
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192
     },
     "openai-gpt-52-codex": {
       "id": "openai-gpt-52-codex",
@@ -1391,7 +1507,9 @@
       ],
       "description": "GPT-5.2 Codex is OpenAI specialized coding model built on GPT-5.2, optimized for advanced software development, code generation, and technical problem-solving.",
       "creditsPerMillionInput": 274,
-      "creditsPerMillionOutput": 2188
+      "creditsPerMillionOutput": 2188,
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192
     },
     "openai-gpt-53-codex": {
       "id": "openai-gpt-53-codex",
@@ -1415,7 +1533,9 @@
       ],
       "description": "GPT-5.3 Codex is OpenAI specialized coding model built on GPT-5.3, optimized for advanced software development, code generation, and technical problem-solving.",
       "creditsPerMillionInput": 274,
-      "creditsPerMillionOutput": 2188
+      "creditsPerMillionOutput": 2188,
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
     },
     "openai-gpt-54": {
       "id": "openai-gpt-54",
@@ -1439,7 +1559,9 @@
       ],
       "description": "GPT-5.4 is the latest frontier model in the GPT-5 series with a 1M+ context window, offering improved agentic and long context performance. It uses adaptive reasoning to dynamically allocate computati",
       "creditsPerMillionInput": 391,
-      "creditsPerMillionOutput": 2350
+      "creditsPerMillionOutput": 2350,
+      "contextWindow": 131072,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-54-pro": {
       "id": "openai-gpt-54-pro",
@@ -1463,7 +1585,9 @@
       ],
       "description": "GPT-5.4 Pro is OpenAI's most advanced model, building on GPT-5.4's unified architecture with enhanced reasoning for complex, high-stakes tasks. It provides a 1M+ token context window (922K input, 128K",
       "creditsPerMillionInput": 4688,
-      "creditsPerMillionOutput": 28125
+      "creditsPerMillionOutput": 28125,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-54-mini": {
       "id": "openai-gpt-54-mini",
@@ -1487,7 +1611,9 @@
       ],
       "description": "GPT-5.4 Mini brings the core capabilities of GPT-5.4 to a faster, more efficient model optimized for high-throughput workloads. It supports text and image inputs with strong performance across reasoni",
       "creditsPerMillionInput": 117,
-      "creditsPerMillionOutput": 703
+      "creditsPerMillionOutput": 703,
+      "contextWindow": 128000,
+      "maxOutputTokens": 4096
     },
     "openai-gpt-55": {
       "id": "openai-gpt-55",
@@ -1511,7 +1637,9 @@
       ],
       "description": "GPT-5.5 is the latest frontier model in the GPT-5 series with a 1M+ context window, offering improved agentic and long context performance. It uses adaptive reasoning to dynamically allocate computati",
       "creditsPerMillionInput": 781,
-      "creditsPerMillionOutput": 4688
+      "creditsPerMillionOutput": 4688,
+      "contextWindow": 131072,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-55-pro": {
       "id": "openai-gpt-55-pro",
@@ -1535,7 +1663,9 @@
       ],
       "description": "GPT-5.5 Pro is OpenAI's most advanced model, building on GPT-5.5's unified architecture with enhanced reasoning for complex, high-stakes tasks. It provides a 1M+ token context window (922K input, 128K",
       "creditsPerMillionInput": 4688,
-      "creditsPerMillionOutput": 28125
+      "creditsPerMillionOutput": 28125,
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-4o-2024-11-20": {
       "id": "openai-gpt-4o-2024-11-20",
@@ -1558,7 +1688,9 @@
       ],
       "description": "OpenAI's multimodal flagship model with vision capabilities, strong reasoning, and broad knowledge. Popular for its balanced performance across tasks. Version: 2024-11-20.",
       "creditsPerMillionInput": 391,
-      "creditsPerMillionOutput": 1562
+      "creditsPerMillionOutput": 1562,
+      "contextWindow": 16384,
+      "maxOutputTokens": 16384
     },
     "openai-gpt-4o-mini-2024-07-18": {
       "id": "openai-gpt-4o-mini-2024-07-18",
@@ -1581,7 +1713,9 @@
       ],
       "description": "OpenAI's cost-efficient small model that delivers GPT-4 level intelligence at a fraction of the cost. Ideal for high-volume applications requiring strong reasoning. Version: 2024-07-18.",
       "creditsPerMillionInput": 23,
-      "creditsPerMillionOutput": 94
+      "creditsPerMillionOutput": 94,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "minimax-m3": {
       "id": "minimax-m3",
@@ -1606,7 +1740,9 @@
       ],
       "description": "MiniMax-M3 is MiniMax's latest frontier model for coding, agentic workflows, and complex reasoning tasks.",
       "creditsPerMillionInput": 38,
-      "creditsPerMillionOutput": 150
+      "creditsPerMillionOutput": 150,
+      "contextWindow": 131072,
+      "maxOutputTokens": 4096
     },
     "minimax-m3-preview": {
       "id": "minimax-m3-preview",
@@ -1629,7 +1765,9 @@
       ],
       "description": "MiniMax-M3 preview is a 1.4T-parameter frontier model from MiniMax for coding, agentic workflows, and complex reasoning, served at fp8 with a 512K context window.",
       "creditsPerMillionInput": 38,
-      "creditsPerMillionOutput": 150
+      "creditsPerMillionOutput": 150,
+      "contextWindow": 65536,
+      "maxOutputTokens": 4096
     },
     "minimax-m25": {
       "id": "minimax-m25",
@@ -1652,31 +1790,9 @@
       ],
       "description": "MiniMax-M2.5 is a state-of-the-art large language model optimized for coding, agentic workflows, and modern application development with enhanced reasoning capabilities.",
       "creditsPerMillionInput": 42,
-      "creditsPerMillionOutput": 149
-    },
-    "minimax-m27": {
-      "id": "minimax-m27",
-      "veniceId": "minimax-m27",
-      "provider": "gonka",
-      "primaryProvider": "gonka",
-      "inputPricePer1M": 0.375,
-      "outputPricePer1M": 1.5,
-      "markupPercent": 25,
-      "category": "budget",
-      "maxTokens": 204800,
-      "supportsStreaming": true,
-      "displayName": "MiniMax M2.7",
-      "capabilities": [
-        "chat",
-        "tools",
-        "reasoning",
-        "web-search",
-        "function-calling"
-      ],
-      "description": "MiniMax-M2.7 is a next-generation large language model designed for autonomous, real-world productivity with advanced agentic capabilities through multi-agent collaboration.",
-      "creditsPerMillionInput": 47,
-      "creditsPerMillionOutput": 188,
-      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
+      "creditsPerMillionOutput": 149,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "mercury-2": {
       "id": "mercury-2",
@@ -1699,7 +1815,9 @@
       ],
       "description": "Mercury 2 is a diffusion-based reasoning LLM from Inception, delivering over 1,000 tokens per second \u2014 5x faster than leading speed-optimized models \u2014 with strong reasoning, tool use, and structured o",
       "creditsPerMillionInput": 39,
-      "creditsPerMillionOutput": 117
+      "creditsPerMillionOutput": 117,
+      "contextWindow": 50000,
+      "maxOutputTokens": 4096
     },
     "nvidia-nemotron-3-nano-30b-a3b": {
       "id": "nvidia-nemotron-3-nano-30b-a3b",
@@ -1721,7 +1839,9 @@
       ],
       "description": "NVIDIA Nemotron 3 Nano 30B is a compact and efficient language model from NVIDIA, optimized for fast inference while maintaining strong performance across diverse tasks.",
       "creditsPerMillionInput": 9,
-      "creditsPerMillionOutput": 38
+      "creditsPerMillionOutput": 38,
+      "contextWindow": 16384,
+      "maxOutputTokens": 4096
     },
     "nvidia-nemotron-3-ultra-550b-a55b": {
       "id": "nvidia-nemotron-3-ultra-550b-a55b",
@@ -1744,7 +1864,9 @@
       ],
       "description": "NVIDIA Nemotron 3 Ultra is built for frontier reasoning, orchestration, coding agents, deep research, and complex enterprise workflows. It delivers up to 5x faster inference and up to 30% lower cost f",
       "creditsPerMillionInput": 78,
-      "creditsPerMillionOutput": 391
+      "creditsPerMillionOutput": 391,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "nvidia-nemotron-cascade-2-30b-a3b": {
       "id": "nvidia-nemotron-cascade-2-30b-a3b",
@@ -1767,7 +1889,9 @@
       ],
       "description": "Nemotron Cascade 2 30B A3B is a reasoning-optimized language model from NVIDIA, designed for efficient inference with strong reasoning capabilities across complex tasks.",
       "creditsPerMillionInput": 18,
-      "creditsPerMillionOutput": 100
+      "creditsPerMillionOutput": 100,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "e2ee-venice-uncensored-24b-p": {
       "id": "e2ee-venice-uncensored-24b-p",
@@ -1788,7 +1912,9 @@
       ],
       "description": "Venice Uncensored 1.1 running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
       "creditsPerMillionInput": 31,
-      "creditsPerMillionOutput": 144
+      "creditsPerMillionOutput": 144,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-gemma-3-27b-p": {
       "id": "e2ee-gemma-3-27b-p",
@@ -1809,7 +1935,9 @@
       ],
       "description": "Gemma 3 27B running in a Trusted Execution Environment (TEE). Google's multimodal model supporting vision-language input with 140+ language understanding, with hardware attestation evidence available ",
       "creditsPerMillionInput": 18,
-      "creditsPerMillionOutput": 62
+      "creditsPerMillionOutput": 62,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-gemma-4-26b-a4b-uncensored-p": {
       "id": "e2ee-gemma-4-26b-a4b-uncensored-p",
@@ -1830,7 +1958,9 @@
       ],
       "description": "Gemma 4 26B A4B Uncensored running in a Trusted Execution Environment (TEE). An uncensored variant of Google's Gemma 4 MoE model with 25.2B total / 3.8B active parameters, supporting multimodal input ",
       "creditsPerMillionInput": 24,
-      "creditsPerMillionOutput": 110
+      "creditsPerMillionOutput": 110,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-glm-4-7-p": {
       "id": "e2ee-glm-4-7-p",
@@ -1843,7 +1973,7 @@
       "category": "mid",
       "maxTokens": 32768,
       "supportsStreaming": true,
-      "displayName": "GLM 4.7",
+      "displayName": "GLM 4.7 (E2EE)",
       "capabilities": [
         "chat",
         "tools",
@@ -1852,7 +1982,9 @@
       ],
       "description": "GLM 4.7 running in a Trusted Execution Environment (TEE). Z.AI's flagship model with enhanced programming capabilities and stable multi-step reasoning, with hardware attestation evidence available for",
       "creditsPerMillionInput": 138,
-      "creditsPerMillionOutput": 519
+      "creditsPerMillionOutput": 519,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "e2ee-glm-4-7-flash-p": {
       "id": "e2ee-glm-4-7-flash-p",
@@ -1865,7 +1997,7 @@
       "category": "budget",
       "maxTokens": 4096,
       "supportsStreaming": true,
-      "displayName": "GLM 4.7 Flash",
+      "displayName": "GLM 4.7 Flash (E2EE)",
       "capabilities": [
         "chat",
         "tools",
@@ -1874,7 +2006,9 @@
       ],
       "description": "GLM 4.7 Flash running in a Trusted Execution Environment (TEE). A 30B-class model optimized for agentic coding with strong long-horizon task planning, with hardware attestation evidence available for ",
       "creditsPerMillionInput": 16,
-      "creditsPerMillionOutput": 69
+      "creditsPerMillionOutput": 69,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-gpt-oss-20b-p": {
       "id": "e2ee-gpt-oss-20b-p",
@@ -1896,7 +2030,9 @@
       ],
       "description": "GPT OSS 20B running in a Trusted Execution Environment (TEE). OpenAI's compact open-weight 21B MoE model with 3.6B active parameters, optimized for lower-latency inference, with hardware attestation e",
       "creditsPerMillionInput": 6,
-      "creditsPerMillionOutput": 24
+      "creditsPerMillionOutput": 24,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "e2ee-gpt-oss-120b-p": {
       "id": "e2ee-gpt-oss-120b-p",
@@ -1918,7 +2054,9 @@
       ],
       "description": "GPT OSS 120B running in a Trusted Execution Environment (TEE). OpenAI's open-weight 117B-parameter MoE model with configurable reasoning depth and native tool use, with hardware attestation evidence a",
       "creditsPerMillionInput": 16,
-      "creditsPerMillionOutput": 81
+      "creditsPerMillionOutput": 81,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "e2ee-qwen-2-5-7b-p": {
       "id": "e2ee-qwen-2-5-7b-p",
@@ -1939,7 +2077,9 @@
       ],
       "description": "Qwen 2.5 7B Instruct running in a Trusted Execution Environment (TEE). A compact model with strong coding, math, and multilingual capabilities supporting 29+ languages, with hardware attestation evide",
       "creditsPerMillionInput": 6,
-      "creditsPerMillionOutput": 16
+      "creditsPerMillionOutput": 16,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-qwen3-6-35b-a3b-uncensored-p": {
       "id": "e2ee-qwen3-6-35b-a3b-uncensored-p",
@@ -1960,7 +2100,9 @@
       ],
       "description": "Qwen3.6 35B A3B Uncensored running in a Trusted Execution Environment (TEE). An uncensored variant of Alibaba's Qwen3.6 MoE model with 35B total parameters and ~3B active, supporting 262K context and ",
       "creditsPerMillionInput": 48,
-      "creditsPerMillionOutput": 235
+      "creditsPerMillionOutput": 235,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-qwen3-30b-a3b-p": {
       "id": "e2ee-qwen3-30b-a3b-p",
@@ -1982,7 +2124,9 @@
       ],
       "description": "Qwen3 30B A3B running in a Trusted Execution Environment (TEE). A MoE model with 30.5B total parameters and 3.3B activated per inference, supporting ultra-long 256K context, with hardware attestation ",
       "creditsPerMillionInput": 24,
-      "creditsPerMillionOutput": 86
+      "creditsPerMillionOutput": 86,
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
     },
     "e2ee-qwen3-vl-30b-a3b-p": {
       "id": "e2ee-qwen3-vl-30b-a3b-p",
@@ -2005,7 +2149,9 @@
       ],
       "description": "Qwen3 VL 30B A3B running in a Trusted Execution Environment (TEE). A multimodal model unifying text generation with visual understanding for images and videos, with hardware attestation evidence avail",
       "creditsPerMillionInput": 31,
-      "creditsPerMillionOutput": 112
+      "creditsPerMillionOutput": 112,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-glm-5-1": {
       "id": "e2ee-glm-5-1",
@@ -2018,7 +2164,7 @@
       "category": "mid",
       "maxTokens": 32768,
       "supportsStreaming": true,
-      "displayName": "GLM 5.1",
+      "displayName": "GLM 5.1 (E2EE)",
       "capabilities": [
         "chat",
         "tools",
@@ -2027,7 +2173,9 @@
       ],
       "description": "GLM 5.1 running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
       "creditsPerMillionInput": 138,
-      "creditsPerMillionOutput": 519
+      "creditsPerMillionOutput": 519,
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
     },
     "e2ee-qwen3-6-35b-a3b": {
       "id": "e2ee-qwen3-6-35b-a3b",
@@ -2050,7 +2198,9 @@
       ],
       "description": "Qwen 3.6 35B A3B FP8 running in a Trusted Execution Environment (TEE). A fast mixture-of-experts model with ~3B active parameters per token. Hardware attestation evidence is available for independent ",
       "creditsPerMillionInput": 23,
-      "creditsPerMillionOutput": 148
+      "creditsPerMillionOutput": 148,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "e2ee-gemma-4-31b": {
       "id": "e2ee-gemma-4-31b",
@@ -2072,7 +2222,9 @@
       ],
       "description": "Gemma 4 31B Instruct running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
       "creditsPerMillionInput": 17,
-      "creditsPerMillionOutput": 54
+      "creditsPerMillionOutput": 54,
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
     },
     "minimax-m2.7": {
       "id": "minimax-m2.7",
@@ -2097,7 +2249,9 @@
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
       "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source.",
-      "supportsTools": true
+      "supportsTools": true,
+      "contextWindow": 204800,
+      "maxOutputTokens": 4096
     }
   },
   "VIDEO_MODELS": {

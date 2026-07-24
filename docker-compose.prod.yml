@@ -88,16 +88,11 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "effective_cache_size=2GB", "-c", "maintenance_work_mem=128MB", "-c", "wal_buffers=16MB", "-c", "max_connections=100"]
     environment:
       - POSTGRES_DB=oma
       - POSTGRES_USER=oma
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      # Tune for 15GB box: cap shared buffers + WAL so it can't eat RAM
-      - POSTGRES_SHARED_BUFFERS=512MB
-      - POSTGRES_EFFECTIVE_CACHE_SIZE=2GB
-      - POSTGRES_MAINTENANCE_WORK_MEM=128MB
-      - POSTGRES_WAL_BUFFERS=16MB
-      - POSTGRES_MAX_CONNECTIONS=100
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped

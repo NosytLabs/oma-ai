@@ -178,7 +178,7 @@ export const ENDPOINTS: EndpointInfo[] = [
       "context_length": 8192
     },
     {
-      "id": "venice-flux-schnell",
+      "id": "flux-schnell",
       "object": "model",
       "created": 1717194000,
       "owned_by": "oma",
@@ -217,7 +217,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			model:
-				'string (required), e.g. "text-embedding-3-small" or any Venice embedding model',
+				'string (required), e.g. "text-embedding-3-small" (Venice passthrough — any Venice embedding model)',
 			input: "string | string[] (required), max 50,000 chars per input",
 		},
 		response: `{
@@ -229,7 +229,7 @@ export const ENDPOINTS: EndpointInfo[] = [
       "embedding": [0.0023, -0.0091, 0.0027, 0.0114, -0.0042]
     }
   ],
-  "model": "text-embedding-3-small",
+  "model": "text-embedding-3-small (Venice passthrough)",
   "usage": { "prompt_tokens": 10, "total_tokens": 10 }
 }`,
 	},
@@ -240,7 +240,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Text-to-image via Venice FLUX models. Pricing is per-image.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "venice-flux-schnell"',
+			model: 'string (required), e.g. "flux-schnell"',
 			prompt: "string (required), max 4000 chars",
 			n: "integer 1 to 10 (optional, default 1)",
 			size: 'string (optional), e.g. "1024x1024"',
@@ -262,7 +262,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Text-to-speech. Returns raw audio bytes (audio/mpeg by default).",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "tts-1"',
+			model: 'string (required), e.g. "tts-1-hd" (Venice passthrough)',
 			input: "string (required), max 10,000 chars",
 			voice: "string (optional). Voice id",
 			response_format: "string (optional): mp3 | opus | aac | flac | wav | pcm",
@@ -280,7 +280,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			file: "binary (required). Audio file to transcribe",
-			model: 'string (required), e.g. "whisper-1"',
+			model: 'string (required), e.g. "whisper-large-v3" (Venice passthrough)',
 			language: 'string (optional). ISO-639-1 code, e.g. "en"',
 			prompt: "string (optional). Context hint to guide the model",
 			response_format:
@@ -298,7 +298,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Text-to-video via Venice video models. Returns a queue id. Poll /v1/videos/retrieve.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "venice-video-1"',
+			model: 'string (required), e.g. "seedance-2-0-text-to-video"',
 			prompt: "string (required), max 4000 chars",
 			duration: 'string (optional), e.g. "5s", "10s"',
 			aspect_ratio: 'string (optional), e.g. "16:9", "9:16"',

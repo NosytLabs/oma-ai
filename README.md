@@ -64,6 +64,9 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 # Or manually (lockfiles are pnpm-managed; npm also works):
 cd app && npm run dev       # Frontend :3000
 cd server && npm run dev    # Backend (Hono API) :3001
+
+# Windows: start-dev.sh is bash-only. Use the manual commands above,
+# or: docker compose up (requires Docker Desktop)
 ```
 
 ---

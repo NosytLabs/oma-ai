@@ -7,11 +7,14 @@ import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const require = createRequire(join(__dirname, "../app/package.json"));
 const { chromium } = require("playwright");
+
+const TMP = tmpdir();
 
 function readFirst(...paths) {
 	for (const p of paths) {
@@ -22,16 +25,16 @@ function readFirst(...paths) {
 
 const JWT = readFirst(
 	resolve(root, "data/seed/session.jwt"),
-	"/tmp/oma-jwt.txt",
+	join(TMP, "oma-jwt.txt"),
 );
 const ACCT = readFirst(
 	resolve(root, "data/seed/account-number.txt"),
-	"/tmp/oma-acct.txt",
+	join(TMP, "oma-acct.txt"),
 );
 
-// Keep /tmp copies in sync for ad-hoc curl
-writeFileSync("/tmp/oma-jwt.txt", JWT);
-writeFileSync("/tmp/oma-acct.txt", ACCT);
+// Keep tmp copies in sync for ad-hoc curl
+writeFileSync(join(TMP, "oma-jwt.txt"), JWT);
+writeFileSync(join(TMP, "oma-acct.txt"), ACCT);
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -66,7 +69,7 @@ page.on("response", (r) => {
 	}
 });
 
-mkdirSync("/tmp/oma-ux-user", { recursive: true });
+mkdirSync(join(TMP, "oma-ux-user"), { recursive: true });
 const results = [];
 
 async function visit(path, waitMs = 3200) {
@@ -77,7 +80,7 @@ async function visit(path, waitMs = 3200) {
 	await page.waitForTimeout(waitMs);
 	const body = (await page.locator("body").innerText()).replace(/\s+/g, " ");
 	const title = await page.title();
-	const shot = `/tmp/oma-ux-user${path.replace(/\//g, "_") || "_home"}.png`;
+	const shot = join(TMP, `oma-ux-user${path.replace(/\//g, "_") || "_home"}.png`);
 	await page.screenshot({ path: shot, fullPage: false });
 	return { path, title, body: body.slice(0, 1200) };
 }
@@ -106,7 +109,7 @@ await page.goto("http://localhost:3000/dashboard?tab=usage", {
 });
 await page.waitForTimeout(2500);
 const usageBody = (await page.locator("body").innerText()).replace(/\s+/g, " ");
-await page.screenshot({ path: "/tmp/oma-ux-user/dashboard_usage.png" });
+await page.screenshot({ path: join(TMP, "oma-ux-user/dashboard_usage.png") });
 results.push({
 	path: "/dashboard?tab=usage",
 	hasUsageUi: /usage|request|model|no request|empty|token/i.test(usageBody),
@@ -120,7 +123,7 @@ await page.goto("http://localhost:3000/dashboard?tab=health", {
 });
 await page.waitForTimeout(2500);
 const healthBody = (await page.locator("body").innerText()).replace(/\s+/g, " ");
-await page.screenshot({ path: "/tmp/oma-ux-user/dashboard_health.png" });
+await page.screenshot({ path: join(TMP, "oma-ux-user/dashboard_health.png") });
 results.push({
 	path: "/dashboard?tab=health",
 	hasHealthUi: /health|provider|latency|status|system/i.test(healthBody),
@@ -174,7 +177,7 @@ try {
 			createKey.success = /e2e-walkthrough-key|oma_sk_/i.test(body);
 			createKey.detail = body.replace(/\s+/g, " ").slice(0, 500);
 			createKey.noUndefined = !/undefined\*{2,}/i.test(body);
-			await page.screenshot({ path: "/tmp/oma-ux-user/create-key.png" });
+			await page.screenshot({ path: join(TMP, "oma-ux-user/create-key.png") });
 		} else {
 			createKey.detail = "no name input visible";
 		}
@@ -204,7 +207,7 @@ try {
 		await walletsTab.click();
 		await page.waitForTimeout(1200);
 		const wb = (await page.locator("body").innerText()).replace(/\s+/g, " ");
-		await page.screenshot({ path: "/tmp/oma-ux-user/settings_wallets.png" });
+		await page.screenshot({ path: join(TMP, "oma-ux-user/settings_wallets.png") });
 		results.push({
 			path: "/settings#wallets",
 			showsAccountNumber: wb.includes(ACCT) || /0876|account number/i.test(wb),
@@ -295,6 +298,6 @@ const out = {
 		.filter((n) => !n.url.includes("favicon") && !n.url.includes("sentry"))
 		.slice(0, 25),
 };
-writeFileSync("/tmp/oma-ux-user/report.json", JSON.stringify(out, null, 2));
+writeFileSync(join(TMP, "oma-ux-user/report.json"), JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out, null, 2));
 await browser.close();

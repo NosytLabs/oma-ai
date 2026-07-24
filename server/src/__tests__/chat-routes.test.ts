@@ -158,7 +158,6 @@ vi.mock('../inference/venice.js', () => {
     veniceChatCompletion: vi.fn(),
     chatCompletion: vi.fn(),
     completion: vi.fn(),
-    streamChatCompletion: vi.fn(),
     embeddings: mockEmbd,
     imageGeneration: mockImg,
     textToSpeech: mockTts,

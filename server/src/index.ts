@@ -119,7 +119,7 @@ app.use("*", securityHeaders);
 const corsOptions = {
   origin: (origin: string | undefined, _c: unknown): string | null => {
     if (!origin) return null;
-    if (config.NODE_ENV === "development") return origin;
+    if (config.NODE_ENV === "development" && origin?.startsWith("http://localhost")) return origin;
     const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
     for (const allowed of allowedOrigins) {
       if (allowed === "*") {

@@ -18,7 +18,23 @@
 set -euo pipefail
 
 PORT="${1:-9222}"
-PROFILE="/tmp/chrome-bh"
+PROFILE="${TMPDIR:-/tmp}/chrome-bh"
+
+# Detect Chrome binary (macOS, Linux, Windows/Git Bash)
+if [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+  CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+elif command -v google-chrome &>/dev/null; then
+  CHROME="google-chrome"
+elif command -v google-chrome-stable &>/dev/null; then
+  CHROME="google-chrome-stable"
+elif command -v chromium-browser &>/dev/null; then
+  CHROME="chromium-browser"
+elif command -v chromium &>/dev/null; then
+  CHROME="chromium"
+else
+  echo "ERROR: Chrome/Chromium not found. Install Chrome or set PATH." >&2
+  exit 1
+fi
 
 # Kill stale Chrome on our port
 lsof -ti ":$PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
@@ -29,7 +45,7 @@ rm -f "$PROFILE/SingletonLock" "$PROFILE/SingletonSocket" 2>/dev/null || true
 
 echo "Starting Chrome (port $PORT, profile $PROFILE)..."
 
-nohup /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+nohup "$CHROME" \
   --headless=new \
   --remote-debugging-port="$PORT" \
   --user-data-dir="$PROFILE" \
@@ -44,7 +60,7 @@ nohup /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --disable-dev-shm-usage \
   --hide-crash-restore-bubble \
   http://localhost:3000 \
-  > /tmp/chrome-bh.log 2>&1 &
+  > "${TMPDIR:-/tmp}/chrome-bh.log" 2>&1 &
 
 CHROME_PID=$!
 

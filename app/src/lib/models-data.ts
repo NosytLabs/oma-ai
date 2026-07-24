@@ -357,10 +357,40 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "MiniMax M2.7",
 			provider: "Gonka",
 			category: "budget",
-			maxTokens: 205000, // OpenBroker docs: 200-205k context
+			maxTokens: 204800, // OpenBroker docs: 204,800 context
 			inputPricePer1M: 0.017, // verified Gonka base rate @ $0.017/1M (2026-07-14)
 			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
+		},
+		"claude-opus-4-8": {
+			id: "claude-opus-4-8",
+			displayName: "Claude Opus 4.8",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 200000,
+			inputPricePer1M: 15,
+			outputPricePer1M: 75,
+			capabilities: ["chat", "reasoning", "coding"],
+		},
+		"claude-sonnet-4-5": {
+			id: "claude-sonnet-4-5",
+			displayName: "Claude Sonnet 4.5",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 200000,
+			inputPricePer1M: 3,
+			outputPricePer1M: 15,
+			capabilities: ["chat", "coding"],
+		},
+		"claude-opus-4-8-fast": {
+			id: "claude-opus-4-8-fast",
+			displayName: "Claude Opus 4.8 Fast",
+			provider: "Venice",
+			category: "frontier",
+			maxTokens: 200000,
+			inputPricePer1M: 15,
+			outputPricePer1M: 75,
+			capabilities: ["chat", "reasoning", "coding", "fast"],
 		},
 	},
 };
@@ -397,4 +427,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // GET /v1/models (91 active chat + 5 video). The SSR fallback catalog
 // (`MODELS`) is a smaller hand-picked set — never use MODELS.length for
 // marketing copy.
-export const MODEL_COUNT = 4; // updated 2026-07-24: fallback catalog trimmed to 4 verified models
+export const MODEL_COUNT = 90; // 89 chat + 5 video = 94 total; 90 rounded for marketing

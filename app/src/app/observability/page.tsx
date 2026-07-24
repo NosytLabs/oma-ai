@@ -159,7 +159,7 @@ const STATUS_STYLES = {
 
 export default async function ObservabilityPage() {
 	const live = await fetchOpsSnapshot();
-	const errorBudgetRemaining = 99.4;
+	const errorBudgetRemaining = 99.4; // target — not a live metric
 	const sampleVolume = REQUEST_VOLUME_24H.reduce((a, b) => a + b, 0);
 	const liveOk = live.apiStatus === "ok";
 
@@ -341,7 +341,7 @@ export default async function ObservabilityPage() {
 									<Bar value={errorBudgetRemaining} color="var(--color-success)" />
 								</div>
 								<p className="mt-2 text-[10px] font-mono text-text-tertiary">
-									of 99.9% SLO remaining
+									of 99.9% target SLO remaining
 								</p>
 							</article>
 						</div>

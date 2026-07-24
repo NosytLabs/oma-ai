@@ -253,7 +253,7 @@ export const openapiPaths = {
                 type: "object",
                 required: ["model", "input"],
                 properties: {
-                  model: { type: "string", description: "e.g. text-embedding-3-small" },
+                  model: { type: "string", description: "e.g. text-embedding-3-small (Venice passthrough)" },
                   input: {
                     oneOf: [
                       { type: "string", maxLength: 50000 },
@@ -264,7 +264,7 @@ export const openapiPaths = {
                 },
               },
               example: {
-                model: "text-embedding-3-small",
+                model: "text-embedding-3-small (Venice passthrough)",
                 input: "The quick brown fox jumped over the lazy dog.",
               },
             },
@@ -330,7 +330,7 @@ export const openapiPaths = {
                 type: "object",
                 required: ["model", "input"],
                 properties: {
-                  model: { type: "string", description: "e.g. tts-1" },
+                  model: { type: "string", description: "e.g. tts-1-hd (Venice passthrough)" },
                   input: { type: "string", maxLength: 10000 },
                   voice: { type: "string" },
                   response_format: { type: "string", enum: ["mp3", "opus", "aac", "flac", "wav", "pcm"] },
@@ -361,7 +361,7 @@ export const openapiPaths = {
                 type: "object",
                 required: ["model", "file"],
                 properties: {
-                  model: { type: "string", description: "e.g. whisper-1" },
+                  model: { type: "string", description: "e.g. whisper-large-v3 (Venice passthrough)" },
                   file: { type: "string", format: "binary" },
                   language: { type: "string", description: "ISO-639-1 code" },
                   prompt: { type: "string" },
@@ -398,7 +398,7 @@ export const openapiPaths = {
                 type: "object",
                 required: ["model", "prompt"],
                 properties: {
-                  model: { type: "string", description: "e.g. venice-video-1" },
+                  model: { type: "string", description: "e.g. seedance-2-0-text-to-video" },
                   prompt: { type: "string", maxLength: 4000 },
                   duration: { type: "string", description: "e.g. 5s, 10s" },
                   aspect_ratio: { type: "string", description: "e.g. 16:9, 9:16" },

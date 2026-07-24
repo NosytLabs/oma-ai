@@ -90,7 +90,7 @@ export function ProviderRoutingSection() {
 					</p>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
-							<span className="text-accent">x-provider</span>: venice | surplus | gonka
+							<span className="text-accent">x-provider</span>: venice | gonka
 						</div>
 					</div>
 				</div>

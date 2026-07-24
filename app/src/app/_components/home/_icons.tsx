@@ -12,10 +12,6 @@
  */
 
 export const TRUST_NAMES = [
-	"OpenAI",
-	"Anthropic",
 	"Venice",
-	"Llama",
-	"DeepSeek",
-	"Gemini",
+	"Gonka (OpenBroker)",
 ] as const;

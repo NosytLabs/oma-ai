@@ -132,96 +132,6 @@ export abstract class BaseInferenceProvider {
     });
   }
 
-  protected async completionInternal(
-    body: {
-      model: string;
-      prompt?: string | Array<string>;
-      input?: string | Array<string>;
-      stream?: boolean;
-      [key: string]: unknown;
-    },
-    path?: string
-  ): Promise<Response> {
-    const tracer = trace.getTracer(this.tracerName);
-    const endpoint = path ?? this.config.completionPath;
-
-    return tracer.startActiveSpan(`${this.spanName}`, { kind: SpanKind.CLIENT }, async (span) => {
-      try {
-        span.setAttribute("llm.provider", this.config.name);
-        span.setAttribute("llm.model", body.model);
-        span.setAttribute("llm.streaming", body.stream ?? false);
-        span.setAttribute("http.method", "POST");
-        span.setAttribute("http.url", this.config.getUrl(endpoint));
-
-        this.config.checkConfig();
-
-        const requestTimeout = typeof body.timeout === "number" ? body.timeout : undefined;
-        const timeout = requestTimeout ?? (body.stream ? this.streamTimeoutMs : this.timeoutMs);
-        const start = Date.now();
-
-        let resp: Response;
-        try {
-          resp = await fetch(this.config.getUrl(endpoint), {
-            method: "POST",
-            headers: this.config.getHeaders(),
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(timeout),
-          });
-        } catch (err) {
-          if (this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
-          }
-          span.setAttribute("error", true);
-          span.setAttribute("error.type", "connection_error");
-          const message = err instanceof Error ? err.message : String(err);
-          // Fix B3: mark network/connection errors as retryable so withRetry
-          // can attempt a fresh fetch on transient failures.
-          throw Object.assign(
-            new Error(`${this.config.name} connection failed: ${message}`),
-            { status: 502, type: "connection_error", retryable: true }
-          ) as InferenceError;
-        }
-
-        span.setAttribute("http.status_code", resp.status);
-
-        if (!resp.ok) {
-          const text = await resp.text().catch(() => "");
-          // Fix B3: capture Retry-After header so withRetry can honor it.
-          // Header is optional; clamp to non-negative finite numbers only.
-          const retryAfterHeader = resp.headers?.get?.("retry-after");
-          const retryAfterParsed = retryAfterHeader ? Number(retryAfterHeader) : NaN;
-          const retryAfter = Number.isFinite(retryAfterParsed) && retryAfterParsed >= 0
-            ? retryAfterParsed
-            : undefined;
-          if (resp.status >= 500 && this.config.reportHealth !== false) {
-            await reportProviderResult(this.config.name as "venice" | "surplus" | "gonka", false, Date.now() - start);
-          }
-          span.setAttribute("error", true);
-          try {
-            this.config.mapError(resp.status, text);
-          } catch (err) {
-            if (retryAfter !== undefined) {
-              (err as { retryAfter?: number }).retryAfter = retryAfter;
-            }
-            throw err;
-          }
-        }
-
-        span.setStatus({ code: SpanStatusCode.OK });
-        return resp;
-      } catch (err) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err instanceof Error ? err.message : "Unknown error",
-        });
-        span.recordException(err instanceof Error ? err : new Error(String(err)));
-        throw err;
-      } finally {
-        span.end();
-      }
-    });
-  }
-
   public async chatCompletion(body: {
     model: string;
     messages: ChatMessage[];
@@ -231,24 +141,6 @@ export abstract class BaseInferenceProvider {
     return this.chatCompletionInternal(body, undefined, requestSignal);
   }
 
-  public async completion(body: {
-    model: string;
-    prompt?: string | Array<string>;
-    input?: string | Array<string>;
-    stream?: boolean;
-    [key: string]: unknown;
-  }): Promise<Response> {
-    return this.completionInternal(body);
-  }
-
-  public streamChatCompletion(body: {
-    model: string;
-    messages: ChatMessage[];
-    stream?: boolean;
-    [key: string]: unknown;
-  }): Promise<Response> {
-    return this.chatCompletion({ ...body, stream: true });
-  }
 }
 
 export function createErrorMapper(providerName: string) {

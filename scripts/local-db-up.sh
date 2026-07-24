@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # Start local Postgres 16 + Redis for OMA server development.
+# Works on macOS (ARM + Intel via Homebrew) and Linux (system packages).
 set -euo pipefail
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-DATA="${PGDATA:-/opt/homebrew/var/postgresql@16}"
+
+# Detect Postgres bin path (Homebrew ARM, Homebrew Intel, or system PATH)
+if command -v brew &>/dev/null; then
+  PG_PREFIX="$(brew --prefix postgresql@16 2>/dev/null || brew --prefix postgresql 2>/dev/null || echo "")"
+  if [ -n "$PG_PREFIX" ]; then
+    export PATH="$PG_PREFIX/bin:$PATH"
+  fi
+fi
+
+DATA="${PGDATA:-$(brew --prefix 2>/dev/null || echo /usr/local)/var/postgresql@16}"
+LOG="${TMPDIR:-/tmp}/pg16-oma.log"
 if ! pg_isready -q 2>/dev/null; then
-  pg_ctl -D "$DATA" -l /tmp/pg16-oma.log start
+  pg_ctl -D "$DATA" -l "$LOG" start
 fi
 pg_isready
 psql -d postgres -v ON_ERROR_STOP=1 <<'SQL'

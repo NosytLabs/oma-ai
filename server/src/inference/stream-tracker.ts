@@ -171,11 +171,13 @@ export function createTrackingStream(
         try {
           const parsed = JSON.parse(data);
           const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
-          if (delta && !firstTokenReceived) {
+          const reasoningDelta = parsed.choices?.[0]?.delta?.reasoning_content ?? "";
+          const combinedDelta = delta + reasoningDelta;
+          if (combinedDelta && !firstTokenReceived) {
             firstTokenReceived = true;
             firstTokenTime = Date.now() - streamStartTime;
           }
-          if (delta) accumulatedContent += delta;
+          if (combinedDelta) accumulatedContent += combinedDelta;
           if (parsed.usage?.completion_tokens) {
             outputTokens = parsed.usage.completion_tokens;
             usageDataReceived = true;

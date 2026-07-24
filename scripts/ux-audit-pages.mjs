@@ -1,24 +1,27 @@
 /**
  * Full-page UX capture for authenticated + public surfaces.
- * Writes screenshots + DOM metrics to /tmp/oma-ux-audit/
+ * Writes screenshots + DOM metrics to $TMPDIR/oma-ux-audit/
  */
 import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const require = createRequire(join(__dirname, "../app/package.json"));
 const { chromium } = require("playwright");
+
+const TMP = tmpdir();
 const JWT = readFileSync(
 	existsSync(resolve(root, "data/seed/session.jwt"))
 		? resolve(root, "data/seed/session.jwt")
-		: "/tmp/oma-jwt.txt",
+		: join(TMP, "oma-jwt.txt"),
 	"utf8",
 ).trim();
 
-const outDir = "/tmp/oma-ux-audit";
+const outDir = join(TMP, "oma-ux-audit");
 mkdirSync(outDir, { recursive: true });
 
 const publicPaths = [

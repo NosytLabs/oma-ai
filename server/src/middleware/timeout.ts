@@ -2,7 +2,7 @@ import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 import { logger } from "../lib/logger.js";
 
-export function requestTimeout(timeoutMs: number = 120_000) {
+export function requestTimeout(timeoutMs: number = 130_000) {
   return async (c: Context<OmaEnv>, next: Next) => {
     let timedOut = false;
     let resolveTimeout: (() => void) | null = null;

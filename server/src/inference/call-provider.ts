@@ -26,8 +26,6 @@ export async function callProvider(
 ): Promise<Response> {
   const requestCorrelationId = correlationId ?? getCorrelationIdFromContext();
   const start = Date.now();
-  const isStreaming = body.stream === true;
-  const timeoutMs = isStreaming ? config.PROVIDER_TIMEOUT_STREAM_MS : config.PROVIDER_TIMEOUT_NON_STREAM_MS;
 
   if (await isCircuitOpen(provider, providerModelId)) {
     const error = Object.assign(
@@ -70,18 +68,7 @@ export async function callProvider(
       return resp;
     })();
 
-    const tp = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        // Fix B3: mark timeouts as retryable so withRetry can attempt a
-        // fresh fetch on transient network/peer slowness.
-        reject(Object.assign(
-          new Error(`Provider request timed out after ${timeoutMs}ms`),
-          { status: 504, provider, type: PROVIDER_ERROR_TYPES.CONNECTION_ERROR, retryable: true },
-        ));
-      }, timeoutMs);
-    });
-
-    return Promise.race([fp, tp]);
+    return fp;
   };
 
   try {
