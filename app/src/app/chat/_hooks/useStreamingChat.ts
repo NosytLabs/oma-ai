@@ -422,9 +422,9 @@ export function useStreamingChat(
 		],
 	);
 
-	// eslint-disable-next-line -- async event handler, mutations are intentional
 	const sendMessage = useCallback(
 		async (overridePrompt?: string) => {
+			"use no memo";
 			const promptText = (overridePrompt ?? opts.input).trim();
 			if (!promptText || opts.loading) return;
 
@@ -465,7 +465,6 @@ export function useStreamingChat(
 			}
 
 			const abortController = new AbortController();
-			// eslint-disable-next-line -- ref mutation in async handler, intentional
 			abortRef.current = abortController;
 			opts.isNearBottomRef.current = true;
 

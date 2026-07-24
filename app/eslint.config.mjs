@@ -44,7 +44,7 @@ const eslintConfig = [
 			// (event handlers setting state, effects syncing external systems).
 			// Downgrade to warnings so they don't block CI.
 			"react-hooks/set-state-in-effect": "warn",
-			"react-hooks/cascading": "warn",
+			"react-hooks/immutability": "warn",
 		},
 	},
 	{
