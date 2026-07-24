@@ -1624,15 +1624,94 @@ export const openapiPaths = {
     //  DEPOSITS
     // ═══════════════════════════════════════════════════════════
     "/v1/deposit/usdc/nonce": {
-      get: {
+      post: {
         tags: ["Deposits"],
-        summary: "Get nonce for USDC direct deposit",
-        security: [],
-        operationId: "getDepositNonce",
-        parameters: [
-          { name: "address", in: "query", required: true, schema: { type: "string" } },
-        ],
-        responses: { "200": { description: "Nonce" } },
+        summary: "Request a deposit nonce",
+        description: "Returns a single-use nonce (10 min expiry) required to submit a USDC deposit. Bind the amount and wallet address at nonce time.",
+        security: [{ BearerAuth: [] }],
+        operationId: "requestDepositNonce",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["amount"],
+                properties: {
+                  amount: { type: "number", minimum: 1, maximum: 100000, description: "Deposit amount in USD" },
+                  walletAddress: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$", description: "Depositor wallet address (optional, bound to nonce)" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Nonce issued",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    nonce: { type: "string", description: "Single-use deposit nonce" },
+                    expiresAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "Validation error" },
+          "401": { description: "Unauthorized" },
+          "429": { description: "Rate limited" },
+        },
+      },
+    },
+    "/v1/deposit/usdc": {
+      post: {
+        tags: ["Deposits"],
+        summary: "Submit USDC deposit for credit",
+        description: "Verify an on-chain USDC transfer and credit the user account. Requires: (1) a valid nonce from /v1/deposit/usdc/nonce, (2) an EIP-191 signature proving wallet ownership, (3) a confirmed on-chain transfer to the treasury.",
+        security: [{ BearerAuth: [] }],
+        operationId: "submitUsdcDeposit",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["amount", "txHash", "signature", "nonce"],
+                properties: {
+                  amount: { type: "number", minimum: 1, maximum: 100000, description: "Deposit amount in USD (must match nonce)" },
+                  txHash: { type: "string", pattern: "^0x[a-fA-F0-9]{64}$", description: "On-chain USDC transfer transaction hash" },
+                  signature: { type: "string", minLength: 130, description: "EIP-191 personal_sign signature over the deposit confirmation message" },
+                  nonce: { type: "string", description: "Nonce from /v1/deposit/usdc/nonce" },
+                  walletAddress: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$", description: "Depositor wallet (optional if bound at nonce time)" },
+                  chainId: { type: "integer", description: "Chain ID (default: 8453 Base mainnet)" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Deposit credited",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    credits: { type: "number", description: "Credits added (in cents)" },
+                    depositId: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "Validation or on-chain verification failed" },
+          "401": { description: "Invalid signature or nonce" },
+          "409": { description: "Duplicate transaction" },
+          "429": { description: "Rate limited" },
+        },
       },
     },
     "/v1/deposit/balance": {
