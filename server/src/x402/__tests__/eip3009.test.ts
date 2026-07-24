@@ -87,6 +87,7 @@ vi.mock('viem', () => ({
   createPublicClient: vi.fn(() => ({ call: callMock })),
   createWalletClient: vi.fn(() => ({ writeContract: writeContractMock })),
   http: vi.fn(),
+  fallback: vi.fn((transports: any[]) => transports[0]),
   parseAbi: vi.fn(() => []),
   decodeFunctionData: vi.fn(),
   formatUnits: vi.fn((v: bigint, d: number) => {
@@ -102,6 +103,10 @@ vi.mock('viem/accounts', () => ({
 }))
 vi.mock('viem/chains', () => ({
   base: { id: 8453, name: 'Base' },
+}))
+vi.mock('../../lib/rpc-client.js', () => ({
+  getPublicClient: vi.fn(() => ({ call: callMock })),
+  resetPublicClient: vi.fn(),
 }))
 
 // ── Config mock ──────────────────────────────────────────

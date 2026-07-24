@@ -91,8 +91,7 @@ async function checkWithdrawalLimits(
     weeklyUsed: weeklySum,
   };
 }
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
+import { getPublicClient } from "../lib/rpc-client.js";
 import type { OmaEnv } from "../types.js";
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -376,10 +375,7 @@ withdrawalRoutes.post("/v1/withdraw/:id/confirm", sessionAuth, rateLimit({ windo
     return c.json({ error: { message: "Withdrawal already processed", type: "invalid_state" } }, 400);
   }
 
-  const client = createPublicClient({
-    chain: base,
-    transport: http(config.CHAIN_RPC_URL),
-  });
+  const client = getPublicClient();
 
   // C-4: on-chain receipt verification constants
   const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";

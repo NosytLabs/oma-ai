@@ -26,6 +26,7 @@ vi.mock('viem', () => ({
     getTransaction: mocks.getTransaction,
   })),
   http: vi.fn(),
+  fallback: vi.fn((transports: any[]) => transports[0]),
   decodeFunctionData: mocks.decodeFunctionData,
   formatUnits: (v: bigint, d: number) => (Number(v) / 10 ** d).toString(),
   parseAbi: () => [
@@ -36,6 +37,14 @@ vi.mock('viem', () => ({
 
 vi.mock('viem/chains', () => ({
   base: { id: 8453, name: 'Base' },
+}))
+
+vi.mock('../../lib/rpc-client.js', () => ({
+  getPublicClient: vi.fn(() => ({
+    getTransactionReceipt: mocks.getTransactionReceipt,
+    getTransaction: mocks.getTransaction,
+  })),
+  resetPublicClient: vi.fn(),
 }))
 
 vi.mock('../../config.js', () => ({

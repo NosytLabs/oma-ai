@@ -1,7 +1,7 @@
-import { createPublicClient, http, decodeFunctionData, formatUnits, parseAbi, type Hash } from "viem";
-import { base } from "viem/chains";
+import { decodeFunctionData, formatUnits, parseAbi, type Hash } from "viem";
 import { config } from "../config.js";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
+import { getPublicClient } from "../lib/rpc-client.js";
 
 export interface UsdcVerifyResult {
   valid: boolean;
@@ -57,8 +57,8 @@ export async function verifyUsdcOnChain(
   const treasuryAddr = treasury;
   const expectedRawAmount = BigInt(Math.round(claimedAmountUsd * 10 ** USDC_DECIMALS));
 
-  async function attempt(rpcUrl: string, expectedPayer?: string): Promise<UsdcVerifyResult> {
-    const client = createPublicClient({ chain: base, transport: http(rpcUrl) });
+  async function attempt(expectedPayer?: string): Promise<UsdcVerifyResult> {
+    const client = getPublicClient();
 
     let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null = null;
     try {
@@ -128,32 +128,11 @@ export async function verifyUsdcOnChain(
     return { valid: false, error: "Unrecognized USDC transfer method" };
   }
 
-  const primaryRpc = config.CHAIN_RPC_URL;
-  if (!primaryRpc) {
-    return { valid: false, error: "Chain RPC URL is not configured" };
-  }
-
+  // viem fallback transport (getPublicClient) handles RPC failover
+  // automatically across QuickNode + free public endpoints.
   try {
-    return await attempt(primaryRpc, expectedPayer);
-  } catch (primaryErr: unknown) {
-    const isNetworkError = primaryErr instanceof Error && (
-      primaryErr.message.includes("fetch") ||
-      primaryErr.message.includes("ECONNREFUSED") ||
-      primaryErr.message.includes("ETIMEDOUT") ||
-      primaryErr.message.includes("network") ||
-      primaryErr.message.includes("timeout") ||
-      primaryErr.name === "TypeError"
-    );
-    if (!isNetworkError) {
-      return { valid: false, error: "On-chain verification failed" };
-    }
-    if (config.CHAIN_RPC_URL_FALLBACK) {
-      try {
-        return await attempt(config.CHAIN_RPC_URL_FALLBACK, expectedPayer);
-      } catch {
-        return { valid: false, error: "On-chain verification failed (fallback RPC also failed)" };
-      }
-    }
-    return { valid: false, error: "On-chain verification failed (primary RPC unavailable)" };
+    return await attempt(expectedPayer);
+  } catch {
+    return { valid: false, error: "On-chain verification failed (all RPC endpoints unavailable)" };
   }
 }

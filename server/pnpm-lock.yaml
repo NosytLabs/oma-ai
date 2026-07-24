@@ -81,9 +81,6 @@ importers:
       viem:
         specifier: ^2.53.1
         version: 2.53.1(typescript@5.9.3)(zod@3.25.76)
-      ws:
-        specifier: '>=8.21.0'
-        version: 8.21.0
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -100,9 +97,6 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -1302,9 +1296,6 @@ packages:
 
   '@types/tedious@4.0.14':
     resolution: {integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==}
-
-  '@types/ws@8.18.1':
-    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/eslint-plugin@8.62.0':
     resolution: {integrity: sha512-o+mpz7EYiMzXoySXiKmzlabIvTVqUuK5yLrAedRPRDA0IpPFMUV1IXt6OqljIxX/kumN6EjUYp41Hqelh6p/Dw==}
@@ -3714,10 +3705,6 @@ snapshots:
       '@types/node': 22.20.0
 
   '@types/tedious@4.0.14':
-    dependencies:
-      '@types/node': 22.20.0
-
-  '@types/ws@8.18.1':
     dependencies:
       '@types/node': 22.20.0
 

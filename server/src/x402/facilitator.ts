@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import {
-  createPublicClient,
   createWalletClient,
   http,
   formatUnits,
@@ -32,6 +31,7 @@ import {
   NONCE_REDIS_TTL_SECONDS,
 } from "../constants.js";
 import { logger } from "../lib/logger.js";
+import { getPublicClient } from "../lib/rpc-client.js";
 import {
   createReceiptPayload,
   parseUsdcAtomic,
@@ -514,9 +514,8 @@ function syntheticEip3009TxHash(auth: Eip3009Authorization, signature: Hex): Has
 async function simulateEip3009Transfer(
   auth: Eip3009Authorization,
   signature: Hex,
-  rpcUrl: string,
 ): Promise<void> {
-  const client = createPublicClient({ chain: base, transport: http(rpcUrl) });
+  const client = getPublicClient();
   // eth_call against the USDC contract. encodeFunctionData + raw call avoids
   // pulling in abi decoding; we only care whether the contract reverts.
   const data = encodePacked(
@@ -683,7 +682,7 @@ async function verifyEip3009Payment(
   //    double-spend attempts even before submission.
   let txHash: Hash;
   try {
-    await simulateEip3009Transfer(auth, sigHex, config.CHAIN_RPC_URL!);
+    await simulateEip3009Transfer(auth, sigHex);
     // 8. Settle: real on-chain submission when facilitator key is configured,
     //    deterministic synthetic txHash otherwise. The synthetic path keeps
     //    the verify+settle contract intact for dev/preview deployments that
@@ -737,11 +736,8 @@ async function verifyUsdcTransferReceipt(
     return { valid: false, error: `Replay protection: ${nonceResult.reason}` };
   }
 
-  async function attemptVerification(rpcUrl: string): Promise<PaymentResponse> {
-    const client = createPublicClient({
-      chain: base,
-      transport: http(rpcUrl),
-    });
+  async function attemptVerification(): Promise<PaymentResponse> {
+    const client = getPublicClient();
 
     const receipt = await client.getTransactionReceipt({ hash: txHash });
 
@@ -804,32 +800,13 @@ async function verifyUsdcTransferReceipt(
     };
   }
 
+  // viem fallback transport (getPublicClient) handles RPC failover
+  // automatically across QuickNode + free public endpoints.
   try {
-    return await attemptVerification(config.CHAIN_RPC_URL!);
-  } catch (primaryErr: unknown) {
-    const isNetworkError = primaryErr instanceof Error && (
-      primaryErr.message.includes("fetch") ||
-      primaryErr.message.includes("ECONNREFUSED") ||
-      primaryErr.message.includes("ETIMEDOUT") ||
-      primaryErr.message.includes("network") ||
-      primaryErr.message.includes("timeout") ||
-      primaryErr.name === "TypeError"
-    );
-
-    logger.error({ err: primaryErr }, "[facilitator] EVM verification error");
-    if (!isNetworkError) {
-      return { valid: false, error: `EVM verification failed` };
-    }
-
-    if (config.CHAIN_RPC_URL_FALLBACK) {
-      try {
-        return await attemptVerification(config.CHAIN_RPC_URL_FALLBACK);
-      } catch {
-        return { valid: false, error: `EVM verification failed` };
-      }
-    }
-
-    return { valid: false, error: `EVM verification failed: no trusted RPC available` };
+    return await attemptVerification();
+  } catch (err: unknown) {
+    logger.error({ err }, "[facilitator] EVM verification error (all RPCs failed)");
+    return { valid: false, error: "EVM verification failed: no trusted RPC available" };
   }
 }
 
@@ -1423,6 +1400,8 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
   );
 });
 
+// ── Test routes — dev/staging only ──────────────────────────────────────────
+if (config.NODE_ENV !== "production") {
 x402Routes.post("/x402/pay-req-test",
   rateLimit({ windowMs: 60_000, maxRequests: 30 }),
   async (c) => {
@@ -1486,6 +1465,7 @@ if (testPayeeAddress) {
 x402Routes.post("/x402/middleware-test", async (c) => {
   return c.json({ success: true });
 });
+} // end NODE_ENV !== "production" test routes
 
 // Houdini/crosschain deposit flow removed — /v1/x402/proxy/chat/completions no longer exists.
 
