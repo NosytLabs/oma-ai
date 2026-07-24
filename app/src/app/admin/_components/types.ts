@@ -80,7 +80,7 @@ export type AdminStats = {
 	activeUsersLast24h: number;
 	providerCosts: {
 		venice: number;
-		openrouter: number;
+		gonka: number;
 	};
 };
 

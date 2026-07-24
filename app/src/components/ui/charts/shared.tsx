@@ -26,18 +26,16 @@ export const CHART_COLORS = {
 	accentHover: "var(--color-accent-hover)",
 	secondary: "var(--color-secondary)",
 	tertiary: "var(--color-tertiary)",
-	emerald: "var(--color-provider-antseed)",
-	blue: "var(--color-provider-openrouter)",
-	pink: "var(--color-provider-together)",
+	emerald: "var(--color-provider-gonka)",
+	blue: "var(--color-tertiary)",
+	pink: "#f472b6",
 	success: "var(--color-success)",
 	error: "var(--color-error)",
 	warning: "var(--color-warning)",
 
 	// Provider colors (used by SpendByProvider / ProviderHealth)
 	providerVenice: "var(--color-provider-venice)",
-	providerAntseed: "var(--color-provider-antseed)",
-	providerOpenrouter: "var(--color-provider-openrouter)",
-	providerTogether: "var(--color-provider-together)",
+	providerGonka: "var(--color-provider-gonka)",
 
 	// Axis / grid neutrals
 	axis: "var(--color-text-tertiary)",
@@ -79,9 +77,7 @@ export function makeGradientId(base: string, instanceId?: string): string {
 export function providerColor(provider: string): string {
 	const p = provider.toLowerCase();
 	if (p.includes("venice")) return CHART_COLORS.providerVenice;
-	if (p.includes("antseed")) return CHART_COLORS.providerAntseed;
-	if (p.includes("openrouter")) return CHART_COLORS.providerOpenrouter;
-	if (p.includes("together")) return CHART_COLORS.providerTogether;
+	if (p.includes("gonka")) return CHART_COLORS.providerGonka;
 	return CHART_COLORS.accent;
 }
 

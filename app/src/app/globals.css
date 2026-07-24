@@ -104,9 +104,7 @@
 
 	/* Provider brand colors */
 	--color-provider-venice: #a78bfa;
-	--color-provider-antseed: #34d399;
-	--color-provider-openrouter: #6ea8fe;
-	--color-provider-together: #f472b6;
+	--color-provider-gonka: oklch(0.7 0.15 145);
 
 	/* Shadows (registers shadow-overlay utility) */
 	--shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
@@ -204,9 +202,7 @@
 
 		/* Provider-specific colors (for charts, brand indicators, status dots) */
 		--color-provider-venice: #a78bfa;      /* violet */
-		--color-provider-antseed: #34d399;     /* emerald - same as success */
-		--color-provider-openrouter: #6ea8fe;  /* soft blue - same as tertiary */
-		--color-provider-together: #f472b6;    /* pink */
+		--color-provider-gonka: oklch(0.7 0.15 145); /* green */
 	}
 
 	/* No light mode right now — the site is dark-first by design. */

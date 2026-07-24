@@ -171,15 +171,15 @@ export default function AdminOverviewTab({
 							</div>
 							<div>
 								<p className="text-sm font-medium text-text-bright">
-									OpenRouter
-								</p>
-								<p className="text-[10px] text-text-muted">
-									Backup provider
+									Gonka
+									</p>
+									<p className="text-[10px] text-text-muted">
+										Free-tier provider
 								</p>
 							</div>
 						</div>
 						<p className="text-lg font-bold font-mono text-amber">
-							{formatUsd(adminStats.providerCosts.openrouter)}
+							{formatUsd(adminStats.providerCosts.gonka)}
 						</p>
 					</div>
 					<div className="border-t border-border pt-3 flex items-center justify-between">
@@ -189,7 +189,7 @@ export default function AdminOverviewTab({
 						<p className="text-lg font-bold font-mono text-text-bright">
 							{formatUsd(
 								adminStats.providerCosts.venice +
-									adminStats.providerCosts.openrouter,
+																adminStats.providerCosts.gonka,
 							)}
 						</p>
 					</div>

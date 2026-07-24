@@ -3,8 +3,8 @@
  * Target: server/src/inference/vendor-meta.ts
  *
  * M10.4 — Vendor Meta spec requires:
- *   1. getVendorMeta() returns the configured inference providers (currently 2:
- *      venice + surplus)
+ *   1. getVendorMeta() returns the configured inference providers (currently 3:
+ *      venice + surplus + gonka)
  *   2. Each entry has all 9 required fields:
  *      { name, displayName, baseUrl, iconUrl, docsUrl,
  *        supportsStreaming, supportsTools, supportsVision, hasApiKey }
@@ -39,6 +39,7 @@ vi.mock("../config.js", () => ({
   config: {
     VENICE_API_KEY: "venice-secret-DO-NOT-LEAK",
     SURPLUS_WALLET_PRIVATE_KEY: "0x" + "a".repeat(64), // looks like a 64-hex private key
+    GONKA_API_KEY: "gonka-test-key",
     NODE_ENV: "test",
   },
 }));
@@ -54,12 +55,12 @@ vi.mock("../inference/venice.js", () => ({
 import { getVendorMeta, VENDOR_META, type VendorMeta } from "../inference/vendor-meta.js";
 
 // ============================================================================
-// Test 1: shape — 2 providers, all 9 required fields populated.
+// Test 1: shape — 3 providers, all 9 required fields populated.
 // ============================================================================
 describe("M10.4 vendor-meta — shape contract", () => {
-  it("returns the configured providers (2 providers: venice + surplus)", async () => {
+  it("returns the configured providers (3 providers: venice + surplus + gonka)", async () => {
     const providers = await getVendorMeta();
-    expect(providers).toHaveLength(2);
+    expect(providers).toHaveLength(3);
   });
 
   it("each provider has all 9 required fields (name, displayName, baseUrl, iconUrl, docsUrl, supportsStreaming, supportsTools, supportsVision, hasApiKey)", async () => {
@@ -82,13 +83,13 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("name is one of the expected inference providers (venice, surplus)", async () => {
-    const expected = new Set(["venice", "surplus"]);
+  it("name is one of the expected inference providers (venice, surplus, gonka)", async () => {
+    const expected = new Set(["venice", "surplus", "gonka"]);
     const providers = await getVendorMeta();
     for (const p of providers) {
       expect(expected.has(p.name), `unexpected provider name: ${p.name}`).toBe(true);
     }
-    expect(new Set(providers.map((p) => p.name)).size).toBe(2);
+    expect(new Set(providers.map((p) => p.name)).size).toBe(3);
   });
 
   it("hasApiKey is a boolean (not undefined, not string, not the key value itself)", async () => {
@@ -98,13 +99,14 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("hasApiKey reflects mocked config — venice=YES, surplus=YES", async () => {
+  it("hasApiKey reflects mocked config — venice=YES, surplus=YES, gonka=YES", async () => {
     const providers = await getVendorMeta();
     const byName: Record<string, VendorMeta> = {};
     for (const p of providers) byName[p.name] = p;
 
     expect(byName.venice.hasApiKey, "venice secret is set in mocked config → hasApiKey=true").toBe(true);
     expect(byName.surplus.hasApiKey, "surplus wallet private key is set → true").toBe(true);
+    expect(byName.gonka.hasApiKey, "gonka key is set in mocked config → true").toBe(true);
   });
 
   it("baseUrl and docsUrl are valid https URLs", async () => {
@@ -116,9 +118,9 @@ describe("M10.4 vendor-meta — shape contract", () => {
     }
   });
 
-  it("VENDOR_META constant is exported and has the same 2 entries", () => {
+  it("VENDOR_META constant is exported and has the same 3 entries", () => {
     expect(Array.isArray(VENDOR_META)).toBe(true);
-    expect(VENDOR_META).toHaveLength(2);
+    expect(VENDOR_META).toHaveLength(3);
     for (const p of VENDOR_META) {
       expect(p).toHaveProperty("name");
       expect(p).toHaveProperty("hasApiKey");

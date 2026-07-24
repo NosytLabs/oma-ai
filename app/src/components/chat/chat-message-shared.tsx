@@ -57,7 +57,7 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "AntSeed" | "Both";
+	provider: "Venice" | "Gonka" | "Both";
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
@@ -87,7 +87,7 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 		? (m.tier as ModelOption["category"])
 		: "mid";
 	const provider: ModelOption["provider"] =
-		m.provider === "AntSeed" ? "AntSeed" : "Venice";
+		m.provider === "Gonka" ? "Gonka" : "Venice";
 	return {
 		id: m.id,
 		name: m.name,

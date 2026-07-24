@@ -118,7 +118,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		? (m.category as ModelOption["category"])
 		: "mid";
 	const provider: ModelOption["provider"] =
-		m.provider === "AntSeed" ? "AntSeed" : "Venice";
+		m.provider === "Gonka" ? "Gonka" : "Venice";
 
 	return {
 		id: m.id,

@@ -137,7 +137,7 @@ const PRIMITIVES: Primitive[] = [
 		status: "beta",
 		description:
 			"An MCP server that exposes OMA's catalog, models, and inference as MCP tools. Plug OMA into Claude Desktop, Cursor, or any MCP-aware agent and call models directly from the agent's tool palette. No API key wiring required — your existing OMA session is reused.",
-		example: 'npx @oma-ai/mcp  # then "use oma_chat with model=claude-opus-4.8"',
+		example: 'npx @oma-ai/mcp  # then "use oma_chat with model=claude-opus-4-8"',
 	},
 	{
 		id: "agent-card",

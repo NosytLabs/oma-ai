@@ -32,7 +32,7 @@ export interface VendorHealth {
 }
 
 export interface VendorMeta {
-  name: "venice" | "surplus";
+  name: "venice" | "surplus" | "gonka";
   displayName: string;
   baseUrl: string;
   iconUrl: string;
@@ -89,6 +89,19 @@ const VENDOR_META_DATA: readonly VendorMetaStatic[] = [
     // a traditional API key. We still report it as hasApiKey=true when the
     // operator has provisioned it.
     apiKeyConfigKey: "SURPLUS_WALLET_PRIVATE_KEY",
+  },
+  {
+    name: "gonka",
+    displayName: "Gonka / OpenBroker",
+    baseUrl: "https://openbroker.ai",
+    iconUrl: "/providers/gonka.svg",
+    docsUrl: "https://gonka.ai",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: false,
+    region: "global",
+    addedAt: "2026-07-01",
+    apiKeyConfigKey: "GONKA_API_KEY",
   },
 ] as const;
 

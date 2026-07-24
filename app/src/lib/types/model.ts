@@ -15,7 +15,7 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "AntSeed" | "Both";
+	provider: "Venice" | "Gonka" | "Both";
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;

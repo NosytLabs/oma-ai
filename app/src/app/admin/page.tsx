@@ -163,8 +163,8 @@ export default function AdminPage() {
 				venice:
 					usageStats.byProvider.find((p) => p.provider === "venice")
 						?.totalCost ?? 0,
-				openrouter:
-					usageStats.byProvider.find((p) => p.provider === "openrouter")
+				gonka:
+					usageStats.byProvider.find((p) => p.provider === "gonka")
 						?.totalCost ?? 0,
 			},
 		};

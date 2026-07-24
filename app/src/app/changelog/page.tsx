@@ -168,7 +168,7 @@ const RELEASES: Release[] = [
 		date: "2026-03-18",
 		codename: "Failover",
 		summary:
-			"Circuit breaker across upstream providers. If Venice goes down, OMA fails over to AntSeed within 8 seconds.",
+			"Circuit breaker across upstream providers. If Venice goes down, OMA fails over to Gonka within 8 seconds.",
 		changes: [
 			{ kind: "feature", text: "Circuit breaker with automatic recovery (8s window)" },
 			{ kind: "feature", text: "Latency-optimized routing when multiple providers healthy" },

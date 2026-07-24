@@ -23,11 +23,6 @@
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 export type Provider =
 	| "Venice"
-	| "AntSeed"
-	| "Claude"
-	| "Gemini"
-	| "OpenRouter"
-	| "Together"
 	| "Gonka";
 
 export interface Model {
@@ -62,31 +57,6 @@ export const PROVIDER_COLORS: Record<
 		bg: "bg-violet/20",
 		text: "text-violet",
 		border: "border-violet/30",
-	},
-	AntSeed: {
-		bg: "bg-success/20",
-		text: "text-success",
-		border: "border-success/30",
-	},
-	Claude: {
-		bg: "bg-warning/20",
-		text: "text-warning",
-		border: "border-warning/30",
-	},
-	Gemini: {
-		bg: "bg-accent/20",
-		text: "text-accent",
-		border: "border-accent/30",
-	},
-	OpenRouter: {
-		bg: "bg-text-secondary/20",
-		text: "text-text-secondary",
-		border: "border-text-secondary/20",
-	},
-	Together: {
-		bg: "bg-tertiary/20",
-		text: "text-tertiary",
-		border: "border-tertiary/30",
 	},
 	Gonka: {
 		bg: "bg-accent/10",
@@ -362,16 +332,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.9,
 			capabilities: ["chat", "reasoning"],
 		},
-		"qwen3-coder-480b-a35b-instruct": {
-			id: "qwen3-coder-480b-a35b-instruct",
-			displayName: "Qwen3 Coder 480B",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 262144,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
-			capabilities: ["chat", "coding"],
-		},
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
@@ -392,46 +352,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.3,
 			capabilities: ["chat", "fast"],
 		},
-		"deepseek-v3.2-exp": {
-			id: "deepseek-v3.2-exp",
-			displayName: "DeepSeek V3.2",
-			provider: "Venice",
-			category: "mid",
-			maxTokens: 131072,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
-			capabilities: ["chat", "reasoning"],
-		},
-		"claude-opus-4-1": {
-			id: "claude-opus-4-1",
-			displayName: "Claude Opus 4.1",
-			provider: "Venice",
-			category: "frontier",
-			maxTokens: 200000,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
-			capabilities: ["chat", "reasoning", "vision", "coding"],
-		},
-		"gemini-2.5-pro": {
-			id: "gemini-2.5-pro",
-			displayName: "Gemini 2.5 Pro",
-			provider: "Venice",
-			category: "frontier",
-			maxTokens: 1048576,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
-			capabilities: ["chat", "reasoning", "multimodal", "vision"],
-		},
-		"mistral-31-24b": {
-			id: "mistral-31-24b",
-			displayName: "Mistral 3.1 24B",
-			provider: "Venice",
-			category: "budget",
-			maxTokens: 131072,
-			inputPricePer1M: 0.06,
-			outputPricePer1M: 0.3,
-			capabilities: ["chat", "fast"],
-		},
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
 			displayName: "MiniMax M2.7",
@@ -442,8 +362,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.017,
 			capabilities: ["chat"],
 		},
-		
-		
 	},
 };
 
@@ -479,4 +397,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // GET /v1/models (91 active chat + 5 video). The SSR fallback catalog
 // (`MODELS`) is a smaller hand-picked set — never use MODELS.length for
 // marketing copy.
-export const MODEL_COUNT = 95; // updated 2026-07-16: removed kimi-k2.6 + glm-5.2-fp8 from disk; live = 90 chat + 5 video
+export const MODEL_COUNT = 4; // updated 2026-07-24: fallback catalog trimmed to 4 verified models

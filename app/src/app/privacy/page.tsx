@@ -393,7 +393,7 @@ export default function PrivacyPage() {
 									</h3>
 								</div>
 								<ul className="space-y-3">
-									<DataPoint term="Model id" detail='e.g. "claude-sonnet-4"' />
+									<DataPoint term="Model id" detail='e.g. "claude-sonnet-4-5"' />
 									<DataPoint
 										term="Token counts"
 										detail="Prompt and completion tokens per request."
@@ -506,9 +506,9 @@ export default function PrivacyPage() {
 									"routes model calls; content not logged",
 								],
 								[
-									"AntSeed",
-									"P2P routing",
-									"peer-to-peer failover; no content logging",
+									"Gonka (OpenBroker)",
+										"Decentralized inference",
+										"free-tier failover; no content logging",
 								],
 								["Base", "Settlement", "on-chain transaction verification"],
 							].map(([name, role, note]) => (

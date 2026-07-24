@@ -1139,7 +1139,7 @@
     "kimi-k2-6": {
       "id": "kimi-k2-6",
       "veniceId": "kimi-k2-6",
-      "provider": "venice",
+      "provider": "gonka",
       "primaryProvider": "gonka",
       "inputPricePer1M": 0.85,
       "outputPricePer1M": 4.655,
@@ -1657,7 +1657,7 @@
     "minimax-m27": {
       "id": "minimax-m27",
       "veniceId": "minimax-m27",
-      "provider": "venice",
+      "provider": "gonka",
       "primaryProvider": "gonka",
       "inputPricePer1M": 0.375,
       "outputPricePer1M": 1.5,

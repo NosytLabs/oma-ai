@@ -150,7 +150,7 @@ export const openapiPaths = {
                   category: "premium",
                   context_length: 128000,
                   supports_streaming: true,
-                  provider: "openai",
+                  provider: "venice",
                 },
               },
             },
