@@ -109,7 +109,15 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
         }
       }
 
-      const payload = { model, messages, stream: !!stream, ...rest };
+      const payload = {
+        model,
+        messages: (messages ?? []).map((m) => ({
+          ...m,
+          content: m.content ?? "",
+        })) as import("../../inference/types.js").ChatMessage[],
+        stream: !!stream,
+        ...rest,
+      };
       const apiKeyId = apiKey?.id ?? "unknown";
 
       try {
