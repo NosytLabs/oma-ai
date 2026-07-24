@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 

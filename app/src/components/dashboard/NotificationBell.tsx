@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	ArrowUpRight,
 	Bell,

@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import type { CreditBatch } from "@/lib/api";

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	Gauge,

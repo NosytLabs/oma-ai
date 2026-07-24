@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, Coins, Lock, Search } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 

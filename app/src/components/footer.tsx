@@ -37,7 +37,7 @@ import {
 	Gavel,
 	ShieldCheck,
 } from "lucide-react";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaLogo } from "@/components/ui/oma-logo";

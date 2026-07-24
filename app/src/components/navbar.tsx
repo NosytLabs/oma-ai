@@ -1,7 +1,7 @@
 "use client";
 
 import { BorderBeam } from "border-beam";
-import { m, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import { Github, Menu, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

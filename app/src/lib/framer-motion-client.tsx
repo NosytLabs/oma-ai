@@ -38,6 +38,9 @@ import {
 	useScroll,
 	useReducedMotion,
 	useInView,
+	animate,
+	motionValue,
+	useTransform,
 } from "framer-motion";
 
 export {
@@ -51,6 +54,9 @@ export {
 	useScroll,
 	useReducedMotion,
 	useInView,
+	animate,
+	motionValue,
+	useTransform,
 };
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration

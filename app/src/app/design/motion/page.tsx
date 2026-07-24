@@ -17,8 +17,7 @@ import {
  * (a) verify the library renders correctly in the OMA theme and
  * (b) copy-paste the exact patterns into product surfaces.
  *
- * Stays gated behind the marketing layout so it never leaks into
- * public builds. Keep this file as the canonical visual reference.
+ * Dev-only: returns 404 in production builds.
  */
 
 const TABS = [
@@ -33,6 +32,11 @@ type TabId = (typeof TABS)[number]["id"];
 export default function MotionReferencePage() {
 	const [count, setCount] = useState(12);
 	const [tab, setTab] = useState<TabId>("chat");
+
+	// Dev-only page — render nothing in production
+	if (process.env.NODE_ENV === "production") {
+		return null;
+	}
 
 	return (
 		<main className="mx-auto max-w-3xl px-4 py-12 space-y-10">

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { X } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { Dispatch, SetStateAction } from "react";

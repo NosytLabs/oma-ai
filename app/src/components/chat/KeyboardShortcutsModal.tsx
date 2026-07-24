@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { Command, Keyboard, X } from "lucide-react";
 import { useDialog } from "@/lib/use-dialog";
 

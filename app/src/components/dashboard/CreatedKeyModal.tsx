@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { AlertTriangle, Check, Copy, Eye, EyeOff, Key } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiKeyWithSecret } from "@/lib/api";

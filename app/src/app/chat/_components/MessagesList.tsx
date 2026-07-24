@@ -18,7 +18,7 @@
  *   - Feature discovery hints in empty state
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, GitCompare, Keyboard, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { RefObject } from "react";

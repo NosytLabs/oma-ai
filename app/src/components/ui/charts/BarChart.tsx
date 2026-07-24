@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { useId } from "react";
 import {
 	Bar,

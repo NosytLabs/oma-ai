@@ -12,7 +12,7 @@
  * - MCP section has a terminal-style status indicator
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useId } from "react";
 import { useToast } from "@/components/ui/Toast";

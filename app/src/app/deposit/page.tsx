@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import dynamic from "next/dynamic";
 import { Zap } from "lucide-react";
 

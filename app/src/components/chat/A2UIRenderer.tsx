@@ -20,7 +20,7 @@
  * keyed on `component` and import dedicated subcomponents.
  */
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { AlertCircle, ChevronRight, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 

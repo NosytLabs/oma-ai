@@ -19,7 +19,7 @@
  * - Typography hierarchy: display → body → micro-copy
  */
 
-import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { ThinkingOrb } from "thinking-orbs";
 import {
 	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, Search, User,

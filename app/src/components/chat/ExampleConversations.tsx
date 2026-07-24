@@ -16,7 +16,7 @@
  *   - Quick: One-shot tasks that show speed
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	BarChart3,
 	ChevronRight,

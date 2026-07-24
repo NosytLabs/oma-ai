@@ -12,7 +12,7 @@
  * - Smooth spring transitions on open/close
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { displayName } from "@/lib/model-utils";

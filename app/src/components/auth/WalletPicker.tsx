@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { ChevronRight, Loader2, X } from "lucide-react";
 import {
 	type KeyboardEvent,

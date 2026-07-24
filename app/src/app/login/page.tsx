@@ -48,7 +48,7 @@
  * composes.
  */
 
-import { m, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	ArrowRight,

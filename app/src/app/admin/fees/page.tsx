@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	Calculator,

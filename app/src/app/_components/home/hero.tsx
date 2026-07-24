@@ -8,7 +8,7 @@
  */
 
 import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { PulseLines } from "@/components/pulse-lines";

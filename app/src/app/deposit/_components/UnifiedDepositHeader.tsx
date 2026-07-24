@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { Coins, Hexagon } from "lucide-react";
 import { blurIn } from "@/lib/motion";
 

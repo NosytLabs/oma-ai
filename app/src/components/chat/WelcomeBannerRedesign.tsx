@@ -14,7 +14,7 @@
  * Mobile-first: steps stack vertically, CTAs are full-width on small screens.
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	ArrowRight,
 	Coins,

@@ -18,7 +18,7 @@
  * - Reduced padding on small screens
  */
 
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { MetalFx } from "metal-fx";
 import type { Ref } from "react";

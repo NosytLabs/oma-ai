@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import {
 	BookOpen,
 	Check,

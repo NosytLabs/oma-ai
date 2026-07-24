@@ -25,7 +25,7 @@ const DonutChart = dynamic(
 );
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	ArrowDownRight,

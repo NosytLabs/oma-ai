@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { useMemo } from "react";
 import type { UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";

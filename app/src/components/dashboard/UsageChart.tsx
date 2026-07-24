@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import dynamic from "next/dynamic";
 import type { DataPoint } from "@/components/ui/charts/AreaChart";
 import type { ModelData } from "@/components/ui/charts/DonutChart";

@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { useMemo } from "react";
 import { providerColor } from "@/components/ui/charts/shared";
 import type { UsageRecord } from "@/lib/api";

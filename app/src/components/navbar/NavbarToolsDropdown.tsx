@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { ChevronDown, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

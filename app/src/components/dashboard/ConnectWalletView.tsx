@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
