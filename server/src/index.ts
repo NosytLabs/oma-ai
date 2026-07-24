@@ -254,6 +254,16 @@ const shutdown = async (signal: string) => {
 if (config.NODE_ENV !== "test") {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
+
+  // Catch unhandled errors so the process logs before exiting
+  process.on("unhandledRejection", (reason) => {
+    logger.fatal({ err: reason }, "Unhandled promise rejection — shutting down");
+    shutdown("unhandledRejection");
+  });
+  process.on("uncaughtException", (err) => {
+    logger.fatal({ err }, "Uncaught exception — shutting down");
+    shutdown("uncaughtException");
+  });
 }
 
 export default app;

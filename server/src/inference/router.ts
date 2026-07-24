@@ -186,6 +186,12 @@ export async function handleChatCompletion(
           span.setAttribute(LLM_ATTRS.PROVIDER, provider);
           span.setAttribute("llm.provider_model_id", providerModelId);
 
+          // Skip billing on 5xx upstream failures — refund and failover
+          if (resp.status >= 500) {
+            await refundCreditsWithRetry(userId, estimatedCostCents);
+            throw Object.assign(new Error(`Provider ${provider} returned ${resp.status}`), { status: resp.status });
+          }
+
           if (body.stream) {
             if (!resp.body) {
               await refundCreditsWithRetry(userId, estimatedCostCents);

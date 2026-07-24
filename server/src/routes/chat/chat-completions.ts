@@ -87,7 +87,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
               code: "model_not_found",
             },
           },
-          400,
+          404,
         );
       }
 

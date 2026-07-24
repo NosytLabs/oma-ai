@@ -213,11 +213,11 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "POST",
 		path: "/v1/embeddings",
 		title: "Embeddings",
-		desc: "Vector embeddings via Venice. Use for semantic search, RAG, clustering.",
+		desc: "Vector embeddings via Venice passthrough. These models are NOT listed in /v1/models — use the Venice model ID directly. Use for semantic search, RAG, clustering.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			model:
-				'string (required), e.g. "text-embedding-3-small" (Venice passthrough — any Venice embedding model)',
+				'string (required), e.g. "text-embedding-3-small" (Venice passthrough — not in /v1/models catalog)',
 			input: "string | string[] (required), max 50,000 chars per input",
 		},
 		response: `{
@@ -237,10 +237,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "POST",
 		path: "/v1/images/generations",
 		title: "Image Generation",
-		desc: "Text-to-image via Venice FLUX models. Pricing is per-image.",
+		desc: "Text-to-image via Venice FLUX models (passthrough — not in /v1/models catalog). Pricing is per-image.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "flux-schnell"',
+			model: 'string (required), e.g. "flux-schnell" (Venice passthrough)',
 			prompt: "string (required), max 4000 chars",
 			n: "integer 1 to 10 (optional, default 1)",
 			size: 'string (optional), e.g. "1024x1024"',
@@ -259,7 +259,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "POST",
 		path: "/v1/audio/speech",
 		title: "Audio Speech (TTS)",
-		desc: "Text-to-speech. Returns raw audio bytes (audio/mpeg by default).",
+		desc: "Text-to-speech via Venice passthrough (not in /v1/models catalog). Returns raw audio bytes (audio/mpeg by default).",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			model: 'string (required), e.g. "tts-1-hd" (Venice passthrough)',
@@ -276,7 +276,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "POST",
 		path: "/v1/audio/transcriptions",
 		title: "Audio Transcriptions",
-		desc: "Speech-to-text via Whisper. Multipart form upload.",
+		desc: "Speech-to-text via Venice Whisper passthrough (not in /v1/models catalog). Multipart form upload.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			file: "binary (required). Audio file to transcribe",

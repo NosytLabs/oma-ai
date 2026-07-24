@@ -8,7 +8,7 @@ import { validationError } from "../../lib/validation.js";
 const depositRouteSchema = z.object({
   sourceChain: z.string().optional(),
   sourceToken: z.string().optional(),
-  amount: z.string().min(1),
+  amount: z.coerce.number().positive().max(1_000_000),
 });
 
 export const depositRouter = new Hono<OmaEnv>();
@@ -18,7 +18,7 @@ depositRouter.post("/v1/deposit/route", sessionAuth, async (c) => {
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { sourceChain, sourceToken, amount } = parsed.data;
   try {
-    const route = routeDeposit(sourceChain ?? "ethereum", sourceToken ?? "USDC", amount);
+    const route = routeDeposit(sourceChain ?? "ethereum", sourceToken ?? "USDC", String(amount));
     return c.json(route);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
