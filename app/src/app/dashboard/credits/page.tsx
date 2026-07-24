@@ -464,7 +464,7 @@ export default function CreditsPage() {
 							disabled={!buyAmount || parseFloat(buyAmount) <= 0}
 							className="btn-primary w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed"
 							whileHover={{ scale: 1.01 }}
-							whileTap={{ scale: 0.99 }}
+							whileTap={{ scale: 0.97 }}
 						>
 							{!buyAmount || parseFloat(buyAmount) <= 0 ? (
 								<>

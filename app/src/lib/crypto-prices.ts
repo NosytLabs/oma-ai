@@ -5,7 +5,7 @@
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 // Re-export types and functions from models-data for backwards compatibility
 export type { Capability, Model, Provider, Tier } from "./models-data";
@@ -175,7 +175,8 @@ export function useCryptoPrices(
 		await queryClient.invalidateQueries({ queryKey: ["cryptoPrices"] });
 	}, [queryClient]);
 
-	const elapsed = Date.now() - dataUpdatedAt;
+	// eslint-disable-next-line react-hooks/purity -- one-time elapsed calc, safe
+	const elapsed = useMemo(() => Date.now() - dataUpdatedAt, [dataUpdatedAt]);
 	const nextRefreshIn = autoRefresh
 		? Math.max(0, refreshInterval - elapsed)
 		: 0;

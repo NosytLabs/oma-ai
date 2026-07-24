@@ -137,7 +137,7 @@ export default function MotionReferencePage() {
 					</tbody>
 				</table>
 				<p className="text-xs text-muted-foreground mt-2">
-					CSS easings (when you can't use framer-motion):{" "}
+					CSS easings (when you can&apos;t use framer-motion):{" "}
 					<code>{easings.spring}</code>,{" "}
 					<code>{easings.springTight}</code>,{" "}
 					<code>{easings.springSoft}</code>,{" "}

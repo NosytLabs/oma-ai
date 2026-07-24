@@ -93,7 +93,7 @@ function Bar({ value, max = 100, color = "var(--color-accent)" }: { value: numbe
 	return (
 		<div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
 			<div
-				className="h-full rounded-full transition-all duration-500"
+				className="h-full rounded-full transition-all duration-300"
 				style={{ width: `${pct}%`, background: color }}
 			/>
 		</div>

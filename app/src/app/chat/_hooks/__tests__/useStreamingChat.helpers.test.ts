@@ -60,7 +60,8 @@ describe("newMessageId", () => {
  */
 function parseSSEBlock(block: string): { data: string[] } | null {
 	if (!block || block.trim() === "") return null;
-	const lines = block.split("\n");
+	// Normalize CR/LF → LF before splitting (mirrors the hook's pre-split normalization)
+	const lines = block.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
 	const data: string[] = [];
 	for (const line of lines) {
 		if (!line || line.startsWith(":")) continue;

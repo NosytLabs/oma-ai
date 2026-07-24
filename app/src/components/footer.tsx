@@ -159,7 +159,7 @@ export function Footer() {
 							<m.span
 								whileHover={{ y: -2 }}
 								transition={EASE_SPRING}
-								className="inline-flex transition-[filter] duration-500 group-hover:drop-shadow-[0_0_6px_var(--color-accent)]"
+								className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_6px_var(--color-accent)]"
 							>
 								<OmaLogo size="sm" />
 							</m.span>

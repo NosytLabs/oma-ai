@@ -420,11 +420,10 @@ export function AccountLoginModal({
 	}, [mode]);
 
 	const handleDone = useCallback(() => {
-		// After a successful account-number creation, we just stored a new
-		// session token. Reload so the wallet-provider picks it up and the
-		// route guards (which read oma_session) recognize the user.
+		// After a successful account-number creation, navigate to the
+		// dashboard so the user lands on their account immediately.
 		if (createdAccount) {
-			window.location.reload();
+			window.location.href = "/dashboard";
 			return;
 		}
 		onClose();

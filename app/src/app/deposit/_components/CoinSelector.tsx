@@ -55,7 +55,7 @@ export function CoinSelector({
           focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30
           transition-colors duration-150"
 				whileHover={{ scale: 1 }}
-				whileTap={{ scale: 0.99 }}
+				whileTap={{ scale: 0.97 }}
 			>
 				{selected ? (
 					<>

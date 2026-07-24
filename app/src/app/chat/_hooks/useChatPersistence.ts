@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Message } from "@/components/chat";
 import { log } from "@/lib/logger";
 
@@ -102,13 +102,14 @@ export function useChatPersistence({
 		messagesRef.current = messages;
 	}, [messages, messagesRef]);
 
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const lastMessagesRef = useRef<Message[]>([]);
+
 	const debouncedSave = useMemo(() => {
-		let timeoutId: ReturnType<typeof setTimeout> | null = null;
-		let lastMessages: Message[] = [];
 		const save = (msgs: Message[]) => {
-			lastMessages = msgs;
-			if (timeoutId) clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => {
+			lastMessagesRef.current = msgs;
+			if (timeoutRef.current) clearTimeout(timeoutRef.current);
+			timeoutRef.current = setTimeout(() => {
 				try {
 					localStorage.setItem(storageKey, JSON.stringify(msgs));
 				} catch (err) {
@@ -117,20 +118,20 @@ export function useChatPersistence({
 			}, 2000);
 		};
 		save.flush = () => {
-			if (timeoutId) {
-				clearTimeout(timeoutId);
-				timeoutId = null;
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+				timeoutRef.current = null;
 			}
-			if (lastMessages.length > 0) {
+			if (lastMessagesRef.current.length > 0) {
 				try {
-					localStorage.setItem(storageKey, JSON.stringify(lastMessages));
+					localStorage.setItem(storageKey, JSON.stringify(lastMessagesRef.current));
 				} catch (err) {
 					log.warn("Failed to flush conversation to storage", err);
 				}
 			}
 		};
 		save.cancel = () => {
-			if (timeoutId) clearTimeout(timeoutId);
+			if (timeoutRef.current) clearTimeout(timeoutRef.current);
 		};
 		return save;
 	}, [storageKey]);

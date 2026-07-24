@@ -497,8 +497,11 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
     .returning({ id: users.id, accountNumber: users.accountNumber });
 
   const [user] = inserted;
+  // Auto-generate a default API key so account-number users get
+  // programmatic access immediately (matches wallet-login behavior).
+  const apiKey = await createApiKey(user.id, "Default account key");
   const token = await generateSessionToken(user.id, "account-number");
-  return c.json({ token, accountNumber: user.accountNumber, authMethod: "account-number" }, 201);
+  return c.json({ token, accountNumber: user.accountNumber, authMethod: "account-number", apiKey: { key: apiKey.key, prefix: apiKey.prefix, id: apiKey.id, name: apiKey.name, createdAt: apiKey.createdAt } }, 201);
 });
 
 const csrfTokenHandler: MiddlewareHandler<OmaEnv> = async (c) => {
@@ -660,7 +663,13 @@ authRoutes.post("/auth/account/login", async (c) => {
     await db.update(users).set({ accountNumber: newAccountNumber, accountNumberHash: newHash }).where(eq(users.id, user.id));
   }
   
-  const existingKeys = await listApiKeys(user.id);
+  let existingKeys = await listApiKeys(user.id);
+  // Auto-generate a default API key on first login if none exist
+  // (matches wallet-login behavior at line ~232).
+  if (existingKeys.length === 0) {
+    await createApiKey(user.id, "Default account key");
+    existingKeys = await listApiKeys(user.id);
+  }
   const token = await generateSessionToken(user.id, "account-number");
   return c.json({ token, address: user.address, accountNumber: newAccountNumber, authMethod: "account-number", hasApiKey: existingKeys.length > 0 });
 });

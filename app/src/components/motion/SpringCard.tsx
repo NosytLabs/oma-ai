@@ -28,7 +28,7 @@ export function SpringCard({
 				type="button"
 				onClick={() => setOpen((v) => !v)}
 				className="w-full flex items-center justify-between px-4 py-3 text-left font-medium hover:bg-accent/30"
-				whileTap={{ scale: 0.99 }}
+				whileTap={{ scale: 0.97 }}
 				transition={{ type: "spring", stiffness: 400, damping: 28 }}
 			>
 				<span>{title}</span>

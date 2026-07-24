@@ -416,7 +416,7 @@ export default function AdminRateLimitsPage() {
 
 					<m.button
 						whileHover={{ scale: 1.01 }}
-						whileTap={{ scale: 0.99 }}
+						whileTap={{ scale: 0.97 }}
 						onClick={handleSaveTiers}
 						disabled={saving}
 						className="flex items-center gap-2 px-4 py-2 rounded border border-accent/30 bg-accent-dim text-accent hover:bg-accent/20 disabled:opacity-50 transition-colors text-sm font-mono"
@@ -561,7 +561,7 @@ export default function AdminRateLimitsPage() {
 							<div className="flex items-center gap-2">
 								<m.button
 									whileHover={{ scale: 1.01 }}
-									whileTap={{ scale: 0.99 }}
+									whileTap={{ scale: 0.97 }}
 									onClick={handleCreateOverride}
 									disabled={saving}
 									className="px-4 py-2 rounded border border-success/30 bg-success-dim text-success hover:bg-success/20 disabled:opacity-50 text-sm font-mono transition-colors"

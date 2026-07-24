@@ -7,7 +7,7 @@ import {
 	useReducedMotion,
 	useTransform,
 } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function AnimatedNumber({
 	value,
@@ -19,9 +19,9 @@ export function AnimatedNumber({
 	const prefersReducedMotion = useReducedMotion();
 	// Start at the real value so first paint never shows $0.00 → mid-tween
 	// garbage (e.g. $44.40 while settling on $50.00).
-	const count = useRef(motionValue(value));
+	const [count] = useState(() => motionValue(value));
 	const prev = useRef(value);
-	const display = useTransform(count.current, (latest) => {
+	const display = useTransform(count, (latest) => {
 		return `${prefix}${latest.toLocaleString(undefined, {
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
@@ -30,11 +30,11 @@ export function AnimatedNumber({
 
 	useEffect(() => {
 		if (prefersReducedMotion || prev.current === value) {
-			count.current.set(value);
+			count.set(value);
 			prev.current = value;
 			return;
 		}
-		const controls = animate(count.current, value, {
+		const controls = animate(count, value, {
 			type: "spring",
 			stiffness: 120,
 			damping: 24,
