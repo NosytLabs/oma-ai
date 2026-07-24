@@ -4,6 +4,7 @@ import { AnimatePresence, m } from "framer-motion";
 import {
 	Activity,
 	AlertTriangle,
+	CreditCard,
 	Hexagon,
 	Key,
 	KeyRound,
@@ -55,8 +56,13 @@ const DangerZoneSection = dynamic(() =>
 		default: m.DangerZoneSection,
 	})),
 );
+const BillingSection = dynamic(() =>
+	import("./_components/BillingSection").then((m) => ({
+		default: m.BillingSection,
+	})),
+);
 
-type SettingsTab = "profile" | "wallets" | "api-keys" | "sessions" | "danger";
+type SettingsTab = "profile" | "wallets" | "api-keys" | "billing" | "sessions" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -85,6 +91,12 @@ const TABS: TabDef[] = [
 		description: "Programmatic access",
 	},
 	{
+		id: "billing",
+		label: "Billing",
+		icon: CreditCard,
+		description: "Auto-reload & budget alerts",
+	},
+	{
 		id: "sessions",
 		label: "Sessions",
 		icon: Activity,
@@ -103,6 +115,7 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	profile: "Profile",
 	wallets: "Wallets",
 	"api-keys": "Keys",
+	billing: "Billing",
 	sessions: "Sessions",
 	danger: "Danger",
 };
@@ -452,7 +465,7 @@ export default function SettingsPage() {
 				<div
 					role="tablist"
 					aria-label="Settings sections"
-					className="grid w-full min-w-0 grid-cols-5 gap-1 pb-1 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+					className="grid w-full min-w-0 grid-cols-3 gap-1 pb-1 sm:grid-cols-6 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
 				>
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
@@ -547,6 +560,7 @@ export default function SettingsPage() {
 										onRevokeKey={handleRevokeKey}
 									/>
 								)}
+								{activeTab === "billing" && <BillingSection />}
 								{activeTab === "sessions" && (
 									<SessionsSection sessions={sessions} />
 								)}

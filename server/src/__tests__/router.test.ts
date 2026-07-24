@@ -16,7 +16,12 @@ vi.mock('../credits/index.js', () => ({
 }))
 
 vi.mock('../inference/models.js', () => ({
-  getModel: vi.fn(),
+  getModel: vi.fn().mockResolvedValue({
+    id: 'llama-3.3-70b',
+    providers: { gonka: 'llama-3.3-70b', venice: 'llama-3.3-70b' },
+    contextWindow: 131072,
+    maxOutputTokens: 4096,
+  }),
   estimateTokens: vi.fn((text: string) => Math.ceil(text.length / 4)),
 }))
 
@@ -56,6 +61,27 @@ vi.mock('../inference/circuit-breaker.js', () => ({
   recordProviderError: vi.fn(),
 }))
 
+vi.mock('../inference/call-provider.js', () => ({
+  callProvider: vi.fn(),
+}))
+
+vi.mock('../inference/cross-provider-router.js', () => ({
+  getCandidateProviders: vi.fn().mockResolvedValue({
+    primary: 'gonka',
+    alternates: [],
+  }),
+  recordFailover: vi.fn(),
+}))
+
+vi.mock('../inference/credit-preflight.js', () => ({
+  countMessageTokens: vi.fn().mockReturnValue(5),
+  refundCreditsWithRetry: vi.fn(),
+}))
+
+vi.mock('../inference/stream-tracker.js', () => ({
+  createTrackingStream: vi.fn((stream: ReadableStream) => stream),
+}))
+
 vi.mock('../config.js', () => ({
   config: {
     PROVIDER_WEIGHTS: undefined,
@@ -93,12 +119,12 @@ describe('Router', () => {
       vi.mocked(isProviderAvailable).mockResolvedValue(true)
 
       const mockResp = new Response(JSON.stringify({ error: 'provider error' }), {
-        status: 500,
+        status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
 
-      const { chatCompletion } = await import('../inference/gonka.js')
-      vi.mocked(chatCompletion).mockResolvedValue(mockResp)
+      const { callProvider } = await import('../inference/call-provider.js')
+      vi.mocked(callProvider).mockResolvedValue(mockResp)
 
       const { refundCredits } = await import('../credits/index.js')
       vi.mocked(refundCredits).mockResolvedValue(undefined)
@@ -126,8 +152,8 @@ describe('Router', () => {
         headers: { 'Content-Type': 'text/event-stream' },
       })
 
-      const { chatCompletion } = await import('../inference/gonka.js')
-      vi.mocked(chatCompletion).mockResolvedValue(mockResp)
+      const { callProvider } = await import('../inference/call-provider.js')
+      vi.mocked(callProvider).mockResolvedValue(mockResp)
 
       const result = await router.handleChatCompletion('user-1', 'key-1', { ...mockBody, stream: true })
 
