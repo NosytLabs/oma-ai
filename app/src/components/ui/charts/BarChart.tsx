@@ -1,18 +1,16 @@
 "use client";
 
 import { format } from "date-fns";
-import { m } from "@/lib/framer-motion-client";
 import { useId } from "react";
 import {
 	Bar,
 	BarChart,
 	CartesianGrid,
-	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
-import { ChartEmptyState, makeGradientId } from "./shared";
+import { ChartContainer, ChartEmptyState, makeGradientId } from "./shared";
 
 export interface CostData {
 	date: string;
@@ -74,25 +72,13 @@ export function BarChartComponent({
 	const chartDescription = `Bar chart showing ${data.length} days of cost data. Total cost: $${totalCost.toFixed(2)}`;
 
 	return (
-		<m.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			className="h-[280px] w-full"
-		>
-			{/* minWidth={1} minHeight={1} silences recharts' "width(-1)/height(-1)
-          should be greater than 0" warning on first paint (see AreaChart.tsx). */}
-			<ResponsiveContainer
-				width="100%"
-				height="100%"
-				minWidth={1}
-				minHeight={1}
+		<ChartContainer heightClass="h-[280px]">
+			<BarChart
+				data={data}
+				margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+				role="img"
+				aria-label={chartDescription}
 			>
-				<BarChart
-					data={data}
-					margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-					role="img"
-					aria-label={chartDescription}
-				>
 					<defs>
 						<linearGradient id={costGradientId} x1="0" y1="0" x2="0" y2="1">
 							<stop
@@ -140,7 +126,6 @@ export function BarChartComponent({
 						animationDuration={1000}
 					/>
 				</BarChart>
-			</ResponsiveContainer>
-		</m.div>
+		</ChartContainer>
 	);
 }

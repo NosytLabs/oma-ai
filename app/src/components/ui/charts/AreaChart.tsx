@@ -1,18 +1,16 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { m } from "@/lib/framer-motion-client";
 import { useId } from "react";
 import {
 	Area,
 	AreaChart,
 	CartesianGrid,
-	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
-import { ChartEmptyState, makeGradientId } from "./shared";
+import { ChartContainer, ChartEmptyState, makeGradientId } from "./shared";
 
 /** Parse chart day keys (YYYY-MM-DD) as local dates — avoids UTC day-shift. */
 function formatChartDay(value: string, pattern: string): string {
@@ -97,27 +95,13 @@ export function AreaChartComponent({
 	const chartDescription = `Area chart showing ${data.length} days of usage data. Total requests: ${totalRequests.toLocaleString()}. Total cost: $${totalCost.toFixed(2)}`;
 
 	return (
-		<m.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			className="h-[300px] w-full"
-		>
-			{/* minWidth={1} minHeight={1} silences recharts' "width(-1)/height(-1)
-          should be greater than 0" warning that fires when the parent has
-          not yet been measured (first paint + initial ResizeObserver tick).
-          Setting 0 is rejected by recharts; 1 is the lowest accepted value. */}
-			<ResponsiveContainer
-				width="100%"
-				height="100%"
-				minWidth={1}
-				minHeight={1}
+		<ChartContainer heightClass="h-[300px]">
+			<AreaChart
+				data={data}
+				margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+				role="img"
+				aria-label={chartDescription}
 			>
-				<AreaChart
-					data={data}
-					margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-					role="img"
-					aria-label={chartDescription}
-				>
 					<defs>
 						<linearGradient id={requestsGradientId} x1="0" y1="0" x2="0" y2="1">
 							<stop
@@ -190,7 +174,6 @@ export function AreaChartComponent({
 						/>
 					)}
 				</AreaChart>
-			</ResponsiveContainer>
-		</m.div>
+		</ChartContainer>
 	);
 }

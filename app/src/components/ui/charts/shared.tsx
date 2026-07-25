@@ -14,7 +14,9 @@
  */
 
 import { Inbox } from "lucide-react";
+import { m } from "@/lib/framer-motion-client";
 import type { ReactNode } from "react";
+import { ResponsiveContainer } from "recharts";
 
 // ─── Color tokens ────────────────────────────────────────────────────────────
 // All chart colors are CSS custom properties from `app/src/app/globals.css`.
@@ -130,5 +132,41 @@ export function ChartEmptyState({
 					</a>
 				) : null)}
 		</div>
+	);
+}
+
+// ─── Chart container ─────────────────────────────────────────────────────────
+
+interface ChartContainerProps {
+	/** Height class for the wrapper, e.g. "h-[300px]". */
+	heightClass?: string;
+	/** Additional class names for the outer m.div. */
+	className?: string;
+	children: ReactNode;
+}
+
+/**
+ * Standardized responsive wrapper for recharts.
+ *
+ * Every chart needs the same `m.div` entrance animation + `ResponsiveContainer`
+ * with `minWidth={1} minHeight={1}` (silences recharts' negative-dimension
+ * warning on first paint before ResizeObserver fires). Extracted so chart
+ * components don't each duplicate this boilerplate.
+ */
+export function ChartContainer({
+	heightClass = "h-[300px]",
+	className,
+	children,
+}: ChartContainerProps) {
+	return (
+		<m.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			className={`${heightClass} w-full ${className ?? ""}`}
+		>
+			<ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+				{children}
+			</ResponsiveContainer>
+		</m.div>
 	);
 }
