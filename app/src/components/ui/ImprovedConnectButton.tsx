@@ -183,10 +183,15 @@ export function ImprovedConnectButton({
 	const [showAccountLogin, setShowAccountLogin] = useState(false);
 	const [connectingId, setConnectingId] = useState<string | null>(null);
 	const [connectError, setConnectError] = useState<string | null>(null);
+	const [mounted, setMounted] = useState(false);
 	// Pre-fetch the CSRF token so the AccountLoginModal opens race-free
 	// (A-C1 fix: the user can press Enter before any in-modal async fetch).
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
 	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -341,12 +346,32 @@ export function ImprovedConnectButton({
 
 	return (
 		<div className="relative" ref={ref}>
-			<MetalFx
-				variant="button"
-				preset="chromatic"
-				strength={0.8}
-				theme="auto"
-			>
+			{mounted ? (
+				<MetalFx
+					variant="button"
+					preset="chromatic"
+					strength={0.8}
+					theme="auto"
+				>
+					<button
+						type="button"
+						onClick={() => setOpen(!open)}
+						disabled={isConnecting}
+						className={`group relative inline-flex items-center gap-2 rounded-[var(--radius-sm)] font-semibold text-[var(--color-accent-fg)] transition-all duration-300 before:absolute before:inset-0 before:bg-accent hover:before:bg-accent-hover before:transition-colors before:duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+							compact ? "px-3.5 py-2 text-xs sm:px-4 sm:text-sm" : "px-5 py-2.5 text-sm"
+						}`}
+					>
+						<span className="relative z-10 flex items-center gap-2">
+							{isConnecting ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<Wallet className="h-4 w-4" />
+							)}
+							{isConnecting ? "Connecting..." : compact ? "Wallet" : "Connect Wallet"}
+						</span>
+					</button>
+				</MetalFx>
+			) : (
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
@@ -364,7 +389,7 @@ export function ImprovedConnectButton({
 						{isConnecting ? "Connecting..." : compact ? "Wallet" : "Connect Wallet"}
 					</span>
 				</button>
-			</MetalFx>
+			)}
 
 			{open && (
 				<>

@@ -109,7 +109,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				className="mb-3 flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted"
 				aria-hidden="true"
 			>
-				<ThinkingOrb state="composing" size={64} theme="auto" />
+				<ThinkingOrb state="composing" size={20} theme="auto" />
 				<span>ready to compose</span>
 			</m.div>
 

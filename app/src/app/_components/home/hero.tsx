@@ -178,7 +178,6 @@ export function Hero() {
 								<ImageGeneration
 									images="/og-image.png"
 									autoReveal
-									revealDelayRange={[5, 8]}
 									strength={0.35}
 									preset="pixels-organic"
 									theme="auto"

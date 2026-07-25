@@ -24,7 +24,6 @@ import { ThinkingOrb } from "thinking-orbs";
 import {
 	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, Search, User,
 } from "lucide-react";
-import Image from "next/image";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -454,12 +453,6 @@ function CodeBlock({
 // SEARCH SOURCES — Expandable web results
 // ═══════════════════════════════════════════════════════════════════
 
-function getFaviconUrl(_url: string) {
-	// ponytail: no third-party favicon service — privacy leak.
-	// Return null so Image onError fallback hides the img element.
-	return null;
-}
-
 function getHostname(url: string): string {
 	try {
 		return new URL(url).hostname;
@@ -528,18 +521,6 @@ const SearchSources = memo(function SearchSources({
                     hover:border-success/30 hover:bg-surface transition-all duration-200 group
                   "
 								>
-									<Image
-										src={getFaviconUrl(result.url) || ""}
-										alt=""
-										aria-hidden="true"
-										width={16}
-										height={16}
-										unoptimized
-										className="w-4 h-4 mt-0.5 rounded-sm"
-										onError={(e) => {
-											(e.target as HTMLImageElement).style.display = "none";
-										}}
-									/>
 									<div className="flex-1 min-w-0">
 										<div className="text-xs font-mono text-success group-hover:underline truncate">
 											{result.title}

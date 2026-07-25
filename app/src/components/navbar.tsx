@@ -29,6 +29,7 @@ export function Navbar() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
+	const [mounted, setMounted] = useState(false);
 	const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
@@ -42,7 +43,10 @@ export function Navbar() {
 	}, [pathname]);
 
 	// Scroll-driven glass + border glow. Passive + rAF-throttled.
+	// Also marks `mounted` so client-only deps (e.g. BorderBeam's color-scheme
+	// reads) don't cause a hydration mismatch.
 	useEffect(() => {
+		setMounted(true);
 		let ticking = false;
 		function onScroll() {
 			if (ticking) return;
@@ -84,7 +88,7 @@ export function Navbar() {
 										oma
 									</span>
 								</Link>
-								{!isConnected && (
+								{!isConnected && mounted && (
 									<BorderBeam
 										size="sm"
 										duration={3}
