@@ -11,6 +11,9 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { m } from "@/lib/framer-motion-client";
+import { useFormErrorShake } from "@/components/motion/use-form-error-shake";
+import { SuccessCheck } from "@/components/motion/success-check";
 import { api, setAuthToken } from "@/lib/api";
 import {
 	getCsrfToken,
@@ -92,6 +95,14 @@ export function AccountLoginModal({
 	const [totpCode, setTotpCode] = useState("");
 	const modalRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLElement | null>(null);
+	// Form error shake — "Error state shake" pattern from transitions.dev.
+	// Triggers a 320ms horizontal wiggle on the error banner whenever a new
+	// error string appears.
+	const { shake: shakeError, animation: shakeAnimation, key: shakeKey } =
+		useFormErrorShake();
+	useEffect(() => {
+		if (error) shakeError();
+	}, [error, shakeError]);
 	// Pending "copied" indicator timer. Held in a ref so we can clear it on
 	// unmount and on subsequent copy attempts — without this, the indicator
 	// can fire setCopied(false) on an unmounted component, and rapid
@@ -485,15 +496,17 @@ export function AccountLoginModal({
 				</div>
 
 				{error && (
-					<div
-						id="account-error"
-						role="alert"
-						className="mb-4 flex items-center gap-2 rounded-lg border border-red/30 bg-red/10 px-4 py-3"
-					>
-						<AlertTriangle className="h-4 w-4 shrink-0 text-red" />
-						<span className="text-sm text-red">{error}</span>
-					</div>
-				)}
+								<m.div
+									key={shakeKey}
+									id="account-error"
+									role="alert"
+									animate={shakeAnimation ?? undefined}
+									className="mb-4 flex items-center gap-2 rounded-lg border border-red/30 bg-red/10 px-4 py-3"
+								>
+									<AlertTriangle className="h-4 w-4 shrink-0 text-red" />
+									<span className="text-sm text-red">{error}</span>
+								</m.div>
+							)}
 
 				{mode === "login" && (
 					<>
@@ -673,25 +686,24 @@ export function AccountLoginModal({
 				)}
 
 				{mode === "success" && createdAccount && (
-					<>
-						<div className="mb-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
-							<div className="flex items-start gap-3">
-								<Check
-									className="h-5 w-5 text-success shrink-0 mt-0.5"
-									aria-hidden="true"
-								/>
-								<div>
-									<p className="text-sm text-success font-medium mb-1">
-										Account created
-									</p>
-									<p className="text-xs text-text-muted">
-										This number is shown once. Save it somewhere safe —
-										there&apos;s no password reset, no email recovery, no
-										support ticket.
-									</p>
-								</div>
-							</div>
-						</div>
+								<>
+									<div className="mb-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+										<div className="flex items-start gap-3">
+											<div className="mt-0.5 text-success">
+												<SuccessCheck size={20} label="Account created" />
+											</div>
+											<div>
+												<p className="text-sm text-success font-medium mb-1">
+													Account created
+												</p>
+												<p className="text-xs text-text-muted">
+													This number is shown once. Save it somewhere safe —
+													there&apos;s no password reset, no email recovery, no
+													support ticket.
+												</p>
+											</div>
+										</div>
+									</div>
 						<div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-surface p-4">
 							<code className="flex-1 break-all text-base sm:text-lg font-mono text-accent tracking-wider select-all">
 								{createdAccount}
