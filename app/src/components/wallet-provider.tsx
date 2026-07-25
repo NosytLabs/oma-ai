@@ -20,6 +20,7 @@ import { base } from "wagmi/chains";
 import { api, setAuthToken, type User } from "@/lib/api/index";
 import { deleteSessionCookie, setSessionCookie } from "@/lib/cookies";
 import { getWagmiConfigSingleton } from "@/lib/wagmi";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
 import {
 	type AuthMethod,
 	WalletContext,
@@ -27,14 +28,6 @@ import {
 } from "./wallet-context";
 
 export type { AuthMethod } from "./wallet-context";
-
-function useIsMounted() {
-	const [mounted, setMounted] = useState(false);
-	useEffect(() => {
-		setMounted(true);
-	}, []);
-	return mounted;
-}
 
 // L-A1: Secure is only valid on HTTPS — http://localhost dev runs on plain
 // HTTP and the browser silently drops any Set-Cookie / document.cookie value

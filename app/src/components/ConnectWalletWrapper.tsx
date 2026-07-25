@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
 import { WalletProvider } from "./wallet-provider";
 
 /**
@@ -25,11 +25,7 @@ interface ConnectWalletWrapperProps {
 }
 
 export function ConnectWalletWrapper({ children }: ConnectWalletWrapperProps) {
-	const [mounted, setMounted] = useState(false);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	const mounted = useIsMounted();
 
 	return <WalletProvider mounted={mounted}>{children}</WalletProvider>;
 }

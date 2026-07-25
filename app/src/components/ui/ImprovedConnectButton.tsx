@@ -19,6 +19,7 @@ import { log } from "@/lib/logger";
 import { useEnsName } from "wagmi";
 import { useWallet } from "@/components/wallet-provider";
 import { api } from "@/lib/api";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
 
 const AccountLoginModal = dynamic(
 	() =>
@@ -183,15 +184,11 @@ export function ImprovedConnectButton({
 	const [showAccountLogin, setShowAccountLogin] = useState(false);
 	const [connectingId, setConnectingId] = useState<string | null>(null);
 	const [connectError, setConnectError] = useState<string | null>(null);
-	const [mounted, setMounted] = useState(false);
+	const mounted = useIsMounted();
 	// Pre-fetch the CSRF token so the AccountLoginModal opens race-free
 	// (A-C1 fix: the user can press Enter before any in-modal async fetch).
 	const [csrfToken, setCsrfToken] = useState<string | null>(null);
 	const ref = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
