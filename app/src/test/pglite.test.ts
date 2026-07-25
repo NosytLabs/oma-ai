@@ -9,6 +9,10 @@ import { createPgFixture, withPgFixture, fixtureWithCleanup, type PgFixtureOptio
 import type { PGlite } from "@electric-sql/pglite";
 
 describe("pglite fixture", () => {
+	// PGlite cold-start can take >5s when the WASM blob hasn't been loaded
+	// yet (first run in a fresh process or after long idle). Tests pass
+	// individually in ~700ms; bumping to 30s prevents false-positive
+	// timeouts under vitest's default pool.
 	let cleanup: (() => Promise<void>)[] = [];
 
 	afterEach(async () => {

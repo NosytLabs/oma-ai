@@ -1,4 +1,3 @@
-import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import { SITE_REDIRECTS } from "./src/lib/site-redirects";
 
@@ -113,31 +112,22 @@ function generateContentSecurityPolicy(): string {
 		"'unsafe-inline'", // Next.js inline bootstraps + theme FOUC script
 		"https://verify.walletconnect.com",
 		"https://*.walletconnect.com",
-		"https://*.coinbase.com",
-		"https://*.coinbasewallet.com",
-	]
-		.filter(Boolean)
-		.join(" ");
+	].filter(Boolean).join(" ");
 
 	const connectSrc = [
 		"'self'",
 		// Local API only needed in dev; harmless if present in prod builds used locally
 		...(isDev ? ["http://localhost:3001", "ws://localhost:3001", "http://127.0.0.1:3001"] : []),
+		// WalletConnect relay (QR-code wallet pairing for mobile + non-extension users)
 		"https://*.walletconnect.com",
+		"wss://*.walletconnect.com",
 		"https://api.web3modal.org",
-		"https://*.coinbase.com",
-		"https://*.coinbasewallet.com",
+		// Public RPC fallbacks used by the injected wallet for read-only chain calls
 		"https://*.infura.io",
 		"https://*.alchemy.com",
-		"wss://*.walletconnect.com",
 		"wss://*.ws.alchemy.com",
-		"https://eth.coinbase.com",
 		"https://base-rpc.publicnode.com",
 		"https://api.alchemy.com",
-		"https://*.lens.dev",
-		"https://viem.sh",
-		"https://*.ingest.sentry.io",
-		"https://*.sentry.io",
 		// Production API host (same-origin /api proxy is preferred; allow direct too)
 		"https://api.oma-ai.com",
 		"https://oma-ai.com",
@@ -149,7 +139,7 @@ function generateContentSecurityPolicy(): string {
 		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data: https: blob:",
 		"font-src 'self'",
-		"frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com https://*.coinbase.com https://*.coinbasewallet.com",
+		"frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com",
 		`connect-src ${connectSrc}`,
 		// Align with X-Frame-Options: DENY — block all framing (clickjacking).
 		"frame-ancestors 'none'",
@@ -161,9 +151,4 @@ function generateContentSecurityPolicy(): string {
 	return directives.join("; ");
 }
 
-export default withSentryConfig(nextConfig, {
-	org: process.env.SENTRY_ORG || "oma-ai",
-	project: process.env.SENTRY_PROJECT || "oma-app",
-	silent: !process.env.SENTRY_AUTH_TOKEN,
-	sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
-});
+export default nextConfig;

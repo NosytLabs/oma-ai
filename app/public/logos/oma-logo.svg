@@ -1,18 +1,2 @@
-<svg width="400" height="96" viewBox="0 0 400 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <title>OMA — Open Model Access</title>
-  <desc>OMA AI horizontal lockup: open-gateway mark + wordmark.</desc>
-  <g transform="translate(8 12)">
-    <rect width="72" height="72" rx="18" fill="#07090a"/>
-    <rect x="2.5" y="2.5" width="67" height="67" rx="16" fill="#0d1110" stroke="#1c2822" stroke-width="1.5"/>
-    <circle cx="36" cy="36" r="22" fill="#46d39a" opacity="0.1"/>
-    <circle cx="36" cy="36" r="20" stroke="#46d39a" stroke-width="4" stroke-linecap="round"
-      stroke-dasharray="104 22" stroke-dashoffset="-9"/>
-    <rect x="24.5" y="40" width="5" height="11" rx="2.2" fill="#46d39a" opacity="0.7"/>
-    <rect x="33.5" y="33" width="5" height="18" rx="2.2" fill="#46d39a" opacity="0.88"/>
-    <rect x="42.5" y="26" width="5" height="25" rx="2.2" fill="#46d39a"/>
-    <circle cx="54.5" cy="19.5" r="6.5" fill="#46d39a" opacity="0.2"/>
-    <circle cx="54.5" cy="19.5" r="3.6" fill="#6ee7b7"/>
-  </g>
-  <text x="100" y="50" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="36" fill="#f5f7f3" letter-spacing="-1.4">oma</text>
-  <text x="100" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" font-size="11" fill="#7b8278" letter-spacing="2.6">OPEN MODEL ACCESS</text>
-</svg>
+<svg width="400" height="96" viewBox="0 0 400 96" fill="none" xmlns="http://www.w3.org/2000/svg"><title>OMA — Open Model Access</title><desc>OMA AI horizontal lockup: open-gateway mark + wordmark.</desc><g transform="translate(8 12)"><rect width="72" height="72" rx="18" fill="#07090a"/><rect x="2.5" y="2.5" width="67" height="67" rx="16" fill="#0d1110" stroke="#1c2822" stroke-width="1.5"/><circle cx="36" cy="36" r="22" fill="#46d39a" opacity="0.1"/><circle cx="36" cy="36" r="20" stroke="#46d39a" stroke-width="4" stroke-linecap="round"
+stroke-dasharray="104 22" stroke-dashoffset="-9"/><rect x="24.5" y="40" width="5" height="11" rx="2.2" fill="#46d39a" opacity="0.7"/><rect x="33.5" y="33" width="5" height="18" rx="2.2" fill="#46d39a" opacity="0.88"/><rect x="42.5" y="26" width="5" height="25" rx="2.2" fill="#46d39a"/><circle cx="54.5" cy="19.5" r="6.5" fill="#46d39a" opacity="0.2"/><circle cx="54.5" cy="19.5" r="3.6" fill="#6ee7b7"/></g><text x="100" y="50" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="36" fill="#f5f7f3" letter-spacing="-1.4">oma</text><text x="100" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" font-size="11" fill="#7b8278" letter-spacing="2.6">OPEN MODEL ACCESS</text></svg>

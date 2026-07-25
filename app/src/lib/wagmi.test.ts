@@ -23,7 +23,7 @@ function clearWindowEthereum(): void {
 }
 
 vi.mock("wagmi/connectors", () => {
-	// wagmi v3 connectors are created by calling coinbaseWallet({...}), injected(),
+	// wagmi v3 connectors are created by calling injected(), walletConnect({...}),
 	// etc., and each call returns a CreateConnectorFn — a function that wagmi
 	// later invokes with { emitter, chains, ... }. Track each construction so we
 	// can assert what's registered.
@@ -45,7 +45,6 @@ vi.mock("wagmi/connectors", () => {
 	};
 	return {
 		injected: makeSpy("injected"),
-		coinbaseWallet: makeSpy("coinbaseWallet"),
 		walletConnect: makeSpy("walletConnect"),
 	};
 });
@@ -75,27 +74,27 @@ describe("getWagmiConfigSingleton", () => {
 		return mod.getWagmiConfigSingleton() as any;
 	};
 
-	it("always registers coinbaseWallet + injected (even without ethereum)", async () => {
-		// Users on Safari / clean Chrome / mobile must still see connect paths.
+	it("always registers injected (even without ethereum)", async () => {
+		// Users on Safari / clean Chrome / mobile must still see a connect path —
+		// the injected connector surfaces any EIP-1193 wallet (MetaMask / Rabby /
+		// Brave / OKX / Coinbase Extension).
 		clearWindowEthereum();
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 		const config = await loadSingleton();
 
 		const names = connectorCalls.map((c) => c.name);
-		expect(names).toContain("coinbaseWallet");
 		expect(names).toContain("injected");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
+		expect(config.connectors.length).toBeGreaterThanOrEqual(1);
 	}, 15_000);
 
-	it("registers coinbaseWallet + injected when window.ethereum exists", async () => {
+	it("registers injected when window.ethereum exists", async () => {
 		setWindowEthereum({ isMetaMask: true });
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 		const config = await loadSingleton();
 
 		const names = connectorCalls.map((c) => c.name);
-		expect(names).toContain("coinbaseWallet");
 		expect(names).toContain("injected");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
+		expect(config.connectors.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it("does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset", async () => {
@@ -119,7 +118,8 @@ describe("getWagmiConfigSingleton", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
 		const wcArgs = wcCall as any;
 		expect(wcArgs.args[0].projectId).toBe("test-walletconnect-project-id");
-		expect(config.connectors.length).toBeGreaterThanOrEqual(3);
+		// injected + walletConnect = 2
+		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
 	});
 
 	it("skips walletConnect for known placeholder project IDs", async () => {

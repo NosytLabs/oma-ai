@@ -1,6 +1,6 @@
 import { createConfig, createStorage, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
-import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 
 /**
  * RPC transport URLs.
@@ -39,20 +39,20 @@ function resolveWalletConnectProjectId(): string | undefined {
 function getWagmiConfig() {
 	const walletConnectProjectId = resolveWalletConnectProjectId();
 
-	// Always register Coinbase Wallet (SDK popup / extension) so browsers
-	// without window.ethereum still get a connect path. Injected is always
-	// registered — MetaMask / Brave / Rabby attach when present.
-	// WalletConnect is optional (needs a real project ID).
+	// Two connectors:
+	//   - injected: works for any EIP-1193 wallet (MetaMask / Rabby / Brave /
+	//     OKX / Coinbase Extension). This is the open-source path that was
+	//     working reliably — no cloud relay, no project ID required.
+	//   - walletConnect: optional QR-code connector for mobile / non-extension
+	//     users. Only registered when a real WalletConnect project ID is set
+	//     (placeholder env values are silently dropped — see
+	//     resolveWalletConnectProjectId).
 	//
-	// Previous behavior returned connectors: [] when ethereum was missing,
-	// which broke /login entirely for users without a browser extension
-	// (Safari, clean Chrome, mobile in-app browsers without WC).
+	// Coinbase Wallet SDK was dropped — it's a separate SDK that adds bundle
+	// weight and the Coinbase Extension already exposes window.ethereum via
+	// the injected path.
 	const connectors = [
 		injected({ shimDisconnect: true }),
-		coinbaseWallet({
-			appName: "OMA AI",
-			appLogoUrl: "https://oma-ai.com/logos/oma-icon-192.png",
-		}),
 		...(walletConnectProjectId
 			? [
 					walletConnect({

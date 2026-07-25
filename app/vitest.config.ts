@@ -10,6 +10,10 @@ export default defineConfig({
 		globals: true,
 		include: ["src/**/*.test.{ts,tsx}"],
 		exclude: ["e2e/**", "tests/**", "node_modules/**", ".next/**"],
+		// PGlite cold-start can take >5s when the WASM blob hasn't been
+		// loaded yet. The default 5s timeout flakes under vitest's pool;
+		// 30s gives it headroom without slowing the rest of the suite.
+		testTimeout: 30_000,
 		onConsoleLog(log: string, type: string) {
 			// Suppress framer-motion React.Fragment className warnings in jsdom
 			if (
