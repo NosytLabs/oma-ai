@@ -18,15 +18,15 @@ import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
 import { ImageGeneration } from "img-fx";
 import Image from "next/image";
+import { springs } from "@/components/motion";
 
 function reveal(index: number) {
 	return {
 		initial: { opacity: 0, y: 16 },
 		animate: { opacity: 1, y: 0 },
 		transition: {
+			...springs.card, // stiffness 320 / damping 24 — Kinetics-style overshoot
 			delay: 0.05 + index * 0.06,
-			duration: 0.55,
-			ease: [0.2, 0.8, 0.2, 1] as const,
 		},
 	};
 }

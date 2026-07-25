@@ -23,6 +23,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
+import AUTO_RELEASES from "@/data/auto-changelog.json";
 
 export const metadata: Metadata = {
 	title: "Product Changelog — releases & fixes",
@@ -52,6 +53,7 @@ interface Release {
 	summary: string;
 	changes: Change[];
 	highlights?: string[];
+	auto?: boolean;
 }
 
 const KIND_STYLES: Record<ChangeKind, { label: string; color: string; icon: typeof Sparkles }> = {
@@ -61,7 +63,11 @@ const KIND_STYLES: Record<ChangeKind, { label: string; color: string; icon: type
 	deprecation: { label: "deprecation", color: "bg-error/10 text-error border-error/30", icon: Wrench },
 };
 
+// Hand-curated releases. Auto-generated entries from `scripts/generate-changelog.mjs`
+// (regenerated at build time) are prepended so the most recent commits always
+// appear first.
 const RELEASES: Release[] = [
+	...((AUTO_RELEASES as unknown as Release[]) ?? []),
 	{
 		version: "2.1.2",
 		date: "2026-07-20",

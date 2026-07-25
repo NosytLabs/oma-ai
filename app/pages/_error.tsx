@@ -1,9 +1,8 @@
 /**
- * pages-router _error.tsx — needed so Next.js 15 uses our own /404 + /500
- * static fallback instead of Sentry's auto-injected chunk that crashes on
- * `<Html> should not be imported outside of pages/_document`.
- * The app router handles all real routes; this only fires for the
- * static 404.html / 500.html fallback exports.
+ * Minimal pages-router _error — required so Next.js 15's static
+ * `/404` + `/500` export doesn't pull in a framework chunk that tries
+ * to use `<Html>` outside `pages/_document`. The app router handles
+ * all real errors via `app/error.tsx` and `app/not-found.tsx`.
  */
 import Link from "next/link";
 
@@ -17,39 +16,23 @@ function ErrorPage() {
 				alignItems: "center",
 				justifyContent: "center",
 				padding: "2rem",
-				fontFamily:
-					"ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-				color: "#e5e5e5",
-				background: "#0a0a0a",
+				fontFamily: "ui-monospace, monospace",
+				color: "#e0e0e0",
+				background: "#07090a",
 			}}
 		>
-			<h1
-				style={{
-					fontSize: "3rem",
-					fontWeight: 700,
-					margin: 0,
-					letterSpacing: "-0.02em",
-				}}
-			>
-				404
+			<h1 style={{ fontSize: "3rem", fontWeight: 700, margin: 0 }}>
+				Something went wrong
 			</h1>
-			<p
-				style={{
-					marginTop: "1rem",
-					color: "#a3a3a3",
-					textAlign: "center",
-				}}
-			>
-				Route not found.{" "}
-				<Link href="/" style={{ color: "#10b981", textDecoration: "underline" }}>
+			<p style={{ marginTop: "1rem", color: "#9ca3af" }}>
+				<Link href="/" style={{ color: "#46d39a", textDecoration: "underline" }}>
 					Return home
 				</Link>
-				.
 			</p>
 		</div>
 	);
 }
 
-ErrorPage.getInitialProps = () => ({ statusCode: 404 });
+ErrorPage.getInitialProps = () => ({ statusCode: 500 });
 
 export default ErrorPage;

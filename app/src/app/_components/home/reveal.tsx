@@ -18,9 +18,11 @@
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
 import { useRevealInView } from "@/lib/use-reveal-in-view";
-// Shared easing source-of-truth — kept in sync with @/lib/motion so the
-// two motion primitive systems never drift apart.
-import { EASE_OUT } from "@/lib/motion";
+// Kinetics-style springs: stiffness + damping instead of fixed duration so
+// interrupted reveals (Page Down, fast scroll) integrate from the current
+// position instead of snapping. Honors prefers-reduced-motion via framer's
+// MotionConfig — these springs resolve instantly when the user opts out.
+import { springs } from "@/components/motion";
 import { useEffect, useState, type ReactNode } from "react";
 
 const fadeUpVariant: Variants = {
@@ -28,7 +30,7 @@ const fadeUpVariant: Variants = {
 	show: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.65, ease: EASE_OUT },
+		transition: { ...springs.toast, mass: 1.1 }, // overshoot 1.08 — settle after a beat
 	},
 };
 
@@ -47,7 +49,7 @@ export const childFadeUp: Variants = {
 	show: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.55, ease: EASE_OUT },
+		transition: { ...springs.card }, // stiffness 320 / damping 24 — Card Resize feel
 	},
 };
 
