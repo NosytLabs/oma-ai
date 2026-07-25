@@ -114,11 +114,7 @@ export default function RootLayout({
 				/>
 				<OrganizationJsonLd />
 				<SoftwareApplicationJsonLd />
-				<link rel="preconnect" href="https://eth.coinbase.com" />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
-				<link rel="preconnect" href="https://verify.walletconnect.com" />
-				<link rel="dns-prefetch" href="https://*.walletconnect.com" />
-				<link rel="dns-prefetch" href="https://*.coinbase.com" />
 				{/* Canonicals come from per-page metadata.alternates — do not hardcode homepage here. */}
 			</head>
 			<body className="min-h-screen bg-void text-text font-sans antialiased">

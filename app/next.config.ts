@@ -80,6 +80,13 @@ const nextConfig: NextConfig = {
 					{ key: "Content-Security-Policy", value: generateContentSecurityPolicy() },
 					{ key: "X-Content-Type-Options", value: "nosniff" },
 					{ key: "X-Frame-Options", value: "DENY" },
+					{ key: "X-Content-Type-Options", value: "nosniff" },
+					{ key: "X-Frame-Options", value: "DENY" },
+					{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+					{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+					{ key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+					{ key: "X-Content-Type-Options", value: "nosniff" },
+					{ key: "X-Frame-Options", value: "DENY" },
 					{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 					{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 					{ key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
@@ -103,25 +110,19 @@ const nextConfig: NextConfig = {
 };
 
 function generateContentSecurityPolicy(): string {
-	// 'unsafe-eval' only in development (Next HMR / React Refresh). Production
-	// drops it; wallet connectors work without eval in modern browsers.
+	// 'unsafe-eval' only in development (Next HMR / React Refresh).
+	// Production drops it; no wallet connectors that need eval remain.
 	const isDev = process.env.NODE_ENV !== "production";
 	const scriptSrc = [
 		"'self'",
 		isDev ? "'unsafe-eval'" : null,
 		"'unsafe-inline'", // Next.js inline bootstraps + theme FOUC script
-		"https://verify.walletconnect.com",
-		"https://*.walletconnect.com",
 	].filter(Boolean).join(" ");
 
 	const connectSrc = [
 		"'self'",
 		// Local API only needed in dev; harmless if present in prod builds used locally
 		...(isDev ? ["http://localhost:3001", "ws://localhost:3001", "http://127.0.0.1:3001"] : []),
-		// WalletConnect relay (QR-code wallet pairing for mobile + non-extension users)
-		"https://*.walletconnect.com",
-		"wss://*.walletconnect.com",
-		"https://api.web3modal.org",
 		// Public RPC fallbacks used by the injected wallet for read-only chain calls
 		"https://*.infura.io",
 		"https://*.alchemy.com",
@@ -139,7 +140,7 @@ function generateContentSecurityPolicy(): string {
 		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data: https: blob:",
 		"font-src 'self'",
-		"frame-src 'self' https://verify.walletconnect.com https://*.walletconnect.com",
+		"frame-src 'self'",
 		`connect-src ${connectSrc}`,
 		// Align with X-Frame-Options: DENY — block all framing (clickjacking).
 		"frame-ancestors 'none'",

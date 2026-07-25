@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Track the constructor args for each connector so we can assert that
-// WalletConnect is only registered when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-// is set. We stub wagmi/connectors so the test doesn't need a window or
-// actual WalletConnect runtime.
+// only the injected connector is registered.
 const connectorCalls = vi.hoisted(
 	() => [] as Array<{ name: string; args: unknown }>,
 );
@@ -23,15 +21,15 @@ function clearWindowEthereum(): void {
 }
 
 vi.mock("wagmi/connectors", () => {
-	// wagmi v3 connectors are created by calling injected(), walletConnect({...}),
-	// etc., and each call returns a CreateConnectorFn — a function that wagmi
-	// later invokes with { emitter, chains, ... }. Track each construction so we
-	// can assert what's registered.
+	// wagmi v3 connectors are created by calling injected(), etc., and
+	// each call returns a CreateConnectorFn — a function that wagmi
+	// later invokes with { emitter, chains, ... }. Track each
+	// construction so we can assert what's registered.
 	const makeSpy = (name: string) => {
 		const factory = (...args: unknown[]) => {
 			connectorCalls.push({ name, args });
-			// Return a CreateConnectorFn that, when called by createConfig, returns
-			// a minimal Connector-shaped stub.
+			// Return a CreateConnectorFn that, when called by
+			// createConfig, returns a minimal Connector-shaped stub.
 			const connectorFn = () => ({
 				id: name,
 				name,
@@ -45,42 +43,24 @@ vi.mock("wagmi/connectors", () => {
 	};
 	return {
 		injected: makeSpy("injected"),
-		walletConnect: makeSpy("walletConnect"),
 	};
 });
 
 describe("getWagmiConfigSingleton", () => {
-	const ORIGINAL_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-
-	// Reset the wagmi module between tests so the singleton cache (and the
-	// connector call log) starts fresh each time.
 	beforeEach(async () => {
 		vi.resetModules();
 		connectorCalls.length = 0;
 	});
 
-	afterEach(() => {
-		if (ORIGINAL_PROJECT_ID === undefined) {
-			delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		} else {
-			process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = ORIGINAL_PROJECT_ID;
-		}
-		clearWindowEthereum();
-	});
-
-	const loadSingleton = async () => {
-		const mod = await import("./wagmi");
-		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
-		return mod.getWagmiConfigSingleton() as any;
-	};
-
 	it("always registers injected (even without ethereum)", async () => {
-		// Users on Safari / clean Chrome / mobile must still see a connect path —
-		// the injected connector surfaces any EIP-1193 wallet (MetaMask / Rabby /
-		// Brave / OKX / Coinbase Extension).
+		// Users on Safari / clean Chrome / mobile must still see a
+		// connect path — the injected connector surfaces any EIP-1193
+		// wallet (MetaMask / Rabby / Brave / OKX / Coinbase Extension).
 		clearWindowEthereum();
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		const config = await loadSingleton();
+		const mod = await import("./wagmi");
+		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
+		const config = mod.getWagmiConfigSingleton() as any;
 
 		const names = connectorCalls.map((c) => c.name);
 		expect(names).toContain("injected");
@@ -90,49 +70,28 @@ describe("getWagmiConfigSingleton", () => {
 	it("registers injected when window.ethereum exists", async () => {
 		setWindowEthereum({ isMetaMask: true });
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		const config = await loadSingleton();
+		const mod = await import("./wagmi");
+		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
+		const config = mod.getWagmiConfigSingleton() as any;
 
 		const names = connectorCalls.map((c) => c.name);
 		expect(names).toContain("injected");
 		expect(config.connectors.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it("does NOT register walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is unset", async () => {
+	it("does NOT register walletConnect (connector was removed — only injected remains)", async () => {
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		await loadSingleton();
+		await import("./wagmi");
 
-		const names = connectorCalls.map((c) => c.name);
-		expect(names).not.toContain("walletConnect");
-	});
-
-	it("registers walletConnect when NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set", async () => {
-		process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID =
-			"test-walletconnect-project-id";
-		const config = await loadSingleton();
-
-		const names = connectorCalls.map((c) => c.name);
-		expect(names).toContain("walletConnect");
-
-		const wcCall = connectorCalls.find((c) => c.name === "walletConnect");
-		expect(wcCall).toBeDefined();
-		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
-		const wcArgs = wcCall as any;
-		expect(wcArgs.args[0].projectId).toBe("test-walletconnect-project-id");
-		// injected + walletConnect = 2
-		expect(config.connectors.length).toBeGreaterThanOrEqual(2);
-	});
-
-	it("skips walletConnect for known placeholder project IDs", async () => {
-		process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID =
-			"your_walletconnect_project_id";
-		await loadSingleton();
 		const names = connectorCalls.map((c) => c.name);
 		expect(names).not.toContain("walletConnect");
 	});
 
 	it("always configures Base + Base Sepolia chains", async () => {
 		delete process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-		const config = await loadSingleton();
+		const mod = await import("./wagmi");
+		// biome-ignore lint/suspicious/noExplicitAny: test file uses any for mocking
+		const config = mod.getWagmiConfigSingleton() as any;
 
 		const ids = config.chains.map((c: { id: number }) => c.id);
 		expect(ids).toContain(8453); // base mainnet

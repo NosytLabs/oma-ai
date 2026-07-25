@@ -1,6 +1,6 @@
 import { createConfig, createStorage, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
-import { injected, walletConnect } from "wagmi/connectors";
+import { injected } from "wagmi/connectors";
 
 /**
  * RPC transport URLs.
@@ -14,60 +14,15 @@ import { injected, walletConnect } from "wagmi/connectors";
 const MAINNET_RPC = "/api/rpc/base";
 const TESTNET_RPC = "/api/rpc/base-sepolia";
 
-function resolveWalletConnectProjectId(): string | undefined {
-	const rawProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-
-	// Reject known placeholders so we never send 403-bound requests to
-	// api.web3modal.org. Real IDs come from https://cloud.walletconnect.com
-	const KNOWN_PLACEHOLDERS = new Set([
-		"your_walletconnect_project_id",
-		"dev-placeholder-project-id",
-	]);
-
-	if (rawProjectId && KNOWN_PLACEHOLDERS.has(rawProjectId)) {
-		console.warn(
-			"[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is a placeholder. " +
-				"WalletConnect connector will not be registered. " +
-				"Get a free project ID at https://cloud.walletconnect.com",
-		);
-		return undefined;
-	}
-
-	return rawProjectId?.trim() || undefined;
-}
-
 function getWagmiConfig() {
-	const walletConnectProjectId = resolveWalletConnectProjectId();
-
-	// Two connectors:
-	//   - injected: works for any EIP-1193 wallet (MetaMask / Rabby / Brave /
-	//     OKX / Coinbase Extension). This is the open-source path that was
-	//     working reliably — no cloud relay, no project ID required.
-	//   - walletConnect: optional QR-code connector for mobile / non-extension
-	//     users. Only registered when a real WalletConnect project ID is set
-	//     (placeholder env values are silently dropped — see
-	//     resolveWalletConnectProjectId).
+	// Single connector: injected (EIP-1193). Works for MetaMask / Rabby /
+	// Brave / OKX / Coinbase Extension — no cloud relay, no project ID,
+	// no SDK, zero bundle overhead from wallet-connect-relay.
 	//
-	// Coinbase Wallet SDK was dropped — it's a separate SDK that adds bundle
-	// weight and the Coinbase Extension already exposes window.ethereum via
-	// the injected path.
-	const connectors = [
-		injected({ shimDisconnect: true }),
-		...(walletConnectProjectId
-			? [
-					walletConnect({
-						projectId: walletConnectProjectId,
-						showQrModal: true,
-						metadata: {
-							name: "OMA AI",
-							description: "Open Model Access — AI inference paid in USDC",
-							url: "https://oma-ai.com",
-							icons: ["https://oma-ai.com/logos/oma-icon-192.png"],
-						},
-					}),
-				]
-			: []),
-	];
+	// Coinbase Wallet SDK was dropped — it's a separate SDK that adds
+	// bundle weight and the Coinbase Extension already exposes
+	// window.ethereum via the injected path.
+	const connectors = [injected({ shimDisconnect: true })];
 
 	return createConfig({
 		chains: [base, baseSepolia],
