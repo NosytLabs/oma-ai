@@ -78,7 +78,7 @@ export async function generateMetadata({
 				title,
 				description,
 				url: `https://oma-ai.com/models/${model.id}`,
-				images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+				images: [{ url: "/og-image.webp", width: 1200, height: 630 }],
 			},
 			twitter: { card: "summary_large_image", title, description },
 			alternates: { canonical: `https://oma-ai.com/models/${model.id}` },

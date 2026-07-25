@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 		title: "Product Changelog — OMA",
 		description:
 			"Release notes for OMA AI: new models, gateway fixes, payment rails, and network primitives.",
-		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Changelog" }],
+		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Changelog" }],
 	},
 	robots: { index: true, follow: true },
 };

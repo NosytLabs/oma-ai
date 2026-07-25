@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 		title: "OMA vs Portkey vs LiteLLM vs OpenRouter",
 		description:
 			"Feature-by-feature comparison. OMA is the agent-native LLM gateway with x402, a genuine free tier, privacy-first accounts, and circuit-breaker failover.",
-		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA comparison" }],
+		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA comparison" }],
 	},
 	robots: { index: true, follow: true },
 };

@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 		title: "Network Primitives — OMA",
 		description:
 			"Programmable network primitives for AI agents: rate limits, signing, audit log, telemetry, deposit feeds.",
-		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Network" }],
+		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Network" }],
 	},
 	robots: { index: true, follow: true },
 };

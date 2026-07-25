@@ -60,7 +60,7 @@ export const metadata: Metadata = {
 		type: "website",
 		images: [
 			{
-				url: "/og-image.png",
+				url: "/og-image.webp",
 				width: 1280,
 				height: 720,
 				alt: "OMA — One gateway. Every model.",
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
 		title: "OMA · Open Model Access — AI inference paid in USDC",
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth and USDC pay-per-request on Base.",
-		images: ["/og-image.png"],
+		images: ["/og-image.webp"],
 	},
 	icons: {
 		icon: [

@@ -176,14 +176,14 @@ export function Hero() {
 						<div className="relative overflow-hidden rounded-xl border border-border-hi bg-surface-elevated/90 shadow-xl backdrop-blur-sm">
 							<div className="border-b border-border p-3">
 								<ImageGeneration
-									images="/og-image.png"
+									images="/og-image.webp"
 									strength={0.35}
 									preset="pixels-organic"
 									theme="auto"
 									className="overflow-hidden rounded-lg"
 								>
 									<Image
-										src="/og-image.png"
+										src="/og-image.webp"
 										alt="OMA AI inference gateway preview"
 										width={1280}
 										height={720}

@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 		title: "System Observability — OMA",
 		description:
 			"Live gateway health plus sample operator metrics for the OMA AI inference gateway.",
-		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Observability" }],
+		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Observability" }],
 	},
 	robots: { index: true, follow: true },
 };

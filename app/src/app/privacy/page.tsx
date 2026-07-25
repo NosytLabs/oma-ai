@@ -30,14 +30,14 @@ export const metadata: Metadata = {
 		title: "Privacy · OMA",
 		description:
 			"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
-		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Privacy" }],
+		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Privacy" }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Privacy · OMA",
 		description:
 			"Minimal data collection policy. No prompt or completion logging, ever.",
-		images: ["/og-image.png"],
+		images: ["/og-image.webp"],
 	},
 	robots: { index: true, follow: true },
 };
