@@ -43,7 +43,8 @@ export function AnimatedNumber({
 		});
 		prev.current = value;
 		return () => controls.stop();
-	}, [value, prefersReducedMotion]);
+		// `count` is a stable motionValue from useState — safe to include.
+	}, [value, prefersReducedMotion, count]);
 
 	return (
 		<m.span

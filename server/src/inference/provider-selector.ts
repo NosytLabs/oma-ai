@@ -14,8 +14,8 @@ const SURPLUS_ENABLED = !!config.SURPLUS_WALLET_PRIVATE_KEY && config.NODE_ENV =
 export { SURPLUS_ENABLED };
 
 // Gonka routes through OpenBroker (api.openbroker.gonka.gg) — free community
-// broker with 0% markup. Always enabled; works with or without an API key.
-const GONKA_ENABLED = true;
+// broker with 0% markup. Always enabled; works with or without an API key
+// (no enable flag needed — availability is gated by isProviderAvailable()).
 
 /** Detect placeholder / truncated API keys that will always 401. */
 function isPlaceholderKey(key: string | undefined): boolean {

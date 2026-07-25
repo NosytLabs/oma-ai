@@ -5,7 +5,6 @@ import { reportProviderResult } from "./provider-health.js";
 import { isCircuitOpen, recordProviderError, recordProviderSuccess } from "./circuit-breaker.js";
 import { PROVIDER_ERROR_TYPES } from "../tracing.js";
 import type { Provider } from "./provider-selector.js";
-import { config } from "../config.js";
 import { trace } from "@opentelemetry/api";
 import { logger } from "../lib/logger.js";
 import { redactPii } from "../lib/privacy.js";

@@ -78,7 +78,7 @@ export function ProviderRoutingSection() {
 					<ol className="space-y-1.5 text-sm text-text-muted list-decimal list-inside">
 						<li>Request arrives with a model id</li>
 						<li>OMA looks up the model→provider mapping in the catalog</li>
-						<li>The model's primary provider handles the request</li>
+						<li>The model&apos;s primary provider handles the request</li>
 						<li>On failure, circuit breaker triggers failover to alternates</li>
 						<li>Each model maps to exactly one or more upstream providers</li>
 					</ol>

@@ -10,7 +10,13 @@
  *   const client = getPublicClient();
  *   const receipt = await client.getTransactionReceipt({ hash });
  */
-import { createPublicClient, fallback, http } from "viem";
+import {
+  createPublicClient,
+  fallback,
+  http,
+  type FallbackTransport,
+  type PublicClient,
+} from "viem";
 import { base } from "viem/chains";
 import { config } from "../config.js";
 import { logger } from "./logger.js";
@@ -22,21 +28,38 @@ const FREE_BASE_RPCS = [
   "https://base-rpc.publicnode.com",
 ];
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-let cachedClient: any = null;
+/**
+ * Base mainnet public client over a ranked fallback transport. Bound to
+ * `typeof base` so OP-stack transaction types (e.g. `deposit`) are included,
+ * and expressed via viem's public `PublicClient`/`FallbackTransport` exports
+ * so the type is portably nameable (the raw inferred type is not).
+ */
+type BasePublicClient = PublicClient<FallbackTransport, typeof base>;
+
+/** Build the Base public client from an ordered transport list. */
+function createClient(transports: ReturnType<typeof http>[]): BasePublicClient {
+  return createPublicClient({
+    chain: base,
+    transport: fallback(transports, { rank: true }),
+  });
+}
+
+let cachedClient: BasePublicClient | null = null;
 
 /**
  * Returns a singleton viem PublicClient for Base mainnet with fallback
  * transport. Primary = CHAIN_RPC_URL (QuickNode), fallbacks = free public
  * RPCs. If CHAIN_RPC_URL is unset (dev/test), uses free RPCs only.
  */
-export function getPublicClient() {
+export function getPublicClient(): BasePublicClient {
   if (cachedClient) return cachedClient;
 
   const transports: ReturnType<typeof http>[] = [];
+  const seenUrls = new Set<string>();
 
   if (config.CHAIN_RPC_URL) {
     transports.push(http(config.CHAIN_RPC_URL));
+    seenUrls.add(config.CHAIN_RPC_URL);
   }
 
   // Explicit fallback from env (e.g. QUICKNODE_RPC_URL_FALLBACK)
@@ -45,14 +68,16 @@ export function getPublicClient() {
     config.CHAIN_RPC_URL_FALLBACK !== config.CHAIN_RPC_URL
   ) {
     transports.push(http(config.CHAIN_RPC_URL_FALLBACK));
+    seenUrls.add(config.CHAIN_RPC_URL_FALLBACK);
   }
 
-  // Free public RPCs — deduped against what's already in the list
-  const seen = new Set(transports.map((t) => (t as any).url ?? ""));
+  // Free public RPCs — deduped against the URLs already registered above.
+  // (Tracking URLs directly is more reliable than reading `.url` off viem
+  // transports, which is not part of the public transport type.)
   for (const url of FREE_BASE_RPCS) {
-    if (!seen.has(url)) {
+    if (!seenUrls.has(url)) {
       transports.push(http(url));
-      seen.add(url);
+      seenUrls.add(url);
     }
   }
 
@@ -65,12 +90,10 @@ export function getPublicClient() {
     `[rpc] fallback transport: ${transports.length} endpoints (primary: ${config.CHAIN_RPC_URL ? "QuickNode" : "free"})`,
   );
 
-  cachedClient = createPublicClient({
-    chain: base,
-    transport: fallback(transports, { rank: true }),
-  });
+  const client = createClient(transports);
+  cachedClient = client;
 
-  return cachedClient;
+  return client;
 }
 
 /** Reset cached client (for tests). */

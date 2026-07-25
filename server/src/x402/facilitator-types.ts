@@ -137,10 +137,6 @@ export function hasCacheEntry(cacheKey: string): boolean {
   return settlementCache.has(cacheKey);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // ponytail: EIP-3009 USDC authorization domain constants live here
 // (used by both signing and verification paths).
 export const USDC_EIP712_DOMAIN = {
