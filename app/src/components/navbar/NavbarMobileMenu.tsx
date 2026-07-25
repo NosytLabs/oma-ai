@@ -100,7 +100,7 @@ export function NavbarMobileMenu({
 	};
 
 	const isAccountCardActive = accountHrefs.some((href) =>
-		isCurrentPath(pathname, href),
+		isCurrentPath(pathname ?? "/", href),
 	);
 
 	return (
@@ -146,7 +146,7 @@ export function NavbarMobileMenu({
 							<div className="space-y-3">
 								{mobileGroups.map((group, gi) => {
 									const isCardActive = group.links.some((link) =>
-										isCurrentPath(pathname, link.href),
+										isCurrentPath(pathname ?? "/", link.href),
 									);
 									return (
 										<m.div
@@ -175,7 +175,7 @@ export function NavbarMobileMenu({
 											<m.ul className="grid grid-cols-2 gap-1">
 												{group.links.map((link) => {
 													const Icon = link.icon;
-													const isActive = isCurrentPath(pathname, link.href);
+													const isActive = isCurrentPath(pathname ?? "/", link.href);
 													return (
 														<m.li key={link.href} variants={mobileLinkVariant}>
 															<Link

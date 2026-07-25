@@ -5,6 +5,8 @@
 
 // ISR: Revalidate every 24 hours (legal content, very rarely changes)
 export const revalidate = 86400;
+// Imports client visuals; opt out of static prerender.
+export const dynamic = "force-dynamic";
 
 import {
 	ArrowLeft,

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { ImageGenerationPanel } from "@/components/chat/ImageGenerationPanel";
 
+// Opt out of static prerender — full client component with effects/state.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "Image generation playground",
 	description:

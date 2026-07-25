@@ -29,6 +29,9 @@ import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 
+// Opt out of static prerender — uses client-only visual components.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "Network Primitives — agent infrastructure APIs",
 	description:

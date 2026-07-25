@@ -7,8 +7,8 @@ import { useEffect } from "react";
 export function AuthNotice() {
 	const params = useSearchParams();
 	const router = useRouter();
-	const auth = params.get("auth");
-	const next = params.get("next");
+	const auth = params?.get("auth");
+	const next = params?.get("next");
 
 	useEffect(() => {
 		if (auth !== "required" && auth !== "expired") return;

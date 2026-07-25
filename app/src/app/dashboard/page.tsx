@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
@@ -20,7 +20,7 @@ import { useDashboardStats } from "./_hooks/useDashboardStats";
 
 // Lazy-load the 599-line grid + chart components. Initial paint shows
 // the header + skeleton; the grid hydrates after data is fetched.
-const DashboardGrid = dynamic(
+const DashboardGrid = nextDynamic(
 	() =>
 		import("./_components/DashboardGrid").then((m) => ({
 			default: m.DashboardGrid,
@@ -53,9 +53,9 @@ export default function DashboardPage() {
 	// TABS is a module-level constant — memoize once so the effect deps are stable.
 	const validTabIds = useMemo(() => TABS.map((t) => t.id), []);
 	const initialTab: TabId =
-		(searchParams.get("tab") &&
-		validTabIds.includes(searchParams.get("tab") as TabId))
-			? (searchParams.get("tab") as TabId)
+		(searchParams?.get("tab") &&
+		validTabIds.includes(searchParams?.get("tab") as TabId))
+			? (searchParams?.get("tab") as TabId)
 			: "overview";
 
 	const {
@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
 	// Keep tab state in sync with ?tab= (back/forward + deep links).
 	useEffect(() => {
-		const raw = searchParams.get("tab");
+		const raw = searchParams?.get("tab");
 		const next =
 			raw && validTabIds.includes(raw as TabId) ? (raw as TabId) : "overview";
 		setActiveTab(next);

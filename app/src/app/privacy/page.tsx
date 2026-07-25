@@ -3,7 +3,8 @@
  * copy: plain English summary at the top, active voice
  */
 
-// ISR: Revalidate every 24 hours (legal content, very rarely changes)
+// Imports client visuals (FloatingIcons etc); opt out of static prerender.
+export const dynamic = "force-dynamic";
 export const revalidate = 86400;
 
 import {

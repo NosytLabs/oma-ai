@@ -15,7 +15,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
@@ -25,38 +25,38 @@ import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, api, type Session, type User } from "@/lib/api";
 
-const AccountLoginModal = dynamic(
+const AccountLoginModal = nextDynamic(
 	() =>
 		import("@/components/account-login-modal").then((m) => m.AccountLoginModal),
 	{ ssr: false },
 );
 
-const ProfileSection = dynamic(() =>
+const ProfileSection = nextDynamic(() =>
 	import("./_components/ProfileSection").then((m) => ({
 		default: m.ProfileSection,
 	})),
 );
-const WalletsSection = dynamic(() =>
+const WalletsSection = nextDynamic(() =>
 	import("./_components/WalletsSection").then((m) => ({
 		default: m.WalletsSection,
 	})),
 );
-const ApiKeysSection = dynamic(() =>
+const ApiKeysSection = nextDynamic(() =>
 	import("./_components/ApiKeysSection").then((m) => ({
 		default: m.ApiKeysSection,
 	})),
 );
-const SessionsSection = dynamic(() =>
+const SessionsSection = nextDynamic(() =>
 	import("./_components/SessionsSection").then((m) => ({
 		default: m.SessionsSection,
 	})),
 );
-const DangerZoneSection = dynamic(() =>
+const DangerZoneSection = nextDynamic(() =>
 	import("./_components/DangerZoneSection").then((m) => ({
 		default: m.DangerZoneSection,
 	})),
 );
-const BillingSection = dynamic(() =>
+const BillingSection = nextDynamic(() =>
 	import("./_components/BillingSection").then((m) => ({
 		default: m.BillingSection,
 	})),
@@ -121,7 +121,7 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 };
 
 /** Accept short aliases in ?tab= (e.g. keys → api-keys). */
-function parseSettingsTab(raw: string | null): SettingsTab | null {
+function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	if (!raw) return null;
 	if (raw === "keys") return "api-keys";
 	if (TABS.some((tab) => tab.id === raw)) return raw as SettingsTab;
@@ -170,7 +170,7 @@ export default function SettingsPage() {
 
 	// Deep-link: /settings?tab=wallets | ?tab=keys (alias for api-keys)
 	useEffect(() => {
-		const parsed = parseSettingsTab(searchParams.get("tab"));
+		const parsed = parseSettingsTab(searchParams?.get("tab") ?? null);
 		if (parsed) setActiveTab(parsed);
 	}, [searchParams]);
 

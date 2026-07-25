@@ -29,7 +29,7 @@ export function NavbarToolsDropdown({
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
-	const isToolsActive = toolsLinks.some((l) => isCurrentPath(pathname, l.href));
+	const isToolsActive = toolsLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
 
 	useClickOutside(containerRef, open, () => onOpenChange(false));
 
@@ -119,7 +119,7 @@ export function NavbarToolsDropdown({
 						<ul className="space-y-1">
 							{toolsLinks.map((link) => {
 								const Icon = link.icon;
-								const isActive = isCurrentPath(pathname, link.href);
+								const isActive = isCurrentPath(pathname ?? "/", link.href);
 								return (
 									<li key={link.href} role="none">
 										<Link

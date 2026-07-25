@@ -61,7 +61,7 @@ export function Navbar() {
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
 
-	const section = sectionLabelFor(pathname);
+	const section = sectionLabelFor(pathname ?? "/");
 
 	return (
 		<header
@@ -118,7 +118,7 @@ export function Navbar() {
 						<ul className="hidden md:flex items-center gap-0.5">
 							{primaryLinks.map((link) => {
 								const Icon = link.icon;
-								const isActive = isCurrentPath(pathname, link.href);
+								const isActive = isCurrentPath(pathname ?? "/", link.href);
 								return (
 									<li key={link.href} className="relative">
 										<m.div

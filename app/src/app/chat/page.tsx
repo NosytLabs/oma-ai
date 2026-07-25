@@ -1,14 +1,14 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { Suspense } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 
 // Lazy-load the 569-line chat shell (framer-motion + wallet hooks).
-const ChatPlaygroundShell = dynamic(
+const ChatPlaygroundShell = nextDynamic(
 	() =>
 		import("./_components/ChatPlaygroundShell").then((m) => ({
 			default: m.ChatPlaygroundShell,

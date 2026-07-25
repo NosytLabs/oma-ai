@@ -7,6 +7,11 @@ import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
+// Opt out of static prerender — uses client components with effects/random
+// positions (FloatingIcons, ElectricBorder, JuiceButton) that depend on the
+// browser environment.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
 	description:

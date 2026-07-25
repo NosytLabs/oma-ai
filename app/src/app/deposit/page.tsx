@@ -1,14 +1,14 @@
 "use client";
 
 import { m } from "@/lib/framer-motion-client";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { Zap } from "lucide-react";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
 
 // Lazy-load the 950-line client interface. Pulls in viem + wagmi + the
 // payment-link API; defer until after the header paints.
-const UnifiedDepositInterface = dynamic(
+const UnifiedDepositInterface = nextDynamic(
 	() =>
 		import("./_components/UnifiedDepositInterface").then((m) => ({
 			default: m.UnifiedDepositInterface,

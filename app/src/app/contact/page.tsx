@@ -4,6 +4,9 @@ import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
+// Opt out of static prerender — uses client-only FloatingIcons background.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",
 	description:

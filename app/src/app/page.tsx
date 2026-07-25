@@ -4,6 +4,10 @@ import { AuthNotice } from "@/components/AuthNotice";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { HomeView } from "./_components/home";
 
+// Homepage composes many client components (AuthNotice + HomeView);
+// opt out of static prerender so Next 15 doesn't crash on missing React hooks.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: {
 		absolute: "OMA · Open Model Access — AI inference paid in USDC",

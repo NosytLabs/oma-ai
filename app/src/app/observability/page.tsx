@@ -25,6 +25,7 @@ import { fetchOpsSnapshot, formatUptime } from "@/lib/ops-snapshot";
 
 /** Revalidate live health/metrics every 30s */
 export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "System Observability — latency & health",

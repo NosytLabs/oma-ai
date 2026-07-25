@@ -12,15 +12,15 @@ export function useUrlFilters() {
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
-	const tier = searchParams.get("tier") || null;
-	const provider = searchParams.get("provider") || null;
-	const search = searchParams.get("q") || "";
-	const sort = searchParams.get("sort") || "name";
+	const tier = searchParams?.get("tier") || null;
+	const provider = searchParams?.get("provider") || null;
+	const search = searchParams?.get("q") || "";
+	const sort = searchParams?.get("sort") || "name";
 
 	const setParam = useCallback(
 		(key: string, value: string | null) => {
 			startTransition(() => {
-				const params = new URLSearchParams(searchParams.toString());
+				const params = new URLSearchParams(searchParams?.toString() ?? "");
 				if (value === null || value === "") {
 					params.delete(key);
 				} else {

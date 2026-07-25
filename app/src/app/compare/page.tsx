@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, X, Sparkles } from "lucide-react";
 
+// Imports client visuals elsewhere; opt out of static prerender so Next 15
+// doesn't crash on missing React hooks.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "OMA vs Portkey vs LiteLLM vs OpenRouter — comparison",
 	description:

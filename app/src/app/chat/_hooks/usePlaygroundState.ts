@@ -120,7 +120,7 @@ export function usePlaygroundState(
 ): PlaygroundState {
 	const searchParams = useSearchParams();
 	const defaultModel =
-		options.defaultModel ?? searchParams.get("model") ?? "llama-3.2-3b";
+		options.defaultModel ?? searchParams?.get("model") ?? "llama-3.2-3b";
 
 	// --- Core chat ---
 	const [model, setModel] = useState<string>(defaultModel);

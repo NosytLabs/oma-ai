@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { CHART_PALETTE } from "@/components/ui/charts/shared";
 import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -9,14 +9,14 @@ import { useWallet } from "@/components/wallet-provider";
 import { api, type BalanceResponse, type CreditTransaction } from "@/lib/api";
 import { DEMO_BALANCE, DEMO_TRANSACTIONS } from "@/lib/demo-fixtures";
 
-const BarChartComponent = dynamic(
+const BarChartComponent = nextDynamic(
 	() => import("@/components/ui/charts").then((m) => m.BarChartComponent),
 	{
 		ssr: false,
 		loading: () => <div className="h-64 animate-pulse rounded bg-surface" />,
 	},
 );
-const DonutChart = dynamic(
+const DonutChart = nextDynamic(
 	() => import("@/components/ui/charts").then((m) => m.DonutChart),
 	{
 		ssr: false,

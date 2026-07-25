@@ -177,7 +177,6 @@ export function Hero() {
 							<div className="border-b border-border p-3">
 								<ImageGeneration
 									images="/og-image.png"
-									autoReveal
 									strength={0.35}
 									preset="pixels-organic"
 									theme="auto"

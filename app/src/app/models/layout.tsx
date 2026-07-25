@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { MODEL_COUNT } from "@/lib/models-data";
 
+// models/ page is fully client; opt the whole segment out of static prerender.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "AI Models Catalog — pricing & capabilities",
 	description: `Browse ${MODEL_COUNT}+ AI models including Claude, Llama, Qwen, DeepSeek, and more. Compare pricing across Venice AI and multi-provider routes. OpenAI-compatible.`,
