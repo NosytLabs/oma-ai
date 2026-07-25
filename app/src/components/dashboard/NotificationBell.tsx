@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/components/motion";
 import {
 	ArrowUpRight,
 	Bell,
@@ -120,23 +121,35 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 				className="relative flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-text-muted transition-colors hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 			>
 				<Bell className="h-4 w-4" aria-hidden="true" />
-				{unreadCount > 0 && (
-					<span
-						aria-hidden="true"
-						className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-void"
-					>
-						{unreadCount > 9 ? "9+" : unreadCount}
-					</span>
-				)}
-			</button>
+				<AnimatePresence>
+					{unreadCount > 0 && (
+						<m.span
+							key="badge"
+							aria-hidden="true"
+							initial={{ opacity: 0, scale: 0, x: 8, y: -8 }}
+							animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+							exit={{ opacity: 0, scale: 0, x: 8, y: -8 }}
+							transition={{ ...springs.magnet, delay: 0.05 }}
+							className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-void"
+						>
+							{unreadCount > 9 ? "9+" : unreadCount}
+						</m.span>
+					)}
+				</AnimatePresence>
+				</button>
 
 			<AnimatePresence>
 				{open && (
 					<m.div
-						initial={{ opacity: 0, y: -4, scale: 0.98 }}
-						animate={{ opacity: 1, y: 0, scale: 1 }}
-						exit={{ opacity: 0, y: -4, scale: 0.98 }}
-						transition={{ duration: 0.15 }}
+						// Origin-aware open: scale + slide from the bell, fade + blur
+						// for crisp entrance. "Toggle menu" pattern from
+						// transitions.dev — opens with origin, closes by collapsing
+						// back to origin so it feels anchored to the trigger.
+						initial={{ opacity: 0, scale: 0.96, y: -6, filter: "blur(4px)" }}
+						animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+						exit={{ opacity: 0, scale: 0.96, y: -6, filter: "blur(4px)" }}
+						transition={{ ...springs.toast, mass: 0.9 }}
+						style={{ transformOrigin: "top right" }}
 						role="menu"
 						aria-label="Notifications"
 						className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-panel p-2 shadow-2xl"
@@ -156,26 +169,49 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 						</div>
 
 						<div className="max-h-96 overflow-y-auto">
-							{isLoading ? (
-								<div className="flex items-center gap-2 px-2 py-4 text-xs text-text-muted">
-									<span className="inline-block h-2 w-2 rounded-full bg-text-muted animate-pulse" />
-									Loading…
-								</div>
-							) : recent.length === 0 ? (
-								<div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
-									<div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-text-muted">
-										<BellOff className="h-4 w-4" aria-hidden="true" />
-									</div>
-									<p className="text-sm text-text-secondary">
-										No notifications
-									</p>
-									<p className="text-[11px] text-text-muted">
-										Deposit and refund events will show up here.
-									</p>
-								</div>
-							) : (
-								recent.map((n) => <NotificationRow key={n.id} n={n} />)
-							)}
+							<AnimatePresence mode="wait" initial={false}>
+								{isLoading ? (
+									<m.div
+										key="loading"
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										exit={{ opacity: 0 }}
+										className="flex items-center gap-2 px-2 py-4 text-xs text-text-muted"
+									>
+										<span className="inline-block h-2 w-2 rounded-full bg-text-muted animate-pulse" />
+										Loading…
+									</m.div>
+								) : recent.length === 0 ? (
+									<m.div
+										key="empty"
+										initial={{ opacity: 0, scale: 0.7, filter: "blur(6px)" }}
+										animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+										exit={{ opacity: 0, scale: 0.7, filter: "blur(6px)" }}
+										transition={{ ...springs.magnet }}
+										className="flex flex-col items-center gap-2 px-2 py-6 text-center"
+									>
+										<div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-text-muted">
+											<BellOff className="h-4 w-4" aria-hidden="true" />
+										</div>
+										<p className="text-sm text-text-secondary">
+											No notifications
+										</p>
+										<p className="text-[11px] text-text-muted">
+											Deposit and refund events will show up here.
+										</p>
+									</m.div>
+								) : (
+									<m.div
+										key="list"
+										initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+										animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+										exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+										transition={{ ...springs.magnet }}
+									>
+										{recent.map((n) => <NotificationRow key={n.id} n={n} />)}
+									</m.div>
+								)}
+							</AnimatePresence>
 						</div>
 
 						<div className="mt-1 flex items-center justify-between border-t border-border px-2 py-1.5 text-[11px]">
