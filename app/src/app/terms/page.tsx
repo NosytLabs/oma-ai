@@ -34,6 +34,7 @@ export const metadata: Metadata = {
 			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination.",
 		images: ["/og-image.png"],
 	},
+	robots: { index: true, follow: true },
 };
 
 const ISSUED = "2026-01-01";

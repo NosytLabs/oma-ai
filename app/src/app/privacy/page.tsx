@@ -38,6 +38,7 @@ export const metadata: Metadata = {
 			"Minimal data collection policy. No prompt or completion logging, ever.",
 		images: ["/og-image.png"],
 	},
+	robots: { index: true, follow: true },
 };
 
 const ISSUED = "2026-01-01";

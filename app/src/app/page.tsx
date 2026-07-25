@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 		description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT}+ models, wallet-based auth, and USDC pay-per-request on Base.`,
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 export default function HomePage() {

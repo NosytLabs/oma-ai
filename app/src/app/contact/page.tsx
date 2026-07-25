@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 			"Product support, privacy requests, and legal questions for the OMA AI gateway.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "Contact OMA" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 const CHANNELS = [

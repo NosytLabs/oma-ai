@@ -226,14 +226,14 @@ export default function DashboardPage() {
 	// while /api/user is still finishing — only block when we truly don't know.
 	const content = !isReady && !isAuthenticated ? (
 		<>
-			<h1 className="sr-only">Dashboard</h1>
-			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-				<AuthSkeleton />
-			</div>
+									<h2 className="sr-only">Dashboard</h2>
+									<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+										<AuthSkeleton />
+									</div>
 		</>
 	) : !isAuthenticated ? (
 		<>
-			<h1 className="sr-only">Dashboard</h1>
+			<h2 className="sr-only">Dashboard</h2>
 			<ConnectWalletView onConnect={connectEvm} />
 		</>
 	) : (

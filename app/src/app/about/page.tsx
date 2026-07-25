@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 			"One gateway. Every model. Wallet auth and USDC pay-per-request — no lock-in.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "About OMA" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 const PILLARS = [

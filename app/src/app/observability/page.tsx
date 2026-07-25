@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 			"Live gateway health plus sample operator metrics for the OMA AI inference gateway.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Observability" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 interface SparklineProps {

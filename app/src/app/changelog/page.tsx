@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 			"Release notes for OMA AI: new models, gateway fixes, payment rails, and network primitives.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Changelog" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 type ChangeKind = "feature" | "fix" | "perf" | "deprecation";

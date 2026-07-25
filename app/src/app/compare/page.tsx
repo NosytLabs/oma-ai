@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 			"Feature-by-feature comparison. OMA is the agent-native LLM gateway with x402, a genuine free tier, privacy-first accounts, and circuit-breaker failover.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA comparison" }],
 	},
+	robots: { index: true, follow: true },
 };
 
 const competitors: { key: string; name: string; tagline: string; ours?: boolean }[] = [
