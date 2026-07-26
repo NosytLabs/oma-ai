@@ -16,6 +16,7 @@ import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { randomBytes } from "node:crypto";
 import { config } from "../config.js";
+import { buildV2Challenge, buildXPaymentResponse, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
@@ -1534,9 +1535,13 @@ export function paymentMiddleware(
       return;
     }
 
+    // v2 transport (X-PAYMENT, base64 JSON, CAIP-2 networks) is checked
+    // first; the legacy v1 PAYMENT-SIGNATURE raw-JSON header remains fully
+    // supported. Both map onto the same EIP-3009 verify/settle core.
+    const xPaymentHeader = c.req.header("X-PAYMENT");
     const paymentHeader = c.req.header("PAYMENT-SIGNATURE");
 
-    if (!paymentHeader) {
+    if (!xPaymentHeader && !paymentHeader) {
       const now = Math.floor(Date.now() / 1000);
       const paymentURL = `https://oma-ai.com/deposit?route=x402&network=${networkId}&asset=${encodeURIComponent(asset)}&return_to=${encodeURIComponent(c.req.url)}`;
 
@@ -1554,9 +1559,19 @@ export function paymentMiddleware(
         "payment-URL": paymentURL,
       };
 
+      const v2Challenge = buildV2Challenge({
+        priceUsd: price,
+        payTo: payeeAddress,
+        resource: c.req.url,
+        maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS,
+      });
+
       c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));
+      // Spec-shaped v2 body (x402Version/accepts) with the legacy v1
+      // error envelope folded in so both client generations can parse it.
       return c.json(
         {
+          ...v2Challenge,
           error: {
             message: "Payment required",
             type: "payment_required",
@@ -1568,13 +1583,24 @@ export function paymentMiddleware(
     }
 
     let paymentSig: PaymentSignature;
-    try {
-      paymentSig = JSON.parse(paymentHeader) as PaymentSignature;
-    } catch {
-      return c.json(
-        { error: { message: "Invalid PAYMENT-SIGNATURE header", type: "payment_error" } },
-        400,
-      );
+    if (xPaymentHeader) {
+      try {
+        paymentSig = parseXPaymentHeader(xPaymentHeader);
+      } catch (err) {
+        return c.json(
+          { error: { message: err instanceof Error ? err.message : "Invalid X-PAYMENT header", type: "payment_error" } },
+          400,
+        );
+      }
+    } else {
+      try {
+        paymentSig = JSON.parse(paymentHeader as string) as PaymentSignature;
+      } catch {
+        return c.json(
+          { error: { message: "Invalid PAYMENT-SIGNATURE header", type: "payment_error" } },
+          400,
+        );
+      }
     }
 
     if (paymentSig.payload?.payee?.toLowerCase() !== payeeAddress.toLowerCase()) {
@@ -1622,6 +1648,16 @@ export function paymentMiddleware(
     }
 
     c.set("payment", { txHash: verification.txHash, amount: verification.amount ?? paymentSig.payload.amount, networkId: verification.networkId ?? paymentSig.payload.networkId });
+    // v2 clients get the spec's settlement receipt header.
+    if (xPaymentHeader) {
+      c.header(
+        "X-PAYMENT-RESPONSE",
+        buildXPaymentResponse({
+          txHash: verification.txHash,
+          payer: paymentSig.payload.payFrom,
+        }),
+      );
+    }
     await next();
   };
 }

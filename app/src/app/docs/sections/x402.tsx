@@ -100,8 +100,15 @@ if (payReq.ok) {
 								x402 protocol
 							</a>
 							. The server verifies, settles on-chain, and serves the
-							completion — no human in the loop. The same envelope also powers
-							instant credit top-ups via{" "}
+							completion — no human in the loop. Spec v2 transport is also
+							supported: the 402 body carries an{" "}
+							<code className="text-accent font-mono">accepts</code> array
+							(CAIP-2 <code className="text-accent font-mono">eip155:8453</code>
+							, atomic units) and payments can be sent as a base64{" "}
+							<code className="text-accent font-mono">X-PAYMENT</code> header;
+							settled requests return{" "}
+							<code className="text-accent font-mono">X-PAYMENT-RESPONSE</code>.
+							The same envelope also powers instant credit top-ups via{" "}
 							<code className="text-accent font-mono">POST /x402/verify</code>.
 						</p>
 					</div>
