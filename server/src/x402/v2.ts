@@ -131,8 +131,32 @@ export function parseXPaymentHeader(headerValue: string): PaymentSignature {
 }
 
 /**
+ * Bazaar discovery extension (x402-foundation specs/extensions/bazaar.md):
+ * declares the endpoint's input/output contract inside the 402 challenge so
+ * facilitators (CDP's /discovery/resources index) can catalog it.
+ */
+export interface BazaarResourceInfo {
+  /** Top-level `resource` object on the 402 body. */
+  resource: {
+    url: string;
+    description: string;
+    mimeType: string;
+    serviceName?: string;
+    tags?: string[];
+    iconUrl?: string;
+  };
+  /** `extensions.bazaar.info.input` — discriminated by `type`/`method`. */
+  input: Record<string, unknown>;
+  /** `extensions.bazaar.info.output`. */
+  output: Record<string, unknown>;
+  /** JSON Schema validating the `info` structure (required by the spec). */
+  schema: Record<string, unknown>;
+}
+
+/**
  * Build the v2 402 challenge body. `priceUsd` is the decimal USD price
  * ("0.10"); `resource` is the absolute URL (or path) being purchased.
+ * When `bazaar` is provided the challenge carries the discovery extension.
  */
 export function buildV2Challenge(params: {
   priceUsd: string;
@@ -140,10 +164,13 @@ export function buildV2Challenge(params: {
   resource: string;
   description?: string;
   maxTimeoutSeconds?: number;
+  bazaar?: BazaarResourceInfo;
 }): {
   x402Version: 2;
   error: string;
   accepts: Array<Record<string, unknown>>;
+  resource?: BazaarResourceInfo["resource"];
+  extensions?: Record<string, unknown>;
 } {
   const atomic = parseUsdcAtomic(params.priceUsd).toString();
   return {
@@ -164,8 +191,95 @@ export function buildV2Challenge(params: {
         extra: { name: "USD Coin", version: "2" },
       },
     ],
+    ...(params.bazaar
+      ? {
+          resource: params.bazaar.resource,
+          extensions: {
+            bazaar: {
+              info: { input: params.bazaar.input, output: params.bazaar.output },
+              schema: params.bazaar.schema,
+            },
+          },
+        }
+      : {}),
   };
 }
+
+/**
+ * Bazaar descriptor for POST /v1/chat/completions — the one x402-priced
+ * endpoint OMA exposes today. Kept here (not in the route) so the
+ * discovery contract lives next to the transport that advertises it.
+ */
+export const CHAT_COMPLETIONS_BAZAAR: BazaarResourceInfo = {
+  resource: {
+    url: "https://api.oma-ai.com/v1/chat/completions",
+    description:
+      "OpenAI-compatible chat completions across 90+ models (Venice + Gonka/OpenBroker routing), flat-rate x402 pay-per-request in USDC on Base.",
+    mimeType: "application/json",
+    serviceName: "OMA — Open Model Access",
+    tags: ["ai", "llm", "chat-completions", "openai-compatible", "inference"],
+    iconUrl: "https://oma-ai.com/logos/oma-icon-192.png",
+  },
+  input: {
+    type: "http",
+    method: "POST",
+    bodyType: "json",
+    body: {
+      model: "llama-3.3-70b",
+      messages: [{ role: "user", content: "Hello" }],
+      max_tokens: 256,
+    },
+  },
+  output: {
+    type: "json",
+    example: {
+      id: "chatcmpl_123",
+      object: "chat.completion",
+      choices: [
+        {
+          index: 0,
+          message: { role: "assistant", content: "Hello! How can I help?" },
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 8, completion_tokens: 7, total_tokens: 15 },
+    },
+  },
+  schema: {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "object",
+    properties: {
+      input: {
+        type: "object",
+        properties: {
+          type: { type: "string", const: "http" },
+          method: { type: "string", enum: ["POST", "PUT", "PATCH"] },
+          bodyType: { type: "string", enum: ["json", "form-data", "text"] },
+          body: { type: "object" },
+          queryParams: {
+            type: "object",
+            additionalProperties: { type: "string" },
+          },
+          headers: {
+            type: "object",
+            additionalProperties: { type: "string" },
+          },
+        },
+        required: ["type", "method", "bodyType", "body"],
+        additionalProperties: false,
+      },
+      output: {
+        type: "object",
+        properties: {
+          type: { type: "string" },
+          example: { type: "object" },
+        },
+        required: ["type"],
+      },
+    },
+    required: ["input"],
+  },
+};
 
 /**
  * Build the v2 `X-PAYMENT-RESPONSE` header value (base64 JSON) returned on

@@ -287,6 +287,8 @@ export interface PaymentMiddlewareConfig {
   asset?: string;
   networkId?: string;
   scheme?: "evm";
+  /** Per-path Bazaar discovery descriptors included in v2 402 challenges. */
+  bazaar?: Record<string, import("./v2.js").BazaarResourceInfo>;
 }
 
 // ============================================================
@@ -1564,6 +1566,7 @@ export function paymentMiddleware(
         payTo: payeeAddress,
         resource: c.req.url,
         maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS,
+        bazaar: middlewareConfig.bazaar?.[path],
       });
 
       c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));

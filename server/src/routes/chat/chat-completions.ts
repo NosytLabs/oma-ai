@@ -4,6 +4,7 @@ import { SpanKind } from "@opentelemetry/api";
 import { bearerAuth } from "../../auth/middleware.js";
 import { config } from "../../config.js";
 import { paymentMiddleware } from "../../x402/facilitator.js";
+import { CHAT_COMPLETIONS_BAZAAR } from "../../x402/v2.js";
 import { handleChatCompletion } from "../../inference/router.js";
 import { getModel } from "../../inference/models.js";
 import { tokenBucket, modelRateLimit } from "../../middleware/rate-limit.js";
@@ -39,6 +40,9 @@ const x402ChatMiddleware = x402ChatEnabled
   ? paymentMiddleware({
       pricing: { "/v1/chat/completions": config.X402_CHAT_PRICE_USD },
       payeeAddress: config.TREASURY_BASE_ADDRESS as string,
+      // Bazaar discovery: lets CDP's /discovery/resources index catalog the
+      // endpoint from its own 402 challenge.
+      bazaar: { "/v1/chat/completions": CHAT_COMPLETIONS_BAZAAR },
     })
   : null;
 

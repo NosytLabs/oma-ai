@@ -4,6 +4,7 @@ import {
   buildV2Challenge,
   buildXPaymentResponse,
   CAIP2_BASE_MAINNET,
+  CHAT_COMPLETIONS_BAZAAR,
   parseXPaymentHeader,
 } from "../v2.js";
 
@@ -95,6 +96,41 @@ describe("buildV2Challenge", () => {
     expect(offer.maxAmountRequired).toBe("100000");
     expect(offer.payTo).toBe(AUTH.to);
     expect(offer.maxTimeoutSeconds).toBe(300);
+  });
+
+  it("omits resource/extensions when no bazaar descriptor is given", () => {
+    const challenge = buildV2Challenge({
+      priceUsd: "0.10",
+      payTo: AUTH.to,
+      resource: "/v1/chat/completions",
+    });
+    expect(challenge.resource).toBeUndefined();
+    expect(challenge.extensions).toBeUndefined();
+  });
+
+  it("includes the bazaar discovery extension when provided", () => {
+    const challenge = buildV2Challenge({
+      priceUsd: "0.10",
+      payTo: AUTH.to,
+      resource: "/v1/chat/completions",
+      bazaar: CHAT_COMPLETIONS_BAZAAR,
+    });
+    expect(challenge.resource?.serviceName).toBe("OMA — Open Model Access");
+    const bazaar = (
+      challenge.extensions as Record<
+        string,
+        {
+          info: { input: Record<string, unknown>; output: Record<string, unknown> };
+          schema: Record<string, unknown>;
+        }
+      >
+    ).bazaar;
+    expect(bazaar.info.input.type).toBe("http");
+    expect(bazaar.info.input.method).toBe("POST");
+    expect(bazaar.info.input.bodyType).toBe("json");
+    expect(bazaar.info.output.type).toBe("json");
+    // spec requires a schema validating the info structure
+    expect(bazaar.schema.required).toEqual(["input"]);
   });
 });
 
