@@ -291,19 +291,22 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
    * NB: We use a UNIQUE content string here so the LRU is guaranteed
    * to start cold for this test (not contaminated by other tests).
    */
-  it('test 4: estimateTokens LRU short-circuits repeated identical content', async () => {
+  it('test 4: fallback token estimate is chars/4 with no estimateTokens call and no body retention', async () => {
     const { estimateTokens } = await import('../inference/models.js');
-    // Use a unique content string that no other test uses, so the LRU
-    // is provably cold for this test.
-    const UNIQUE = 'lru-test-marker-9b3f8a ' + Date.now();
-    // First, do a single warm-up stream to verify the LRU works
-    // (and to get an unambiguous "1 underlying call" baseline).
-    const warmup = makeUpstream([
-      `data: {"choices":[{"delta":{"content":"${UNIQUE}"}}]}\n\n`,
+    const { recordUsage } = await import('../inference/usage-service.js');
+    ;(recordUsage as any).mockClear();
+    ;(estimateTokens as any).mockClear();
+    // 20-char delta -> ceil(20/4) = 5 output tokens via the inline
+    // chars/4 fallback. The old estimateCache keyed on the ENTIRE
+    // accumulated response body (never hits in production, pure memory
+    // retention) — it was removed along with the estimateTokens call.
+    const CONTENT = 'a'.repeat(20);
+    const upstream = makeUpstream([
+      `data: {"choices":[{"delta":{"content":"${CONTENT}"}}]}\n\n`,
       'data: [DONE]\n\n',
     ]);
-    const warmupStream = createTrackingStream(
-      warmup,
+    const tracking = createTrackingStream(
+      upstream,
       baseParams.model,
       baseParams.modelId,
       baseParams.inputTokens,
@@ -313,38 +316,13 @@ describe('M10.7 stream-tracker — perf, correctness, metrics', () => {
       baseParams.provider,
       baseParams.estimatedTotalCents,
       baseParams.pricing,
-      'req-lru-warmup',
+      'req-charcount',
     );
-    await consumeStream(warmupStream);
+    await consumeStream(tracking);
     await new Promise((r) => setTimeout(r, 10));
-    // Snapshot the mock call count after warmup
-    const callsAfterWarmup = (estimateTokens as any).mock.calls.length;
-    expect(callsAfterWarmup).toBe(1);
-    // Now run 5 more identical streams — all should hit the LRU.
-    for (let i = 0; i < 5; i++) {
-      const upstream = makeUpstream([
-        `data: {"choices":[{"delta":{"content":"${UNIQUE}"}}]}\n\n`,
-        'data: [DONE]\n\n',
-      ]);
-      const tracking = createTrackingStream(
-        upstream,
-        baseParams.model,
-        baseParams.modelId,
-        baseParams.inputTokens,
-        baseParams.discountPercent,
-        baseParams.userId,
-        baseParams.apiKeyId,
-        baseParams.provider,
-        baseParams.estimatedTotalCents,
-        baseParams.pricing,
-        `req-lru-${i}`,
-      );
-      await consumeStream(tracking);
-      await new Promise((r) => setTimeout(r, 5));
-    }
-    const callsAfterLoop = (estimateTokens as any).mock.calls.length;
-    // The 5 cached iterations should add ZERO new underlying calls.
-    expect(callsAfterLoop).toBe(callsAfterWarmup);
+    expect((estimateTokens as any).mock.calls.length).toBe(0);
+    const usageCall = (recordUsage as any).mock.calls.at(-1)?.[0];
+    expect(usageCall?.outputTokens).toBe(5);
   });
 
   /**

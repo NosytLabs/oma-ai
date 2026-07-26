@@ -101,8 +101,13 @@ function formatPrometheus(): string {
 export async function metricsMiddleware(c: Context<OmaEnv>, next: Next) {
   await next();
   const method = c.req.method;
-  const path = c.req.path;
   const status = c.res.status;
+  // Label by the MATCHED route pattern, not the raw path — raw paths give
+  // every 404 probe (/wp-admin, /.env, …) a permanent Map entry and a
+  // permanent /metrics line: unbounded label cardinality, trivially
+  // OOM-able. Unmatched requests share one bucket.
+  const routePath = c.req.routePath;
+  const path = routePath && routePath !== "/*" ? routePath : "<unmatched>";
   const key = `${method}|${path}|${status}`;
   metricsStore.httpRequestsTotal.set(key, (metricsStore.httpRequestsTotal.get(key) ?? 0) + 1);
   if (status >= 400) {

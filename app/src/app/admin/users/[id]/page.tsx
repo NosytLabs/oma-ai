@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { use } from "react";
 import { formatDateShort, formatDateTime, formatUsd } from "@/lib/utils";
 
 type UserDetail = {
@@ -26,7 +26,7 @@ type UserDetail = {
 		createdAt: string;
 	};
 	balance: {
-		balanceCredits: number;
+		balanceDollars: number;
 		totalDeposited: number;
 		totalUsed: number;
 	};
@@ -87,10 +87,6 @@ export default function UserDetailPage({
 			: "Failed to fetch user"
 		: null;
 
-	const formatCredits = useMemo(
-		() => (cents: number) => `${cents.toLocaleString()} credits`,
-		[],
-	);
 	// formatUsd, formatDateTime, formatDateShort are imported from @/lib/utils
 
 	if (loading) {
@@ -193,7 +189,7 @@ export default function UserDetailPage({
 							</span>
 						</div>
 						<p className="text-2xl font-bold font-mono text-accent">
-							{formatCredits(balance.balanceCredits)}
+							{formatUsd(balance.balanceDollars)}
 						</p>
 					</div>
 					<div className="rounded border border-border bg-surface p-5">

@@ -97,7 +97,15 @@ async function handleNonStreamingResponse(
   });
   const refund = parseInt(estimatedCostCents, 10) - parseInt(actualCost.totalCents, 10);
   if (refund > 0) await refundCreditsWithRetry(userId, String(refund));
-  const response = Response.json(json, { headers: { "x-provider": provider } });
+  // Surface the billed cost so the route can track per-key spend and emit
+  // the x-oma-response-cost header — it previously read a json.usage field
+  // that never existed, leaving daily spend limits permanently untripped.
+  const response = Response.json(json, {
+    headers: {
+      "x-provider": provider,
+      "x-oma-cost-cents": actualCost.totalCents,
+    },
+  });
   span.setStatus({ code: SpanStatusCode.OK });
   return { response, provider, inputTokens: actualInput, outputTokens: actualOutput };
 }
@@ -116,6 +124,16 @@ export async function handleChatCompletion(
   const requestId = crypto.randomUUID();
   const requestStartTime = Date.now();
   validateRequest(body);
+
+  // Always request the final usage chunk from upstream on streams. Without
+  // it, streaming billing falls back to the chars/4 heuristic — the primary
+  // revenue path running on an estimate. Harmless if the client also set it.
+  if (body.stream) {
+    (body as Record<string, unknown>).stream_options = {
+      ...((body as { stream_options?: Record<string, unknown> }).stream_options ?? {}),
+      include_usage: true,
+    };
+  }
 
   return trace.getTracer("oma-server").startActiveSpan("llm.inference.handleChatCompletion", { kind: SpanKind.INTERNAL }, async (span) => {
     try {
@@ -254,15 +272,19 @@ export async function handleChatCompletion(
           span.setAttribute(LLM_ATTRS.PROVIDER, provider);
           span.setAttribute("llm.provider_model_id", providerModelId);
 
-          // Skip billing on 5xx upstream failures — refund and failover
+          // Skip billing on 5xx upstream failures and fail over. Do NOT
+          // refund here: the reservation must stay held across the failover
+          // loop. A mid-loop refund followed by a later provider's success
+          // (which settles the delta) or the all-failed full refund below
+          // would credit the user twice. Cancel the body so the socket is
+          // released instead of held until GC.
           if (resp.status >= 500) {
-            await refundCreditsWithRetry(userId, estimatedCostCents);
+            resp.body?.cancel().catch(() => {});
             throw Object.assign(new Error(`Provider ${provider} returned ${resp.status}`), { status: resp.status });
           }
 
           if (body.stream) {
             if (!resp.body) {
-              await refundCreditsWithRetry(userId, estimatedCostCents);
               throw Object.assign(new Error("No response body for streaming"), { status: 502 });
             }
             const trackingStream = createTrackingStream(

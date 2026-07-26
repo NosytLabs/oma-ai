@@ -175,14 +175,9 @@ export default function AdminPage() {
 			revenue:
 				revenueStats.summary.totalRevenue - revenueStats.summary.totalCost,
 			activeUsersLast24h,
-			providerCosts: {
-				venice:
-					usageStats.byProvider.find((p) => p.provider === "venice")
-						?.totalCost ?? 0,
-				gonka:
-					usageStats.byProvider.find((p) => p.provider === "gonka")
-						?.totalCost ?? 0,
-			},
+			providerCosts: Object.fromEntries(
+				usageStats.byProvider.map((p) => [p.provider, p.totalCost]),
+			),
 		};
 	}, [usageStats, revenueStats, usersQuery.data, users, apiKeys.length]);
 

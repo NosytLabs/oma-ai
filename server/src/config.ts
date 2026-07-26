@@ -88,6 +88,9 @@ const envSchema = z.object({
   // (e.g. staging environments).
   PUBLIC_API_URL: z.string().url().default("https://api.oma-ai.com"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // Shared secret for the /internal/jobs/:name trigger endpoints (GitHub
+  // Actions cron). Endpoints return 503 when unset — fail closed.
+  JOBS_TOKEN: z.string().min(32).optional(),
   // LI.FI deposit webhook HMAC secret. Required for production LI.FI webhook verification.
   LIFI_WEBHOOK_SECRET: z.string().min(1).optional(),
   // CCTP deposit webhook HMAC secret. Required for production CCTP webhook verification.

@@ -91,6 +91,23 @@ describe('Admin DLQ POST — zod validation (M5)', () => {
       expect(body.success).toBe(true)
     })
 
+    it('accepts a 0x transaction hash (settlement DLQ entries are keyed by txHash)', async () => {
+      const txHash = `0x${'ab'.repeat(32)}`
+      ;(retrySettlementById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        orderId: txHash,
+        success: true,
+        attempts: 1,
+      })
+
+      const res = await app.request(`/v1/admin/dlq/settlements/${txHash}/retry`, {
+        method: 'POST',
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.orderId).toBe(txHash)
+    })
+
     it('returns 400 when id is not a valid UUID', async () => {
       const res = await app.request('/v1/admin/dlq/settlements/not-a-uuid/retry', {
         method: 'POST',

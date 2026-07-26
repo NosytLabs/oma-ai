@@ -37,7 +37,9 @@ import type { OmaEnv } from "../../types.js";
 export const adminRefundRoutes = new Hono<OmaEnv>();
 
 const grantSchema = z.object({
-  notes: z.string().max(500).optional(),
+  // nullish, not optional: the admin UI has historically sent {"notes": null}
+  // and .optional() rejects null — which made every grant 400.
+  notes: z.string().max(500).nullish(),
 });
 
 const denySchema = z.object({

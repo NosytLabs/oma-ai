@@ -181,7 +181,7 @@ export default function AdminUsageTab({
 								<tbody>
 									{usageStats.byModel.map((m) => (
 										<tr
-											key={m.model}
+											key={`${m.model}-${m.provider}`}
 											className="border-b border-border/50"
 										>
 											<td className="px-4 py-2">

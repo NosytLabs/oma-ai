@@ -43,32 +43,34 @@ export function AdminOverviewCharts({
 
 			<div className="rounded-xl border border-border overflow-hidden">
 				<div className="px-4 py-3 border-b border-border bg-surface/50 flex items-center justify-between">
-					<h3 className="font-medium text-text-bright">Recent Transactions</h3>
+					<h3 className="font-medium text-text-bright">Daily Revenue</h3>
 				</div>
 				<div className="divide-y divide-border/50">
-					{dailyUsage
-						?.slice(-10)
-						.reverse()
-						.map((day, i) => (
-							<div
-								key={i}
-								className="px-4 py-3 flex items-center justify-between"
-							>
-								<div>
-									<p className="text-sm text-text-bright">
-										{format(new Date(day.date), "MMM d, yyyy")}
-									</p>
-									<p className="text-xs text-text-muted">
-										{day.totalRequests.toLocaleString()} requests
+					{dailyUsage && dailyUsage.length > 0 ? (
+						dailyUsage
+							.slice(-10)
+							.reverse()
+							.map((day) => (
+								<div
+									key={day.date}
+									className="px-4 py-3 flex items-center justify-between"
+								>
+									<div>
+										<p className="text-sm text-text-bright">
+											{format(new Date(day.date), "MMM d, yyyy")}
+										</p>
+										<p className="text-xs text-text-muted">
+											{day.totalRequests.toLocaleString()} requests
+										</p>
+									</div>
+									<p className="text-sm font-mono text-accent">
+										${day.totalRevenue.toFixed(2)}
 									</p>
 								</div>
-								<p className="text-sm font-mono text-accent">
-									${day.totalRevenue.toFixed(2)}
-								</p>
-							</div>
-						)) || (
+							))
+					) : (
 						<div className="px-4 py-8 text-center text-text-muted">
-							No transactions yet
+							No revenue recorded yet
 						</div>
 					)}
 				</div>

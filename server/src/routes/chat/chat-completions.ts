@@ -213,9 +213,13 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           });
         }
         const json = await response.json();
-        const totalCents =
-          json.usage?.totalCents ??
-          Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
+        // Billed cost comes from the router via header — the upstream JSON
+        // has no cost field (reading json.usage.totalCents was dead code
+        // that left per-key daily spend limits permanently untripped).
+        const totalCents = parseInt(
+          response.headers.get("x-oma-cost-cents") ?? "0",
+          10,
+        );
         if (totalCents > 0) {
           trackApiKeySpend(apiKey?.keyHash, Math.ceil(totalCents));
         }

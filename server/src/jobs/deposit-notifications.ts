@@ -1,7 +1,6 @@
 import { db } from "../db/client.js";
 import { deposits, users, webhookSubscriptions, depositNotifications } from "../db/schema.js";
 import { eq, and, or } from "drizzle-orm";
-import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import crypto from "crypto";
 
@@ -153,24 +152,9 @@ export async function notifyDepositUpdate(
   }
 }
 
-export async function scheduleDepositNotifications(): Promise<void> {
-  const redis = await getRedisClient();
-  if (!redis) {
-    logger.warn("[notifications] Redis not available, skipping deposit notification scheduler");
-    return;
-  }
-
-  setInterval(async () => {
-    try {
-      await processPendingDeposits();
-      await retryFailedWebhooks();
-    } catch (error) {
-      logger.error({ error }, "[notifications] Error in notification scheduler");
-    }
-  }, 60000);
-
-  logger.info("[notifications] Deposit notification scheduler started");
-}
+// In-process scheduling removed — this job is triggered externally via
+// POST /internal/jobs/deposit-notifications (see routes/jobs.ts) so NEON
+// can scale to zero between runs.
 
 export async function processPendingDeposits(): Promise<void> {
   const pendingDeposits = await db

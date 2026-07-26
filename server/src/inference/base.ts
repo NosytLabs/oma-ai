@@ -224,7 +224,10 @@ export async function withRetry<T>(
       const retryAfter = errorObj?.retryAfter;
       let delay: number;
       if (retryAfter) {
-        delay = retryAfter * 1000;
+        // Honor Retry-After but clamp to maxDelayMs — an upstream sending
+        // Retry-After: 3600 must not park the request (and its reserved
+        // credits) for an hour.
+        delay = Math.min(retryAfter * 1000, maxDelayMs);
       } else {
         const exponentialDelay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
         const jitter = Math.random() * 0.3 * exponentialDelay;

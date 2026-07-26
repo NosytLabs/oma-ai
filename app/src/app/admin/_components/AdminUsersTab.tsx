@@ -49,7 +49,7 @@ export default function AdminUsersTab({
 			<div className="rounded border border-border bg-surface overflow-hidden">
 				<div className="px-4 py-3 border-b border-border bg-panel">
 					<h3 className="text-sm font-bold font-mono uppercase tracking-wider text-text-secondary">
-						Top Models
+						Users
 					</h3>
 				</div>
 				<div className="overflow-x-auto">
@@ -67,9 +67,6 @@ export default function AdminUsersTab({
 								</th>
 								<th className="px-4 py-3 font-medium text-text-muted text-xs font-mono uppercase tracking-wider text-right">
 									Total Used
-								</th>
-								<th className="px-4 py-3 font-medium text-text-muted text-xs font-mono uppercase tracking-wider text-right">
-									Requests
 								</th>
 								<th className="px-4 py-3 font-medium text-text-muted text-xs font-mono uppercase tracking-wider">
 									Last Active
@@ -89,16 +86,13 @@ export default function AdminUsersTab({
 										</div>
 									</td>
 									<td className="px-4 py-3 text-right font-mono text-accent">
-										{formatUsd(user.balanceCredits)}
+										{formatUsd(user.balanceDollars)}
 									</td>
 									<td className="px-4 py-3 text-right font-mono text-success">
 										{formatUsd(user.totalDeposited)}
 									</td>
 									<td className="px-4 py-3 text-right font-mono text-amber">
 										{formatUsd(user.totalUsed)}
-									</td>
-									<td className="px-4 py-3 text-right font-mono text-text-muted">
-										{user.totalRequests?.toLocaleString() || 0}
 									</td>
 									<td className="px-4 py-3 text-text-muted font-mono text-xs">
 										{user.lastActivityAt
@@ -118,7 +112,7 @@ export default function AdminUsersTab({
 							{users.length === 0 && !usersLoading && (
 								<tr>
 									<td
-										colSpan={7}
+										colSpan={6}
 										className="px-4 py-8 text-center text-text-muted font-mono"
 									>
 										No users found

@@ -16,6 +16,41 @@ const AdminOverviewCharts = dynamic(
 
 type ChartDatum = { date: string; revenue: number; cost: number };
 
+/**
+ * Display metadata for known providers. Unknown provider keys fall back to a
+ * capitalized label so new providers render without a code change.
+ */
+const PROVIDER_META: Record<
+	string,
+	{ label: string; description: string; badgeClass: string }
+> = {
+	venice: {
+		label: "Venice",
+		description: "Primary provider",
+		badgeClass: "border-blue/30 bg-blue/10 text-blue",
+	},
+	gonka: {
+		label: "Gonka",
+		description: "Decentralized provider",
+		badgeClass: "border-violet/30 bg-violet/10 text-violet",
+	},
+	surplus: {
+		label: "Surplus",
+		description: "Discounted surplus capacity",
+		badgeClass: "border-success/30 bg-success/10 text-success",
+	},
+};
+
+function providerMeta(provider: string) {
+	return (
+		PROVIDER_META[provider] ?? {
+			label: provider.charAt(0).toUpperCase() + provider.slice(1),
+			description: "Inference provider",
+			badgeClass: "border-border bg-panel text-text-secondary",
+		}
+	);
+}
+
 export type AdminOverviewTabProps = {
 	adminStats: AdminStats | null;
 	chartData: ChartDatum[];
@@ -114,7 +149,7 @@ export default function AdminOverviewTab({
 					<div className="flex items-center gap-2 mb-3">
 						<TrendingUp className="w-3.5 h-3.5 text-text-muted" />
 						<span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">
-							Revenue
+							Gross Profit
 						</span>
 					</div>
 					<p className="text-2xl font-bold font-mono text-accent">
@@ -142,54 +177,51 @@ export default function AdminOverviewTab({
 					<div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
 				</div>
 				<div className="space-y-3">
-					<div className="flex items-center justify-between p-3 rounded border border-border bg-panel">
-						<div className="flex items-center gap-3">
-							<div className="w-8 h-8 rounded border border-blue/30 bg-blue/10 flex items-center justify-center">
-								<span className="text-[11px] font-bold font-mono text-blue">
-									V
-								</span>
-							</div>
-							<div>
-								<p className="text-sm font-medium text-text-bright">
-									Venice
+					{Object.entries(adminStats.providerCosts).map(([provider, cost]) => {
+						const meta = providerMeta(provider);
+						return (
+							<div
+								key={provider}
+								className="flex items-center justify-between p-3 rounded border border-border bg-panel"
+							>
+								<div className="flex items-center gap-3">
+									<div
+										className={`w-8 h-8 rounded border flex items-center justify-center ${meta.badgeClass}`}
+									>
+										<span className="text-[11px] font-bold font-mono">
+											{meta.label.charAt(0)}
+										</span>
+									</div>
+									<div>
+										<p className="text-sm font-medium text-text-bright">
+											{meta.label}
+										</p>
+										<p className="text-[10px] text-text-muted">
+											{meta.description}
+										</p>
+									</div>
+								</div>
+								<p className="text-lg font-bold font-mono text-amber">
+									{formatUsd(cost)}
 								</p>
-								<p className="text-[10px] text-text-muted">
-									Primary provider
-								</p>
 							</div>
-						</div>
-						<p className="text-lg font-bold font-mono text-amber">
-							{formatUsd(adminStats.providerCosts.venice)}
+						);
+					})}
+					{Object.keys(adminStats.providerCosts).length === 0 && (
+						<p className="text-sm text-text-muted font-mono">
+							No provider costs recorded this month.
 						</p>
-					</div>
-					<div className="flex items-center justify-between p-3 rounded border border-border bg-panel">
-						<div className="flex items-center gap-3">
-							<div className="w-8 h-8 rounded border border-violet/30 bg-violet/10 flex items-center justify-center">
-								<span className="text-[11px] font-bold font-mono text-violet">
-									OR
-								</span>
-							</div>
-							<div>
-								<p className="text-sm font-medium text-text-bright">
-									Gonka
-									</p>
-									<p className="text-[10px] text-text-muted">
-										Free-tier provider
-								</p>
-							</div>
-						</div>
-						<p className="text-lg font-bold font-mono text-amber">
-							{formatUsd(adminStats.providerCosts.gonka)}
-						</p>
-					</div>
+					)}
 					<div className="border-t border-border pt-3 flex items-center justify-between">
 						<p className="text-xs text-text-muted font-mono uppercase tracking-wider">
 							Total Provider Costs
 						</p>
 						<p className="text-lg font-bold font-mono text-text-bright">
 							{formatUsd(
-								adminStats.providerCosts.venice +
-																adminStats.providerCosts.gonka,
+								Object.values(adminStats.providerCosts).reduce(
+									(sum, cost) => sum + cost,
+									0,
+								),
 							)}
 						</p>
 					</div>

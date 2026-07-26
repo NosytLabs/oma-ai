@@ -2,34 +2,26 @@
  * Admin API namespace.
  * Server routes: `server/src/routes/admin/`.
  */
-import { getCached, request, setCache } from "./client.js";
+import { request } from "./client.js";
 import type { User as ApiUser } from "./types.js";
 
 export type AdminUser = ApiUser & {
 	lastActivityAt: string | null;
-	balanceCredits: number;
+	balanceDollars: number;
 	totalDeposited: number;
 	totalUsed: number;
-	totalRequests: number;
 };
 
-const CACHE_ADMINS = "admins";
-
 export const admin = {
-	async getUsers(page: number, limit: number) {
-		const cached = await getCached<{
+	async getUsers(page: number, limit: number, search?: string) {
+		const qs = new URLSearchParams();
+		qs.set("page", String(page));
+		qs.set("limit", String(limit));
+		if (search) qs.set("search", search);
+		return request<{
 			users: AdminUser[];
 			pagination?: { total: number; page: number; limit: number };
-		}>(CACHE_ADMINS);
-		if (cached) return cached;
-		const data = (await request(
-			`/admin/users?page=${page}&limit=${limit}`,
-		)) as unknown as {
-			users: AdminUser[];
-			pagination?: { total: number; page: number; limit: number };
-		};
-		setCache(CACHE_ADMINS, data);
-		return data;
+		}>(`/admin/users?${qs.toString()}`);
 	},
 
 	async getUsage(period: string) {
@@ -191,7 +183,14 @@ export const admin = {
 		}>(`/admin/refunds?status=${status}&limit=${limit}&offset=${offset}`);
 	},
 
-	async grantRefund(id: string, notes?: string) {
+	async grantRefund(id: string, notes?: string, totpCode?: string) {
+		// The server zod schema only accepts `notes` as an optional string —
+		// sending `notes: null` is rejected with a 400, so omit it entirely
+		// unless the operator actually provided a non-empty note.
+		const body: { notes?: string } = {};
+		if (typeof notes === "string" && notes.trim().length > 0) {
+			body.notes = notes;
+		}
 		return request<{
 			ok: boolean;
 			refundId: string;
@@ -201,11 +200,12 @@ export const admin = {
 			creditDebitStatus: string;
 		}>(`/admin/refunds/${id}/grant`, {
 			method: "POST",
-			body: JSON.stringify({ notes: notes ?? null }),
+			body: JSON.stringify(body),
+			...(totpCode ? { headers: { "X-2FA-Code": totpCode } } : {}),
 		});
 	},
 
-	async denyRefund(id: string, notes: string) {
+	async denyRefund(id: string, notes: string, totpCode?: string) {
 		return request<{
 			ok: boolean;
 			refundId: string;
@@ -215,6 +215,7 @@ export const admin = {
 		}>(`/admin/refunds/${id}/deny`, {
 			method: "POST",
 			body: JSON.stringify({ notes }),
+			...(totpCode ? { headers: { "X-2FA-Code": totpCode } } : {}),
 		});
 	},
 

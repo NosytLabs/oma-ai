@@ -1,0 +1,40 @@
+name: Scheduled jobs
+
+# External cron for the server's background jobs. Runs OUTSIDE the API
+# process so NEON Postgres can scale to zero between runs — the DB only
+# wakes when a trigger lands. Requires the JOBS_TOKEN repo secret to match
+# the server's JOBS_TOKEN env var (>=32 chars).
+
+on:
+  schedule:
+    # Every 10 minutes. GitHub cron is best-effort (runs may be delayed a
+    # few minutes under load) — both jobs are idempotent, so that's fine.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [deposit-recovery, deposit-notifications]
+    steps:
+      - name: Trigger ${{ matrix.job }}
+        run: |
+          if [ -z "${{ secrets.JOBS_TOKEN }}" ]; then
+            echo "JOBS_TOKEN secret not configured — skipping (server would 503 anyway)."
+            exit 0
+          fi
+          STATUS=$(curl -s -o /tmp/body -w "%{http_code}" \
+            -X POST "https://api.oma-ai.com/internal/jobs/${{ matrix.job }}" \
+            -H "X-Jobs-Token: ${{ secrets.JOBS_TOKEN }}" \
+            --max-time 120)
+          cat /tmp/body
+          if [ "$STATUS" != "200" ]; then
+            echo "Job ${{ matrix.job }} returned HTTP $STATUS"
+            exit 1
+          fi

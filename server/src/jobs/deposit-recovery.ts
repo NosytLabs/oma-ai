@@ -1,7 +1,6 @@
 import { db } from "../db/client.js";
 import { deposits, users, depositRecoveries } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { config } from "../config.js";
 import { addToDlq } from "../lib/dlq.js";
@@ -245,23 +244,9 @@ export async function getPendingRecoveries() {
     .orderBy(depositRecoveries.createdAt);
 }
 
-export async function scheduleWrongNetworkRecovery(): Promise<void> {
-  const redis = await getRedisClient();
-  if (!redis) {
-    logger.warn("[recovery] Redis not available, skipping recovery scheduler");
-    return;
-  }
-
-  setInterval(async () => {
-    try {
-      await processPendingRecoveries();
-    } catch (error) {
-      logger.error({ error }, "[recovery] Error in recovery scheduler");
-    }
-  }, 300000);
-
-  logger.info("[recovery] Wrong-network deposit recovery scheduler started");
-}
+// In-process scheduling removed — this job is triggered externally via
+// POST /internal/jobs/deposit-recovery (see routes/jobs.ts) so NEON can
+// scale to zero between runs.
 
 export async function processPendingRecoveries(): Promise<void> {
   const pending = await db

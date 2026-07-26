@@ -2,18 +2,39 @@
 
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Check, RefreshCw, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { ApiError } from "@/lib/api/client";
 import { formatCents, formatDateShort } from "@/lib/utils";
 
 const STATUSES = ["pending", "granted", "denied"] as const;
 type RefundStatus = (typeof STATUSES)[number];
+
+/**
+ * Admins with 2FA enabled get a step-up challenge on refund decisions:
+ * the server responds 401 with error code `2fa_required` until the request
+ * is retried with a valid `X-2FA-Code` header.
+ */
+function is2faRequired(err: unknown): boolean {
+	if (!(err instanceof ApiError)) return false;
+	if (err.status !== 401) return false;
+	return true;
+}
+
+function errorMessage(err: unknown): string {
+	if (err instanceof Error) return err.message;
+	return "Request failed";
+}
 
 export default function AdminRefundsTab() {
 	const qc = useQueryClient();
 	const [status, setStatus] = useState<RefundStatus>("pending");
 	const [denyId, setDenyId] = useState<string | null>(null);
 	const [denyNotes, setDenyNotes] = useState("");
+	const [grantId, setGrantId] = useState<string | null>(null);
+	const [totpCode, setTotpCode] = useState("");
+	const [needs2fa, setNeeds2fa] = useState(false);
+	const [mutationError, setMutationError] = useState<string | null>(null);
 
 	const query = useQuery({
 		queryKey: ["adminRefunds", status],
@@ -24,18 +45,50 @@ export default function AdminRefundsTab() {
 	const invalidate = (s: RefundStatus) =>
 		qc.invalidateQueries({ queryKey: ["adminRefunds", s] });
 
+	const resetActionState = () => {
+		setGrantId(null);
+		setDenyId(null);
+		setDenyNotes("");
+		setTotpCode("");
+		setNeeds2fa(false);
+		setMutationError(null);
+	};
+
+	const onMutationError = (err: unknown) => {
+		if (is2faRequired(err)) {
+			setNeeds2fa(true);
+			setMutationError(
+				"Two-factor code required — enter your 6-digit TOTP code and retry.",
+			);
+			return;
+		}
+		setMutationError(errorMessage(err));
+	};
+
 	const grantMut = useMutation({
-		mutationFn: (id: string) => api.admin.grantRefund(id),
-		onSuccess: () => invalidate("pending"),
-	});
-	const denyMut = useMutation({
-		mutationFn: ({ id, notes }: { id: string; notes: string }) =>
-			api.admin.denyRefund(id, notes),
+		mutationFn: ({ id, totp }: { id: string; totp?: string }) =>
+			api.admin.grantRefund(id, undefined, totp),
 		onSuccess: () => {
-			setDenyId(null);
-			setDenyNotes("");
+			resetActionState();
 			invalidate("pending");
 		},
+		onError: onMutationError,
+	});
+	const denyMut = useMutation({
+		mutationFn: ({
+			id,
+			notes,
+			totp,
+		}: {
+			id: string;
+			notes: string;
+			totp?: string;
+		}) => api.admin.denyRefund(id, notes, totp),
+		onSuccess: () => {
+			resetActionState();
+			invalidate("pending");
+		},
+		onError: onMutationError,
 	});
 
 	const refunds = query.data?.refunds ?? [];
@@ -67,6 +120,13 @@ export default function AdminRefundsTab() {
 					<RefreshCw className="w-3.5 h-3.5" /> Refresh
 				</button>
 			</div>
+
+			{mutationError && (
+				<div className="flex items-center gap-3 p-4 rounded border border-error/30 bg-error/10 text-error">
+					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+					<span className="text-sm font-mono">{mutationError}</span>
+				</div>
+			)}
 
 			<div className="rounded border border-border bg-surface overflow-hidden">
 				<div className="overflow-x-auto">
@@ -113,7 +173,11 @@ export default function AdminRefundsTab() {
 												<button
 													type="button"
 													disabled={grantMut.isPending}
-													onClick={() => grantMut.mutate(r.id)}
+													onClick={() => {
+														setGrantId(r.id);
+														setDenyId(null);
+														setDenyNotes("");
+													}}
 													className="p-1.5 rounded hover:bg-panel text-text-muted hover:text-success transition-colors inline-flex"
 													title="Grant"
 												>
@@ -125,12 +189,57 @@ export default function AdminRefundsTab() {
 													onClick={() => {
 														setDenyId(r.id);
 														setDenyNotes("");
+														setGrantId(null);
 													}}
 													className="p-1.5 rounded hover:bg-panel text-text-muted hover:text-error transition-colors inline-flex"
 													title="Deny"
 												>
 													<X className="w-4 h-4" />
 												</button>
+											</div>
+										)}
+										{grantId === r.id && (
+											<div className="mt-2 flex flex-col gap-2">
+												<span className="text-xs font-mono text-text-secondary">
+													Grant ${formatCents(r.amountCents)} refund?
+												</span>
+												{needs2fa && (
+													<input
+														type="text"
+														inputMode="numeric"
+														maxLength={6}
+														value={totpCode}
+														onChange={(e) => setTotpCode(e.target.value)}
+														placeholder="2FA code"
+														aria-label="Two-factor authentication code"
+														className="w-24 px-2 py-1.5 rounded border border-border bg-surface text-text text-xs font-mono focus:outline-none focus:border-accent/50"
+													/>
+												)}
+												<div className="flex items-center gap-2">
+													<button
+														type="button"
+														disabled={
+															grantMut.isPending ||
+															(needs2fa && totpCode.trim().length !== 6)
+														}
+														onClick={() =>
+															grantMut.mutate({
+																id: r.id,
+																totp: totpCode.trim() || undefined,
+															})
+														}
+														className="px-2 py-1 rounded border border-success/40 text-success text-xs font-mono disabled:opacity-40"
+													>
+														{grantMut.isPending ? "Granting…" : "Confirm Grant"}
+													</button>
+													<button
+														type="button"
+														onClick={resetActionState}
+														className="px-2 py-1 rounded border border-border text-text-muted text-xs font-mono"
+													>
+														Cancel
+													</button>
+												</div>
 											</div>
 										)}
 										{denyId === r.id && (
@@ -143,18 +252,40 @@ export default function AdminRefundsTab() {
 													rows={2}
 													className="w-64 px-2 py-1.5 rounded border border-border bg-surface text-text text-xs focus:outline-none focus:border-error/50"
 												/>
+												{needs2fa && (
+													<input
+														type="text"
+														inputMode="numeric"
+														maxLength={6}
+														value={totpCode}
+														onChange={(e) => setTotpCode(e.target.value)}
+														placeholder="2FA code"
+														aria-label="Two-factor authentication code"
+														className="w-24 px-2 py-1.5 rounded border border-border bg-surface text-text text-xs font-mono focus:outline-none focus:border-accent/50"
+													/>
+												)}
 												<div className="flex items-center gap-2">
 													<button
 														type="button"
-														disabled={denyNotes.trim().length < 8 || denyMut.isPending}
-														onClick={() => denyMut.mutate({ id: r.id, notes: denyNotes.trim() })}
+														disabled={
+															denyNotes.trim().length < 8 ||
+															denyMut.isPending ||
+															(needs2fa && totpCode.trim().length !== 6)
+														}
+														onClick={() =>
+															denyMut.mutate({
+																id: r.id,
+																notes: denyNotes.trim(),
+																totp: totpCode.trim() || undefined,
+															})
+														}
 														className="px-2 py-1 rounded border border-error/40 text-error text-xs font-mono disabled:opacity-40"
 													>
 														Confirm Deny
 													</button>
 													<button
 														type="button"
-														onClick={() => setDenyId(null)}
+														onClick={resetActionState}
 														className="px-2 py-1 rounded border border-border text-text-muted text-xs font-mono"
 													>
 														Cancel

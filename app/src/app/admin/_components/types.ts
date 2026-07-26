@@ -78,10 +78,8 @@ export type AdminStats = {
 	totalUsageThisMonth: number;
 	revenue: number;
 	activeUsersLast24h: number;
-	providerCosts: {
-		venice: number;
-		gonka: number;
-	};
+	/** Cost this month keyed by provider id (venice, gonka, surplus, …). */
+	providerCosts: Record<string, number>;
 };
 
 /**

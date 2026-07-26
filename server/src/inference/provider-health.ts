@@ -105,6 +105,10 @@ export function stopCacheCleanup(): void {
 const lastTrafficAt = new Map<Provider, number>();
 const PROBE_INTERVAL_MS = 45_000;
 const IDLE_THRESHOLD_MS = 60_000;
+// Stop probing entirely once the WHOLE service has been idle this long.
+// Probing an unused deploy keeps NEON + upstream connections warm 24/7 for
+// nobody; health data refreshes as soon as real traffic returns.
+const SERVICE_IDLE_STOP_MS = 15 * 60_000;
 
 async function createInitialRecord(provider: Provider): Promise<HealthRecord> {
   const record: HealthRecord = {
@@ -371,6 +375,16 @@ export function recordTraffic(provider: Provider): void {
 
 async function probeIdleProviders(): Promise<void> {
   const now = Date.now();
+  // Service-wide idle gate: no traffic to ANY provider since boot (0) or in
+  // the last SERVICE_IDLE_STOP_MS → skip the round. This is what lets a
+  // quiet deploy actually reach NEON scale-to-zero.
+  const lastServiceTraffic = Math.max(
+    0,
+    ...ALL_PROVIDERS.map((p) => lastTrafficAt.get(p) ?? 0),
+  );
+  if (lastServiceTraffic === 0 || now - lastServiceTraffic > SERVICE_IDLE_STOP_MS) {
+    return;
+  }
   for (const provider of ALL_PROVIDERS) {
     const lastTraffic = lastTrafficAt.get(provider) ?? 0;
     if (now - lastTraffic < IDLE_THRESHOLD_MS) continue;

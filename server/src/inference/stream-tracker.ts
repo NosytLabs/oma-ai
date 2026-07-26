@@ -1,4 +1,3 @@
-import { estimateTokens } from "./models.js";
 import { calculateActualCost } from "./billing-service.js";
 import { recordUsage } from "./usage-service.js";
 import { refundCreditsWithRetry } from "./credit-preflight.js";
@@ -11,28 +10,6 @@ const DEBUG_STREAM = config.DEBUG_STREAM;
 let streamParseErrors = 0;
 const MAX_ERROR_COUNT = 1_000_000;
 
-// In-memory LRU cache for estimateTokens. Short-circuits repeated identical
-// content strings. Map iteration order is insertion order in JS, so the
-// oldest entry is at the front and gets evicted first when the cap is hit.
-const estimateCache = new Map<string, number>();
-const MAX_ESTIMATE_CACHE_SIZE = 1000;
-
-function estimateTokensCached(text: string): number {
-  const cached = estimateCache.get(text);
-  if (cached !== undefined) {
-    // Touch: move to end to mark as most-recently-used
-    estimateCache.delete(text);
-    estimateCache.set(text, cached);
-    return cached;
-  }
-  const result = estimateTokens(text);
-  if (estimateCache.size >= MAX_ESTIMATE_CACHE_SIZE) {
-    const firstKey = estimateCache.keys().next().value;
-    if (firstKey !== undefined) estimateCache.delete(firstKey);
-  }
-  estimateCache.set(text, result);
-  return result;
-}
 
 function logStreamDebug(message: string, data?: Record<string, unknown>) {
   if (DEBUG_STREAM) {
@@ -86,7 +63,7 @@ interface StreamState {
 async function handleStreamEnd(
   streamState: StreamState,
   streamStartTime: number, firstTokenTime: number | undefined,
-  outputTokens: number, accumulatedContent: string, usageDataReceived: boolean,
+  outputTokens: number, accumulatedChars: number, usageDataReceived: boolean,
   _inputTokens: number, modelId: string, discountPercent: number,
   userId: string, apiKeyId: string, provider: string, estimatedTotalCents: string,
   requestId: string,
@@ -95,7 +72,8 @@ async function handleStreamEnd(
   if (streamState.refundExecuted) return;
   streamState.refundExecuted = true;
   const streamDuration = Date.now() - streamStartTime;
-  const finalOutputTokens = usageDataReceived ? outputTokens : estimateTokensCached(accumulatedContent);
+  // chars/4 estimate — same as estimateTokens, without retaining the body.
+  const finalOutputTokens = usageDataReceived ? outputTokens : Math.ceil(accumulatedChars / 4);
   if (firstTokenTime !== undefined && onStreamingMetrics) {
     await onStreamingMetrics(firstTokenTime, finalOutputTokens, streamDuration);
   }
@@ -105,13 +83,13 @@ async function handleStreamEnd(
     // disconnections are observable in monitoring without over-billing.
     const isEmptyStream =
       finalOutputTokens === 0 &&
-      (!accumulatedContent || accumulatedContent.length === 0);
+      accumulatedChars === 0;
     let cost: { costCents: string; markupCents: string; totalCents: string };
     if (isEmptyStream) {
       logger.info(
         {
           requestId, modelId, provider, userId,
-          accumulatedLength: accumulatedContent.length,
+          accumulatedLength: accumulatedChars,
           type: "empty_stream_no_charge",
         },
         "[stream-tracker] empty stream (no tokens produced), charging 0",
@@ -146,7 +124,9 @@ export function createTrackingStream(
   requestId: string,
   onStreamingMetrics?: (ttftMs: number, totalTokens: number, durationMs: number) => Promise<void>
 ): ReadableStream<Uint8Array> {
-  let outputTokens = 0, buffer = "", accumulatedContent = "";
+  // Running char count only — retaining the concatenated response body
+  // held up to ~100KB per concurrent stream for a number we derive as len/4.
+  let outputTokens = 0, buffer = "", accumulatedChars = 0;
   let usageDataReceived = false, firstTokenReceived = false;
   let firstTokenTime: number | undefined;
   let streamCompleted = false;
@@ -163,7 +143,7 @@ export function createTrackingStream(
           streamCompleted = true;
           await handleStreamEnd(
             streamState,
-            streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+            streamStartTime, firstTokenTime, outputTokens, accumulatedChars, usageDataReceived,
             _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
           );
           return;
@@ -177,7 +157,7 @@ export function createTrackingStream(
             firstTokenReceived = true;
             firstTokenTime = Date.now() - streamStartTime;
           }
-          if (combinedDelta) accumulatedContent += combinedDelta;
+          if (combinedDelta) accumulatedChars += combinedDelta.length;
           if (parsed.usage?.completion_tokens) {
             outputTokens = parsed.usage.completion_tokens;
             usageDataReceived = true;
@@ -255,7 +235,7 @@ export function createTrackingStream(
           try {
             await handleStreamEnd(
               streamState,
-              streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+              streamStartTime, firstTokenTime, outputTokens, accumulatedChars, usageDataReceived,
               _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
             );
           } catch (err) {
@@ -274,7 +254,7 @@ export function createTrackingStream(
         try {
           await handleStreamEnd(
             streamState,
-            streamStartTime, firstTokenTime, outputTokens, accumulatedContent, usageDataReceived,
+            streamStartTime, firstTokenTime, outputTokens, accumulatedChars, usageDataReceived,
             _inputTokens, modelId, discountPercent, userId, apiKeyId, provider, estimatedTotalCents, requestId, onStreamingMetrics,
           );
         } catch (err) {

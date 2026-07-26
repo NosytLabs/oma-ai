@@ -12,13 +12,20 @@ import { logger } from "../../lib/logger.js";
 
 export const dlqRoutes = new Hono<OmaEnv>();
 
-// M5 zod schemas for POST endpoints (paths use :id in URL, not body)
-const idParamSchema = z.object({
-  id: z.string().uuid({ message: "id must be a valid UUID" }),
-});
+// Settlement DLQ entries are keyed by the on-chain transaction hash
+// (addSettlementToDlq(txHash, …) in x402/settle.ts), NOT a UUID — the old
+// uuid-only validation made retry/discard permanently 400 on real entries.
+const DLQ_ID = z
+  .string()
+  .refine(
+    (v) => /^0x[0-9a-fA-F]{64}$/.test(v) || z.string().uuid().safeParse(v).success,
+    { message: "id must be a 0x transaction hash or UUID" },
+  );
+
+const idParamSchema = z.object({ id: DLQ_ID });
 
 const processBodySchema = z.object({
-  id: z.string().uuid().optional(),
+  id: DLQ_ID.optional(),
   force: z.boolean().optional(),
 });
 

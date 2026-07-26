@@ -34,17 +34,26 @@ export default function AdminFeesPage() {
 			const res = await fetch("/api/v1/admin/config/fees");
 			if (!res.ok) throw new Error("Failed to fetch fee configuration");
 			const data = await res.json();
-			if (data.config) {
-				const values: Record<string, number> = {};
-				for (const [key, val] of Object.entries(data.config.providers)) {
-					values[key] = (val as { markupPercent: number }).markupPercent;
-				}
-				setEditValues(values);
-			}
 			return data.config;
 		},
 		staleTime: 30_000,
 	});
+
+	// Sync fetched config into the edit form. Only initialize when the form is
+	// empty (first load or after an explicit refresh clears it) so we never
+	// clobber values the admin is currently editing.
+	const providers = feesQuery.data?.providers;
+	useEffect(() => {
+		if (!providers) return;
+		setEditValues((prev) => {
+			if (Object.keys(prev).length > 0) return prev;
+			const values: Record<string, number> = {};
+			for (const [key, val] of Object.entries(providers)) {
+				values[key] = val.markupPercent;
+			}
+			return values;
+		});
+	}, [providers]);
 
 	const saveMutation = useMutation({
 		mutationFn: async (newConfig: FeeConfig) => {
@@ -137,9 +146,12 @@ export default function AdminFeesPage() {
 					<m.button
 						whileHover={{ scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}
-						onClick={() =>
-							queryClient.invalidateQueries({ queryKey: ["adminFeesConfig"] })
-						}
+						onClick={() => {
+							// Clear the edit form so the sync effect re-initializes it
+							// from the freshly fetched config.
+							setEditValues({});
+							queryClient.invalidateQueries({ queryKey: ["adminFeesConfig"] });
+						}}
 						className="flex items-center gap-2 px-3 py-2 rounded border border-border bg-surface text-text-muted hover:text-text hover:border-border-bright transition-colors text-sm"
 					>
 						<RefreshCw className="w-3.5 h-3.5" />
@@ -167,6 +179,17 @@ export default function AdminFeesPage() {
 					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
 					<span className="text-sm font-mono">{error}</span>
 				</m.div>
+			)}
+
+			{feesQuery.isError && (
+				<div className="flex items-center gap-3 p-4 rounded border border-error/30 bg-error/10 text-error">
+					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+					<span className="text-sm font-mono">
+						{feesQuery.error instanceof Error
+							? feesQuery.error.message
+							: "Failed to fetch fee configuration"}
+					</span>
+				</div>
 			)}
 
 			{success && (

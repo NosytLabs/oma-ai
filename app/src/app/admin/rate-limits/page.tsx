@@ -187,7 +187,7 @@ export default function AdminRateLimitsPage() {
 
 	const deleteOverrideMutation = useMutation({
 		mutationFn: async (id: string) => {
-			const res = await fetch(`/api/v1/admin/rate-limit-overrides?id=${id}`, {
+			const res = await fetch(`/api/v1/admin/rate-limit-overrides/${id}`, {
 				method: "DELETE",
 			});
 			const data = await res.json();
@@ -298,6 +298,16 @@ export default function AdminRateLimitsPage() {
 					<Save className="w-4 h-4 flex-shrink-0" />
 					<span className="text-sm font-mono">{success}</span>
 				</m.div>
+			)}
+
+			{configQuery.isError && (
+				<div className="flex items-center gap-3 p-4 rounded border border-error/30 bg-error/10 text-error">
+					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+					<span className="text-sm font-mono">
+						Failed to load rate limit configuration — displayed values are
+						placeholders, not live config. Saving is disabled.
+					</span>
+				</div>
 			)}
 
 			<div className="flex gap-0.5 border-b border-border" role="tablist">
@@ -418,7 +428,7 @@ export default function AdminRateLimitsPage() {
 						whileHover={{ scale: 1.01 }}
 						whileTap={{ scale: 0.97 }}
 						onClick={handleSaveTiers}
-						disabled={saving}
+						disabled={saving || !configQuery.data}
 						className="flex items-center gap-2 px-4 py-2 rounded border border-accent/30 bg-accent-dim text-accent hover:bg-accent/20 disabled:opacity-50 transition-colors text-sm font-mono"
 					>
 						<Save className="w-3.5 h-3.5" />

@@ -30,11 +30,12 @@ import { providersMetaRoutes } from "./routes/providers-meta.js";
 import { usageRoutes } from "./routes/usage.js";
 import { adminObservabilityRoutes } from "./routes/admin-observability.js";
 import { logRoutes } from "./routes/log.js";
+import { jobsRoutes } from "./routes/jobs.js";
 import { missingRoutes } from "./routes/missing-routes.js";
 import { networkRoutes } from "./routes/network.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
-import { reloadModelCatalog } from "./inference/models.js";
+import { ensureCatalogLoaded } from "./inference/models.js";
 import {
   startBackgroundDbSync,
   startBackgroundProbing,
@@ -46,15 +47,18 @@ import {
 
 import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheaptokens.js";
 
-reloadModelCatalog();
+// ensureCatalogLoaded (not reloadModelCatalog) so the boot load is the
+// same promise later callers await — avoids parsing models.json twice.
+void ensureCatalogLoaded();
 
-// Periodic jobs (credit-expiry, subscription-check, nonce-cleanup,
-// deposit-retry, deposit-recovery, deposit-notifications, retention) are NOT
-// scheduled in-process — they were extracted so NEON can scale to zero. The
-// intended schedulers (.github/workflows/<job>.yml) have NOT been created yet;
-// until they exist, the work functions in src/jobs/* are exported entry points
-// with no trigger. Wire them via GitHub Actions cron or an external scheduler
-// before relying on deposit webhooks / recovery / expiry actually running.
+// Periodic jobs are NOT scheduled in-process — extracted so NEON can scale
+// to zero. The two implemented jobs (src/jobs/deposit-recovery.ts,
+// src/jobs/deposit-notifications.ts) are triggered externally via
+// POST /internal/jobs/:name (routes/jobs.ts, X-Jobs-Token auth) on the
+// .github/workflows/jobs.yml cron. Set the JOBS_TOKEN env + repo secret to
+// activate. (Earlier comments referenced credit-expiry / subscription-check /
+// nonce-cleanup / deposit-retry / retention jobs — those were never
+// implemented; don't go looking for them.)
 //
 // In-process tasks that MUST stay here (real-time, no external trigger is
 // fast enough to drive them):
@@ -66,8 +70,6 @@ reloadModelCatalog();
 //   - initProviderResultReporter   : one-shot result-reporter init
 // Moving these to GH Actions would break the circuit breaker (the breaker
 // is in-process and must be driven in the same process that holds it).
-// The schedule*() helpers in each job module are kept (not called) so
-// existing tests can still instantiate intervals in isolation.
 
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
   logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
@@ -149,8 +151,7 @@ app.use("*", metricsMiddleware);
 // sub-router that uses a `*` wildcard, so probes/ping/metrics/openapi are not
 // shadowed by 401s. The inline `app.get("/health")` previously in this file
 // was a stub that did not touch the DB; the full /health + /ready + /live +
-// /version set lives in routes/health.ts. See docs/archive/audit-2026-06-13v2/backend.md
-// S-NEW-1 (23 orphan endpoints before this fix).
+// /version set lives in routes/health.ts.
 app.route("/", healthRoutes);
 app.route("/", metricsRoutes);
 app.route("/", openapiRoutes);
@@ -166,6 +167,7 @@ app.route("/", x402Routes);
 app.route("/", onrampRoutes);
 app.route("/", creditRoutes);
 app.route("/", adminRoutes);
+app.route("/", jobsRoutes);
 app.route("/", missingRoutes);
 app.route("/", configRoutes);
 app.route("/", analyticsRoutes);

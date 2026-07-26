@@ -109,6 +109,11 @@ export const chatCompletionSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   max_tokens: z.number().int().positive().optional(),
   stream: z.boolean().optional(),
+  // OpenAI stream_options passthrough (Zod strips unknown keys, so this must
+  // be declared or clients can never request the final usage chunk).
+  stream_options: z
+    .object({ include_usage: z.boolean().optional() })
+    .optional(),
   tools: z.array(z.any()).optional(),
   tool_choice: z.union([z.enum(["none", "auto", "required"]), z.any()]).optional(),
   parallel_tool_calls: z.boolean().optional(),

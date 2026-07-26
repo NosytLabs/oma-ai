@@ -9,6 +9,8 @@ import { formatDateTime } from "@/lib/utils";
 export default function AdminDlqTab() {
 	const qc = useQueryClient();
 	const [page, setPage] = useState(1);
+	const [confirmDiscardId, setConfirmDiscardId] = useState<string | null>(null);
+	const [confirmProcess, setConfirmProcess] = useState(false);
 
 	const query = useQuery({
 		queryKey: ["adminDlq", page],
@@ -24,16 +26,24 @@ export default function AdminDlqTab() {
 	});
 	const discardMut = useMutation({
 		mutationFn: (id: string) => api.admin.discardDlq(id),
-		onSuccess: invalidate,
+		onSuccess: () => {
+			setConfirmDiscardId(null);
+			invalidate();
+		},
 	});
 	const processMut = useMutation({
 		mutationFn: () => api.admin.processDlq(),
-		onSuccess: invalidate,
+		onSuccess: () => {
+			setConfirmProcess(false);
+			invalidate();
+		},
 	});
 
 	const entries = query.data?.entries ?? [];
 	const summary = query.data?.summary;
 	const pagination = query.data?.pagination;
+
+	const mutationError = retryMut.error ?? discardMut.error ?? processMut.error;
 
 	return (
 		<div className="space-y-4">
@@ -54,14 +64,36 @@ export default function AdminDlqTab() {
 					)}
 				</div>
 				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						disabled={processMut.isPending}
-						onClick={() => processMut.mutate()}
-						className="flex items-center gap-2 px-3 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text text-sm font-mono disabled:opacity-40"
-					>
-						<Play className="w-3.5 h-3.5" /> Process All
-					</button>
+					{confirmProcess ? (
+						<>
+							<button
+								type="button"
+								disabled={processMut.isPending}
+								onClick={() => processMut.mutate()}
+								className="flex items-center gap-2 px-3 py-2 rounded border border-amber/40 bg-amber/10 text-amber text-sm font-mono disabled:opacity-40"
+							>
+								<Play className="w-3.5 h-3.5" />
+								{processMut.isPending ? "Processing…" : "Confirm Process All?"}
+							</button>
+							<button
+								type="button"
+								disabled={processMut.isPending}
+								onClick={() => setConfirmProcess(false)}
+								className="px-3 py-2 rounded border border-border bg-surface text-text-muted hover:text-text text-sm font-mono disabled:opacity-40"
+							>
+								Cancel
+							</button>
+						</>
+					) : (
+						<button
+							type="button"
+							disabled={processMut.isPending}
+							onClick={() => setConfirmProcess(true)}
+							className="flex items-center gap-2 px-3 py-2 rounded border border-border bg-surface text-text-secondary hover:text-text text-sm font-mono disabled:opacity-40"
+						>
+							<Play className="w-3.5 h-3.5" /> Process All
+						</button>
+					)}
 					<button
 						type="button"
 						onClick={() => query.refetch()}
@@ -71,6 +103,17 @@ export default function AdminDlqTab() {
 					</button>
 				</div>
 			</div>
+
+			{mutationError && (
+				<div className="flex items-center gap-3 p-4 rounded border border-error/30 bg-error/10 text-error">
+					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+					<span className="text-sm font-mono">
+						{mutationError instanceof Error
+							? mutationError.message
+							: "Request failed"}
+					</span>
+				</div>
+			)}
 
 			{processMut.data && (
 				<div className="rounded border border-border bg-panel px-4 py-2 text-sm font-mono text-text-muted">
@@ -133,15 +176,38 @@ export default function AdminDlqTab() {
 											>
 												<RotateCcw className="w-4 h-4" />
 											</button>
-											<button
-												type="button"
-												disabled={discardMut.isPending}
-												onClick={() => discardMut.mutate(e.orderId)}
-												className="p-1.5 rounded hover:bg-panel text-text-muted hover:text-error transition-colors inline-flex"
-												title="Discard"
-											>
-												<Trash2 className="w-4 h-4" />
-											</button>
+											{confirmDiscardId === e.orderId ? (
+												<>
+													<button
+														type="button"
+														disabled={discardMut.isPending}
+														onClick={() => discardMut.mutate(e.orderId)}
+														className="px-2 py-1 rounded border border-error/40 text-error text-xs font-mono disabled:opacity-40"
+													>
+														{discardMut.isPending
+															? "Discarding…"
+															: "Confirm Discard"}
+													</button>
+													<button
+														type="button"
+														disabled={discardMut.isPending}
+														onClick={() => setConfirmDiscardId(null)}
+														className="px-2 py-1 rounded border border-border text-text-muted text-xs font-mono"
+													>
+														Cancel
+													</button>
+												</>
+											) : (
+												<button
+													type="button"
+													disabled={discardMut.isPending}
+													onClick={() => setConfirmDiscardId(e.orderId)}
+													className="p-1.5 rounded hover:bg-panel text-text-muted hover:text-error transition-colors inline-flex"
+													title="Discard"
+												>
+													<Trash2 className="w-4 h-4" />
+												</button>
+											)}
 										</div>
 									</td>
 								</tr>
