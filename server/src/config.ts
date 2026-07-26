@@ -81,7 +81,7 @@ const envSchema = z.object({
   // Canonical production domain. Used as the SIWE `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
   // and dev default to a permissive value.
-  PRIMARY_DOMAIN: z.string().min(1).default("oma.ai"),
+  PRIMARY_DOMAIN: z.string().min(1).default("oma-ai.com"),
   // Public-facing API URL. Used by OpenAPI spec, SSO SAML entity/ACS URLs, and any
   // server-rendered surface that surfaces the public endpoint to clients.
   // Falls back to the production domain; production deployments can override

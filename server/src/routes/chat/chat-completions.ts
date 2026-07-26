@@ -91,7 +91,8 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
       span?.setAttribute("user.id", userId);
       if (correlationId) span?.setAttribute("correlation.id", correlationId);
 
-      const parsed = chatCompletionSchema.safeParse(await c.req.json());
+      // Reject oversized bodies from the Content-Length header BEFORE reading
+      // the body into memory — checking afterwards protects nothing.
       if (!checkRequestBodySizeLimit(c)) {
         span?.setAttribute("error", true);
         span?.setAttribute("error.type", "request_too_large");
@@ -106,6 +107,24 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           413,
         );
       }
+      let body: unknown;
+      try {
+        body = await c.req.json();
+      } catch {
+        span?.setAttribute("error", true);
+        span?.setAttribute("error.type", "invalid_json");
+        return c.json(
+          {
+            error: {
+              message: "Request body is not valid JSON",
+              type: "invalid_request_error",
+              code: "invalid_json",
+            },
+          },
+          400,
+        );
+      }
+      const parsed = chatCompletionSchema.safeParse(body);
       if (!parsed.success) {
         span?.setAttribute("error", true);
         span?.setAttribute("error.type", "validation_error");

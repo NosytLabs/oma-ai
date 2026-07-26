@@ -48,16 +48,13 @@ import { triggerRefresh as triggerCheapTokensRefresh } from "./inference/cheapto
 
 reloadModelCatalog();
 
-// External cron jobs (moved to .github/workflows/* to allow NEON scale-to-zero).
-// The work functions are still exported from each module so existing unit tests
-// can call them directly.
-//   credit-expiry          → .github/workflows/credit-expiry.yml          (daily)
-//   subscription-check     → .github/workflows/subscription-check.yml     (hourly)
-//   nonce-cleanup          → .github/workflows/nonce-cleanup.yml          (every 15m)
-//   deposit-retry          → .github/workflows/deposit-retry.yml          (every 5m)
-//   deposit-recovery       → .github/workflows/wrong-network-recovery.yml (every 5m)
-//   deposit-notifications  → .github/workflows/deposit-notifications.yml   (every 5m)
-//   retention              → .github/workflows/retention.yml              (daily 03:00 UTC)
+// Periodic jobs (credit-expiry, subscription-check, nonce-cleanup,
+// deposit-retry, deposit-recovery, deposit-notifications, retention) are NOT
+// scheduled in-process — they were extracted so NEON can scale to zero. The
+// intended schedulers (.github/workflows/<job>.yml) have NOT been created yet;
+// until they exist, the work functions in src/jobs/* are exported entry points
+// with no trigger. Wire them via GitHub Actions cron or an external scheduler
+// before relying on deposit webhooks / recovery / expiry actually running.
 //
 // In-process tasks that MUST stay here (real-time, no external trigger is
 // fast enough to drive them):
