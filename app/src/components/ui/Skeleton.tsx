@@ -3,8 +3,9 @@ import type { HTMLAttributes } from "react";
 
 /**
  * Skeleton — shimmer placeholder.
- * Uses the global shimmer keyframes defined in globals.css
- * (.animate-shimmer) so timing matches existing motion budget.
+ * `animate-shimmer` resolves via the `--animate-shimmer` token in globals.css
+ * (@theme). The base background lives here so a Skeleton is visible even
+ * where callers don't pass one.
  */
 
 export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
@@ -21,7 +22,7 @@ export function Skeleton({
 		<div
 			aria-hidden="true"
 			className={cn(
-				"animate-shimmer rounded-[var(--radius-sm)]",
+				"animate-shimmer bg-surface-elevated rounded-[var(--radius-sm)]",
 				shapeClassName,
 				className,
 			)}

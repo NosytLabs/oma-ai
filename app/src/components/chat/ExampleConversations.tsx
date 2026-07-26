@@ -320,7 +320,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 									<div
 										className="shrink-0 w-8 h-8 flex items-center justify-center border border-border bg-surface group-hover:border-success/30 transition-colors"
 										style={{
-											borderColor: isExpanded ? `${catColor}40` : undefined,
+											borderColor: isExpanded ? `color-mix(in srgb, ${catColor} 25%, transparent)` : undefined,
 										}}
 									>
 										<Icon className="w-4 h-4" style={{ color: catColor }} />
@@ -364,9 +364,9 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 											<span
 												className="px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider border"
 												style={{
-													borderColor: `${catColor}30`,
+													borderColor: `color-mix(in srgb, ${catColor} 19%, transparent)`,
 													color: catColor,
-													backgroundColor: `${catColor}08`,
+													backgroundColor: `color-mix(in srgb, ${catColor} 3%, transparent)`,
 												}}
 											>
 												{example.category}
@@ -374,9 +374,9 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 											<span
 												className="px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider border"
 												style={{
-													borderColor: `${diff.color}30`,
+													borderColor: `color-mix(in srgb, ${diff.color} 19%, transparent)`,
 													color: diff.color,
-													backgroundColor: `${diff.color}08`,
+													backgroundColor: `color-mix(in srgb, ${diff.color} 3%, transparent)`,
 												}}
 											>
 												{diff.label}

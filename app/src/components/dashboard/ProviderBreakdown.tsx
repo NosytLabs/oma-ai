@@ -123,11 +123,12 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 									</div>
 								</div>
 								<div className="w-full h-1.5 bg-surface rounded-full overflow-hidden">
+									{/* scaleX instead of width — compositor-only, no per-frame layout */}
 									<m.div
-										className="h-full rounded-full"
+										className="h-full w-full rounded-full origin-left"
 										style={{ backgroundColor: getProviderColor(stat.provider) }}
-										initial={{ width: 0 }}
-										animate={{ width: `${pct}%` }}
+										initial={{ scaleX: 0 }}
+										animate={{ scaleX: pct / 100 }}
 										transition={{ duration: 0.5, delay: i * 0.05 }}
 									/>
 								</div>

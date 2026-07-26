@@ -1,6 +1,5 @@
 "use client";
 
-import "./models.css";
 import {
 	Brain,
 	Check,
@@ -177,7 +176,8 @@ function ModelsPageInner() {
 	};
 
 	const handleCopy = async () => {
-		await copyFilterUrl();
+		const ok = await copyFilterUrl();
+		if (!ok) return;
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	};

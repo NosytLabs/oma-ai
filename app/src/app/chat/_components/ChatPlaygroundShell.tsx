@@ -353,7 +353,7 @@ function ShellContent({
 	]);
 
 	return (
-		<div className="min-h-dvh h-dvh w-full flex flex-col bg-void text-text-secondary font-mono overflow-hidden">
+		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text-secondary font-mono overflow-hidden">
 			<h1 className="sr-only">
 				{isChat
 					? "OMA Chat — try models, stream responses, pay per token"

@@ -119,7 +119,7 @@ const SOCIAL_LINKS = [
 ];
 
 const CURRENT_YEAR = 2026;
-const LAST_DEPLOY = "2026-07-15";
+const LAST_DEPLOY = "2026-07-26";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";
@@ -130,6 +130,12 @@ export function Footer() {
 		accountSection(isAuthenticated),
 		LEGAL,
 	];
+
+	// /chat is a viewport-locked app surface — a footer below it forces a
+	// scroll that pushes the composer off-screen.
+	if (pathname === "/chat" || pathname.startsWith("/chat/")) {
+		return null;
+	}
 
 	return (
 		<footer

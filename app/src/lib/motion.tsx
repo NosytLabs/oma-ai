@@ -17,6 +17,7 @@
  * live in `@/components/motion` — see that directory's README.
  */
 
+import { springs } from "@/components/motion/springs";
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
 import { useRevealInView } from "@/lib/use-reveal-in-view";
@@ -29,18 +30,11 @@ import type { ReactNode } from "react";
    ============================================================ */
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-export const EASE_SPRING = {
-	type: "spring",
-	stiffness: 380,
-	damping: 30,
-	mass: 0.8,
-} as const;
-export const EASE_SPRING_SOFT = {
-	type: "spring",
-	stiffness: 220,
-	damping: 26,
-	mass: 1,
-} as const;
+// Canonical spring values live in components/motion/springs.ts — these are
+// aliases so both entry points share one token set (they previously drifted
+// by a mass typo: 0.8 here vs 0.9 there).
+export const EASE_SPRING = springs.tab;
+export const EASE_SPRING_SOFT = springs.soft;
 
 /* ============================================================
    VIEWPORT

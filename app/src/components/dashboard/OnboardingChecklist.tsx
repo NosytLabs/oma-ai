@@ -160,10 +160,11 @@ export const OnboardingChecklist = memo(function OnboardingChecklist({
 
 			{/* Progress bar */}
 			<div className="h-0.5 bg-border">
+				{/* scaleX instead of width — compositor-only, no per-frame layout */}
 				<m.div
-					className="h-full bg-accent"
-					initial={{ width: 0 }}
-					animate={{ width: `${(completedCount / steps.length) * 100}%` }}
+					className="h-full w-full bg-accent origin-left"
+					initial={{ scaleX: 0 }}
+					animate={{ scaleX: completedCount / steps.length }}
 					transition={{ duration: 0.5, ease: "easeOut" }}
 				/>
 			</div>

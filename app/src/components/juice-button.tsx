@@ -20,8 +20,8 @@
 import { useReducedMotion } from "@/lib/framer-motion-client";
 import {
 	useCallback,
+	useEffect,
 	useRef,
-	useState,
 	type CSSProperties,
 	type ReactNode,
 } from "react";
@@ -42,29 +42,48 @@ export function JuiceButton({
 	opacity = 0.12,
 }: JuiceButtonProps) {
 	const ref = useRef<HTMLDivElement>(null);
-	const [pos, setPos] = useState({ x: 50, y: 50 });
+	const blobRef = useRef<HTMLDivElement>(null);
+	const frame = useRef<number | null>(null);
 	const prefReduced = useReducedMotion();
 
+	// rAF-throttled direct CSS-var write — no React re-render per mousemove
+	// (the previous setState version re-rendered ~60×/s while hovering).
 	const handleMouseMove = useCallback(
 		(e: React.MouseEvent) => {
 			if (prefReduced) return;
 			const el = ref.current;
-			if (!el) return;
-			const rect = el.getBoundingClientRect();
-			setPos({
-				x: ((e.clientX - rect.left) / rect.width) * 100,
-				y: ((e.clientY - rect.top) / rect.height) * 100,
+			if (!el || frame.current !== null) return;
+			const { clientX, clientY } = e;
+			frame.current = requestAnimationFrame(() => {
+				frame.current = null;
+				const blob = blobRef.current;
+				if (!blob) return;
+				const rect = el.getBoundingClientRect();
+				blob.style.setProperty(
+					"--jx",
+					`${((clientX - rect.left) / rect.width) * 100}%`,
+				);
+				blob.style.setProperty(
+					"--jy",
+					`${((clientY - rect.top) / rect.height) * 100}%`,
+				);
 			});
 		},
 		[prefReduced],
 	);
 
+	useEffect(
+		() => () => {
+			if (frame.current !== null) cancelAnimationFrame(frame.current);
+		},
+		[],
+	);
+
 	const bgStyle: CSSProperties = prefReduced
 		? {}
 		: {
-				background: `radial-gradient(circle ${size}px at ${pos.x}% ${pos.y}%, ${color} 0%, transparent 100%)`,
+				background: `radial-gradient(circle ${size}px at var(--jx, 50%) var(--jy, 50%), ${color} 0%, transparent 100%)`,
 				opacity,
-				transition: "background 0.08s ease-out",
 		  };
 
 	return (
@@ -75,6 +94,7 @@ export function JuiceButton({
 		>
 			{/* Juice blob layer */}
 			<div
+				ref={blobRef}
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-0"
 				style={bgStyle}

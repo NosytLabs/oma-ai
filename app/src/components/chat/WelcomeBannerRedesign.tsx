@@ -138,7 +138,7 @@ function TypewriterText({ text, delay = 0 }: { text: string; delay?: number }) {
 			{showCursor && (
 				<span
 					className="inline-block w-[2px] h-[1em] bg-accent ml-0.5 align-baseline"
-					style={{ animation: "oma-blink-caret 1.1s steps(1) infinite" }}
+					style={{ animation: "caret-blink 1.1s steps(1) infinite" }}
 				/>
 			)}
 		</span>
@@ -247,7 +247,7 @@ export function WelcomeBanner({
 							background:
 								"linear-gradient(90deg, transparent, var(--color-accent), var(--color-tertiary), transparent)",
 							backgroundSize: "200% 100%",
-							animation: "oma-gradient-shift 4s ease infinite",
+							animation: "gradient-shift 4s ease infinite",
 						}}
 					/>
 
