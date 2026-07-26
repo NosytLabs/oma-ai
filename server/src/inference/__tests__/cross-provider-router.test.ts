@@ -67,6 +67,8 @@ vi.mock('../../config.js', () => ({
 import {
   findProvidersForModel,
   getCandidateProviders,
+  hasConfiguredProvider,
+  isProviderConfigured,
   resolveModelAlias,
   recordFailover,
   getRouterStats,
@@ -161,6 +163,66 @@ describe('getCandidateProviders', () => {
     const { primary, alternates } = result!
     expect(primary).toBe('gonka')
     expect(alternates).toEqual([])
+  })
+})
+
+// Catalog gating reuses the router's credential predicate: a model with no
+// configured provider both 503s on use AND is hidden from /v1/models. The
+// mocked config has no VENICE_API_KEY / surplus wallet, so only gonka counts
+// as configured here.
+describe('hasConfiguredProvider / isProviderConfigured', () => {
+  const baseDef = {
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    markupPercent: 0,
+    category: 'mid' as const,
+    maxTokens: 8192,
+    supportsStreaming: true,
+    displayName: 'Test',
+    capabilities: [],
+    description: 'test',
+    creditsPerMillionInput: 0,
+    creditsPerMillionOutput: 0,
+  }
+
+  it('only gonka is configured in the keyless test env', () => {
+    expect(isProviderConfigured('gonka')).toBe(true)
+    expect(isProviderConfigured('venice')).toBe(false)
+    expect(isProviderConfigured('surplus')).toBe(false)
+  })
+
+  it('returns false for a venice-only model on a keyless deploy', () => {
+    const modelDef = {
+      ...baseDef,
+      id: 'venice-only',
+      veniceId: 'venice-only',
+      provider: 'venice' as const,
+      primaryProvider: 'venice' as const,
+    }
+    expect(hasConfiguredProvider(modelDef)).toBe(false)
+  })
+
+  it('returns true for a gonka-primary model (keyless-capable)', () => {
+    const modelDef = {
+      ...baseDef,
+      id: 'gonka-model',
+      gonkaId: 'gonka-model',
+      provider: 'gonka' as const,
+      primaryProvider: 'gonka' as const,
+    }
+    expect(hasConfiguredProvider(modelDef)).toBe(true)
+  })
+
+  it('returns true when an unconfigured primary has a configured gonka alternate', () => {
+    const modelDef = {
+      ...baseDef,
+      id: 'multi',
+      veniceId: 'multi',
+      gonkaId: 'multi-gonka',
+      provider: 'all' as const,
+      primaryProvider: 'venice' as const,
+    }
+    expect(hasConfiguredProvider(modelDef)).toBe(true)
   })
 })
 

@@ -78,6 +78,21 @@ describe('models', () => {
         expect(model).toHaveProperty('description')
       }
     })
+
+    // Catalog gating: the test env has no VENICE_API_KEY (see vitest.setup.ts),
+    // so Venice counts as unconfigured — the same predicate that makes the
+    // router 503 must also hide those models from the advertised catalog.
+    it('hides models whose providers all lack credentials (keyless deploy)', async () => {
+      const models = await listModels()
+      expect(models.some((m) => m.provider === 'venice')).toBe(false)
+    })
+
+    it('still advertises keyless-capable Gonka models on a keyless deploy', async () => {
+      const models = await listModels()
+      const gonkaModels = models.filter((m) => m.provider === 'gonka')
+      expect(gonkaModels.length).toBeGreaterThan(0)
+      expect(models.length).toBe(gonkaModels.length)
+    })
   })
 
   // detectPriceDrift gates revenue decisions: it must flag catalog entries whose

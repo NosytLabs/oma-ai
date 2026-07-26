@@ -14,13 +14,16 @@
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
 import { listModels, getModel, listVideoModels } from "../inference/models.js";
+import { hasConfiguredProvider } from "../inference/cross-provider-router.js";
 import { getModelPricing } from "../inference/billing-service.js";
 import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import type { OmaEnv } from "../types.js";
 
 // v2: response entries now carry `provider` (upstream routing target).
-const MODELS_CACHE_KEY = "cache:models:catalog:v2";
+// v3: catalog is filtered by provider credentials (hasConfiguredProvider) —
+//     keyless deploys must not serve a stale cache that advertises Venice.
+const MODELS_CACHE_KEY = "cache:models:catalog:v3";
 const MODELS_CACHE_TTL = 3600; // 1 hour in seconds
 
 /**
@@ -145,7 +148,12 @@ modelRoutes.get("/v1/models/:model", async (c) => {
   const modelId = c.req.param("model");
 
   const modelInfo = await getModel(modelId);
-  if (!modelInfo) return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
+  // Treat models with no configured provider (e.g. Venice models on a keyless
+  // deploy) as absent — they are filtered from the list endpoint and would
+  // only 503 on use, so don't advertise them here either.
+  if (!modelInfo || modelInfo.enabled === false || !hasConfiguredProvider(modelInfo)) {
+    return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
+  }
 
   return c.json({
     id: modelInfo.id,
