@@ -9,6 +9,7 @@ import {
 	LogOut,
 	Wallet,
 } from "lucide-react";
+import { formatAddress } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { MetalFx } from "metal-fx";
 import Image from "next/image";
@@ -112,9 +113,7 @@ function getIcon(id: string, name?: string) {
 	return <Wallet className="h-4 w-4" />;
 }
 
-function truncate(addr: string) {
-	return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
+const truncate = formatAddress;
 
 function ConnectorRow({
 	connector,

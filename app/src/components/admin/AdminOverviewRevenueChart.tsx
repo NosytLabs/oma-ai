@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { useId } from "react";
 import {
 	Area,
 	AreaChart,
@@ -10,6 +11,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { ChartEmptyState, makeGradientId } from "@/components/ui/charts/shared";
 
 interface ChartDataPoint {
 	date: string;
@@ -24,16 +26,24 @@ interface AdminOverviewRevenueChartProps {
 export function AdminOverviewRevenueChart({
 	chartData,
 }: AdminOverviewRevenueChartProps) {
+	const gradientId = makeGradientId("adminRevenue", useId());
 	return (
 		<div className="rounded-xl border border-border bg-surface/50 p-5">
 			<h3 className="text-sm font-medium text-text-bright mb-4">
 				Revenue Overview
 			</h3>
 			<div className="h-[280px]">
-				<ResponsiveContainer width="100%" height="100%">
-					<AreaChart data={chartData.slice(-30)}>
+				{chartData.length === 0 ? (
+					<ChartEmptyState title="No revenue data yet" />
+				) : (
+				<ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+					<AreaChart
+						data={chartData.slice(-30)}
+						role="img"
+						aria-label="Area chart of daily revenue over the last 30 days"
+					>
 						<defs>
-							<linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+							<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
 								<stop
 									offset="5%"
 									stopColor="var(--color-accent)"
@@ -76,17 +86,18 @@ export function AdminOverviewRevenueChart({
 								borderRadius: "8px",
 								fontSize: "12px",
 							}}
-							formatter={(value) => [`${Number(value).toFixed(2)}`, "Revenue"]}
+							formatter={(value) => [`$${Number(value).toFixed(2)}`, "Revenue"]}
 						/>
 						<Area
 							type="monotone"
 							dataKey="revenue"
 							stroke="var(--color-accent)"
-							fill="url(#revenueGradient)"
+							fill={`url(#${gradientId})`}
 							strokeWidth={2}
 						/>
 					</AreaChart>
 				</ResponsiveContainer>
+				)}
 			</div>
 		</div>
 	);

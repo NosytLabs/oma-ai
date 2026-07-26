@@ -1,5 +1,6 @@
 "use client";
 
+import { formatAddress } from "@/lib/utils";
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
@@ -21,8 +22,7 @@ interface NavbarUserMenuProps {
 	onDisconnect: () => void | Promise<void>;
 }
 
-const shortAddress = (addr: string) =>
-	addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
+const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
 
 /**
  * Format an account number for the trigger label. We don't want to

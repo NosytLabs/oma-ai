@@ -44,24 +44,3 @@ export async function proxyPost(
 	});
 }
 
-export async function proxyGet(
-	path: string,
-	session: string,
-): Promise<Response> {
-	const upstream = await fetch(`${UPSTREAM}${path}`, {
-		method: "GET",
-		headers: {
-			Authorization: `Bearer ${session}`,
-		},
-		cache: "no-store",
-		signal: AbortSignal.timeout(60_000),
-	});
-	const text = await upstream.text();
-	return new Response(text, {
-		status: upstream.status,
-		headers: {
-			"Content-Type":
-				upstream.headers.get("content-type") ?? "application/json",
-		},
-	});
-}

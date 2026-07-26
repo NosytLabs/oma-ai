@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	Activity,
@@ -24,6 +25,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { type ApiKey, api, type Session, type User } from "@/lib/api";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const AccountLoginModal = nextDynamic(
 	() =>
@@ -250,10 +252,15 @@ export default function SettingsPage() {
 
 	const handleCopy = useCallback(
 		(text: string, id: string) => {
-			navigator.clipboard.writeText(text);
-			toast.success("Copied to clipboard");
-			setCopied(id);
-			setTimeout(() => setCopied(null), 2000);
+			void copyToClipboard(text).then((ok) => {
+				if (!ok) {
+					toast.error("Couldn't copy to clipboard");
+					return;
+				}
+				toast.success("Copied to clipboard");
+				setCopied(id);
+				setTimeout(() => setCopied(null), 2000);
+			});
 		},
 		[toast],
 	);
@@ -386,19 +393,19 @@ export default function SettingsPage() {
 						</Button>
 					</div>
 					<div className="mt-4 flex flex-col items-center gap-2 text-center">
-						<a
+						<Link
 							href="/login?method=account&next=/settings"
 							className="text-xs text-accent underline-offset-2 hover:underline"
 						>
 							Open full login →
-						</a>
-						<a
+						</Link>
+						<Link
 							href="/dashboard?demo=1"
 							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text"
 						>
 							<Sparkles className="h-3 w-3" aria-hidden="true" />
 							Try the dashboard in demo mode
-						</a>
+						</Link>
 					</div>
 				</m.div>
 

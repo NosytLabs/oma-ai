@@ -234,9 +234,9 @@ export default function CreditsPage() {
 						Wallet or account number — both work for deposits and history.
 					</p>
 					<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-						<a href="/login?next=/dashboard/credits" className="btn-primary py-3 px-8">
+						<Link href="/login?next=/dashboard/credits" className="btn-primary py-3 px-8">
 							Sign in
-						</a>
+						</Link>
 						<m.button
 							type="button"
 							onClick={() => connectEvm()}

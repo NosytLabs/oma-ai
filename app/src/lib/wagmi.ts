@@ -56,7 +56,3 @@ export function getWagmiConfigSingleton() {
 	return wagmiConfigSingleton;
 }
 
-/** Test-only: drop the singleton so env / window changes re-bind connectors. */
-export function __resetWagmiConfigForTests() {
-	wagmiConfigSingleton = null;
-}

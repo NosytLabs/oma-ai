@@ -139,6 +139,7 @@ export default function AdminRefundsTab() {
 													value={denyNotes}
 													onChange={(e) => setDenyNotes(e.target.value)}
 													placeholder="Reason (min 8 chars, required for audit)"
+													aria-label="Refund denial reason"
 													rows={2}
 													className="w-64 px-2 py-1.5 rounded border border-border bg-surface text-text text-xs focus:outline-none focus:border-error/50"
 												/>

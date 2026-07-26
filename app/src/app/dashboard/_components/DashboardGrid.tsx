@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	Activity,
@@ -456,12 +457,12 @@ export function DashboardGrid(props: DashboardGridProps) {
 								title="No usage data"
 								description="Start making API or chat requests — usage charts and request history will show up here."
 								action={
-									<a
+									<Link
 										href="/chat"
 										className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent/80"
 									>
 										Open chat playground →
-									</a>
+									</Link>
 								}
 							/>
 						) : (

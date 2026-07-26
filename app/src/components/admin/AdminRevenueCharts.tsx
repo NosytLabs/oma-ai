@@ -9,6 +9,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { ChartEmptyState } from "@/components/ui/charts/shared";
 
 interface MonthlyRevenue {
 	month: string;
@@ -21,14 +22,22 @@ export function AdminRevenueCharts({
 }: {
 	monthlyRevenue: MonthlyRevenue[] | undefined;
 }) {
+	const data = monthlyRevenue?.slice(-12) ?? [];
 	return (
 		<div className="rounded border border-border bg-surface p-5">
 			<h3 className="text-xs font-bold font-mono uppercase tracking-wider text-text-secondary mb-4">
 				Revenue Chart
 			</h3>
 			<div className="h-[260px]">
-				<ResponsiveContainer width="100%" height="100%">
-					<BarChart data={monthlyRevenue?.slice(-12)}>
+				{data.length === 0 ? (
+					<ChartEmptyState title="No revenue data yet" />
+				) : (
+				<ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+					<BarChart
+						data={data}
+						role="img"
+						aria-label="Bar chart of monthly revenue for the last 12 months"
+					>
 						<CartesianGrid
 							strokeDasharray="3 3"
 							stroke="var(--color-border)"
@@ -55,7 +64,7 @@ export function AdminRevenueCharts({
 								borderRadius: "6px",
 								fontSize: "11px",
 							}}
-							formatter={(value) => [`${Number(value).toFixed(2)}`, "Revenue"]}
+							formatter={(value) => [`$${Number(value).toFixed(2)}`, "Revenue"]}
 						/>
 						<Bar
 							dataKey="totalRevenue"
@@ -64,6 +73,7 @@ export function AdminRevenueCharts({
 						/>
 					</BarChart>
 				</ResponsiveContainer>
+				)}
 			</div>
 		</div>
 	);

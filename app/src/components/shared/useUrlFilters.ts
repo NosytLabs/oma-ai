@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
+import { copyToClipboard } from "@/lib/clipboard";
 
 /**
  * useUrlFilters — syncs filter state to URL search params.
@@ -9,6 +10,7 @@ import { useCallback, useTransition } from "react";
  */
 export function useUrlFilters() {
 	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
@@ -27,15 +29,16 @@ export function useUrlFilters() {
 					params.set(key, value);
 				}
 				const qs = params.toString();
-				router.replace(qs ? `?${qs}` : "/models", { scroll: false });
+				// Reset to the CURRENT route, not a hard-coded one — this hook is
+				// shared and must not silently redirect future consumers to /models.
+				router.replace(qs ? `?${qs}` : (pathname ?? "/"), { scroll: false });
 			});
 		},
-		[router, searchParams, startTransition],
+		[router, pathname, searchParams, startTransition],
 	);
 
 	const copyFilterUrl = useCallback(async () => {
-		const url = window.location.href;
-		await navigator.clipboard.writeText(url);
+		return copyToClipboard(window.location.href);
 	}, []);
 
 	return {

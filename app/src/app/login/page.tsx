@@ -384,13 +384,13 @@ function X402Callout() {
 						envelope (EIP-3009 USDC on Base). Flat rate per request — no card,
 						no KYC, gas paid by the facilitator.
 					</p>
-					<a
+					<Link
 						href="/docs#x402"
 						className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline underline-offset-2"
 					>
 						How x402 works
 						<ArrowRight className="h-3 w-3" aria-hidden="true" />
-					</a>
+					</Link>
 				</div>
 			</div>
 		</m.div>

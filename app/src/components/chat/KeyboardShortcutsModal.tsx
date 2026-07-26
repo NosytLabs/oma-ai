@@ -9,7 +9,7 @@ export interface Shortcut {
 	description: string;
 }
 
-export const SHORTCUTS: Shortcut[] = [
+const SHORTCUTS: Shortcut[] = [
 	{ keys: ["Cmd", "K"], description: "Open model picker" },
 	{ keys: ["Cmd", "/"], description: "Toggle settings panel" },
 	{ keys: ["Cmd", "Enter"], description: "Send message" },

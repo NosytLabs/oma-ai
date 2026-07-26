@@ -27,6 +27,7 @@ import {
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { copyToClipboard } from "@/lib/clipboard";
 import { estimateTokens } from "@/lib/text";
 import {
 	FALLBACK_MODELS,
@@ -97,11 +98,13 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 	}, []);
 
 	const handleCopy = useCallback(() => {
-		navigator.clipboard.writeText(msg.content);
-		setCopied(true);
-		if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-		copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-		onCopy(msg.content);
+		void copyToClipboard(msg.content).then((ok) => {
+			if (!ok) return;
+			setCopied(true);
+			if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+			copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+			onCopy(msg.content);
+		});
 	}, [msg.content, onCopy]);
 
 	const time = new Date(msg.timestamp).toLocaleTimeString([], {
@@ -403,10 +406,12 @@ function CodeBlock({
 	}, []);
 
 	const handleCopy = useCallback(() => {
-		navigator.clipboard.writeText(code);
-		setCopied(true);
-		if (timeoutRef.current) clearTimeout(timeoutRef.current);
-		timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+		void copyToClipboard(code).then((ok) => {
+			if (!ok) return;
+			setCopied(true);
+			if (timeoutRef.current) clearTimeout(timeoutRef.current);
+			timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+		});
 	}, [code]);
 
 	return (

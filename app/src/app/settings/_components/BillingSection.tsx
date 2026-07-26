@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, DollarSign, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -89,10 +90,10 @@ export function BillingSection() {
 			{/* Auto-reload */}
 			<section className="space-y-4">
 				<div className="flex items-center gap-2">
-					<RefreshCw className="h-4 w-4 text-muted-foreground" />
+					<RefreshCw className="h-4 w-4 text-text-muted" />
 					<h3 className="text-sm font-medium">Auto-reload</h3>
 				</div>
-				<p className="text-xs text-muted-foreground">
+				<p className="text-xs text-text-muted">
 					Automatically reload credits when your balance drops below a threshold.
 				</p>
 
@@ -106,7 +107,7 @@ export function BillingSection() {
 								onChange={(e) =>
 									setAutoReload({ ...autoReload, enabled: e.target.checked })
 								}
-								className="h-4 w-4 accent-primary"
+								className="h-4 w-4 accent-accent"
 							/>
 						</label>
 						<label className="flex items-center justify-between gap-4">
@@ -122,7 +123,7 @@ export function BillingSection() {
 										thresholdCents: Math.round(parseFloat(e.target.value || "0") * 100),
 									})
 								}
-								className="w-24 rounded border border-border bg-background px-2 py-1 text-sm"
+								className="w-24 rounded border border-border bg-surface px-2 py-1 text-sm"
 							/>
 						</label>
 						<label className="flex items-center justify-between gap-4">
@@ -138,7 +139,7 @@ export function BillingSection() {
 										reloadAmountCents: Math.round(parseFloat(e.target.value || "0") * 100),
 									})
 								}
-								className="w-24 rounded border border-border bg-background px-2 py-1 text-sm"
+								className="w-24 rounded border border-border bg-surface px-2 py-1 text-sm"
 							/>
 						</label>
 						<Button
@@ -155,10 +156,10 @@ export function BillingSection() {
 			{/* Budget alerts */}
 			<section className="space-y-4">
 				<div className="flex items-center gap-2">
-					<Bell className="h-4 w-4 text-muted-foreground" />
+					<Bell className="h-4 w-4 text-text-muted" />
 					<h3 className="text-sm font-medium">Budget alerts</h3>
 				</div>
-				<p className="text-xs text-muted-foreground">
+				<p className="text-xs text-text-muted">
 					Get notified when your monthly spend reaches a limit.
 				</p>
 
@@ -172,7 +173,7 @@ export function BillingSection() {
 							placeholder="e.g. 50"
 							value={budgetLimit}
 							onChange={(e) => setBudgetLimit(e.target.value)}
-							className="w-24 rounded border border-border bg-background px-2 py-1 text-sm"
+							className="w-24 rounded border border-border bg-surface px-2 py-1 text-sm"
 						/>
 					</label>
 					<label className="flex items-center justify-between">
@@ -181,11 +182,11 @@ export function BillingSection() {
 							type="checkbox"
 							checked={emailEnabled}
 							onChange={(e) => setEmailEnabled(e.target.checked)}
-							className="h-4 w-4 accent-primary"
+							className="h-4 w-4 accent-accent"
 						/>
 					</label>
 					{budget && budget.budgetLimitCents > 0 && (
-						<p className="text-xs text-muted-foreground">
+						<p className="text-xs text-text-muted">
 							Current limit: ${(budget.budgetLimitCents / 100).toFixed(2)} · Alerts at 50%, 80%, 100%
 						</p>
 					)}
@@ -200,13 +201,13 @@ export function BillingSection() {
 			</section>
 
 			{/* Spend summary link */}
-			<section className="flex items-center gap-2 text-sm text-muted-foreground">
+			<section className="flex items-center gap-2 text-sm text-text-muted">
 				<DollarSign className="h-4 w-4" />
 				<span>
 					View detailed usage on the{" "}
-					<a href="/dashboard" className="text-primary underline underline-offset-2">
+					<Link href="/dashboard" className="text-accent underline underline-offset-2">
 						dashboard
-					</a>
+					</Link>
 				</span>
 			</section>
 		</div>

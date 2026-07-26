@@ -9,8 +9,8 @@
  *   used by every chart axis and tooltip.
  * - **Empty/Loading states**: small composable pieces that any chart can
  *   slot in to handle the "no data" and "loading" cases consistently.
- * - **Figure wrapper**: each chart is wrapped in `<figure role="img">` with
- *   a `<figcaption className="sr-only">` description for screen readers.
+ * - **Accessibility**: each chart sets `role="img"` + `aria-label` on the
+ *   recharts root so screen readers get a one-line description.
  */
 
 import { Inbox } from "lucide-react";
@@ -30,7 +30,7 @@ export const CHART_COLORS = {
 	tertiary: "var(--color-tertiary)",
 	emerald: "var(--color-provider-gonka)",
 	blue: "var(--color-tertiary)",
-	pink: "#f472b6",
+	pink: "var(--color-pink)",
 	success: "var(--color-success)",
 	error: "var(--color-error)",
 	warning: "var(--color-warning)",
@@ -95,21 +95,16 @@ interface ChartEmptyStateProps {
 	title?: string;
 	description?: string;
 	action?: ReactNode;
-	ctaLabel?: string;
-	ctaHref?: string;
 }
 
 /**
  * Standardized empty state for every chart. Shows an inbox icon, a one-line
- * title, optional description, and an optional CTA (e.g., "make a test
- * request") when the page provides a route.
+ * title, optional description, and an optional action node.
  */
 export function ChartEmptyState({
 	title = "No data yet",
 	description = "Once you start using the API, your activity will show up here.",
 	action,
-	ctaLabel,
-	ctaHref,
 }: ChartEmptyStateProps) {
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center">
@@ -122,15 +117,7 @@ export function ChartEmptyState({
 					{description}
 				</p>
 			)}
-			{action ??
-				(ctaLabel && ctaHref ? (
-					<a
-						href={ctaHref}
-						className="mt-2 inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-accent transition-colors hover:bg-accent/20 focus-ring"
-					>
-						{ctaLabel}
-					</a>
-				) : null)}
+			{action}
 		</div>
 	);
 }

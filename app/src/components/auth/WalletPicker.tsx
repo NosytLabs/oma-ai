@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { m } from "@/lib/framer-motion-client";
 import { ChevronRight, Loader2, X } from "lucide-react";
 import {
@@ -183,12 +184,12 @@ export function WalletPicker({
 										Coinbase Wallet
 									</a>
 									<span className="text-text-tertiary">·</span>
-									<a
+									<Link
 										href="/login?method=account"
 										className="text-accent hover:underline underline-offset-2"
 									>
 										Account number
-									</a>
+									</Link>
 								</div>
 							</li>
 						) : (

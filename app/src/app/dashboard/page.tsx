@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import nextDynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -253,12 +254,12 @@ export default function DashboardPage() {
 						<span className="uppercase tracking-wider">
 							Demo mode — mock data only. Sign in to use real credits &amp; keys.
 						</span>
-						<a
+						<Link
 							href="/login?next=/dashboard"
 							className="shrink-0 rounded bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
 							Sign in →
-						</a>
+						</Link>
 					</div>
 				)}
 				<div className="p-4 md:p-8 pt-4">

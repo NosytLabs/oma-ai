@@ -1,5 +1,6 @@
 "use client";
 
+import { formatAddress } from "@/lib/utils";
 import { Copy, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -9,10 +10,7 @@ interface ChainPillProps {
 	expectedId?: number;
 }
 
-function truncateAddress(addr: string): string {
-	if (addr.length <= 10) return addr;
-	return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
+const truncateAddress = formatAddress;
 
 /**
  * Truncated wallet address + current chain badge.

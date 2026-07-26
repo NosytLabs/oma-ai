@@ -11,6 +11,7 @@ import {
 	Shield,
 	Unlink,
 } from "lucide-react";
+import { formatAddress } from "@/lib/utils";
 import { useWallet } from "@/components/wallet-provider";
 import type { User } from "@/lib/api";
 
@@ -67,7 +68,7 @@ export function WalletsSection({
 										className="font-mono text-xs text-accent"
 										title={evmAddress}
 									>
-										{evmAddress.slice(0, 6)}…{evmAddress.slice(-4)}
+										{formatAddress(evmAddress)}
 									</span>
 									<button
 										type="button"

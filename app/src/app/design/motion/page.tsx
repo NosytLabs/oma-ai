@@ -39,7 +39,7 @@ export default function MotionReferencePage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-3xl px-4 py-12 space-y-10">
+		<div className="mx-auto max-w-3xl px-4 py-12 space-y-10">
 			<header>
 				<h1 className="text-3xl font-semibold tracking-tight">Motion reference</h1>
 				<p className="text-muted-foreground mt-2">
@@ -149,6 +149,6 @@ export default function MotionReferencePage() {
 					<code>{easings.easeOut}</code>
 				</p>
 			</section>
-		</main>
+		</div>
 	);
 }

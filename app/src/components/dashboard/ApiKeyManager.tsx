@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import type { ApiKey } from "@/lib/api";
 import { maskKey } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ function ApiKeyManagerComponent({
 	setNewKeyName,
 }: ApiKeyManagerProps) {
 	const [confirmKeyId, setConfirmKeyId] = useState<string | null>(null);
+	const revokeTrapRef = useRef<HTMLDivElement>(null);
 
 	const handleRevokeClick = (keyId: string) => {
 		setConfirmKeyId(keyId);
@@ -51,6 +53,11 @@ function ApiKeyManagerComponent({
 	};
 
 	const keyToRevoke = keys.find((k) => k.id === confirmKeyId);
+	useFocusTrap({
+		active: !!confirmKeyId && !!keyToRevoke,
+		containerRef: revokeTrapRef,
+		onClose: () => setConfirmKeyId(null),
+	});
 
 	return (
 		<>
@@ -177,6 +184,7 @@ function ApiKeyManagerComponent({
 
 			{confirmKeyId && keyToRevoke && (
 				<div
+					ref={revokeTrapRef}
 					role="alertdialog"
 					aria-modal="true"
 					aria-labelledby="revoke-dialog-title"

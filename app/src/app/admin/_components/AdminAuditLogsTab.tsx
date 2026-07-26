@@ -194,6 +194,7 @@ function FilterInput({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={label}
+				aria-label={label}
 				className="w-40 px-3 py-2 rounded border border-border bg-surface text-text placeholder:text-text-muted text-sm focus:outline-none focus:border-accent/50"
 			/>
 		</div>

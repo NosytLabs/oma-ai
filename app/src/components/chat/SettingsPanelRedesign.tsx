@@ -12,6 +12,7 @@
  * - MCP section has a terminal-style status indicator
  */
 
+import { copyToClipboard } from "@/lib/clipboard";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useId } from "react";
@@ -231,10 +232,12 @@ function MCPConnector() {
 							<button
 								type="button"
 								onClick={() => {
-									navigator.clipboard.writeText(
+									void copyToClipboard(
 										"npx -y install-mcp@latest https://agent.tinyfish.ai/mcp --client claude-code",
-									);
-									toast.success("Install command copied!");
+									).then((ok) => {
+										if (ok) toast.success("Install command copied!");
+										else toast.error("Couldn't copy to clipboard");
+									});
 								}}
 								className="
                   w-full px-3 py-2 bg-surface border border-border text-text-muted text-xs font-mono

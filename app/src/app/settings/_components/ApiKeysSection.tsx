@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
@@ -141,12 +142,12 @@ export function ApiKeysSection({
 						Create additional keys from the dashboard with custom rate limits
 						and expiry dates.
 					</p>
-					<a
+					<Link
 						href="/dashboard?tab=api-keys"
 						className="mt-2 inline-block text-xs font-medium text-accent hover:text-accent/80"
 					>
 						Open dashboard → API keys →
-					</a>
+					</Link>
 				</div>
 			)}
 

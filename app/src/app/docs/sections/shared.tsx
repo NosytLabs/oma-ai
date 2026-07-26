@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { copyToClipboard } from "@/lib/clipboard";
 import { MODEL_COUNT, MODELS, type Model } from "@/lib/models-data";
 import { SyntaxHighlighter } from "../_components/SyntaxHighlighter";
 
@@ -390,9 +391,11 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 		<button
 			type="button"
 			onClick={() => {
-				navigator.clipboard.writeText(text);
-				setCopied(true);
-				setTimeout(() => setCopied(false), 2000);
+				void copyToClipboard(text).then((ok) => {
+					if (!ok) return;
+					setCopied(true);
+					setTimeout(() => setCopied(false), 2000);
+				});
 			}}
 			className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
 			aria-label={copied ? "Copied" : "Copy code"}

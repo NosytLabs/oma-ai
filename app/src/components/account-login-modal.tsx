@@ -10,6 +10,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { m } from "@/lib/framer-motion-client";
 import { useFormErrorShake } from "@/components/motion/use-form-error-shake";
@@ -524,7 +525,7 @@ export function AccountLoginModal({
 							>
 								Account Number
 							</label>
-							<a
+							<Link
 								href="/docs#auth-account"
 								className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-accent"
 							>
@@ -533,7 +534,7 @@ export function AccountLoginModal({
 									aria-hidden="true"
 								/>
 								What&apos;s this?
-							</a>
+							</Link>
 						</div>
 						<input
 							id="account-number-input"
@@ -743,12 +744,12 @@ export function AccountLoginModal({
 										Connect an EVM wallet to enable SIWE sign-in and USDC
 										deposits on Base.
 									</p>
-									<a
+									<Link
 										href="/settings?tab=wallets"
 										className="text-xs font-semibold text-accent hover:underline underline-offset-2"
 									>
 										Set up in Settings →
-									</a>
+									</Link>
 								</div>
 							</div>
 						</div>

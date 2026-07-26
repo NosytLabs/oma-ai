@@ -3,6 +3,7 @@
 import { m } from "@/lib/framer-motion-client";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatUsd } from "@/lib/utils";
+import { ChartEmptyState } from "./shared";
 
 export interface ModelData {
 	name: string;
@@ -51,6 +52,13 @@ export function DonutChart({
 	currency = true,
 }: DonutChartProps) {
 	const total = data.reduce((sum, item) => sum + item.value, 0);
+	if (data.length === 0 || total === 0) {
+		return (
+			<div className="relative h-[280px] w-full">
+				<ChartEmptyState />
+			</div>
+		);
+	}
 	const chartDescription = `Donut chart showing ${data.map((d) => `${d.name}: ${formatValue(d.value, currency)}`).join(", ")}. Total: ${formatValue(total, currency)}`;
 
 	return (

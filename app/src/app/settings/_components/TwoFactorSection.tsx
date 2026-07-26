@@ -1,5 +1,6 @@
 "use client";
 
+import { copyToClipboard } from "@/lib/clipboard";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
@@ -158,7 +159,11 @@ export function TwoFactorSection({
 
 	const copyAllCodes = async () => {
 		if (state.phase !== "backup-codes") return;
-		await navigator.clipboard.writeText(state.codes.join("\n"));
+		const ok = await copyToClipboard(state.codes.join("\n"));
+		if (!ok) {
+			toast.error("Couldn't copy to clipboard");
+			return;
+		}
 		setState({ ...state, copied: true });
 		toast.success("Backup codes copied to clipboard");
 	};

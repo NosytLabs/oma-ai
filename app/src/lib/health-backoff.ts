@@ -17,9 +17,9 @@
  * shared query must see the same count.
  */
 
-export const HEALTH_POLL_INTERVAL_MS = 30_000;
-export const OFFLINE_BACKOFF_BASE_MS = 5_000;
-export const OFFLINE_BACKOFF_MAX_MS = 60_000;
+const HEALTH_POLL_INTERVAL_MS = 30_000;
+const OFFLINE_BACKOFF_BASE_MS = 5_000;
+const OFFLINE_BACKOFF_MAX_MS = 60_000;
 
 let consecutiveFailures = 0;
 
@@ -32,7 +32,7 @@ export function recordHealthCheckResult(ok: boolean): void {
  * Poll delay for a given number of consecutive failures.
  * 0 → steady 30s; otherwise 5s doubling per failure, capped at 60s.
  */
-export function healthPollInterval(failures: number): number {
+function healthPollInterval(failures: number): number {
 	if (failures <= 0) return HEALTH_POLL_INTERVAL_MS;
 	return Math.min(
 		OFFLINE_BACKOFF_BASE_MS * 2 ** (failures - 1),

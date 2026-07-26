@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Activity, ArrowUpRight } from "lucide-react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { formatTime } from "@/lib/utils";
@@ -123,12 +124,12 @@ export function ProviderHealthSummary() {
 				<span>
 					Last checked {formatTime(new Date(dataUpdatedAt).toISOString())}
 				</span>
-				<a
+				<Link
 					href="/dashboard?tab=health"
 					className="inline-flex items-center gap-1 font-medium text-accent hover:text-accent/80"
 				>
 					View all <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-				</a>
+				</Link>
 			</div>
 		</div>
 	);
