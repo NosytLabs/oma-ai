@@ -89,7 +89,7 @@ export function A2UIRenderer({ payload }: A2UIRendererProps) {
 
 	return (
 		<div
-			className="a2ui-surface border border-border bg-surface p-3 my-2"
+			className="border border-border bg-surface p-3 my-2"
 			data-a2ui-version={A2UI_VERSION}
 		>
 			<div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-2">

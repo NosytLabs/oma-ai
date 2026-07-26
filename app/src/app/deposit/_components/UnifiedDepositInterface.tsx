@@ -386,7 +386,7 @@ export function UnifiedDepositInterface({
 										</span>
 									)}
 								</div>
-								<div className="relative glow-accent-sm">
+								<div className="relative shadow-[0_0_12px_var(--color-accent-shadow)]">
 									<input
 										id={id}
 										type="text"

@@ -19,6 +19,9 @@
  *   - requestAnimationFrame-driven; cancels on unmount.
  *   - Resolved characters lock in place so the final frame matches `text` byte-for-byte.
  *   - Spaces and unmaskable chars (`text[i] === " "`) skip the swap.
+ *   - Per-frame output is written straight to `textContent` via a ref —
+ *     NOT React state. The previous setState-per-frame version re-rendered
+ *     ~54× per instance on the hero/LCP headline.
  */
 
 import {
@@ -61,8 +64,8 @@ export function ScrambleText({
 	delay = 0,
 }: ScrambleTextProps) {
 	const prefersReduced = useReducedMotion();
-	const [display, setDisplay] = useState(text);
 	const [shouldRun, setShouldRun] = useState(trigger === "mount");
+	const nodeRef = useRef<HTMLElement | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const frameRef = useRef<number>(0);
 	const firedRef = useRef<boolean>(trigger === "mount");
@@ -81,8 +84,9 @@ export function ScrambleText({
 	}, [trigger, show]);
 
 	const scramble = useCallback(() => {
-		if (prefersReduced) {
-			setDisplay(text);
+		const node = nodeRef.current;
+		if (prefersReduced || !node) {
+			if (node) node.textContent = text;
 			return;
 		}
 		const start = performance.now() + delay;
@@ -112,11 +116,10 @@ export function ScrambleText({
 					out += pickGlyph(glyphs);
 				}
 			}
-			setDisplay(out);
+			// Direct DOM write — zero React re-renders during the animation.
+			node.textContent = progress < 1 ? out : text;
 			if (progress < 1) {
 				rafRef.current = requestAnimationFrame(tick);
-			} else {
-				setDisplay(text);
 			}
 		};
 		rafRef.current = requestAnimationFrame(tick);
@@ -142,18 +145,32 @@ export function ScrambleText({
 	// lib/motion.tsx conventions); fall back to plain Tag if needed.
 	const Component = Tag as typeof m.span;
 
+	// Attach both the DOM node (for textContent writes) and, when the trigger
+	// is viewport-based, the reveal hook's ref.
+	const setRefs = useCallback(
+		(el: HTMLElement | null) => {
+			nodeRef.current = el;
+			if (trigger === "viewport" && typeof ref === "function") {
+				(ref as (el: HTMLElement | null) => void)(el);
+			} else if (trigger === "viewport" && ref && "current" in ref) {
+				(ref as React.MutableRefObject<HTMLElement | null>).current = el;
+			}
+		},
+		[trigger, ref],
+	);
+
 	if (prefersReduced) {
 		return <Tag className={className}>{text}</Tag>;
 	}
 
 	return (
 		<Component
-			ref={trigger === "viewport" ? (ref as never) : undefined}
+			ref={setRefs as never}
 			className={className}
 			onMouseEnter={handleMouseEnter}
 			aria-label={text}
 		>
-			{display}
+			{text}
 		</Component>
 	);
 }

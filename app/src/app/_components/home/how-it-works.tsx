@@ -3,7 +3,7 @@
 /**
  * HowItWorks — section 4 of the homepage.
  * 3-step horizontal process (vertical stack on mobile).
- * Numbered indicators use the mono numeric-mono utility.
+ * Numbered indicators use mono tabular numerals.
  */
 
 import { Key, Rocket, Wallet } from "lucide-react";
@@ -86,7 +86,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 	return (
 		<div className="relative h-full surface-card p-7 flex flex-col gap-5">
 			<div className="flex items-center justify-between">
-				<span className="numeric-mono text-4xl sm:text-5xl font-bold text-accent leading-none">
+				<span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
 					{step.n}
 				</span>
 				<div

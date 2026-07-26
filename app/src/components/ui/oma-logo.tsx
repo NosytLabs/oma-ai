@@ -63,7 +63,10 @@ export function OmaLogo({
 			/>
 
 			{/* Open gateway ring — gap at 3 o'clock (open access).
-			    Geometry mirrors favicon.svg scaled 32→40 (×1.25). */}
+			    Geometry (positions, radii, dash pattern) mirrors favicon.svg
+			    scaled 32→40 (×1.25). Stroke weights are intentionally LIGHTER
+			    than the scaled 3.75 — optical sizing: the favicon needs a heavy
+			    stroke to survive 16px, the in-app mark renders at 24-40px. */}
 			<circle
 				cx={20}
 				cy={20}

@@ -281,7 +281,7 @@ export function MessagesList({
 		<div
 			ref={scrollContainerRef}
 			onScroll={handleScroll}
-			className="flex-1 overflow-y-auto p-3 md:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative chat-container chat-scroll"
+			className="flex-1 overflow-y-auto p-3 md:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative"
 		>
 			<div
 				className="pointer-events-none absolute inset-0 bg-grid-animated mask-radial"

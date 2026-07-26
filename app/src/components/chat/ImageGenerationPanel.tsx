@@ -268,7 +268,7 @@ export function ImageGenerationPanel() {
 			{loading && (
 				<div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
 					{Array.from({ length: count }).map((_, i) => (
-						<div key={i} className="aspect-square rounded-2xl skeleton" />
+						<div key={i} className="aspect-square rounded-2xl animate-shimmer bg-surface-elevated" />
 					))}
 				</div>
 			)}

@@ -240,7 +240,7 @@ export function DashboardHeader({
 							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
 							aria-hidden="true"
 						/>
-						<span className="hidden xs:inline sm:inline">
+						<span className="hidden sm:inline">
 							{isRefreshing ? "Syncing" : "Refresh"}
 						</span>
 					</button>

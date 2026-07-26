@@ -91,8 +91,7 @@ export default function DepositPage() {
 				className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
 			>
 				<div className="absolute inset-0 bg-grid-animated opacity-[0.12] mask-radial" />
-				<div className="absolute inset-0 aurora opacity-25" />
-			</div>
+				</div>
 
 			<UnifiedDepositHeader />
 			<UnifiedDepositInterface />
