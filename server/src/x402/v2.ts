@@ -1,13 +1,16 @@
 /**
  * x402 v2 transport adapter (2026 spec, x402 Foundation / Coinbase + Cloudflare).
  *
- * v2 differs from our v1 wire shape in three ways:
- *   - transport header is `X-PAYMENT` carrying base64-encoded JSON (v1 used
- *     a raw-JSON `PAYMENT-SIGNATURE` header),
- *   - networks are CAIP-2 ids (`eip155:8453`), not aliases (`base`),
- *   - the 402 challenge is a machine-readable body:
- *     `{ x402Version: 2, accepts: [{ scheme: "exact", network, maxAmountRequired
- *     (atomic units), asset, payTo, maxTimeoutSeconds, ... }] }`.
+ * HEADER NAMING (per the official v1→v2 migration guide, verified 2026-07-26):
+ *   payment (client→server):  v1 `X-PAYMENT`  →  v2 `PAYMENT-SIGNATURE` (base64 JSON)
+ *   receipt (server→client):  v1 `X-PAYMENT-RESPONSE`  →  v2 `PAYMENT-RESPONSE`
+ * OMA accepts ALL of these inbound shapes (raw-JSON legacy PAYMENT-SIGNATURE,
+ * base64 X-PAYMENT, base64 PAYMENT-SIGNATURE) and emits both receipt headers.
+ *
+ * v2 challenge body: `{ x402Version: 2, accepts: [{ scheme: "exact", network
+ * (CAIP-2 `eip155:8453`), amount (atomic units; spec renamed
+ * maxAmountRequired→amount — we emit both), asset, payTo,
+ * maxTimeoutSeconds, extra }] }`.
  *
  * The signing core is unchanged — EIP-3009 transferWithAuthorization over
  * USDC — so this module only translates the v2 envelope to the internal
@@ -180,6 +183,9 @@ export function buildV2Challenge(params: {
       {
         scheme: "exact",
         network: CAIP2_BASE_MAINNET,
+        // Spec renamed maxAmountRequired → amount (atomic units). Emit both
+        // so pre-rename clients keep parsing the challenge.
+        amount: atomic,
         maxAmountRequired: atomic,
         asset: USDC_BASE,
         payTo: params.payTo,

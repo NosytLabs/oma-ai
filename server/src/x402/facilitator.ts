@@ -316,7 +316,8 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 //   (transport: https://github.com/coinbase/x402/blob/main/specs/transports-v2/http.md)
 //
 // V1 wire shape (now EIP-3009-aligned; was: receipt-check of pre-paid transfer):
-//   * x402Version: string ("1"|"2"). V2 spec uses number (2); v2.ts still 501.
+//   * x402Version: string ("1"|"2"). V2 spec uses number (2); v2.ts adapts
+//     the v2 wire (base64 PAYMENT-SIGNATURE / X-PAYMENT) onto this envelope.
 //   * Transport header: PAYMENT-SIGNATURE (JSON-encoded PaymentSignature).
 //   * signature     = 65-byte EIP-712 sig over TransferWithAuthorization typed data.
 //   * authorization = JSON { from, to, value, validAfter, validBefore, nonce }.
@@ -430,11 +431,17 @@ export function paymentMiddleware(
         );
       }
     } else {
+      // PAYMENT-SIGNATURE carries either the legacy OMA raw-JSON envelope or,
+      // per the current v2 spec (which renamed X-PAYMENT → PAYMENT-SIGNATURE),
+      // base64-encoded v2 JSON. Sniff the first character to tell them apart.
+      const raw = (paymentHeader as string).trim();
       try {
-        paymentSig = JSON.parse(paymentHeader as string) as PaymentSignature;
-      } catch {
+        paymentSig = raw.startsWith("{")
+          ? (JSON.parse(raw) as PaymentSignature)
+          : parseXPaymentHeader(raw);
+      } catch (err) {
         return c.json(
-          { error: { message: "Invalid PAYMENT-SIGNATURE header", type: "payment_error" } },
+          { error: { message: err instanceof Error ? err.message : "Invalid PAYMENT-SIGNATURE header", type: "payment_error" } },
           400,
         );
       }
@@ -485,15 +492,16 @@ export function paymentMiddleware(
     }
 
     c.set("payment", { txHash: verification.txHash, amount: verification.amount ?? paymentSig.payload.amount, networkId: verification.networkId ?? paymentSig.payload.networkId });
-    // v2 clients get the spec's settlement receipt header.
+    // Settlement receipt headers: PAYMENT-RESPONSE is the current v2 spec
+    // name; X-PAYMENT-RESPONSE is kept for clients built against the older
+    // draft. Same base64 payload in both.
+    const receiptHeader = buildXPaymentResponse({
+      txHash: verification.txHash,
+      payer: paymentSig.payload.payFrom,
+    });
+    c.header("PAYMENT-RESPONSE", receiptHeader);
     if (xPaymentHeader) {
-      c.header(
-        "X-PAYMENT-RESPONSE",
-        buildXPaymentResponse({
-          txHash: verification.txHash,
-          payer: paymentSig.payload.payFrom,
-        }),
-      );
+      c.header("X-PAYMENT-RESPONSE", receiptHeader);
     }
     await next();
   };
