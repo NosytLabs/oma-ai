@@ -99,6 +99,18 @@ export default function AdminPage() {
 		queryClient.invalidateQueries({ queryKey: ["adminKeys"] });
 	};
 
+	// Auth failures are terminal — retrying 401/403 three times just delays
+	// the auth gate by ~7s while the bare shell flashes "No Data Available".
+	const noAuthRetry = (failureCount: number, error: unknown) => {
+		if (
+			error instanceof ApiError &&
+			(error.status === 401 || error.status === 403)
+		) {
+			return false;
+		}
+		return failureCount < 2;
+	};
+
 	// Overview aggregates users + usage + revenue + keys. Enable those
 	// queries on overview as well as on their own tabs (previously overview
 	// stayed empty forever because nothing was fetched until tab switch).
@@ -106,6 +118,7 @@ export default function AdminPage() {
 		queryKey: ["adminUsers", usersPage],
 		queryFn: () => api.admin.getUsers(usersPage, 50),
 		staleTime: 30_000,
+		retry: noAuthRetry,
 		enabled: activeTab === "users" || activeTab === "overview",
 	});
 
@@ -113,6 +126,7 @@ export default function AdminPage() {
 		queryKey: ["adminUsage", usagePeriod],
 		queryFn: () => api.admin.getUsage(usagePeriod),
 		staleTime: 30_000,
+		retry: noAuthRetry,
 		enabled: activeTab === "usage" || activeTab === "overview",
 	});
 
@@ -120,6 +134,7 @@ export default function AdminPage() {
 		queryKey: ["adminRevenue", revenuePeriod],
 		queryFn: () => api.admin.getRevenue(revenuePeriod),
 		staleTime: 30_000,
+		retry: noAuthRetry,
 		enabled: activeTab === "revenue" || activeTab === "overview",
 	});
 
@@ -130,6 +145,7 @@ export default function AdminPage() {
 				.getKeys(1, 100)
 				.then((data) => (data as { keys?: ApiKey[] })?.keys ?? []),
 		staleTime: 30_000,
+		retry: noAuthRetry,
 		enabled: activeTab === "keys" || activeTab === "overview",
 	});
 
@@ -212,17 +228,52 @@ export default function AdminPage() {
 		}));
 	}, [revenueStats]);
 
-	const isUnauthorized = useMemo(() => {
+	// 403 = signed in but not an admin; 401 = not signed in at all. Without
+	// the 401 branch an anonymous visitor saw the full admin shell (tabs,
+	// layout, "No Data Available") instead of a gate — the backend never
+	// leaked data, but the admin surface should not render for non-admins.
+	const authGate = useMemo(() => {
 		const errors = [
 			usersQuery.error,
 			usageQuery.error,
 			revenueQuery.error,
 			keysQuery.error,
 		];
-		return errors.some((err) => err instanceof ApiError && err.status === 403);
+		if (errors.some((err) => err instanceof ApiError && err.status === 403)) {
+			return "forbidden" as const;
+		}
+		if (errors.some((err) => err instanceof ApiError && err.status === 401)) {
+			return "unauthenticated" as const;
+		}
+		return null;
 	}, [usersQuery.error, usageQuery.error, revenueQuery.error, keysQuery.error]);
 
-	if (isUnauthorized) {
+	if (authGate === "unauthenticated") {
+		return (
+			<div className="min-h-screen bg-void text-text flex flex-col items-center justify-center px-4">
+				<div className="rounded border border-border bg-surface p-10 max-w-md w-full text-center">
+					<div className="w-16 h-16 rounded border border-accent/30 bg-accent-dim flex items-center justify-center mx-auto mb-6">
+						<ShieldAlert className="w-8 h-8 text-accent" />
+					</div>
+					<h1 className="text-xl font-bold font-display tracking-tight text-text-bright mb-2">
+						Sign In Required
+					</h1>
+					<p className="text-sm text-text-muted font-mono mb-6">
+						The admin console requires an authenticated administrator
+						session.
+					</p>
+					<Link
+						href="/login?next=%2Fadmin"
+						className="inline-flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-accent-dim text-accent hover:border-accent transition-colors text-sm font-mono"
+					>
+						Sign In
+					</Link>
+				</div>
+			</div>
+		);
+	}
+
+	if (authGate === "forbidden") {
 		return (
 			<div className="min-h-screen bg-void text-text flex flex-col items-center justify-center px-4">
 				<div className="rounded border border-border bg-surface p-10 max-w-md w-full text-center">
