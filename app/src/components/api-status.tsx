@@ -22,24 +22,33 @@
  *   "offline".
  * - Exposes a stable `refresh()` callback so consumers can re-poll after
  *   a "Retry" click.
+ * - While the API is offline the poll backs off exponentially
+ *   (5s → 10s → 20s → 40s → 60s cap) instead of hammering a dead
+ *   backend on a fixed cadence. A successful check resets the backoff
+ *   and returns to the steady 30s poll. No per-attempt console logging.
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useCallback } from "react";
 import { api } from "@/lib/api";
+import {
+  nextHealthPollMs,
+  recordHealthCheckResult,
+} from "@/lib/health-backoff";
 
 export type HealthStatus = "checking" | "online" | "offline";
 
-const POLL_INTERVAL_MS = 30_000;
 const STALE_TIME_MS = 25_000;
 const HEALTH_QUERY_KEY = ["health", "ready-v2"] as const;
 
 async function fetchHealth(): Promise<HealthStatus> {
   try {
     const ok = await api.healthPing();
+    recordHealthCheckResult(ok);
     return ok ? "online" : "offline";
   } catch {
+    recordHealthCheckResult(false);
     return "offline";
   }
 }
@@ -50,7 +59,9 @@ export function useApiHealth() {
     queryKey: HEALTH_QUERY_KEY,
     queryFn: fetchHealth,
     staleTime: STALE_TIME_MS,
-    refetchInterval: POLL_INTERVAL_MS,
+    // Steady 30s poll while online; capped exponential backoff (5s → 60s)
+    // while offline so a dead backend isn't hammered on a hot loop.
+    refetchInterval: nextHealthPollMs,
     refetchOnWindowFocus: false,
     // fetchHealth already swallows errors and resolves with "offline".
     // Disabling retries prevents React Query from racing the abort

@@ -562,8 +562,6 @@ export default function PrivacyPage() {
 							{[
 								["Neon", "Database hosting", "account metadata, usage meters"],
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
-								["Sentry", "Error telemetry", "stack traces (no prompt bodies)"],
-								["WalletConnect / Coinbase", "Wallet connect", "session handshake only"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
 							].map(([name, role, note]) => (
 								<li

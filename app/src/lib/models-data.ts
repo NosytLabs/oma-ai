@@ -9,7 +9,7 @@
 //     58 KB JSON blob in the client bundle for every page that imported
 //     anything from this file — including static SSR pages like the
 //     homepage, pricing, and `/models` routes that only need a count.
-//   - Now we ship a *small static fallback* (50 hand-picked models with the
+//   - Now we ship a *small static fallback* (a handful of hand-picked models with the
 //     exact `Model` shape consumers expect) and load the full catalog
 //     lazily at runtime via the `/v1/models` endpoint. The fallback
 //     guarantees SSR metadata (`MODEL_COUNT`, layout descriptions,
@@ -205,7 +205,7 @@ function toModel(entry: RawEntry): Model {
 }
 
 /** Transform any raw upstream catalog shape into the public `Model[]`. */
-export function catalogFromRaw(catalog: RawCatalog): Model[] {
+function catalogFromRaw(catalog: RawCatalog): Model[] {
 	return Object.values(catalog.MODEL_CATALOG).map(toModel);
 }
 
@@ -223,6 +223,8 @@ interface ApiModelEntry {
 	pricing: { prompt: string; completion: string | null };
 	category: string;
 	context_length: number | null;
+	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus"). */
+	provider?: string;
 }
 
 interface ApiModelsResponse {
@@ -287,7 +289,9 @@ export async function loadModels(): Promise<Model[]> {
 					return {
 						id: entry.id,
 						name,
-						provider: "Gonka" as Provider,
+						provider: (entry.provider === "gonka"
+							? "Gonka"
+							: "Venice") as Provider,
 						tier,
 						description: deriveDescription(entry.id, name, undefined),
 						contextLength: formatContextLength(entry.context_length ?? 0),
@@ -424,7 +428,7 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match live
-// GET /v1/models (91 active chat + 5 video). The SSR fallback catalog
+// GET /v1/models (89 active chat + 5 video = 94). The SSR fallback catalog
 // (`MODELS`) is a smaller hand-picked set — never use MODELS.length for
 // marketing copy.
-export const MODEL_COUNT = 90; // 89 chat + 5 video = 94 total; 90 rounded for marketing
+export const MODEL_COUNT = 90; // 94 live entries; 90 kept as the rounded-down marketing floor

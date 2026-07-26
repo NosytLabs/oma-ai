@@ -10,7 +10,7 @@
 set -euo pipefail
 
 REPO_URL="${OMA_REPO_URL:-https://github.com/NosytLabs/oma-ai.git}"
-BRANCH="master"
+BRANCH="main"
 OMA_DIR="/opt/oma"
 
 echo "[*] OMA Deployment -- Vault-Tec Approved!"

@@ -1,7 +1,25 @@
+"use client";
+
 import { BookOpen, Sparkles, Terminal } from "lucide-react";
+import { useEffect, useState } from "react";
+import { loadModels } from "@/lib/models-data";
 import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } from "./shared";
 
 export function AvailableModelsSection() {
+	// Static fallback renders immediately (SSR-safe); the live catalog
+	// (90+ entries) replaces it once /v1/models responds. Without this the
+	// docs advertised "90 models" over a 7-row table.
+	const [models, setModels] = useState(MODELS);
+	useEffect(() => {
+		let cancelled = false;
+		loadModels().then((live) => {
+			if (!cancelled && live.length > 0) setModels(live);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
 	const tiers = [
 		{
 			id: "budget",
@@ -9,7 +27,7 @@ export function AvailableModelsSection() {
 			color: "text-warning",
 			badge: "bg-warning/20 text-warning",
 			desc: "Fast, cost-effective models for simple tasks and prototyping.",
-			models: MODELS.filter((m) => m.tier === "budget"),
+			models: models.filter((m) => m.tier === "budget"),
 		},
 		{
 			id: "mid",
@@ -17,7 +35,7 @@ export function AvailableModelsSection() {
 			color: "text-accent",
 			badge: "bg-accent/20 text-accent",
 			desc: "Balanced performance and cost for everyday workloads.",
-			models: MODELS.filter((m) => m.tier === "mid"),
+			models: models.filter((m) => m.tier === "mid"),
 		},
 		{
 			id: "premium",
@@ -25,7 +43,7 @@ export function AvailableModelsSection() {
 			color: "text-violet",
 			badge: "bg-violet/20 text-violet",
 			desc: "High-performance models for demanding tasks.",
-			models: MODELS.filter((m) => m.tier === "premium"),
+			models: models.filter((m) => m.tier === "premium"),
 		},
 		{
 			id: "frontier",
@@ -33,7 +51,7 @@ export function AvailableModelsSection() {
 			color: "text-violet",
 			badge: "bg-violet/20 text-violet",
 			desc: "State-of-the-art models with maximum capability.",
-			models: MODELS.filter((m) => m.tier === "frontier"),
+			models: models.filter((m) => m.tier === "frontier"),
 		},
 	];
 

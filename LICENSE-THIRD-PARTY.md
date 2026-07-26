@@ -85,10 +85,30 @@ Attribution is provided as required by MIT, Apache 2.0, BSD, and other open-sour
 - **License:** MIT — Copyright (c) 2020 Titus Wormer
 - **Used in:** GitHub Flavored Markdown support
 
-### @sentry/nextjs (MIT)
-- **Source:** https://github.com/getsentry/sentry-javascript
-- **License:** MIT — Copyright (c) 2019 Sentry (https://sentry.io)
-- **Used in:** Error tracking and performance monitoring
+### border-beam (MIT)
+- **Source:** https://github.com/Jakubantalik/border-beam
+- **License:** MIT — Copyright (c) 2026 Jakub Antalik
+- **Used in:** Animated border beam effect for React
+
+### cuelume (MIT)
+- **Source:** https://github.com/Danilaa1/cuelume
+- **License:** MIT — Copyright (c) 2026 Daniel Belyi
+- **Used in:** Curated interaction sounds for the web
+
+### img-fx (MIT)
+- **Source:** https://github.com/Jakubantalik/img-fx
+- **License:** MIT — Copyright (c) 2026 Jakub Antalik
+- **Used in:** Animated WebGL image loader effect for React cards
+
+### metal-fx (MIT)
+- **Source:** https://github.com/Jakubantalik/metal-fx
+- **License:** MIT — Copyright (c) 2026 Jakub Antalik
+- **Used in:** Animated WebGL metal shader effect for buttons and UI
+
+### thinking-orbs (MIT)
+- **Source:** https://github.com/Jakubantalik/thinking-orbs
+- **License:** MIT — Copyright (c) 2026 Jakub Antalik
+- **Used in:** Dotted thought-orb loading indicators for AI UIs
 
 ## Core Runtime (Server)
 
@@ -136,11 +156,6 @@ Attribution is provided as required by MIT, Apache 2.0, BSD, and other open-sour
 - **Source:** https://github.com/nodejs/undici
 - **License:** MIT — Copyright (c) Node.js Contributors
 - **Used in:** HTTP/1.1 client library
-
-### ws (MIT)
-- **Source:** https://github.com/websockets/ws
-- **License:** MIT — Copyright (c) 2011 Einar Otto Stangvik
-- **Used in:** WebSocket implementation
 
 ### qrcode (MIT)
 - **Source:** https://github.com/soldair/node-qrcode

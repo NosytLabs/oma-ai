@@ -149,17 +149,6 @@ export function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
 	cache.set(key, { data, timestamp: Date.now(), ttl });
 }
 
-/** Invalidate cache entries by substring match, or clear everything. */
-export function invalidateCache(pattern?: string): void {
-	if (!pattern) {
-		cache.clear();
-		return;
-	}
-	for (const key of cache.keys()) {
-		if (key.includes(pattern)) cache.delete(key);
-	}
-}
-
 /**
  * Options accepted by `request()`. Extends the standard `RequestInit` with
  * a `responseType` discriminator so callers can ask for a `Blob` (CSV/JSON

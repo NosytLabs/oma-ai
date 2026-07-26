@@ -2,7 +2,8 @@
  * Auth namespace: SIWE + account-number login + API key listing.
  */
 
-import { request } from "./client.js";
+import { DEFAULT_API_URL } from "@/lib/config";
+import { getAuthToken, request } from "./client.js";
 import type {
 	ApiKey,
 	ApiKeyWithSecret,
@@ -129,6 +130,52 @@ export const auth = {
 			method: "POST",
 			body: JSON.stringify({ name }),
 		});
+	},
+
+	/**
+	 * Install the freshly created API key as the HttpOnly `oma_api_key`
+	 * cookie so browser-direct calls (chat/playground SSE streams that
+	 * can't go through the buffering /api proxy) authenticate.
+	 *
+	 * Two paths, tried in order:
+	 * 1. Direct to the backend origin with the in-memory session JWT —
+	 *    required in production where the API lives on its own host and
+	 *    a `__Host-` cookie set via the app-origin proxy would never be
+	 *    sent cross-origin.
+	 * 2. Through the /api proxy (session cookie → Bearer translation) —
+	 *    covers the hard-reload case where the in-memory JWT is gone.
+	 *    Same-origin cookies are port-agnostic in dev, so this is fully
+	 *    sufficient there.
+	 *
+	 * Best-effort: failure just means chat asks the user to re-auth.
+	 */
+	async installKeyCookie(apiKey: string): Promise<boolean> {
+		const token = getAuthToken();
+		if (token) {
+			try {
+				const res = await fetch(`${DEFAULT_API_URL}/auth/api-key/cookie`, {
+					method: "POST",
+					credentials: "include",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ apiKey }),
+				});
+				if (res.ok) return true;
+			} catch {
+				// fall through to the proxy path
+			}
+		}
+		try {
+			await request<{ success: boolean }>(p("/auth/api-key/cookie"), {
+				method: "POST",
+				body: JSON.stringify({ apiKey }),
+			});
+			return true;
+		} catch {
+			return false;
+		}
 	},
 
 	deleteKey(id: string) {

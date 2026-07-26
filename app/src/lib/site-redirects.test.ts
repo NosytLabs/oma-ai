@@ -72,7 +72,7 @@ describe("brand assets on disk (public/)", () => {
 		"favicon-16x16.png",
 		"favicon-32x32.png",
 		"apple-touch-icon.png",
-		"og-image.png",
+		"og-image.webp",
 		"logos/oma-logo.svg",
 		"logos/oma-icon-192.png",
 		"logos/oma-icon-512.png",

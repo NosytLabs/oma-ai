@@ -11,12 +11,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL } from "../config";
 import { readSessionToken } from "../cookies";
 
-export const PROXY_RUNTIME = "nodejs";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 /** Routes that don't require auth, mapped from the path *after* `/api`. */
-export const PUBLIC_BACKEND_PATHS = new Set([
+const PUBLIC_BACKEND_PATHS = new Set([
 	// Pre-auth + public health
 	"/health",
 	"/ready",
@@ -59,7 +58,7 @@ export interface ProxyRequestResult {
 	body: string;
 }
 
-export async function isAuthorizedRequest(
+async function isAuthorizedRequest(
 	req: NextRequest,
 	backendPath: string,
 ): Promise<boolean> {
@@ -71,7 +70,7 @@ export async function isAuthorizedRequest(
 	return Boolean(session);
 }
 
-export function buildUpstreamHeaders(req: NextRequest): Record<string, string> {
+function buildUpstreamHeaders(req: NextRequest): Record<string, string> {
 	const headers: Record<string, string> = { accept: "application/json" };
 	const cookie = req.headers.get("cookie");
 	if (cookie) headers.cookie = cookie;
@@ -84,7 +83,7 @@ export function buildUpstreamHeaders(req: NextRequest): Record<string, string> {
 	return headers;
 }
 
-export async function ensureBearer(
+async function ensureBearer(
 	headers: Record<string, string>,
 ): Promise<void> {
 	if (headers.authorization) return;

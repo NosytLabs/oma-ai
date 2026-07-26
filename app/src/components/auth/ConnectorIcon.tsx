@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard, Wallet, Wifi } from "lucide-react";
+import { Wallet } from "lucide-react";
 import type { ConnectorKind, ConnectorView } from "./types";
 
 /**
@@ -61,46 +61,6 @@ function MetaMaskIcon() {
 	);
 }
 
-function CoinbaseIcon() {
-	return (
-		<svg
-			viewBox="0 0 32 32"
-			width="20"
-			height="20"
-			aria-hidden="true"
-			className="h-5 w-5"
-		>
-			<circle cx="16" cy="16" r="14" fill="#1652F0" />
-			<rect x="11" y="11" width="10" height="10" rx="5" fill="#ffffff" />
-		</svg>
-	);
-}
-
-function WalletConnectIcon() {
-	return (
-		<svg
-			viewBox="0 0 32 32"
-			width="20"
-			height="20"
-			aria-hidden="true"
-			className="h-5 w-5"
-		>
-			<path
-				d="M9.5 11.2c1.8-1.7 4.7-1.7 6.5 0L17.4 13l1.4-1.4c2.7-2.6 7.1-2.6 9.8 0l-1.5 1.4c-1.9-1.8-5-1.8-6.8 0L18.7 14.7l-1.4-1.4c-1-1-2.5-1-3.4 0L12.5 14.7l-1.5-1.5z"
-				fill="#3B99FC"
-			/>
-			<path
-				d="M5.3 16.7c2.7-2.6 7.1-2.6 9.8 0L16.7 18l-1.5 1.4c-1.9-1.8-5-1.8-6.8 0l-3.1-2.7z"
-				fill="#F6A65A"
-			/>
-			<path
-				d="M16 21.5l1.4-1.4 5.2 5-1.4 1.4zm-1.4-1.4l1.4-1.4 1.4 1.4-1.4 1.4z"
-				fill="#F6A65A"
-			/>
-		</svg>
-	);
-}
-
 /**
  * Resolve a connector `id`/`name` pair (as emitted by wagmi) to a
  * strongly-typed `ConnectorKind`. Centralizing this here keeps the
@@ -114,12 +74,6 @@ export function classifyConnector(id: string, name?: string): ConnectorKind {
 		id === "metaMask"
 	) {
 		return "metamask";
-	}
-	if (id.includes("coinbase") || lowerName.includes("coinbase")) {
-		return "coinbase";
-	}
-	if (id === "walletConnect" || lowerName.includes("walletconnect")) {
-		return "walletconnect";
 	}
 	if (id === "injected") return "injected";
 	return "unknown";
@@ -141,18 +95,6 @@ export function ConnectorIcon({
 					<MetaMaskIcon />
 				</div>
 			);
-		case "coinbase":
-			return (
-				<div className={wrapperCls}>
-					<CoinbaseIcon />
-				</div>
-			);
-		case "walletconnect":
-			return (
-				<div className={wrapperCls}>
-					<WalletConnectIcon />
-				</div>
-			);
 		case "injected":
 			return (
 				<div className={wrapperCls}>
@@ -160,25 +102,6 @@ export function ConnectorIcon({
 				</div>
 			);
 		default:
-			// Fallback for `unknown` (catch-all): try to infer from id since
-			// classifyConnector already ran.
-			if (
-				connector.id === "walletConnect" ||
-				connector.id.includes("walletconnect")
-			) {
-				return (
-					<div className={wrapperCls}>
-						<Wifi className="h-4 w-4 text-text-secondary" />
-					</div>
-				);
-			}
-			if (connector.id.includes("coinbase")) {
-				return (
-					<div className={wrapperCls}>
-						<CreditCard className="h-4 w-4 text-text-secondary" />
-					</div>
-				);
-			}
 			return (
 				<div className={wrapperCls}>
 					<Wallet className="h-4 w-4 text-text-secondary" />

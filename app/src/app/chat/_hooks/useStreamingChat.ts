@@ -237,7 +237,7 @@ export function useStreamingChat(
 
 			if (response.status === 401) {
 				throw new Error(
-					"Authentication required — please reconnect your wallet to continue",
+					"Authentication required — sign in and create an API key to use chat",
 				);
 			}
 			if (response.status === 429) {

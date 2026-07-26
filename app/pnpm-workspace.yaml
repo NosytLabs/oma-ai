@@ -3,7 +3,6 @@ publicHoistPatterns:
   - 'motion-utils'
 allowBuilds:
   '@reown/appkit': true
-  '@sentry/cli': true
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:

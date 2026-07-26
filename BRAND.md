@@ -25,11 +25,9 @@
 | Vector favicon (source of truth) | `app/public/favicon.svg` |
 | Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (regenerate from SVG) |
 | App icon 192 / 512 | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` |
-| Glow marketing icon | `app/public/logos/oma-icon-glow-512.png` (social / press; not PWA source) |
 | Lockup SVG | `app/public/logos/oma-logo.svg` |
-| OG lockup PNG | `app/public/logos/oma-og-lockup.png` |
 | Apple touch | `app/public/apple-touch-icon.png` |
-| Open Graph 1280×720 | `app/public/og-image.png` |
+| Open Graph 1280×720 | `app/public/og-image.webp` |
 
 Regenerate PWA/tab rasters from SVG (always after mark edits):
 
@@ -49,10 +47,8 @@ rsvg-convert -w 512 -h 512 app/public/favicon.svg -o app/public/logos/oma-icon-5
 | `favicon-16x16.png` / `favicon-32x32.png` | Fallback tabs (SVG preferred) |
 | `apple-touch-icon.png` | iOS home screen |
 | `logos/oma-icon-192.png` / `oma-icon-512.png` | PWA / manifest (flat SVG-derived) |
-| `logos/oma-icon-glow-512.png` | Press / marketing glow variant |
 | `logos/oma-logo.svg` | Marketing lockup (vector) |
-| `logos/oma-og-lockup.png` | Social lockup still |
-| `og-image.png` | Open Graph 1280×720 (slogan, no hex codes) |
+| `og-image.webp` | Open Graph 1280×720 (slogan, no hex codes) |
 | `oma-logo.tsx` | In-app React mark (CSS tokens / theme accents) |
 
 Do not invent a second mark. Live site may lag until deploy; local `app/public` is source of truth.
@@ -69,7 +65,7 @@ Do not invent a second mark. Live site may lag until deploy; local `app/public` 
 
 ### What OMA IS vs. IS NOT
 
-**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with AntSeed backup · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, LI.FI / CCTP, 20+ chains) · wallet-based auth (SIWE) · OpenAI-compatible API.
+**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with Gonka failover · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, LI.FI / CCTP, 20+ chains) · wallet-based auth (SIWE) · OpenAI-compatible API.
 
 **Not designed for:** illicit use. OMA is a professional tool for developers who value privacy, control, and crypto-native payments. Position as "low-friction signup", not "no KYC"; "private inference", not "anonymous"; "privacy-focused", not "untraceable".
 
@@ -135,7 +131,7 @@ Rules:
 ### Navigation
 
 - Sticky header `h-14`, glass when scrolled.
-- Primary: Models · Chat · Pricing · Docs (Title Case).
+- Primary: Models · Chat · Pricing · Docs · Compare (Title Case).
 - Tools dropdown: Network · Observability · Changelog.
 - Account: Dashboard · Settings · Sign in (footer + mobile).
 - Retired: `/swap` → `/deposit` (permanent redirect).

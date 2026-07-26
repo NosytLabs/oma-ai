@@ -56,10 +56,27 @@ export async function findProvidersForModel(
 }
 
 /** Check if a provider is actually configured (has valid credentials). */
-function isProviderConfigured(p: Provider): boolean {
+export function isProviderConfigured(p: Provider): boolean {
   if (p === "venice") return VENICE_CONFIGURED;
   if (p === "surplus") return SURPLUS_ENABLED;
   return true; // gonka works without a key
+}
+
+/**
+ * True when at least one configured provider can serve this model — the same
+ * static predicate getCandidateProviders() applies before the router returns
+ * 503. Used by the catalog so a keyless deploy only advertises models it can
+ * actually serve.
+ */
+export function hasConfiguredProvider(modelDef: ModelDef): boolean {
+  if (isProviderConfigured(modelDef.primaryProvider)) return true;
+  for (const { provider, field } of PROVIDER_ID_FIELDS) {
+    const v = modelDef[field];
+    if (typeof v === "string" && v.length > 0 && isProviderConfigured(provider)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export async function getCandidateProviders(

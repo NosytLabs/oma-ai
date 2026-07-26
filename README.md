@@ -176,7 +176,7 @@ See `GET /v1/models` for the live, complete catalog and current pricing.
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | Frontend | Next.js 15, React 19 | Landing, dashboard, pages |
-| Backend | Hono.js, Node.js 22 | API server |
+| Backend | Hono.js, Node.js 20 | API server |
 | Database | PostgreSQL (Drizzle ORM) | Users, credits, deposits |
 | Cache | Redis | Rate limiting, sessions |
 | Blockchain | Base (EVM) | USDC deposits, x402 settlement |

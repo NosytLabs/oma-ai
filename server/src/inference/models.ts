@@ -3,6 +3,7 @@ import * as path from 'path';
 import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
 import { invalidateModelsCache } from "../routes/models.js";
+import { hasConfiguredProvider, isProviderConfigured } from "./cross-provider-router.js";
 
 export interface ModelDef {
   id: string;
@@ -327,6 +328,7 @@ export function estimateTokensFromWords(wordCount: number): number {
 export async function listModels(): Promise<Array<{
   id: string;
   category: string;
+  provider: string;
   inputPricePer1M: number;
   outputPricePer1M: number;
   maxTokens: number;
@@ -335,11 +337,16 @@ export async function listModels(): Promise<Array<{
   description: string;
 }>> {
   await ensureCatalogLoaded();
+  // hasConfiguredProvider: hide models whose providers all lack credentials
+  // (e.g. the 87 Venice models on a keyless deploy). Same predicate the
+  // router uses before returning 503, so the catalog only advertises what
+  // this deploy can actually serve.
   return Object.values(MODEL_CATALOG)
-    .filter((m) => m.enabled !== false)
+    .filter((m) => m.enabled !== false && hasConfiguredProvider(m))
     .map((m) => ({
       id: m.id,
       category: m.category,
+      provider: m.primaryProvider,
       inputPricePer1M: m.inputPricePer1M,
       outputPricePer1M: m.outputPricePer1M,
       maxTokens: m.maxTokens,
@@ -359,7 +366,10 @@ export async function listVideoModels(): Promise<Array<{
   description: string;
 }>> {
   await ensureCatalogLoaded();
-  return Object.values(VIDEO_MODELS).map((m) => ({
+  // Video models are Venice-only today — hide them all on keyless deploys.
+  return Object.values(VIDEO_MODELS)
+    .filter((m) => isProviderConfigured(m.provider))
+    .map((m) => ({
     id: m.id,
     provider: m.provider,
     price: m.price,

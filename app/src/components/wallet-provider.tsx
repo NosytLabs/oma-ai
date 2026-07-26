@@ -215,7 +215,7 @@ function InnerProvider({
 		// window.ethereum provider under a single "Injected" entry, which
 		// hides MetaMask from the popular list and ships a generic wallet
 		// icon. We do this client-side only so SSR is unchanged and the
-		// existing wagmi config (injected + coinbaseWallet) is preserved.
+		// existing wagmi config (injected only) is preserved.
 		const eth =
 			typeof window !== "undefined"
 				? (window as { ethereum?: { isMetaMask?: boolean } }).ethereum

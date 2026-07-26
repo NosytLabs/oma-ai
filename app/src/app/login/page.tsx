@@ -625,7 +625,8 @@ function LoginCard(p: LoginCardProps) {
 					<div className="flex-1 text-xs text-text leading-relaxed">
 						<p className="font-semibold mb-1">API is offline</p>
 						<p className="text-text-muted">
-							Sign-in is temporarily unavailable. Auto-retrying every 30s.
+							Sign-in is temporarily unavailable. Retrying automatically,
+							backing off to once per minute.
 						</p>
 						<button
 							type="button"

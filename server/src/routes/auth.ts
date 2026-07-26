@@ -228,15 +228,8 @@ authRoutes.post("/auth/wallet", rateLimit({ windowMs: 60_000, maxRequests: 20 })
     }, 200);
   }
 
-  // First wallet connect - generate and return new API key (returned ONCE)
-  const apiKey = await createApiKey(user.id, "Default wallet key");
-  return c.json({
-    apiKey: apiKey.key,
-    prefix: apiKey.prefix,
-    id: apiKey.id,
-    name: apiKey.name,
-    createdAt: apiKey.createdAt
-  }, 201);
+  // First wallet connect — no API key created. User can create one via POST /keys
+  return c.json({ message: "Wallet connected. Create an API key at POST /auth/keys" }, 201);
 });
 
 // ============================================================
@@ -497,11 +490,8 @@ authRoutes.post("/auth/account/create", rateLimit({ windowMs: 60_000, maxRequest
     .returning({ id: users.id, accountNumber: users.accountNumber });
 
   const [user] = inserted;
-  // Auto-generate a default API key so account-number users get
-  // programmatic access immediately (matches wallet-login behavior).
-  const apiKey = await createApiKey(user.id, "Default account key");
   const token = await generateSessionToken(user.id, "account-number");
-  return c.json({ token, accountNumber: user.accountNumber, authMethod: "account-number", apiKey: { key: apiKey.key, prefix: apiKey.prefix, id: apiKey.id, name: apiKey.name, createdAt: apiKey.createdAt } }, 201);
+  return c.json({ token, accountNumber: user.accountNumber, authMethod: "account-number" }, 201);
 });
 
 const csrfTokenHandler: MiddlewareHandler<OmaEnv> = async (c) => {
@@ -663,15 +653,10 @@ authRoutes.post("/auth/account/login", async (c) => {
     await db.update(users).set({ accountNumber: newAccountNumber, accountNumberHash: newHash }).where(eq(users.id, user.id));
   }
   
-  let existingKeys = await listApiKeys(user.id);
-  // Auto-generate a default API key on first login if none exist
-  // (matches wallet-login behavior at line ~232).
-  if (existingKeys.length === 0) {
-    await createApiKey(user.id, "Default account key");
-    existingKeys = await listApiKeys(user.id);
-  }
+  const existingKeys = await listApiKeys(user.id);
+  const hasApiKey = existingKeys.length > 0;
   const token = await generateSessionToken(user.id, "account-number");
-  return c.json({ token, address: user.address, accountNumber: newAccountNumber, authMethod: "account-number", hasApiKey: existingKeys.length > 0 });
+  return c.json({ token, address: user.address, accountNumber: newAccountNumber, authMethod: "account-number", hasApiKey });
 });
 
 authRoutes.get("/keys", sessionAuth, async (c) => {
@@ -740,15 +725,13 @@ authRoutes.post("/auth/api-key/cookie", sessionAuth, async (c) => {
   // SEC-10: ownership check — we must validate the API key belongs to this
   // user before storing it as a cookie. Without this check, User A could set
   // a cookie with User B's known API key and impersonate B for API calls.
-  const ownerKey = await getApiKey(userId, apiKey);
-  if (!ownerKey) {
-    // Fallback: also try validateApiKey which does a full lookup by hash.
-    // getApiKey expects (userId, keyId) — but a raw key string isn't keyId,
-    // so it only matches when the caller passes the actual key ID.
-    const validated = await validateApiKey(apiKey);
-    if (!validated || validated.userId !== userId) {
-      return c.json({ error: { message: "API key not found or does not belong to this account", type: "invalid_request_error" } }, 404);
-    }
+  //
+  // Lookup is by hash (validateApiKey): callers send the raw `oma_sk_…`
+  // secret. Passing it to getApiKey(userId, keyId) crashed with a 500 —
+  // the raw key isn't a UUID, and Postgres rejects the `id = $1` cast.
+  const validated = await validateApiKey(apiKey);
+  if (!validated || validated.userId !== userId) {
+    return c.json({ error: { message: "API key not found or does not belong to this account", type: "invalid_request_error" } }, 404);
   }
 
   const cookieHeader = createApiKeyCookieHeader(apiKey);

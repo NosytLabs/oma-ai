@@ -19,7 +19,8 @@ import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import type { OmaEnv } from "../types.js";
 
-const MODELS_CACHE_KEY = "cache:models:catalog:v1";
+// v2: response entries now carry `provider` (upstream routing target).
+const MODELS_CACHE_KEY = "cache:models:catalog:v2";
 const MODELS_CACHE_TTL = 3600; // 1 hour in seconds
 
 /**
@@ -70,6 +71,7 @@ async function buildModelsResponse(): Promise<{
             object: "model" as const,
             created,
             owned_by: "oma",
+            provider: m.provider,
             permission: [],
             root: m.id,
             parent: null,
@@ -85,6 +87,7 @@ async function buildModelsResponse(): Promise<{
       object: "model" as const,
       created,
       owned_by: "oma",
+      provider: m.provider,
       permission: [],
       root: m.id,
       parent: null,

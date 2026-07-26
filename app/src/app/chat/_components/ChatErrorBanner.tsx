@@ -60,7 +60,8 @@ function classifyError(error: string): ErrorClassification {
 		return {
 			type: "auth",
 			label: "AUTH REQUIRED",
-			suggestion: "Sign in with your wallet to continue",
+			suggestion:
+				"Sign in with your wallet or account number — chat also needs an API key (created in the dashboard)",
 		};
 	}
 
@@ -283,7 +284,25 @@ export function ChatErrorBanner({
                   hover:bg-accent-hover transition-colors min-h-[32px]
                 "
 							>
-								Connect Wallet
+								Sign In
+								<ArrowRight className="w-3 h-3" />
+							</Link>
+						)}
+
+						{/* API key CTA — a 401 also fires for signed-in users who
+						    haven't created an API key yet (chat auths with the
+						    oma_api_key cookie, not the session JWT). */}
+						{classification.type === "auth" && (
+							<Link
+								href="/dashboard?tab=api-keys"
+								prefetch={false}
+								className="
+                inline-flex items-center gap-1 px-3 py-1.5
+                border border-current text-[10px] font-bold uppercase tracking-wider
+                hover:bg-white/5 transition-colors min-h-[32px]
+              "
+							>
+								Create API Key
 								<ArrowRight className="w-3 h-3" />
 							</Link>
 						)}

@@ -93,7 +93,7 @@ const VENDOR_META_DATA: readonly VendorMetaStatic[] = [
   {
     name: "gonka",
     displayName: "Gonka / OpenBroker",
-    baseUrl: "https://openbroker.ai",
+    baseUrl: "https://api.openbroker.gonka.gg",
     iconUrl: "/providers/gonka.svg",
     docsUrl: "https://gonka.ai",
     supportsStreaming: true,

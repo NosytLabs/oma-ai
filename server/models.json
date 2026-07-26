@@ -1234,7 +1234,6 @@
     },
     "kimi-k2-6": {
       "id": "kimi-k2-6",
-      "veniceId": "kimi-k2-6",
       "provider": "gonka",
       "primaryProvider": "gonka",
       "inputPricePer1M": 0.85,
@@ -2228,7 +2227,6 @@
     },
     "minimax-m2.7": {
       "id": "minimax-m2.7",
-      "veniceId": "minimax-m2.7",
       "gonkaId": "MiniMaxAI/MiniMax-M2.7",
       "provider": "gonka",
       "primaryProvider": "gonka",
@@ -2246,8 +2244,8 @@
         "agentic"
       ],
       "description": "MiniMax M2.7 \u2014 budget language model served by Gonka/OpenBroker.",
-      "creditsPerMillionInput": 0,
-      "creditsPerMillionOutput": 0,
+      "creditsPerMillionInput": 2,
+      "creditsPerMillionOutput": 2,
       "pricingNote": "wholesale at Gonka network dynamic base rate (BasePerTokenPrice=100 ngonka @ GNK=$0.17). Verified 2026-07-14 from source.",
       "supportsTools": true,
       "contextWindow": 204800,

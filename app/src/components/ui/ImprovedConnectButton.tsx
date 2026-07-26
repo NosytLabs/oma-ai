@@ -2,14 +2,12 @@
 
 import {
 	ChevronDown,
-	CreditCard,
 	ExternalLink,
 	HelpCircle,
 	Key,
 	Loader2,
 	LogOut,
 	Wallet,
-	Wifi,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { MetalFx } from "metal-fx";
@@ -29,7 +27,7 @@ const AccountLoginModal = dynamic(
 	{ ssr: false },
 );
 
-const POPULAR_IDS = ["injected", "coinbaseWalletSDK", "com.coinbase.wallet"];
+const POPULAR_IDS = ["injected"];
 
 function MetaMaskIcon() {
 	return (
@@ -111,8 +109,6 @@ function getIcon(id: string, name?: string) {
 	if (name === "MetaMask" || id === "io.metamask" || id === "metaMask")
 		return <MetaMaskIcon />;
 	if (id === "injected") return <Wallet className="h-4 w-4" />;
-	if (id === "walletConnect") return <Wifi className="h-4 w-4" />;
-	if (id.includes("coinbase")) return <CreditCard className="h-4 w-4" />;
 	return <Wallet className="h-4 w-4" />;
 }
 

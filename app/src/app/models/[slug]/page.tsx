@@ -16,7 +16,7 @@ import {
 } from "@/lib/models-data";
 import "../models.css";
 
-/** SSG: pre-render the 13 curated models in the static catalog. */
+/** SSG: pre-render the hand-picked models in the static fallback catalog. */
 export function generateStaticParams() {
 	return MODELS.map((m) => ({ slug: m.id }));
 }
@@ -27,15 +27,33 @@ export function generateStaticParams() {
  *  curated catalog. */
 export const dynamicParams = true;
 
-/** Shape returned by `/v1/models` for a single long-tail model. */
+/** Raw entry shape actually returned by `GET /v1/models` (OpenAI-style:
+ *  per-token USD strings under `pricing`, context under `context_length`). */
 type LiveModelDetail = {
 	id: string;
-	name?: string;
 	category?: "budget" | "mid" | "premium" | "frontier" | string;
-	ctx?: number | string;
-	inputPer1M?: number;
-	outputPer1M?: number;
+	context_length?: number | null;
+	provider?: string;
+	pricing?: { prompt?: string; completion?: string | null };
 };
+
+/** Per-token USD string → $/1M tokens, or undefined when absent. */
+function livePricePer1M(perToken: string | null | undefined): number | undefined {
+	if (!perToken) return undefined;
+	const n = parseFloat(perToken);
+	return Number.isFinite(n) ? n * 1_000_000 : undefined;
+}
+
+/** "qwen3-235b-a22b-instruct" → "Qwen3 235b A22b Instruct" (matches the
+ *  humanization used by the /models listing for long-tail entries). */
+function liveDisplayName(id: string): string {
+	return id
+		.replace(/^(openai|minimax|together|deepinfra)\//i, "")
+		.split(/[-_]/)
+		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+		.filter(Boolean)
+		.join(" ");
+}
 
 /** `fetchLiveModel` is called once from `generateMetadata` and again from the
  *  page body. Wrapping with React's `cache()` dedupes both calls within a
@@ -87,10 +105,10 @@ export async function generateMetadata({
 	// Long-tail model from the live catalog — minimal metadata.
 	const live = await fetchLiveModel(slug);
 	if (!live) return { title: "Model not found · OMA AI" };
-	const name = live.name ?? slug;
+	const name = liveDisplayName(slug);
 	return {
 		title: `${name} · OMA AI`,
-		description: `${name} — served via the OMA gateway. ${formatLivePrice(live.inputPer1M)}/M input, ${formatLivePrice(live.outputPer1M)}/M output.`,
+		description: `${name} — served via the OMA gateway. ${formatLivePrice(livePricePer1M(live.pricing?.prompt))}/M input, ${formatLivePrice(livePricePer1M(live.pricing?.completion))}/M output.`,
 		alternates: { canonical: `https://oma-ai.com/models/${slug}` },
 	};
 }
@@ -117,7 +135,7 @@ export default async function ModelDetailPage({
 	}
 
 	// Long-tail model from the live catalog. Fall back to a minimal page
-	// rather than 404 — `/v1/models` returns 95+ entries, all of which the
+	// rather than 404 — `/v1/models` returns 90+ entries, all of which the
 	// /models listing links to detail pages for.
 	const live = await fetchLiveModel(slug);
 	if (!live) notFound();
@@ -241,11 +259,9 @@ function LiveModelDetail({
 	slug: string;
 	live: LiveModelDetail;
 }) {
-	const name = live.name ?? slug;
-	const ctx = live.ctx
-		? typeof live.ctx === "number"
-			? `${live.ctx.toLocaleString()} tokens`
-			: `${live.ctx} tokens`
+	const name = liveDisplayName(slug);
+	const ctx = live.context_length
+		? `${live.context_length.toLocaleString()} tokens`
 		: "—";
 	return (
 		<div className="min-h-screen bg-void">
@@ -268,12 +284,12 @@ function LiveModelDetail({
 				<div className="grid gap-6 sm:grid-cols-3 mb-10">
 					<Stat
 						label="Input"
-						value={formatLivePrice(live.inputPer1M)}
+						value={formatLivePrice(livePricePer1M(live.pricing?.prompt))}
 						unit="/ 1M tokens"
 					/>
 					<Stat
 						label="Output"
-						value={formatLivePrice(live.outputPer1M)}
+						value={formatLivePrice(livePricePer1M(live.pricing?.completion))}
 						unit="/ 1M tokens"
 					/>
 					<Stat label="Context window" value={ctx} unit="" />

@@ -231,7 +231,7 @@ const summaryCards = [
 	},
 	{
 		title: "Multi-provider + circuit breaker",
-		body: "Venice, Surplus, Gonka, CheapTokens, CheapSurplus. If one provider 503s, traffic auto-routes to a backup. No retry storms.",
+		body: "Venice and Gonka (OpenBroker). If one provider 503s, traffic auto-routes to a backup. No retry storms.",
 	},
 ];
 

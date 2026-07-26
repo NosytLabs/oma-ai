@@ -264,13 +264,19 @@ const envSchema = z.object({
 export type Config = z.infer<typeof envSchema>;
 
 // Parse, then fold QuickNode RPC aliases into CHAIN_RPC_URL so every consumer
-// only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK.
+// only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK. Similarly, fold
+// the OPENBROKER_API_URL alias into GONKA_API_URL (explicit GONKA_* wins).
 const _parsed = envSchema.parse(process.env);
 export const config: Config = {
   ..._parsed,
   CHAIN_RPC_URL: _parsed.QUICKNODE_RPC_URL ?? _parsed.CHAIN_RPC_URL,
   CHAIN_RPC_URL_FALLBACK:
     _parsed.QUICKNODE_RPC_URL_FALLBACK ?? _parsed.CHAIN_RPC_URL_FALLBACK,
+  GONKA_API_URL: process.env.GONKA_API_URL
+    ? _parsed.GONKA_API_URL
+    : process.env.OPENBROKER_API_URL
+      ? _parsed.OPENBROKER_API_URL
+      : _parsed.GONKA_API_URL,
 };
 
 // Cached set of admin wallet addresses for O(1) lookup in requireAdmin()

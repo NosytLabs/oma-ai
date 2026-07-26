@@ -7,9 +7,11 @@
 // silent 404 or a generic 501 — clients can read the body and switch to
 // the real endpoint with no guesswork.
 //
-// /v1/x402/proxy is also a 410 — the spec documents it as a future
-// direct-proxy placeholder; the real proxy is at
-// /v1/x402/proxy/chat/completions.
+// /v1/x402/proxy (and its /chat/completions child) are 410s — the
+// direct x402 chat proxy was removed with the Houdini/crosschain flow
+// (see x402/facilitator.ts). Point callers at the supported path:
+// /v1/chat/completions with an API key, or /v1/x402/verify + /settle
+// for the payment envelope.
 //
 // ponytail: we do NOT delegate here. routes/auth.ts mounts `/keys/*`
 // directly inside `authRoutes`; extracting a sub-router would touch a
@@ -54,8 +56,15 @@ missingRoutes.all("/v1/keys/*", (c) =>
 missingRoutes.all("/v1/x402/proxy", (c) =>
 	gone(
 		c,
-		"/v1/x402/proxy/chat/completions",
-		"Use POST /v1/x402/proxy/chat/completions for the x402 chat proxy.",
+		"/v1/chat/completions",
+		"The x402 chat proxy was removed. Use POST /v1/chat/completions with an API key; x402 verify/settle live at /v1/x402/verify and /v1/x402/settle.",
+	),
+);
+missingRoutes.all("/v1/x402/proxy/*", (c) =>
+	gone(
+		c,
+		"/v1/chat/completions",
+		"The x402 chat proxy was removed. Use POST /v1/chat/completions with an API key; x402 verify/settle live at /v1/x402/verify and /v1/x402/settle.",
 	),
 );
 // Export lives under /v1/export/* (not /v1/usage/export).

@@ -227,7 +227,7 @@ export default function PricingPage() {
 			/>
 			<ProductJsonLd
 				name="OMA AI API Inference"
-				description="Pay-per-request AI inference across 200+ models. No monthly fees, no lock-in."
+				description="Pay-per-request AI inference across 90+ models. No monthly fees, no lock-in."
 				price="0.01"
 			/>
 			<FAQPageJsonLd

@@ -141,7 +141,10 @@ class GonkaProvider extends BaseInferenceProvider {
 const provider = createProvider(
   {
     name: "gonka",
-    apiKeyConfigPath: "GONKA_API_KEY",
+    // No apiKeyConfigPath: OpenBroker is keyless by default (see
+    // checkGonkaConfig). gonkaHeaders() attaches GONKA_API_KEY or
+    // OPENBROKER_API_KEY when present; the factory's checkConfig would
+    // otherwise 503 every request on keyless deployments.
     baseUrl: config.GONKA_API_URL,
     endpoints: {
       chat: "/v1/chat/completions",

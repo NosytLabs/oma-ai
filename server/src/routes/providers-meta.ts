@@ -10,7 +10,7 @@
  *   - admin audit reports
  *
  * IMPORTANT: no API keys or secrets are in the response. `getVendorMeta()`
- * returns 8 hard-coded entries — see vendor-meta.ts for the full list.
+ * returns 3 hard-coded entries — see vendor-meta.ts for the full list.
  */
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";

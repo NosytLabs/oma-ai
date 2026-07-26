@@ -87,6 +87,9 @@ export default function ApiKeysPage() {
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
+			// Install the key as the HttpOnly oma_api_key cookie so the
+			// browser chat/playground (direct-to-backend SSE) authenticates.
+			void api.auth.installKeyCookie(key.key);
 			queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) => [
 				...(prev ?? []),
 				{
