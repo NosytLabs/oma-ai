@@ -22,7 +22,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-	title: "Privacy · OMA",
+	title: "Privacy",
 	description:
 		"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
 	alternates: { canonical: "/privacy" },

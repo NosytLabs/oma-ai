@@ -19,7 +19,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-	title: "Terms · OMA",
+	title: "Terms",
 	description:
 		"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.",
 	alternates: { canonical: "/terms" },

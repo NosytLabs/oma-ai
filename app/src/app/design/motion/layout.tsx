@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Motion Design System — OMA",
+	title: "Motion Design System",
 	description:
 		"OMA's motion design language: easing curves, spring physics, magnetic buttons, and reveal animations built on Framer Motion.",
 	alternates: { canonical: "/design/motion" },
@@ -10,8 +10,15 @@ export const metadata: Metadata = {
 		description:
 			"Easing curves, spring physics, magnetic buttons, and reveal animations.",
 		url: "https://oma-ai.com/design/motion",
-		siteName: "OMA",
 		type: "website",
+		images: [
+			{
+				url: "/og-image.webp",
+				width: 1280,
+				height: 720,
+				alt: "OMA — One gateway. Every model.",
+			},
+		],
 	},
 	robots: { index: true, follow: true },
 };

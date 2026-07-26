@@ -10,13 +10,21 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/dashboard" },
 	robots: { index: false, follow: false },
 	openGraph: {
-		title: "Dashboard | OMA AI",
+		title: "Dashboard · OMA",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",
+		images: [
+			{
+				url: "/og-image.webp",
+				width: 1280,
+				height: 720,
+				alt: "OMA — One gateway. Every model.",
+			},
+		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Dashboard | OMA AI",
+		title: "Dashboard · OMA",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",
 	},

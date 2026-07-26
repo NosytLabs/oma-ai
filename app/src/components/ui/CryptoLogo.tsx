@@ -40,7 +40,9 @@ export function CryptoLogo({
 	symbol,
 	size = 32,
 	className = "",
-	useSvg = false,
+	// Default to the SVGs bundled in /public/logos/ — the CoinGecko CDN is
+	// only a fallback for symbols we don't ship locally.
+	useSvg = true,
 	fallback,
 	loading = false,
 	rounded = true,

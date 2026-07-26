@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
 import { OrganizationJsonLd, SoftwareApplicationJsonLd } from "@/components/json-ld";
 import "./globals.css";
-import "@/styles/transitions.css";
 
 const display = Instrument_Serif({
 	subsets: ["latin"],
@@ -54,6 +53,7 @@ export const metadata: Metadata = {
 	description:
 		"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth and USDC pay-per-request on Base.",
 	openGraph: {
+		siteName: "OMA",
 		title: "OMA · Open Model Access — AI inference paid in USDC",
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth and USDC pay-per-request on Base.",
@@ -67,11 +67,11 @@ export const metadata: Metadata = {
 			},
 		],
 	},
+	// No title/description here on purpose: pages that don't define their own
+	// twitter block would otherwise inherit the homepage copy wholesale.
+	// Twitter falls back to each page's og:title/og:description when absent.
 	twitter: {
 		card: "summary_large_image",
-		title: "OMA · Open Model Access — AI inference paid in USDC",
-		description:
-			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth and USDC pay-per-request on Base.",
 		images: ["/og-image.webp"],
 	},
 	icons: {

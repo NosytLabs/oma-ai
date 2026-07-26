@@ -14,7 +14,6 @@ import {
 	PROVIDER_COLORS,
 	TIER_COLORS,
 } from "@/lib/models-data";
-import "../models.css";
 
 /** SSG: pre-render the hand-picked models in the static fallback catalog. */
 export function generateStaticParams() {
@@ -87,7 +86,8 @@ export async function generateMetadata({
 	const { slug } = await params;
 	const model = MODELS.find((m) => m.id === slug);
 	if (model) {
-		const title = `${model.name} · ${model.provider} · OMA AI`;
+		// Root template appends "· OMA" — don't bake the brand in here too.
+		const title = `${model.name} · ${model.provider}`;
 		const description = `${model.description} ${formatPrice(model.inputPricePer1M)}/M input, ${formatPrice(model.outputPricePer1M)}/M output, ${model.contextLength} context.`;
 		return {
 			title,
@@ -96,7 +96,7 @@ export async function generateMetadata({
 				title,
 				description,
 				url: `https://oma-ai.com/models/${model.id}`,
-				images: [{ url: "/og-image.webp", width: 1200, height: 630 }],
+				images: [{ url: "/og-image.webp", width: 1280, height: 720 }],
 			},
 			twitter: { card: "summary_large_image", title, description },
 			alternates: { canonical: `https://oma-ai.com/models/${model.id}` },
@@ -104,10 +104,10 @@ export async function generateMetadata({
 	}
 	// Long-tail model from the live catalog — minimal metadata.
 	const live = await fetchLiveModel(slug);
-	if (!live) return { title: "Model not found · OMA AI" };
+	if (!live) return { title: "Model not found" };
 	const name = liveDisplayName(slug);
 	return {
-		title: `${name} · OMA AI`,
+		title: name,
 		description: `${name} — served via the OMA gateway. ${formatLivePrice(livePricePer1M(live.pricing?.prompt))}/M input, ${formatLivePrice(livePricePer1M(live.pricing?.completion))}/M output.`,
 		alternates: { canonical: `https://oma-ai.com/models/${slug}` },
 	};

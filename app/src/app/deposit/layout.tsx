@@ -9,14 +9,14 @@ export const metadata: Metadata = {
 		"Deposit funds to your OMA AI account. USDC on Base supported for pay-per-request inference.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
-		title: "Deposit USDC credits | OMA AI",
+		title: "Deposit USDC credits · OMA",
 		description:
 			"Deposit funds to your OMA AI account. USDC on Base supported for pay-per-request inference.",
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Deposit" }],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Deposit USDC credits | OMA AI",
+		title: "Deposit USDC credits · OMA",
 		description:
 			"Deposit funds to your OMA AI account. USDC on Base supported.",
 		images: ["/og-image.webp"],

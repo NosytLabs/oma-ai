@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-	title: "Admin | OMA AI",
+	title: "Admin console",
 	description:
 		"OMA admin console — users, usage, revenue, fees, and rate limits.",
 	robots: { index: false, follow: false },
