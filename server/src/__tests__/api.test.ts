@@ -163,7 +163,7 @@ vi.mock('../inference/models.js', () => ({
   calculateCost: vi.fn().mockReturnValue({ inputCost: 0.001, outputCost: 0.002, totalCost: 0.003 }),
   estimateTokens: vi.fn().mockReturnValue(100),
   listModels: vi.fn().mockResolvedValue([
-    { id: 'llama-3.3-70b', inputPricePer1M: 0.35, outputPricePer1M: 0.90, maxTokens: 128000, category: 'mid' },
+    { id: 'llama-3.3-70b', provider: 'venice', inputPricePer1M: 0.35, outputPricePer1M: 0.90, maxTokens: 128000, category: 'mid', capabilities: ['chat', 'code', 'tools', 'vision'] },
   ]),
   listVideoModels: vi.fn().mockResolvedValue([]),
   ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
@@ -237,6 +237,23 @@ describe('API Endpoints', () => {
       expect(body.data[0]).toHaveProperty('id')
       expect(body.data[0]).toHaveProperty('object', 'model')
       expect(body.data[0]).toHaveProperty('pricing')
+      // OpenRouter de-facto schema fields (cache v4)
+      expect(body.data[0]).toHaveProperty('canonical_slug', body.data[0].id)
+      expect(body.data[0].architecture).toEqual({
+        input_modalities: ['text', 'image'],
+        output_modalities: ['text'],
+      })
+      expect(body.data[0].supported_parameters).toEqual([
+        'temperature',
+        'top_p',
+        'max_tokens',
+        'stream',
+        'frequency_penalty',
+        'presence_penalty',
+        'stop',
+        'tools',
+        'tool_choice',
+      ])
     })
   })
 

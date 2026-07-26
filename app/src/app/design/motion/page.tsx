@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-	MagneticButton,
+	Magnetic,
 	SpringCard,
 	ElasticCounter,
 	TabPill,
@@ -53,25 +53,26 @@ export default function MotionReferencePage() {
 			<section className="space-y-3">
 				<h2 className="text-xl font-medium">Magnetic button</h2>
 				<p className="text-sm text-muted-foreground">
-					Pulls toward cursor inside a dead zone, resets on leave.
+					Spring-follows the cursor (max displacement in px), snaps back on
+					leave. Renders static under reduced motion.
 				</p>
 				<div className="flex gap-4 items-center">
-					<MagneticButton>
+					<Magnetic>
 						<button
 							type="button"
 							className="rounded-md bg-primary px-4 py-2 text-primary-foreground text-sm font-medium"
 						>
 							Connect wallet
 						</button>
-					</MagneticButton>
-					<MagneticButton strength={0.6}>
+					</Magnetic>
+					<Magnetic strength={24}>
 						<button
 							type="button"
 							className="rounded-md border border-border bg-card px-4 py-2 text-sm"
 						>
-							Stronger (0.6)
+							Stronger (24px)
 						</button>
-					</MagneticButton>
+					</Magnetic>
 				</div>
 			</section>
 

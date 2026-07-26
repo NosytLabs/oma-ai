@@ -13,7 +13,10 @@ library tuned to emil-kowalski craft rules:
   `width`/`height`/`top`/`left` animation — those trigger paint.
 - **prefers-reduced-motion.** `MotionProvider` already wraps the
   app with `<MotionConfig reducedMotion="user">`, so every spring
-  here is a no-op for users who opt out.
+  here is a no-op for users who opt out. Components that drive
+  motion outside framer's animation props (`Magnetic`'s pointer
+  tracking, `useFormErrorShake`'s keyframes) additionally guard
+  with `useReducedMotion()` so nothing slips past the config.
 
 ## Spring tokens (from kinetics.colorion.co)
 
@@ -22,8 +25,12 @@ library tuned to emil-kowalski craft rules:
 | `card` | 320 | 24 | 1.0 | `SpringCard` (height, panel reveals) |
 | `counter` | 280 | 18 | 1.0 | `ElasticCounter` (digit bumps) |
 | `tab` | 380 | 30 | 0.9 | `TabPill` (indicator glide) |
-| `toast` | 260 | 16 | 1.0 | (reserved for toast upgrades) |
-| `magnet` | 400 | 28 | 0.6 | `MagneticButton` (fast follow) |
+| `toast` | 260 | 16 | 1.0 | `NotificationBell` (panel slide) |
+| `magnet` | 400 | 28 | 0.6 | `NotificationBell` (item pops) |
+
+(`Magnetic` uses its own follow spring — stiffness 220 / damping 18 /
+mass 0.4 via `useSpring` — tuned for continuous cursor tracking rather
+than one-shot transitions.)
 
 Spring physics is interruptible — if the user clicks again mid-spring,
 the new motion integrates from current velocity, never snaps.
@@ -43,14 +50,39 @@ for small visual elements, can feel cheap on large surfaces (use
 
 ## Components
 
-- `MagneticButton` — wraps any button, applies a 35%-strength
-  cursor-pull inside a dead zone. Pair with `whileTap={{ scale: 0.97 }}`.
+- `Magnetic` — wraps any CTA; the element spring-follows the cursor
+  and snaps back on leave. `strength` is the max displacement in px
+  (default 12; navbar/chat use 4–6). Built on `useMotionValue` +
+  `useSpring` so the follow is interruptible and GPU-composited, with
+  `whileTap={{ scale: 0.97 }}` baked in. Under reduced motion it
+  renders a plain static `<span>`. This is the single magnetic
+  primitive — the old `MagneticButton` (CSS-var transform) and
+  `@/lib/motion`'s `Magnetic` were merged into it. Consumers: navbar,
+  chat message input, deposit quick-amounts.
 - `SpringCard` — height collapse via `grid-template-rows: 0fr/1fr`
   trick. No JS measurement. AnimatePresence for content fade.
 - `ElasticCounter` — number that bumps + overshoots on every click.
   Restarts cleanly under rapid clicks.
 - `TabPill` — animated active-tab indicator. Uses `offsetLeft`/
   `offsetWidth` measurement so it works without `layoutId` if needed.
+- `SuccessCheck` (`success-check.tsx`) — transitions.dev "Success
+  check": circle scales in on a spring, the check stroke draws on via
+  `pathLength`, wrapper enters with a small 8° rotate snap. Props:
+  `size` (px, default 24), `label` (aria-label, default "Success"),
+  `className`. Announces via `role="status"`. Reduced motion: entrance
+  scale/rotate disabled and the stroke draws instantly. Consumer:
+  `account-login-modal` (post-auth confirmation).
+
+## Hooks
+
+- `useFormErrorShake` (`use-form-error-shake.ts`) — transitions.dev
+  "Error state shake". Returns `{ shake, animation, key }`: call
+  `shake()` on a failed submit, spread `animate={animation}` and
+  `key={key}` onto an `m.div` wrapping the form. ~320ms x-axis
+  keyframe wiggle (`0 → -8 → 8 → -6 → 6 → -2 → 0`), throttled to one
+  shake per 350ms so stacked errors don't vibrate. Under reduced
+  motion `animation` is `undefined` — the error state still shows,
+  only the wiggle is suppressed. Consumer: `account-login-modal`.
 
 ## When NOT to use
 

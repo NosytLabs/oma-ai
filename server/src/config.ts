@@ -65,6 +65,10 @@ const envSchema = z.object({
   // SECURITY (A14): No placeholder default. Must be explicitly set in
   // production. The production startup guard below rejects known placeholders.
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  // Flat USD price for one x402-paid /v1/chat/completions request (no
+  // account, no credits — settled per request via PAYMENT-SIGNATURE).
+  // "0" disables the 402 challenge path; requires TREASURY_BASE_ADDRESS.
+  X402_CHAT_PRICE_USD: z.string().regex(/^\d+(\.\d+)?$/).default("0.10"),
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
   // JWT_SECRET_PREVIOUS enables zero-downtime key rotation. When set, tokens

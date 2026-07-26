@@ -24,10 +24,10 @@
  *      identifier. Server stores a SHA-256 hash, no PII. Reuses the
  *      existing `AccountLoginModal` in `inline` mode.
  *
- *   3. x402 (agents) — sign an EIP-3009 USDC authorization and submit
- *      the `PAYMENT-SIGNATURE` envelope to /x402/verify to top up
- *      without a card or KYC. Linked from the callout; not a form on
- *      this page.
+ *   3. x402 (agents, no account) — /v1/chat/completions answers
+ *      unauthenticated requests with 402 + PAYMENT-REQUIRED; retry with
+ *      a signed EIP-3009 `PAYMENT-SIGNATURE` envelope to pay per
+ *      request. Linked from the callout; not a form on this page.
  *
  * Cross-cutting concerns
  * ----------------------
@@ -379,10 +379,10 @@ function X402Callout() {
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Top up with a signed{" "}
+						Call chat completions with no account; on 402, retry with a signed{" "}
 						<code className="font-mono text-text-secondary">PAYMENT-SIGNATURE</code>{" "}
-						envelope (EIP-3009 USDC on Base). Agent-native settlement — no
-						card, no KYC, gas paid by the facilitator.
+						envelope (EIP-3009 USDC on Base). Flat rate per request — no card,
+						no KYC, gas paid by the facilitator.
 					</p>
 					<a
 						href="/docs#x402"
@@ -416,7 +416,7 @@ function BrandPitch() {
 		{
 			Icon: Shield,
 			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. Gasless x402 top-ups for agents — no card, no KYC.",
+			body: "Credits in USDC on Base. x402 pay-per-request for agents — no card, no KYC.",
 		},
 	];
 
@@ -489,7 +489,7 @@ function BrandPitch() {
 						>
 							Read the docs
 						</Link>{" "}
-						or top up agent-natively with{" "}
+						or skip accounts entirely with{" "}
 						<Link
 							href="/docs#x402"
 							className="text-accent hover:underline underline-offset-2"

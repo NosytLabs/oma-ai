@@ -8,7 +8,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OmaLogo } from "@/components/ui/oma-logo";
 import { useWallet } from "@/components/wallet-provider";
-import { EASE_SPRING, Magnetic } from "@/lib/motion";
+import { Magnetic } from "@/components/motion";
+import { EASE_SPRING } from "@/lib/motion";
 import { ApiStatus } from "./api-status";
 import {
 	isCurrentPath,

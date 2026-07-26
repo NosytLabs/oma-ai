@@ -1,11 +1,11 @@
 /**
- * OMA mark — "Open Gateway"
+ * OMA mark — "Open Gateway Aperture" (brand refresh 2026-07-26)
  *
- * Matches generated brand art:
+ * Matches app/public/favicon.svg and logos/oma-icon.svg:
  *   - rounded terminal badge
- *   - open emerald ring (gap at ~1 o'clock)
- *   - three ascending signal bars
- *   - status LED at the ring gap
+ *   - open emerald ring, gap at 3 o'clock (open access)
+ *   - terminal prompt chevron pointing through the gap
+ *   - signal dot sitting in the gap (live token out)
  *
  * Uses CSS brand tokens so the mark tracks ThemeToggle accents.
  */
@@ -62,58 +62,58 @@ export function OmaLogo({
 				opacity={0.08}
 			/>
 
-			{/* Open ring — gap at ~1 o'clock */}
+			{/* Open gateway ring — gap at 3 o'clock (open access).
+			    Geometry mirrors favicon.svg scaled 32→40 (×1.25). */}
 			<circle
 				cx={20}
 				cy={20}
-				r={11.2}
+				r={13.25}
 				stroke="var(--color-accent)"
 				strokeWidth={s.ring}
 				strokeLinecap="round"
-				strokeDasharray="58 12.5"
-				strokeDashoffset={-5}
+				strokeDasharray="63.8 19.4"
+				strokeDashoffset={-9.7}
 			/>
 
-			{/* Signal bars */}
+			{/* Terminal prompt chevron pointing through the gap */}
 			<rect
-				x={13.6}
-				y={22.2}
-				width={s.bar}
-				height={6}
+				x={14}
+				y={20 - s.bar / 2}
+				width={11.5}
+				height={s.bar}
 				rx={s.bar / 2}
 				fill="var(--color-accent)"
-				opacity={0.7}
+				transform="rotate(45 25.5 20)"
 			/>
 			<rect
-				x={18.6}
-				y={18.2}
-				width={s.bar}
-				height={10}
+				x={14}
+				y={20 - s.bar / 2}
+				width={11.5}
+				height={s.bar}
 				rx={s.bar / 2}
 				fill="var(--color-accent)"
-				opacity={0.88}
+				transform="rotate(-45 25.5 20)"
 			/>
-			<rect
-				x={23.6}
-				y={14.2}
-				width={s.bar}
-				height={14}
-				rx={s.bar / 2}
-				fill="var(--color-accent)"
-			/>
+			<circle cx={24.2} cy={20} r={s.bar / 2} fill="var(--color-accent)" />
 
-			{/* Status LED at ring gap */}
+			{/* Signal dot in the gap (live token out) */}
 			<circle
-				cx={30.2}
-				cy={10.8}
-				r={s.led * 1.7}
+				cx={33.25}
+				cy={20}
+				r={s.led * 2.1}
 				fill="var(--color-accent)"
 				opacity={0.22}
 			/>
 			<circle
-				cx={30.2}
-				cy={10.8}
-				r={s.led}
+				cx={33.25}
+				cy={20}
+				r={s.led * 1.25}
+				fill="var(--color-accent)"
+			/>
+			<circle
+				cx={33.25}
+				cy={20}
+				r={s.led * 0.6}
 				fill="var(--color-accent-bright)"
 			/>
 		</svg>

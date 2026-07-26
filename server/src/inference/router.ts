@@ -102,11 +102,16 @@ async function handleNonStreamingResponse(
   return { response, provider, inputTokens: actualInput, outputTokens: actualOutput };
 }
 
+/** Output-token ceiling for flat-rate x402 requests — a single prepaid
+ *  price can't cover unbounded generation. */
+const X402_MAX_OUTPUT_TOKENS = 4096;
+
 export async function handleChatCompletion(
   userId: string,
   apiKeyId: string,
   body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown },
   signal?: AbortSignal,
+  opts?: { prepaidUsd?: number },
 ): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
   const requestId = crypto.randomUUID();
   const requestStartTime = Date.now();
@@ -123,6 +128,69 @@ export async function handleChatCompletion(
 
       const modelId = body.model;
       const model = await getModel(modelId);
+
+      // x402 flat-rate prepaid path: the payment was already settled
+      // on-chain by paymentMiddleware, so no credits, no preflight
+      // deduction, no refunds. userId is a synthetic guest — it must not
+      // reach any balance/discount query (those key on real accounts).
+      if (opts?.prepaidUsd !== undefined) {
+        span.setAttribute("llm.x402_prepaid", true);
+        const pricing = await getModelPricing(modelId);
+        const requestedMax =
+          typeof body.max_tokens === "number" && body.max_tokens > 0
+            ? body.max_tokens
+            : X402_MAX_OUTPUT_TOKENS;
+        const maxOut = Math.min(requestedMax, X402_MAX_OUTPUT_TOKENS);
+        const prepaidBody = { ...body, max_tokens: maxOut };
+        const inputTokens = body.messages ? countMessageTokens(body.messages) : 0;
+        const estimatedCostUsd =
+          ((inputTokens * pricing.inputPer1k) / 1000 +
+            (maxOut * pricing.outputPer1k) / 1000) *
+          (1 + pricing.markup / 100);
+        if (estimatedCostUsd > opts.prepaidUsd) {
+          throw Object.assign(
+            new Error(
+              `Request exceeds the flat x402 price ($${opts.prepaidUsd.toFixed(2)}): worst-case cost ~$${estimatedCostUsd.toFixed(4)}. Lower max_tokens, shorten the prompt, or pick a cheaper model.`,
+            ),
+            { status: 402, type: "payment_error" },
+          );
+        }
+        const candidates = await getCandidateProviders(modelId, model);
+        const providersToTry: Provider[] = candidates
+          ? [candidates.primary, ...candidates.alternates]
+          : [];
+        if (providersToTry.length === 0) {
+          throw Object.assign(new Error("No inference providers available for this model"), { status: 503 });
+        }
+        let lastError: unknown = null;
+        for (const provider of providersToTry) {
+          const providerModelId = getModelIdForProvider(model, provider, modelId);
+          try {
+            const resp = await callProvider(provider, providerModelId, prepaidBody, undefined, signal);
+            if (resp.status >= 500) {
+              throw Object.assign(new Error(`Provider ${provider} returned ${resp.status}`), { status: resp.status });
+            }
+            span.setAttribute(LLM_ATTRS.PROVIDER, provider);
+            span.setStatus({ code: SpanStatusCode.OK });
+            if (prepaidBody.stream) {
+              if (!resp.body) {
+                throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+              }
+              const response = new Response(resp.body, {
+                status: resp.status,
+                headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
+              });
+              return { response, provider, inputTokens };
+            }
+            const json = await resp.json();
+            const response = Response.json(json, { headers: { "x-provider": provider } });
+            return { response, provider, inputTokens };
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        throw lastError;
+      }
       const [discountPercent, pricing, estimatedOutputTokens] = await Promise.all([
         getStakingDiscount(userId),
         getModelPricing(modelId),

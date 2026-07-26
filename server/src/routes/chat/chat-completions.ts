@@ -1,6 +1,9 @@
 import { Hono } from "hono";
+import type { Context, Next } from "hono";
 import { SpanKind } from "@opentelemetry/api";
 import { bearerAuth } from "../../auth/middleware.js";
+import { config } from "../../config.js";
+import { paymentMiddleware } from "../../x402/facilitator.js";
 import { handleChatCompletion } from "../../inference/router.js";
 import { getModel } from "../../inference/models.js";
 import { tokenBucket, modelRateLimit } from "../../middleware/rate-limit.js";
@@ -21,7 +24,39 @@ import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler
 
 export const chatCompletionsRouter = new Hono<OmaEnv>();
 
-chatCompletionsRouter.use("/v1/chat/completions", bearerAuth);
+/**
+ * x402 pay-per-request: when enabled (TREASURY_BASE_ADDRESS set and
+ * X402_CHAT_PRICE_USD > 0), a request carrying PAYMENT-SIGNATURE settles a
+ * flat-rate USDC payment instead of using an API key, and an unauthenticated
+ * request receives the spec's 402 + PAYMENT-REQUIRED challenge rather than a
+ * 401. Requests with normal credentials keep the existing bearerAuth path
+ * untouched. Test/dev deploys without a treasury keep the legacy 401.
+ */
+const X402_CHAT_PRICE = Number(config.X402_CHAT_PRICE_USD);
+const x402ChatEnabled =
+  Boolean(config.TREASURY_BASE_ADDRESS) && X402_CHAT_PRICE > 0;
+const x402ChatMiddleware = x402ChatEnabled
+  ? paymentMiddleware({
+      pricing: { "/v1/chat/completions": config.X402_CHAT_PRICE_USD },
+      payeeAddress: config.TREASURY_BASE_ADDRESS as string,
+    })
+  : null;
+
+async function authOrPayment(c: Context<OmaEnv>, next: Next) {
+  if (x402ChatMiddleware) {
+    const hasPayment = Boolean(c.req.header("PAYMENT-SIGNATURE"));
+    const hasBearer = Boolean(c.req.header("Authorization"));
+    const hasKeyCookie = /(?:^|;\s*)(?:__Host-)?oma_api_key=/.test(
+      c.req.header("Cookie") || "",
+    );
+    if (hasPayment || (!hasBearer && !hasKeyCookie)) {
+      return x402ChatMiddleware(c, next);
+    }
+  }
+  return bearerAuth(c, next);
+}
+
+chatCompletionsRouter.use("/v1/chat/completions", authOrPayment);
 chatCompletionsRouter.use("/v1/chat/completions", requestTimeout());
 chatCompletionsRouter.use(
   "/v1/chat/completions",
@@ -31,7 +66,10 @@ chatCompletionsRouter.use("/v1/chat/completions", modelRateLimit());
 chatCompletionsRouter.use("/v1/chat/completions", spendLimit());
 
 chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
-  const userId = c.get("userId");
+  // x402-paid requests have no user/key — payment was settled up front by
+  // authOrPayment (paymentMiddleware sets c.var.payment on success).
+  const payment = c.get("payment");
+  const userId = c.get("userId") ?? "x402-guest";
   const apiKey = c.get("apiKey");
   const correlationId = c.get("correlationId") as string | undefined;
 
@@ -126,7 +164,13 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           provider,
           inputTokens,
           outputTokens,
-        } = await handleChatCompletion(userId, apiKeyId, payload, c.req.raw.signal);
+        } = await handleChatCompletion(
+          userId,
+          apiKeyId,
+          payload,
+          c.req.raw.signal,
+          payment ? { prepaidUsd: X402_CHAT_PRICE } : undefined,
+        );
         span?.setAttribute("llm.provider", provider);
         if (inputTokens) span?.setAttribute("llm.tokens.input", inputTokens);
         if (outputTokens)
@@ -159,6 +203,12 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           headers: {
             "x-provider": provider,
             "X-Correlation-ID": correlationId || "",
+            // USD cost of this completion (LiteLLM-style header) — the #1
+            // thing pay-per-use clients check. Streaming responses carry
+            // cost in the final usage chunk instead.
+            ...(totalCents > 0
+              ? { "x-oma-response-cost": (totalCents / 100).toFixed(6) }
+              : {}),
           },
         });
       } catch (err) {

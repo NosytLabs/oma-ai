@@ -23,7 +23,10 @@ import type { OmaEnv } from "../types.js";
 // v2: response entries now carry `provider` (upstream routing target).
 // v3: catalog is filtered by provider credentials (hasConfiguredProvider) —
 //     keyless deploys must not serve a stale cache that advertises Venice.
-const MODELS_CACHE_KEY = "cache:models:catalog:v3";
+// v4: OpenRouter-schema enrichment — entries now carry `architecture`,
+//     `supported_parameters`, and `canonical_slug` so agent tools (Cline,
+//     LiteLLM) can auto-consume the catalog.
+const MODELS_CACHE_KEY = "cache:models:catalog:v4";
 const MODELS_CACHE_TTL = 3600; // 1 hour in seconds
 
 /**
@@ -52,6 +55,45 @@ async function customerPricePerToken(
   }
 }
 
+/**
+ * OpenRouter de-facto schema helpers. Modalities and parameters are derived
+ * from the capability strings in models.json (see MODEL_CATALOG entries):
+ * "vision" → image input, "audio-input" → audio input, "video-input" →
+ * video input, "tools"/"function-calling" → tools + tool_choice,
+ * "structured-output"/"json" → response_format.
+ */
+function deriveArchitecture(capabilities: readonly string[]): {
+  input_modalities: string[];
+  output_modalities: string[];
+} {
+  const input_modalities = ["text"];
+  if (capabilities.includes("vision")) input_modalities.push("image");
+  if (capabilities.includes("audio-input")) input_modalities.push("audio");
+  if (capabilities.includes("video-input")) input_modalities.push("video");
+  return { input_modalities, output_modalities: ["text"] };
+}
+
+const BASE_SUPPORTED_PARAMETERS = [
+  "temperature",
+  "top_p",
+  "max_tokens",
+  "stream",
+  "frequency_penalty",
+  "presence_penalty",
+  "stop",
+] as const;
+
+function deriveSupportedParameters(capabilities: readonly string[]): string[] {
+  const params: string[] = [...BASE_SUPPORTED_PARAMETERS];
+  if (capabilities.includes("tools") || capabilities.includes("function-calling")) {
+    params.push("tools", "tool_choice");
+  }
+  if (capabilities.includes("structured-output") || capabilities.includes("json")) {
+    params.push("response_format");
+  }
+  return params;
+}
+
 async function buildModelsResponse(): Promise<{
   object: string;
   data: unknown[];
@@ -69,8 +111,10 @@ async function buildModelsResponse(): Promise<{
             m.inputPricePer1M,
             m.outputPricePer1M,
           );
+          const capabilities = m.capabilities ?? [];
           return {
             id: m.id,
+            canonical_slug: m.id,
             object: "model" as const,
             created,
             owned_by: "oma",
@@ -81,12 +125,15 @@ async function buildModelsResponse(): Promise<{
             pricing,
             category: m.category,
             context_length: m.maxTokens,
+            architecture: deriveArchitecture(capabilities),
+            supported_parameters: deriveSupportedParameters(capabilities),
           };
         }),
       )
     ),
     ...videoCatalog.map((m) => ({
       id: m.id,
+      canonical_slug: m.id,
       object: "model" as const,
       created,
       owned_by: "oma",
@@ -99,6 +146,8 @@ async function buildModelsResponse(): Promise<{
       },
       category: "video",
       duration: m.duration,
+      architecture: { input_modalities: ["text"], output_modalities: ["video"] },
+      supported_parameters: [] as string[],
     })),
   ];
 
@@ -155,8 +204,10 @@ modelRoutes.get("/v1/models/:model", async (c) => {
     return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
   }
 
+  const capabilities = modelInfo.capabilities ?? [];
   return c.json({
     id: modelInfo.id,
+    canonical_slug: modelInfo.id,
     object: "model",
     created: Math.floor(Date.now() / 1000),
     owned_by: "oma",
@@ -172,6 +223,8 @@ modelRoutes.get("/v1/models/:model", async (c) => {
     context_length: modelInfo.maxTokens,
     supports_streaming: modelInfo.supportsStreaming,
     provider: modelInfo.provider,
+    architecture: deriveArchitecture(capabilities),
+    supported_parameters: deriveSupportedParameters(capabilities),
   });
 });
 

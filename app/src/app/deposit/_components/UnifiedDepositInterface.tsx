@@ -23,7 +23,8 @@ import { CryptoLogo } from "@/components/ui/CryptoLogo";
 import { useToast } from "@/components/ui/Toast";
 import { api, type DepositStatus, getAuthToken } from "@/lib/api";
 import { useWallet } from "@/components/wallet-provider";
-import { Magnetic, scaleInSpring } from "@/lib/motion";
+import { Magnetic } from "@/components/motion";
+import { scaleInSpring } from "@/lib/motion";
 import { calculateUsdValue, useCryptoPrices } from "@/lib/crypto-prices";
 import { formatCents } from "@/lib/utils";
 import {

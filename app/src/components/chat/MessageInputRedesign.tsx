@@ -23,7 +23,8 @@ import { Loader2, Send, Sparkles } from "lucide-react";
 import { MetalFx } from "metal-fx";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
-import { EASE_SPRING, Magnetic } from "@/lib/motion";
+import { Magnetic } from "@/components/motion";
+import { EASE_SPRING } from "@/lib/motion";
 
 interface MessageInputProps {
 	input: string;

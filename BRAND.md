@@ -17,16 +17,17 @@
 | **Text** | `#d8dcd6` | Body |
 | **Text muted** | `#9aa394` | Meta / captions (≥4.5:1 on void) |
 
-**Mark:** Open gateway — rounded terminal badge, open emerald ring (gap = open access), three ascending signal bars (multi-model throughput), live LED at the gap.
+**Mark (refined 2026-07-26):** Open gateway aperture — broken emerald ring opened at 3 o'clock (gap = open access), terminal prompt chevron `>` pointing through the opening, live signal dot in the gap (token out). Favicon is transparent-bg with a hairline void keyline for light tabs; badge versions sit on the void terminal plate.
 
 | Asset | Path |
 |-------|------|
 | UI component | `app/src/components/ui/oma-logo.tsx` |
-| Vector favicon (source of truth) | `app/public/favicon.svg` |
-| Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (regenerate from SVG) |
-| App icon 192 / 512 | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` |
+| Vector favicon (transparent bg, light/dark-tab safe) | `app/public/favicon.svg` |
+| Master mark on void badge (source for app-icon rasters) | `app/public/logos/oma-icon.svg` |
+| Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (regenerate from `favicon.svg`) |
+| App icon 192 / 512 | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` (from `logos/oma-icon.svg`) |
 | Lockup SVG | `app/public/logos/oma-logo.svg` |
-| Apple touch | `app/public/apple-touch-icon.png` |
+| Apple touch (solid void bg) | `app/public/apple-touch-icon.png` |
 | Open Graph 1280×720 | `app/public/og-image.webp` |
 
 Regenerate PWA/tab rasters from SVG (always after mark edits):
@@ -34,9 +35,9 @@ Regenerate PWA/tab rasters from SVG (always after mark edits):
 ```bash
 rsvg-convert -w 16 -h 16 app/public/favicon.svg -o app/public/favicon-16x16.png
 rsvg-convert -w 32 -h 32 app/public/favicon.svg -o app/public/favicon-32x32.png
-rsvg-convert -w 180 -h 180 app/public/favicon.svg -o app/public/apple-touch-icon.png
-rsvg-convert -w 192 -h 192 app/public/favicon.svg -o app/public/logos/oma-icon-192.png
-rsvg-convert -w 512 -h 512 app/public/favicon.svg -o app/public/logos/oma-icon-512.png
+rsvg-convert -w 180 -h 180 -b '#07090a' app/public/logos/oma-icon.svg -o app/public/apple-touch-icon.png
+rsvg-convert -w 192 -h 192 app/public/logos/oma-icon.svg -o app/public/logos/oma-icon-192.png
+rsvg-convert -w 512 -h 512 app/public/logos/oma-icon.svg -o app/public/logos/oma-icon-512.png
 ```
 
 ### Brand kit (ship checklist)
