@@ -2,60 +2,61 @@ import { CheckCircle2, Zap } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 
 export function X402Section() {
-	const flowCode = `# 1. Request without credits — API returns 402
-curl -i https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_agent_key" \\
+	const flowCode = `# 1. Sign a USDC transferWithAuthorization (EIP-3009) on Base
+#    to the OMA treasury using viem, ethers, or any EIP-3009 signer.
+#    (The deposit page at /deposit does this for you in the browser.)
+
+# 2. Submit the signed envelope for verification + settlement
+curl -i https://api.oma-ai.com/x402/verify \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
+  -H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{"scheme":"evm","networkId":"base","asset":"0x8335...","amount":"5000000","payee":"0x...","maxAmountRequired":"5000000","validBefore":1785100000,"validAfter":1785090000}}'
 
-# Response: 402 Payment Required
-# Header: PAYMENT-REQUIRED: {"x402Version":"1","scheme":"exact","network":"base",
-#   "asset":"0x8335...","amount":"250","payTo":"0x...","maxTimeoutSeconds":300,...}
-# (amount is USDC base units; 250 = $0.00025 when USDC has 6 decimals)
+# The facilitator recovers the EIP-712 signer, pins payee + amount,
+# simulates the transfer, then settles on-chain (facilitator pays gas).
+# Your account is credited in USDC — no card, no KYC, no bank.
 
-# 2. Sign a USDC transferWithAuthorization (EIP-3009) on Base for payTo/amount
-#    using viem, ethers, or any EIP-3009 signer.
-
-# 3. Retry with PAYMENT-SIGNATURE (JSON PaymentSignature envelope) — SUCCESS
+# 3. Spend the credits through the OpenAI-compatible API
 curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_agent_key" \\
+  -H "Authorization: Bearer oma_sk_your_key" \\
   -H "Content-Type: application/json" \\
-  -H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}' \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`;
 
 	const agentCode = `import { privateKeyToAccount } from 'viem/accounts';
-import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
 const account = privateKeyToAccount(process.env.AGENT_KEY);
-const publicClient = createPublicClient({ chain: base, transport: http() });
 
-// 1) Call the API; if it returns 402, the PAYMENT-REQUIRED header
-//    carries the payment requirements (payTo, asset, amount, network).
-// 2) Sign a USDC transferWithAuthorization (EIP-3009) to payTo.
-// 3) Retry the original request with:
-//      PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}
+// 1) Sign a USDC transferWithAuthorization (EIP-3009) to the OMA
+//    treasury for the amount you want to deposit.
+// 2) POST the PaymentSignature envelope to /x402/verify — the server
+//    verifies the signature, settles on-chain, and credits your account.
+// 3) Call /v1/chat/completions with your API key as usual; every
+//    request is metered against the credited balance.
 //
-// The OMA server verifies the signature (or CDP facilitator) and settles
-// the request when the authorization is valid.
 // See https://x402.org for the protocol shape.
 
-const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
+const payReq = await fetch('https://api.oma-ai.com/x402/verify', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    model: 'llama-3.3-70b',
-    messages: [{ role: 'user', content: 'Write a smart contract' }],
-  }),
+  headers: {
+    'Content-Type': 'application/json',
+    'PAYMENT-SIGNATURE': JSON.stringify({ signature, payload }),
+  },
 });
 
-if (res.status === 402) {
-  const payReq = JSON.parse(res.headers.get('PAYMENT-REQUIRED') ?? '{}');
-  // sign EIP-3009 authorization + retry with PAYMENT-SIGNATURE (omitted)
-  console.log(payReq.payTo, payReq.amount, payReq.network);
-}
-
-const json = await res.json();`;
+if (payReq.ok) {
+  // Credits land as soon as settlement confirms.
+  const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: \`Bearer \${process.env.OMA_KEY}\`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b',
+      messages: [{ role: 'user', content: 'Write a smart contract' }],
+    }),
+  });
+}`;
 
 	return (
 		<AnimatedSection delay={450}>
@@ -63,23 +64,37 @@ const json = await res.json();`;
 				id="x402"
 				icon={<Zap className="h-5 w-5" />}
 				title="x402 Payments"
-				subtitle="Per-request USDC payments on Base. No account, no credit pre-funding."
+				subtitle="USDC top-ups on Base via the x402 payment envelope. No card, no KYC."
 			/>
 
 			<div className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6">
 				<div className="flex items-start gap-3">
 					<Zap className="h-5 w-5 text-warning mt-0.5" />
 					<div>
-						<h3 className="font-semibold text-warning">x402 — Per-Request Payments</h3>
+						<h3 className="font-semibold text-warning">
+							x402 — Crypto-Native Settlement
+						</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Agents can call any OMA endpoint without pre-funding credits.
-							When the request has no usable balance, the API returns HTTP
-							402 with a <code className="text-accent font-mono">PAYMENT-REQUIRED</code>{" "}
-							header (payTo, asset, amount, network). Sign a USDC
-							transferWithAuthorization (EIP-3009) on Base and retry with{" "}
-							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>.
-							The server verifies the signature and settles the request —
-							no human in the loop.
+							OMA settles USDC payments with the{" "}
+							<a
+								href="https://x402.org"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-accent hover:underline"
+							>
+								x402 protocol
+							</a>
+							: sign a USDC{" "}
+							<code className="text-accent font-mono">
+								transferWithAuthorization
+							</code>{" "}
+							(EIP-3009) on Base — gasless for you, the facilitator pays gas —
+							and submit it as a{" "}
+							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>{" "}
+							envelope. The server verifies the signature, settles on-chain,
+							and credits your balance. Inline HTTP 402 challenges on inference
+							endpoints (pay-per-request without any balance) are on the
+							roadmap; today the envelope powers instant top-ups.
 						</p>
 					</div>
 				</div>
@@ -87,7 +102,7 @@ const json = await res.json();`;
 
 			<div className="mb-6">
 				<h3 className="mb-3 text-sm font-semibold text-text">
-					402 Payment Flow
+					Deposit → Spend Flow
 				</h3>
 				<CodeBlock code={flowCode} lang="bash" />
 			</div>
@@ -98,8 +113,8 @@ const json = await res.json();`;
 					Use <code className="text-accent font-mono">viem</code> or{" "}
 					<code className="text-accent font-mono">ethers</code> directly to
 					sign USDC payment authorizations. No first-party SDK is required.
-					Ideal for agents that make sporadic API calls and don&apos;t want to
-					manage credit balances.
+					An agent holding a funded Base wallet can top up its own balance and
+					keep working — no human in the loop.
 				</p>
 				<CodeBlock code={agentCode} lang="javascript" />
 			</div>
@@ -110,15 +125,15 @@ const json = await res.json();`;
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							No credit pre-funding
+							Gasless USDC deposits (EIP-3009)
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							Per-request billing
+							No card, no KYC, no bank account
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							Standard x402 protocol
+							Standard x402 protocol envelope
 						</li>
 					</ul>
 				</div>

@@ -1,7 +1,35 @@
+"use client";
+
 import { CheckCircle2, DollarSign } from "lucide-react";
+import { useEffect, useState } from "react";
+import { loadModels } from "@/lib/models-data";
 import { AnimatedSection, fmt, MODEL_PRICING_ROWS, SectionHeading } from "./shared";
 
 export function PricingSection() {
+	// Static fallback rows render immediately; the live catalog replaces
+	// them once /v1/models responds (same pattern as AvailableModelsSection —
+	// without it this table showed 7 hand-picked models under a "90 models"
+	// headline).
+	const [rows, setRows] = useState(MODEL_PRICING_ROWS);
+	useEffect(() => {
+		let cancelled = false;
+		loadModels().then((live) => {
+			if (cancelled || live.length === 0) return;
+			setRows(
+				live.map((m) => ({
+					id: m.id,
+					name: m.name,
+					input: m.inputPricePer1M,
+					output: m.outputPricePer1M,
+					ctx: m.contextLength,
+				})),
+			);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
 	return (
 		<AnimatedSection delay={400}>
 			<SectionHeading
@@ -28,7 +56,7 @@ export function PricingSection() {
 						</tr>
 					</thead>
 					<tbody>
-						{MODEL_PRICING_ROWS.map((m, i) => (
+						{rows.map((m, i) => (
 							<tr
 								key={m.id}
 								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : ""}`}

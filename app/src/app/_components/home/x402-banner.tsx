@@ -39,15 +39,13 @@ export function X402Banner() {
 									Agents pay for themselves.
 								</h2>
 								<p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
-									No accounts. No subscriptions. On 402, read{" "}
-									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
-										PAYMENT-REQUIRED
-									</code>
-									, sign USDC on Base, retry with{" "}
+									No card. No KYC. No subscriptions. Sign USDC on Base
+									(EIP-3009, gasless) and submit the{" "}
 									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
 										PAYMENT-SIGNATURE
 									</code>{" "}
-									— the gateway verifies, routes, and returns the completion.
+									envelope — the facilitator verifies, settles on-chain, and
+									credits your balance instantly.
 								</p>
 								<div className="mt-7 flex flex-wrap gap-3">
 									<Link
@@ -72,12 +70,12 @@ export function X402Banner() {
 									request shape
 								</p>
 								<pre className="overflow-x-auto whitespace-pre">
-									{`POST /v1/chat/completions
+									{`POST /x402/verify
 PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
-Content-Type: application/json
 
-{ "model": "llama-3.3-70b",
-  "messages": [...] }`}
+→ balance credited, then:
+POST /v1/chat/completions
+Authorization: Bearer oma_sk_…`}
 								</pre>
 							</div>
 						</div>

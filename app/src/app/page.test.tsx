@@ -193,7 +193,7 @@ describe("HomePage", () => {
 		await waitFor(() => {
 			expect(screen.getByText(/agents pay for themselves/i)).toBeInTheDocument();
 			expect(
-				screen.getByText(/no accounts\. no subscriptions\./i),
+				screen.getByText(/no card\. no kyc\. no subscriptions\./i),
 			).toBeInTheDocument();
 		});
 	});

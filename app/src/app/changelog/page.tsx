@@ -147,7 +147,7 @@ const RELEASES: Release[] = [
 		summary:
 			"Major release: x402 pay-per-request becomes a first-class citizen. Wallet-only auth replaces email-based signup. Deposit watcher runs continuously on Base mainnet.",
 		highlights: [
-			"x402 pay-per-request — USDC settlement on every request without pre-funding",
+			"x402 payment envelope — gasless EIP-3009 USDC settlement for instant top-ups",
 			"Wallet-only authentication (SIWE) — no email, no password, no card",
 			"Continuous deposit watcher — USDC credits within ~12 seconds of confirmation",
 			"Multi-chain deposits via LI.FI / CCTP into USDC on Base",

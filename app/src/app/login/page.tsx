@@ -24,9 +24,10 @@
  *      identifier. Server stores a SHA-256 hash, no PII. Reuses the
  *      existing `AccountLoginModal` in `inline` mode.
  *
- *   3. x402 (no account) — any OMA endpoint accepts a `PAYMENT-SIGNATURE`
- *      header on Base after a 402 + `PAYMENT-REQUIRED` challenge. Linked
- *      from the callout; not a form on this page.
+ *   3. x402 (agents) — sign an EIP-3009 USDC authorization and submit
+ *      the `PAYMENT-SIGNATURE` envelope to /x402/verify to top up
+ *      without a card or KYC. Linked from the callout; not a form on
+ *      this page.
  *
  * Cross-cutting concerns
  * ----------------------
@@ -378,10 +379,10 @@ function X402Callout() {
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Call any OMA endpoint; on 402, settle with{" "}
+						Top up with a signed{" "}
 						<code className="font-mono text-text-secondary">PAYMENT-SIGNATURE</code>{" "}
-						on Base. Agent-native USDC settlement — no pre-funded
-						credits or session cookie required.
+						envelope (EIP-3009 USDC on Base). Agent-native settlement — no
+						card, no KYC, gas paid by the facilitator.
 					</p>
 					<a
 						href="/docs#x402"
@@ -415,7 +416,7 @@ function BrandPitch() {
 		{
 			Icon: Shield,
 			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. x402 pay-per-request for agents — no pre-fund required.",
+			body: "Credits in USDC on Base. Gasless x402 top-ups for agents — no card, no KYC.",
 		},
 	];
 
@@ -488,7 +489,7 @@ function BrandPitch() {
 						>
 							Read the docs
 						</Link>{" "}
-						or skip auth entirely with{" "}
+						or top up agent-natively with{" "}
 						<Link
 							href="/docs#x402"
 							className="text-accent hover:underline underline-offset-2"
