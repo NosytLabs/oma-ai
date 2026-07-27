@@ -7,13 +7,15 @@ import {
 	Clock,
 	Key as KeyIcon,
 	Loader2,
+	Plus,
 	Trash2,
 	X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
-import type { ApiKey } from "@/lib/api";
+import { api } from "@/lib/api";
+import type { ApiKey, ApiKeyWithSecret } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 
 interface ApiKeysSectionProps {
@@ -21,6 +23,7 @@ interface ApiKeysSectionProps {
 	onCopy: (text: string, id: string) => void;
 	copied: string | null;
 	onRevokeKey?: (keyId: string) => Promise<void>;
+	onCreateKey?: (key: ApiKeyWithSecret) => Promise<void>;
 }
 
 export function ApiKeysSection({
@@ -28,10 +31,14 @@ export function ApiKeysSection({
 	onCopy,
 	copied,
 	onRevokeKey,
+	onCreateKey,
 }: ApiKeysSectionProps) {
 	const toast = useToast();
 	const [confirmKeyId, setConfirmKeyId] = useState<string | null>(null);
 	const [revokingId, setRevokingId] = useState<string | null>(null);
+	const [newKeyName, setNewKeyName] = useState("");
+	const [showCreateForm, setShowCreateForm] = useState(false);
+	const [creating, setCreating] = useState(false);
 
 	const keyToRevoke = apiKeys.find((k) => k.id === confirmKeyId);
 	const revokeTrapRef = useRef<HTMLDivElement>(null);
@@ -52,6 +59,24 @@ export function ApiKeysSection({
 		}
 	};
 
+	const handleCreateKey = useCallback(async () => {
+		if (!newKeyName.trim() || creating) return;
+		setCreating(true);
+		try {
+			const key = await api.auth.createKey(newKeyName.trim());
+			setNewKeyName("");
+			setShowCreateForm(false);
+			toast.success("API key created");
+			if (onCreateKey) {
+				await onCreateKey(key);
+			}
+		} catch (e: unknown) {
+			toast.error(e instanceof Error ? e.message : "Failed to create key");
+		} finally {
+			setCreating(false);
+		}
+	}, [newKeyName, creating, onCreateKey, toast]);
+
 	return (
 		<div>
 			<div className="mb-1">
@@ -63,14 +88,69 @@ export function ApiKeysSection({
 			</div>
 
 			<div className="mt-6 space-y-2">
-				{apiKeys.length === 0 ? (
+				{showCreateForm ? (
+					<div className="rounded-lg border border-border bg-void px-4 py-3">
+						<div className="flex items-center gap-2">
+							<input
+								type="text"
+								value={newKeyName}
+								onChange={(e) => setNewKeyName(e.target.value)}
+								placeholder="Key name (e.g. production, staging)"
+								className="flex-1 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-bright placeholder:text-text-muted focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleCreateKey();
+									if (e.key === "Escape") {
+										setShowCreateForm(false);
+										setNewKeyName("");
+									}
+								}}
+								disabled={creating}
+								autoFocus
+							/>
+							<button
+								type="button"
+								onClick={handleCreateKey}
+								disabled={creating || !newKeyName.trim()}
+								className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/80 disabled:opacity-50"
+							>
+								{creating ? (
+									<Loader2 className="h-3 w-3 animate-spin" />
+								) : (
+									<Plus className="h-3 w-3" />
+								)}
+								Create
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowCreateForm(false);
+									setNewKeyName("");
+								}}
+								className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:bg-surface"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				) : (
+					<button
+						type="button"
+						onClick={() => setShowCreateForm(true)}
+						className="inline-flex items-center gap-2 rounded-md border border-dashed border-border px-4 py-2 text-sm font-medium text-text-muted hover:border-accent hover:text-accent"
+					>
+						<Plus className="h-3 w-3" />
+						Create new key
+					</button>
+				)}
+
+				{apiKeys.length === 0 && !showCreateForm ? (
 					<div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
 						<div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface">
 							<KeyIcon className="h-4 w-4 text-text-muted" aria-hidden="true" />
 						</div>
 						<p className="text-sm text-text-bright">No API keys yet</p>
 						<p className="mt-1 text-xs text-text-muted">
-							Your first key is generated automatically when you sign in.
+							Create one now to start making API calls.
 						</p>
 					</div>
 				) : (

@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
-import { type ApiKey, api, type Session, type User } from "@/lib/api";
+import { type ApiKey, api, type ApiKeyWithSecret, type Session, type User } from "@/lib/api";
 import { copyToClipboard } from "@/lib/clipboard";
 
 const AccountLoginModal = nextDynamic(
@@ -323,6 +323,10 @@ export default function SettingsPage() {
 		setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
 	};
 
+	const handleCreateKey = useCallback(async (key: ApiKeyWithSecret) => {
+		setApiKeys((prev) => [...prev, key]);
+	}, []);
+
 	if (!isReady && !isAuthenticated) {
 		return (
 			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
@@ -565,6 +569,7 @@ export default function SettingsPage() {
 										onCopy={handleCopy}
 										copied={copied}
 										onRevokeKey={handleRevokeKey}
+										onCreateKey={handleCreateKey}
 									/>
 								)}
 								{activeTab === "billing" && <BillingSection />}
