@@ -5,6 +5,9 @@ import type { UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";
 import type { TimeRangeId } from "../_constants";
 
+/** Usage statuses that represent a successful (non-error) request. */
+const SUCCESS_STATUSES = new Set(["completed", "free_tier"]);
+
 interface UseDashboardStatsResult {
 	todayUsage: UsageRecord[];
 	filteredUsage: UsageRecord[];
@@ -54,7 +57,13 @@ export function useDashboardStats(
 	}, [usage, timeRange]);
 
 	const todayCost = useMemo(
-		() => todayUsage.reduce((sum, u) => sum + toDollars(u.costCents), 0),
+		// Billed amount (cost + markup); decimal-string cents, may be sub-cent.
+		// `toDollars` returns 0 for null/undefined/garbage.
+		() =>
+			todayUsage.reduce(
+				(sum, u) => sum + toDollars(u.totalCents ?? u.costCents),
+				0,
+			),
 		[todayUsage],
 	);
 
@@ -69,17 +78,20 @@ export function useDashboardStats(
 	const totalTokens = useMemo(
 		() =>
 			todayUsage.reduce(
-				(sum, u) => sum + u.promptTokens + u.completionTokens,
+				(sum, u) => sum + (u.promptTokens ?? 0) + (u.completionTokens ?? 0),
 				0,
 			),
 		[todayUsage],
 	);
 
 	// Count of today's requests that ended in a non-success status. Drives
-	// the error-rate metric in QuickStatsCard. We match the same "completed"
-	// baseline the recent-requests table uses.
+	// the error-rate metric in QuickStatsCard. "completed" and "free_tier"
+	// are both successful outcomes — anything else counts as an error.
 	const todayErrorCount = useMemo(
-		() => todayUsage.filter((u) => u.status && u.status !== "completed").length,
+		() =>
+			todayUsage.filter(
+				(u) => u.status && !SUCCESS_STATUSES.has(u.status),
+			).length,
 		[todayUsage],
 	);
 

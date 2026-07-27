@@ -26,7 +26,11 @@ import type { OmaEnv } from "../types.js";
 // v4: OpenRouter-schema enrichment — entries now carry `architecture`,
 //     `supported_parameters`, and `canonical_slug` so agent tools (Cline,
 //     LiteLLM) can auto-consume the catalog.
-const MODELS_CACHE_KEY = "cache:models:catalog:v4";
+// v5: pricing now actually applies the resolved markup (audit 2026-07-26:
+//     getModelPricing returns wholesale per-1k + markup % separately, and
+//     the old code forgot to multiply — the whole catalog understated real
+//     billed prices by the markup, typically 25%).
+const MODELS_CACHE_KEY = "cache:models:catalog:v5";
 const MODELS_CACHE_TTL = 3600; // 1 hour in seconds
 
 /**
@@ -41,10 +45,13 @@ async function customerPricePerToken(
 ): Promise<{ prompt: string; completion: string }> {
   try {
     const p = await getModelPricing(modelId);
-    // p.inputPer1k is USD per 1K input tokens (with markup).
+    // p.inputPer1k / p.outputPer1k are WHOLESALE USD per 1K tokens; the
+    // resolved markup comes back separately in p.markup and must be applied
+    // here so the published price matches what calculateCost actually bills.
+    const markupMultiplier = 1 + p.markup / 100;
     return {
-      prompt: (p.inputPer1k / 1000).toFixed(8),
-      completion: (p.outputPer1k / 1000).toFixed(8),
+      prompt: ((p.inputPer1k * markupMultiplier) / 1000).toFixed(8),
+      completion: ((p.outputPer1k * markupMultiplier) / 1000).toFixed(8),
     };
   } catch (err) {
     logger.debug({ err }, "[models] pricing conversion failed, falling back to wholesale");

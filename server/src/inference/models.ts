@@ -278,11 +278,22 @@ export async function calculateCost(
   const discount = grossTotal * (discountPercent / 100);
   const netTotal = grossTotal - discount;
 
-  const costCents = Math.ceil(baseCost * 100).toString();
-  const markupCents = Math.ceil(markup * 100).toString();
-  const totalCents = Math.max(1, Math.ceil(netTotal * 100)).toString();
+  // Sub-cent accuracy (audit 2026-07-26): the old whole-cent ceil + 1¢ floor
+  // billed a ~$0.000007 Gonka call at 1¢ (~1400× over) and made
+  // costCents + markupCents ≠ totalCents, corrupting admin margin math.
+  // usage_records columns are numeric(18,2) cents, so 0.01¢ ($0.0001) is the
+  // storable minimum — round to that precision and keep the columns additive.
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const costCents = round2(baseCost * 100);
+  const markupCents = round2(markup * 100);
+  const netCents = netTotal * 100;
+  const totalCents = netCents > 0 ? Math.max(0.01, round2(netCents)) : 0;
 
-  return { costCents, markupCents, totalCents };
+  return {
+    costCents: costCents.toFixed(2),
+    markupCents: markupCents.toFixed(2),
+    totalCents: totalCents.toFixed(2),
+  };
 }
 
 export async function calculateCostCredits(

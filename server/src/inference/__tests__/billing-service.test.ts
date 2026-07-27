@@ -182,16 +182,20 @@ describe('billing-service', () => {
       const withDiscount = await calculateActualCost('unknown-model', 10000, 5000, 50)
       // 50% discount must reduce total cost
       expect(Number(withDiscount.totalCents)).toBeLessThan(Number(withoutDiscount.totalCents))
-      // totalCents ≈ costCents + markupCents (within 1 due to rounding)
-      expect(Math.abs(Number(withDiscount.totalCents) - (Number(withDiscount.costCents) + Number(withDiscount.markupCents)))).toBeLessThanOrEqual(1)
+      // Sub-cent precision: totalCents = (costCents + markupCents) × (1 − discount),
+      // within a rounding step of 0.01¢.
+      const gross = Number(withDiscount.costCents) + Number(withDiscount.markupCents)
+      expect(Math.abs(Number(withDiscount.totalCents) - gross * 0.5)).toBeLessThanOrEqual(0.02)
     })
 
-    it('returns minimum 1 cent for costCents and totalCents', async () => {
+    it('bills tiny requests at sub-cent precision with a 0.01¢ floor', async () => {
       vi.mocked(getModel).mockResolvedValue(null)
 
+      // 1+1 tokens ≈ $0.000003 — the old code ceiled this to a full cent
+      // (~330× overcharge). Now it rounds to 0.01¢ ($0.0001) minimum.
       const result = await calculateActualCost('unknown-model', 1, 1)
-      expect(result.costCents).toBe('1')
-      expect(result.totalCents).toBe('1')
+      expect(result.costCents).toBe('0.00')
+      expect(result.totalCents).toBe('0.01')
     })
   })
 

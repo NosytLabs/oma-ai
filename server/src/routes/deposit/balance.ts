@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { getBalance } from "../../credits/index.js";
 import { db } from "../../db/client.js";
-import { usageRecords, deposits } from "../../db/schema.js";
-import { eq, desc, and } from "drizzle-orm";
+import { deposits } from "../../db/schema.js";
+import { eq, and } from "drizzle-orm";
 import { checkCircuitBreaker } from "../../credits/price-guard.js";
 import type { OmaEnv } from "../../types.js";
 import { logger } from "../../lib/logger.js";
@@ -20,15 +20,6 @@ balanceRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
     totalUsedCents: balance.totalUsedCents,
     lastActivityAt: balance.lastActivityAt,
   });
-});
-
-balanceRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
-  const userId = c.get("userId");
-  const records = await db.select().from(usageRecords)
-    .where(eq(usageRecords.userId, userId))
-    .orderBy(desc(usageRecords.createdAt))
-    .limit(100);
-  return c.json({ usage: records });
 });
 
 balanceRoutes.get("/v1/circuit-breaker", sessionOrBearerAuth, async (c) => {

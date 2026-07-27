@@ -15,8 +15,10 @@ export interface UsageRecordLike {
 	model: string;
 	promptTokens: number;
 	completionTokens: number;
-	/** Backend stores cents as a string (decimal numeric). */
+	/** Provider cost in cents — decimal string, may be sub-cent (e.g. "0.03"). */
 	costCents: string | number;
+	/** Billed amount (cost + markup) in cents. Preferred over `costCents`. */
+	totalCents?: string | number;
 	createdAt: string;
 }
 
@@ -71,7 +73,8 @@ export function mapUsageToChartData(
 		if (!day) continue;
 		const prev = byDay.get(day) ?? { requests: 0, cost: 0 };
 		prev.requests += 1;
-		prev.cost += toDollars(u.costCents);
+		// Billed amount when available; `toDollars` tolerates missing values.
+		prev.cost += toDollars(u.totalCents ?? u.costCents);
 		byDay.set(day, prev);
 	}
 	const sorted = Array.from(byDay.entries()).sort(([a], [b]) =>
@@ -103,7 +106,10 @@ export function mapUsageToModelData(
 	const byModel = new Map<string, number>();
 	for (const u of usage) {
 		const model = u.model?.trim() || "unknown";
-		byModel.set(model, (byModel.get(model) ?? 0) + toDollars(u.costCents));
+		byModel.set(
+			model,
+			(byModel.get(model) ?? 0) + toDollars(u.totalCents ?? u.costCents),
+		);
 	}
 	return Array.from(byModel.entries())
 		.sort(([, a], [, b]) => b - a)

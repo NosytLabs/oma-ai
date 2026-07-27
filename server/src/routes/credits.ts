@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
-import { getBalance, addCredits } from "../credits/index.js";
+import { getBalance } from "../credits/index.js";
 import {
   getBudgetAlertConfig,
   setBudgetAlertConfig,
@@ -11,10 +11,11 @@ import {
 } from "../credits/budget-alerts.js";
 import { auditLog } from "../middleware/audit.js";
 import { db } from "../db/client.js";
-import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts } from "../db/schema.js";
+import { creditBatches, autoReloadSettings, deposits, usageRecords, budgetAlerts, refundRequests } from "../db/schema.js";
 import { eq, desc, and, sql, gte } from "drizzle-orm";
 import { config } from "../config.js";
-import { calculateCostCredits, getModel } from "../inference/models.js";
+import { getModel } from "../inference/models.js";
+import { calculateActualCost } from "../inference/billing-service.js";
 import { validationError } from "../lib/validation.js";
 import { errorResponse } from "../lib/api-errors.js";
 import { logger } from "../lib/logger.js";
@@ -319,6 +320,11 @@ creditRoutes.get("/v1/credits/auto-reload", sessionOrBearerAuth, async (c) => {
   }
 });
 
+// SECURITY (audit 2026-07-26): this endpoint used to flip the usage row to
+// "refunded" and credit the user immediately — any authenticated user could
+// self-refund every request they ever made and drain revenue. It now files a
+// refund_requests row for the existing admin grant/deny flow
+// (routes/admin/refunds.ts); no balance or usage mutation happens here.
 creditRoutes.post("/v1/credits/refund/:usageId", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
   const usageId = c.req.param("usageId");
@@ -336,22 +342,27 @@ creditRoutes.post("/v1/credits/refund/:usageId", sessionOrBearerAuth, async (c) 
   }
 
   const usage = usageRecordsResult[0];
-
-  // C2: Atomically claim the refund slot — only one concurrent request can
-  // succeed. Uses UPDATE...WHERE with status check and .returning() to detect
-  // if we actually changed the row (eliminates TOCTOU race condition).
-  const [updated] = await db.update(usageRecords)
-    .set({ status: "refunded", refundedAt: new Date() })
-    .where(and(eq(usageRecords.id, usageId), sql`${usageRecords.status} != 'refunded'`))
-    .returning();
-
-  if (!updated) {
+  if (usage.status === "refunded") {
     return c.json({ error: { message: "Usage record has already been refunded", type: "duplicate_refund" } }, 409);
   }
 
-  await addCredits(userId, Number(usage.totalCents));
+  // One pending request per usage record — dedupe on the note marker.
+  const marker = `usage:${usageId}`;
+  const existing = await db.select({ id: refundRequests.id }).from(refundRequests)
+    .where(and(eq(refundRequests.userId, userId), eq(refundRequests.notes, marker)))
+    .limit(1);
+  if (existing.length > 0) {
+    return c.json({ success: true, requestId: existing[0].id, status: "pending" });
+  }
 
-  return c.json({ success: true, creditsRefunded: Number(usage.totalCents) });
+  const [request] = await db.insert(refundRequests).values({
+    userId,
+    amountCents: usage.totalCents,
+    reason: "usage_refund",
+    notes: marker,
+  }).returning({ id: refundRequests.id });
+
+  return c.json({ success: true, requestId: request.id, status: "pending" }, 202);
 });
 
 creditRoutes.get("/v1/credits/price-estimate", sessionOrBearerAuth, async (c) => {
@@ -364,15 +375,25 @@ creditRoutes.get("/v1/credits/price-estimate", sessionOrBearerAuth, async (c) =>
   }
 
   try {
-    const credits = await calculateCostCredits(model, inputTokens, outputTokens);
+    // Audit 2026-07-26: this used calculateCostCredits, whose creditsPerMillion
+    // inputs in models.json already bake in ~25% markup — then multiplied by
+    // markupPercent AGAIN, over-quoting by ~56% vs what billing charges.
+    // Quote with the same math billing uses (calculateCost → cents), and echo
+    // the CUSTOMER per-1M price (markup applied), not the wholesale rate.
+    const cost = await calculateActualCost(model, inputTokens, outputTokens);
     const modelDef = await getModel(model);
+    const markupMult = 1 + (modelDef?.markupPercent ?? 0) / 100;
+    const estimatedCents = parseFloat(cost.totalCents);
     return c.json({
       model,
       inputTokens,
       outputTokens,
-      estimatedCredits: credits,
-      pricePerMillionInput: modelDef?.inputPricePer1M ?? 0,
-      pricePerMillionOutput: modelDef?.outputPricePer1M ?? 0,
+      estimatedCents: cost.totalCents,
+      estimatedUsd: estimatedCents / 100,
+      // Back-compat: 1 credit = 1 cent; ceil for a conservative quote.
+      estimatedCredits: Math.ceil(estimatedCents),
+      pricePerMillionInput: (modelDef?.inputPricePer1M ?? 0) * markupMult,
+      pricePerMillionOutput: (modelDef?.outputPricePer1M ?? 0) * markupMult,
     });
   } catch (err) {
     return c.json({ error: { message: (err as Error).message, type: "invalid_request_error" } }, 400);

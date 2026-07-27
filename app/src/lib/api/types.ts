@@ -75,15 +75,27 @@ export interface BalanceResponse {
 	lastActivityAt: string | null;
 }
 
+/**
+ * One row from GET /v1/usage/recent.
+ * Token counts are numbers; all cents fields are decimal strings (may be
+ * sub-cent, e.g. "0.03"). `latencyMs` is null for in-flight/failed requests.
+ */
 export interface UsageRecord {
 	id: string;
+	requestId: string;
 	model: string;
+	provider: string;
 	promptTokens: number;
 	completionTokens: number;
+	/** Upstream provider cost in cents (decimal string). */
 	costCents: string;
-	provider?: string;
-	latencyMs?: number | null;
-	status?: string;
+	/** OMA markup in cents (decimal string). */
+	markupCents: string;
+	/** Amount billed to the user in cents (decimal string). */
+	totalCents: string;
+	latencyMs: number | null;
+	/** "completed" | "error" | "free_tier" | future values. */
+	status: string;
 	createdAt: string;
 }
 

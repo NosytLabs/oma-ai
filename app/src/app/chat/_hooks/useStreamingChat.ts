@@ -4,6 +4,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Message, SearchResult } from "@/components/chat";
 import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { buildAuthHeaders } from "@/lib/cookies";
 import { log } from "@/lib/logger";
@@ -106,6 +107,20 @@ export function useStreamingChat(
 ): UseStreamingChatResult {
 	const toast = useToast();
 	const abortRef = useRef<AbortController | null>(null);
+
+	// One cookie-repair attempt per send. Both parallel streams (primary +
+	// compare) share the same in-flight promise so a 401/402 on each side
+	// triggers a single /auth/api-key/ensure call, and `sendMessage` resets
+	// the ref so the next send gets a fresh attempt. No retry loops.
+	const ensureKeyPromiseRef = useRef<Promise<boolean> | null>(null);
+	const ensureChatKeyOnce = useCallback((): Promise<boolean> => {
+		if (!ensureKeyPromiseRef.current) {
+			ensureKeyPromiseRef.current = api.auth
+				.ensureChatKey()
+				.catch(() => false);
+		}
+		return ensureKeyPromiseRef.current;
+	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -210,30 +225,50 @@ export function useStreamingChat(
 				messagesToSend = [sysMsg, ...messagesToSend];
 			}
 
-			const response = await fetch(CHAT_ENDPOINT, {
-				method: "POST",
-				credentials: "include",
-				headers: buildAuthHeaders({
-					"Content-Type": "application/json",
-					Accept: opts.stream ? "text/event-stream" : "application/json",
-				}),
-				body: JSON.stringify({
-					model: useModel,
-					messages: messagesToSend.map((m) => ({
-						role: m.role,
-						content: m.content,
-					})),
-					temperature: opts.temperature,
-					top_p: opts.topP,
-					max_tokens: opts.maxTokens,
-					top_k: opts.topK,
-					frequency_penalty: opts.freqPenalty,
-					presence_penalty: opts.presPenalty,
-					stream: opts.stream,
-					...(opts.stream ? { stream_options: { include_usage: true } } : {}),
-				}),
-				signal,
-			});
+			const doFetch = () =>
+				fetch(CHAT_ENDPOINT, {
+					method: "POST",
+					credentials: "include",
+					headers: buildAuthHeaders({
+						"Content-Type": "application/json",
+						Accept: opts.stream ? "text/event-stream" : "application/json",
+					}),
+					body: JSON.stringify({
+						model: useModel,
+						messages: messagesToSend.map((m) => ({
+							role: m.role,
+							content: m.content,
+						})),
+						temperature: opts.temperature,
+						top_p: opts.topP,
+						max_tokens: opts.maxTokens,
+						top_k: opts.topK,
+						frequency_penalty: opts.freqPenalty,
+						presence_penalty: opts.presPenalty,
+						stream: opts.stream,
+						...(opts.stream
+							? { stream_options: { include_usage: true } }
+							: {}),
+					}),
+					signal,
+				});
+
+			let response = await doFetch();
+
+			// Logged-in users on a new device have a session but no
+			// `oma_api_key` cookie (it is only installed at key creation), so
+			// chat 401s/402s. Ask the server to reinstall the cookie from the
+			// session, then retry the request exactly once. If ensure or the
+			// retry fails, fall through to the existing error handling below.
+			if (
+				(response.status === 401 || response.status === 402) &&
+				!signal.aborted
+			) {
+				const repaired = await ensureChatKeyOnce();
+				if (repaired && !signal.aborted) {
+					response = await doFetch();
+				}
+			}
 
 			if (response.status === 401) {
 				throw new Error(
@@ -419,6 +454,7 @@ export function useStreamingChat(
 			opts.freqPenalty,
 			opts.presPenalty,
 			opts.stream,
+			ensureChatKeyOnce,
 		],
 	);
 
@@ -427,6 +463,9 @@ export function useStreamingChat(
 			"use no memo";
 			const promptText = (overridePrompt ?? opts.input).trim();
 			if (!promptText || opts.loading) return;
+
+			// Fresh cookie-repair budget for this send (see ensureChatKeyOnce).
+			ensureKeyPromiseRef.current = null;
 
 			const userMessage: Message = {
 				id: newMessageId("user"),

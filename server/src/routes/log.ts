@@ -4,6 +4,7 @@
 
 import { Hono } from "hono";
 import { logger } from "../lib/logger.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import type { OmaEnv } from "../types.js";
 
 export const logRoutes = new Hono<OmaEnv>();
@@ -19,7 +20,7 @@ interface InboundLogEntry {
   env?: unknown;
 }
 
-logRoutes.post("/v1/log", async (c) => {
+logRoutes.post("/v1/log", rateLimit({ windowMs: 60_000, maxRequests: 60 }), async (c) => {
   // Basic service-header gate to prevent casual log injection.
   if (c.req.header("X-Service-Name") !== "oma-app") {
     return c.json({ error: { message: "Forbidden", type: "forbidden" } }, 403);

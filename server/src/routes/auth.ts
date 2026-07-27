@@ -740,6 +740,29 @@ authRoutes.post("/auth/api-key/cookie", sessionAuth, async (c) => {
   return c.json({ success: true });
 });
 
+/**
+ * Chat-cookie recovery (audit 2026-07-26): the oma_api_key cookie was only
+ * installed at key-creation time (dashboard), so a returning user on a new
+ * device had a valid session but got 402s in chat forever. This endpoint
+ * lets a session holder mint a dedicated chat key and receive the cookie in
+ * one shot. Raw keys are hashed at rest, so re-installing an existing key
+ * is impossible — instead we rotate: previous auto-minted chat keys are
+ * revoked so recoveries don't accumulate keys.
+ */
+const CHAT_AUTO_KEY_NAME = "chat-auto";
+authRoutes.post("/auth/api-key/ensure", sessionAuth, rateLimit({ windowMs: 60_000, maxRequests: 5 }), async (c) => {
+  const userId = c.get("userId");
+  const existing = await listApiKeys(userId);
+  for (const key of existing) {
+    if (key.name === CHAT_AUTO_KEY_NAME && key.active) {
+      await revokeApiKey(userId, key.id);
+    }
+  }
+  const result = await createApiKey(userId, CHAT_AUTO_KEY_NAME);
+  c.header("Set-Cookie", createApiKeyCookieHeader(result.key));
+  return c.json({ success: true, keyPrefix: result.prefix });
+});
+
 authRoutes.get("/keys/:id/allowlist", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const keyId = c.req.param("id") ?? "";

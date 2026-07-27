@@ -192,7 +192,11 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           apiKeyId,
           payload,
           c.req.raw.signal,
-          payment ? { prepaidUsd: X402_CHAT_PRICE } : undefined,
+          payment
+            ? { prepaidUsd: X402_CHAT_PRICE }
+            : // keyHash lets the stream tracker enforce the per-key daily
+              // spend limit — streaming used to bypass it entirely.
+              { keyHash: apiKey?.keyHash },
         );
         span?.setAttribute("llm.provider", provider);
         if (inputTokens) span?.setAttribute("llm.tokens.input", inputTokens);
@@ -209,6 +213,9 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
               "X-Accel-Buffering": "no",
               "x-provider": provider,
               "X-Correlation-ID": correlationId || "",
+              // Router stamps the generation id — clients use it with
+              // GET /v1/generation?id= to reconcile billed cost.
+              "x-request-id": response.headers.get("x-request-id") ?? "",
             },
           });
         }
@@ -216,9 +223,9 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
         // Billed cost comes from the router via header — the upstream JSON
         // has no cost field (reading json.usage.totalCents was dead code
         // that left per-key daily spend limits permanently untripped).
-        const totalCents = parseInt(
+        // parseFloat, not parseInt — cost strings are sub-cent decimals now.
+        const totalCents = parseFloat(
           response.headers.get("x-oma-cost-cents") ?? "0",
-          10,
         );
         if (totalCents > 0) {
           trackApiKeySpend(apiKey?.keyHash, Math.ceil(totalCents));
@@ -230,6 +237,7 @@ chatCompletionsRouter.post("/v1/chat/completions", async (c) => {
           headers: {
             "x-provider": provider,
             "X-Correlation-ID": correlationId || "",
+            "x-request-id": response.headers.get("x-request-id") ?? "",
             // USD cost of this completion (LiteLLM-style header) — the #1
             // thing pay-per-use clients check. Streaming responses carry
             // cost in the final usage chunk instead.

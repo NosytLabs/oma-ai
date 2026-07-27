@@ -16,6 +16,7 @@ import {
 import { getCandidateProviders, recordFailover } from "./cross-provider-router.js";
 import { getModelIdForProvider } from "./provider-selector.js";
 import { logger } from "../lib/logger.js";
+import { trackApiKeySpend } from "./handler-helpers.js";
 
 export { getModelPricing } from "./billing-service.js";
 export { selectProvider } from "./provider-selector.js";
@@ -70,6 +71,39 @@ async function callProviderWithRefund(
   }
 }
 
+/**
+ * Normalize a non-streaming upstream completion for clients:
+ *  - never leak upstream internals (devshard ids, provider model slugs) —
+ *    the id becomes `gen-<requestId>` (usable with GET /v1/generation) and
+ *    `model` becomes our catalog id
+ *  - Gonka (MiniMax M2.7) embeds reasoning as a leading `<think>…</think>`
+ *    block inside `content` — move it to `reasoning_content` like every
+ *    other reasoning model
+ */
+function normalizeCompletionJson(json: unknown, modelId: string, requestId: string, provider: string): void {
+  const obj = json as { id?: string; model?: string; choices?: Array<{ message?: { content?: string | null; reasoning_content?: string | null } }> };
+  if (!obj || typeof obj !== "object") return;
+  obj.id = `gen-${requestId}`;
+  obj.model = modelId;
+  if (provider === "gonka") {
+    for (const choice of obj.choices ?? []) {
+      const msg = choice?.message as (typeof choice)["message"] & { reasoning?: string | null };
+      if (!msg) continue;
+      // vLLM sometimes surfaces reasoning in a `reasoning` field — mirror it
+      // to the OpenAI-style name our clients read.
+      if (msg.reasoning != null && msg.reasoning_content == null) {
+        msg.reasoning_content = msg.reasoning;
+      }
+      if (typeof msg.content !== "string") continue;
+      const m = msg.content.match(/^\s*<think>([\s\S]*?)(?:<\/think>\s*|$)/);
+      if (m) {
+        msg.reasoning_content = ((msg.reasoning_content ?? "") + m[1]).trim() || null;
+        msg.content = msg.content.slice(m[0].length).replace(/^\s+/, "");
+      }
+    }
+  }
+}
+
 async function handleNonStreamingResponse(
   json: unknown,
   modelId: string,
@@ -88,15 +122,23 @@ async function handleNonStreamingResponse(
   span.setAttribute(LLM_ATTRS.TOKENS_INPUT, actualInput);
   span.setAttribute(LLM_ATTRS.TOKENS_OUTPUT, actualOutput);
   span.setAttribute(LLM_ATTRS.TOKENS_TOTAL, actualInput + actualOutput);
-  span.setAttribute("llm.request_duration_ms", Date.now() - requestStartTime);
+  const latencyMs = Date.now() - requestStartTime;
+  span.setAttribute("llm.request_duration_ms", latencyMs);
   const actualCost = await calculateActualCost(modelId, actualInput, actualOutput, discountPercent);
   await recordUsage({
     requestId, userId, apiKeyId, modelId, provider,
     inputTokens: actualInput, outputTokens: actualOutput,
     costCents: actualCost.costCents, markupCents: actualCost.markupCents, totalCents: actualCost.totalCents,
+    latencyMs, status: "completed",
   });
-  const refund = parseInt(estimatedCostCents, 10) - parseInt(actualCost.totalCents, 10);
+  // Sub-cent precision: cost strings carry decimals — parseInt floored them.
+  const refund = Math.round((parseFloat(estimatedCostCents) - parseFloat(actualCost.totalCents)) * 100) / 100;
   if (refund > 0) await refundCreditsWithRetry(userId, String(refund));
+  normalizeCompletionJson(json, modelId, requestId, provider);
+  // Expose OpenRouter-style usage.cost on the body too — agents that never
+  // read headers still see what they were billed.
+  const usage = (json as { usage?: Record<string, unknown> }).usage;
+  if (usage) usage.cost = parseFloat(actualCost.totalCents) / 100;
   // Surface the billed cost so the route can track per-key spend and emit
   // the x-oma-response-cost header — it previously read a json.usage field
   // that never existed, leaving daily spend limits permanently untripped.
@@ -104,6 +146,7 @@ async function handleNonStreamingResponse(
     headers: {
       "x-provider": provider,
       "x-oma-cost-cents": actualCost.totalCents,
+      "x-request-id": requestId,
     },
   });
   span.setStatus({ code: SpanStatusCode.OK });
@@ -119,7 +162,7 @@ export async function handleChatCompletion(
   apiKeyId: string,
   body: { model: string; messages?: import("./types.js").ChatMessage[]; stream?: boolean; [key: string]: unknown },
   signal?: AbortSignal,
-  opts?: { prepaidUsd?: number },
+  opts?: { prepaidUsd?: number; keyHash?: string },
 ): Promise<{ response: Response; provider: string; inputTokens?: number; outputTokens?: number }> {
   const requestId = crypto.randomUUID();
   const requestStartTime = Date.now();
@@ -190,18 +233,41 @@ export async function handleChatCompletion(
             }
             span.setAttribute(LLM_ATTRS.PROVIDER, provider);
             span.setStatus({ code: SpanStatusCode.OK });
+            const prepaidCents = Math.round(opts.prepaidUsd * 100);
             if (prepaidBody.stream) {
               if (!resp.body) {
                 throw Object.assign(new Error("No response body for streaming"), { status: 502 });
               }
-              const response = new Response(resp.body, {
+              // Audit 2026-07-26: x402 traffic was completely unmetered —
+              // wrap in the tracking stream (prepaid mode) so tokens/COGS
+              // land in usage_records with the flat price as revenue.
+              const trackingStream = createTrackingStream(
+                resp.body as ReadableStream<Uint8Array>,
+                model, modelId, inputTokens, 0, userId, apiKeyId, provider, "0", pricing, requestId,
+                undefined,
+                { billingMode: "prepaid", prepaidCents },
+              );
+              const response = new Response(trackingStream as ReadableStream<Uint8Array>, {
                 status: resp.status,
-                headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
+                headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no", "x-request-id": requestId },
               });
               return { response, provider, inputTokens };
             }
             const json = await resp.json();
-            const response = Response.json(json, { headers: { "x-provider": provider } });
+            const actualInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
+            const actualOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
+            const wholesale = await calculateActualCost(modelId, actualInput, actualOutput, 0);
+            await recordUsage({
+              requestId, userId, apiKeyId, modelId, provider,
+              inputTokens: actualInput, outputTokens: actualOutput,
+              costCents: wholesale.costCents, markupCents: "0",
+              totalCents: prepaidCents.toFixed(2),
+              latencyMs: Date.now() - requestStartTime, status: "x402",
+            });
+            normalizeCompletionJson(json, modelId, requestId, provider);
+            const usage = (json as { usage?: Record<string, unknown> }).usage;
+            if (usage) usage.cost = prepaidCents / 100;
+            const response = Response.json(json, { headers: { "x-provider": provider, "x-request-id": requestId, "x-oma-cost-cents": prepaidCents.toFixed(2) } });
             return { response, provider, inputTokens };
           } catch (err) {
             lastError = err;
@@ -233,15 +299,40 @@ export async function handleChatCompletion(
           logger.info({ userId, modelId, gonkaModelId: freeModelId }, "[free-tier] Routing to Gonka");
           const provider = 'gonka' as Provider;
           const freeResponse = await callProvider(provider, freeModelId, body, undefined, signal);
+          // Audit 2026-07-26: the free tier was completely unmetered —
+          // infinite invisible inference per zero-balance account. Record
+          // every request (status "free_tier", zero revenue, real wholesale
+          // costCents) so it shows up in usage, analytics, and abuse review.
           if (body.stream) {
-            const streamingResponse = new Response(freeResponse.body, {
+            if (!freeResponse.body) {
+              throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+            }
+            const trackingStream = createTrackingStream(
+              freeResponse.body as ReadableStream<Uint8Array>,
+              model, modelId, inputTokens, 0, userId, apiKeyId, provider, "0", pricing, requestId,
+              undefined,
+              { billingMode: "free" },
+            );
+            const streamingResponse = new Response(trackingStream as ReadableStream<Uint8Array>, {
               status: freeResponse.status,
-              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": "gonka", "X-Accel-Buffering": "no" },
+              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": "gonka", "X-Accel-Buffering": "no", "x-request-id": requestId },
             });
             return { response: streamingResponse, provider: 'gonka', inputTokens };
           }
           const json = await freeResponse.json();
-          const nonStreamResponse = Response.json(json, { headers: { "x-provider": "gonka" } });
+          const freeInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
+          const freeOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
+          const wholesale = await calculateActualCost(modelId, freeInput, freeOutput, 0);
+          await recordUsage({
+            requestId, userId, apiKeyId, modelId, provider,
+            inputTokens: freeInput, outputTokens: freeOutput,
+            costCents: wholesale.costCents, markupCents: "0", totalCents: "0",
+            latencyMs: Date.now() - requestStartTime, status: "free_tier",
+          });
+          normalizeCompletionJson(json, modelId, requestId, provider);
+          const usage = (json as { usage?: Record<string, unknown> }).usage;
+          if (usage) usage.cost = 0;
+          const nonStreamResponse = Response.json(json, { headers: { "x-provider": "gonka", "x-request-id": requestId } });
           return { response: nonStreamResponse, provider: 'gonka', inputTokens };
         }
         throw Object.assign(new Error("Insufficient credits"), { status: 402 });
@@ -295,11 +386,17 @@ export async function handleChatCompletion(
                 if (totalTokens > 0 && durationMs > 0)
                   span.setAttribute(LLM_ATTRS.TOKEN_THROUGHPUT_PER_SEC, totalTokens / (durationMs / 1000));
                 span.setAttribute("llm.streaming_duration_ms", durationMs);
+              },
+              {
+                billingMode: "credits",
+                // Streaming previously bypassed SPEND_LIMIT_DAILY_CENTS
+                // entirely — the daily cap only ran on non-stream responses.
+                onSettled: (totalCents) => trackApiKeySpend(opts?.keyHash, Math.ceil(totalCents)),
               }
             );
             const response = new Response(trackingStream as ReadableStream<Uint8Array>, {
               status: resp.status,
-              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no" },
+              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": provider, "X-Accel-Buffering": "no", "x-request-id": requestId },
             });
             span.setAttribute("llm.response_start_time_ms", Date.now() - requestStartTime);
             span.setStatus({ code: SpanStatusCode.OK });

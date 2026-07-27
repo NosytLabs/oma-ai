@@ -311,9 +311,13 @@ completionsRouter.post("/v1/completions", async (c) => {
           usage?: { totalCents?: number; total_cost?: string };
         };
 
-        const totalCents =
-          json.usage?.totalCents ??
-          Math.round(parseFloat(json.usage?.total_cost ?? "0") * 100);
+        // Billed cost comes from the router's x-oma-cost-cents header — the
+        // old json.usage.totalCents / total_cost fields never existed in any
+        // provider response, so the legacy endpoint silently bypassed the
+        // per-key daily spend limit.
+        const totalCents = parseFloat(
+          response.headers.get("x-oma-cost-cents") ?? "0",
+        );
         if (totalCents > 0) {
           trackApiKeySpend(apiKey?.keyHash, Math.ceil(totalCents));
         }

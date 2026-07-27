@@ -103,10 +103,14 @@ export async function calculateActualCost(
   const grossTotal = baseUsd + markupUsd;
   const discount = grossTotal * (discountPercent / 100);
   const costUsd = grossTotal - discount;
+  // Sub-cent accuracy — mirror models.ts:calculateCost (0.01¢ precision, no
+  // whole-cent floor; columns stay additive for admin margin math).
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const netCents = costUsd * 100;
   return {
-    costCents: String(Math.max(1, Math.ceil(baseUsd * 100))),
-    markupCents: String(Math.ceil(markupUsd * 100)),
-    totalCents: String(Math.max(1, Math.ceil(costUsd * 100))),
+    costCents: round2(baseUsd * 100).toFixed(2),
+    markupCents: round2(markupUsd * 100).toFixed(2),
+    totalCents: (netCents > 0 ? Math.max(0.01, round2(netCents)) : 0).toFixed(2),
   };
 }
 

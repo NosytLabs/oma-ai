@@ -178,6 +178,47 @@ export const auth = {
 		}
 	},
 
+	/**
+	 * (Re)install the HttpOnly `oma_api_key` cookie from the current session.
+	 *
+	 * `installKeyCookie` only runs at key-creation time, so a logged-in user
+	 * on a new device has a session but no chat cookie and gets 401/402 in
+	 * chat. POST /auth/api-key/ensure derives the cookie server-side from the
+	 * session — no body required.
+	 *
+	 * Same two-path strategy as `installKeyCookie`: direct-to-backend with the
+	 * in-memory session JWT first (production cross-origin cookie), then the
+	 * /api proxy (hard-reload case where the in-memory JWT is gone).
+	 *
+	 * Best-effort: failure just means chat keeps showing its auth error.
+	 */
+	async ensureChatKey(): Promise<boolean> {
+		const token = getAuthToken();
+		if (token) {
+			try {
+				const res = await fetch(`${DEFAULT_API_URL}/auth/api-key/ensure`, {
+					method: "POST",
+					credentials: "include",
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+				if (res.ok) return true;
+			} catch {
+				// fall through to the proxy path
+			}
+		}
+		try {
+			const res = await request<{ success: boolean; keyPrefix: string }>(
+				p("/auth/api-key/ensure"),
+				{ method: "POST" },
+			);
+			return res?.success === true;
+		} catch {
+			return false;
+		}
+	},
+
 	deleteKey(id: string) {
 		return request<void>(p(`/keys/${id}`), { method: "DELETE" });
 	},
