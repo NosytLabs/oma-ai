@@ -133,6 +133,20 @@ export function Hero() {
 								/>
 							</Link>
 							<Link
+								href="/models"
+								className="btn-ghost inline-flex h-12 items-center justify-center gap-2 px-3 text-[13px] text-text-muted"
+							>
+								<ScrambleText
+									text="View Live Models"
+									trigger="hover"
+									as="span"
+									className="inline-block"
+								/>
+								<span className="ml-2 text-xs font-mono text-text-muted">
+									{MODEL_COUNT}+
+								</span>
+							</Link>
+							<Link
 								href="/docs#x402"
 								className="btn-ghost inline-flex h-12 items-center justify-center gap-2 px-3 text-[13px] text-text-muted"
 							>

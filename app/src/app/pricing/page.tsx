@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 import { ElectricBorder } from "@/components/electric-border";
-import { formatPricePerMillion, loadModels, type Model, MODELS } from "@/lib/models-data";
+import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import {
 	BreadcrumbListJsonLd,
 	ProductJsonLd,
@@ -225,11 +225,12 @@ export default function PricingPage() {
 					{ name: "Pricing", url: "/pricing" },
 				]}
 			/>
-			<ProductJsonLd
-				name="OMA AI API Inference"
-				description="Pay-per-request AI inference across 90+ models. No monthly fees, no lock-in."
-				price="0.01"
-			/>
+<ProductJsonLd
+	name="OMA AI API Inference"
+	description={`Pay-per-request AI inference across ${MODEL_COUNT}+ models. No monthly fees, no lock-in.`}
+
+	price="0.01"
+/>
 			<FAQPageJsonLd
 				questions={FAQ_ITEMS.map((item) => ({
 					question: item.q,
