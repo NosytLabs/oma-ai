@@ -1,5 +1,13 @@
 import { SiweMessage } from "siwe";
 import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
+
+// EIP-4361 nonces must match `[a-zA-Z0-9]{8,}` — nanoid's default alphabet
+// includes `-` and `_` which makes the entire message unparseable on the
+// client side, breaking the SIWE flow for a non-trivial fraction of new
+// users. Use a SIWE-safe alphabet for nonces (not for nanoid's other uses).
+const SIWE_NONCE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const siweNonce = customAlphabet(SIWE_NONCE_ALPHABET, 32);
 import { SignJWT, jwtVerify, decodeProtectedHeader } from "jose";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
@@ -84,7 +92,7 @@ async function resetFailedAttempts(normalized: string): Promise<void> {
 }
 
 async function rotateNonceAndInvalidateCache(normalized: string, lookupField: "address" | "evmAddress"): Promise<void> {
-  const newNonce = nanoid(32);
+  const newNonce = siweNonce();
   if (lookupField === "evmAddress") {
     await db
       .update(users)
@@ -156,7 +164,7 @@ export async function getOrCreateUser(address: string) {
   if (existing.length > 0) {
     return existing[0];
   }
-  const nonce = nanoid(32);
+  const nonce = siweNonce();
   const [created] = await db.insert(users).values({
     address: normalized,
     nonce,
@@ -303,7 +311,7 @@ export async function getNonce(address: string) {
 
   // If no existing user found with this address (legacy or evmAddress), create one.
   // For new users we always write to the legacy `address` column for backwards compat.
-  const nonce = nanoid(32);
+  const nonce = siweNonce();
   await db.insert(users)
     .values({ address: normalized, nonce, updatedAt: new Date() })
     .onConflictDoUpdate({

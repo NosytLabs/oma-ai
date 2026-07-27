@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../../db/client.js";
 import { apiKeys, users, usageRecords } from "../../db/schema.js";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { eq, desc, sql, count, inArray } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { logger } from "../../lib/logger.js";
 
@@ -18,15 +18,15 @@ keysRoutes.get("/admin/keys", async (c) => {
   const offset = (page - 1) * limit;
 
   try {
-    const usageStats = db.select({
-      apiKeyId: usageRecords.apiKeyId,
-      totalRequests: sql<number>`cast(count(${usageRecords.id}) as bigint)`,
-      totalSpendCents: sql<number>`cast(coalesce(sum(${usageRecords.totalCents}), 0) as bigint)`,
-      lastUsedAt: sql<string>`max(${usageRecords.createdAt})`,
-    })
-    .from(usageRecords)
-    .groupBy(usageRecords.apiKeyId);
-
+    // Inline subquery with explicit column aliases. Drizzle's select({...}).as(name)
+    // generates aliases from the field KEYS but PG interprets the underlying
+    // expression (e.g. count(*)) without an alias — producing a subquery that
+    // has no usable column names. Use raw SQL with explicit `as name`.
+    // Two-step query: get keys first, then aggregate per-key usage in a
+    // single batched query. Drizzle's select({...}).as(name) aliasing is
+    // broken for COUNT/SUM aggregates without explicit `as` clauses, and
+    // Drizzle 0.45's leftJoinLateral wraps the subquery in a way that
+    // confuses pg. Two queries (cheap, single round-trip) is the clean fix.
     const keysResult = await db.select({
       id: apiKeys.id,
       userId: apiKeys.userId,
@@ -35,40 +35,54 @@ keysRoutes.get("/admin/keys", async (c) => {
       active: apiKeys.active,
       createdAt: apiKeys.createdAt,
       userAddress: users.address,
-      totalRequests: sql<number>`coalesce(usage_stats.total_requests, 0)`,
-      totalSpendCents: sql<number>`coalesce(usage_stats.total_spend_cents, 0)`,
-      lastUsedAt: sql<string>`usage_stats.last_used_at`,
     })
     .from(apiKeys)
     .leftJoin(users, eq(apiKeys.userId, users.id))
-    .leftJoin(
-      sql<{
-        apiKeyId: string | null;
-        totalRequests: number;
-        totalSpendCents: number;
-        lastUsedAt: string | null;
-      }>`(${usageStats}) as usage_stats`,
-      sql`${apiKeys.id} = usage_stats.api_key_id`
-    )
     .orderBy(desc(apiKeys.createdAt))
     .limit(limit)
     .offset(offset);
 
+    // Per-key usage aggregates in a single query
+    const usageByKey = new Map<string, { totalRequests: number; totalSpendCents: number; lastUsedAt: string | null }>();
+    if (keysResult.length > 0) {
+      const keyIds = keysResult.map((k) => k.id);
+      const agg = await db.select({
+        apiKeyId: usageRecords.apiKeyId,
+        totalRequests: sql<number>`cast(count(*) as bigint)`,
+        totalSpendCents: sql<number>`cast(coalesce(sum("total_cents"), 0) as bigint)`,
+        lastUsedAt: sql<string | null>`max("created_at")`,
+      })
+      .from(usageRecords)
+      .where(inArray(usageRecords.apiKeyId, keyIds))
+      .groupBy(usageRecords.apiKeyId);
+      for (const a of agg) {
+        if (!a.apiKeyId) continue;
+        usageByKey.set(a.apiKeyId, {
+          totalRequests: Number(a.totalRequests ?? 0),
+          totalSpendCents: Number(a.totalSpendCents ?? 0),
+          lastUsedAt: a.lastUsedAt ?? null,
+        });
+      }
+    }
+
     const totalResult = await db.select({ count: count() }).from(apiKeys);
 
     return c.json({
-      keys: keysResult.map((k) => ({
-        id: k.id,
-        userId: k.userId,
-        userAddress: k.userAddress,
-        keyPrefix: k.keyPrefix,
-        name: k.name,
-        active: k.active,
-        createdAt: k.createdAt,
-        totalRequests: Number(k.totalRequests || 0),
-        totalSpend: Number(k.totalSpendCents || 0) / 100,
-        lastUsedAt: k.lastUsedAt,
-      })),
+      keys: keysResult.map((k) => {
+        const u = usageByKey.get(k.id);
+        return {
+          id: k.id,
+          userId: k.userId,
+          userAddress: k.userAddress,
+          keyPrefix: k.keyPrefix,
+          name: k.name,
+          active: k.active,
+          createdAt: k.createdAt,
+          totalRequests: u?.totalRequests ?? 0,
+          totalSpend: (u?.totalSpendCents ?? 0) / 100,
+          lastUsedAt: u?.lastUsedAt ?? null,
+        };
+      }),
       pagination: {
         page,
         limit,

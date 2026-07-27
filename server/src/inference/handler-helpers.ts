@@ -49,6 +49,10 @@ export function trackApiKeySpend(
 /**
  * Shared inference error handler — log + return JSON error response.
  * Works for any Hono context (typed loosely to avoid generic threading).
+ * Preserves the original error message for client-facing 4xx errors
+ * (insufficient_credits, model_not_allowed, invalid params) and only
+ * sanitizes 5xx (the client can't act on internal errors, and leaking
+ * stack details is a security smell).
  */
 type HonoContextLike = {
   json(body: unknown, status?: number): Response;
@@ -60,9 +64,17 @@ export function inferenceErrorHandler(
 ): Response {
   const status = (err as { status?: number }).status ?? 500;
   const errType = (err as { type?: string }).type ?? "inference_error";
-  logger.error({ err }, `[chat] ${routeName} error:`);
-  return c.json(
-    { error: { message: "An internal error occurred", type: errType } },
-    status,
-  );
+  const errCode = (err as { code?: string }).code;
+  const isUserFacing = status >= 400 && status < 500;
+  const rawMessage = err instanceof Error ? err.message : String(err);
+  // Log full error (including stack) server-side, never echo it to the client on 5xx.
+  logger.error({ err, status, routeName, type: "inference_error" }, `[chat] ${routeName} error: ${rawMessage}`);
+  const responseBody: Record<string, unknown> = {
+    error: {
+      message: isUserFacing && rawMessage ? rawMessage : "An internal error occurred",
+      type: errType,
+    },
+  };
+  if (errCode) (responseBody.error as Record<string, unknown>).code = errCode;
+  return c.json(responseBody, status);
 }

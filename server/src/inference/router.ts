@@ -226,6 +226,7 @@ export async function handleChatCompletion(
         let lastError: unknown = null;
         for (const provider of providersToTry) {
           const providerModelId = getModelIdForProvider(model, provider, modelId);
+          if (!providerModelId) continue;
           try {
             const resp = await callProvider(provider, providerModelId, prepaidBody, undefined, signal);
             if (resp.status >= 500) {
@@ -294,48 +295,63 @@ export async function handleChatCompletion(
         // Free tier fallback: route to Gonka/OpenBroker instead of blocking.
         // Gonka costs us ~$0.0002/M tokens — negligible enough to absorb for
         // users with zero balance. No billing/credits are touched on this path.
+        // CRITICAL: only attempt this when the model actually has a Gonka
+        // mapping. Models that are Venice-only (e.g. llama-3.3-70b) skip the
+        // free-tier path entirely and surface a clean 402.
         const freeModelId = model ? getModelIdForProvider(model, 'gonka', modelId) : null;
         if (freeModelId) {
           logger.info({ userId, modelId, gonkaModelId: freeModelId }, "[free-tier] Routing to Gonka");
           const provider = 'gonka' as Provider;
-          const freeResponse = await callProvider(provider, freeModelId, body, undefined, signal);
-          // Audit 2026-07-26: the free tier was completely unmetered —
-          // infinite invisible inference per zero-balance account. Record
-          // every request (status "free_tier", zero revenue, real wholesale
-          // costCents) so it shows up in usage, analytics, and abuse review.
-          if (body.stream) {
-            if (!freeResponse.body) {
-              throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+          try {
+            const freeResponse = await callProvider(provider, freeModelId, body, undefined, signal);
+            // Audit 2026-07-26: the free tier was completely unmetered —
+            // infinite invisible inference per zero-balance account. Record
+            // every request (status "free_tier", zero revenue, real wholesale
+            // costCents) so it shows up in usage, analytics, and abuse review.
+            if (body.stream) {
+              if (!freeResponse.body) {
+                throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+              }
+              const trackingStream = createTrackingStream(
+                freeResponse.body as ReadableStream<Uint8Array>,
+                model, modelId, inputTokens, 0, userId, apiKeyId, provider, "0", pricing, requestId,
+                undefined,
+                { billingMode: "free" },
+              );
+              const streamingResponse = new Response(trackingStream as ReadableStream<Uint8Array>, {
+                status: freeResponse.status,
+                headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": "gonka", "X-Accel-Buffering": "no", "x-request-id": requestId },
+              });
+              return { response: streamingResponse, provider: 'gonka', inputTokens };
             }
-            const trackingStream = createTrackingStream(
-              freeResponse.body as ReadableStream<Uint8Array>,
-              model, modelId, inputTokens, 0, userId, apiKeyId, provider, "0", pricing, requestId,
-              undefined,
-              { billingMode: "free" },
-            );
-            const streamingResponse = new Response(trackingStream as ReadableStream<Uint8Array>, {
-              status: freeResponse.status,
-              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "x-provider": "gonka", "X-Accel-Buffering": "no", "x-request-id": requestId },
+            const json = await freeResponse.json();
+            const freeInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
+            const freeOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
+            const wholesale = await calculateActualCost(modelId, freeInput, freeOutput, 0);
+            await recordUsage({
+              requestId, userId, apiKeyId, modelId, provider,
+              inputTokens: freeInput, outputTokens: freeOutput,
+              costCents: wholesale.costCents, markupCents: "0", totalCents: "0",
+              latencyMs: Date.now() - requestStartTime, status: "free_tier",
             });
-            return { response: streamingResponse, provider: 'gonka', inputTokens };
+            normalizeCompletionJson(json, modelId, requestId, provider);
+            const usage = (json as { usage?: Record<string, unknown> }).usage;
+            if (usage) usage.cost = 0;
+            const nonStreamResponse = Response.json(json, { headers: { "x-provider": "gonka", "x-request-id": requestId } });
+            return { response: nonStreamResponse, provider: 'gonka', inputTokens };
+          } catch (err) {
+            // Free-tier Gonka call failed (model not on Gonka, network, 402
+            // from upstream). Fall through to the user-facing 402 instead of
+            // bubbling a 500 — the user can't fix the upstream, only deposit.
+            logger.warn({ err, userId, modelId, gonkaModelId: freeModelId }, "[free-tier] Gonka fallback failed, returning 402");
           }
-          const json = await freeResponse.json();
-          const freeInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
-          const freeOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
-          const wholesale = await calculateActualCost(modelId, freeInput, freeOutput, 0);
-          await recordUsage({
-            requestId, userId, apiKeyId, modelId, provider,
-            inputTokens: freeInput, outputTokens: freeOutput,
-            costCents: wholesale.costCents, markupCents: "0", totalCents: "0",
-            latencyMs: Date.now() - requestStartTime, status: "free_tier",
-          });
-          normalizeCompletionJson(json, modelId, requestId, provider);
-          const usage = (json as { usage?: Record<string, unknown> }).usage;
-          if (usage) usage.cost = 0;
-          const nonStreamResponse = Response.json(json, { headers: { "x-provider": "gonka", "x-request-id": requestId } });
-          return { response: nonStreamResponse, provider: 'gonka', inputTokens };
         }
-        throw Object.assign(new Error("Insufficient credits"), { status: 402 });
+        throw Object.assign(
+          new Error(
+            `Insufficient credits. Deposit USDC at /deposit or pick a free-tier model with a Gonka mapping (MiniMax-M2.7, MiniMax-M3, MiniMax-M3-preview, etc.).`,
+          ),
+          { status: 402, type: "insufficient_credits", code: "insufficient_credits" },
+        );
       }
 
       // Find the ordered list of candidate providers for this model.
@@ -351,6 +367,7 @@ export async function handleChatCompletion(
       for (let i = 0; i < providersToTry.length; i++) {
         const provider = providersToTry[i];
         const providerModelId = getModelIdForProvider(model, provider, modelId);
+        if (!providerModelId) continue;
         // SECURITY: On failover (i > 0), skip the refund in callProviderWithRefund.
         // The preflight deduction is still held; refunding on each failure would
         // cause double-refund: p1 fails → full refund → p2 succeeds → partial

@@ -224,7 +224,8 @@
       "creditsPerMillionInput": 25,
       "creditsPerMillionOutput": 112,
       "contextWindow": 8192,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "venice-uncensored-role-play": {
       "id": "venice-uncensored-role-play",
@@ -249,7 +250,8 @@
       "creditsPerMillionInput": 62,
       "creditsPerMillionOutput": 250,
       "contextWindow": 4096,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "qwen-3-7-max": {
       "id": "qwen-3-7-max",
@@ -484,7 +486,8 @@
       "creditsPerMillionInput": 19,
       "creditsPerMillionOutput": 94,
       "contextWindow": 16384,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "qwen3-next-80b": {
       "id": "qwen3-next-80b",
@@ -508,7 +511,8 @@
       "creditsPerMillionInput": 44,
       "creditsPerMillionOutput": 238,
       "contextWindow": 16384,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "qwen3-vl-235b-a22b": {
       "id": "qwen3-vl-235b-a22b",
@@ -557,7 +561,8 @@
       "creditsPerMillionInput": 44,
       "creditsPerMillionOutput": 188,
       "contextWindow": 65536,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "google-gemma-4-26b-a4b-it": {
       "id": "google-gemma-4-26b-a4b-it",
@@ -584,7 +589,8 @@
       "creditsPerMillionInput": 20,
       "creditsPerMillionOutput": 62,
       "contextWindow": 8192,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "google-gemma-4-31b-it": {
       "id": "google-gemma-4-31b-it",
@@ -611,7 +617,8 @@
       "creditsPerMillionInput": 15,
       "creditsPerMillionOutput": 45,
       "contextWindow": 8192,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "gemma-4-uncensored": {
       "id": "gemma-4-uncensored",
@@ -661,7 +668,8 @@
       "creditsPerMillionInput": 15,
       "creditsPerMillionOutput": 25,
       "contextWindow": 16384,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "arcee-trinity-large-thinking": {
       "id": "arcee-trinity-large-thinking",
@@ -813,7 +821,8 @@
       "creditsPerMillionInput": 12,
       "creditsPerMillionOutput": 31,
       "contextWindow": 16384,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "mistral-small-2603": {
       "id": "mistral-small-2603",
@@ -839,7 +848,8 @@
       "creditsPerMillionInput": 23,
       "creditsPerMillionOutput": 94,
       "contextWindow": 65536,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "hermes-3-llama-3.1-405b": {
       "id": "hermes-3-llama-3.1-405b",
@@ -1282,7 +1292,8 @@
       "creditsPerMillionInput": 70,
       "creditsPerMillionOutput": 438,
       "contextWindow": 65536,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "moonshotai/Kimi-K2.6"
     },
     "xiaomi-mimo-v2-5": {
       "id": "xiaomi-mimo-v2-5",
@@ -1360,7 +1371,8 @@
       "creditsPerMillionInput": 21,
       "creditsPerMillionOutput": 44,
       "contextWindow": 32768,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "deepseek-v3.2": {
       "id": "deepseek-v3.2",
@@ -1385,7 +1397,8 @@
       "creditsPerMillionInput": 41,
       "creditsPerMillionOutput": 60,
       "contextWindow": 32768,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "aion-labs-aion-2-0": {
       "id": "aion-labs-aion-2-0",
@@ -1433,7 +1446,8 @@
       "creditsPerMillionInput": 19,
       "creditsPerMillionOutput": 75,
       "contextWindow": 4096,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "llama-3.3-70b": {
       "id": "llama-3.3-70b",
@@ -1457,7 +1471,8 @@
       "creditsPerMillionInput": 88,
       "creditsPerMillionOutput": 350,
       "contextWindow": 4096,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "openai-gpt-52": {
       "id": "openai-gpt-52",
@@ -1766,7 +1781,8 @@
       "creditsPerMillionInput": 38,
       "creditsPerMillionOutput": 150,
       "contextWindow": 65536,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "minimax-m25": {
       "id": "minimax-m25",
@@ -1791,7 +1807,8 @@
       "creditsPerMillionInput": 42,
       "creditsPerMillionOutput": 149,
       "contextWindow": 32768,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "mercury-2": {
       "id": "mercury-2",
@@ -1816,7 +1833,8 @@
       "creditsPerMillionInput": 39,
       "creditsPerMillionOutput": 117,
       "contextWindow": 50000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "gonkaId": "MiniMaxAI/MiniMax-M2.7"
     },
     "nvidia-nemotron-3-nano-30b-a3b": {
       "id": "nvidia-nemotron-3-nano-30b-a3b",

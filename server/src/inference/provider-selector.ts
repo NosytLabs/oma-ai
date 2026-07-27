@@ -54,16 +54,28 @@ function selectProviderWeighted(weights: Map<Provider, number>, available: Provi
   return activeProviders[activeProviders.length - 1];
 }
 
-export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string {
+export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string | null {
   if (!modelDef) {
-    return model;
+    return null;
   }
-  const idMap: Record<string, string> = {
+  const idMap: Record<string, string | undefined> = {
     venice: modelDef.veniceId ?? modelDef.id,
     surplus: modelDef.surplusId ?? modelDef.id,
-    gonka: modelDef.gonkaId ?? modelDef.id,
+    gonka: modelDef.gonkaId, // null when unset — caller must check, do NOT default to model.id
   };
-  return idMap[provider] ?? modelDef.id;
+  const resolved = idMap[provider];
+  if (!resolved) return null;
+  return resolved;
+}
+
+export function hasProviderMapping(modelDef: ModelDef | null, provider: Provider): boolean {
+  if (!modelDef) return false;
+  const idMap: Record<string, string | undefined> = {
+    venice: modelDef.veniceId ?? modelDef.id,
+    surplus: modelDef.surplusId ?? modelDef.id,
+    gonka: modelDef.gonkaId,
+  };
+  return Boolean(idMap[provider]);
 }
 
 function canUseProvider(modelDef: ModelDef | null, p: Provider): boolean {
@@ -87,7 +99,9 @@ async function selectFromWeights(weights: Map<Provider, number>, modelDef: Model
   const availableProviders = await getAvailableProviders();
   const selected = selectProviderWeighted(weights, availableProviders);
   if (!selected || !canUseProvider(modelDef, selected)) return null;
-  return { provider: selected, providerModelId: getModelIdForProvider(modelDef, selected, model) };
+  const providerModelId = getModelIdForProvider(modelDef, selected, model);
+  if (!providerModelId) return null;
+  return { provider: selected, providerModelId };
 }
 
 function logAndReturn(model: string, result: { provider: Provider; providerModelId: string }, source: string): { provider: Provider; providerModelId: string } {
@@ -98,7 +112,7 @@ function logAndReturn(model: string, result: { provider: Provider; providerModel
 export async function selectProvider(model: string): Promise<{ provider: Provider; providerModelId: string }> {
   const modelDef = await getModel(model);
   const preferred = modelDef?.primaryProvider ?? "gonka";
-  const providerModelId = getModelIdForProvider(modelDef, preferred, model);
+  const preferredModelId = getModelIdForProvider(modelDef, preferred, model);
   const modelWeights = parseModelWeights(config.MODEL_WEIGHTS);
   const globalWeights = parseProviderWeights(config.PROVIDER_WEIGHTS);
 
@@ -112,20 +126,24 @@ export async function selectProvider(model: string): Promise<{ provider: Provide
     if (result) return logAndReturn(model, result, "global_weights");
   }
 
-  if ((preferred !== "surplus" || SURPLUS_ENABLED) && await isProviderAvailable(preferred)) {
-    return logAndReturn(model, { provider: preferred, providerModelId }, "primary");
+  if (preferredModelId && (preferred !== "surplus" || SURPLUS_ENABLED) && await isProviderAvailable(preferred)) {
+    return logAndReturn(model, { provider: preferred, providerModelId: preferredModelId }, "primary");
   }
 
   const fallbackProviders = ALL_PROVIDERS.filter(p => p !== preferred && canUseProvider(modelDef, p));
   const fallbackResults = await Promise.all(
-    fallbackProviders.map(async p => ({ provider: p, available: await isProviderAvailable(p) }))
+    fallbackProviders.map(async p => {
+      const mapping = getModelIdForProvider(modelDef, p, model);
+      const available = Boolean(mapping) && await isProviderAvailable(p);
+      return { provider: p, mapping, available };
+    })
   );
-  
-  const firstAvailable = fallbackResults.find(r => r.available);
-  if (firstAvailable) {
-    return logAndReturn(model, { 
-      provider: firstAvailable.provider, 
-      providerModelId: getModelIdForProvider(modelDef, firstAvailable.provider, model) 
+
+  const firstAvailable = fallbackResults.find(r => r.available && r.mapping);
+  if (firstAvailable && firstAvailable.mapping) {
+    return logAndReturn(model, {
+      provider: firstAvailable.provider,
+      providerModelId: firstAvailable.mapping,
     }, "fallback");
   }
 
