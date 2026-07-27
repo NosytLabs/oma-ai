@@ -266,6 +266,11 @@ const envSchema = z.object({
   NEON_AUTH_URL: z.string().url().optional(),
   NEON_AUTH_JWKS_URL: z.string().url().optional(),
   NEON_AUTH_ENABLED: envBoolean.default(true),
+  // Polar.sh merchant of record configuration
+  POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
+  POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
+  POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
+  POLAR_SERVER: z.string().url().optional().default("https://api.polar.sh"),
 });
 
 export type Config = z.infer<typeof envSchema>;

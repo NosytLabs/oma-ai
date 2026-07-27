@@ -18,9 +18,12 @@ vi.mock('../credits/index.js', () => ({
 vi.mock('../inference/models.js', () => ({
   getModel: vi.fn().mockResolvedValue({
     id: 'llama-3.3-70b',
+    gonkaId: 'llama-3.3-70b',
+    veniceId: 'llama-3.3-70b',
     providers: { gonka: 'llama-3.3-70b', venice: 'llama-3.3-70b' },
     contextWindow: 131072,
     maxOutputTokens: 4096,
+    primaryProvider: 'gonka',
   }),
   estimateTokens: vi.fn((text: string) => Math.ceil(text.length / 4)),
 }))
