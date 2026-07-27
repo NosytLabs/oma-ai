@@ -11,6 +11,7 @@ import {
 	Trophy,
 	Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -407,8 +408,9 @@ function ModelsPageInner() {
 										const providerStyle =
 											PROVIDER_COLORS[model.provider] ?? PROVIDER_COLORS.Venice;
 										return (
-											<div
+											<Link
 												key={model.id}
+												href={`/models/${model.id}`}
 												className="group relative rounded-md border border-border bg-panel p-4 transition-[border-color,box-shadow] hover:border-accent/50 hover:shadow-[0_0_15px_var(--color-accent-dim)] h-full flex flex-col"
 											>
 												<div className="flex items-start justify-between gap-2">
@@ -487,7 +489,7 @@ function ModelsPageInner() {
 												<span className="sr-only">
 													{`Input $${(typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens, output $${(typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens`}
 												</span>
-											</div>
+											</Link>
 										);
 									})}
 								</div>
