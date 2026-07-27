@@ -33,6 +33,16 @@ interface MessageInputProps {
 	onStop: () => void;
 	loading: boolean;
 	textareaRef?: Ref<HTMLTextAreaElement>;
+	/**
+	 * When true, the send button is disabled and a hint is shown next to the
+	 * input. Set when the user's balance is $0 (or below the cost of any
+	 * available model) so we don't burn a failed round-trip on every keystroke.
+	 * Defaults to false — leave unset for playground/demo modes that don't
+	 * charge per request.
+	 */
+	disabled?: boolean;
+	/** Optional reason surfaced to the user when `disabled` is true. */
+	disabledReason?: string;
 }
 
 const INPUT_HINTS = [
@@ -54,6 +64,8 @@ export const MessageInputRedesigned = forwardRef<
 		onStop,
 		loading,
 		textareaRef: externalTextareaRef,
+		disabled = false,
+		disabledReason,
 	},
 	forwardedRef,
 ) {
@@ -79,10 +91,11 @@ export const MessageInputRedesigned = forwardRef<
 		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 			if (e.key === "Enter" && !e.shiftKey) {
 				e.preventDefault();
+				if (disabled) return;
 				onSubmit();
 			}
 		},
-		[onSubmit],
+		[onSubmit, disabled],
 	);
 
 	const setTextareaRef = useCallback(
@@ -191,7 +204,8 @@ export const MessageInputRedesigned = forwardRef<
 							<MetalFx variant="circle" preset="chromatic" strength={0.7}>
 							<m.button
 								onClick={onSubmit}
-								disabled={!hasInput}
+								disabled={!hasInput || disabled}
+								title={disabled ? disabledReason ?? "Send disabled" : undefined}
 								aria-label="Send message"
 								aria-describedby="message-hint"
 								whileTap={{ scale: 0.9 }}

@@ -503,12 +503,26 @@ function ShellContent({
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
+									disabled={isLowBalance && balanceDollars <= 0}
+									disabledReason={
+										isLowBalance && balanceDollars <= 0
+											? "Top up credits to send"
+											: undefined
+									}
 								/>
 
-								<div className="flex items-center justify-between mt-2 px-1">
-									<p className="text-[10px] text-text-muted uppercase tracking-widest">
+								<div className="flex items-center justify-between mt-2 px-1 gap-3">
+									<p className="text-[10px] text-text-muted uppercase tracking-widest shrink-0">
 										[ENTER] EXECUTE · [SHIFT+ENTER] NEWLINE
 									</p>
+									{isLowBalance && balanceDollars <= 0 && (
+										<Link
+											href="/deposit"
+											className="text-[10px] text-accent hover:underline font-mono uppercase tracking-wider"
+										>
+											Top up to send →
+										</Link>
+									)}
 									<LazyCostEstimate
 										inputText={input}
 										model={model}
