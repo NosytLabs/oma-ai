@@ -13,10 +13,14 @@ const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_BUILD_SHA:
 			process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
-			process.env.NEXT_PUBLIC_BUILD_SHA,
+			process.env.NEXT_PUBLIC_BUILD_SHA ??
+			"dev",
+		// Hardcode the fallback to a stable string so SSR and CSR agree
+		// (avoids the `new Date()`-at-config-eval-time server/client
+		// hydration mismatch). Bump in source on each deploy.
 		NEXT_PUBLIC_BUILD_DATE:
 			process.env.NEXT_PUBLIC_BUILD_DATE ??
-			new Date().toISOString().slice(0, 10),
+			"2026-07-26",
 	},
 
 	experimental: {},
