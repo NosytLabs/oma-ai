@@ -17,6 +17,7 @@ import {
 	getModelsByTier,
 	loadModels,
 	MODELS,
+	distinctProviders,
 	PROVIDER_COLORS,
 	TIER_COLORS,
 	TIER_ORDER,
@@ -80,6 +81,7 @@ function sortModels(models: Model[], sort: SortKey): Model[] {
 function ModelsPageInner() {
 	const {
 		tier: urlTier,
+		provider: urlProvider,
 		search: urlSearch,
 		sort: urlSort,
 		setParam,
@@ -88,6 +90,9 @@ function ModelsPageInner() {
 
 	const [localSearch, setLocalSearch] = useState(urlSearch);
 	const [selectedTier, setSelectedTier] = useState<string | null>(urlTier);
+	const [selectedProvider, setSelectedProvider] = useState<string | null>(
+		urlProvider,
+	);
 	const [sortBy, setSortBy] = useState<SortKey>(urlSort as SortKey);
 	const [copied, setCopied] = useState(false);
 	const [sortOpen, setSortOpen] = useState(false);
@@ -126,10 +131,17 @@ function ModelsPageInner() {
 		if (selectedTier) {
 			result = result.filter((m) => m && m.tier === selectedTier);
 		}
+		if (selectedProvider) {
+			result = result.filter((m) => m && m.provider === selectedProvider);
+		}
 		return sortModels(result, sortBy);
-	}, [localSearch, selectedTier, sortBy, safeModels]);
+	}, [localSearch, selectedTier, selectedProvider, sortBy, safeModels]);
 
 	const modelsByTier = useMemo(() => getModelsByTier(filtered), [filtered]);
+	const availableProviders = useMemo(
+		() => distinctProviders(safeModels),
+		[safeModels],
+	);
 
 	const groupedModels = useMemo(() => {
 		if (sortBy === "tier") {
@@ -169,6 +181,11 @@ function ModelsPageInner() {
 		setParam("tier", tier);
 	};
 
+	const handleProvider = (provider: string | null) => {
+		setSelectedProvider(provider);
+		setParam("provider", provider);
+	};
+
 	const handleSort = (key: SortKey) => {
 		setSortBy(key);
 		setParam("sort", key === "name" ? null : key);
@@ -182,7 +199,7 @@ function ModelsPageInner() {
 		setTimeout(() => setCopied(false), 2000);
 	};
 
-	const hasFilters = selectedTier || localSearch;
+	const hasFilters = selectedTier || selectedProvider || localSearch;
 
 	return (
 		<div className="min-h-screen bg-void">
@@ -311,20 +328,57 @@ function ModelsPageInner() {
 						</button>
 					))}
 
-					{/* Active filter summary */}
-					{hasFilters && (
-						<button
-							type="button"
-							onClick={() => {
-								handleTier(null);
-								handleSearch("");
-							}}
-							className="ml-2 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-secondary border border-dashed border-border hover:border-text-muted transition-colors"
-						>
-							Clear all
-						</button>
-					)}
+{/* Active filter summary */}
+				{hasFilters && (
+					<button
+						type="button"
+						onClick={() => {
+							handleTier(null);
+							handleProvider(null);
+							handleSearch("");
+						}}
+						className="ml-2 px-3 py-1.5 rounded-full text-xs font-medium text-text-muted hover:text-text-secondary border border-dashed border-border hover:border-text-muted transition-colors"
+					>
+						Clear all
+					</button>
+				)}
+			</div>
+
+			{/* Provider Filter Chips (only show providers that exist in catalog) */}
+			{availableProviders.length > 1 && (
+				<div className="flex flex-wrap gap-2 mb-6" aria-label="Filter by provider">
+					<button
+						type="button"
+						onClick={() => handleProvider(null)}
+						className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+							!selectedProvider
+								? "bg-text-bright text-void"
+								: "bg-panel text-text-secondary border border-border hover:border-text-bright"
+						}`}
+					>
+						All Providers
+					</button>
+					{availableProviders.map((p) => {
+						const pStyle = PROVIDER_COLORS[p];
+						return (
+							<button
+								type="button"
+								key={p}
+								onClick={() =>
+									handleProvider(selectedProvider === p ? null : p)
+								}
+								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+									selectedProvider === p
+										? `${pStyle.bg} ${pStyle.text} ${pStyle.border} border`
+										: "bg-panel text-text-secondary border border-border hover:border-text-bright"
+								}`}
+							>
+								{p}
+							</button>
+						);
+					})}
 				</div>
+			)}
 
 				{/* Model Grid */}
 				{groupedModels.length > 0 ? (
@@ -397,8 +451,8 @@ function ModelsPageInner() {
 												</div>
 
 												<div className="mt-3 flex items-center justify-between text-xs">
-													<span className="text-text-secondary">
-														{model.contextLength ?? "\u2014"}
+													<span className="text-text-secondary font-mono">
+														{model.contextLength ? `${model.contextLength} ctx` : "\u2014"}
 													</span>
 													<div className="flex items-center gap-2 text-[10px] font-mono">
 														<span className="text-accent" aria-hidden="true">
@@ -444,16 +498,17 @@ function ModelsPageInner() {
 					<div className="text-center py-20">
 						<Brain className="h-12 w-12 text-text-muted mx-auto mb-4" />
 						<p className="text-text-secondary">No models match your search.</p>
-						<button
-							type="button"
-							onClick={() => {
-								handleSearch("");
-								handleTier(null);
-							}}
-							className="mt-4 text-sm text-accent hover:underline"
-						>
-							Clear filters
-						</button>
+<button
+						type="button"
+						onClick={() => {
+							handleSearch("");
+							handleTier(null);
+							handleProvider(null);
+						}}
+						className="mt-4 text-sm text-accent hover:underline"
+					>
+						Clear filters
+					</button>
 					</div>
 				)}
 			</div>

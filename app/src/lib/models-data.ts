@@ -23,7 +23,9 @@
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 export type Provider =
 	| "Venice"
-	| "Gonka";
+	| "Gonka"
+	| "Surplus"
+	| "Tinyfish";
 
 export interface Model {
 	id: string;
@@ -63,7 +65,38 @@ export const PROVIDER_COLORS: Record<
 		text: "text-accent",
 		border: "border-accent/30",
 	},
+	Surplus: {
+		bg: "bg-warning/10",
+		text: "text-warning",
+		border: "border-warning/30",
+	},
+	Tinyfish: {
+		bg: "bg-cyan-500/10",
+		text: "text-cyan-400",
+		border: "border-cyan-500/30",
+	},
 };
+
+/** Map any provider string returned by the live `/v1/models` endpoint
+ *  (lowercase, vendor name, or alias) onto the canonical `Provider`. */
+export function normalizeProvider(raw: string | undefined | null): Provider {
+	const s = (raw ?? "").trim().toLowerCase();
+	if (!s) return "Venice";
+	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) return "Gonka";
+	if (s.includes("surplus")) return "Surplus";
+	if (s.includes("tinyfish")) return "Tinyfish";
+	return "Venice";
+}
+
+/** Distinct providers actually surfaced in a list of models — used to
+ *  build the provider filter chip row on /models without hard-coding. */
+export function distinctProviders(models: readonly Model[]): Provider[] {
+	const seen = new Set<Provider>();
+	for (const m of models) seen.add(m.provider);
+	return (["Venice", "Gonka", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
+		seen.has(p),
+	);
+}
 
 export const TIER_COLORS: Record<
 	Tier,
@@ -124,7 +157,7 @@ interface RawCatalog {
 	VIDEO_MODELS?: Record<string, unknown>;
 }
 
-function formatContextLength(maxTokens: number): string {
+export function formatContextLength(maxTokens: number): string {
 	if (!Number.isFinite(maxTokens) || maxTokens <= 0) return "—";
 	if (maxTokens >= 1_000_000) {
 		const m = maxTokens / 1_000_000;
@@ -135,7 +168,7 @@ function formatContextLength(maxTokens: number): string {
 	return `${k}K`;
 }
 
-function deriveCapabilities(
+export function deriveCapabilities(
 	id: string,
 	displayName: string,
 	description: string | undefined,
@@ -188,7 +221,7 @@ function toModel(entry: RawEntry): Model {
 	return {
 		id: entry.id,
 		name: entry.displayName,
-		provider: (entry.provider as Provider) || "Gonka",
+		provider: normalizeProvider(entry.provider),
 		tier,
 		description: deriveDescription(entry.id, entry.displayName, entry.description),
 		contextLength: formatContextLength(entry.maxTokens),
@@ -289,9 +322,7 @@ export async function loadModels(): Promise<Model[]> {
 					return {
 						id: entry.id,
 						name,
-						provider: (entry.provider === "gonka"
-							? "Gonka"
-							: "Venice") as Provider,
+						provider: normalizeProvider(entry.provider),
 						tier,
 						description: deriveDescription(entry.id, name, undefined),
 						contextLength: formatContextLength(entry.context_length ?? 0),

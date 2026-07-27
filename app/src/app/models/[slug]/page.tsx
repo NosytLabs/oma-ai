@@ -10,9 +10,14 @@ import { TIER_LABELS } from "@/app/models/_lib/labels";
 import { DEFAULT_API_URL } from "@/lib/config";
 import {
 	MODELS,
-	type Model,
+	deriveCapabilities,
+	formatContextLength,
+	normalizeProvider,
 	PROVIDER_COLORS,
 	TIER_COLORS,
+	type Capability,
+	type Model,
+	type Tier,
 } from "@/lib/models-data";
 
 /** SSG: pre-render the hand-picked models in the static fallback catalog. */
@@ -250,8 +255,9 @@ function StaticModelDetail({ model }: { model: Model }) {
 }
 
 /** Minimal detail view for long-tail models served by `/v1/models`. We don't
- *  have provider/tier/capabilities metadata for these — show what we have
- *  and link to the playground so users can try the model. */
+ *  have rich provider metadata for these — show what we have plus capabilities
+ *  derived from the model ID so users see something useful rather than a wall
+ *  of "—". */
 function LiveModelDetail({
 	slug,
 	live,
@@ -261,8 +267,19 @@ function LiveModelDetail({
 }) {
 	const name = liveDisplayName(slug);
 	const ctx = live.context_length
-		? `${live.context_length.toLocaleString()} tokens`
+		? `${formatContextLength(live.context_length)} (${live.context_length.toLocaleString()} tokens)`
 		: "—";
+	const provider = normalizeProvider(live.provider);
+	const providerStyle = PROVIDER_COLORS[provider] ?? PROVIDER_COLORS.Venice;
+	const tier: Tier =
+		live.category === "budget" ||
+		live.category === "mid" ||
+		live.category === "premium" ||
+		live.category === "frontier"
+			? live.category
+			: "mid";
+	const tierStyle = TIER_COLORS[tier];
+	const caps: Capability[] = deriveCapabilities(slug, name, undefined, undefined);
 	return (
 		<div className="min-h-screen bg-void">
 			<div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
@@ -273,6 +290,18 @@ function LiveModelDetail({
 				</nav>
 
 				<header className="mb-10">
+					<div className="flex flex-wrap items-center gap-2 mb-3">
+						<span
+							className={`inline-flex items-center px-2.5 py-1 rounded-md border text-[10px] font-mono uppercase tracking-wider ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
+						>
+							{provider}
+						</span>
+						<span
+							className={`inline-flex items-center px-2.5 py-1 rounded-md border text-[10px] font-mono uppercase tracking-wider ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}
+						>
+							{TIER_LABELS[tier]}
+						</span>
+					</div>
 					<h1 className="h1-page text-text-bright mb-3">{name}</h1>
 					<p className="text-lg text-text-secondary max-w-3xl">
 						Live catalog entry. Open it in the chat to try it, or call it
@@ -294,6 +323,32 @@ function LiveModelDetail({
 					/>
 					<Stat label="Context window" value={ctx} unit="" />
 				</div>
+
+				{caps.length > 0 && (
+					<section aria-labelledby="capabilities-heading" className="mb-10">
+						<h2
+							id="capabilities-heading"
+							className="font-mono text-xs uppercase tracking-widest text-text-muted mb-3"
+						>
+							Capabilities (inferred)
+						</h2>
+						<ul className="flex flex-wrap gap-2">
+							{caps.map((c) => (
+								<li
+									key={c}
+									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-accent/30 bg-accent-dim text-xs font-medium text-accent"
+								>
+									{CAPABILITY_ICONS[c]}
+									{CAPABILITY_LABELS[c]}
+								</li>
+							))}
+						</ul>
+						<p className="text-xs text-text-muted mt-2">
+							Derived from the model ID; verify against provider docs if
+							accuracy matters.
+						</p>
+					</section>
+				)}
 
 				<section aria-labelledby="model-id-heading" className="mb-10">
 					<h2
