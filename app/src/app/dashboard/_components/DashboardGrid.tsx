@@ -15,6 +15,7 @@ import { Suspense, useMemo, useState } from "react";
 import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
+import { PolarSubscriptionCard } from "@/components/dashboard/PolarSubscriptionCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type {
 	ApiKey,
@@ -396,7 +397,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</div>
 						)}
 
-						<div className="mb-6 grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-h-[12rem] [&>*]:bg-void">
+						<div className="mb-6 grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem] [&>*]:bg-void">
 							<WidgetErrorBoundary title="Balance">
 								<CreditBalanceCard
 									balance={balance}
@@ -420,6 +421,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<LazyProviderHealthSummary />
 								</WidgetErrorBoundary>
 							</div>
+							<WidgetErrorBoundary title="Subscription">
+								<PolarSubscriptionCard />
+							</WidgetErrorBoundary>
 						</div>
 
 						<div className="mb-6">
