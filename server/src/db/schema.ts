@@ -821,3 +821,176 @@ export const byokKeys = pgTable(
     index("idx_byok_keys_byok_id").on(t.byokKeyId),
   ]
 );
+
+// ============================================================================
+// POLAR.SH BILLING TABLES
+// Migration: server/src/db/migrations/0035_polar_sh_schema.sql
+// ============================================================================
+//
+// These tables back the /v1/polar/* routes and the webhook handler. They were
+// created via the SQL migration first (so they exist in production DBs) and
+// are now also registered with Drizzle so we can query them through the ORM.
+//
+// IMPORTANT: do NOT introduce raw SQL `.selectFrom(...)` Kysely-style usage on
+// these tables — the server uses Drizzle, not Kysely. The earlier polar scaffold
+// was buggy because it tried to. Stick to `db.select()`, `db.insert()`,
+// `db.update()` here.
+
+/**
+ * `polarCustomers` links an OMA-AI `users.id` to a Polar.sh `customer_id`.
+ * One user has at most one Polar customer (unique on both `userId` and
+ * `polarCustomerId`). When the user first hits a /v1/polar/* endpoint, we
+ * create the Polar customer via `polar.customers.create({ externalId: userId })`
+ * and persist the link here.
+ */
+export const polarCustomers = pgTable(
+  "polar_customers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    polarCustomerId: text("polar_customer_id").notNull().unique(),
+    email: text("email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_polar_customers_user_id").on(t.userId),
+    index("idx_polar_customers_polar_id").on(t.polarCustomerId),
+  ],
+);
+
+/**
+ * `polarSubscriptions` mirrors the active subscription state for the linked
+ * Polar customer. We upsert on every `subscription.created` /
+ * `subscription.updated` / `subscription.canceled` webhook. UI reads this
+ * table to show "Active until <date>" badges on the dashboard / settings.
+ */
+export const polarSubscriptions = pgTable(
+  "polar_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    customerId: uuid("customer_id")
+      .references(() => polarCustomers.id, { onDelete: "cascade" })
+      .notNull(),
+    polarSubscriptionId: text("polar_subscription_id").notNull().unique(),
+    polarProductId: text("polar_product_id").notNull(),
+    status: text("status").notNull().default("active"),
+    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    cancelAtPeriodEnd: integer("cancel_at_period_end").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_polar_subscriptions_customer_id").on(t.customerId),
+    index("idx_polar_subscriptions_polar_id").on(t.polarSubscriptionId),
+    index("idx_polar_subscriptions_status").on(t.status),
+  ],
+);
+
+/**
+ * `polarOrders` records each successful Polar payment. Created on
+ * `order.paid` / `payment.succeeded` webhooks. Drives the "Recent invoices"
+ * table on the dashboard.
+ */
+export const polarOrders = pgTable(
+  "polar_orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    customerId: uuid("customer_id")
+      .references(() => polarCustomers.id, { onDelete: "cascade" })
+      .notNull(),
+    polarOrderId: text("polar_order_id").notNull().unique(),
+    polarProductId: text("polar_product_id").notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull().default("usd"),
+    status: text("status").notNull().default("completed"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_polar_orders_customer_id").on(t.customerId),
+    index("idx_polar_orders_polar_id").on(t.polarOrderId),
+  ],
+);
+
+/**
+ * `polarLicenseKeys` records lifetime / perpetual license keys issued via
+ * Polar.sh. Used by `/v1/polar/license/validate` for activation checks.
+ */
+export const polarLicenseKeys = pgTable(
+  "polar_license_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    customerId: uuid("customer_id")
+      .references(() => polarCustomers.id, { onDelete: "cascade" })
+      .notNull(),
+    polarOrderId: text("polar_order_id").notNull(),
+    licenseKey: text("license_key").notNull().unique(),
+    status: text("status").notNull().default("active"),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    lastValidatedAt: timestamp("last_validated_at", { withTimezone: true }),
+    validationCount: integer("validation_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_polar_license_keys_customer_id").on(t.customerId),
+    index("idx_polar_license_keys_polar_order_id").on(t.polarOrderId),
+    index("idx_polar_license_keys_license_key").on(t.licenseKey),
+  ],
+);
+
+/**
+ * `polarWebhookEvents` is an audit log of every inbound Polar webhook.
+ * Dedupe on `polarEventId` (Polar may redeliver). `processed=1` after the
+ * handler returns successfully; `errorMessage` populated on failure.
+ * Surface in the admin console for debugging failed deliveries.
+ */
+export const polarWebhookEvents = pgTable(
+  "polar_webhook_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    polarEventId: text("polar_event_id").notNull().unique(),
+    eventType: text("event_type").notNull(),
+    payload: text("payload").notNull(),
+    processed: integer("processed").default(0).notNull(),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("idx_polar_webhook_events_event_type").on(t.eventType),
+    index("idx_polar_webhook_events_processed").on(t.processed),
+  ],
+);
+
+// Relations
+export const polarCustomersRelations = relations(polarCustomers, ({ one, many }) => ({
+  user: one(users, { fields: [polarCustomers.userId], references: [users.id] }),
+  subscriptions: many(polarSubscriptions),
+  orders: many(polarOrders),
+  licenseKeys: many(polarLicenseKeys),
+}));
+
+export const polarSubscriptionsRelations = relations(polarSubscriptions, ({ one }) => ({
+  customer: one(polarCustomers, {
+    fields: [polarSubscriptions.customerId],
+    references: [polarCustomers.id],
+  }),
+}));
+
+export const polarOrdersRelations = relations(polarOrders, ({ one }) => ({
+  customer: one(polarCustomers, {
+    fields: [polarOrders.customerId],
+    references: [polarCustomers.id],
+  }),
+}));
+
+export const polarLicenseKeysRelations = relations(polarLicenseKeys, ({ one }) => ({
+  customer: one(polarCustomers, {
+    fields: [polarLicenseKeys.customerId],
+    references: [polarCustomers.id],
+  }),
+}));

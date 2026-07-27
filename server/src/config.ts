@@ -271,6 +271,12 @@ const envSchema = z.object({
   POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
   POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
   POLAR_SERVER: z.string().url().optional().default("https://api.polar.sh"),
+  // Per-plan Polar product UUIDs. Get these from Polar dashboard → Products.
+  POLAR_HOBBY_PRODUCT_ID: z.string().min(1).optional(),
+  POLAR_BUILDER_PRODUCT_ID: z.string().min(1).optional(),
+  POLAR_SCALE_PRODUCT_ID: z.string().min(1).optional(),
+  // Public app URL — used to build absolute checkout success/cancel URLs.
+  PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 });
 
 export type Config = z.infer<typeof envSchema>;
