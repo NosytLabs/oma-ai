@@ -15,6 +15,7 @@ import { request } from "./client.js";
 import { creditHistory, credits } from "./credits.js";
 import { deposit } from "./deposit.js";
 import { health } from "./inference.js";
+import { polar } from "./polar.js";
 import { balance, models, usage } from "./resources.js";
 
 export {
@@ -27,6 +28,16 @@ export type {
 	CreditTransaction,
 	CreditTransactionsResponse,
 } from "./credits.js";
+export {
+	PolarNotConfiguredError,
+	polar,
+	type PolarOrder,
+	type PolarOrdersResponse,
+	type PolarPlan,
+	type PolarPlansResponse,
+	type PolarSubscription,
+	type PolarSubscriptionResponse,
+} from "./polar.js";
 export * from "./types.js";
 
 /**
@@ -71,4 +82,5 @@ export const api = {
 	creditHistory,
 	credits,
 	exportData,
+	polar,
 };

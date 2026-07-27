@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, DollarSign, RefreshCw } from "lucide-react";
+import { Bell, CreditCard, DollarSign, ExternalLink, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/Toast";
-import { api } from "@/lib/api";
+import { api, PolarNotConfiguredError } from "@/lib/api";
 import { request } from "@/lib/api/client";
+import type {
+	PolarPlan,
+	PolarSubscription,
+} from "@/lib/api";
 import type { AutoReloadSettings } from "@/lib/api/types";
 
 interface BudgetAlerts {
@@ -29,6 +33,63 @@ export function BillingSection() {
 	const [savingBudget, setSavingBudget] = useState(false);
 	const [budgetLimit, setBudgetLimit] = useState("");
 	const [emailEnabled, setEmailEnabled] = useState(false);
+
+	// Polar subscription state. null = not configured on the server;
+	// loaded = present in our DB.
+	const [polarUnavailable, setPolarUnavailable] = useState(false);
+	const [plans, setPlans] = useState<PolarPlan[]>([]);
+	const [subscription, setSubscription] = useState<PolarSubscription | null>(null);
+	const [openingPortal, setOpeningPortal] = useState(false);
+	const [checkingOut, setCheckingOut] = useState<string | null>(null);
+
+	const loadPolar = useCallback(async () => {
+		try {
+			const [plansResp, subResp] = await Promise.all([
+				api.polar.plans(),
+				api.polar.subscription(),
+			]);
+			setPlans(plansResp.plans);
+			setSubscription(subResp.subscription);
+			setPolarUnavailable(false);
+		} catch (e: unknown) {
+			if (e instanceof PolarNotConfiguredError) {
+				setPolarUnavailable(true);
+			} else {
+				// Non-503 errors get logged but don't hide the section — the
+				// plans list is best-effort context for the user.
+				console.warn("[billing] failed to load polar state", e);
+			}
+		}
+	}, []);
+
+	useEffect(() => {
+		loadPolar();
+	}, [loadPolar]);
+
+	const handleCheckout = useCallback(
+		async (planId: string) => {
+			setCheckingOut(planId);
+			try {
+				const { url } = await api.polar.checkout(planId);
+				window.location.href = url;
+			} catch (e: unknown) {
+				toast.error(e instanceof Error ? e.message : "Failed to start checkout");
+				setCheckingOut(null);
+			}
+		},
+		[toast],
+	);
+
+	const handleOpenPortal = useCallback(async () => {
+		setOpeningPortal(true);
+		try {
+			const { url } = await api.polar.portal();
+			window.location.href = url;
+		} catch (e: unknown) {
+			toast.error(e instanceof Error ? e.message : "Failed to open billing portal");
+			setOpeningPortal(false);
+		}
+	}, [toast]);
 
 	const load = useCallback(async () => {
 		try {
@@ -199,6 +260,93 @@ export function BillingSection() {
 					</Button>
 				</div>
 			</section>
+
+			{/* Polar.sh subscriptions */}
+			{!polarUnavailable && (
+				<section className="space-y-4">
+					<div className="flex items-center gap-2">
+						<CreditCard className="h-4 w-4 text-text-muted" />
+						<h3 className="text-sm font-medium">Monthly subscription</h3>
+					</div>
+					<p className="text-xs text-text-muted">
+						Recurring billing via Polar.sh. Each plan includes a credit
+						allowance; usage above the allowance is billed per-token.
+					</p>
+
+					{subscription && (
+						<div className="rounded-lg border border-accent/30 bg-accent-dim/30 p-4 space-y-3">
+							<div className="flex items-center justify-between gap-2">
+								<div>
+									<p className="text-sm font-semibold">
+										{subscription.planName ?? "Active subscription"}
+									</p>
+									<p className="text-xs text-text-muted font-mono">
+										Status: {subscription.status}
+										{subscription.currentPeriodEnd &&
+											` · renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`}
+									</p>
+								</div>
+								{subscription.cancelAtPeriodEnd === 1 && (
+									<span className="text-[10px] uppercase tracking-wider text-warning font-mono">
+										cancels at period end
+									</span>
+								)}
+							</div>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={handleOpenPortal}
+								disabled={openingPortal}
+							>
+								<ExternalLink className="h-3 w-3 mr-1.5" />
+								{openingPortal ? "Opening…" : "Manage in Polar"}
+							</Button>
+						</div>
+					)}
+
+					{plans.filter((p) => p.available).length > 0 && (
+						<div className="grid gap-3 sm:grid-cols-3">
+							{plans
+								.filter((p) => p.available)
+								.map((plan) => (
+									<div
+										key={plan.id}
+										className="rounded-lg border border-border p-4 flex flex-col gap-2"
+									>
+										<div className="flex items-baseline justify-between gap-2">
+											<h4 className="text-sm font-semibold">{plan.name}</h4>
+											<span className="text-base font-bold font-mono">
+												${(plan.priceCents / 100).toFixed(0)}
+												<span className="text-[10px] text-text-muted font-normal">
+													/mo
+												</span>
+											</span>
+										</div>
+										<p className="text-xs text-text-muted flex-1">
+											{plan.description}
+										</p>
+										<ul className="text-xs text-text-secondary space-y-1">
+											{plan.features.map((f) => (
+												<li key={f} className="flex items-start gap-1.5">
+													<span className="text-accent">·</span>
+													{f}
+												</li>
+											))}
+										</ul>
+										<Button
+											size="sm"
+											onClick={() => handleCheckout(plan.id)}
+											disabled={checkingOut === plan.id}
+											className="w-full"
+										>
+											{checkingOut === plan.id ? "Opening…" : "Subscribe"}
+										</Button>
+									</div>
+								))}
+						</div>
+					)}
+				</section>
+			)}
 
 			{/* Spend summary link */}
 			<section className="flex items-center gap-2 text-sm text-text-muted">
