@@ -6,6 +6,7 @@ import {
 	Activity,
 	Boxes,
 	CircleDollarSign,
+	CreditCard,
 	DollarSign,
 	FileText,
 	Gauge,
@@ -31,6 +32,7 @@ import AdminDlqTab from "./_components/AdminDlqTab";
 import AdminInvoicesTab from "./_components/AdminInvoicesTab";
 import AdminKeysTab from "./_components/AdminKeysTab";
 import AdminOverviewTab from "./_components/AdminOverviewTab";
+import AdminPolarTab from "./_components/AdminPolarTab";
 import AdminRefundsTab from "./_components/AdminRefundsTab";
 import AdminRevenueTab from "./_components/AdminRevenueTab";
 import AdminSurplusTab from "./_components/AdminSurplusTab";
@@ -55,6 +57,7 @@ type Tab =
 	| "refunds"
 	| "invoices"
 	| "surplus"
+	| "polar"
 	| "fees"
 	| "rate-limits";
 
@@ -69,6 +72,7 @@ const TABS: { id: Tab; Icon: LucideIcon; href?: string }[] = [
 	{ id: "refunds", Icon: CircleDollarSign },
 	{ id: "invoices", Icon: FileText },
 	{ id: "surplus", Icon: Boxes },
+	{ id: "polar", Icon: CreditCard },
 	// Full pages — navigate instead of empty stub panels
 	{ id: "fees", Icon: DollarSign, href: "/admin/fees" },
 	{ id: "rate-limits", Icon: Gauge, href: "/admin/rate-limits" },
@@ -424,6 +428,8 @@ export default function AdminPage() {
 			{activeTab === "invoices" && <AdminInvoicesTab />}
 
 			{activeTab === "surplus" && <AdminSurplusTab />}
+
+			{activeTab === "polar" && <AdminPolarTab />}
 
 		</div>
 		</div>

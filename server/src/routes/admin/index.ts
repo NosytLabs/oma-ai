@@ -12,6 +12,7 @@ import { dlqRoutes } from "./dlq.js";
 import { auditLogsRoutes } from "./audit-logs.js";
 import { surplusRoutes } from "./surplus.js";
 import { adminRefundRoutes } from "./refunds.js";
+import { adminPolarRoutes } from "./polar.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
@@ -54,3 +55,4 @@ adminRoutes.route("/", invoicesRoutes);
 adminRoutes.route("/", dlqRoutes);
 adminRoutes.route("/", auditLogsRoutes);
 adminRoutes.route("/", surplusRoutes);
+adminRoutes.route("/", adminPolarRoutes);
