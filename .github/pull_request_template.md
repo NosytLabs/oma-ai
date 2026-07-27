@@ -25,9 +25,9 @@ Run locally before requesting review:
 pnpm run validate
 ```
 
-- [ ] `pnpm run typecheck` passes (app + server)
-- [ ] `pnpm run lint` passes (app + server)
-- [ ] `pnpm test` passes (app + server)
+- [ ] `pnpm run validate:typecheck` passes (app + server)
+- [ ] `pnpm run validate:lint` passes (app + server)
+- [ ] `pnpm run validate:test` passes (app + server)
 - [ ] No new `TODO` / `FIXME` / `HACK` introduced in production code
 - [ ] I have read [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) and [BRAND.md](../blob/main/BRAND.md) (voice/terminology applies to user-facing strings)
 

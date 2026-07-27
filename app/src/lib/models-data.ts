@@ -320,30 +320,32 @@ export async function loadModels(): Promise<Model[]> {
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
  * pages that need a synchronous `MODELS` / `MODEL_COUNT`. The actual
- * catalog is bigger (89 entries today) and is loaded lazily via
- * `loadModels()` from the client; this subset covers the most-used
- * pricing/tier entries so SSR markup never goes blank.
+ * catalog is bigger (89 chat entries today; video excluded) and is loaded
+ * lazily via `loadModels()` from the client; this subset covers the
+ * most-used pricing/tier entries so SSR markup never goes blank.
  */
 const FALLBACK_CATALOG: RawCatalog = {
 	MODEL_CATALOG: {
+		// Prices/categories below mirror server/models.json (the billing source
+		// of truth) as of 2026-07-26 — keep them in sync when the catalog moves.
 		"qwen3-235b-a22b-instruct-2507": {
 			id: "qwen3-235b-a22b-instruct-2507",
 			displayName: "Qwen3 235B Instruct",
 			provider: "Venice",
-			category: "premium",
-			maxTokens: 131072,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
+			category: "budget",
+			maxTokens: 16384,
+			inputPricePer1M: 0.15,
+			outputPricePer1M: 0.75,
 			capabilities: ["chat", "reasoning"],
 		},
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
 			provider: "Venice",
-			category: "mid",
-			maxTokens: 131072,
-			inputPricePer1M: 0.18,
-			outputPricePer1M: 0.9,
+			category: "budget",
+			maxTokens: 4096,
+			inputPricePer1M: 0.7,
+			outputPricePer1M: 2.8,
 			capabilities: ["chat"],
 		},
 		"llama-3.2-3b": {
@@ -351,9 +353,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Llama 3.2 3B",
 			provider: "Venice",
 			category: "budget",
-			maxTokens: 131072,
-			inputPricePer1M: 0.06,
-			outputPricePer1M: 0.3,
+			maxTokens: 4096,
+			inputPricePer1M: 0.15,
+			outputPricePer1M: 0.6,
 			capabilities: ["chat", "fast"],
 		},
 		"minimax-m2.7": {
@@ -371,9 +373,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Claude Opus 4.8",
 			provider: "Venice",
 			category: "premium",
-			maxTokens: 200000,
-			inputPricePer1M: 15,
-			outputPricePer1M: 75,
+			maxTokens: 128000,
+			inputPricePer1M: 6,
+			outputPricePer1M: 30,
 			capabilities: ["chat", "reasoning", "coding"],
 		},
 		"claude-sonnet-4-5": {
@@ -381,9 +383,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Claude Sonnet 4.5",
 			provider: "Venice",
 			category: "premium",
-			maxTokens: 200000,
-			inputPricePer1M: 3,
-			outputPricePer1M: 15,
+			maxTokens: 64000,
+			inputPricePer1M: 3.75,
+			outputPricePer1M: 18.75,
 			capabilities: ["chat", "coding"],
 		},
 		"claude-opus-4-8-fast": {
@@ -391,9 +393,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Claude Opus 4.8 Fast",
 			provider: "Venice",
 			category: "frontier",
-			maxTokens: 200000,
-			inputPricePer1M: 15,
-			outputPricePer1M: 75,
+			maxTokens: 128000,
+			inputPricePer1M: 12,
+			outputPricePer1M: 60,
 			capabilities: ["chat", "reasoning", "coding", "fast"],
 		},
 	},
@@ -403,7 +405,7 @@ const FALLBACK_CATALOG: RawCatalog = {
  * Synchronous `MODELS` array for SSR metadata and the few places that
  * genuinely can't go async (Next.js `generateStaticParams`, page
  * metadata). This is the *fallback* catalog — the live catalog
- * (91 chat + 5 video = 96) is loaded lazily via `loadModels()`.
+ * (89 chat + 5 video = 94) is loaded lazily via `loadModels()`.
  */
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 

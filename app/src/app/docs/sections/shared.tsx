@@ -13,13 +13,16 @@ export type { Model };
 
 export type Tab = { label: string; lang: string; code: string };
 
-export type PlanLimits = {
+export type RateLimitRow = {
 	name: string;
+	value: string;
+	desc: string;
+};
+
+export type ModelRateOverride = {
+	model: string;
 	rpm: number;
 	tpm: number;
-	concurrent: number;
-	color: string;
-	badge: string;
 };
 
 export type ModelPricing = {
@@ -33,6 +36,8 @@ export type ModelPricing = {
 export type EndpointInfo = {
 	method: "GET" | "POST";
 	path: string;
+	/** Stable heading anchor used by the docs sidebar/search (nav-data.ts). */
+	anchor: string;
 	title: string;
 	desc: string;
 	auth: string;
@@ -49,39 +54,32 @@ export type ErrorInfo = {
 
 /* ==================== DATA ==================== */
 
-export const PLAN_LIMITS: PlanLimits[] = [
+// Single-tier limits — there are no per-plan tiers. Values mirror the
+// server's token-bucket middleware (server/src/middleware/rate-limit/).
+export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 	{
-		name: "Free",
-		rpm: 60,
-		tpm: 60000,
-		concurrent: 5,
-		color: "text-text-secondary",
-		badge: "bg-surface text-text-secondary",
+		name: "Burst",
+		value: "60 requests",
+		desc: "Token bucket capacity — the most requests you can fire at once.",
 	},
 	{
-		name: "Starter",
-		rpm: 120,
-		tpm: 120000,
-		concurrent: 10,
-		color: "text-accent",
-		badge: "bg-accent/20 text-accent",
+		name: "Refill",
+		value: "20 req/s",
+		desc: "How fast the bucket refills after a burst.",
 	},
 	{
-		name: "Pro",
-		rpm: 300,
-		tpm: 300000,
-		concurrent: 25,
-		color: "text-tertiary",
-		badge: "bg-tertiary/20 text-tertiary",
+		name: "Sustained",
+		value: "60 RPM",
+		desc: "Sliding-window requests-per-minute ceiling.",
 	},
-	{
-		name: "Business",
-		rpm: 1000,
-		tpm: 1000000,
-		concurrent: 100,
-		color: "text-warning",
-		badge: "bg-warning/20 text-warning",
-	},
+];
+
+// Per-model overrides — mirrors MODEL_LIMITS in
+// server/src/middleware/rate-limit/utils.ts.
+export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
+	{ model: "deepseek-v3.2", rpm: 60, tpm: 120000 },
+	{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
+	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
 ];
 
 export const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
@@ -96,6 +94,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/chat/completions",
+		anchor: "ep-chat",
 		title: "Chat Completions",
 		desc: "OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -128,6 +127,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/completions",
+		anchor: "ep-completions",
 		title: "Completions (Legacy)",
 		desc: "Deprecated prompt-based completion endpoint. Use Chat Completions for new projects.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -160,6 +160,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "GET",
 		path: "/v1/models",
+		anchor: "ep-models",
 		title: "List Models",
 		desc: "Returns every model currently routable: text, image, video. No auth required. Cached for 1h.",
 		auth: "None",
@@ -192,6 +193,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "GET",
 		path: "/v1/models/:model",
+		anchor: "ep-model",
 		title: "Get Model",
 		desc: "Returns pricing, capabilities, and provider metadata for a single model. No auth required.",
 		auth: "None",
@@ -213,6 +215,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/embeddings",
+		anchor: "ep-embeddings",
 		title: "Embeddings",
 		desc: "Vector embeddings via Venice passthrough. These models are NOT listed in /v1/models — use the Venice model ID directly. Use for semantic search, RAG, clustering.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -237,6 +240,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/images/generations",
+		anchor: "ep-images",
 		title: "Image Generation",
 		desc: "Text-to-image via Venice FLUX models (passthrough — not in /v1/models catalog). Pricing is per-image.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -259,6 +263,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/audio/speech",
+		anchor: "ep-audio-tts",
 		title: "Audio Speech (TTS)",
 		desc: "Text-to-speech via Venice passthrough (not in /v1/models catalog). Returns raw audio bytes (audio/mpeg by default).",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -276,6 +281,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/audio/transcriptions",
+		anchor: "ep-audio-stt",
 		title: "Audio Transcriptions",
 		desc: "Speech-to-text via Venice Whisper passthrough (not in /v1/models catalog). Multipart form upload.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -295,6 +301,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "POST",
 		path: "/v1/videos/generations",
+		anchor: "ep-video",
 		title: "Video Generation",
 		desc: "Text-to-video via Venice video models. Returns a queue id. Poll /v1/videos/retrieve.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
@@ -316,6 +323,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	{
 		method: "GET",
 		path: "/v1/videos/retrieve",
+		anchor: "ep-video-retrieve",
 		title: "Video Retrieve",
 		desc: "Polls the status of a video generation job by queue_id.",
 		auth: "Bearer token (API key)",
@@ -333,24 +341,28 @@ export const ENDPOINTS: EndpointInfo[] = [
 export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 400,
-		type: "bad_request",
-		desc: "Malformed request body or invalid parameters.",
+		type: "invalid_request_error",
+		desc: "Malformed request body or invalid parameters. Schema failures return validation_error.",
 	},
-	{ code: 401, type: "unauthorized", desc: "Missing or invalid API key." },
+	{
+		code: 401,
+		type: "authentication_error",
+		desc: "Missing or invalid API key.",
+	},
 	{
 		code: 402,
-		type: "payment_required",
+		type: "payment_error",
 		desc: "Insufficient credits. Deposit more or use x402 pay-per-request.",
 	},
 	{
 		code: 429,
-		type: "rate_limited",
-		desc: "Rate limit exceeded. Retry after X-RateLimit-Reset seconds.",
+		type: "rate_limit_error",
+		desc: "Rate limit exceeded. Wait Retry-After seconds, then retry.",
 	},
 	{
 		code: 500,
 		type: "internal_error",
-		desc: "Unexpected server error. Contact support if persistent.",
+		desc: "Unexpected server error (also server_error). Contact support if persistent.",
 	},
 	{
 		code: 503,
@@ -362,16 +374,19 @@ export const ERROR_CODES: ErrorInfo[] = [
 export const QUICK_START_STEPS = [
 	{
 		n: "1",
+		id: "qs-step-key",
 		title: "Get API Key",
 		desc: "Create an account and generate your API key from the dashboard.",
 	},
 	{
 		n: "2",
+		id: "qs-step-request",
 		title: "Add to Headers",
 		desc: "Include your key in the Authorization header: Bearer oma_sk_...",
 	},
 	{
 		n: "3",
+		id: "qs-step-response",
 		title: "Start Building",
 		desc: "Use the OpenAI SDK with base_url=https://api.oma-ai.com/v1",
 	},

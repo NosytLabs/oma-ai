@@ -11,6 +11,12 @@
  * server/client hydration mismatches when midnight UTC rolls over
  * between SSR and hydration. Bump in source on each deploy.
  *
+ * `suppressHydrationWarning` must sit on the exact element whose text
+ * can differ (the build-date `<span>`), not an ancestor — React only
+ * suppresses mismatches for the element's own direct text. A stale
+ * server bundle (constant bumped while `next dev` is running) otherwise
+ * throws a hydration error on every page.
+ *
  * Layout (desktop, lg+):
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │  Logo · tagline · socials                  (3 cols of nav)     │
@@ -267,12 +273,9 @@ export function Footer() {
 				{/* BOTTOM BAR */}
 				<div className="border-t border-border-subtle">
 					<div className="flex flex-col gap-3 py-5 text-[11px] text-text-muted sm:flex-row sm:items-center sm:justify-between">
-						<p
-							suppressHydrationWarning
-							className="font-mono tabular-nums"
-						>
+						<p className="font-mono tabular-nums">
 							<span className="text-text-secondary">©</span>{" "}
-							<span>{CURRENT_YEAR}</span>{" "}
+							<span suppressHydrationWarning>{CURRENT_YEAR}</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>MIT licensed</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
@@ -280,7 +283,10 @@ export function Footer() {
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>
 								build{" "}
-								<span className="text-text-secondary">
+								<span
+									suppressHydrationWarning
+									className="text-text-secondary"
+								>
 									{LAST_DEPLOY}
 								</span>
 							</span>

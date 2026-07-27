@@ -68,7 +68,10 @@ const nextConfig: NextConfig = {
 			return url?.trim() ? url : "http://127.0.0.1:3001";
 		})();
 		return [
-			{ source: "/x402/:path*", destination: `${apiRewriteDestination}/v1/x402/:path*` },
+			// The facilitator serves /x402/verify + /x402/settle (NO /v1 prefix) —
+			// the old /v1/x402 destination 404'd the payment endpoint advertised
+			// in .well-known/agent-card.json.
+			{ source: "/x402/:path*", destination: `${apiRewriteDestination}/x402/:path*` },
 		];
 	},
 

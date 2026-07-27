@@ -48,7 +48,7 @@ Out of scope: third-party AI provider behavior (Venice, OpenAI, etc.) — report
 ## Security-Related Updates
 
 - Published via [GitHub Security Advisories](https://github.com/NosytLabs/oma-ai/security/advisories)
-- Noted in the project README changelog
+- Noted on the product changelog at [oma-ai.com/changelog](https://oma-ai.com/changelog)
 - Tagged with the `security` label on GitHub
 
 Operators should watch the repository for releases.

@@ -20,7 +20,8 @@ export function EndpointsSection() {
 				{ENDPOINTS.map((ep) => (
 					<div
 						key={ep.path}
-						className="rounded-xl border border-border bg-surface/50 overflow-hidden"
+						id={ep.anchor}
+						className="rounded-xl border border-border bg-surface/50 overflow-hidden scroll-mt-24"
 					>
 						<button
 							type="button"

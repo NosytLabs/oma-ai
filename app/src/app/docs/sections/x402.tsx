@@ -71,7 +71,7 @@ if (payReq.ok) {
 				subtitle="USDC top-ups on Base via the x402 payment envelope. No card, no KYC."
 			/>
 
-			<div className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6">
+			<div id="x402-what" className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6 scroll-mt-24">
 				<div className="flex items-start gap-3">
 					<Zap className="h-5 w-5 text-warning mt-0.5" />
 					<div>
@@ -115,14 +115,14 @@ if (payReq.ok) {
 				</div>
 			</div>
 
-			<div className="mb-6">
+			<div id="x402-flow" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 text-sm font-semibold text-text">
 					Deposit → Spend Flow
 				</h3>
 				<CodeBlock code={flowCode} lang="bash" />
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface/50 p-5">
+			<div id="x402-code" className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">For AI Agents</h3>
 				<p className="text-sm text-text-muted mb-4">
 					Use <code className="text-accent font-mono">viem</code> or{" "}
@@ -134,7 +134,7 @@ if (payReq.ok) {
 				<CodeBlock code={agentCode} lang="javascript" />
 			</div>
 
-			<div className="mt-6 grid gap-4 sm:grid-cols-2">
+			<div id="x402-where" className="mt-6 grid gap-4 sm:grid-cols-2 scroll-mt-24">
 				<div className="rounded-xl border border-border bg-surface/50 p-4">
 					<h3 className="mb-2 font-semibold text-text">Benefits</h3>
 					<ul className="space-y-1.5 text-sm text-text-muted">

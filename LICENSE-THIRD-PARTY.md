@@ -181,17 +181,21 @@ Attribution is provided as required by MIT, Apache 2.0, BSD, and other open-sour
 | TypeScript | Apache 2.0 | Microsoft Corporation |
 | ESLint | MIT | JS Foundation |
 | Vitest | MIT | Vitest Contributors |
-| tsx | MIT | esbuild Community |
+| tsx | MIT | Hiroki Osame (privatenumber) |
 | Drizzle Kit | Apache 2.0 | Drizzle Team |
 | pino-pretty | MIT | Pino Contributors |
-| Prettier | MIT | Prettier Contributors |
-| PostCSS | MIT | PostCSS Contributors |
-| Autoprefixer | MIT | Autoprefixer Contributors |
+| @playwright/test | Apache 2.0 | Microsoft Corporation |
+| axe-core | MPL 2.0 | Deque Systems, Inc. |
+| @axe-core/playwright | MPL 2.0 | Deque Systems, Inc. |
+| @electric-sql/pglite | Apache 2.0 | Electric DB Limited |
+| @testing-library/* | MIT | Kent C. Dodds |
+| jsdom | MIT | jsdom contributors |
 | @types/* (DefinitelyTyped) | MIT | Microsoft Corporation |
 | typescript-eslint | MIT | James Henry / TypeScript ESLint Team |
 
 ## Attribution Notes
 
 - This software includes type definitions from DefinitelyTyped (https://github.com/DefinitelyTyped/DefinitelyTyped), MIT Licensed.
-- Where a package does not declare a license, its use is governed by the MIT License of this project per the terms of copyright law.
+- `axe-core` and `@axe-core/playwright` are licensed under the Mozilla Public License 2.0, which requires that the source of the MPL-covered files remain available and that this attribution be preserved. They are used unmodified as development/test dependencies and are not distributed with the product.
+- Packages without a declared license grant no rights and are excluded from distribution, or used only per the terms stated in their repositories.
 - Full license texts of each dependency are available in their respective repositories.

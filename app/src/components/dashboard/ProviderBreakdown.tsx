@@ -4,7 +4,7 @@ import { m } from "@/lib/framer-motion-client";
 import { useMemo } from "react";
 import { providerColor } from "@/components/ui/charts/shared";
 import type { UsageRecord } from "@/lib/api";
-import { toDollars } from "@/lib/utils";
+import { formatUsdPrecise, toDollars } from "@/lib/utils";
 
 interface ProviderBreakdownProps {
 	usage: UsageRecord[];
@@ -32,9 +32,10 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 		const statsMap = new Map<string, ProviderStats>();
 
 		usage.forEach((record) => {
-			const provider = record.provider ?? "unknown";
+			const provider = record.provider || "unknown";
 			const existing = statsMap.get(provider);
-			const cost = toDollars(record.costCents);
+			// Billed amount (cost + markup); decimal-string cents, may be sub-cent.
+			const cost = toDollars(record.totalCents ?? record.costCents);
 			if (existing) {
 				existing.requests++;
 				existing.totalCost += cost;
@@ -115,7 +116,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 									<div className="flex items-center gap-3 text-xs text-text-muted">
 										<span>{stat.requests.toLocaleString()} requests</span>
 										<span className="font-mono">
-											${stat.totalCost.toFixed(4)}
+											{formatUsdPrecise(stat.totalCost)}
 										</span>
 										<span className="font-mono w-12 text-right">
 											{pct.toFixed(1)}%

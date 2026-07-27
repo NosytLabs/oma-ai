@@ -3,7 +3,7 @@
 import { m } from "@/lib/framer-motion-client";
 import { useMemo } from "react";
 import type { UsageRecord } from "@/lib/api";
-import { toDollars } from "@/lib/utils";
+import { formatUsdPrecise, toDollars } from "@/lib/utils";
 
 interface ModelUsageTableProps {
 	usage: UsageRecord[];
@@ -42,11 +42,16 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 			const hasLatency =
 				typeof record.latencyMs === "number" &&
 				Number.isFinite(record.latencyMs);
+			// Billed amount (cost + markup) as decimal-string cents; may be
+			// sub-cent. `toDollars` tolerates null/undefined/garbage → 0.
+			const billedDollars = toDollars(
+				record.totalCents ?? record.costCents,
+			);
 			if (existing) {
 				existing.requests++;
-				existing.totalInputTokens += record.promptTokens;
-				existing.totalOutputTokens += record.completionTokens;
-				existing.totalCost += toDollars(record.costCents);
+				existing.totalInputTokens += record.promptTokens ?? 0;
+				existing.totalOutputTokens += record.completionTokens ?? 0;
+				existing.totalCost += billedDollars;
 				if (hasLatency) {
 					existing.avgLatency += record.latencyMs as number;
 					existing._latencyCount += 1;
@@ -55,9 +60,9 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 				statsMap.set(record.model, {
 					model: record.model,
 					requests: 1,
-					totalInputTokens: record.promptTokens,
-					totalOutputTokens: record.completionTokens,
-					totalCost: toDollars(record.costCents),
+					totalInputTokens: record.promptTokens ?? 0,
+					totalOutputTokens: record.completionTokens ?? 0,
+					totalCost: billedDollars,
 					avgLatency: hasLatency ? (record.latencyMs as number) : 0,
 					_latencyCount: hasLatency ? 1 : 0,
 				});
@@ -188,7 +193,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 									{stat.totalOutputTokens.toLocaleString()}
 								</td>
 								<td className="px-6 py-4 text-sm text-text-secondary text-right">
-									${stat.totalCost.toFixed(4)}
+									{formatUsdPrecise(stat.totalCost)}
 								</td>
 								<td className="px-6 py-4 text-sm text-text-secondary text-right font-mono">
 									{formatLatency(stat.avgLatency)}

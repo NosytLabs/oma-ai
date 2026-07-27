@@ -89,7 +89,7 @@ export function AvailableModelsSection() {
 
 			<div className="space-y-6">
 				{tiers.map((tier) => (
-					<div key={tier.id} className="rounded-xl border border-border bg-surface/50 overflow-hidden">
+					<div key={tier.id} id={`models-${tier.id}`} className="rounded-xl border border-border bg-surface/50 overflow-hidden scroll-mt-24">
 						<div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
 							<div className="flex items-center gap-3">
 								<span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tier.badge}`}>

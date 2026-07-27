@@ -1,8 +1,6 @@
 /**
  * Minimal pages-router _document — required by Next.js 15 for the static
  * `/404` + `/500` HTML export. The app router handles all real routes.
- * Kept lean so Sentry's pages-router instrumentation (no longer installed)
- * has nothing to auto-inject into.
  */
 import { Html, Head, Main, NextScript } from "next/document";
 

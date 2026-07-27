@@ -61,9 +61,9 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 # From oma root
 ./scripts/start-dev.sh
 
-# Or manually (lockfiles are pnpm-managed; npm also works):
-cd app && npm run dev       # Frontend :3000
-cd server && npm run dev    # Backend (Hono API) :3001
+# Or manually (lockfiles and CI are pnpm-managed):
+cd app && pnpm run dev      # Frontend :3000
+cd server && pnpm run dev   # Backend (Hono API) :3001
 
 # Windows: start-dev.sh is bash-only. Use the manual commands above,
 # or: docker compose up (requires Docker Desktop)
@@ -97,9 +97,10 @@ cd server && npm run dev    # Backend (Hono API) :3001
          │              │              │              │
           ▼              ▼              ▼              ▼
      ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐
-      │  Redis  │   │  Venice  │   │  LI.FI   │   │On-chain │
-     │ (Rate    │   │   AI     │   │  Swap   │   │(Base)   │
-     │ Limits) │   │          │   │  CCTP   │   │         │
+     │Postgres │   │  Venice  │   │  LI.FI   │   │On-chain │
+     │+ Redis  │   │   AI     │   │  Swap   │   │(Base)   │
+     │(data +  │   │          │   │  CCTP   │   │         │
+     │ limits) │   │          │   │         │   │         │
      └─────────┘   └──────────┘   └──────────┘   └─────────┘
 ```
 
@@ -113,7 +114,7 @@ cd server && npm run dev    # Backend (Hono API) :3001
 |--------|----------|-------------|
 | POST | `/auth/nonce` | Get SIWE nonce for wallet |
 | POST | `/auth/verify` | Verify signature, get session |
-| POST | `/auth/wallet` | Sign message, get API key |
+| POST | `/auth/wallet` | Bind an additional wallet to your account |
 | GET | `/user` | Get current user info |
 
 ### Inference (OpenAI-Compatible)
@@ -149,11 +150,11 @@ cd server && npm run dev    # Backend (Hono API) :3001
 
 ## Available Models
 
-Live catalog fetched from `GET /v1/models` (OpenAI-compatible) — returns the
-full list with `inputPricePer1M`, `outputPricePer1M`, `capabilities`, and
-`maxTokens`. The `app/src/lib/models-data.ts` module ships a small hand-picked
-fallback for SSR metadata so layout descriptions and `MODEL_COUNT` work
-without an async fetch.
+Live catalog fetched from `GET /v1/models` (OpenAI-compatible) — each entry
+carries `pricing.prompt` / `pricing.completion` (per-token USD strings),
+`context_length`, `architecture`, and `supported_parameters`. The
+`app/src/lib/models-data.ts` module ships a small hand-picked fallback for SSR
+metadata so layout descriptions and `MODEL_COUNT` work without an async fetch.
 
 - **Web UI:** [oma-ai.com/models](https://oma-ai.com/models)
 - **API:** `GET https://api.oma-ai.com/v1/models`
@@ -162,10 +163,10 @@ without an async fetch.
 
 | Tier | Examples | Price range (input / 1M tokens) |
 |------|----------|-----------------------------------|
-| **Frontier** | `claude-opus-4-8`, `gemini-3-1-pro-preview` | ~$3.00 – $6.00 |
-| **Premium** | `qwen3-coder-480b-a35b-instruct-turbo`, `claude-opus-4-7` | ~$1.00 – $3.60 |
-| **Mid-Range** | `llama-3.3-70b`, `mistral-small-3-2-24b-instruct` | ~$0.30 – $1.73 |
-| **Budget** | `zai-org-glm-4.7-flash`, `qwen3-5-9b`, `minimax-m2.7` (gonka) | ~$0.01 – $0.70 |
+| **Frontier** | `claude-opus-4-8-fast`, `openai-gpt-55-pro` | ~$12.00 – $37.50 |
+| **Premium** | `claude-opus-4-8`, `claude-sonnet-4-5` | ~$3.13 – $6.25 |
+| **Mid-Range** | `gemini-3-1-pro-preview`, `qwen-3-7-max` | ~$1.00 – $2.70 |
+| **Budget** | `llama-3.3-70b`, `deepseek-v3.2`, `minimax-m2.7` (gonka) | ~$0.02 – $0.94 |
 
 See `GET /v1/models` for the live, complete catalog and current pricing.
 
@@ -176,7 +177,7 @@ See `GET /v1/models` for the live, complete catalog and current pricing.
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | Frontend | Next.js 15, React 19 | Landing, dashboard, pages |
-| Backend | Hono.js, Node.js 20 | API server |
+| Backend | Hono.js, Node.js 22 | API server |
 | Database | PostgreSQL (Drizzle ORM) | Users, credits, deposits |
 | Cache | Redis | Rate limiting, sessions |
 | Blockchain | Base (EVM) | USDC deposits, x402 settlement |
@@ -187,7 +188,7 @@ See `GET /v1/models` for the live, complete catalog and current pricing.
 
 | Service | Free Tier | Production |
 |---------|-----------|------------|
-| Neon PostgreSQL | 0.5GB | ~$10/mo |
+| PostgreSQL (self-hosted via `docker-compose.prod.yml`, or Neon serverless) | Self-host $0 / Neon 0.5GB | ~$0–10/mo |
 | Redis | Local / self-host | ~$0 (bundled) |
 | Coolify hosting | Self-hosted | ~$5-20/mo |
 | Venice API | Pay-per-token | Usage-based |

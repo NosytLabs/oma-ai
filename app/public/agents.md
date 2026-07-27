@@ -49,8 +49,9 @@ See [docs#x402](https://oma-ai.com/docs#x402) for quote + settle flow.
 
 ## 3. Models
 
-`GET https://api.oma-ai.com/v1/models` returns the live catalog with
-`inputPricePer1M`, `outputPricePer1M`, and capabilities.
+`GET https://api.oma-ai.com/v1/models` returns the live catalog. Each entry
+carries `pricing.prompt` / `pricing.completion` (per-token USD strings),
+`context_length`, `architecture`, and `supported_parameters`.
 
 ## 4. Privacy
 

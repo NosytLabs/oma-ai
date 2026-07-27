@@ -77,7 +77,7 @@ for await (const chunk of stream) {
 				</div>
 			</div>
 
-			<div className="mb-6">
+			<div id="stream-how" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 text-sm font-semibold text-text">Enable Streaming</h3>
 				<p className="mb-4 text-sm text-text-muted">
 					Add <code className="font-mono text-accent">&quot;stream&quot;: true</code> to your request body.
@@ -86,7 +86,7 @@ for await (const chunk of stream) {
 				<CodeBlock code={streamCode} lang="bash" title="Request with stream: true" />
 			</div>
 
-			<div className="mb-6">
+			<div id="stream-example" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 text-sm font-semibold text-text">Stream Response Format</h3>
 				<p className="mb-4 text-sm text-text-muted">
 					Each event contains a <code className="font-mono text-accent">chat.completion.chunk</code> with
@@ -96,7 +96,7 @@ for await (const chunk of stream) {
 				<CodeBlock code={streamResponse} lang="text" title="SSE Response Stream" />
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface/50 p-5">
+			<div id="stream-handling" className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">SDK Examples</h3>
 				<TabbedCode
 					tabs={[

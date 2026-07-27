@@ -17,16 +17,17 @@ export function ProviderRoutingSection() {
 					<div>
 						<h3 className="font-semibold text-accent">Intelligent Request Routing</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Every model id resolves to one or more upstream providers. OMA
-							selects the optimal provider based on your plan tier, latency,
-							and availability — with automatic circuit-breaker failover.
+							Every model id resolves to an upstream provider. OMA routes each
+							request to the model&apos;s catalog-mapped provider based on
+							availability — with circuit-breaker protection against failing
+							upstreams.
 						</p>
 					</div>
 				</div>
 			</div>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-3">
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div id="pr-venice" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="inline-flex items-center rounded-full bg-accent/20 text-accent px-2.5 py-0.5 text-xs font-medium">Primary</span>
 						<span className="font-semibold text-text text-sm">Venice</span>
@@ -42,28 +43,30 @@ export function ProviderRoutingSection() {
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">embeddings</span>
 					</div>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div id="pr-surplus" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
-						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Failover</span>
+						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Reserved</span>
 						<span className="font-semibold text-text text-sm">Surplus</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Failover provider for models with surplusId mappings.
-						Activated automatically when the primary provider is unavailable.
+						Reserved failover path. No models in the current catalog map to
+						Surplus, so it is not active today — requests are always served by
+						the model&apos;s primary provider.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">reasoning</span>
 					</div>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div id="pr-gonka" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
-						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Free</span>
+						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
 						<span className="font-semibold text-text text-sm">Gonka / OpenBroker</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Free-tier provider via OpenBroker. Hosts MiniMax-M2.7 and
-						Kimi-K2.6. No API key required — ideal for prototyping.
+						Decentralized budget provider via OpenBroker. Hosts MiniMax-M2.7
+						and Kimi-K2.6 at the lowest per-token rates in the catalog —
+						metered and billed like every other model.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
@@ -73,7 +76,7 @@ export function ProviderRoutingSection() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div id="pr-how" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<h3 className="mb-2 font-semibold text-text text-sm">How Routing Works</h3>
 					<ol className="space-y-1.5 text-sm text-text-muted list-decimal list-inside">
 						<li>Request arrives with a model id</li>

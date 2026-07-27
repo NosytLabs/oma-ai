@@ -34,9 +34,9 @@ export const NAV_ITEMS: NavItem[] = [
 			"introduction",
 		],
 		headings: [
-			{ id: "qs-step-key", label: "1. Get a key" },
-			{ id: "qs-step-request", label: "2. Make a request" },
-			{ id: "qs-step-response", label: "3. Read the response" },
+			{ id: "qs-step-key", label: "1. Get API key" },
+			{ id: "qs-step-request", label: "2. Add to headers" },
+			{ id: "qs-step-response", label: "3. Start building" },
 		],
 	},
 	{
@@ -55,9 +55,8 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "auth-key", label: "API key" },
-			{ id: "auth-wallet", label: "Wallet (x402)" },
+			{ id: "auth-wallet", label: "Wallet Auth (SIWE)" },
 			{ id: "auth-account", label: "Account number" },
-			{ id: "auth-errors", label: "Auth errors" },
 		],
 	},
 	{
@@ -164,9 +163,9 @@ export const NAV_ITEMS: NavItem[] = [
 			"429",
 		],
 		headings: [
-			{ id: "rl-plans", label: "Plan limits" },
+			{ id: "rl-limits", label: "Default limits" },
+			{ id: "rl-models", label: "Per-model overrides" },
 			{ id: "rl-headers", label: "Response headers" },
-			{ id: "rl-when", label: "When you hit the ceiling" },
 		],
 	},
 	{
@@ -186,8 +185,8 @@ export const NAV_ITEMS: NavItem[] = [
 			"cost",
 		],
 		headings: [
-			{ id: "pricing-overview", label: "Overview" },
 			{ id: "pricing-table", label: "Full catalog" },
+			{ id: "pricing-credits", label: "Credit deduction" },
 		],
 	},
 	{
@@ -208,7 +207,7 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "x402-what", label: "What is x402?" },
 			{ id: "x402-flow", label: "How a payment works" },
 			{ id: "x402-code", label: "Code examples" },
-			{ id: "x402-where", label: "Where it runs" },
+			{ id: "x402-where", label: "Supported networks" },
 		],
 	},
 	{

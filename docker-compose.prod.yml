@@ -1,7 +1,7 @@
 # =============================================================================
 # OMA-AI — PRODUCTION compose for oldpc (Ryzen 5 1400 / 15GB RAM / 830GB free)
 # Tuned so the 4-core box never OOMs: Postgres + Redis buffers capped.
-# Public ingress is Cloudflare Tunnel (see DEPLOYMENT.md), NOT port 22/3000/3001.
+# Public ingress is Cloudflare Tunnel (see README + deploy/coolify/), NOT port 22/3000/3001.
 # =============================================================================
 services:
   app:

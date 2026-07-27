@@ -12,7 +12,13 @@ import { tmpdir } from "node:os";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const require = createRequire(join(__dirname, "../app/package.json"));
-const { chromium } = require("playwright");
+const { chromium } = (() => {
+	try {
+		return require("playwright");
+	} catch {
+		return require("@playwright/test");
+	}
+})();
 
 const TMP = tmpdir();
 

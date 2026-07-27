@@ -6,6 +6,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { log } from "@/lib/logger";
 
 // Re-export types and functions from models-data for backwards compatibility
 export type { Capability, Model, Provider, Tier } from "./models-data";
@@ -59,6 +60,12 @@ interface CoinGeckoPriceResponse {
 	cachedAt: string;
 }
 
+/**
+ * Offline / ad-blocked / backend-down fetches are expected, not exceptional.
+ * Warn once per session instead of spamming console.error on every 30s poll.
+ */
+let warnedFetchFailure = false;
+
 async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 	try {
 		const response = await fetch(COINGECKO_API, {
@@ -80,8 +87,16 @@ async function fetchPricesFromCoinGecko(): Promise<CryptoPrice[]> {
 			source: "coingecko" as const,
 		}));
 	} catch (error) {
-		console.error("Failed to fetch prices from CoinGecko:", error);
-		return [];
+		// Degrade silently: fall back to the last cached prices (possibly
+		// stale) so the UI keeps rendering values, and never reject.
+		if (!warnedFetchFailure) {
+			warnedFetchFailure = true;
+			log.warn(
+				"Crypto price fetch unavailable — using cached/fallback values",
+				error,
+			);
+		}
+		return priceCache?.data ?? [];
 	}
 }
 

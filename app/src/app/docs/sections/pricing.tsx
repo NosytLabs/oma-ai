@@ -39,7 +39,7 @@ export function PricingSection() {
 				subtitle="Per-model pricing. Input and output priced per million tokens."
 			/>
 
-			<div className="mb-6 rounded-xl border border-border overflow-hidden">
+			<div id="pricing-table" className="mb-6 rounded-xl border border-border overflow-hidden scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
@@ -77,13 +77,15 @@ export function PricingSection() {
 				</table>
 			</div>
 
-			<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+			<div id="pricing-credits" className="rounded-xl border border-accent/20 bg-accent/5 p-4 scroll-mt-24">
 				<h3 className="font-semibold text-accent">Credit Deduction</h3>
 				<div className="mt-2 grid gap-2 sm:grid-cols-2">
 					<div className="flex items-start gap-2">
 						<CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
 						<span className="text-sm text-text-muted">
-							$1 = $1. Billed per token in real-time.
+							Listed model prices are the final billed prices. $1 of credits
+							buys 100 cents of usage at those rates, deducted per token in
+							real-time.
 						</span>
 					</div>
 

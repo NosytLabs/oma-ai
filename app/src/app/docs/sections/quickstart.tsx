@@ -38,7 +38,8 @@ export function QuickStartSection() {
 				{QUICK_START_STEPS.map((step) => (
 					<div
 						key={step.n}
-						className="rounded-xl border border-border bg-surface/50 p-5"
+						id={step.id}
+						className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24"
 					>
 						<div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent text-sm font-bold font-mono">
 							{step.n}

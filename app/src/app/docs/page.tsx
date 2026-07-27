@@ -65,7 +65,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 							<Terminal className="h-4 w-4 text-accent" />
 							<span className="text-sm font-semibold text-accent">OMA API</span>
 						</div>
-						<p className="mt-1 text-xs text-text-muted">v1.0.0</p>
+						<p className="mt-1 text-xs text-text-muted">v2.1.0</p>
 					</div>
 
 					<nav className="space-y-1" aria-label="Documentation navigation">

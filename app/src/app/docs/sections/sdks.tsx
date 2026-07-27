@@ -287,7 +287,7 @@ func main() {
 			</div>
 
 			{/* Chat Completion */}
-			<div className="mb-10">
+			<div id="sdk-chat" className="mb-10 scroll-mt-24">
 				<h3 className="mb-3 text-lg font-semibold text-text font-display flex items-center gap-2">
 					<Sparkles className="h-5 w-5 text-accent" />
 					Chat Completion
@@ -306,7 +306,7 @@ func main() {
 			</div>
 
 			{/* Streaming */}
-			<div className="mb-10">
+			<div id="sdk-stream" className="mb-10 scroll-mt-24">
 				<h3 className="mb-3 text-lg font-semibold text-text font-display flex items-center gap-2">
 					<Zap className="h-5 w-5 text-accent" />
 					Streaming
@@ -326,7 +326,7 @@ func main() {
 			</div>
 
 			{/* List Models */}
-			<div className="mb-10">
+			<div id="sdk-models" className="mb-10 scroll-mt-24">
 				<h3 className="mb-3 text-lg font-semibold text-text font-display flex items-center gap-2">
 					<BookOpen className="h-5 w-5 text-violet" />
 					List Models
@@ -361,7 +361,7 @@ func main() {
 			</div>
 
 			{/* Vercel AI SDK */}
-			<div className="rounded-xl border border-border bg-surface/50 p-5">
+			<div id="sdk-vercel" className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text flex items-center gap-2">
 					<Package className="h-4 w-4 text-accent" />
 					Vercel AI SDK

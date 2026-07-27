@@ -2,6 +2,14 @@ import { AlertCircle } from "lucide-react";
 import { AnimatedSection, CodeBlock, ERROR_CODES, SectionHeading } from "./shared";
 
 export function ErrorsSection() {
+	const errorFormatCode = `{
+  "error": {
+    "message": "Rate limit exceeded. Please slow down.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}`;
+
 	const retryCode = `import time
 from openai import OpenAI
 client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
@@ -24,7 +32,19 @@ for attempt in range(5):
 				subtitle="Standard HTTP status codes returned by the API."
 			/>
 
-			<div className="mb-6 overflow-hidden rounded-xl border border-border">
+			<div id="err-format" className="mb-6 scroll-mt-24">
+				<h3 className="mb-3 font-semibold text-text">Response Format</h3>
+				<p className="mb-3 text-sm text-text-muted">
+					Every error returns a JSON body with an{" "}
+					<code className="font-mono text-accent">error</code> object carrying{" "}
+					<code className="font-mono text-accent">message</code>,{" "}
+					<code className="font-mono text-accent">type</code>, and{" "}
+					<code className="font-mono text-accent">code</code>.
+				</p>
+				<CodeBlock code={errorFormatCode} lang="json" />
+			</div>
+
+			<div id="err-common" className="mb-6 overflow-hidden rounded-xl border border-border scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="API error codes">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
@@ -49,7 +69,7 @@ for attempt in range(5):
 				</table>
 			</div>
 
-			<div className="relative rounded-xl border border-border bg-panel p-5">
+			<div id="err-retry" className="relative rounded-xl border border-border bg-panel p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">Handling Rate Limits</h3>
 				<CodeBlock code={retryCode} lang="python" />
 			</div>

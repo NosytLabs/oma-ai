@@ -40,7 +40,7 @@ func main() {
 				subtitle="All inference endpoints require a Bearer token API key in the Authorization header."
 			/>
 
-			<div className="rounded-xl border border-border bg-panel p-5 mb-6">
+			<div id="auth-key" className="rounded-xl border border-border bg-panel p-5 mb-6 scroll-mt-24">
 				<div className="mb-3 text-sm text-text-muted">Authorization Header</div>
 				<div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
 					<span className="text-warning">Authorization:</span>{" "}
@@ -107,16 +107,17 @@ func main() {
 					Account Number Login
 				</h3>
 				<p className="text-sm text-text-muted mb-4">
-					No wallet? No problem. Create an account with just a username — a unique
-					account number is issued and linked to your API key. Credits are managed
-					via USDC deposits to your on-chain address.
+					No wallet? No problem. Account creation takes no username, email, or
+					password — the server allocates a random 16-digit account number that
+					is your credential, linked to your API key. Credits are managed via
+					USDC deposits to your on-chain address.
 				</p>
 				<div className="grid gap-4 sm:grid-cols-2 mb-4">
 					<div className="rounded-xl border border-border bg-surface/50 p-4">
 						<h3 className="font-semibold text-text text-sm mb-2">Flow</h3>
 						<ol className="list-decimal list-inside space-y-1 text-sm text-text-muted">
 							<li>Create an account via the login page</li>
-							<li>Receive a unique <code className="text-accent font-mono text-xs">oma-xxxx</code> account number</li>
+							<li>Receive a unique 16-digit account number (e.g. <code className="text-accent font-mono text-xs">1234 5678 9012 3456</code>) — keep it secret</li>
 							<li>Deposit USDC on Base to your on-chain address</li>
 							<li>Use the generated API key with any OpenAI-compatible SDK</li>
 						</ol>

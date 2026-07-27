@@ -33,7 +33,12 @@ function CreditBalanceCardComponent({
 			const day = new Date(u.createdAt).toISOString().slice(0, 10);
 			// biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
 			if (byDay.has(day))
-				byDay.set(day, byDay.get(day)! + toDollars(u.costCents));
+				// Billed amount (cost + markup); decimal-string cents, may be
+				// sub-cent. `toDollars` returns 0 for null/undefined/garbage.
+				byDay.set(
+					day,
+					byDay.get(day)! + toDollars(u.totalCents ?? u.costCents),
+				);
 		}
 		return Array.from(byDay.values());
 	})();

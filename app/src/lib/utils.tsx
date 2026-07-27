@@ -52,6 +52,17 @@ export function formatUsd(amount: number, decimals = 2): string {
 }
 
 /**
+ * Format a USD amount that may be sub-cent (usage rows can bill fractions of
+ * a cent, e.g. "0.03" cents → $0.0003). Fixed 4 decimals for readable amounts;
+ * below that, keep 2 significant digits so tiny costs never flatten to $0.0000.
+ */
+export function formatUsdPrecise(amount: number): string {
+	if (!Number.isFinite(amount) || amount === 0) return "$0.00";
+	if (Math.abs(amount) >= 0.0001) return `$${amount.toFixed(4)}`;
+	return `$${Number(amount.toPrecision(2))}`;
+}
+
+/**
  * Shorten an EVM address for table display.
  * Examples:
  *   "0x1234567890abcdef1234567890abcdef12345678" → "0x1234…5678"

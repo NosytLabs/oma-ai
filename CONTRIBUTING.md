@@ -13,11 +13,12 @@ Thank you for your interest in contributing to OMA AI Gateway!
 
 3. **Run validation** before pushing:
    ```bash
-   npm run validate
+   pnpm run validate
    ```
    This runs typecheck, lint, and tests for both `app/` and `server/`.
-   Lockfiles are `pnpm-lock.yaml` but the scripts run fine under npm;
-   either package manager works locally.
+   Use pnpm — lockfiles are `pnpm-lock.yaml` and CI installs with
+   `pnpm install --frozen-lockfile`, so npm/yarn installs will drift
+   from what CI verifies.
 
 4. **Commit with a clear message**:
    ```bash
@@ -29,7 +30,7 @@ Thank you for your interest in contributing to OMA AI Gateway!
 ## Coding Standards
 
 - **TypeScript** — strict mode enabled. No `any` without explicit justification.
-- **Formatting** — run `npm run lint` (and `npm run lint --fix` where supported) before committing. Both `app/` and `server/` use **ESLint flat config** (`app/eslint.config.mjs`, `server/eslint.config.js`).
+- **Formatting** — run `pnpm run lint` (and `pnpm run lint --fix` where supported) before committing. Both `app/` and `server/` use **ESLint flat config** (`app/eslint.config.mjs`, `server/eslint.config.js`).
 - **Naming** — use descriptive names. Follow existing conventions in each package (`app/` and `server/`).
 - **Error handling** — never swallow errors silently. Propagate with context.
 - **No dead code** — remove unused imports, functions, and providers. The project maintains a clean inference provider list.
@@ -37,9 +38,9 @@ Thank you for your interest in contributing to OMA AI Gateway!
 
 ## Testing Requirements
 
-- **Unit tests** — required for new logic. Run with `npm test` in `app/` or `server/` (both use Vitest).
+- **Unit tests** — required for new logic. Run with `pnpm test` in `app/` or `server/` (both use Vitest).
 - **Integration tests** — for API routes and payment flows.
-- **100% passing** — CI will not merge PRs with failing tests. Run `npm run validate` locally to verify.
+- **100% passing** — CI will not merge PRs with failing tests. Run `pnpm run validate` locally to verify.
 
 ## Project Structure
 

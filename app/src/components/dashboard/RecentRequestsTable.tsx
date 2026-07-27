@@ -5,7 +5,7 @@ import { m } from "@/lib/framer-motion-client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
-import { formatTime, toDollars } from "@/lib/utils";
+import { formatTime, formatUsdPrecise, toDollars } from "@/lib/utils";
 
 interface RecentRequestsTableProps {
 	usage: UsageRecord[];
@@ -68,6 +68,12 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 								scope="col"
 								className="py-3 text-[11px] font-medium text-text-muted"
 							>
+								Latency
+							</th>
+							<th
+								scope="col"
+								className="py-3 text-[11px] font-medium text-text-muted"
+							>
 								Time
 							</th>
 						</tr>
@@ -75,14 +81,14 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 					<tbody>
 						{loading && usage.length === 0 ? (
 							<tr>
-								<td colSpan={5} className="px-6 py-12 text-center">
+								<td colSpan={6} className="px-6 py-12 text-center">
 									<span className="inline-block h-4 w-4 border border-border-bright border-t-accent rounded-full animate-spin" />
 								</td>
 							</tr>
 						) : usage.length === 0 ? (
 							<tr>
 								<td
-									colSpan={5}
+									colSpan={6}
 									className="px-6 py-12 text-center text-sm text-text-muted"
 								>
 									No inference calls yet.{" "}
@@ -107,13 +113,22 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 										{row.model}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
-										{row.promptTokens.toLocaleString()}
+										{(row.promptTokens ?? 0).toLocaleString()}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
-										{row.completionTokens.toLocaleString()}
+										{(row.completionTokens ?? 0).toLocaleString()}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
-										${toDollars(row.costCents).toFixed(4)}
+										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent. */}
+										{formatUsdPrecise(
+											toDollars(row.totalCents ?? row.costCents),
+										)}
+									</td>
+									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
+										{typeof row.latencyMs === "number" &&
+										Number.isFinite(row.latencyMs)
+											? `${Math.round(row.latencyMs)}ms`
+											: "—"}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-muted">
 										{formatTime(row.createdAt)}

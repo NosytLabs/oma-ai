@@ -5,8 +5,8 @@
 #           ./start-prod.sh down      # stop
 #           ./start-prod.sh logs      # follow logs
 #
-# Reads secrets from .env.prod (gitignored). Copy .env.prod.example -> .env.prod
-# and fill in real values. Secrets are NEVER committed.
+# Reads secrets from .env.prod (gitignored). Copy deploy/coolify/.env.example
+# -> .env.prod and fill in real values. Secrets are NEVER committed.
 # =============================================================================
 set -euo pipefail
 
