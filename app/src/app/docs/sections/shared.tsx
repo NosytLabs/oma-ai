@@ -242,10 +242,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/images/generations",
 		anchor: "ep-images",
 		title: "Image Generation",
-		desc: "Text-to-image via Venice FLUX models (passthrough — not in /v1/models catalog). Pricing is per-image.",
+		desc: "Text-to-image via Venice image models (FLUX, GPT Image, Ideogram, Recraft, Qwen Image, Wan, Hunyuan, Seedream, Luma, Nano Banana, Krea, Chroma, Z-Image — listed in /v1/models). Pricing is per-image; markup is applied on top of wholesale.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "flux-schnell" (Venice passthrough)',
+			model: 'string (required), e.g. "flux-2-pro" (see GET /v1/models for all image models)',
 			prompt: "string (required), max 4000 chars",
 			n: "integer 1 to 10 (optional, default 1)",
 			size: 'string (optional), e.g. "1024x1024"',

@@ -8,14 +8,37 @@ import {
 	Sparkles,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useImageGeneration } from "@/lib/use-image-generation";
 
+// Live catalog from /v1/models — kept in sync with server/models.json IMAGE_MODELS.
+// Names mirror Venice's "model_spec.name" so the dropdown matches the upstream labels.
 const IMAGE_MODELS = [
-	{ id: "sdxl", name: "SDXL" },
-	{ id: "flux-schnell", name: "Flux Schnell" },
-	{ id: "flux-pro", name: "Flux Pro" },
-	{ id: "stable-diffusion-3.5", name: "Stable Diffusion 3.5" },
+	{ id: "venice-sd35", name: "Venice SD35" },
+	{ id: "flux-2-pro", name: "Flux 2 Pro" },
+	{ id: "flux-2-max", name: "Flux 2 Max" },
+	{ id: "gpt-image-1-5", name: "GPT Image 1.5" },
+	{ id: "hunyuan-image-v3", name: "Hunyuan Image 3.0" },
+	{ id: "ideogram-v4", name: "Ideogram V4" },
+	{ id: "imagineart-1.5-pro", name: "ImagineArt 1.5 Pro" },
+	{ id: "krea-v2-large", name: "Krea v2 Large" },
+	{ id: "krea-v2-medium", name: "Krea v2 Medium" },
+	{ id: "luma-uni-1", name: "Luma Uni-1" },
+	{ id: "luma-uni-1-max", name: "Luma Uni-1 Max" },
+	{ id: "nano-banana-2-lite", name: "Nano Banana 2 Lite" },
+	{ id: "recraft-v4", name: "Recraft V4" },
+	{ id: "recraft-v4-pro", name: "Recraft V4 Pro" },
+	{ id: "seedream-v4", name: "Seedream V4.5" },
+	{ id: "seedream-v5-lite", name: "Seedream V5 Lite" },
+	{ id: "qwen-image-2", name: "Qwen Image 2" },
+	{ id: "qwen-image-2-pro", name: "Qwen Image 2 Pro" },
+	{ id: "wan-2-7-text-to-image", name: "Wan 2.7" },
+	{ id: "wan-2-7-pro-text-to-image", name: "Wan 2.7 Pro" },
+	{ id: "qwen-image", name: "Qwen Image" },
+	{ id: "wai-Illustrious", name: "Anime (WAI)" },
+	{ id: "z-image-turbo", name: "Z-Image Turbo" },
+	{ id: "chroma", name: "Chroma" },
+	{ id: "bria-bg-remover", name: "Background Remover" },
 ];
 
 const SIZE_OPTIONS = [
