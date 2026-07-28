@@ -167,6 +167,12 @@ vi.mock('../inference/models.js', () => ({
   ]),
   listVideoModels: vi.fn().mockResolvedValue([]),
   listImageModels: vi.fn().mockResolvedValue([]),
+  listTtsModels: vi.fn().mockResolvedValue([]),
+  listEmbeddingModels: vi.fn().mockResolvedValue([]),
+  listAsrModels: vi.fn().mockResolvedValue([]),
+  listMusicModels: vi.fn().mockResolvedValue([]),
+  listUpscaleModels: vi.fn().mockResolvedValue([]),
+  listInpaintModels: vi.fn().mockResolvedValue([]),
   getImageModel: vi.fn().mockResolvedValue(null),
   ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 }))
