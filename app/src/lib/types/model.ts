@@ -15,7 +15,7 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "Gonka" | "Both";
+	provider: "Venice" | "OMA-AI" | "Both";
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;

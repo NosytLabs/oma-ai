@@ -227,11 +227,11 @@ const summaryCards = [
 	},
 	{
 		title: "Free tier, structurally",
-		body: "Cheapest budget tier is $0.017/M tokens via Gonka/OpenBroker. 10K free users costs ~$50/mo at base rate (cheaper than most SaaS bills). No credit card.",
+		body: "Cheapest budget tier is via OMA-AI. 10K free users costs ~$50/mo at base rate (cheaper than most SaaS bills). No credit card.",
 	},
 	{
 		title: "Multi-provider + circuit breaker",
-		body: "Venice and Gonka (OpenBroker). If one provider 503s, traffic auto-routes to a backup. No retry storms.",
+		body: "Venice and OMA-AI. If one provider 503s, traffic auto-routes to a backup. No retry storms.",
 	},
 ];
 
@@ -421,7 +421,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								Together is a direct inference provider, not a gateway. They
 								own GPUs and serve models directly. OMA is a routing layer on
 								top of multiple providers — you get failover, mix-and-match,
-								and Gonka cost-effective routes Together can&apos;t match.
+								and OMA-AI cost-effective Together can&apos;t match.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">OMA wins on:</strong>{" "}

@@ -121,7 +121,7 @@ const PROVIDERS = [
 		share: 95,
 	},
 	{
-		name: "Gonka",
+		name: "OMA-AI",
 		role: "free-tier",
 		status: "healthy" as const,
 		p95ms: 340,

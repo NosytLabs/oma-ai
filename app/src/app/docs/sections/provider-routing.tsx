@@ -61,7 +61,7 @@ export function ProviderRoutingSection() {
 				<div id="pr-gonka" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
-						<span className="font-semibold text-text text-sm">Gonka / OpenBroker</span>
+						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
 						Decentralized budget provider via OpenBroker. Hosts MiniMax-M2.7

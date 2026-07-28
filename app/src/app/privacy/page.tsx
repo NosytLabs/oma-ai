@@ -508,7 +508,7 @@ export default function PrivacyPage() {
 									"routes model calls; content not logged",
 								],
 								[
-									"Gonka (OpenBroker)",
+									"OMA-AI",
 										"Decentralized inference",
 										"free-tier failover; no content logging",
 								],

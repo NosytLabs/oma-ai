@@ -36,7 +36,7 @@ interface PricedModel {
 
 const VENDOR_DISPLAY: Record<string, string> = {
 	Venice: "Venice",
-	Gonka: "Gonka",
+	Gonka: "OMA-AI",
 };
 
 function toPricedModel(m: Model): PricedModel {
@@ -450,7 +450,7 @@ export default function PricingPage() {
 														className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
 															mm.provider === "Venice"
 																? "bg-accent/20 text-accent"
-																: mm.provider === "Gonka"
+																: mm.provider === "OMA-AI"
 																? "bg-accent/10 text-accent"
 																: "bg-secondary/20 text-secondary"
 														}`}

@@ -31,7 +31,7 @@ const PROVIDER_META: Record<
 		badgeClass: "border-blue/30 bg-blue/10 text-blue",
 	},
 	gonka: {
-		label: "Gonka",
+		label: "OMA-AI",
 		description: "Decentralized provider",
 		badgeClass: "border-violet/30 bg-violet/10 text-violet",
 	},

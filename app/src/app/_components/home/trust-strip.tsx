@@ -45,7 +45,7 @@ export function TrustStrip() {
 				</Reveal>
 				<Reveal>
 					<p className="mt-4 text-center text-xs text-text-muted font-mono">
-						OMA routes requests through Venice and Gonka via one
+						OMA routes requests through Venice and OMA-AI via one
 						OpenAI-compatible API.
 					</p>
 				</Reveal>

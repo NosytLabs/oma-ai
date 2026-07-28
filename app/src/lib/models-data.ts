@@ -64,7 +64,7 @@ export const MODALITY_ORDER: Modality[] = [
 ];
 export type Provider =
 	| "Venice"
-	| "Gonka"
+	| "OMA-AI"
 	| "Surplus"
 	| "Tinyfish";
 
@@ -117,7 +117,7 @@ export const PROVIDER_COLORS: Record<
 		text: "text-violet",
 		border: "border-violet/30",
 	},
-	Gonka: {
+	"OMA-AI": {
 		bg: "bg-accent/10",
 		text: "text-accent",
 		border: "border-accent/30",
@@ -139,7 +139,7 @@ export const PROVIDER_COLORS: Record<
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "Venice";
-	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) return "Gonka";
+	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) return "OMA-AI";
 	if (s.includes("surplus")) return "Surplus";
 	if (s.includes("tinyfish")) return "Tinyfish";
 	return "Venice";
@@ -150,7 +150,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["Venice", "Gonka", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
+	return (["Venice", "OMA-AI", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }
@@ -507,7 +507,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
 			displayName: "MiniMax M2.7",
-			provider: "Gonka",
+			provider: "OMA-AI",
 			category: "budget",
 			maxTokens: 204800, // OpenBroker docs: 204,800 context
 			inputPricePer1M: 0.017, // verified Gonka base rate @ $0.017/1M (2026-07-14)
