@@ -4,11 +4,18 @@ import {
   Brain,
   Check,
   ChevronDown,
+  Image as ImageIcon,
   Link2,
+  Mic,
+  Music2,
+  Pencil,
   Search,
   Sparkles,
   Star,
   Trophy,
+  Video,
+  Volume2,
+  Wand2,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +29,10 @@ import {
   PROVIDER_COLORS,
   TIER_COLORS,
   TIER_ORDER,
+  MODALITY_LABELS,
+  MODALITY_ORDER,
   type Model,
+  type Modality,
 } from "@/lib/models-data";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
@@ -40,6 +50,18 @@ const TIER_ICONS: Record<string, React.ReactNode> = {
   mid: <Star className="h-4 w-4" />,
   premium: <Sparkles className="h-4 w-4" />,
   frontier: <Trophy className="h-4 w-4" />,
+};
+
+const MODALITY_ICONS: Record<Modality, React.ReactNode> = {
+  chat: <Brain className="h-4 w-4" />,
+  image: <ImageIcon className="h-4 w-4" />,
+  video: <Video className="h-4 w-4" />,
+  tts: <Volume2 className="h-4 w-4" />,
+  embedding: <Wand2 className="h-4 w-4" />,
+  asr: <Mic className="h-4 w-4" />,
+  music: <Music2 className="h-4 w-4" />,
+  upscale: <Wand2 className="h-4 w-4" />,
+  inpaint: <Pencil className="h-4 w-4" />,
 };
 
 type SortKey =
@@ -261,14 +283,54 @@ function ModelsPageInner() {
     [safeModels]
   );
 
+  /**
+   * Group models into sections. When sorting by tier we render:
+   *   1. Tiered chat models (Budget → Mid → Premium → Frontier)
+   *   2. One section per non-chat modality (image, video, tts, …) that has
+   *      ≥ 1 model in the filtered set. This keeps the page useful even
+   *      with 280+ models and 9 modalities.
+   * For all other sorts we flatten into one section.
+   */
   const groupedModels = useMemo(() => {
     if (sortBy === "tier") {
-      return TIER_ORDER.map((tier) => ({
-        tier,
-        label: TIER_LABELS[tier] || tier,
-        icon: TIER_ICONS[tier] ?? null,
-        models: modelsByTier[tier] || [],
-      })).filter((g) => g.models.length > 0);
+      const sections: Array<{
+        tier: string;
+        label: string;
+        icon: React.ReactNode;
+        models: typeof filtered;
+      }> = [];
+
+      for (const tier of TIER_ORDER) {
+        const ms = modelsByTier[tier] || [];
+        if (ms.length > 0) {
+          sections.push({
+            tier,
+            label: TIER_LABELS[tier] || tier,
+            icon: TIER_ICONS[tier] ?? null,
+            models: ms,
+          });
+        }
+      }
+
+      // Non-chat modality buckets — render each only if it has models.
+      // MODALITY_ORDER is imported from models-data so labels stay in sync.
+      const chatModels = new Set(sections.flatMap((s) => s.models));
+      for (const modality of MODALITY_ORDER) {
+        if (modality === "chat") continue;
+        const ms = filtered.filter(
+          (m) => m.modality === modality && !chatModels.has(m),
+        );
+        if (ms.length > 0) {
+          sections.push({
+            tier: `__modality_${modality}`,
+            label: `${MODALITY_LABELS[modality]} (${ms.length})`,
+            icon: MODALITY_ICONS[modality] ?? null,
+            models: ms,
+          });
+        }
+      }
+
+      return sections;
     }
     // Flat list when sorting by name/price/context/etc
     if (filtered.length === 0) return [];
@@ -662,7 +724,7 @@ function ModelsPageInner() {
                     <div className="flex items-center gap-2 mb-4">
                       {group.icon && (
                         <span
-                          className={`p-1.5 rounded-md ${TIER_COLORS[group.tier]?.bg || "bg-panel"}`}
+                          className={`p-1.5 rounded-md ${TIER_COLORS[group.tier as keyof typeof TIER_COLORS]?.bg || "bg-panel"}`}
                         >
                           {group.icon}
                         </span>
@@ -680,6 +742,9 @@ function ModelsPageInner() {
                         if (!model?.id) return null;
                         const providerStyle =
                           PROVIDER_COLORS[model.provider] ?? PROVIDER_COLORS.Venice;
+                        const inModalities = model.inputModalities ?? ["text"];
+                        const outModalities = model.outputModalities ?? ["text"];
+                        const isNonChat = model.modality !== "chat";
                         return (
                           <Link
                             key={model.id}
@@ -695,23 +760,51 @@ function ModelsPageInner() {
                                   {model.id}
                                 </p>
                               </div>
-                              {model.provider && (
-                                <span
-                                  className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
-                                >
-                                  {model.provider}
-                                </span>
-                              )}
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                {model.provider && (
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
+                                  >
+                                    {model.provider}
+                                  </span>
+                                )}
+                                {model.modality && model.modality !== "chat" && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
+                                    {MODALITY_LABELS[model.modality]}
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              {/* Input/Output Modality Badges */}
-                              <div className="flex flex-wrap gap-1">
-                                {/* In a real implementation, we'd get actual modality data */}
-                                <span className="px-2 py-0.5 rounded text-[9px] font-medium bg-surface text-text-secondary border border-border/50">
-                                  T
-                                </span>
-                                {/* Placeholder for image/audio/video badges */}
+                              {/* Input/Output Modality Badges — driven by the live
+                                  /v1/models architecture payload. Renders I for image,
+                                  A for audio, V for video, T for text, E for embeddings. */}
+                              <div className="flex flex-wrap gap-1" aria-label="Modalities">
+                                {inModalities.includes("text") && (
+                                  <span title="Text input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">T in</span>
+                                )}
+                                {inModalities.includes("image") && (
+                                  <span title="Image input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">I in</span>
+                                )}
+                                {inModalities.includes("audio") && (
+                                  <span title="Audio input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">A in</span>
+                                )}
+                                {inModalities.includes("video") && (
+                                  <span title="Video input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">V in</span>
+                                )}
+                                {outModalities.includes("image") && (
+                                  <span title="Image output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue/10 text-blue border border-blue/30">image</span>
+                                )}
+                                {outModalities.includes("audio") && (
+                                  <span title="Audio output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet/10 text-violet border border-violet/30">audio</span>
+                                )}
+                                {outModalities.includes("video") && (
+                                  <span title="Video output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber/10 text-amber border border-amber/30">video</span>
+                                )}
+                                {outModalities.includes("embeddings") && (
+                                  <span title="Embeddings output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">embed</span>
+                                )}
                               </div>
 
                               {/* Capability Tags */}
@@ -739,28 +832,36 @@ function ModelsPageInner() {
 
                             <div className="mt-3 flex items-center justify-between text-xs">
                               <span className="text-text-secondary font-mono">
-                                {model.contextLength ? `${model.contextLength} ctx` : "—"}
+                                {model.contextLength && model.contextLength !== "0" ? `${model.contextLength} ctx` : "—"}
                               </span>
                               <div className="flex items-center gap-2 text-[10px] font-mono">
-                                <span className="text-accent" aria-hidden="true">
-                                  $
-                                  {typeof model.inputPricePer1M === "number"
-                                    ? model.inputPricePer1M < 0.01
-                                      ? model.inputPricePer1M.toFixed(4)
-                                      : model.inputPricePer1M.toFixed(2)
-                                    : "—"}
-                                </span>
-                                <span className="text-text-muted" aria-hidden="true">
-                                  &middot;
-                                </span>
-                                <span className="text-text-secondary" aria-hidden="true">
-                                  $
-                                  {typeof model.outputPricePer1M === "number"
-                                    ? model.outputPricePer1M < 0.01
-                                      ? model.outputPricePer1M.toFixed(4)
-                                      : model.outputPricePer1M.toFixed(2)
-                                    : "—"}
-                                </span>
+                                {isNonChat && typeof model.pricePerUnit === "number" && model.pricePerUnit > 0 ? (
+                                  <span className="text-accent" title={`Price${model.priceUnit ?? ""}`}>
+                                    ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}{model.priceUnit ?? ""}
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span className="text-accent" aria-hidden="true">
+                                      $
+                                      {typeof model.inputPricePer1M === "number"
+                                        ? model.inputPricePer1M < 0.01
+                                          ? model.inputPricePer1M.toFixed(4)
+                                          : model.inputPricePer1M.toFixed(2)
+                                        : "—"}
+                                    </span>
+                                    <span className="text-text-muted" aria-hidden="true">
+                                      &middot;
+                                    </span>
+                                    <span className="text-text-secondary" aria-hidden="true">
+                                      $
+                                      {typeof model.outputPricePer1M === "number"
+                                        ? model.outputPricePer1M < 0.01
+                                          ? model.outputPricePer1M.toFixed(4)
+                                          : model.outputPricePer1M.toFixed(2)
+                                        : "—"}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             </div>
                             <span className="sr-only">

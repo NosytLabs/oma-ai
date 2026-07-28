@@ -21,6 +21,47 @@
 // `MODEL_COUNT`, `MODELS`, `PROVIDER_COLORS`, `TIER_COLORS`, `TIER_ORDER`.
 
 export type Tier = "budget" | "mid" | "premium" | "frontier";
+
+/**
+ * Modalities the catalog knows about. Text models carry a Tier (budget /
+ * mid / premium / frontier). All other modalities are priced per-unit
+ * (per-image, per-second, per-generation) and live alongside the chat
+ * models in the catalog but render in dedicated sections.
+ */
+export type Modality =
+	| "chat"
+	| "image"
+	| "video"
+	| "tts"
+	| "embedding"
+	| "asr"
+	| "music"
+	| "upscale"
+	| "inpaint";
+
+export const MODALITY_LABELS: Record<Modality, string> = {
+	chat: "Chat / Language",
+	image: "Image Generation",
+	video: "Video Generation",
+	tts: "Text-to-Speech",
+	embedding: "Embeddings",
+	asr: "Speech-to-Text",
+	music: "Music Generation",
+	upscale: "Image Upscale",
+	inpaint: "Image Edit",
+};
+
+export const MODALITY_ORDER: Modality[] = [
+	"chat",
+	"image",
+	"video",
+	"tts",
+	"embedding",
+	"asr",
+	"music",
+	"upscale",
+	"inpaint",
+];
 export type Provider =
 	| "Venice"
 	| "Gonka"
@@ -32,12 +73,24 @@ export interface Model {
 	name: string;
 	provider: Provider;
 	tier: Tier;
+	/**
+	 * Which modality bucket this model lives in. Text chat models keep
+	 * their tier for pricing comparison. Image/Video/TTS/Embedding/ASR/
+	 * Music/Upscale/Inpaint each render in their own section.
+	 */
+	modality: Modality;
 	description: string;
 	contextLength: string;
 	/** Raw context length in tokens (for filter sliders). */
 	contextTokens: number;
 	inputPricePer1M: number;
 	outputPricePer1M: number;
+	/**
+	 * Per-unit USD for non-chat modalities (image, video, audio, music,
+	 * upscale, inpaint). 0 for chat models which price per-token.
+	 */
+	pricePerUnit?: number;
+	priceUnit?: string;
 	capabilities: Capability[];
 	modelId: string;
 	inputModalities?: string[];
@@ -202,6 +255,7 @@ function deriveDescription(
 	id: string,
 	displayName: string,
 	description: string | undefined,
+	modality: Modality = "chat",
 ): string {
 	const trimmed = (description ?? "").trim();
 	if (trimmed) return trimmed;
@@ -211,7 +265,41 @@ function deriveDescription(
 		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
 		.filter(Boolean)
 		.join(" ");
-	return `${titleCase || displayName} — language model served by OMA.`;
+	const label = MODALITY_LABELS[modality] ?? "language model";
+	return `${titleCase || displayName} — ${label.toLowerCase()} served by OMA.`;
+}
+
+/**
+ * Bucket a server catalog entry into a single `Modality` for UI grouping.
+ * The server already emits `category` strings ("image", "video", "tts",
+ * "embedding", "asr", "music", "upscale", "inpaint", "budget", "mid",
+ * "premium", "frontier"); we map non-text categories to dedicated
+ * modalities and treat all text tiers as `chat`.
+ */
+function deriveModality(entry: ApiModelEntry): Modality {
+	const cat = (entry.category ?? "").toLowerCase();
+	if (cat === "image") return "image";
+	if (cat === "video") return "video";
+	if (cat === "tts") return "tts";
+	if (cat === "embedding") return "embedding";
+	if (cat === "asr") return "asr";
+	if (cat === "music") return "music";
+	if (cat === "upscale") return "upscale";
+	if (cat === "inpaint") return "inpaint";
+	// Text tiers and unknown categories fall back to chat.
+	return "chat";
+}
+
+function derivePriceUnit(modality: Modality, pricing: ApiModelEntry["pricing"]): string | undefined {
+	if (modality === "chat" || modality === "embedding") return "/M tokens";
+	if (modality === "image") return "/image";
+	if (modality === "video") return "/generation";
+	if (modality === "asr") return "/audio second";
+	if (modality === "tts") return "/M chars";
+	if (modality === "music") return "/track";
+	if (modality === "upscale") return "/upscale";
+	if (modality === "inpaint") return "/edit";
+	return undefined;
 }
 
 function toModel(entry: RawEntry): Model {
@@ -222,13 +310,21 @@ function toModel(entry: RawEntry): Model {
 		entry.category === "frontier"
 			? entry.category
 			: "mid";
+	const modality: Modality = (() => {
+		const cat = (entry.category ?? "").toLowerCase();
+		if (cat === "image" || cat === "video" || cat === "tts" || cat === "embedding" || cat === "asr" || cat === "music" || cat === "upscale" || cat === "inpaint") {
+			return cat as Modality;
+		}
+		return "chat";
+	})();
 	const serverCaps = entry.capabilities ?? [];
 	return {
 		id: entry.id,
 		name: entry.displayName,
 		provider: normalizeProvider(entry.provider),
 		tier,
-		description: deriveDescription(entry.id, entry.displayName, entry.description),
+		modality,
+		description: deriveDescription(entry.id, entry.displayName, entry.description, modality),
 		contextLength: formatContextLength(entry.maxTokens),
 		contextTokens: entry.maxTokens,
 		inputPricePer1M: entry.inputPricePer1M,
@@ -256,7 +352,14 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
  */
 interface ApiModelEntry {
 	id: string;
-	pricing: { prompt: string; completion: string | null };
+	pricing: {
+		prompt: string;
+		completion: string | null;
+		/** Per-generation USD price for image/video/music/upscale/inpaint. */
+		generation?: string;
+		/** Per-second USD price for ASR. */
+		audio_second?: string;
+	};
 	category: string;
 	context_length: number | null;
 	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus"). */
@@ -317,23 +420,27 @@ export async function loadModels(): Promise<Model[]> {
 					const outputPrice = Number.isFinite(completionRaw)
 						? completionRaw * 1_000_000
 						: 0;
-					const tier: Tier =
-						entry.category === "budget" ||
-						entry.category === "mid" ||
-						entry.category === "premium" ||
-						entry.category === "frontier"
-							? entry.category
+const tier: Tier =
+		entry.category === "budget" ||
+		entry.category === "mid" ||
+		entry.category === "premium" ||
+		entry.category === "frontier"
+			? entry.category
 							: "mid";
+					const modality = deriveModality(entry);
 					return {
 						id: entry.id,
 						name,
 						provider: normalizeProvider(entry.provider),
 						tier,
-						description: deriveDescription(entry.id, name, undefined),
+						modality,
+						description: deriveDescription(entry.id, name, undefined, modality),
 						contextLength: formatContextLength(entry.context_length ?? 0),
 						contextTokens: entry.context_length ?? 0,
 						inputPricePer1M: inputPrice,
 						outputPricePer1M: outputPrice,
+						pricePerUnit: modality === "chat" ? undefined : (Number(entry.pricing?.generation) || Number(entry.pricing?.audio_second) || inputPrice),
+						priceUnit: derivePriceUnit(modality, entry.pricing),
 						capabilities: deriveCapabilities(entry.id, name, undefined, entry.supported_parameters),
 						modelId: entry.id,
 						inputModalities: entry.architecture?.input_modalities ?? ["text"],
@@ -471,4 +578,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // Marketing model count surfaced across the UI. Must match live
 // GET /v1/models count. The SSR fallback catalog (`MODELS`) is a smaller
 // hand-picked set — never use MODELS.length for marketing copy.
-export const MODEL_COUNT = 134; // 104 chat + 25 image + 5 video from server/models.json
+export const MODEL_COUNT = 288; // 104 chat + 35 image + 91 video + 11 tts + 9 embedding + 5 asr + 14 music + 1 upscale + 18 inpaint — server/models.json
