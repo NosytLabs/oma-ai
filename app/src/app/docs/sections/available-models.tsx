@@ -7,7 +7,7 @@ import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } 
 
 export function AvailableModelsSection() {
 	// Static fallback renders immediately (SSR-safe); the live catalog
-	// (90+ entries) replaces it once /v1/models responds. Without this the
+	// (288+ entries) replaces it once /v1/models responds. Without this the
 	// docs advertised "90 models" over a 7-row table.
 	const [models, setModels] = useState(MODELS);
 	useEffect(() => {
@@ -61,7 +61,7 @@ export function AvailableModelsSection() {
 				id="models"
 				icon={<BookOpen className="h-5 w-5" />}
 				title="Available Models"
-				subtitle={`${MODEL_COUNT} models across text, image, video, and audio categories.`}
+				subtitle={`${MODEL_COUNT} models across 9 modalities — chat, image, video, TTS, embedding, ASR, music, upscale, and inpaint.`}
 			/>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
