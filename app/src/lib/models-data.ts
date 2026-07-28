@@ -34,10 +34,14 @@ export interface Model {
 	tier: Tier;
 	description: string;
 	contextLength: string;
+	/** Raw context length in tokens (for filter sliders). */
+	contextTokens: number;
 	inputPricePer1M: number;
 	outputPricePer1M: number;
 	capabilities: Capability[];
 	modelId: string;
+	inputModalities?: string[];
+	outputModalities?: string[];
 }
 
 export type Capability =
@@ -218,6 +222,7 @@ function toModel(entry: RawEntry): Model {
 		entry.category === "frontier"
 			? entry.category
 			: "mid";
+	const serverCaps = entry.capabilities ?? [];
 	return {
 		id: entry.id,
 		name: entry.displayName,
@@ -225,15 +230,13 @@ function toModel(entry: RawEntry): Model {
 		tier,
 		description: deriveDescription(entry.id, entry.displayName, entry.description),
 		contextLength: formatContextLength(entry.maxTokens),
+		contextTokens: entry.maxTokens,
 		inputPricePer1M: entry.inputPricePer1M,
 		outputPricePer1M: entry.outputPricePer1M,
-		capabilities: deriveCapabilities(
-			entry.id,
-			entry.displayName,
-			entry.description,
-			entry.capabilities,
-		),
+		capabilities: deriveCapabilities(entry.id, entry.displayName, entry.description, serverCaps),
 		modelId: entry.veniceId ?? entry.id,
+		inputModalities: ["text"],
+		outputModalities: ["text"],
 	};
 }
 
@@ -258,6 +261,8 @@ interface ApiModelEntry {
 	context_length: number | null;
 	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus"). */
 	provider?: string;
+	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
+	supported_parameters?: string[];
 }
 
 interface ApiModelsResponse {
@@ -326,10 +331,13 @@ export async function loadModels(): Promise<Model[]> {
 						tier,
 						description: deriveDescription(entry.id, name, undefined),
 						contextLength: formatContextLength(entry.context_length ?? 0),
+						contextTokens: entry.context_length ?? 0,
 						inputPricePer1M: inputPrice,
 						outputPricePer1M: outputPrice,
-						capabilities: deriveCapabilities(entry.id, name, undefined, undefined),
+						capabilities: deriveCapabilities(entry.id, name, undefined, entry.supported_parameters),
 						modelId: entry.id,
+						inputModalities: entry.architecture?.input_modalities ?? ["text"],
+						outputModalities: entry.architecture?.output_modalities ?? ["text"],
 					};
 				});
 			_liveModels = models;

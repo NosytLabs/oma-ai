@@ -178,7 +178,7 @@ function ModelsPageInner() {
   // Apply filters
   const filtered = useMemo(() => {
     let result = [...safeModels];
-    
+
     // Text search
     if (localSearch.trim()) {
       const q = localSearch.toLowerCase();
@@ -190,20 +190,57 @@ function ModelsPageInner() {
           (m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))
       );
     }
-    
+
     // Tier filter
     if (selectedTier) {
       result = result.filter((m) => m && m.tier === selectedTier);
     }
-    
+
     // Provider filter
     if (selectedProvider) {
       result = result.filter((m) => m && m.provider === selectedProvider);
     }
-    
-    // TODO: Add modality and capability filters when we have that data in Model type
-    // For now, we'll skip these as they require extending the Model type
-    
+
+    // Input modalities filter (any selected modality matches)
+    if (inputModalities.length > 0) {
+      result = result.filter((m) => {
+        const mods = (m.inputModalities ?? ["text"]) as string[];
+        return inputModalities.some((mod) => mods.includes(mod));
+      });
+    }
+
+    // Output modalities filter
+    if (outputModalities.length > 0) {
+      result = result.filter((m) => {
+        const mods = (m.outputModalities ?? ["text"]) as string[];
+        return outputModalities.some((mod) => mods.includes(mod));
+      });
+    }
+
+    // Capabilities filter
+    if (capabilities.length > 0) {
+      result = result.filter((m) => {
+        const caps = (m.capabilities ?? []) as string[];
+        return capabilities.some((cap) => caps.includes(cap));
+      });
+    }
+
+    // Context range filter
+    if (contextRange[0] > 0 || contextRange[1] < 2_000_000) {
+      result = result.filter((m) => {
+        const ctx = m.contextTokens ?? 0;
+        return ctx >= contextRange[0] && ctx <= contextRange[1];
+      });
+    }
+
+    // Price range filter (input price)
+    if (priceRange[0] > 0 || priceRange[1] < 1000) {
+      result = result.filter((m) => {
+        const price = m.inputPricePer1M ?? 0;
+        return price >= priceRange[0] && price <= priceRange[1];
+      });
+    }
+
     return sortModels(result, sortBy);
   }, [
     localSearch,
@@ -211,12 +248,11 @@ function ModelsPageInner() {
     selectedProvider,
     sortBy,
     safeModels,
-    // We're not using the modality/capability filters yet since they're not in Model type
     inputModalities,
     outputModalities,
     capabilities,
     contextRange,
-    priceRange
+    priceRange,
   ]);
 
   const modelsByTier = useMemo(() => getModelsByTier(filtered), [filtered]);
