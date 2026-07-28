@@ -162,4 +162,109 @@ adminObservabilityRoutes.on("GET", "/v1/admin/dlq", async (c) => {
   }
 });
 
+/**
+ * GET /v1/admin/observability/venice-balance
+ *
+ * Proxies a single cheap Venice call (/api/v1/models) and returns the
+ * Diem balance + per-minute / daily rate-limit headers as a JSON snapshot.
+ * Cached in-process for 30s to avoid hammering Venice every page load.
+ *
+ * This is the source of truth for "how much Diem do we have left?" — the
+ * `x-venice-balance-diem` header would otherwise only surface in logs.
+ */
+interface VeniceBalanceSnapshot {
+  capturedAt: number; // epoch ms
+  balanceDiem: number | null;
+  dailyLimit: number | null;
+  dailyRemaining: number | null;
+  dailyResetAt: number | null;
+  perMinuteRequestLimit: number | null;
+  perMinuteRequestRemaining: number | null;
+  perMinuteTokenLimit: number | null;
+  perMinuteTokenRemaining: number | null;
+  configured: boolean;
+  source: "venice" | "placeholder" | "error";
+  error?: string;
+}
+
+const BALANCE_CACHE_TTL_MS = 30_000;
+let _balanceCache: { at: number; snap: VeniceBalanceSnapshot } | null = null;
+
+adminObservabilityRoutes.on("GET", "/v1/admin/observability/venice-balance", async (c) => {
+  if (_balanceCache && Date.now() - _balanceCache.at < BALANCE_CACHE_TTL_MS) {
+    return c.json(_balanceCache.snap);
+  }
+
+  const token = process.env.VENICE_API_KEY;
+  if (!token || token.startsWith("sk-...") || !token.includes("_")) {
+    const snap: VeniceBalanceSnapshot = {
+      capturedAt: Date.now(),
+      balanceDiem: null,
+      dailyLimit: null,
+      dailyRemaining: null,
+      dailyResetAt: null,
+      perMinuteRequestLimit: null,
+      perMinuteRequestRemaining: null,
+      perMinuteTokenLimit: null,
+      perMinuteTokenRemaining: null,
+      configured: false,
+      source: "placeholder",
+      error: "VENICE_API_KEY is missing or looks like a placeholder. Venice routing is disabled until a real key is set.",
+    };
+    _balanceCache = { at: Date.now(), snap };
+    return c.json(snap);
+  }
+
+  try {
+    const resp = await fetch("https://api.venice.ai/api/v1/models", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+      // Match the Venice SDK timeout. The /models endpoint is fast, so
+      // 5s is more than enough.
+      signal: AbortSignal.timeout(5_000),
+    });
+    const num = (k: string): number | null => {
+      const v = resp.headers.get(k);
+      if (!v) return null;
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const snap: VeniceBalanceSnapshot = {
+      capturedAt: Date.now(),
+      balanceDiem: num("x-venice-balance-diem"),
+      dailyLimit: num("x-ratelimit-limit-requests"),
+      dailyRemaining: num("x-ratelimit-remaining"),
+      dailyResetAt: num("x-ratelimit-resets"),
+      perMinuteRequestLimit: num("x-ratelimit-limit-requests"),
+      perMinuteRequestRemaining: num("x-ratelimit-remaining-requests"),
+      perMinuteTokenLimit: num("x-ratelimit-limit-tokens"),
+      perMinuteTokenRemaining: num("x-ratelimit-remaining-tokens"),
+      configured: true,
+      source: resp.ok ? "venice" : "error",
+      error: resp.ok
+        ? undefined
+        : `Venice /api/v1/models returned ${resp.status} — balance headers may be stale.`,
+    };
+    _balanceCache = { at: Date.now(), snap };
+    return c.json(snap);
+  } catch (err) {
+    const snap: VeniceBalanceSnapshot = {
+      capturedAt: Date.now(),
+      balanceDiem: null,
+      dailyLimit: null,
+      dailyRemaining: null,
+      dailyResetAt: null,
+      perMinuteRequestLimit: null,
+      perMinuteRequestRemaining: null,
+      perMinuteTokenLimit: null,
+      perMinuteTokenRemaining: null,
+      configured: true,
+      source: "error",
+      error: err instanceof Error ? err.message : String(err),
+    };
+    _balanceCache = { at: Date.now(), snap };
+    return c.json(snap);
+  }
+});
+
 

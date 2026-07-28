@@ -109,7 +109,56 @@ function veniceHeaders(options?: { skipContentType?: boolean }): Record<string, 
  *    Logged at info level on errors, debug level on success to avoid noise.
  *  - x-venice-model-deprecation-warning: signals an upcoming model deprecation
  *  - x-venice-model-deprecation-date: the deprecation effective date
+ *  - x-venice-balance-diem: live Diem balance (1 Diem = $1 USD). Logged
+ *    at WARN when < 5 Diem (operator should top up before next spike),
+ *    DEBUG otherwise. Surfaced to the admin observability dashboard via
+ *    the `/admin/observability/venice` proxy endpoint.
+ *  - x-ratelimit-*: rate-limit headers. The `x-ratelimit-resets` (plural)
+ *    header carries the DAILY reset timestamp, the singular `-requests`
+ *    and `-tokens` headers carry per-minute windows. Logged at WARN when
+ *    daily remaining < 3 so the operator can switch to a fallback key
+ *    before the 20-req/day cap on the current key is exhausted.
  */
+export interface VeniceRateLimitSnapshot {
+  balanceDiem: number | null;
+  dailyLimit: number | null;
+  dailyRemaining: number | null;
+  dailyResetAt: number | null; // epoch ms
+  perMinuteRequestLimit: number | null;
+  perMinuteRequestRemaining: number | null;
+  perMinuteRequestResetAt: number | null;
+  perMinuteTokenLimit: number | null;
+  perMinuteTokenRemaining: number | null;
+  perMinuteTokenResetAt: number | null;
+}
+
+/** Thresholds below which we WARN. Tuned for the Venice promo key
+ *  (20 req/day, ~3M tokens/min) — adjust if the operator upgrades to a
+ *  paid plan with larger allocations. */
+const LOW_DIEM_THRESHOLD = 5;
+const LOW_DAILY_REMAINING_THRESHOLD = 3;
+
+function parseVeniceRateLimitHeaders(headers: Headers): VeniceRateLimitSnapshot {
+  const num = (k: string): number | null => {
+    const v = headers.get(k);
+    if (!v) return null;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    balanceDiem: num("x-venice-balance-diem"),
+    dailyLimit: num("x-ratelimit-limit-requests"),
+    dailyRemaining: num("x-ratelimit-remaining"),
+    dailyResetAt: num("x-ratelimit-resets"),
+    perMinuteRequestLimit: num("x-ratelimit-limit-requests"),
+    perMinuteRequestRemaining: num("x-ratelimit-remaining-requests"),
+    perMinuteRequestResetAt: num("x-ratelimit-reset-requests"),
+    perMinuteTokenLimit: num("x-ratelimit-limit-tokens"),
+    perMinuteTokenRemaining: num("x-ratelimit-remaining-tokens"),
+    perMinuteTokenResetAt: num("x-ratelimit-reset-tokens"),
+  };
+}
+
 function logVeniceResponseHeaders(
   resp: Response,
   endpoint: string,
@@ -123,6 +172,7 @@ function logVeniceResponseHeaders(
   const cfRay = headers.get("CF-RAY");
   const deprecationWarning = headers.get("x-venice-model-deprecation-warning");
   const deprecationDate = headers.get("x-venice-model-deprecation-date");
+  const rate = parseVeniceRateLimitHeaders(headers);
   if (cfRay) {
     if (!resp.ok) {
       logger.info({ cfRay, endpoint, model, status: resp.status, type: "venice_cf_ray" }, "Venice CF-RAY (error)");
@@ -135,6 +185,26 @@ function logVeniceResponseHeaders(
       { endpoint, model, deprecationWarning, deprecationDate, type: "venice_model_deprecated" },
       "Venice model deprecation warning",
     );
+  }
+  // Balance + rate-limit warnings — only on successful responses so we
+  // don't spam during outages. The numbers are sampled, not exact; the
+  // admin observability dashboard polls /admin/observability/venice for
+  // the live values.
+  if (resp.ok) {
+    const balance = rate.balanceDiem;
+    const dailyLeft = rate.dailyRemaining;
+    if (balance !== null && balance < LOW_DIEM_THRESHOLD) {
+      logger.warn(
+        { endpoint, model, balanceDiem: balance, type: "venice_low_balance" },
+        `Venice Diem balance low: ${balance.toFixed(2)} Diem — top up before next request spike.`,
+      );
+    }
+    if (dailyLeft !== null && dailyLeft < LOW_DAILY_REMAINING_THRESHOLD) {
+      logger.warn(
+        { endpoint, model, dailyRemaining: dailyLeft, dailyResetAt: rate.dailyResetAt, type: "venice_daily_cap_low" },
+        `Venice daily request cap low: ${dailyLeft} req remaining before reset.`,
+      );
+    }
   }
 }
 
