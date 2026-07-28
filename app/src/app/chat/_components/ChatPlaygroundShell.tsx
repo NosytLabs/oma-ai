@@ -27,6 +27,7 @@ import { useChatShortcuts } from "../_hooks/useChatShortcuts";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
+import { AuthPromptModal } from "@/components/chat/AuthPromptModal";
 import { ChatErrorBanner } from "./ChatErrorBanner";
 import { ChatSettingsPanel } from "./ChatSettingsPanel";
 import { MemoizedChatToolbar } from "./ChatToolbar";
@@ -152,6 +153,59 @@ function ShellContent({
 		!balanceLoading &&
 		balanceDollars < LOW_BALANCE_THRESHOLD;
 
+	// ─── Auth prompt modal (guest gating) ───
+	const [authPromptOpen, setAuthPromptOpen] = useState(false);
+	const [authPromptReason, setAuthPromptReason] = useState<
+		"paid-model" | "message-limit"
+	>("message-limit");
+	const [authPromptModel, setAuthPromptModel] = useState<string>();
+
+	const handleAuthRequired = useCallback(
+		(modelName: string) => {
+			setAuthPromptReason("paid-model");
+			setAuthPromptModel(modelName);
+			setAuthPromptOpen(true);
+		},
+		[],
+	);
+
+	// ─── Free message limit for guests (20/day) ───
+	const FREE_DAILY_LIMIT = 20;
+	const guestMsgCountRef = useRef(0);
+
+	useEffect(() => {
+		if (isAuthenticated) return;
+		try {
+			const key = "oma-guest-msgs";
+			const stored = localStorage.getItem(key);
+			if (stored) {
+				const { date, count } = JSON.parse(stored);
+				const today = new Date().toISOString().slice(0, 10);
+				guestMsgCountRef.current = date === today ? count : 0;
+			}
+		} catch {}
+	}, [isAuthenticated]);
+
+	const incrementGuestCount = useCallback(() => {
+		if (isAuthenticated) return true; // authed users have no limit
+		const today = new Date().toISOString().slice(0, 10);
+		const next = guestMsgCountRef.current + 1;
+		guestMsgCountRef.current = next;
+		try {
+			localStorage.setItem(
+				"oma-guest-msgs",
+				JSON.stringify({ date: today, count: next }),
+			);
+		} catch {}
+		if (next > FREE_DAILY_LIMIT) {
+			setAuthPromptReason("message-limit");
+			setAuthPromptModel(undefined);
+			setAuthPromptOpen(true);
+			return false; // blocked
+		}
+		return true; // allowed
+	}, [isAuthenticated]);
+
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
 	const compareMessagesRef = useRef<Message[]>(compareMessages);
@@ -231,8 +285,21 @@ function ShellContent({
 		sendMessageRef.current = sendMessage;
 	}, [sendMessage]);
 
+	// Gated send: checks free message limit for guests before sending
+	const gatedSend = useCallback(
+		async (prompt?: string) => {
+			if (!incrementGuestCount()) return; // blocked by free limit
+			await sendMessage(prompt);
+		},
+		[incrementGuestCount, sendMessage],
+	);
+	const gatedSendRef = useRef(gatedSend);
+	useEffect(() => {
+		gatedSendRef.current = gatedSend;
+	}, [gatedSend]);
+
 	useChatShortcuts({
-		sendMessageRef,
+		sendMessageRef: gatedSendRef,
 		input,
 		loading,
 		shortcutsOpen,
@@ -323,8 +390,8 @@ function ShellContent({
 		messagesRef.current = truncated;
 		setMessages(truncated);
 		setError(null);
-		void sendMessage(prompt);
-	}, [loading, sendMessage, setMessages, setError]);
+		void gatedSend(prompt);
+	}, [loading, gatedSend, setMessages, setError]);
 
 	const exportConversation = useCallback(() => {
 		setExportStatus("loading");
@@ -432,6 +499,7 @@ function ShellContent({
 				messagesLength={messages.length}
 				deferredMessages={deferredMessages}
 				setShortcutsOpen={setShortcutsOpen}
+				onAuthRequired={handleAuthRequired}
 			/>
 
 			<div className="flex-1 flex overflow-hidden bg-void">
@@ -543,7 +611,7 @@ function ShellContent({
 									onRetry={() => {
 										setError(null);
 										if (input.trim()) {
-											void sendMessage();
+											void gatedSend();
 										} else {
 											handleRegenerate();
 										}
@@ -553,7 +621,7 @@ function ShellContent({
 								<LazyMessageInput
 									input={input}
 									setInput={setInput}
-									onSubmit={sendMessage}
+									onSubmit={gatedSend}
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
@@ -566,7 +634,7 @@ function ShellContent({
 										{!isAuthenticated && (
 											<span className="text-accent/80">
 												{" "}
-												· Free OMA-AI models — no sign-in
+												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCountRef.current)} free messages left
 											</span>
 										)}
 									</p>
@@ -627,11 +695,18 @@ function ShellContent({
 				onSubmit={(p) => {
 					const text = (p ?? "").trim();
 					if (text && !loading) {
-						void sendMessageRef.current(text);
+						void gatedSendRef.current(text);
 					}
 				}}
 				loading={loading}
 				compareMessages={compareMessages}
+			/>
+
+			<AuthPromptModal
+				open={authPromptOpen}
+				onClose={() => setAuthPromptOpen(false)}
+				reason={authPromptReason}
+				modelName={authPromptModel}
 			/>
 		</div>
 	);

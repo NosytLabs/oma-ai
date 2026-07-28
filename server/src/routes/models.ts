@@ -133,6 +133,7 @@ async function buildModelsResponse(): Promise<{
           return {
             id: m.id,
             canonical_slug: m.id,
+            display_name: m.displayName,
             object: "model" as const,
             created,
             owned_by: "oma",

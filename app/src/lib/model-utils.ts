@@ -111,6 +111,7 @@ export function displayName(id: string, fallback?: string): string {
 
 export interface LiveModelRaw {
 	id: string;
+	display_name?: string;
 	category?: string;
 	context_length?: number;
 	provider?: string;
@@ -144,7 +145,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 
 	return {
 		id: m.id,
-		name: humanizeModelId(m.id),
+		name: m.display_name || humanizeModelId(m.id),
 		category: cat,
 		provider,
 		inputPer1M: m.pricing?.prompt

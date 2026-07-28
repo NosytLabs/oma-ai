@@ -82,6 +82,8 @@ export interface ChatToolbarProps {
 	messagesLength: number;
 	deferredMessages: Message[];
 	setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
+	/** Called when a guest tries to select a paid model */
+	onAuthRequired?: (modelName: string) => void;
 }
 
 /**
@@ -122,6 +124,7 @@ export function ChatToolbar({
 	messagesLength,
 	deferredMessages,
 	setShortcutsOpen,
+	onAuthRequired,
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
@@ -234,7 +237,12 @@ export function ChatToolbar({
 				</div>
 
 				<div className="min-w-0 flex-1 sm:max-w-[220px] md:max-w-none md:flex-none">
-					<LazyModelSelector model={model} setModel={setModel} />
+					<LazyModelSelector
+						model={model}
+						setModel={setModel}
+						isAuthenticated={isAuthenticated}
+						onAuthRequired={onAuthRequired}
+					/>
 				</div>
 
 				<button

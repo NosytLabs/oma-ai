@@ -15,6 +15,7 @@ function isLiveModelRaw(v: unknown): v is LiveModelRaw {
 	const obj = v as Record<string, unknown>;
 	return (
 		typeof obj.id === "string" &&
+		(obj.display_name === undefined || typeof obj.display_name === "string") &&
 		(obj.category === undefined || typeof obj.category === "string") &&
 		(obj.context_length === undefined ||
 			typeof obj.context_length === "number") &&

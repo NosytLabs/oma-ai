@@ -13,7 +13,7 @@
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Lock, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { displayName } from "@/lib/model-utils";
 import { type TierFilter, useSharedLiveModels } from "./chat-message-shared";
@@ -22,6 +22,10 @@ interface ModelSelectorProps {
 	model: string;
 	setModel: (m: string) => void;
 	compact?: boolean;
+	/** Whether the current user is authenticated (guest = false) */
+	isAuthenticated?: boolean;
+	/** Called when a guest tries to select a paid model */
+	onAuthRequired?: (modelName: string) => void;
 }
 
 // Tier colors — more vivid, with glow variants
@@ -113,6 +117,8 @@ export function ModelSelector({
 	model,
 	setModel,
 	compact = false,
+	isAuthenticated = false,
+	onAuthRequired,
 }: ModelSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -141,25 +147,21 @@ export function ModelSelector({
 		};
 	}, [open]);
 
-	// ponytail: chat playground is a free-OMA-AI / Gonka surface only. Filter
-	// the dropdown to the OMA-AI provider tier so guests never see a paid
-	// Venice model they can't call without signing in. The full catalog
-	// (including paid Venice models) is still available at /models.
-	const freeOnly = useMemo(
-		() => MODELS.filter((m) => m.provider === "OMA-AI"),
-		[MODELS],
-	);
+	// Show ALL models in the dropdown. Free models (OMA-AI provider) work
+	// without auth; paid models (Venice) require sign-in. Guests see a lock
+	// icon on paid models and trigger the auth prompt on click.
+	const isFreeModel = (m: { provider?: string }) => m.provider === "OMA-AI";
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase();
-		return freeOnly.filter((m) => {
+		return MODELS.filter((m) => {
 			const name = displayName(m.id, m.name);
 			const matchesSearch =
 				!q || name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
 			const matchesTier = tierFilter === "all" || m.category === tierFilter;
 			return matchesSearch && matchesTier;
 		});
-	}, [search, tierFilter, freeOnly]);
+	}, [search, tierFilter, MODELS]);
 
 	const selectedModel = useMemo(
 		() => MODELS.find((m) => m.id === model),
@@ -300,6 +302,8 @@ export function ModelSelector({
 								filtered.map((modelItem, i) => {
 									const name = displayName(modelItem.id, modelItem.name);
 									const isSelected = modelItem.id === model;
+									const free = isFreeModel(modelItem);
+									const locked = !isAuthenticated && !free;
 									const tierStyle =
 										tierStyles[modelItem.category as TierFilter] ||
 										tierStyles.all;
@@ -311,6 +315,11 @@ export function ModelSelector({
 											initial="hidden"
 											animate="visible"
 											onClick={() => {
+												if (locked) {
+													onAuthRequired?.(name);
+													setOpen(false);
+													return;
+												}
 												setModel(modelItem.id);
 												setOpen(false);
 												setSearch("");
@@ -318,7 +327,7 @@ export function ModelSelector({
 											}}
 											role="option"
 											aria-selected={isSelected}
-											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context`}
+											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : ", free"}`}
 											className={`
                         w-full flex items-center justify-between text-left
                         ${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
@@ -326,7 +335,9 @@ export function ModelSelector({
                         ${
 													isSelected
 														? "bg-accent/10 text-accent"
-														: "hover:bg-surface/80 text-text-secondary"
+														: locked
+															? "hover:bg-surface/40 text-text-muted/60"
+															: "hover:bg-surface/80 text-text-secondary"
 												}
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                         focus-visible:ring-offset-1 focus-visible:ring-offset-void
@@ -337,22 +348,34 @@ export function ModelSelector({
 												<div className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-accent" />
 											)}
 											<div className="min-w-0">
-												<div className="text-sm font-mono truncate">{name}</div>
+												<div className="text-sm font-mono truncate flex items-center gap-1.5">
+													{name}
+													{free && (
+														<span className="text-[9px] px-1 py-0.5 bg-accent/15 text-accent font-mono uppercase tracking-wide shrink-0">
+															Free
+														</span>
+													)}
+												</div>
 												<div className="text-[10px] text-text-muted font-mono truncate">
 													{modelItem.ctx} CTX · {modelItem.id}
 												</div>
 											</div>
-											<div className="text-right shrink-0 ml-2">
-												<div
-													className={`
+											<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
+												{locked && (
+													<Lock className="w-3 h-3 text-text-muted/50" />
+												)}
+												<div>
+													<div
+														className={`
                             text-[10px] px-1.5 py-0.5 font-mono uppercase
                             ${tierStyle.bg} ${tierStyle.text}
                           `}
-												>
-													{modelItem.category}
-												</div>
-												<div className="text-[10px] text-text-muted font-mono mt-1">
-													${modelItem.inputPer1M.toFixed(2)}/1M IN
+													>
+														{modelItem.category}
+													</div>
+													<div className="text-[10px] text-text-muted font-mono mt-1">
+														{free ? "$0.00" : `$${modelItem.inputPer1M.toFixed(2)}`}/1M IN
+													</div>
 												</div>
 											</div>
 										</m.button>
