@@ -224,6 +224,8 @@ export interface MessagesListProps {
 	handlePreset: (prompt: string, model?: string) => void;
 	handleExampleSelect: (example: ExampleConversation) => void;
 	inputRef: RefObject<HTMLTextAreaElement | null>;
+	/** Regenerate the last assistant turn (ChatGPT-style Retry). */
+	onRegenerate?: () => void;
 }
 
 /**
@@ -266,6 +268,7 @@ export function MessagesList({
 	handlePreset,
 	handleExampleSelect,
 	inputRef,
+	onRegenerate,
 }: MessagesListProps) {
 	const showFeatureHints =
 		deferredMessages.length === 0 &&
@@ -345,7 +348,7 @@ export function MessagesList({
 				) : (
 					<div className="space-y-6 md:space-y-8 pb-12">
 						<AnimatePresence mode="popLayout">
-							{deferredMessages.map((msg) => {
+							{deferredMessages.map((msg, index) => {
 								// ponytail: memoize the JSON-classification result per
 								// message so SSE token flushes (which replace the
 								// content array reference) don't re-parse every line
@@ -362,12 +365,22 @@ export function MessagesList({
 										</div>
 									);
 								}
+								const isLast =
+									index === deferredMessages.length - 1;
+								const isLastAssistant =
+									msg.role === "assistant" && isLast;
 								return (
 									<LazyChatMessage
 										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
-										loading={loading}
+										loading={loading && isLastAssistant}
 										onCopy={handleCopy}
+										onRegenerate={
+											isLastAssistant && !loading
+												? onRegenerate
+												: undefined
+										}
+										isLastAssistant={isLastAssistant}
 									/>
 								);
 							})}

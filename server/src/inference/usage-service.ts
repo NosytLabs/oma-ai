@@ -1,7 +1,8 @@
 import { db } from '../db/client.js';
-import { usageRecords, users } from '../db/schema.js';
+import { usageRecords, users, apiKeys } from '../db/schema.js';
 import { sql, eq, gte, and } from 'drizzle-orm';
 import { metricsStore } from '../routes/metrics.js';
+import { logger } from '../lib/logger.js';
 
 export interface UsageRecordParams {
   requestId: string;
@@ -49,30 +50,94 @@ export async function getX402SystemUserId(): Promise<string> {
   return x402SystemUserId;
 }
 
+/**
+ * Some deployed DBs still enforce NOT NULL on usage_records.api_key_id even
+ * though the Drizzle schema allows null. Free website chat (oma-ai-guest) and
+ * x402 have no real key — attribute them to a reserved system key.
+ */
+let systemApiKeyId: string | null = null;
+export async function getSystemApiKeyId(): Promise<string> {
+  if (systemApiKeyId) return systemApiKeyId;
+  const userId = await getX402SystemUserId();
+  const existing = await db
+    .select({ id: apiKeys.id })
+    .from(apiKeys)
+    .where(and(eq(apiKeys.userId, userId), eq(apiKeys.keyPrefix, "system_guest")))
+    .limit(1);
+  if (existing.length > 0) {
+    systemApiKeyId = existing[0].id;
+    return systemApiKeyId;
+  }
+  const inserted = await db
+    .insert(apiKeys)
+    .values({
+      userId,
+      keyPrefix: "system_guest",
+      // Not a usable secret — hash is a fixed sentinel for metering only.
+      keyHash: "system:free-guest-metering-v1",
+      name: "System free-guest / x402 metering",
+      active: false,
+    })
+    .onConflictDoNothing()
+    .returning({ id: apiKeys.id });
+  if (inserted.length > 0) {
+    systemApiKeyId = inserted[0].id;
+  } else {
+    const raced = await db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.userId, userId), eq(apiKeys.keyPrefix, "system_guest")))
+      .limit(1);
+    systemApiKeyId = raced[0]?.id ?? null;
+  }
+  if (!systemApiKeyId) {
+    throw new Error("Failed to allocate system API key for guest metering");
+  }
+  return systemApiKeyId;
+}
+
 export async function recordUsage(params: UsageRecordParams): Promise<void> {
-  const userId = UUID_RE.test(params.userId)
-    ? params.userId
-    : await getX402SystemUserId();
-  // Legacy callers pass "unknown" when the request had no API key — the
-  // column is a nullable UUID FK, so anything non-UUID becomes null.
-  const apiKeyId = params.apiKeyId && UUID_RE.test(params.apiKeyId) ? params.apiKeyId : null;
-  await db.insert(usageRecords).values({
-    requestId: params.requestId,
-    userId,
-    apiKeyId,
-    model: params.modelId,
-    provider: params.provider as "venice" | "surplus" | "gonka",
-    inputTokens: params.inputTokens,
-    outputTokens: params.outputTokens,
-    costCents: params.costCents,
-    markupCents: params.markupCents,
-    totalCents: params.totalCents,
-    latencyMs: params.latencyMs ?? null,
-    status: params.status ?? 'completed',
-  }).onConflictDoNothing();
-  // oma_chat_completion_tokens_total was declared but never incremented —
-  // every recorded request now feeds the Prometheus counter.
-  metricsStore.chatCompletionTokens += params.inputTokens + params.outputTokens;
+  try {
+    const userId = UUID_RE.test(params.userId)
+      ? params.userId
+      : await getX402SystemUserId();
+    // Legacy callers pass "unknown" when the request had no API key.
+    // Prefer a real system key when the DB still requires NOT NULL api_key_id.
+    let apiKeyId =
+      params.apiKeyId && UUID_RE.test(params.apiKeyId) ? params.apiKeyId : null;
+    if (!apiKeyId) {
+      try {
+        apiKeyId = await getSystemApiKeyId();
+      } catch (err) {
+        logger.warn({ err }, "[usage] system api key unavailable; skipping api_key_id");
+        apiKeyId = null;
+      }
+    }
+    await db.insert(usageRecords).values({
+      requestId: params.requestId,
+      userId,
+      apiKeyId,
+      model: params.modelId,
+      provider: params.provider as "venice" | "surplus" | "gonka",
+      inputTokens: params.inputTokens,
+      outputTokens: params.outputTokens,
+      costCents: params.costCents,
+      markupCents: params.markupCents,
+      totalCents: params.totalCents,
+      latencyMs: params.latencyMs ?? null,
+      status: params.status ?? 'completed',
+    }).onConflictDoNothing();
+    // oma_chat_completion_tokens_total was declared but never incremented —
+    // every recorded request now feeds the Prometheus counter.
+    metricsStore.chatCompletionTokens += params.inputTokens + params.outputTokens;
+  } catch (err) {
+    // Never fail a successful inference because metering could not write.
+    // Free-guest + x402 paths especially must return content to the client.
+    logger.error(
+      { err, requestId: params.requestId, modelId: params.modelId, status: params.status },
+      "[usage] recordUsage failed (non-fatal)",
+    );
+  }
 }
 
 // Provider-level cost rollup. Used by /v1/admin/providers/:provider/usage and

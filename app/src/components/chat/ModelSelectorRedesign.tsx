@@ -141,16 +141,25 @@ export function ModelSelector({
 		};
 	}, [open]);
 
+	// ponytail: chat playground is a free-OMA-AI / Gonka surface only. Filter
+	// the dropdown to the OMA-AI provider tier so guests never see a paid
+	// Venice model they can't call without signing in. The full catalog
+	// (including paid Venice models) is still available at /models.
+	const freeOnly = useMemo(
+		() => MODELS.filter((m) => m.provider === "OMA-AI"),
+		[MODELS],
+	);
+
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase();
-		return MODELS.filter((m) => {
+		return freeOnly.filter((m) => {
 			const name = displayName(m.id, m.name);
 			const matchesSearch =
 				!q || name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
 			const matchesTier = tierFilter === "all" || m.category === tierFilter;
 			return matchesSearch && matchesTier;
 		});
-	}, [search, tierFilter, MODELS]);
+	}, [search, tierFilter, freeOnly]);
 
 	const selectedModel = useMemo(
 		() => MODELS.find((m) => m.id === model),

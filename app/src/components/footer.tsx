@@ -66,7 +66,7 @@ const PRODUCT: FooterSection = {
 	title: "Product",
 	links: [
 		{ label: "Models", href: "/models", icon: Boxes },
-		{ label: "Chat", href: "/chat", icon: Terminal },
+		{ label: "Playground", href: "/chat", icon: Terminal },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
 		{ label: "Compare", href: "/compare" },

@@ -13,6 +13,8 @@ import { readSessionToken } from "../cookies";
 
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+/** Streaming chat / long free-model replies need a longer upstream budget. */
+const LONG_INFERENCE_TIMEOUT_MS = 180_000;
 
 /** Routes that don't require auth, mapped from the path *after* `/api`. */
 const PUBLIC_BACKEND_PATHS = new Set([
@@ -25,6 +27,12 @@ const PUBLIC_BACKEND_PATHS = new Set([
 	"/v1/health",
 	"/v1/ping",
 	"/v1/models",
+	// Free website playground: guest chat (gonka models) + web search.
+	// Backend still enforces paid-model auth on completions; search is
+	// rate-limited and keyless-fallback capable.
+	"/v1/chat/completions",
+	"/v1/search",
+	"/v1/search/stream",
 	// SIWE / account-number login — these MUST be reachable without a
 	// session, otherwise the catch-all proxy short-circuits them to 401
 	// and users can't start the auth flow at all. CSRF protection still
@@ -109,7 +117,7 @@ export async function proxyRequest(
 	const {
 		backendPath: explicitPath,
 		backendBase,
-		timeoutMs = DEFAULT_TIMEOUT_MS,
+		timeoutMs: timeoutOverride,
 		autoBearer = true,
 	} = options;
 
@@ -122,6 +130,13 @@ export async function proxyRequest(
 			{ status: 401 },
 		);
 	}
+
+	const timeoutMs =
+		timeoutOverride ??
+		(backendPath.startsWith("/v1/chat/completions") ||
+		backendPath.startsWith("/v1/completions")
+			? LONG_INFERENCE_TIMEOUT_MS
+			: DEFAULT_TIMEOUT_MS);
 
 	const headers = buildUpstreamHeaders(request);
 	if (autoBearer) await ensureBearer(headers);

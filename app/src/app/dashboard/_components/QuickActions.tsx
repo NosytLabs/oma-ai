@@ -22,20 +22,20 @@ interface QuickAction {
 const ACTIONS: QuickAction[] = [
 	{
 		href: "/chat",
-		label: "Open chat",
-		description: "Test prompts in the browser",
+		label: "Open playground",
+		description: "Chat with free OMA-AI models",
 		icon: Terminal,
 	},
 	{
-		href: "/image-generation",
+		href: "/chat?mode=image",
 		label: "Generate image",
-		description: "Text → image models",
+		description: "Text → image (credits)",
 		icon: ImageIcon,
 	},
 	{
-		href: "/video-generation",
+		href: "/chat?mode=video",
 		label: "Generate video",
-		description: "Text → video models",
+		description: "Text → video (credits)",
 		icon: VideoIcon,
 	},
 	{

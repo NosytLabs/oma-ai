@@ -19,8 +19,8 @@ export type ImageGenerationResult = {
 const DEFAULT_API_URL = "/api/v1/images/generations";
 
 /**
- * Shared image-generation request flow. Both the standalone
- * /image-generation page and the chat ImageGenerationPanel call this so
+ * Shared image-generation request flow. The chat ImageGenerationPanel
+ * (`/chat?mode=image`) is the sole UI surface — this hook keeps request
  * auth handling, error mapping, and toast behavior stay in lockstep.
  */
 export function useImageGeneration(apiUrl: string = DEFAULT_API_URL) {

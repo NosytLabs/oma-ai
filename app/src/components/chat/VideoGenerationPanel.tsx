@@ -4,11 +4,12 @@ import {
 	Download,
 	Film,
 	Image as ImageIcon,
-	Loader2,
 	Plus,
+	RefreshCw,
 	Sparkles,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { useToast } from "@/components/ui/Toast";
 import { buildAuthHeaders } from "@/lib/cookies";
@@ -464,7 +465,7 @@ export function VideoGenerationPanel() {
 						type="button"
 						onClick={generate}
 						disabled={!prompt.trim() || loading || polling}
-						className="btn-primary w-full sm:w-auto justify-center"
+						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
 						aria-label={
 							loading
 								? "Submitting video generation job"
@@ -475,13 +476,23 @@ export function VideoGenerationPanel() {
 					>
 						{loading ? (
 							<>
-								<Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />{" "}
-								Submitting...
+								<ThinkingOrb
+									state="working"
+									size={20}
+									theme="auto"
+									aria-hidden="true"
+								/>
+								Submitting…
 							</>
 						) : polling ? (
 							<>
-								<Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />{" "}
-								Processing...
+								<ThinkingOrb
+									state="shaping"
+									size={20}
+									theme="auto"
+									aria-hidden="true"
+								/>
+								Processing…
 							</>
 						) : (
 							<>
@@ -490,11 +501,25 @@ export function VideoGenerationPanel() {
 							</>
 						)}
 					</button>
+					{error && !loading && !polling && (
+						<button
+							type="button"
+							onClick={() => {
+								setError(null);
+								void generate();
+							}}
+							disabled={!prompt.trim()}
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+							aria-label="Retry video generation"
+						>
+							<RefreshCw className="w-4 h-4" aria-hidden="true" /> Retry
+						</button>
+					)}
 					{(videoUrl || queueId) && (
 						<button
 							type="button"
 							onClick={reset}
-							className="btn-secondary w-full sm:w-auto justify-center"
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
 							aria-label="Start new video generation"
 						>
 							<Plus className="w-4 h-4" aria-hidden="true" /> New
@@ -519,11 +544,20 @@ export function VideoGenerationPanel() {
 			</div>
 
 			{loading && !polling && (
-				<div className="mt-8 rounded-2xl border border-border bg-surface p-12 shadow-sm">
-					<div className="flex flex-col items-center justify-center text-center">
-						<Loader2 className="w-10 h-10 text-accent animate-spin mb-4" />
+				<div className="mt-8 rounded-2xl border border-border bg-surface p-8 sm:p-12 shadow-sm">
+					<div
+						className="flex flex-col items-center justify-center text-center gap-3"
+						role="status"
+						aria-live="polite"
+					>
+						<ThinkingOrb
+							state="working"
+							size={64}
+							theme="auto"
+							aria-hidden="true"
+						/>
 						<p className="text-lg font-semibold text-text-bright">
-							Submitting video generation job...
+							Submitting video job…
 						</p>
 						<p className="text-sm text-text">This may take a moment.</p>
 					</div>
@@ -531,16 +565,22 @@ export function VideoGenerationPanel() {
 			)}
 
 			{polling && (
-				<div className="mt-8 rounded-2xl border border-border bg-surface p-12 shadow-sm">
-					<div className="flex flex-col items-center justify-center text-center">
-						<div className="relative mb-6">
-							<Loader2 className="w-16 h-16 text-accent animate-spin" />
-							<div className="absolute inset-0 flex items-center justify-center">
-								<Film className="w-6 h-6 text-accent" />
-							</div>
+				<div className="mt-8 rounded-2xl border border-border bg-surface p-8 sm:p-12 shadow-sm">
+					<div
+						className="flex flex-col items-center justify-center text-center"
+						role="status"
+						aria-live="polite"
+					>
+						<div className="mb-6">
+							<ThinkingOrb
+								state="shaping"
+								size={64}
+								theme="auto"
+								aria-label="Generating video"
+							/>
 						</div>
 						<p className="text-lg font-semibold text-text-bright">
-							Generating your video...
+							Shaping your video…
 						</p>
 						<p className="mt-2 text-sm text-text">
 							This usually takes 30-60 seconds. Stay on this page and the video

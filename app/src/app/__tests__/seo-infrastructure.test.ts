@@ -55,8 +55,9 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("excludes auth-gated product surfaces", () => {
 		const result = sitemap();
 		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+		// /chat is public free playground — may appear in sitemap.
+		// image/video legacy paths redirect and must not be listed.
 		for (const gated of [
-			"/chat",
 			"/deposit",
 			"/dashboard",
 			"/settings",
@@ -115,7 +116,7 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 		}
 	});
 
-	it("disallows /api/, /admin, /dashboard, /settings, /login and product gates", () => {
+	it("disallows /api/, /admin, /dashboard, /settings, /login and deposit", () => {
 		const result = robots();
 		for (const rule of rulesArray(result)) {
 			if (rule.userAgent === "*") {
@@ -130,11 +131,12 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 					"/dashboard",
 					"/settings",
 					"/login",
-					"/chat",
 					"/deposit",
 				]) {
 					expect(disallow).toContain(path);
 				}
+				// Free public playground must remain crawlable
+				expect(disallow).not.toContain("/chat");
 			}
 		}
 	});

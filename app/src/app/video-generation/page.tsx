@@ -1,17 +1,9 @@
-import type { Metadata } from "next";
-import { VideoGenerationPanel } from "@/components/chat/VideoGenerationPanel";
+import { permanentRedirect } from "next/navigation";
 
-// Imports a client-only panel; opt out of static prerender.
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-	title: "Video generation playground",
-	description:
-		"Generate short videos from text or image prompts. Charged per second in OMA credits.",
-	alternates: { canonical: "/video-generation" },
-	robots: { index: false, follow: false },
-};
-
+/**
+ * Video generation lives in the unified playground at `/chat?mode=video`.
+ * Permanent redirect keeps old bookmarks working.
+ */
 export default function VideoGenerationPage() {
-	return <VideoGenerationPanel />;
+	permanentRedirect("/chat?mode=video");
 }

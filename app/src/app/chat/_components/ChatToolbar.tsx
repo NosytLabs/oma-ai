@@ -157,25 +157,83 @@ export function ChatToolbar({
 			)
 		) : null;
 
+	const mediaTabs =
+		isChat && setMediaMode ? (
+			<div
+				className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
+				role="tablist"
+				aria-label="Playground mode"
+			>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("text")}
+					aria-selected={mediaMode === "text"}
+					aria-pressed={mediaMode === "text"}
+					title="Text chat (free OMA-AI models available)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<MessageSquare className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Chat</span>
+				</button>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("image")}
+					aria-selected={mediaMode === "image"}
+					aria-pressed={mediaMode === "image"}
+					title="Image generation (credits)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<ImageIcon className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Image</span>
+				</button>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("video")}
+					aria-selected={mediaMode === "video"}
+					aria-pressed={mediaMode === "video"}
+					title="Video generation (credits)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<Film className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Video</span>
+				</button>
+			</div>
+		) : null;
+
+	const webSearchBtn = (
+		<button
+			type="button"
+			onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+			aria-label="Toggle web search"
+			aria-pressed={webSearchEnabled}
+			className={`${btnBase} shrink-0 min-h-[40px] min-w-[40px] ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+			title="Toggle Web Search"
+		>
+			<Search className="h-3.5 w-3.5" />
+			<span className="hidden sm:inline">WEB</span>
+		</button>
+	);
+
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex h-12 flex-none items-center gap-2 border-b border-border bg-void/95 px-2 sm:px-4"
+			className="flex h-12 flex-none items-center gap-1.5 border-b border-border bg-void/95 px-1.5 sm:gap-2 sm:px-4"
 		>
-			{/* Left cluster: brand (md+) + model + params */}
-			<div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+			{/* Left: model + params (shrinks on mobile) */}
+			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
 				<div
-					className={`mr-1 hidden shrink-0 items-center gap-2 sm:flex ${isChat ? "text-accent" : "text-warning"}`}
+					className={`mr-1 hidden shrink-0 items-center gap-2 md:flex ${isChat ? "text-accent" : "text-warning"}`}
 				>
 					<TerminalSquare className="h-4 w-4" />
 					<span className="text-[11px] font-bold uppercase tracking-widest">
-						OMA.WB
+						OMA
 					</span>
 				</div>
 
-				<div className="hidden h-4 w-px shrink-0 bg-border md:block" />
-
-				<div className="min-w-0 flex-1 sm:flex-none">
+				<div className="min-w-0 flex-1 sm:max-w-[220px] md:max-w-none md:flex-none">
 					<LazyModelSelector model={model} setModel={setModel} />
 				</div>
 
@@ -184,94 +242,46 @@ export function ChatToolbar({
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="Toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-[36px] min-w-[36px] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
 				>
 					<Settings2 className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline">PARAMS</span>
+					<span className="hidden lg:inline">PARAMS</span>
 				</button>
-
-				{/* Credits pinned left of the scrollable actions on mobile so they never clip */}
-				<div className="ml-auto shrink-0 sm:hidden">{creditsPill}</div>
 			</div>
 
-			{/* Right cluster: secondary tools — scrollable on narrow viewports */}
-			<div className="hidden max-w-[55%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:flex sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden md:max-w-none">
-				<button
-					type="button"
-					onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-					aria-label="Toggle web search"
-					aria-pressed={webSearchEnabled}
-					className={`${btnBase} shrink-0 ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-					title="Toggle Web Search (Tinyfish MCP)"
-				>
-					<Search className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline">WEB</span>
-				</button>
-
-				{isChat && setMediaMode && (
-					<div
-						className="hidden shrink-0 items-center gap-0.5 border border-border bg-surface md:flex"
-						role="group"
-						aria-label="Chat mode"
-					>
-						<button
-							type="button"
-							onClick={() => setMediaMode("text")}
-							aria-pressed={mediaMode === "text"}
-							title="Text chat"
-							className={`${btnBase} !border-0 ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-						>
-							<MessageSquare className="h-3.5 w-3.5" />
-							<span className="hidden md:inline">TEXT</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setMediaMode("image")}
-							aria-pressed={mediaMode === "image"}
-							title="Image generation"
-							className={`${btnBase} !border-0 ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-						>
-							<ImageIcon className="h-3.5 w-3.5" />
-							<span className="hidden md:inline">IMG</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setMediaMode("video")}
-							aria-pressed={mediaMode === "video"}
-							title="Video generation"
-							className={`${btnBase} !border-0 ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-						>
-							<Film className="h-3.5 w-3.5" />
-							<span className="hidden md:inline">VID</span>
-						</button>
-					</div>
-				)}
-
+			{/* Primary actions always visible (mobile + desktop): mode + web search */}
+			<div className="flex shrink-0 items-center gap-1">
+				{mediaTabs}
+				{webSearchBtn}
 				{searching && (
-					<div className="flex shrink-0 items-center gap-2 border border-accent/20 bg-accent/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-accent">
+					<div
+						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1 text-[10px] uppercase tracking-widest text-accent"
+						role="status"
+						aria-live="polite"
+					>
 						<span className="h-1.5 w-1.5 animate-pulse bg-accent" />
-						NET_REQ
+						<span className="hidden xs:inline sm:inline">SEARCH</span>
 					</div>
 				)}
+			</div>
 
-				<div className="mx-1 hidden h-4 w-px shrink-0 bg-border md:block" />
+			{/* Secondary actions — scrollable on small screens, never hide media tabs */}
+			<div className="flex max-w-[40%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
 				<div className="hidden shrink-0 md:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>
 				<div className="hidden shrink-0 sm:block md:hidden">
 					<LazyMobileStatsBar messages={deferredMessages} model={model} />
 				</div>
-				<div className="mx-1 hidden h-4 w-px shrink-0 bg-border md:block" />
 
-				{/* Desktop credits (mobile uses pinned pill above) */}
-				<div className="hidden sm:block">{creditsPill}</div>
+				{creditsPill}
 
 				<button
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} shrink-0 ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-[40px] min-w-[40px] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
@@ -339,29 +349,6 @@ export function ChatToolbar({
 						</button>
 					</div>
 				)}
-			</div>
-
-			{/* Mobile-only secondary actions (web + compare) — keep strip short */}
-			<div className="flex shrink-0 items-center gap-1 sm:hidden">
-				<button
-					type="button"
-					onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-					aria-label="Toggle web search"
-					aria-pressed={webSearchEnabled}
-					className={`${btnBase} ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-					title="Toggle Web Search"
-				>
-					<Search className="h-3.5 w-3.5" />
-				</button>
-				<button
-					type="button"
-					onClick={() => setCompareMode(!compareMode)}
-					aria-label="Compare models"
-					aria-pressed={compareMode}
-					className={`${btnBase} ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-				>
-					<Columns2 className="h-3.5 w-3.5" />
-				</button>
 			</div>
 		</header>
 	);

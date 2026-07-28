@@ -5,8 +5,30 @@
  * (dropdown labels) so the two surfaces stay visually consistent.
  */
 
-import { MODELS } from "@/lib/models-data";
+import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
+
+/** Default free OMA-AI (OpenBroker/gonka) model for unauthenticated website chat. */
+export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
+
+/** Known free catalog ids (provider=gonka). Keep in sync with server/models.json. */
+export const FREE_CHAT_MODEL_IDS = new Set([
+	"minimax-m2.7",
+	"kimi-k2-6",
+]);
+
+/**
+ * Whether the website chat may call completions without sign-in / API key.
+ * Free OMA-AI models are resold cheaply enough to offer as guest chat.
+ */
+export function isFreeChatModel(
+	modelId: string,
+	provider?: ModelOption["provider"] | string | null,
+): boolean {
+	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
+	const p = typeof provider === "string" ? normalizeProvider(provider) : provider;
+	return p === "OMA-AI";
+}
 
 // ---------------------------------------------------------------------------
 // Friendly-name lookup — maps raw model IDs from the static catalog to
@@ -118,7 +140,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		? (m.category as ModelOption["category"])
 		: "mid";
 	const provider: ModelOption["provider"] =
-		m.provider === "OMA-AI" ? "OMA-AI" : "Venice";
+		normalizeProvider(m.provider);
 
 	return {
 		id: m.id,

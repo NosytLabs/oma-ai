@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { normalizeProvider } from "@/lib/models-data";
 import { type LiveModelRaw, mapLiveModel } from "@/lib/model-utils";
 import { MODELS } from "@/lib/models-data";
 
@@ -57,7 +58,7 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "OMA-AI" | "Both";
+	provider: "Venice" | "OMA-AI" | "Both" | "Surplus" | "Tinyfish";
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
@@ -87,7 +88,7 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 		? (m.tier as ModelOption["category"])
 		: "mid";
 	const provider: ModelOption["provider"] =
-		m.provider === "OMA-AI" ? "OMA-AI" : "Venice";
+		normalizeProvider(m.provider);
 	return {
 		id: m.id,
 		name: m.name,

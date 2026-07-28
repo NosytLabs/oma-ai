@@ -7,13 +7,29 @@ import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 
-// Lazy-load the 569-line chat shell (framer-motion + wallet hooks).
+// Lazy-load the chat shell (framer-motion + wallet hooks) with a branded
+// ThinkingOrb fallback so first paint is never a blank main region.
 const ChatPlaygroundShell = nextDynamic(
 	() =>
 		import("./_components/ChatPlaygroundShell").then((m) => ({
 			default: m.ChatPlaygroundShell,
 		})),
-	{ ssr: false },
+	{
+		ssr: false,
+		loading: () => (
+			<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+				<div className="flex flex-col items-center gap-5">
+					<ThinkingOrb
+						state="searching"
+						size={64}
+						theme="auto"
+						aria-label="Loading chat"
+					/>
+					<div className="animate-shimmer h-3 w-64 max-w-full rounded-full bg-surface-elevated" />
+				</div>
+			</div>
+		),
+	},
 );
 
 function ChatLoadingFallback() {

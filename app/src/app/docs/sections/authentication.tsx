@@ -37,11 +37,35 @@ func main() {
 				id="authentication"
 				icon={<Key className="h-5 w-5" />}
 				title="Authentication"
-				subtitle="All inference endpoints require a Bearer token API key in the Authorization header."
+				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI website chat does not."
 			/>
 
+			<div
+				id="auth-free-chat"
+				className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-6 scroll-mt-24"
+			>
+				<h3 className="font-semibold text-accent text-sm mb-2">
+					Free OMA-AI models (website chat)
+				</h3>
+				<p className="text-sm text-text-muted mb-2">
+					Models routed via OMA-AI (OpenBroker /{" "}
+					<code className="text-accent font-mono text-xs">provider: gonka</code>
+					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{" "}
+					<code className="text-accent font-mono text-xs">kimi-k2-6</code> — can be
+					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
+					without sign-in, API key, or wallet. Rate limits still apply. Venice and
+					other paid models require an account (API key or wallet) and credits.
+				</p>
+				<p className="text-sm text-text-muted">
+					Programmatic API access to free models still works with a key if you
+					prefer; unauthenticated requests to{" "}
+					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
+					are accepted only for free OMA-AI model ids.
+				</p>
+			</div>
+
 			<div id="auth-key" className="rounded-xl border border-border bg-panel p-5 mb-6 scroll-mt-24">
-				<div className="mb-3 text-sm text-text-muted">Authorization Header</div>
+				<div className="mb-3 text-sm text-text-muted">Authorization Header (paid API)</div>
 				<div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
 					<span className="text-warning">Authorization:</span>{" "}
 					<span className="text-accent">Bearer oma_sk_...</span>

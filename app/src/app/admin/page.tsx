@@ -21,8 +21,8 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { api } from "@/lib/api";
 import type { AdminUser } from "@/lib/api/admin";
@@ -78,9 +78,29 @@ const TABS: { id: Tab; Icon: LucideIcon; href?: string }[] = [
 	{ id: "rate-limits", Icon: Gauge, href: "/admin/rate-limits" },
 ];
 
+const VALID_TABS = new Set<Tab>([
+	"overview",
+	"users",
+	"usage",
+	"revenue",
+	"keys",
+	"audit-logs",
+	"dlq",
+	"refunds",
+	"invoices",
+	"surplus",
+	"polar",
+]);
+
 export default function AdminPage() {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<Tab>("overview");
+	const searchParams = useSearchParams();
+	const tabFromUrl = searchParams.get("tab");
+	const initialTab: Tab =
+		tabFromUrl && VALID_TABS.has(tabFromUrl as Tab)
+			? (tabFromUrl as Tab)
+			: "overview";
+	const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 	const [usersPage, setUsersPage] = useState(1);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [usagePeriod, setUsagePeriod] = useState("30d");
@@ -88,12 +108,25 @@ export default function AdminPage() {
 
 	const queryClient = useQueryClient();
 
+	// Keep tab in sync when landing via /admin?tab=usage (deep links).
+	useEffect(() => {
+		if (tabFromUrl && VALID_TABS.has(tabFromUrl as Tab)) {
+			setActiveTab(tabFromUrl as Tab);
+		}
+	}, [tabFromUrl]);
+
 	const selectTab = (id: Tab, href?: string) => {
 		if (href) {
 			router.push(href);
 			return;
 		}
 		setActiveTab(id);
+		// Reflect in-panel tabs in the URL without full navigation.
+		const next = new URLSearchParams(searchParams.toString());
+		if (id === "overview") next.delete("tab");
+		else next.set("tab", id);
+		const q = next.toString();
+		router.replace(q ? `/admin?${q}` : "/admin", { scroll: false });
 	};
 
 	const refreshStats = () => {

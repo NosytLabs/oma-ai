@@ -1,4 +1,4 @@
-import { Hono, type Context } from "hono";
+import { Hono, type Context, type Next } from "hono";
 import crypto from "node:crypto";
 import { bearerAuth } from "../auth/middleware.js";
 import { searchWeb } from "../inference/tinyfish.js";
@@ -8,15 +8,38 @@ import { getBalance, deductCredits } from "../credits/index.js";
 import { createInsufficientCreditsPayReq } from "../credits/insufficient-credits.js";
 import type { OmaEnv } from "../types.js";
 import { trackApiKeySpend } from "../inference/handler-helpers.js";
+import { FREE_GUEST_USER_ID } from "./chat/free-guest.js";
 
 export const searchRoutes = new Hono<OmaEnv>();
 
 const SEARCH_COST_CENTS = 1; // Basic cost for web search
+/** Free guest searches: no credit deduction, still rate-limited. */
+const GUEST_SEARCH_DAILY_SOFT_CAP = 30;
 
-// Shared middleware for both /v1/search and /v1/search/stream
-searchRoutes.use("/v1/search/*", bearerAuth);
+/**
+ * Website chat needs web search without a key (pairs with free OMA-AI models).
+ * Guests get a rate-limited free path; authenticated callers keep bearer auth.
+ */
+async function optionalSearchAuth(c: Context<OmaEnv>, next: Next) {
+  const hasBearer = Boolean(c.req.header("Authorization"));
+  const hasKeyCookie = /(?:^|;\s*)(?:__Host-)?oma_api_key=/.test(
+    c.req.header("Cookie") || "",
+  );
+  if (!hasBearer && !hasKeyCookie) {
+    c.set("userId", FREE_GUEST_USER_ID);
+    return next();
+  }
+  return bearerAuth(c, next);
+}
+
+// Apply to both /v1/search and nested /v1/search/* (stream).
+searchRoutes.use("/v1/search", optionalSearchAuth);
+searchRoutes.use("/v1/search/*", optionalSearchAuth);
+searchRoutes.use("/v1/search", tokenBucket({ refillRate: 20, bucketSize: 60, rpmLimit: 60 }));
 searchRoutes.use("/v1/search/*", tokenBucket({ refillRate: 20, bucketSize: 60, rpmLimit: 60 }));
+searchRoutes.use("/v1/search", modelRateLimit());
 searchRoutes.use("/v1/search/*", modelRateLimit());
+searchRoutes.use("/v1/search", spendLimit());
 searchRoutes.use("/v1/search/*", spendLimit());
 
 // ponytail: shared search handler — JSON and SSE differ only in response format.
@@ -26,20 +49,24 @@ async function executeSearch(c: Context<OmaEnv>, stream: boolean) {
     return c.json({ error: { message: "query parameter required", type: "invalid_request_error" } }, 400);
   }
 
-  const userId = c.get("userId");
+  const userId = c.get("userId") ?? FREE_GUEST_USER_ID;
   const apiKey = c.get("apiKey");
-  const bal = await getBalance(userId);
-  if (Number(bal.balanceCents) <= 0) {
-    return createInsufficientCreditsPayReq(c, SEARCH_COST_CENTS, 0);
+  const isGuest = userId === FREE_GUEST_USER_ID || !apiKey;
+
+  if (!isGuest) {
+    const bal = await getBalance(userId);
+    if (Number(bal.balanceCents) <= 0) {
+      return createInsufficientCreditsPayReq(c, SEARCH_COST_CENTS, 0);
+    }
   }
 
   try {
     const results = await searchWeb(query);
 
     // SECURITY: Only deduct credits if search returned non-empty results.
-    // Previously, credits were deducted even for empty/partial results.
+    // Guests never pay — free website chat web search.
     const hasResults = Array.isArray(results.results) && results.results.length > 0;
-    if (hasResults) {
+    if (hasResults && !isGuest) {
       const requestId = crypto.randomUUID();
       await deductCredits(
         userId,
@@ -55,6 +82,12 @@ async function executeSearch(c: Context<OmaEnv>, stream: boolean) {
       );
 
       trackApiKeySpend(apiKey?.keyHash, SEARCH_COST_CENTS);
+    }
+
+    // Soft-cap hint for abuse review (header only; hard limit is tokenBucket).
+    if (isGuest) {
+      c.header("x-oma-guest-search", "1");
+      c.header("x-oma-guest-search-soft-cap", String(GUEST_SEARCH_DAILY_SOFT_CAP));
     }
 
     if (stream) {
@@ -104,7 +137,14 @@ async function executeSearch(c: Context<OmaEnv>, stream: boolean) {
     });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
-    return c.json({ error: { message: "Search failed", type: "search_error" } }, status as Parameters<typeof c.json>[1]);
+    const message =
+      status === 503
+        ? "Web search is not configured on this deployment"
+        : "Search failed";
+    return c.json(
+      { error: { message, type: "search_error", code: status === 503 ? "search_unavailable" : "search_error" } },
+      status as Parameters<typeof c.json>[1],
+    );
   }
 }
 

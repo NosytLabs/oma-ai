@@ -19,6 +19,7 @@
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { BorderBeam } from "border-beam";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { MetalFx } from "metal-fx";
 import type { Ref } from "react";
@@ -76,6 +77,16 @@ export const MessageInputRedesigned = forwardRef<
 			return false;
 		}
 	});
+	const [focused, setFocused] = useState(false);
+	const [reduceMotion, setReduceMotion] = useState(false);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const sync = () => setReduceMotion(mq.matches);
+		sync();
+		mq.addEventListener("change", sync);
+		return () => mq.removeEventListener("change", sync);
+	}, []);
 
 	// Auto-dismiss hints after first interaction
 	useEffect(() => {
@@ -124,30 +135,34 @@ export const MessageInputRedesigned = forwardRef<
 		}
 	}, []);
 
+	const beamActive =
+		!reduceMotion && (loading || (focused && hasInput));
+
 	return (
 		<div className="relative">
+			<BorderBeam
+				size={loading ? "pulse-inner" : "line"}
+				colorVariant={loading ? "ocean" : "mono"}
+				theme="auto"
+				strength={loading ? 0.55 : 0.4}
+				duration={loading ? 2.6 : 3.2}
+				active={beamActive}
+				borderRadius={12}
+				className="w-full"
+			>
 			<div
 				className="
-            glass relative flex items-end px-2 py-2
+            glass relative flex items-end px-2 py-2 rounded-xl
             transition-all duration-300
+            border border-border
             focus-within:border-accent/50
             focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)]
           "
 				role="group"
 				aria-label="New message"
+				aria-busy={loading}
+				data-state={loading ? "loading" : focused ? "focus" : "idle"}
 			>
-				{/* ─── Animated top border on focus ─── */}
-				<div
-					className={`
-              absolute top-0 left-0 right-0 h-px transition-opacity duration-300
-              ${hasInput ? "opacity-100" : "opacity-0"}
-            `}
-					style={{
-						background:
-							"linear-gradient(90deg, transparent, var(--color-accent), transparent)",
-					}}
-				/>
-
 				<textarea
 					ref={setTextareaRef}
 					id="chat-message-input"
@@ -155,7 +170,9 @@ export const MessageInputRedesigned = forwardRef<
 					value={input}
 					onChange={(e) => setInput(e.target.value)}
 					onKeyDown={handleKeyDown}
-					placeholder="$ QUERY"
+					onFocus={() => setFocused(true)}
+					onBlur={() => setFocused(false)}
+					placeholder="Message OMA…"
 					aria-label="Enter your message"
 					aria-describedby="message-hint"
 					rows={1}
@@ -164,13 +181,13 @@ export const MessageInputRedesigned = forwardRef<
 					enterKeyHint="send"
 					className="
               flex-1 resize-none bg-transparent px-3 md:px-4 py-3
-              text-text-secondary placeholder-text-muted
-              outline-none text-sm font-mono leading-relaxed
+              text-text-bright placeholder-text-muted
+              outline-none text-[15px] leading-relaxed font-sans
               focus:ring-0
-              min-h-[48px]
+              min-h-[52px]
             "
 					disabled={loading}
-					style={{ minHeight: "48px", maxHeight: "200px" }}
+					style={{ minHeight: "52px", maxHeight: "200px" }}
 					onInput={handleInput}
 				/>
 
@@ -191,25 +208,38 @@ export const MessageInputRedesigned = forwardRef<
                   "
 							>
 								{/* Rotating ring */}
-								<m.span
-									className="absolute inset-0 border-2 border-danger/30 rounded-sm"
-									animate={{ rotate: 360 }}
-									transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-								/>
+								{!reduceMotion && (
+									<m.span
+										className="absolute inset-0 border-2 border-danger/30 rounded-sm"
+										animate={{ rotate: 360 }}
+										transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+									/>
+								)}
 								<Loader2 className="w-4 h-4 relative z-10" />
 							</button>
 						</Magnetic>
 					) : (
 						<Magnetic strength={6}>
-							<MetalFx variant="circle" preset="chromatic" strength={0.7}>
+							<MetalFx
+								variant="circle"
+								preset="chromatic"
+								theme="auto"
+								strength={hasInput && !disabled ? 0.75 : 0.2}
+								paused={reduceMotion || !hasInput || disabled}
+								disableGlow={reduceMotion || !hasInput}
+								normalizeHostStyles={false}
+							>
 							<m.button
+								type="button"
 								onClick={onSubmit}
 								disabled={!hasInput || disabled}
 								title={disabled ? disabledReason ?? "Send disabled" : undefined}
 								aria-label="Send message"
 								aria-describedby="message-hint"
-								whileTap={{ scale: 0.9 }}
-								whileHover={hasInput ? { scale: 1.04 } : undefined}
+								whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+								whileHover={
+									hasInput && !reduceMotion ? { scale: 1.04 } : undefined
+								}
 								transition={EASE_SPRING}
 								className={`
                     flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
@@ -230,6 +260,7 @@ export const MessageInputRedesigned = forwardRef<
 					)}
 				</div>
 			</div>
+			</BorderBeam>
 
 			{/* ─── Input hints (first visit) ─── */}
 			<AnimatePresence>

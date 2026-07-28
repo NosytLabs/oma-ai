@@ -139,9 +139,20 @@ export const PROVIDER_COLORS: Record<
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "Venice";
-	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) return "OMA-AI";
+	// Catalog + UI labels: "OMA-AI", "oma", gonka/OpenBroker upstream names
+	if (
+		s.includes("gonka") ||
+		s.includes("openbroker") ||
+		s.includes("obk") ||
+		s === "oma-ai" ||
+		s === "oma" ||
+		s.includes("oma-ai")
+	) {
+		return "OMA-AI";
+	}
 	if (s.includes("surplus")) return "Surplus";
 	if (s.includes("tinyfish")) return "Tinyfish";
+	if (s.includes("venice")) return "Venice";
 	return "Venice";
 }
 
@@ -389,7 +400,7 @@ function deriveNameFromId(id: string): string {
  * Returns chat models with derived display names, descriptions,
  * capabilities, and provider assignment. Video models (category "video")
  * are excluded: they are priced per-generation/per-second (surfaced on
- * `/video-generation`), not per-token, so mixing them into the per-token
+ * `/chat?mode=video`), not per-token, so mixing them into the per-token
  * catalog produced `$NaN` output prices and `$850000/1M` input prices.
  * Falls back to the static `MODELS` array if the network request fails.
  *

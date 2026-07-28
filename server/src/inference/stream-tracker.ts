@@ -56,6 +56,33 @@ function parseSSEBlock(block: string): { event?: string; data: string[]; id?: st
   return { event, data, id };
 }
 
+/** Promote a short final answer out of a reasoning dump (empty-content recovery). */
+function extractTrailingAnswerFromReasoning(reasoning: string): string | null {
+  const text = reasoning.trim();
+  if (!text) return null;
+  const markers = [
+    /(?:so\s+(?:the\s+)?answer\s+is[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:final\s+answer[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:reply(?:ing)?\s+with[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:output|respond(?: with)?)[:\s]+["']?([^\n"']{1,40})["']?\s*$/i,
+  ];
+  for (const re of markers) {
+    const m = text.match(re);
+    if (m?.[1]) {
+      const a = m[1].trim().replace(/^[`"']+|[`"'.]+$/g, "");
+      if (a && a.length <= 80) return a;
+    }
+  }
+  const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0 && i >= lines.length - 4; i--) {
+    const line = lines[i].replace(/^["'`]+|["'`]+$/g, "");
+    if (line.length > 0 && line.length <= 40 && !/^(we |the |so |i |let |but |and )/i.test(line)) {
+      return line;
+    }
+  }
+  return null;
+}
+
 /**
  * Gonka's MiniMax M2.7 embeds its reasoning at the START of `content` as a
  * `<think>…</think>` block (its `reasoning` field is null). Downstream
@@ -196,6 +223,10 @@ export function createTrackingStream(
   const publicId = `gen-${requestId}`;
   // Gonka embeds <think> reasoning inside content — split it out.
   const thinkSplitter = provider === "gonka" ? new ThinkSplitter() : null;
+  // Accumulated after ThinkSplitter so we can recover empty-content streams
+  // (reasoning-only MiniMax replies) by promoting a short final answer.
+  let streamVisibleContent = "";
+  let streamReasoningContent = "";
 
   async function settle(status: string): Promise<{ inputTokens: number; outputTokens: number; totalCents: number } | null> {
     if (streamState.refundExecuted) return null;
@@ -319,6 +350,35 @@ export function createTrackingStream(
         const data = raw.trim();
         if (!data) return null;
         if (data === "[DONE]") {
+          // Before closing: if gonka streamed only reasoning, emit a content
+          // delta so OpenAI clients (and our chat bubble) are not blank.
+          if (
+            provider === "gonka" &&
+            !streamVisibleContent.trim() &&
+            streamReasoningContent.trim()
+          ) {
+            const promoted = extractTrailingAnswerFromReasoning(streamReasoningContent);
+            if (promoted) {
+              const chunk = {
+                id: publicId,
+                object: "chat.completion.chunk",
+                model: modelId,
+                choices: [{
+                  index: 0,
+                  delta: { content: promoted },
+                  finish_reason: null,
+                }],
+              };
+              streamVisibleContent = promoted;
+              if (!streamCompleted) {
+                streamCompleted = true;
+                await settleAndEmitUsage("completed");
+              }
+              return encoder.encode(
+                `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`,
+              );
+            }
+          }
           if (!streamCompleted) {
             streamCompleted = true;
             await settleAndEmitUsage("completed");
@@ -367,6 +427,9 @@ export function createTrackingStream(
               choice.delta.reasoning_content = (choice.delta.reasoning_content ?? "") + split.reasoning;
             }
           }
+          // Track visible content vs reasoning for free-model empty-content recovery.
+          if (choice?.delta?.content) streamVisibleContent += choice.delta.content;
+          if (choice?.delta?.reasoning_content) streamReasoningContent += choice.delta.reasoning_content;
           // Usage-only terminal chunk from upstream: hold it back — our own
           // usage chunk (with cost, correct ids) is emitted at settle.
           const hasChoiceData = Array.isArray(parsed.choices) && parsed.choices.length > 0;

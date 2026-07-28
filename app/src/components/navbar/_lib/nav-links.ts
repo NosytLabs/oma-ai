@@ -26,7 +26,12 @@ export interface NavGroup {
 /** Primary nav — visible at all times on desktop, used in the mobile menu. */
 export const primaryLinks: NavItem[] = [
 	{ href: "/models", label: "Models", icon: Box, desc: "Browse the catalog" },
-	{ href: "/chat", label: "Chat", icon: Terminal, desc: "Try it live" },
+	{
+		href: "/chat",
+		label: "Playground",
+		icon: Terminal,
+		desc: "Chat · image · video",
+	},
 	{ href: "/pricing", label: "Pricing", icon: Tag, desc: "Transparent cost" },
 	{ href: "/docs", label: "Docs", icon: FileText, desc: "API reference" },
 	{

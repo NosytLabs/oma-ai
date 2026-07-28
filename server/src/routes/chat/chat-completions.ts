@@ -22,8 +22,13 @@ import {
   checkRequestBodySizeLimit,
 } from "./validation.js";
 import { trackApiKeySpend, inferenceErrorHandler } from "../../inference/handler-helpers.js";
+import {
+  FREE_GUEST_USER_ID,
+  isFreeGuestModel,
+} from "./free-guest.js";
 
 export const chatCompletionsRouter = new Hono<OmaEnv>();
+export { isFreeGuestModel, FREE_GUEST_USER_ID, isSyntheticGuestUserId } from "./free-guest.js";
 
 /**
  * x402 pay-per-request: when enabled (TREASURY_BASE_ADDRESS set and
@@ -46,13 +51,40 @@ const x402ChatMiddleware = x402ChatEnabled
     })
   : null;
 
-async function authOrPayment(c: Context<OmaEnv>, next: Next) {
+/**
+ * Auth gate for chat completions. Exported for unit tests of the free-guest path.
+ * Free OMA-AI (gonka) models skip bearer/x402 entirely.
+ */
+export async function authOrPayment(c: Context<OmaEnv>, next: Next) {
+  // Free chat: OMA-AI provider models (Gonka/OpenBroker) bypass auth entirely.
+  // Cheap to resell — website guests can use them without sign-in / API key.
+  // Rate limiting still applies (tokenBucket below).
+  // Prefer Authorization / API-key cookie when present so logged-in users keep
+  // real userId attribution while still using free models.
+  const hasBearer = Boolean(c.req.header("Authorization"));
+  const hasKeyCookie = /(?:^|;\s*)(?:__Host-)?oma_api_key=/.test(
+    c.req.header("Cookie") || "",
+  );
+  if (!hasBearer && !hasKeyCookie) {
+    const body = await c.req.raw.clone().text().catch(() => "");
+    let requestedModel = "";
+    try {
+      const parsed = JSON.parse(body);
+      if (typeof parsed?.model === "string") requestedModel = parsed.model;
+    } catch {
+      /* invalid JSON — fall through to auth */
+    }
+    if (requestedModel) {
+      const modelInfo = await getModel(requestedModel);
+      if (isFreeGuestModel(modelInfo)) {
+        c.set("userId", FREE_GUEST_USER_ID);
+        return next();
+      }
+    }
+  }
+
   if (x402ChatMiddleware) {
     const hasPayment = Boolean(c.req.header("PAYMENT-SIGNATURE"));
-    const hasBearer = Boolean(c.req.header("Authorization"));
-    const hasKeyCookie = /(?:^|;\s*)(?:__Host-)?oma_api_key=/.test(
-      c.req.header("Cookie") || "",
-    );
     if (hasPayment || (!hasBearer && !hasKeyCookie)) {
       return x402ChatMiddleware(c, next);
     }

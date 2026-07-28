@@ -95,14 +95,51 @@ function normalizeCompletionJson(json: unknown, modelId: string, requestId: stri
       if (msg.reasoning != null && msg.reasoning_content == null) {
         msg.reasoning_content = msg.reasoning;
       }
-      if (typeof msg.content !== "string") continue;
-      const m = msg.content.match(/^\s*<think>([\s\S]*?)(?:<\/think>\s*|$)/);
-      if (m) {
-        msg.reasoning_content = ((msg.reasoning_content ?? "") + m[1]).trim() || null;
-        msg.content = msg.content.slice(m[0].length).replace(/^\s+/, "");
+      if (typeof msg.content === "string") {
+        const m = msg.content.match(/^\s*<think>([\s\S]*?)(?:<\/think>\s*|$)/);
+        if (m) {
+          msg.reasoning_content = ((msg.reasoning_content ?? "") + m[1]).trim() || null;
+          msg.content = msg.content.slice(m[0].length).replace(/^\s+/, "");
+        }
+      }
+      // Free/gonka models occasionally finish with only reasoning_content when
+      // the budget is tight. Promote a short trailing answer line so clients
+      // that only read `content` still get a usable reply.
+      if ((!msg.content || !String(msg.content).trim()) && msg.reasoning_content) {
+        const promoted = extractTrailingAnswer(String(msg.reasoning_content));
+        if (promoted) msg.content = promoted;
       }
     }
   }
+}
+
+/** Best-effort: pull a final short answer out of a reasoning dump. */
+function extractTrailingAnswer(reasoning: string): string | null {
+  const text = reasoning.trim();
+  if (!text) return null;
+  // Explicit answer markers
+  const markers = [
+    /(?:so\s+(?:the\s+)?answer\s+is[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:final\s+answer[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:reply(?:ing)?\s+with[:\s]+)["']?([^\n"']{1,80})/i,
+    /(?:output|respond(?: with)?)[:\s]+["']?([^\n"']{1,40})["']?\s*$/i,
+  ];
+  for (const re of markers) {
+    const m = text.match(re);
+    if (m?.[1]) {
+      const a = m[1].trim().replace(/^[`"']+|[`"'.]+$/g, "");
+      if (a && a.length <= 80) return a;
+    }
+  }
+  // Last non-empty short line that looks like a final reply
+  const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0 && i >= lines.length - 4; i--) {
+    const line = lines[i].replace(/^["'`]+|["'`]+$/g, "");
+    if (line.length > 0 && line.length <= 40 && !/^(we |the |so |i |let |but |and )/i.test(line)) {
+      return line;
+    }
+  }
+  return null;
 }
 
 async function handleNonStreamingResponse(
@@ -190,6 +227,95 @@ export async function handleChatCompletion(
 
       const modelId = body.model;
       const model = await getModel(modelId);
+
+      // OMA-AI free catalog models (provider=gonka / OpenBroker): no credits,
+      // no preflight, no staking discount — website guests and signed-in users
+      // both get free usage. Mirrors free_tier billing without a failed balance check.
+      if (model?.provider === "gonka") {
+        const freeModelId = getModelIdForProvider(model, "gonka", modelId);
+        if (!freeModelId) {
+          throw Object.assign(
+            new Error(`Model '${modelId}' is not available on the free OMA-AI path`),
+            { status: 404, type: "model_not_found" },
+          );
+        }
+        // Cap free output so one guest request cannot burn unbounded broker cost.
+        // Floor low max_tokens: MiniMax/reasoning models burn budget on
+        // reasoning_content first — clients that send 32–64 often get empty
+        // `content` and look "broken". Free path guarantees a usable reply budget.
+        const FREE_MAX_OUTPUT_TOKENS = 4096;
+        // Reasoning models (MiniMax M2.7) spend hundreds of tokens on
+        // reasoning_content before any visible answer — 256 was still too
+        // low for short prompts and produced empty `content` streams.
+        const FREE_MIN_OUTPUT_TOKENS = 512;
+        const requestedMax =
+          typeof body.max_tokens === "number" && body.max_tokens > 0
+            ? body.max_tokens
+            : FREE_MAX_OUTPUT_TOKENS;
+        const freeBody = {
+          ...body,
+          max_tokens: Math.min(
+            Math.max(requestedMax, FREE_MIN_OUTPUT_TOKENS),
+            FREE_MAX_OUTPUT_TOKENS,
+          ),
+        };
+        span.setAttribute("llm.free_guest", true);
+        span.setAttribute(LLM_ATTRS.PROVIDER, "gonka");
+        const inputTokens = freeBody.messages ? countMessageTokens(freeBody.messages as import("./types.js").ChatMessage[]) : 0;
+        const pricing = await getModelPricing(modelId);
+        const provider = "gonka" as Provider;
+        try {
+          const freeResponse = await callProvider(provider, freeModelId, freeBody, undefined, signal);
+          if (body.stream) {
+            if (!freeResponse.body) {
+              throw Object.assign(new Error("No response body for streaming"), { status: 502 });
+            }
+            const trackingStream = createTrackingStream(
+              freeResponse.body as ReadableStream<Uint8Array>,
+              model, modelId, inputTokens, 0, userId, apiKeyId, provider, "0", pricing, requestId,
+              undefined,
+              { billingMode: "free" },
+            );
+            const streamingResponse = new Response(trackingStream as ReadableStream<Uint8Array>, {
+              status: freeResponse.status,
+              headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+                "x-provider": "gonka",
+                "X-Accel-Buffering": "no",
+                "x-request-id": requestId,
+              },
+            });
+            span.setStatus({ code: SpanStatusCode.OK });
+            return { response: streamingResponse, provider: "gonka", inputTokens };
+          }
+          const json = await freeResponse.json();
+          const freeInput = (json as { usage?: { prompt_tokens?: number } }).usage?.prompt_tokens ?? inputTokens;
+          const freeOutput = (json as { usage?: { completion_tokens?: number } }).usage?.completion_tokens ?? 0;
+          const wholesale = await calculateActualCost(modelId, freeInput, freeOutput, 0);
+          await recordUsage({
+            requestId, userId, apiKeyId, modelId, provider,
+            inputTokens: freeInput, outputTokens: freeOutput,
+            costCents: wholesale.costCents, markupCents: "0", totalCents: "0",
+            latencyMs: Date.now() - requestStartTime, status: "free_tier",
+          });
+          normalizeCompletionJson(json, modelId, requestId, provider);
+          const usage = (json as { usage?: Record<string, unknown> }).usage;
+          if (usage) usage.cost = 0;
+          const nonStreamResponse = Response.json(json, {
+            headers: { "x-provider": "gonka", "x-request-id": requestId, "x-oma-cost-cents": "0" },
+          });
+          span.setStatus({ code: SpanStatusCode.OK });
+          return { response: nonStreamResponse, provider: "gonka", inputTokens };
+        } catch (err) {
+          logger.warn({ err, userId, modelId, gonkaModelId: freeModelId }, "[free-guest] Gonka call failed");
+          throw Object.assign(
+            err instanceof Error ? err : new Error("Free OMA-AI model temporarily unavailable"),
+            { status: (err as { status?: number }).status ?? 502, type: "provider_error" },
+          );
+        }
+      }
 
       // x402 flat-rate prepaid path: the payment was already settled
       // on-chain by paymentMiddleware, so no credits, no preflight

@@ -344,10 +344,10 @@ export function WelcomeBanner({
 						>
 							<span className="font-bold text-accent">TIP:</span> Not sure where
 							to start? Try{" "}
-							<span className="text-accent font-bold">Claude Sonnet 4</span> for
-							balanced quality and speed, or{" "}
-							<span className="text-accent font-bold">GPT-4o mini</span> for
-							fast, affordable responses.
+							<span className="text-accent font-bold">MiniMax M2.7</span> for
+							reasoning + code (free via OMA-AI / Gonka), or{" "}
+							<span className="text-accent font-bold">Kimi K2.6</span> for
+							analysis + research. Both are free — no sign-in required.
 						</m.div>
 
 						{/* ─── Pro Tips (first visit only) ─── */}

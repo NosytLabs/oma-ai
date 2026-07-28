@@ -72,8 +72,8 @@ async function processPayment(orderId: string) {
 \`\`\`
 
 Two concurrent requests with the same orderId can both pass the status check before either updates it. Show me a proper fix using database-level locking or an idempotency key.`,
-		model: "claude-sonnet-4",
-		modelName: "Claude Sonnet 4",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "advanced",
 	},
 	{
@@ -89,8 +89,8 @@ Two concurrent requests with the same orderId can both pass the status check bef
 - Graceful degradation if Redis is down
 
 Give me the TypeScript implementation with proper types, tests, and middleware integration for Express/Hono.`,
-		model: "gpt-4o",
-		modelName: "GPT-4o",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "advanced",
 	},
 
@@ -121,8 +121,8 @@ LIMIT 50;
 \`\`\`
 
 The users table has 500K rows, orders has 2M, order_items has 8M. Current indexes: users(id), orders(user_id), order_items(order_id).`,
-		model: "claude-sonnet-4",
-		modelName: "Claude Sonnet 4",
+		model: "kimi-k2-6",
+		modelName: "Kimi K2.6 (free via OMA-AI)",
 		difficulty: "moderate",
 	},
 	{
@@ -137,8 +137,8 @@ The users table has 500K rows, orders has 2M, order_items has 8M. Current indexe
 - User presence indicators — who's online
 
 Compare WebSocket, Server-Sent Events, and polling for this use case. Consider: connection overhead, browser support, scaling behind a load balancer, and what happens when a connection drops. Give me a concrete recommendation with implementation notes.`,
-		model: "claude-opus-4",
-		modelName: "Claude Opus 4",
+		model: "kimi-k2-6",
+		modelName: "Kimi K2.6 (free via OMA-AI)",
 		difficulty: "moderate",
 	},
 
@@ -159,8 +159,8 @@ Target audience: Backend engineers who've heard of CRDTs but never implemented o
 5. When NOT to use CRDTs
 
 Tone: Technical but conversational. Like explaining to a colleague over coffee. ~2000 words.`,
-		model: "deepseek-v3.2",
-		modelName: "DeepSeek V3.2",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "moderate",
 	},
 	{
@@ -181,8 +181,8 @@ Requirements:
 - Easy to say and spell
 
 For each name, explain the reasoning in one sentence.`,
-		model: "llama-3.3-70b",
-		modelName: "Llama 3.3 70B",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "quick",
 	},
 
@@ -213,8 +213,8 @@ app.use('/api/admin/*', async (req, res, next) => {
 \`\`\`
 
 Be specific about each vulnerability and provide the corrected code.`,
-		model: "claude-sonnet-4",
-		modelName: "Claude Sonnet 4",
+		model: "kimi-k2-6",
+		modelName: "Kimi K2.6 (free via OMA-AI)",
 		difficulty: "advanced",
 	},
 
@@ -232,8 +232,8 @@ Be specific about each vulnerability and provide the corrected code.`,
 \`\`\`
 
 Then suggest 3 passwords that would pass and 3 that would fail, with explanations.`,
-		model: "llama-3.2-3b",
-		modelName: "Llama 3.2 3B",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},
@@ -246,8 +246,8 @@ Then suggest 3 passwords that would pass and 3 that would fail, with explanation
 		prompt: `Write a conventional commit message for this change:
 
 Moved the rate limiter from middleware/rateLimit.ts to lib/rate-limiter.ts, switched from in-memory Map to Redis, added configurable window sizes per endpoint, and updated all route handlers to use the new interface. Old middleware is removed.`,
-		model: "llama-3.2-3b",
-		modelName: "Llama 3.2 3B",
+		model: "minimax-m2.7",
+		modelName: "MiniMax M2.7 (free via OMA-AI)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},

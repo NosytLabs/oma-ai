@@ -213,7 +213,8 @@ describe("Footer", () => {
 		expect(screen.getAllByText(/docs/i).length).toBeGreaterThan(0);
 		expect(screen.getAllByText(/models/i).length).toBeGreaterThan(0);
 		expect(screen.getAllByText(/pricing/i).length).toBeGreaterThan(0);
-		expect(screen.getAllByText(/chat/i).length).toBeGreaterThan(0);
+		// Product nav labels the free chat surface "Playground" (href=/chat)
+		expect(screen.getAllByText(/playground/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders legal links", () => {

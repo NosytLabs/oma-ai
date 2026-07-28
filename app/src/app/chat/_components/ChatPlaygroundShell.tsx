@@ -17,6 +17,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useWallet } from "@/components/wallet-provider";
 import { log } from "@/lib/logger";
+import {
+	FREE_DEFAULT_CHAT_MODEL,
+	isFreeChatModel,
+} from "@/lib/model-utils";
 import { useChatPersistence } from "../_hooks/useChatPersistence";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
@@ -251,22 +255,37 @@ function ShellContent({
 		setTimeout(() => inputRef.current?.focus(), 100);
 	}, [storageKey, setError, setCompareMessages, setMessages]);
 
+	// Guests stay on free OMA-AI models so example/preset clicks never
+	// switch them to a paid model that 401/402s without a key.
+	const pickModelForGuest = useCallback(
+		(candidate?: string) => {
+			if (isAuthenticated && !isDemo) {
+				return candidate;
+			}
+			if (candidate && isFreeChatModel(candidate)) return candidate;
+			if (isFreeChatModel(model)) return model;
+			return FREE_DEFAULT_CHAT_MODEL;
+		},
+		[isAuthenticated, isDemo, model],
+	);
+
 	const handlePreset = useCallback(
 		(prompt: string, modelOverride?: string) => {
 			setInput(prompt);
-			if (modelOverride) setModel(modelOverride);
+			const next = pickModelForGuest(modelOverride);
+			if (next) setModel(next);
 			inputRef.current?.focus();
 		},
-		[setInput, setModel],
+		[setInput, setModel, pickModelForGuest],
 	);
 
 	const handleExampleSelect = useCallback(
 		(example: ExampleConversation) => {
 			setInput(example.prompt);
-			setModel(example.model);
+			setModel(pickModelForGuest(example.model) ?? FREE_DEFAULT_CHAT_MODEL);
 			inputRef.current?.focus();
 		},
-		[setModel, setInput],
+		[setModel, setInput, pickModelForGuest],
 	);
 
 	const handleCopy = useCallback(() => {
@@ -277,6 +296,35 @@ function ShellContent({
 		// already gives feedback, and a second success toast is noisy when the
 		// user copies many messages in a row.
 	}, [isChat, toast]);
+
+	/**
+	 * Regenerate the last assistant response (ChatGPT / Claude-style Retry).
+	 * Drops the trailing assistant turn (and its paired user prompt if present),
+	 * then re-sends the user prompt so history stays consistent.
+	 */
+	const handleRegenerate = useCallback(() => {
+		if (loading) return;
+		const current = messagesRef.current;
+		if (current.length === 0) return;
+
+		let end = current.length;
+		// Drop trailing empty/failed assistant if present
+		if (current[end - 1]?.role === "assistant") {
+			end -= 1;
+		}
+		// Pair: previous user message becomes the re-send prompt
+		const lastUser = current[end - 1];
+		if (!lastUser || lastUser.role !== "user" || !lastUser.content.trim()) {
+			return;
+		}
+		const prompt = lastUser.content;
+		// Remove user + any following assistant so sendMessage re-appends both
+		const truncated = current.slice(0, end - 1);
+		messagesRef.current = truncated;
+		setMessages(truncated);
+		setError(null);
+		void sendMessage(prompt);
+	}, [loading, sendMessage, setMessages, setError]);
 
 	const exportConversation = useCallback(() => {
 		setExportStatus("loading");
@@ -353,10 +401,10 @@ function ShellContent({
 	]);
 
 	return (
-		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text-secondary font-mono overflow-hidden">
+		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text font-sans overflow-hidden">
 			<h1 className="sr-only">
 				{isChat
-					? "OMA Chat — try models, stream responses, pay per token"
+					? "OMA Playground — chat, image, and video generation"
 					: "OMA API Playground"}
 			</h1>
 			<MemoizedChatToolbar
@@ -394,81 +442,80 @@ function ShellContent({
 					{isDemo && (
 						<div
 							role="status"
-							className="flex-none flex items-center justify-between gap-3 px-4 md:px-8 py-2 bg-accent/10 border-b border-accent/25 text-[11px] text-accent font-mono"
+							className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-accent/10 border-b border-accent/25 text-xs text-accent font-mono"
 						>
-							<span className="uppercase tracking-wider">
-								Demo mode — mock data only. Sign in to run real inference.
+							<span className="tracking-wide">
+								Demo mode — mock dashboard data. Free OMA-AI chat still works
+								without sign-in on this page.
 							</span>
 							<Link
 								href="/login?next=/chat"
-								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[10px] font-bold uppercase tracking-wider hover:bg-accent-bright transition-colors"
+								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent-bright transition-colors"
 							>
 								Sign in →
 							</Link>
 						</div>
 					)}
-					{isLowBalance && (
+					{isLowBalance && mediaMode !== "text" && (
 						<div
 							role="status"
-							className="flex-none flex items-center justify-between gap-3 px-4 md:px-8 py-2 bg-warning/10 border-b border-warning/30 text-[11px] text-warning font-mono"
+							className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-warning/10 border-b border-warning/30 text-xs text-warning font-mono"
 						>
-							<span className="flex items-center gap-2 uppercase tracking-wider">
+							<span className="flex items-center gap-2 tracking-wide">
 								<AlertTriangle
 									className="w-3.5 h-3.5 shrink-0"
 									aria-hidden="true"
 								/>
-								Low credits — ${balanceDollars.toFixed(2)} remaining
+								Low credits — ${balanceDollars.toFixed(2)} (image/video require
+								balance)
 							</span>
 							<Link
 								href="/deposit"
-								className="px-2 py-0.5 bg-accent text-void text-[10px] font-bold uppercase tracking-wider hover:bg-accent/90 transition-colors"
+								className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors"
 							>
 								Top up →
 							</Link>
 						</div>
 					)}
 
-					<div className="flex-none border-b border-border bg-void">
-						<button
-							type="button"
-							onClick={() => setSystemPromptOpen(!systemPromptOpen)}
-							aria-expanded={systemPromptOpen}
-							aria-label="Toggle system prompt"
-							className="w-full flex items-center justify-between px-4 md:px-8 py-2 text-[10px] font-mono text-text-muted uppercase tracking-widest hover:text-text-secondary transition-colors focus-ring"
-						>
-							<span className="flex items-center gap-2">
-								<span
-									className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
-								/>
-								{isChat ? "Instructions" : "SYSTEM PROMPT"}{" "}
-								{systemPrompt.trim()
-									? isChat
-										? "· Active"
-										: "· SET"
-									: isChat
-										? "· Optional"
-										: "· OPTIONAL"}
-							</span>
-							{systemPromptOpen ? (
-								<ChevronUp className="w-3 h-3" />
-							) : (
-								<ChevronDown className="w-3 h-3" />
+					{/* System instructions only apply to text chat */}
+					{mediaMode === "text" && (
+						<div className="flex-none border-b border-border bg-void">
+							<button
+								type="button"
+								onClick={() => setSystemPromptOpen(!systemPromptOpen)}
+								aria-expanded={systemPromptOpen}
+								aria-label="Toggle system prompt"
+								className="w-full flex items-center justify-between px-4 md:px-6 py-2 text-[11px] font-mono text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors focus-ring"
+							>
+								<span className="flex items-center gap-2">
+									<span
+										className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
+									/>
+									Instructions{" "}
+									{systemPrompt.trim() ? "· Active" : "· Optional"}
+								</span>
+								{systemPromptOpen ? (
+									<ChevronUp className="w-3.5 h-3.5" />
+								) : (
+									<ChevronDown className="w-3.5 h-3.5" />
+								)}
+							</button>
+							{systemPromptOpen && (
+								<div className="px-4 md:px-6 pb-3">
+									<textarea
+										value={systemPrompt}
+										onChange={(e) => setSystemPrompt(e.target.value)}
+										placeholder="Set behavior, persona, or instructions for the model. Sent as the first message of every request."
+										aria-label="System prompt"
+										rows={3}
+										className="w-full resize-y bg-surface border border-border px-3 py-2 text-sm text-text-secondary font-sans leading-relaxed placeholder-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+										style={{ minHeight: "64px", maxHeight: "160px" }}
+									/>
+								</div>
 							)}
-						</button>
-						{systemPromptOpen && (
-							<div className="px-4 md:px-8 pb-3">
-								<textarea
-									value={systemPrompt}
-									onChange={(e) => setSystemPrompt(e.target.value)}
-									placeholder="Set behavior, persona, or instructions for the model. Sent as the first message of every request."
-									aria-label="System prompt"
-									rows={3}
-									className="w-full resize-y bg-surface border border-border px-3 py-2 text-xs text-text-secondary font-mono leading-relaxed placeholder-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-									style={{ minHeight: "60px", maxHeight: "160px" }}
-								/>
-							</div>
-						)}
-					</div>
+						</div>
+					)}
 
 					<MessagesList
 						scrollContainerRef={scrollContainerRef}
@@ -483,16 +530,23 @@ function ShellContent({
 						handlePreset={handlePreset}
 						handleExampleSelect={handleExampleSelect}
 						inputRef={inputRef}
+						onRegenerate={handleRegenerate}
 					/>
 
-						<div className="flex-none p-4 bg-void border-t border-border">
-							<div className="max-w-4xl mx-auto">
+					{/* Text composer only for chat mode — image/video use their own panels */}
+					{mediaMode === "text" && (
+						<div className="flex-none px-3 py-3 sm:px-4 sm:py-4 bg-void border-t border-border">
+							<div className="max-w-3xl mx-auto">
 								<ChatErrorBanner
 									error={error}
 									onDismiss={() => setError(null)}
 									onRetry={() => {
 										setError(null);
-										if (input.trim()) sendMessage();
+										if (input.trim()) {
+											void sendMessage();
+										} else {
+											handleRegenerate();
+										}
 									}}
 								/>
 
@@ -503,24 +557,25 @@ function ShellContent({
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
-									disabled={isLowBalance && balanceDollars <= 0}
-									disabledReason={
-										isLowBalance && balanceDollars <= 0
-											? "Top up credits to send"
-											: undefined
-									}
+									disabled={false}
 								/>
 
-								<div className="flex items-center justify-between mt-2 px-1 gap-3">
-									<p className="text-[10px] text-text-muted uppercase tracking-widest shrink-0">
-										[ENTER] EXECUTE · [SHIFT+ENTER] NEWLINE
+								<div className="flex items-center justify-between mt-2 px-0.5 gap-3">
+									<p className="text-[11px] text-text-muted tracking-wide shrink-0 font-mono">
+										Enter send · Shift+Enter newline
+										{!isAuthenticated && (
+											<span className="text-accent/80">
+												{" "}
+												· Free OMA-AI models — no sign-in
+											</span>
+										)}
 									</p>
-									{isLowBalance && balanceDollars <= 0 && (
+									{isLowBalance && (
 										<Link
 											href="/deposit"
-											className="text-[10px] text-accent hover:underline font-mono uppercase tracking-wider"
+											className="text-[11px] text-warning hover:underline font-mono tracking-wide"
 										>
-											Top up to send →
+											Low credits — top up for paid models →
 										</Link>
 									)}
 									<LazyCostEstimate
@@ -531,6 +586,7 @@ function ShellContent({
 								</div>
 							</div>
 						</div>
+					)}
 				</section>
 
 				<ChatSettingsPanel

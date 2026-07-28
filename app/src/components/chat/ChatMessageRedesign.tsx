@@ -5,7 +5,7 @@
  *
  * Design Direction: "Terminal Noir" — A cinematic take on terminal aesthetics.
  * Think: Blade Runner meets a high-end code editor. Dark, atmospheric,
- * with moments of vivid orange glow that feel earned, not decorative.
+ * with moments of emerald accent glow that feel earned, not decorative.
  *
  * Typography: JetBrains Mono (code/labels) + DM Sans (body prose)
  * — DM Sans is geometric with soft ink traps, avoiding the coldness
@@ -22,7 +22,7 @@
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { ThinkingOrb } from "thinking-orbs";
 import {
-	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, Search, User,
+	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, RefreshCw, Search, User,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -79,15 +79,30 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 	msg,
 	loading,
 	onCopy,
+	onRegenerate,
+	isLastAssistant,
 }: {
 	msg: Message;
 	loading: boolean;
 	onCopy: (content: string) => void;
+	/** Regenerate this turn (last assistant only). */
+	onRegenerate?: () => void;
+	isLastAssistant?: boolean;
 }) {
 	const isUser = msg.role === "user";
 	const [copied, setCopied] = useState(false);
-	const [sourcesExpanded, setSourcesExpanded] = useState(false);
 	const [reasoningExpanded, setReasoningExpanded] = useState(false);
+	// Show sources expanded by default when web search attached results —
+	// free-guest WEB mode should make citations obvious, not buried.
+	const [sourcesExpanded, setSourcesExpanded] = useState(
+		() => !!(msg.searchResults && msg.searchResults.length > 0),
+	);
+	// Expand when results arrive after mount (streaming attaches them late).
+	useEffect(() => {
+		if (msg.searchResults && msg.searchResults.length > 0) {
+			setSourcesExpanded(true);
+		}
+	}, [msg.searchResults]);
 	const prefersReducedMotion = useReducedMotion() ?? false;
 	const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -134,8 +149,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
         group relative
         ${
 					isUser
-						? "flex flex-row-reverse gap-4 pl-16 md:pl-24"
-						: "flex flex-row gap-4 pr-16 md:pr-24"
+						? "flex flex-row-reverse gap-2.5 sm:gap-4 pl-6 sm:pl-16 md:pl-24"
+						: "flex flex-row gap-2.5 sm:gap-4 pr-6 sm:pr-16 md:pr-24"
 				}
       `}
 		>
@@ -157,6 +172,25 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				>
 					{isUser ? (
 						<User className="w-5 h-5" strokeWidth={1.5} />
+					) : isStreaming ? (
+						<ThinkingOrb
+							state={
+								msg.searchResults && msg.searchResults.length > 0
+									? "searching"
+									: hasReasoning && !msg.content
+										? "solving"
+										: "composing"
+							}
+							size={20}
+							theme="auto"
+							aria-label={
+								msg.searchResults && msg.searchResults.length > 0
+									? "Searching the web"
+									: hasReasoning && !msg.content
+										? "Reasoning"
+										: "Composing response"
+							}
+						/>
 					) : (
 						<Bot className="w-5 h-5" strokeWidth={1.5} />
 					)}
@@ -175,7 +209,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 
 			{/* ─── MESSAGE BODY ─── */}
 			<div
-				className={`flex flex-col max-w-[80%] ${isUser ? "items-end" : "items-start"}`}
+				className={`flex flex-col max-w-[min(100%,42rem)] sm:max-w-[80%] ${isUser ? "items-end" : "items-start"}`}
 			>
 				{/* Search Sources */}
 				{msg.searchResults && msg.searchResults.length > 0 && (
@@ -238,7 +272,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					{isUser ? (
 						<p className="whitespace-pre-wrap break-words">{msg.content}</p>
 					) : (
-						<div className="markdown-content font-mono text-sm" aria-live="polite">
+						<div className="markdown-content font-sans text-[15px] leading-relaxed" aria-live="polite">
 							<ReactMarkdown
 								remarkPlugins={[remarkGfm]}
 								components={{
@@ -270,8 +304,18 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								/>
 							)}
 							{isWaitingForFirstToken && (
-							<ThinkingOrb state="composing" size={20} />
-						)}
+								<span className="inline-flex items-center gap-2 text-text-muted" role="status">
+									<ThinkingOrb
+										state="composing"
+										size={20}
+										theme="auto"
+										aria-hidden="true"
+									/>
+									<span className="text-xs font-mono uppercase tracking-wider">
+										Thinking…
+									</span>
+								</span>
+							)}
 						</div>
 					)}
 				</div>
@@ -297,25 +341,46 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 						</span>
 					)}
 					{!isUser && msg.content && !loading && (
-						<button
-							type="button"
-							onClick={handleCopy}
-							aria-label={copied ? "Copied to clipboard" : "Copy message"}
-							className="
-                flex items-center gap-1 px-2 py-1
-                opacity-0 group-hover:opacity-100
+						<>
+							<button
+								type="button"
+								onClick={handleCopy}
+								aria-label={copied ? "Copied to clipboard" : "Copy message"}
+								className="
+                flex items-center gap-1 px-2 py-1 min-h-[32px]
+                opacity-100 sm:opacity-0 sm:group-hover:opacity-100
                 hover:text-success transition-all duration-200
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
-						>
-							{copied ? (
-								<Check className="w-3 h-3 text-success" />
-							) : (
-								<Copy className="w-3 h-3" />
+							>
+								{copied ? (
+									<Check className="w-3 h-3 text-success" />
+								) : (
+									<Copy className="w-3 h-3" />
+								)}
+								{copied ? "COPIED" : "COPY"}
+							</button>
+							{isLastAssistant && onRegenerate && (
+								<button
+									type="button"
+									onClick={onRegenerate}
+									aria-label="Regenerate response"
+									className="
+                flex items-center gap-1 px-2 py-1 min-h-[32px]
+                opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+                hover:text-accent transition-all duration-200
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+                focus-visible:ring-offset-2 focus-visible:ring-offset-surface
+              "
+								>
+									<RefreshCw className="w-3 h-3" aria-hidden="true" />
+									<span className="text-[10px] uppercase tracking-wide">
+										Retry
+									</span>
+								</button>
 							)}
-							{copied ? "COPIED" : "COPY"}
-						</button>
+						</>
 					)}
 				</div>
 			</div>

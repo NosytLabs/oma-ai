@@ -17,12 +17,10 @@ export default function robots(): MetadataRoute.Robots {
 					"/login",
 					"/api-keys",
 					// Auth-gated product surfaces (session required)
-					"/chat",
-					"/chat/",
 					"/deposit",
 					"/deposit/",
-					"/image-generation",
-					"/video-generation",
+					// /chat is public free playground — indexable; image/video
+					// legacy paths redirect into /chat?mode=
 				],
 			},
 		],

@@ -1,18 +1,21 @@
 "use client";
 
+/**
+ * Image generation panel — embedded in /chat?mode=image.
+ * Compact, mobile-first layout (not a standalone marketing page).
+ */
+
 import {
 	Download,
 	Image as ImageIconComponent,
-	Loader2,
-	Plus,
+	RefreshCw,
 	Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { useImageGeneration } from "@/lib/use-image-generation";
 
-// Live catalog from /v1/models — kept in sync with server/models.json IMAGE_MODELS.
-// Names mirror Venice's "model_spec.name" so the dropdown matches the upstream labels.
 const IMAGE_MODELS = [
 	{ id: "venice-sd35", name: "Venice SD35" },
 	{ id: "flux-2-pro", name: "Flux 2 Pro" },
@@ -45,7 +48,7 @@ const SIZE_OPTIONS = [
 	{ label: "Square", value: "1024x1024" },
 	{ label: "Portrait", value: "1024x1536" },
 	{ label: "Landscape", value: "1536x1024" },
-	{ label: "Small Square", value: "512x512" },
+	{ label: "Small", value: "512x512" },
 ];
 
 const STYLE_OPTIONS = [
@@ -60,7 +63,7 @@ const USD_PER_CREDIT = 0.0025;
 
 export function ImageGenerationPanel() {
 	const [prompt, setPrompt] = useState("");
-	const [model, setModel] = useState("sdxl");
+	const [model, setModel] = useState("venice-sd35");
 	const [size, setSize] = useState("1024x1024");
 	const [style, setStyle] = useState<string>("");
 	const [count, setCount] = useState(1);
@@ -80,72 +83,74 @@ export function ImageGenerationPanel() {
 		if (result) setImages(result.urls);
 	}, [prompt, model, count, size, style, loading, generate]);
 
-	const downloadImage = useCallback(
-		async (url: string, index: number) => {
-			try {
-				const resp = await fetch(url);
-				const blob = await resp.blob();
-				const a = document.createElement("a");
-				a.href = URL.createObjectURL(blob);
-				a.download = `oma-image-${Date.now()}-${index + 1}.png`;
-				a.click();
-				URL.revokeObjectURL(a.href);
-			} catch {
-				// Download failure is non-fatal; the user can still right-click
-				// the image. We log to the console so the failure is visible
-				// in dev tools without a noisy toast.
-				console.error("Image download failed");
-			}
-		},
-		[],
-	);
+	const onRetry = useCallback(() => {
+		setError(null);
+		void onGenerate();
+	}, [onGenerate, setError]);
+
+	const downloadImage = useCallback(async (url: string, index: number) => {
+		try {
+			const resp = await fetch(url);
+			const blob = await resp.blob();
+			const a = document.createElement("a");
+			a.href = URL.createObjectURL(blob);
+			a.download = `oma-image-${Date.now()}-${index + 1}.png`;
+			a.click();
+			URL.revokeObjectURL(a.href);
+		} catch {
+			console.error("Image download failed");
+		}
+	}, []);
+
+	const costCredits = CREDITS_PER_IMAGE * count;
 
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-			<div className="mb-8">
-				<div className="mb-2 text-sm font-medium text-accent">
-					OMA AI Gateway
+		<div className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-y-auto px-3 py-4 sm:px-5 sm:py-6">
+			{/* Compact header for chat shell */}
+			<div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+				<div>
+					<p className="text-[11px] font-mono uppercase tracking-widest text-accent">
+						Image · Venice
+					</p>
+					<h1 className="text-lg font-semibold text-text-bright sm:text-xl">
+						Image generation
+					</h1>
 				</div>
-				<h1 className="h1-utility text-text-bright">Image Generation</h1>
-				<p className="mt-3 text-lg text-text-bright">
-					Generate images from text prompts. Powered by Venice AI.{" "}
-					<span className="text-accent">{CREDITS_PER_IMAGE} credits</span>
-					<span className="text-text-muted">
-						{" "}
-						(${(CREDITS_PER_IMAGE * USD_PER_CREDIT).toFixed(3)} USD)
-					</span>{" "}
-					per image.
+				<p className="text-xs text-text-muted font-mono">
+					<span className="text-accent">{costCredits} cr</span>
+					{" · "}
+					${(costCredits * USD_PER_CREDIT).toFixed(3)}
 				</p>
 			</div>
 
-			<div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-				<div className="grid gap-6 lg:grid-cols-3">
-					<div className="lg:col-span-2 space-y-4">
-						<div>
-							<label
-								htmlFor="prompt-input"
-								className="mb-2 block text-sm font-semibold text-text-bright"
-							>
-								Prompt
-							</label>
-							<textarea
-								id="prompt-input"
-								value={prompt}
-								onChange={(e) => setPrompt(e.target.value)}
-								placeholder="A serene mountain lake at sunset, digital art..."
-								rows={4}
-								disabled={loading}
-								aria-required="true"
-								className="w-full resize-none text-text-bright placeholder:text-text-muted"
-							/>
-						</div>
+			<div className="rounded-xl border border-border bg-surface/80 p-3 sm:p-4">
+				<div className="grid gap-4 lg:grid-cols-5">
+					{/* Prompt */}
+					<div className="lg:col-span-3 space-y-2">
+						<label
+							htmlFor="prompt-input"
+							className="block text-xs font-semibold uppercase tracking-wide text-text-muted"
+						>
+							Prompt
+						</label>
+						<textarea
+							id="prompt-input"
+							value={prompt}
+							onChange={(e) => setPrompt(e.target.value)}
+							placeholder="A serene mountain lake at sunset, digital art…"
+							rows={4}
+							disabled={loading}
+							aria-required="true"
+							className="w-full min-h-[96px] resize-y rounded-lg border border-border bg-void px-3 py-2.5 text-[15px] text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50"
+						/>
 					</div>
 
-					<div className="space-y-4">
+					{/* Controls */}
+					<div className="lg:col-span-2 space-y-3">
 						<div>
 							<label
 								htmlFor="img-model-select"
-								className="mb-2 block text-sm font-semibold text-text-bright"
+								className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted"
 							>
 								Model
 							</label>
@@ -154,7 +159,7 @@ export function ImageGenerationPanel() {
 								value={model}
 								onChange={(e) => setModel(e.target.value)}
 								disabled={loading}
-								className="w-full disabled:opacity-50"
+								className="w-full rounded-lg border border-border bg-void px-3 py-2.5 text-sm text-text-bright disabled:opacity-50"
 							>
 								{IMAGE_MODELS.map((m) => (
 									<option key={m.id} value={m.id}>
@@ -165,20 +170,20 @@ export function ImageGenerationPanel() {
 						</div>
 
 						<div>
-							<label className="mb-2 block text-sm font-semibold text-text-bright">
+							<span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">
 								Style
-							</label>
-							<div className="grid grid-cols-2 gap-1.5">
+							</span>
+							<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-2">
 								{STYLE_OPTIONS.map((s) => (
 									<button
 										key={s.value}
 										type="button"
 										onClick={() => setStyle(style === s.value ? "" : s.value)}
 										aria-pressed={style === s.value}
-										className={`px-2.5 py-2 text-xs font-mono rounded-lg border transition-all ${
+										className={`min-h-[40px] rounded-lg border px-2 py-2 text-xs font-mono transition-all ${
 											style === s.value
 												? "border-accent bg-accent/10 text-accent"
-												: "border-border bg-surface text-text-secondary hover:border-accent/40 hover:text-text"
+												: "border-border bg-void text-text-secondary hover:border-accent/40"
 										}`}
 									>
 										{s.label}
@@ -187,100 +192,116 @@ export function ImageGenerationPanel() {
 							</div>
 						</div>
 
-						<div>
-							<label
-								htmlFor="img-size-select"
-								className="mb-2 block text-sm font-semibold text-text-bright"
-							>
-								Size
-							</label>
-							<select
-								id="img-size-select"
-								value={size}
-								onChange={(e) => setSize(e.target.value)}
-								disabled={loading}
-								className="w-full disabled:opacity-50"
-							>
-								{SIZE_OPTIONS.map((o) => (
-									<option key={o.value} value={o.value}>
-										{o.label} ({o.value})
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<label className="mb-2 block text-sm font-semibold text-text-bright">
-								Count
-							</label>
-							<div
-								className="flex items-center gap-2"
-								role="toolbar"
-								aria-label="Number of images to generate"
-							>
-								{[1, 2, 3, 4].map((n) => (
-									<button
-										type="button"
-										key={n}
-										onClick={() => setCount(n)}
-										disabled={loading}
-										aria-pressed={count === n}
-										className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
-											count === n
-												? "bg-accent text-void shadow-md"
-												: "bg-surface text-text hover:bg-border"
-										}`}
-									>
-										{n}
-									</button>
-								))}
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<label
+									htmlFor="img-size-select"
+									className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted"
+								>
+									Size
+								</label>
+								<select
+									id="img-size-select"
+									value={size}
+									onChange={(e) => setSize(e.target.value)}
+									disabled={loading}
+									className="w-full rounded-lg border border-border bg-void px-2 py-2.5 text-sm text-text-bright disabled:opacity-50"
+								>
+									{SIZE_OPTIONS.map((o) => (
+										<option key={o.value} value={o.value}>
+											{o.label}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">
+									Count
+								</span>
+								<div
+									className="flex gap-1"
+									role="toolbar"
+									aria-label="Number of images"
+								>
+									{[1, 2, 3, 4].map((n) => (
+										<button
+											type="button"
+											key={n}
+											onClick={() => setCount(n)}
+											disabled={loading}
+											aria-pressed={count === n}
+											className={`min-h-[40px] flex-1 rounded-lg text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent ${
+												count === n
+													? "bg-accent text-void"
+													: "bg-void border border-border text-text hover:border-accent/40"
+											}`}
+										>
+											{n}
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+				{/* Actions */}
+				<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
 					<button
 						type="button"
 						onClick={onGenerate}
 						disabled={!prompt.trim() || loading}
-						className="btn-primary w-full sm:w-auto justify-center"
+						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
 						aria-label={
-							loading
-								? "Generating images, please wait"
-								: "Generate images from prompt"
+							loading ? "Generating images, please wait" : "Generate images"
 						}
 					>
 						{loading ? (
 							<>
-								<Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />{" "}
-								Generating...
+								<ThinkingOrb
+									state="shaping"
+									size={20}
+									theme="auto"
+									aria-hidden="true"
+								/>
+								Generating…
 							</>
 						) : (
 							<>
-								<Sparkles className="w-5 h-5" aria-hidden="true" /> Generate
+								<Sparkles className="h-4 w-4" aria-hidden="true" />
+								Generate
 							</>
 						)}
 					</button>
-					{images.length > 0 && (
+					{(error || images.length > 0) && !loading && (
+						<button
+							type="button"
+							onClick={onRetry}
+							disabled={!prompt.trim()}
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+							aria-label="Retry image generation"
+						>
+							<RefreshCw className="h-4 w-4" aria-hidden="true" />
+							{error ? "Retry" : "Regenerate"}
+						</button>
+					)}
+					{images.length > 0 && !loading && (
 						<button
 							type="button"
 							onClick={() => {
 								setImages([]);
-								setPrompt("");
 								setError(null);
 							}}
-							className="btn-secondary w-full sm:w-auto justify-center"
-							aria-label="Create new image generation"
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
 						>
-							<Plus className="w-4 h-4" aria-hidden="true" /> New
+							Clear results
 						</button>
 					)}
 				</div>
 
 				{error && (
 					<div
-						className="mt-4 rounded-xl border px-4 py-3 text-sm border-error bg-error/10 text-error"
+						className="mt-3 rounded-lg border border-error/40 bg-error/10 px-3 py-2.5 text-sm text-error"
 						role="alert"
 					>
 						{error}
@@ -288,24 +309,46 @@ export function ImageGenerationPanel() {
 				)}
 			</div>
 
+			{/* Loading skeletons + orb */}
 			{loading && (
-				<div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-					{Array.from({ length: count }).map((_, i) => (
-						<div key={i} className="aspect-square rounded-2xl animate-shimmer bg-surface-elevated" />
-					))}
+				<div className="mt-6">
+					<div
+						className="mb-4 flex items-center justify-center gap-3 text-sm text-text-muted"
+						role="status"
+						aria-live="polite"
+					>
+						<ThinkingOrb
+							state="shaping"
+							size={64}
+							theme="auto"
+							aria-hidden="true"
+						/>
+						<span className="font-mono text-xs uppercase tracking-widest">
+							Shaping image…
+						</span>
+					</div>
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						{Array.from({ length: count }).map((_, i) => (
+							<div
+								key={i}
+								className="aspect-square animate-shimmer rounded-xl bg-surface-elevated"
+							/>
+						))}
+					</div>
 				</div>
 			)}
 
+			{/* Results — downloads always visible on touch (not hover-only) */}
 			{images.length > 0 && !loading && (
-				<div className="mt-8">
-					<h2 className="mb-4 text-lg font-semibold text-text-bright">
-						Results
+				<div className="mt-6">
+					<h2 className="mb-3 text-sm font-semibold text-text-bright">
+						Results ({images.length})
 					</h2>
-					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						{images.map((url, i) => (
 							<div
 								key={i}
-								className="group relative rounded-2xl overflow-hidden border border-border bg-surface shadow-sm aspect-square"
+								className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-surface"
 							>
 								<Image
 									src={url}
@@ -314,26 +357,15 @@ export function ImageGenerationPanel() {
 									className="object-cover"
 									unoptimized
 								/>
-								<div className="absolute inset-0 bg-transparent group-hover:bg-overlay transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-									<button
-										type="button"
-										onClick={() => downloadImage(url, i)}
-										className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-text shadow-lg hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-all"
-										aria-label={`Download generated image ${i + 1}`}
-									>
-										<Download className="w-4 h-4" aria-hidden="true" /> Download
-									</button>
-								</div>
-								<div className="absolute bottom-3 right-3 opacity-100 group-hover:opacity-100">
-									<button
-										type="button"
-										onClick={() => downloadImage(url, i)}
-										className="flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-										aria-label={`Download generated image ${i + 1}`}
-									>
-										<Download className="w-3.5 h-3.5" aria-hidden="true" />
-									</button>
-								</div>
+								<button
+									type="button"
+									onClick={() => downloadImage(url, i)}
+									className="absolute bottom-2 right-2 flex min-h-[40px] items-center gap-1.5 rounded-full bg-surface/95 px-3 py-2 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent sm:opacity-90"
+									aria-label={`Download generated image ${i + 1}`}
+								>
+									<Download className="h-3.5 w-3.5" aria-hidden="true" />
+									Download
+								</button>
 							</div>
 						))}
 					</div>
@@ -341,16 +373,13 @@ export function ImageGenerationPanel() {
 			)}
 
 			{!loading && images.length === 0 && !error && (
-				<div className="mt-16 flex flex-col items-center justify-center text-center">
-					<div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center mb-6 shadow-xl">
-						<ImageIconComponent className="w-10 h-10 text-text-inverse" />
+				<div className="mt-10 flex flex-col items-center justify-center px-4 text-center">
+					<div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+						<ImageIconComponent className="h-7 w-7" />
 					</div>
-					<h2 className="h2-page text-text-bright mb-2">
-						Describe what you want to see
-					</h2>
-					<p className="text-text max-w-md">
-						Enter a detailed prompt above and click Generate. Try including
-						style, lighting, and composition details.
+					<p className="max-w-sm text-sm text-text-muted">
+						Describe a scene above, pick a model, then Generate. Include style,
+						lighting, and composition for better results.
 					</p>
 				</div>
 			)}

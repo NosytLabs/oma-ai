@@ -8,10 +8,18 @@ import { api } from "@/lib/api";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { buildAuthHeaders } from "@/lib/cookies";
 import { log } from "@/lib/logger";
+import { isFreeChatModel } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
 
+// Chat completions must hit the backend directly for true SSE streaming —
+// the Next /api catch-all buffers the full body and breaks streams.
+// Web search is short JSON: prefer same-origin /api proxy (public free path)
+// so free-guest WEB mode works without CORS surprises in production.
 const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`;
-const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`;
+function searchEndpoint(): string {
+	if (typeof window !== "undefined") return "/api/v1/search";
+	return `${DEFAULT_API_URL}/v1/search`;
+}
 const MAX_MESSAGE_LENGTH = 100 * 1024;
 const BATCH_INTERVAL_MS = 250;
 
@@ -139,7 +147,7 @@ export function useStreamingChat(
 			setSearchingFn(true);
 			try {
 				const searchResp = await fetch(
-					`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query.trim())}`,
+					`${searchEndpoint()}?query=${encodeURIComponent(query.trim())}`,
 					{
 						credentials: "include",
 						headers: buildAuthHeaders({ Accept: "application/json" }),
@@ -255,12 +263,12 @@ export function useStreamingChat(
 
 			let response = await doFetch();
 
-			// Logged-in users on a new device have a session but no
-			// `oma_api_key` cookie (it is only installed at key creation), so
-			// chat 401s/402s. Ask the server to reinstall the cookie from the
-			// session, then retry the request exactly once. If ensure or the
-			// retry fails, fall through to the existing error handling below.
+			// Paid models only: logged-in users on a new device have a session
+			// but no `oma_api_key` cookie, so chat 401s/402s. Free OMA-AI models
+			// never need a key — skip ensureKey so guests are not blocked.
+			const freeModel = isFreeChatModel(useModel);
 			if (
+				!freeModel &&
 				(response.status === 401 || response.status === 402) &&
 				!signal.aborted
 			) {
@@ -272,7 +280,9 @@ export function useStreamingChat(
 
 			if (response.status === 401) {
 				throw new Error(
-					"Authentication required — sign in and create an API key to use chat",
+					freeModel
+						? "Free model request was rejected — try again or pick another OMA-AI free model"
+						: "Authentication required — sign in and create an API key for paid models (OMA-AI free models work without sign-in)",
 				);
 			}
 			if (response.status === 429) {

@@ -76,12 +76,21 @@ export function getModelLimits(model: string): { rpm: number; tpm: number } | nu
   return MODEL_LIMITS[model.toLowerCase()] ?? null;
 }
 
+/** Synthetic guests must rate-limit by IP — a shared userId would let one
+ *  noisy client exhaust free chat/search for everyone. */
+const SYNTHETIC_GUEST_IDS = new Set([
+  "oma-ai-guest",
+  "x402-guest",
+]);
+
 export function getRateLimitKey(c: Context<OmaEnv>, keyPrefix: string): string {
   const apiKey = c.get("apiKey");
   const userId = c.get("userId");
-  
+
   if (apiKey) return `${keyPrefix}:${apiKey.id}`;
-  if (userId) return `${keyPrefix}:${userId}`;
+  if (userId && !SYNTHETIC_GUEST_IDS.has(userId) && !userId.startsWith("oma-ai-guest")) {
+    return `${keyPrefix}:${userId}`;
+  }
   const ip = extractClientIp(c);
   return `${keyPrefix}:ip:${ip}`;
 }

@@ -4,14 +4,13 @@ import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/cookies";
 import { log } from "@/lib/logger";
 
+// /chat is public (free OMA-AI chat + image/video tabs; paid ops still
+// auth at the API). Image/video legacy URLs redirect via SITE_REDIRECTS.
 const PROTECTED_PATHS = [
 	"/dashboard",
 	"/admin",
 	"/settings",
 	"/deposit",
-	"/chat",
-	"/image-generation",
-	"/video-generation",
 ];
 // C-C1: when this cookie is present, the user has opted into a 24h demo
 // session. The middleware lets them through the protected-route gate so
@@ -23,9 +22,6 @@ const DEMO_BYPASS_PATHS = [
 	"/dashboard",
 	"/settings",
 	"/deposit",
-	"/chat",
-	"/image-generation",
-	"/video-generation",
 ];
 const DEMO_COOKIE_NAME = "oma-demo";
 
@@ -52,6 +48,24 @@ export async function middleware(request: NextRequest) {
 			redirectUrl.searchParams.set(key, value);
 		});
 		return NextResponse.redirect(redirectUrl);
+	}
+
+	// Image/video standalone pages → unified playground media tabs
+	if (
+		pathname === "/image-generation" ||
+		pathname.startsWith("/image-generation/")
+	) {
+		const url = new URL("/chat", request.url);
+		url.searchParams.set("mode", "image");
+		return NextResponse.redirect(url, 308);
+	}
+	if (
+		pathname === "/video-generation" ||
+		pathname.startsWith("/video-generation/")
+	) {
+		const url = new URL("/chat", request.url);
+		url.searchParams.set("mode", "video");
+		return NextResponse.redirect(url, 308);
 	}
 
 	// /credits → /dashboard/credits
@@ -188,10 +202,12 @@ export const config = {
 		"/admin/:path*",
 		"/settings/:path*",
 		"/deposit/:path*",
-		"/chat/:path*",
+		// Public playground redirects (not auth-gated)
 		"/playground",
 		"/playground/:path*",
+		"/image-generation",
 		"/image-generation/:path*",
+		"/video-generation",
 		"/video-generation/:path*",
 		// Legacy / marketing redirects handled above
 		"/account",

@@ -20,6 +20,12 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	{ source: "/provenance", destination: "/docs" },
 	{ source: "/playground", destination: "/chat" },
 	{ source: "/playground/:path*", destination: "/chat/:path*" },
+	// Image/video playgrounds merged into unified /chat media modes
+	// (OpenRouter-style single playground with modality tabs).
+	{ source: "/image-generation", destination: "/chat?mode=image" },
+	{ source: "/image-generation/:path*", destination: "/chat?mode=image" },
+	{ source: "/video-generation", destination: "/chat?mode=video" },
+	{ source: "/video-generation/:path*", destination: "/chat?mode=video" },
 	// Swap provider retired — fund via direct USDC deposit
 	{ source: "/swap", destination: "/deposit" },
 	{ source: "/swap/:path*", destination: "/deposit" },
@@ -38,6 +44,8 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/disclosures",
 	"/provenance",
 	"/playground",
+	"/image-generation",
+	"/video-generation",
 	"/swap",
 	"/credits",
 	"/account",

@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
-import { ImageGenerationPanel } from "@/components/chat/ImageGenerationPanel";
+import { permanentRedirect } from "next/navigation";
 
-// Opt out of static prerender — full client component with effects/state.
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-	title: "Image generation playground",
-	description:
-		"Generate images from text with FLUX and SDXL models. Charged per image in OMA credits.",
-	alternates: { canonical: "/image-generation" },
-	robots: { index: false, follow: false },
-};
-
+/**
+ * Image generation lives in the unified playground at `/chat?mode=image`
+ * (same pattern as OpenRouter/Venice single-workspace multimodal UIs).
+ * Permanent redirect keeps old bookmarks working.
+ */
 export default function ImageGenerationPage() {
-	return <ImageGenerationPanel />;
+	permanentRedirect("/chat?mode=image");
 }

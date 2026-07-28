@@ -42,6 +42,8 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		expect(bySource["/support"]).toBe("/contact");
 		expect(bySource["/signup"]).toBe("/login");
 		expect(bySource["/playground"]).toBe("/chat");
+		expect(bySource["/image-generation"]).toBe("/chat?mode=image");
+		expect(bySource["/video-generation"]).toBe("/chat?mode=video");
 		expect(bySource["/swap"]).toBe("/deposit");
 		expect(bySource["/credits"]).toBe("/dashboard/credits");
 		expect(bySource["/account"]).toBe("/settings");

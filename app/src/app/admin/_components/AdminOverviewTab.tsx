@@ -356,7 +356,7 @@ export default function AdminOverviewTab({
 							</h3>
 						</div>
 						<Link
-							href="/admin/usage"
+							href="/admin?tab=usage"
 							className="text-[10px] text-text-muted hover:text-accent font-mono uppercase tracking-wider"
 						>
 							View all →

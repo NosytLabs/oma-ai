@@ -2570,7 +2570,7 @@
       "category": "budget",
       "maxTokens": 8192,
       "supportsStreaming": true,
-      "displayName": "Kimi K2.6 (Free via Gonka)",
+      "displayName": "Kimi K2.6 (Free via OMA-AI)",
       "capabilities": [
         "chat",
         "reasoning"

@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Message } from "@/components/chat";
 
 /**
@@ -20,17 +20,27 @@ export type ShareStatus = "default" | "success" | "error";
 
 /**
  * Media mode toggles between text chat, image generation, and video
- * generation panels. Lives in component-only state (no localStorage)
- * so each fresh tab starts in text mode.
+ * generation panels. Synced with `?mode=text|image|video` so deep links
+ * and redirects from /image-generation + /video-generation work.
  */
 export type MediaMode = "text" | "image" | "video";
+
+const MEDIA_MODES: readonly MediaMode[] = ["text", "image", "video"] as const;
+
+export function parseMediaMode(raw: string | null | undefined): MediaMode {
+	const v = (raw ?? "").trim().toLowerCase();
+	if (v === "image" || v === "img") return "image";
+	if (v === "video" || v === "vid") return "video";
+	if (v === "text" || v === "chat" || v === "") return "text";
+	return "text";
+}
 
 export interface UsePlaygroundStateOptions {
 	/**
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
 	 * to `?model=<value>` from the current URL, falling back to
-	 * `llama-3.2-3b`.
+	 * `minimax-m2.7` (free OMA-AI).
 	 */
 	defaultModel?: string;
 }
@@ -119,8 +129,14 @@ export function usePlaygroundState(
 	options: UsePlaygroundStateOptions = {},
 ): PlaygroundState {
 	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
+	// Default to free OMA-AI (OpenBroker) model so guests can chat without sign-in.
+	// Lazy string keeps this hook free of a models-data import cycle; value must
+	// match FREE_DEFAULT_CHAT_MODEL in @/lib/model-utils.
 	const defaultModel =
-		options.defaultModel ?? searchParams?.get("model") ?? "llama-3.2-3b";
+		options.defaultModel ?? searchParams?.get("model") ?? "minimax-m2.7";
+	const initialMode = parseMediaMode(searchParams?.get("mode"));
 
 	// --- Core chat ---
 	const [model, setModel] = useState<string>(defaultModel);
@@ -153,13 +169,42 @@ export function usePlaygroundState(
 	const [shareStatus, setShareStatus] = useState<ShareStatus>("default");
 
 	// --- Compare mode ---
+	// ponytail: chat playground is a free OMA-AI / Gonka surface. Default
+	// the compare slot to the second free model so guests never see a paid
+	// Venice model they can't call without signing in.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("claude-sonnet-4-5");
+	const [compareModel, setCompareModel] = useState<string>("kimi-k2-6");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
 	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
-	const [mediaMode, setMediaMode] = useState<MediaMode>("text");
+	const [mediaMode, setMediaModeState] = useState<MediaMode>(initialMode);
+
+	// Keep mode in sync if the user lands with a new ?mode= (redirects, back/forward).
+	useEffect(() => {
+		const fromUrl = parseMediaMode(searchParams?.get("mode"));
+		setMediaModeState((prev) => (prev === fromUrl ? prev : fromUrl));
+	}, [searchParams]);
+
+	const setMediaMode = useCallback(
+		(next: SetStateAction<MediaMode>) => {
+			setMediaModeState((prev) => {
+				const resolved = typeof next === "function" ? next(prev) : next;
+				const mode = MEDIA_MODES.includes(resolved) ? resolved : "text";
+				// Reflect mode in the URL without a full navigation (shareable deep link).
+				if (typeof window !== "undefined" && pathname) {
+					const params = new URLSearchParams(searchParams?.toString() ?? "");
+					if (mode === "text") params.delete("mode");
+					else params.set("mode", mode);
+					const qs = params.toString();
+					const href = qs ? `${pathname}?${qs}` : pathname;
+					router.replace(href, { scroll: false });
+				}
+				return mode;
+			});
+		},
+		[pathname, router, searchParams],
+	);
 
 	return {
 		// Core chat
