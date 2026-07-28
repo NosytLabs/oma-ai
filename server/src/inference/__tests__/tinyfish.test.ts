@@ -1,12 +1,12 @@
 /**
  * TinyFish + Wikipedia fallback tests.
- * Uses bun:test (server test runner); mocks config via module mock.
+ * Uses vitest (server test runner); mocks config via vi.mock + vi.stubEnv.
  */
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const configState = { TINYFISH_API_KEY: undefined as string | undefined };
 
-mock.module("../../config.js", () => ({
+vi.mock("../../config.js", () => ({
   config: new Proxy(
     {},
     {
@@ -18,7 +18,7 @@ mock.module("../../config.js", () => ({
   ),
 }));
 
-mock.module("../../lib/logger.js", () => ({
+vi.mock("../../lib/logger.js", () => ({
   logger: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 
@@ -37,7 +37,7 @@ describe("searchWeb", () => {
   });
 
   it("uses Wikipedia keyless fallback when TinyFish is not configured", async () => {
-    const fetchMock = mock(() =>
+    const fetchMock = vi.fn(() =>
       Promise.resolve(
         new Response(
           JSON.stringify([
@@ -78,7 +78,7 @@ describe("searchWeb", () => {
       total_results: 1,
       page: 1,
     };
-    const fetchMock = mock(() =>
+    const fetchMock = vi.fn(() =>
       Promise.resolve(
         new Response(JSON.stringify(payload), {
           status: 200,

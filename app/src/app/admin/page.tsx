@@ -95,7 +95,7 @@ const VALID_TABS = new Set<Tab>([
 export default function AdminPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const tabFromUrl = searchParams.get("tab");
+	const tabFromUrl = searchParams?.get("tab");
 	const initialTab: Tab =
 		tabFromUrl && VALID_TABS.has(tabFromUrl as Tab)
 			? (tabFromUrl as Tab)
@@ -122,7 +122,7 @@ export default function AdminPage() {
 		}
 		setActiveTab(id);
 		// Reflect in-panel tabs in the URL without full navigation.
-		const next = new URLSearchParams(searchParams.toString());
+		const next = new URLSearchParams(searchParams?.toString() ?? "");
 		if (id === "overview") next.delete("tab");
 		else next.set("tab", id);
 		const q = next.toString();

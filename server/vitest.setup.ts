@@ -14,6 +14,14 @@
 // (SURPLUS_ENABLED requires NODE_ENV === "development" to prevent accidental production use)
 process.env.NODE_ENV = 'development';
 
+// Force-clear provider API keys so test env is deterministic. Without this,
+// shell env (e.g. VENICE_API_KEY exported in ~/.zshrc) leaks into vitest and
+// flips VENICE_CONFIGURED true, breaking the keyless-deploy catalog tests.
+delete process.env.VENICE_API_KEY;
+delete process.env.OPENAI_API_KEY;
+delete process.env.ANTHROPIC_API_KEY;
+delete process.env.OPENROUTER_API_KEY;
+
 // Surplus wallet key - required for SURPLUS_ENABLED to be true in tests
 if (!process.env.SURPLUS_WALLET_PRIVATE_KEY) {
   process.env.SURPLUS_WALLET_PRIVATE_KEY = '0x' + 'a1'.repeat(31) + 'b1'; // valid hex format for test
