@@ -200,6 +200,15 @@ export default function PricingPage() {
 	}, []);
 
 	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
+
+	function prettyName(id: string): string {
+		return id
+			.split("-")
+			.map((p) =>
+				/^\d/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1),
+			)
+			.join(" ");
+	}
 	const lowestInputPrice = useMemo(
 		() =>
 			formatPricePerMillion(
@@ -216,6 +225,47 @@ export default function PricingPage() {
 			),
 		[category, pricedModels],
 	);
+
+	// Pull image + video models from the same /v1/models response. The
+	// loadModels() helper above drops them; we re-fetch once for the
+	// generation section's per-image / per-generation pricing.
+	const [generationModels, setGenerationModels] = useState<
+		Array<{
+			id: string;
+			name: string;
+			priceUsd: number;
+			category: "image" | "video";
+			duration?: string;
+		}>
+	>([]);
+	useEffect(() => {
+		let cancelled = false;
+		fetch("/api/v1/models")
+			.then((r) => (r.ok ? r.json() : null))
+			.then((json: { data?: Array<{ id: string; category?: string; pricing?: { prompt?: string; generation?: string }; context_length?: number; duration?: string; architecture?: { input_modalities?: string[]; output_modalities?: string[] } }> } | null) => {
+				if (cancelled || !json?.data) return;
+				const gen = json.data
+					.filter(
+						(m) =>
+							m.category === "image" || m.category === "video",
+					)
+					.map((m) => ({
+						id: m.id,
+						name: prettyName(m.id),
+						priceUsd: Number(
+							m.pricing?.generation ?? m.pricing?.prompt ?? 0,
+						),
+						category: m.category as "image" | "video",
+						duration: m.duration,
+					}))
+					.sort((a, b) => a.priceUsd - b.priceUsd);
+				setGenerationModels(gen);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	return (
 		<div className="relative min-h-screen overflow-hidden bg-void">
@@ -253,7 +303,7 @@ export default function PricingPage() {
 						platform fee layered on top of the quoted rates.
 					</p>
 					<div className="meta-strip">
-							<span>{modelCount} live models</span>
+							<span>{modelCount + generationModels.length} live models</span>
 						<span>Usage-based billing</span>
 						<span>x402 native</span>
 					</div>
@@ -430,6 +480,79 @@ export default function PricingPage() {
 						</div>
 					</div>
 				</div>
+
+				{generationModels.length > 0 && (
+					<div className="mb-12">
+						<div className="mb-6 flex items-center gap-2">
+							<div className="h-px flex-1 bg-border" />
+							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+								image & video generation
+							</span>
+							<div className="h-px flex-1 bg-border" />
+						</div>
+						<div className="surface-card p-4 sm:p-6">
+							<p className="mb-4 text-sm text-text-secondary">
+								Generation models bill per output (image or video), not per
+								token. Pricing shown is the customer-facing rate — wholesale
+								cost plus a {`25%`} markup. Image + video models also count
+								toward the live catalog total.
+							</p>
+							<div className="relative">
+								<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
+								<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]">
+									<table className="w-full min-w-[32rem] text-left">
+										<thead>
+											<tr className="border-b border-border bg-surface-elevated">
+												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
+													Model
+												</th>
+												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
+													Type
+												</th>
+												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
+													Price
+												</th>
+												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
+													Notes
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{generationModels.map((m) => (
+												<tr
+													key={m.id}
+													className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors"
+												>
+													<td className="px-4 py-3 font-medium text-text-bright">
+														{m.name}
+													</td>
+													<td className="px-4 py-3">
+														<span
+															className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.category === "image" ? "bg-violet/15 text-violet" : "bg-accent/15 text-accent"}`}
+														>
+															{m.category}
+														</span>
+													</td>
+													<td className="px-4 py-3 font-mono text-text-bright text-right whitespace-nowrap">
+														${m.priceUsd.toFixed(4)}
+														<span className="ml-1 text-xs text-text-muted">
+															{m.category === "image"
+																? "/image"
+																: "/generation"}
+														</span>
+													</td>
+													<td className="px-4 py-3 text-text-muted text-right text-xs font-mono">
+														{m.duration ?? (m.category === "video" ? "—" : "")}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 
 				<div className="mb-12">
 					<div className="mb-6 flex items-center gap-2">

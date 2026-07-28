@@ -471,4 +471,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // Marketing model count surfaced across the UI. Must match live
 // GET /v1/models count. The SSR fallback catalog (`MODELS`) is a smaller
 // hand-picked set — never use MODELS.length for marketing copy.
-export const MODEL_COUNT = 109; // Actual count from server/models.json
+export const MODEL_COUNT = 134; // 104 chat + 25 image + 5 video from server/models.json
