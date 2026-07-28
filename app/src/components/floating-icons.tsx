@@ -19,6 +19,7 @@
  */
 
 import { useReducedMotion } from "@/lib/framer-motion-client";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
 const DEFAULT_SYMBOLS = ["₿", "Ξ", "◎", "Ð", "Ł", "◈", "◆", "₮", "₳"];
@@ -39,6 +40,11 @@ export function FloatingIcons({
 	className,
 }: FloatingIconsProps) {
 	const prefersReduced = useReducedMotion();
+	const [isClient, setIsClient] = useState(false);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	// Generate deterministic-but-distinct seeds per icon
 	const items = Array.from({ length: count }, (_, i) => {
@@ -71,7 +77,7 @@ export function FloatingIcons({
 					color: "var(--color-accent)",
 					["--float-wobble" as string]: `${item.wobble}px`,
 					transform: `rotate(${item.seed}deg)`,
-					...(prefersReduced
+					...(isClient && prefersReduced
 						? {}
 						: {
 								animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
