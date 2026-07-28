@@ -68,9 +68,139 @@ export interface ImageModelDef {
   enabled?: boolean;
 }
 
+/** Text-to-speech model — charged per input token (or per char for some Venice TTS). */
+export interface TtsModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  inputPricePer1M: number;
+  outputPricePer1M: number;
+  markupPercent: number;
+  category: "tts";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  responseFormat?: string[];
+  enabled?: boolean;
+}
+
+/** Embedding model — charged per input token. Output also costs tokens in some catalogs. */
+export interface EmbeddingModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  inputPricePer1M: number;
+  outputPricePer1M: number;
+  markupPercent: number;
+  category: "embedding";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  dimensions?: number;
+  enabled?: boolean;
+}
+
+/** Speech-to-text model — charged per second of input audio. */
+export interface AsrModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  /** Per-second USD wholesale price. */
+  pricePerSecond: number;
+  markupPercent: number;
+  category: "asr";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPrice: number;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  enabled?: boolean;
+}
+
+/** Music generation model — charged per generation (track). */
+export interface MusicModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  /** Per-generation USD wholesale price. */
+  pricePerGeneration: number;
+  markupPercent: number;
+  category: "music";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPrice: number;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  enabled?: boolean;
+}
+
+/** Image upscale model — charged per upscale operation. */
+export interface UpscaleModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  pricePerUpscale: number;
+  markupPercent: number;
+  category: "upscale";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPrice: number;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  enabled?: boolean;
+}
+
+/** Image edit / inpaint model — charged per edit. */
+export interface InpaintModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  pricePerEdit: number;
+  markupPercent: number;
+  category: "inpaint";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  creditsPrice: number;
+  creditsPerMillionInput: number;
+  creditsPerMillionOutput: number;
+  enabled?: boolean;
+}
+
 let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
 export let IMAGE_MODELS: Record<string, ImageModelDef> = {};
+export let TTS_MODELS: Record<string, TtsModelDef> = {};
+export let EMBEDDING_MODELS: Record<string, EmbeddingModelDef> = {};
+export let ASR_MODELS: Record<string, AsrModelDef> = {};
+export let MUSIC_MODELS: Record<string, MusicModelDef> = {};
+export let UPSCALE_MODELS: Record<string, UpscaleModelDef> = {};
+export let INPAINT_MODELS: Record<string, InpaintModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
   "deepseek-v3.2": {
@@ -173,6 +303,48 @@ const FALLBACK_IMAGE_MODELS: Record<string, ImageModelDef> = {
   },
 };
 
+const FALLBACK_TTS_MODELS: Record<string, TtsModelDef> = {
+  "tts-kokoro": {
+    id: "tts-kokoro",
+    veniceId: "tts-kokoro",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 3.5,
+    outputPricePer1M: 0.0,
+    markupPercent: 25,
+    category: "tts",
+    maxTokens: 4096,
+    supportsStreaming: true,
+    displayName: "Kokoro TTS",
+    capabilities: ["text-to-speech", "audio-output"],
+    description: "Kokoro text-to-speech via Venice — high-quality natural voices.",
+    creditsPerMillionInput: 438,
+    creditsPerMillionOutput: 0,
+    responseFormat: ["mp3", "opus", "wav", "pcm"],
+  },
+};
+
+const FALLBACK_EMBEDDING_MODELS: Record<string, EmbeddingModelDef> = {
+  "text-embedding-bge-m3": {
+    id: "text-embedding-bge-m3",
+    veniceId: "text-embedding-bge-m3",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0.15,
+    outputPricePer1M: 0.15,
+    markupPercent: 25,
+    category: "embedding",
+    maxTokens: 8192,
+    supportsStreaming: false,
+    displayName: "BGE-M3 Embeddings",
+    capabilities: ["embeddings", "vector-output"],
+    description: "BGE-M3 multilingual embeddings via Venice.",
+    creditsPerMillionInput: 19,
+    creditsPerMillionOutput: 19,
+    dimensions: 1024,
+  },
+};
+
 let catalogPromise: Promise<void> | null = null;
 
 export function ensureCatalogLoaded(): Promise<void> {
@@ -191,11 +363,23 @@ export async function reloadModelCatalog(): Promise<void> {
     MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS;
     VIDEO_MODELS = parsed.VIDEO_MODELS || FALLBACK_VIDEO_MODELS;
     IMAGE_MODELS = parsed.IMAGE_MODELS || FALLBACK_IMAGE_MODELS;
+    TTS_MODELS = parsed.TTS_MODELS || FALLBACK_TTS_MODELS;
+    EMBEDDING_MODELS = parsed.EMBEDDING_MODELS || FALLBACK_EMBEDDING_MODELS;
+    ASR_MODELS = parsed.ASR_MODELS || {};
+    MUSIC_MODELS = parsed.MUSIC_MODELS || {};
+    UPSCALE_MODELS = parsed.UPSCALE_MODELS || {};
+    INPAINT_MODELS = parsed.INPAINT_MODELS || {};
     loadedFromDisk = parsed.MODEL_CATALOG !== undefined;
     logger.info({
       modelCount: Object.keys(MODEL_CATALOG).length,
       videoModelCount: Object.keys(VIDEO_MODELS).length,
       imageModelCount: Object.keys(IMAGE_MODELS).length,
+      ttsModelCount: Object.keys(TTS_MODELS).length,
+      embeddingModelCount: Object.keys(EMBEDDING_MODELS).length,
+      asrModelCount: Object.keys(ASR_MODELS).length,
+      musicModelCount: Object.keys(MUSIC_MODELS).length,
+      upscaleModelCount: Object.keys(UPSCALE_MODELS).length,
+      inpaintModelCount: Object.keys(INPAINT_MODELS).length,
       configPath,
       source: loadedFromDisk ? 'models.json' : 'fallback',
       type: 'model_catalog_loaded'
@@ -205,6 +389,12 @@ export async function reloadModelCatalog(): Promise<void> {
     MODEL_CATALOG = FALLBACK_MODELS;
     VIDEO_MODELS = FALLBACK_VIDEO_MODELS;
     IMAGE_MODELS = FALLBACK_IMAGE_MODELS;
+    TTS_MODELS = FALLBACK_TTS_MODELS;
+    EMBEDDING_MODELS = FALLBACK_EMBEDDING_MODELS;
+    ASR_MODELS = {};
+    MUSIC_MODELS = {};
+    UPSCALE_MODELS = {};
+    INPAINT_MODELS = {};
   }
   // Audit the catalog AFTER both success and failure paths so operators
   // see the same warnings no matter which catalog got loaded.
@@ -445,6 +635,7 @@ export async function listImageModels(): Promise<Array<{
   id: string;
   provider: string;
   pricePerImage: number;
+  markupPercent: number;
   displayName: string;
   capabilities: string[];
   description: string;
@@ -457,6 +648,7 @@ export async function listImageModels(): Promise<Array<{
       id: m.id,
       provider: m.provider,
       pricePerImage: m.pricePerImage,
+      markupPercent: m.markupPercent,
       displayName: m.displayName,
       capabilities: m.capabilities,
       description: m.description,
@@ -466,5 +658,186 @@ export async function listImageModels(): Promise<Array<{
 export async function getImageModel(id: string): Promise<ImageModelDef | null> {
   await ensureCatalogLoaded();
   return IMAGE_MODELS[id] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// New model categories: TTS, Embedding, ASR, Music, Upscale, Inpaint.
+// Each follows the same shape as the legacy list* accessors — filtered by
+// provider credentials so a keyless deploy never advertises a model that
+// would 503 on use.
+// ---------------------------------------------------------------------------
+
+export async function listTtsModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  inputPricePer1M: number;
+  maxTokens: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(TTS_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      inputPricePer1M: m.inputPricePer1M,
+      maxTokens: m.maxTokens,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function listEmbeddingModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  inputPricePer1M: number;
+  outputPricePer1M: number;
+  maxTokens: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(EMBEDDING_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      inputPricePer1M: m.inputPricePer1M,
+      outputPricePer1M: m.outputPricePer1M,
+      maxTokens: m.maxTokens,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function listAsrModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  pricePerSecond: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(ASR_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      pricePerSecond: m.pricePerSecond,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function listMusicModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  pricePerGeneration: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(MUSIC_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      pricePerGeneration: m.pricePerGeneration,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function listUpscaleModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  pricePerUpscale: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(UPSCALE_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      pricePerUpscale: m.pricePerUpscale,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function listInpaintModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  pricePerEdit: number;
+  markupPercent: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  return Object.values(INPAINT_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      pricePerEdit: m.pricePerEdit,
+      markupPercent: m.markupPercent,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function getTtsModel(id: string): Promise<TtsModelDef | null> {
+  await ensureCatalogLoaded();
+  return TTS_MODELS[id] ?? null;
+}
+
+export async function getEmbeddingModel(id: string): Promise<EmbeddingModelDef | null> {
+  await ensureCatalogLoaded();
+  return EMBEDDING_MODELS[id] ?? null;
+}
+
+export async function getAsrModel(id: string): Promise<AsrModelDef | null> {
+  await ensureCatalogLoaded();
+  return ASR_MODELS[id] ?? null;
+}
+
+export async function getMusicModel(id: string): Promise<MusicModelDef | null> {
+  await ensureCatalogLoaded();
+  return MUSIC_MODELS[id] ?? null;
+}
+
+export async function getUpscaleModel(id: string): Promise<UpscaleModelDef | null> {
+  await ensureCatalogLoaded();
+  return UPSCALE_MODELS[id] ?? null;
+}
+
+export async function getInpaintModel(id: string): Promise<InpaintModelDef | null> {
+  await ensureCatalogLoaded();
+  return INPAINT_MODELS[id] ?? null;
 }
 

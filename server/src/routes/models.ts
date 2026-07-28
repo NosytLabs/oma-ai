@@ -13,7 +13,7 @@
  */
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
-import { listModels, getModel, listVideoModels, listImageModels, getImageModel } from "../inference/models.js";
+import { listModels, getModel, listVideoModels, listImageModels, getImageModel, listTtsModels, listEmbeddingModels, listAsrModels, listMusicModels, listUpscaleModels, listInpaintModels } from "../inference/models.js";
 import { hasConfiguredProvider } from "../inference/cross-provider-router.js";
 import { getModelPricing } from "../inference/billing-service.js";
 import { getRedisClient } from "../lib/redis-client.js";
@@ -112,6 +112,12 @@ async function buildModelsResponse(): Promise<{
   const catalog = await listModels();
   const videoCatalog = await listVideoModels();
   const imageCatalog = await listImageModels();
+  const ttsCatalog = await listTtsModels();
+  const embeddingCatalog = await listEmbeddingModels();
+  const asrCatalog = await listAsrModels();
+  const musicCatalog = await listMusicModels();
+  const upscaleCatalog = await listUpscaleModels();
+  const inpaintCatalog = await listInpaintModels();
   const created = Math.floor(Date.now() / 1000);
 
   const data = [
@@ -187,6 +193,158 @@ async function buildModelsResponse(): Promise<{
       architecture: { input_modalities: ["text"], output_modalities: ["video"] },
       supported_parameters: [] as string[],
     })),
+    ...ttsCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = m.inputPricePer1M * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          completion: "0",
+        },
+        category: "tts",
+        context_length: m.maxTokens,
+        architecture: {
+          input_modalities: ["text"],
+          output_modalities: ["audio"],
+        },
+        supported_parameters: ["voice", "speed", "response_format"],
+      };
+    }),
+    ...embeddingCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = m.inputPricePer1M * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          completion: retailPrice.toFixed(8),
+        },
+        category: "embedding",
+        context_length: m.maxTokens,
+        architecture: {
+          input_modalities: ["text"],
+          output_modalities: ["embeddings"],
+        },
+        supported_parameters: ["encoding_format", "dimensions"],
+      };
+    }),
+    ...asrCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = (m.pricePerSecond ?? 0) * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          audio_second: retailPrice.toFixed(8),
+        },
+        category: "asr",
+        architecture: {
+          input_modalities: ["audio"],
+          output_modalities: ["text"],
+        },
+        supported_parameters: ["language", "response_format", "temperature"],
+      };
+    }),
+    ...musicCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = (m.pricePerGeneration ?? 0) * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          generation: retailPrice.toFixed(8),
+        },
+        category: "music",
+        architecture: {
+          input_modalities: ["text"],
+          output_modalities: ["audio"],
+        },
+        supported_parameters: ["duration"],
+      };
+    }),
+    ...upscaleCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = (m.pricePerUpscale ?? 0) * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          generation: retailPrice.toFixed(8),
+        },
+        category: "upscale",
+        architecture: {
+          input_modalities: ["image"],
+          output_modalities: ["image"],
+        },
+        supported_parameters: ["scale"],
+      };
+    }),
+    ...inpaintCatalog.map((m) => {
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = (m.pricePerEdit ?? 0) * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          generation: retailPrice.toFixed(8),
+        },
+        category: "inpaint",
+        architecture: {
+          input_modalities: ["text", "image"],
+          output_modalities: ["image"],
+        },
+        supported_parameters: ["mask", "prompt_strength"],
+      };
+    }),
   ];
 
   return { object: "list", data };

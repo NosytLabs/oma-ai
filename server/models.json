@@ -2655,6 +2655,1389 @@
       "creditsPerMillionInput": 10,
       "creditsPerMillionOutput": 10,
       "creditsPrice": 0.85
+    },
+    "wan-2-7-text-to-video": {
+      "id": "wan-2-7-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.7 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2-7-image-to-video": {
+      "id": "wan-2-7-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.7 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2-7-reference-to-video": {
+      "id": "wan-2-7-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7 Reference",
+      "capabilities": [
+        "reference-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.7 Reference \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2-7-video-to-video": {
+      "id": "wan-2-7-video-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7 Edit",
+      "capabilities": [
+        "video-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.7 Edit \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2-7-enhanced-image-to-video": {
+      "id": "wan-2-7-enhanced-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7 Enhanced",
+      "capabilities": [
+        "image-to-video",
+        "enhanced",
+        "6s"
+      ],
+      "description": "Wan 2.7 Enhanced \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2-7-enhanced-text-to-video": {
+      "id": "wan-2-7-enhanced-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.7 Enhanced",
+      "capabilities": [
+        "text-to-video",
+        "enhanced",
+        "6s"
+      ],
+      "description": "Wan 2.7 Enhanced \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "happyhorse-1-1-text-to-video": {
+      "id": "happyhorse-1-1-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.1",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.1 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-1-image-to-video": {
+      "id": "happyhorse-1-1-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.1",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.1 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-1-reference-to-video": {
+      "id": "happyhorse-1-1-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.1 Reference",
+      "capabilities": [
+        "reference-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.1 Reference \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-0-text-to-video": {
+      "id": "happyhorse-1-0-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.0",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.0 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-0-image-to-video": {
+      "id": "happyhorse-1-0-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.0",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.0 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-0-reference-to-video": {
+      "id": "happyhorse-1-0-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.0 Reference",
+      "capabilities": [
+        "reference-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.0 Reference \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "happyhorse-1-0-video-to-video": {
+      "id": "happyhorse-1-0-video-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "HappyHorse 1.0 Edit",
+      "capabilities": [
+        "video-to-video",
+        "6s"
+      ],
+      "description": "HappyHorse 1.0 Edit \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "wan-2.6-image-to-video": {
+      "id": "wan-2.6-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.6",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.6 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2.6-flash-image-to-video": {
+      "id": "wan-2.6-flash-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Wan 2.6 Flash",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Wan 2.6 Flash \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "wan-2.6-text-to-video": {
+      "id": "wan-2.6-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.6",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.6 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2.5-preview-image-to-video": {
+      "id": "wan-2.5-preview-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.5 Preview",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.5 Preview \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2.5-preview-text-to-video": {
+      "id": "wan-2.5-preview-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.5 Preview",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.5 Preview \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "grok-imagine-text-to-video-private": {
+      "id": "grok-imagine-text-to-video-private",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Grok Imagine Private",
+      "capabilities": [
+        "text-to-video",
+        "private",
+        "6s"
+      ],
+      "description": "Grok Imagine Private \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "grok-imagine-image-to-video-private": {
+      "id": "grok-imagine-image-to-video-private",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Grok Imagine Private",
+      "capabilities": [
+        "image-to-video",
+        "private",
+        "6s"
+      ],
+      "description": "Grok Imagine Private \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "grok-imagine-reference-to-video-private": {
+      "id": "grok-imagine-reference-to-video-private",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Grok Imagine R2V Private",
+      "capabilities": [
+        "reference-to-video",
+        "private",
+        "6s"
+      ],
+      "description": "Grok Imagine R2V Private \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "grok-imagine-video-to-video-private": {
+      "id": "grok-imagine-video-to-video-private",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Grok Imagine Private",
+      "capabilities": [
+        "video-to-video",
+        "private",
+        "6s"
+      ],
+      "description": "Grok Imagine Private \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "grok-imagine-1-5-image-to-video-private": {
+      "id": "grok-imagine-1-5-image-to-video-private",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Grok Imagine 1.5 Private",
+      "capabilities": [
+        "image-to-video",
+        "private",
+        "6s"
+      ],
+      "description": "Grok Imagine 1.5 Private \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2.2-a14b-text-to-video": {
+      "id": "wan-2.2-a14b-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Wan 2.2 A14B",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Wan 2.2 A14B \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "wan-2.1-pro-image-to-video": {
+      "id": "wan-2.1-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Wan 2.1 Pro",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Wan 2.1 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "ltx-2-v2-3-fast-image-to-video": {
+      "id": "ltx-2-v2-3-fast-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "LTX Video 2.3 Fast",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "LTX Video 2.3 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "ltx-2-v2-3-fast-text-to-video": {
+      "id": "ltx-2-v2-3-fast-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "LTX Video 2.3 Fast",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "LTX Video 2.3 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "ltx-2-v2-3-full-image-to-video": {
+      "id": "ltx-2-v2-3-full-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "LTX Video 2.3 Full Quality",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "LTX Video 2.3 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "ltx-2-v2-3-full-text-to-video": {
+      "id": "ltx-2-v2-3-full-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "LTX Video 2.3 Full Quality",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "LTX Video 2.3 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "ovi-image-to-video": {
+      "id": "ovi-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Ovi",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Ovi \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "kling-2.6-pro-text-to-video": {
+      "id": "kling-2.6-pro-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling 2.6 Pro",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Kling 2.6 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "kling-2.6-pro-image-to-video": {
+      "id": "kling-2.6-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling 2.6 Pro",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Kling 2.6 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "kling-2.5-turbo-pro-text-to-video": {
+      "id": "kling-2.5-turbo-pro-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling 2.5 Turbo Pro",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Kling 2.5 Turbo Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "kling-2.5-turbo-pro-image-to-video": {
+      "id": "kling-2.5-turbo-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling 2.5 Turbo Pro",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Kling 2.5 Turbo Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "kling-v3-4k-text-to-video": {
+      "id": "kling-v3-4k-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling V3 4K",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Kling V3 4K \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-4k-reference-to-video": {
+      "id": "kling-v3-4k-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling V3 4K R2V",
+      "capabilities": [
+        "reference-to-video",
+        "8s"
+      ],
+      "description": "Kling V3 4K R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-4k-text-to-video": {
+      "id": "kling-o3-4k-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 4K",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 4K \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-4k-image-to-video": {
+      "id": "kling-o3-4k-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 4K",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 4K \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-4k-reference-to-video": {
+      "id": "kling-o3-4k-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 4K R2V",
+      "capabilities": [
+        "reference-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 4K R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-pro-text-to-video": {
+      "id": "kling-o3-pro-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 Pro",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-pro-image-to-video": {
+      "id": "kling-o3-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 Pro",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-pro-reference-to-video": {
+      "id": "kling-o3-pro-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling O3 Pro R2V",
+      "capabilities": [
+        "reference-to-video",
+        "8s"
+      ],
+      "description": "Kling O3 Pro R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-standard-text-to-video": {
+      "id": "kling-o3-standard-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling O3 Standard",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Kling O3 Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-standard-image-to-video": {
+      "id": "kling-o3-standard-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling O3 Standard",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Kling O3 Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-o3-standard-reference-to-video": {
+      "id": "kling-o3-standard-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling O3 Standard R2V",
+      "capabilities": [
+        "reference-to-video",
+        "6s"
+      ],
+      "description": "Kling O3 Standard R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-pro-motion-control": {
+      "id": "kling-v3-pro-motion-control",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Kling V3 Pro Motion Control",
+      "capabilities": [
+        "motion-control",
+        "8s"
+      ],
+      "description": "Kling V3 Pro Motion Control \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-standard-motion-control": {
+      "id": "kling-v3-standard-motion-control",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling V3 Standard Motion Control",
+      "capabilities": [
+        "motion-control",
+        "6s"
+      ],
+      "description": "Kling V3 Standard Motion Control \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-standard-text-to-video": {
+      "id": "kling-v3-standard-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling V3 Standard",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Kling V3 Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-standard-image-to-video": {
+      "id": "kling-v3-standard-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Kling V3 Standard",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Kling V3 Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-turbo-pro-text-to-video": {
+      "id": "kling-v3-turbo-pro-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling V3 Turbo Pro",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Kling V3 Turbo Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-turbo-pro-image-to-video": {
+      "id": "kling-v3-turbo-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling V3 Turbo Pro",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Kling V3 Turbo Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-turbo-standard-text-to-video": {
+      "id": "kling-v3-turbo-standard-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling V3 Turbo Standard",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Kling V3 Turbo Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "kling-v3-turbo-standard-image-to-video": {
+      "id": "kling-v3-turbo-standard-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Kling V3 Turbo Standard",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Kling V3 Turbo Standard \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "longcat-distilled-image-to-video": {
+      "id": "longcat-distilled-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Longcat Distilled",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Longcat Distilled \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "longcat-distilled-text-to-video": {
+      "id": "longcat-distilled-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Longcat Distilled",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Longcat Distilled \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "longcat-image-to-video": {
+      "id": "longcat-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Longcat Full Quality",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Longcat Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "longcat-text-to-video": {
+      "id": "longcat-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Longcat Full Quality",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Longcat Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "veo3-fast-text-to-video": {
+      "id": "veo3-fast-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Veo 3 Fast",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Veo 3 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3-fast-image-to-video": {
+      "id": "veo3-fast-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Veo 3 Fast",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Veo 3 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3-full-text-to-video": {
+      "id": "veo3-full-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Veo 3 Full Quality",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Veo 3 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3-full-image-to-video": {
+      "id": "veo3-full-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Veo 3 Full Quality",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Veo 3 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3.1-fast-text-to-video": {
+      "id": "veo3.1-fast-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Veo 3.1 Fast",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Veo 3.1 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3.1-fast-image-to-video": {
+      "id": "veo3.1-fast-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Veo 3.1 Fast",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Veo 3.1 Fast \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3.1-full-text-to-video": {
+      "id": "veo3.1-full-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Veo 3.1 Full Quality",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Veo 3.1 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "veo3.1-full-image-to-video": {
+      "id": "veo3.1-full-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Veo 3.1 Full Quality",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Veo 3.1 Full Quality \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "gemini-omni-flash-text-to-video": {
+      "id": "gemini-omni-flash-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Gemini Omni Flash",
+      "capabilities": [
+        "text-to-video",
+        "5s"
+      ],
+      "description": "Gemini Omni Flash \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "gemini-omni-flash-image-to-video": {
+      "id": "gemini-omni-flash-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Gemini Omni Flash",
+      "capabilities": [
+        "image-to-video",
+        "5s"
+      ],
+      "description": "Gemini Omni Flash \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "gemini-omni-flash-reference-to-video": {
+      "id": "gemini-omni-flash-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Gemini Omni Flash R2V",
+      "capabilities": [
+        "reference-to-video",
+        "5s"
+      ],
+      "description": "Gemini Omni Flash R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "sora-2-image-to-video": {
+      "id": "sora-2-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Sora 2",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Sora 2 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "sora-2-pro-image-to-video": {
+      "id": "sora-2-pro-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Sora 2 Pro",
+      "capabilities": [
+        "image-to-video",
+        "8s"
+      ],
+      "description": "Sora 2 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "sora-2-text-to-video": {
+      "id": "sora-2-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Sora 2",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Sora 2 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "sora-2-pro-text-to-video": {
+      "id": "sora-2-pro-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "8s",
+      "displayName": "Sora 2 Pro",
+      "capabilities": [
+        "text-to-video",
+        "8s"
+      ],
+      "description": "Sora 2 Pro \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "pixverse-v5.6-text-to-video": {
+      "id": "pixverse-v5.6-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse v5.6",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "PixVerse v5.6 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "pixverse-v5.6-image-to-video": {
+      "id": "pixverse-v5.6-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse v5.6",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "PixVerse v5.6 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "pixverse-v5.6-transition": {
+      "id": "pixverse-v5.6-transition",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse v5.6 Transition",
+      "capabilities": [
+        "video-transition",
+        "6s"
+      ],
+      "description": "PixVerse v5.6 Transition \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "pixverse-c1-text-to-video": {
+      "id": "pixverse-c1-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse C1",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "PixVerse C1 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "pixverse-c1-image-to-video": {
+      "id": "pixverse-c1-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse C1",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "PixVerse C1 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "pixverse-c1-reference-to-video": {
+      "id": "pixverse-c1-reference-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse C1 R2V",
+      "capabilities": [
+        "reference-to-video",
+        "6s"
+      ],
+      "description": "PixVerse C1 R2V \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "pixverse-c1-transition": {
+      "id": "pixverse-c1-transition",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "PixVerse C1 Transition",
+      "capabilities": [
+        "video-transition",
+        "6s"
+      ],
+      "description": "PixVerse C1 Transition \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "vidu-q3-text-to-video": {
+      "id": "vidu-q3-text-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Vidu Q3",
+      "capabilities": [
+        "text-to-video",
+        "6s"
+      ],
+      "description": "Vidu Q3 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "vidu-q3-image-to-video": {
+      "id": "vidu-q3-image-to-video",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Vidu Q3",
+      "capabilities": [
+        "image-to-video",
+        "6s"
+      ],
+      "description": "Vidu Q3 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "runway-gen4-5": {
+      "id": "runway-gen4-5",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Runway Gen-4.5",
+      "capabilities": [
+        "video-generation",
+        "6s"
+      ],
+      "description": "Runway Gen-4.5 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "runway-gen4-5-text": {
+      "id": "runway-gen4-5-text",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Runway Gen-4.5",
+      "capabilities": [
+        "video-generation",
+        "6s"
+      ],
+      "description": "Runway Gen-4.5 \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
+    },
+    "runway-gen4-turbo": {
+      "id": "runway-gen4-turbo",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "5s",
+      "displayName": "Runway Gen-4 Turbo",
+      "capabilities": [
+        "video-generation",
+        "5s"
+      ],
+      "description": "Runway Gen-4 Turbo \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "budget"
+    },
+    "runway-gen4-aleph": {
+      "id": "runway-gen4-aleph",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Runway Gen-4 Aleph",
+      "capabilities": [
+        "video-generation",
+        "6s"
+      ],
+      "description": "Runway Gen-4 Aleph \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "mid"
+    },
+    "topaz-video-upscale": {
+      "id": "topaz-video-upscale",
+      "provider": "venice",
+      "price": 0.05,
+      "duration": "6s",
+      "displayName": "Topaz Video Upscale",
+      "capabilities": [
+        "upscale",
+        "6s"
+      ],
+      "description": "Topaz Video Upscale \u2014 Venice-hosted video generation model.",
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0,
+      "creditsPrice": 6.0,
+      "category": "premium"
     }
   },
   "IMAGE_MODELS": {
@@ -3157,6 +4540,1533 @@
       ],
       "description": "Background Remover \u2014 Venice-hosted image generation model.",
       "creditsPrice": 4
+    },
+    "grok-imagine-image-quality": {
+      "id": "grok-imagine-image-quality",
+      "veniceId": "grok-imagine-image-quality",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Grok Imagine High Quality (SOTA)",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Grok Imagine High Quality (SOTA) \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "krea-2-turbo": {
+      "id": "krea-2-turbo",
+      "veniceId": "krea-2-turbo",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Krea 2 Turbo",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Krea 2 Turbo \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "gpt-image-2": {
+      "id": "gpt-image-2",
+      "veniceId": "gpt-image-2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "GPT Image 2",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "GPT Image 2 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "nano-banana-2": {
+      "id": "nano-banana-2",
+      "veniceId": "nano-banana-2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana 2",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Nano Banana 2 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "nano-banana-pro": {
+      "id": "nano-banana-pro",
+      "veniceId": "nano-banana-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Nano Banana Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "seedream-v5-pro": {
+      "id": "seedream-v5-pro",
+      "veniceId": "seedream-v5-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V5 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Seedream V5 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "grok-imagine-image": {
+      "id": "grok-imagine-image",
+      "veniceId": "grok-imagine-image",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Grok Imagine",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Grok Imagine \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "lustify-sdxl": {
+      "id": "lustify-sdxl",
+      "veniceId": "lustify-sdxl",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Lustify SDXL",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Lustify SDXL \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "lustify-v7": {
+      "id": "lustify-v7",
+      "veniceId": "lustify-v7",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Lustify v7",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Lustify v7 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "lustify-v8": {
+      "id": "lustify-v8",
+      "veniceId": "lustify-v8",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Lustify v8",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Lustify v8 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    }
+  },
+  "TTS_MODELS": {
+    "tts-kokoro": {
+      "id": "tts-kokoro",
+      "veniceId": "tts-kokoro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 3.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Kokoro Text to Speech",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Kokoro Text to Speech \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 437,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-qwen3-0-6b": {
+      "id": "tts-qwen3-0-6b",
+      "veniceId": "tts-qwen3-0-6b",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 87.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Qwen 3 TTS 0.6B",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Qwen 3 TTS 0.6B \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 10937,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-qwen3-1-7b": {
+      "id": "tts-qwen3-1-7b",
+      "veniceId": "tts-qwen3-1-7b",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 112.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Qwen 3 TTS 1.7B",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Qwen 3 TTS 1.7B \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 14062,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-xai-v1": {
+      "id": "tts-xai-v1",
+      "veniceId": "tts-xai-v1",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 18.75,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "xAI TTS v1",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "xAI TTS v1 \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 2343,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-inworld-1-5-max": {
+      "id": "tts-inworld-1-5-max",
+      "veniceId": "tts-inworld-1-5-max",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 12.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Inworld TTS-1.5 Max",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Inworld TTS-1.5 Max \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 1562,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-chatterbox-hd": {
+      "id": "tts-chatterbox-hd",
+      "veniceId": "tts-chatterbox-hd",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 50,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Chatterbox HD (Resemble AI)",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Chatterbox HD (Resemble AI) \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 6250,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-orpheus": {
+      "id": "tts-orpheus",
+      "veniceId": "tts-orpheus",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 62.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Orpheus TTS",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Orpheus TTS \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 7812,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-elevenlabs-turbo-v2-5": {
+      "id": "tts-elevenlabs-turbo-v2-5",
+      "veniceId": "tts-elevenlabs-turbo-v2-5",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 62.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "ElevenLabs Turbo v2.5",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "ElevenLabs Turbo v2.5 \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 7812,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-minimax-speech-02-hd": {
+      "id": "tts-minimax-speech-02-hd",
+      "veniceId": "tts-minimax-speech-02-hd",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 125,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "MiniMax Speech-02 HD",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "MiniMax Speech-02 HD \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 15625,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-gemini-3-1-flash": {
+      "id": "tts-gemini-3-1-flash",
+      "veniceId": "tts-gemini-3-1-flash",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 187.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Gemini 3.1 Flash TTS",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Gemini 3.1 Flash TTS \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 23437,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    },
+    "tts-gradium-v1": {
+      "id": "tts-gradium-v1",
+      "veniceId": "tts-gradium-v1",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 47.5,
+      "outputPricePer1M": 0.0,
+      "markupPercent": 25,
+      "category": "tts",
+      "maxTokens": 4096,
+      "supportsStreaming": true,
+      "displayName": "Gradium TTS",
+      "capabilities": [
+        "text-to-speech",
+        "audio-output"
+      ],
+      "description": "Gradium TTS \u2014 Venice text-to-speech model.",
+      "creditsPerMillionInput": 5937,
+      "creditsPerMillionOutput": 0,
+      "responseFormat": [
+        "mp3",
+        "opus",
+        "wav",
+        "pcm"
+      ]
+    }
+  },
+  "EMBEDDING_MODELS": {
+    "text-embedding-bge-m3": {
+      "id": "text-embedding-bge-m3",
+      "veniceId": "text-embedding-bge-m3",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.15,
+      "outputPricePer1M": 0.15,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "BGE-M3",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "BGE-M3 \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 18,
+      "creditsPerMillionOutput": 18,
+      "dimensions": 1024
+    },
+    "text-embedding-bge-en-icl": {
+      "id": "text-embedding-bge-en-icl",
+      "veniceId": "text-embedding-bge-en-icl",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0125,
+      "outputPricePer1M": 0.0125,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "BGE-EN-ICL",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "BGE-EN-ICL \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 1,
+      "creditsPerMillionOutput": 1,
+      "dimensions": 1024
+    },
+    "text-embedding-qwen3-8b": {
+      "id": "text-embedding-qwen3-8b",
+      "veniceId": "text-embedding-qwen3-8b",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0125,
+      "outputPricePer1M": 0.0125,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Qwen3 Embedding 8B",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Qwen3 Embedding 8B \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 1,
+      "creditsPerMillionOutput": 1,
+      "dimensions": 1024
+    },
+    "text-embedding-qwen3-0-6b": {
+      "id": "text-embedding-qwen3-0-6b",
+      "veniceId": "text-embedding-qwen3-0-6b",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0125,
+      "outputPricePer1M": 0.0125,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Qwen3 Embedding 0.6B",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Qwen3 Embedding 0.6B \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 1,
+      "creditsPerMillionOutput": 1,
+      "dimensions": 1024
+    },
+    "text-embedding-multilingual-e5-large-instruct": {
+      "id": "text-embedding-multilingual-e5-large-instruct",
+      "veniceId": "text-embedding-multilingual-e5-large-instruct",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0125,
+      "outputPricePer1M": 0.0125,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Multilingual E5 Large Instruct",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Multilingual E5 Large Instruct \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 1,
+      "creditsPerMillionOutput": 1,
+      "dimensions": 1024
+    },
+    "text-embedding-3-small": {
+      "id": "text-embedding-3-small",
+      "veniceId": "text-embedding-3-small",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.025,
+      "outputPricePer1M": 0.025,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Text Embedding 3 Small",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Text Embedding 3 Small \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 3,
+      "creditsPerMillionOutput": 3,
+      "dimensions": 1024
+    },
+    "text-embedding-3-large": {
+      "id": "text-embedding-3-large",
+      "veniceId": "text-embedding-3-large",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.1625,
+      "outputPricePer1M": 0.1625,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Text Embedding 3 Large",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Text Embedding 3 Large \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 20,
+      "creditsPerMillionOutput": 20,
+      "dimensions": 1024
+    },
+    "gemini-embedding-2-preview": {
+      "id": "gemini-embedding-2-preview",
+      "veniceId": "gemini-embedding-2-preview",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.25,
+      "outputPricePer1M": 0.25,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Gemini Embedding 2 Preview",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Gemini Embedding 2 Preview \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 31,
+      "creditsPerMillionOutput": 31,
+      "dimensions": 1024
+    },
+    "text-embedding-nemotron-embed-vl-1b-v2": {
+      "id": "text-embedding-nemotron-embed-vl-1b-v2",
+      "veniceId": "text-embedding-nemotron-embed-vl-1b-v2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0125,
+      "outputPricePer1M": 0.0125,
+      "markupPercent": 25,
+      "category": "embedding",
+      "maxTokens": 8192,
+      "supportsStreaming": false,
+      "displayName": "Nemotron Embed VL 1B v2",
+      "capabilities": [
+        "embeddings",
+        "vector-output"
+      ],
+      "description": "Nemotron Embed VL 1B v2 \u2014 Venice embedding model.",
+      "creditsPerMillionInput": 1,
+      "creditsPerMillionOutput": 1,
+      "dimensions": 1024
+    }
+  },
+  "ASR_MODELS": {
+    "nvidia/parakeet-tdt-0.6b-v3": {
+      "id": "nvidia/parakeet-tdt-0.6b-v3",
+      "veniceId": "nvidia/parakeet-tdt-0.6b-v3",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerSecond": 0.0001,
+      "markupPercent": 25,
+      "category": "asr",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Parakeet ASR",
+      "capabilities": [
+        "speech-to-text",
+        "audio-input",
+        "transcription"
+      ],
+      "description": "Parakeet ASR \u2014 Venice speech-to-text model. Charged per audio-second.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "openai/whisper-large-v3": {
+      "id": "openai/whisper-large-v3",
+      "veniceId": "openai/whisper-large-v3",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerSecond": 0.0001,
+      "markupPercent": 25,
+      "category": "asr",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Whisper Large V3",
+      "capabilities": [
+        "speech-to-text",
+        "audio-input",
+        "transcription"
+      ],
+      "description": "Whisper Large V3 \u2014 Venice speech-to-text model. Charged per audio-second.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "fal-ai/wizper": {
+      "id": "fal-ai/wizper",
+      "veniceId": "fal-ai/wizper",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerSecond": 0.0001,
+      "markupPercent": 25,
+      "category": "asr",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Wizper (Whisper v3)",
+      "capabilities": [
+        "speech-to-text",
+        "audio-input",
+        "transcription"
+      ],
+      "description": "Wizper (Whisper v3) \u2014 Venice speech-to-text model. Charged per audio-second.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "elevenlabs/scribe-v2": {
+      "id": "elevenlabs/scribe-v2",
+      "veniceId": "elevenlabs/scribe-v2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerSecond": 0.000167,
+      "markupPercent": 25,
+      "category": "asr",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ElevenLabs Scribe V2",
+      "capabilities": [
+        "speech-to-text",
+        "audio-input",
+        "transcription"
+      ],
+      "description": "ElevenLabs Scribe V2 \u2014 Venice speech-to-text model. Charged per audio-second.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "stt-xai-v1": {
+      "id": "stt-xai-v1",
+      "veniceId": "stt-xai-v1",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerSecond": 3.1480000000000004e-05,
+      "markupPercent": 25,
+      "category": "asr",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "xAI Speech to Text v1",
+      "capabilities": [
+        "speech-to-text",
+        "audio-input",
+        "transcription"
+      ],
+      "description": "xAI Speech to Text v1 \u2014 Venice speech-to-text model. Charged per audio-second.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    }
+  },
+  "MUSIC_MODELS": {
+    "ace-step-15": {
+      "id": "ace-step-15",
+      "veniceId": "ace-step-15",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ACE-Step 1.5",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "ACE-Step 1.5 \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "elevenlabs-music": {
+      "id": "elevenlabs-music",
+      "veniceId": "elevenlabs-music",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ElevenLabs Music",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "ElevenLabs Music \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "minimax-music-v2": {
+      "id": "minimax-music-v2",
+      "veniceId": "minimax-music-v2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.04,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "MiniMax Music 2.0",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "MiniMax Music 2.0 \u2014 Venice music generation model.",
+      "creditsPrice": 5,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "minimax-music-v25": {
+      "id": "minimax-music-v25",
+      "veniceId": "minimax-music-v25",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.18,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "MiniMax Music 2.5",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "MiniMax Music 2.5 \u2014 Venice music generation model.",
+      "creditsPrice": 22,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "minimax-music-v26": {
+      "id": "minimax-music-v26",
+      "veniceId": "minimax-music-v26",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.18,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "MiniMax Music 2.6",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "MiniMax Music 2.6 \u2014 Venice music generation model.",
+      "creditsPrice": 22,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "lyria-3-pro": {
+      "id": "lyria-3-pro",
+      "veniceId": "lyria-3-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.1,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Lyria 3 Pro",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "Lyria 3 Pro \u2014 Venice music generation model.",
+      "creditsPrice": 12,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "stable-audio-25": {
+      "id": "stable-audio-25",
+      "veniceId": "stable-audio-25",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.19,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Stable Audio 2.5",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "Stable Audio 2.5 \u2014 Venice music generation model.",
+      "creditsPrice": 23,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "sonilo-v1-1-music": {
+      "id": "sonilo-v1-1-music",
+      "veniceId": "sonilo-v1-1-music",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Sonilo V1.1 Music",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "Sonilo V1.1 Music \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "sonilo-v1-1-sound-effects": {
+      "id": "sonilo-v1-1-sound-effects",
+      "veniceId": "sonilo-v1-1-sound-effects",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Sonilo V1.1 Sound Effects",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "Sonilo V1.1 Sound Effects \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "elevenlabs-sound-effects-v2": {
+      "id": "elevenlabs-sound-effects-v2",
+      "veniceId": "elevenlabs-sound-effects-v2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ElevenLabs Sound Effects",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "ElevenLabs Sound Effects \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "mmaudio-v2-text-to-audio": {
+      "id": "mmaudio-v2-text-to-audio",
+      "veniceId": "mmaudio-v2-text-to-audio",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "MMAudio V2",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "MMAudio V2 \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "elevenlabs-tts-v3": {
+      "id": "elevenlabs-tts-v3",
+      "veniceId": "elevenlabs-tts-v3",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ElevenLabs TTS v3",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "ElevenLabs TTS v3 \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "elevenlabs-tts-multilingual-v2": {
+      "id": "elevenlabs-tts-multilingual-v2",
+      "veniceId": "elevenlabs-tts-multilingual-v2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ElevenLabs Multilingual v2",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "ElevenLabs Multilingual v2 \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "seed-audio-1-0": {
+      "id": "seed-audio-1-0",
+      "veniceId": "seed-audio-1-0",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerGeneration": 0.05,
+      "markupPercent": 25,
+      "category": "music",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seed Audio 1.0",
+      "capabilities": [
+        "music-generation",
+        "audio-output"
+      ],
+      "description": "Seed Audio 1.0 \u2014 Venice music generation model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    }
+  },
+  "UPSCALE_MODELS": {
+    "upscaler": {
+      "id": "upscaler",
+      "veniceId": "upscaler",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerUpscale": 0.01,
+      "markupPercent": 25,
+      "category": "upscale",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Upscaler",
+      "capabilities": [
+        "image-upscale"
+      ],
+      "description": "Upscaler \u2014 Venice image upscaler.",
+      "creditsPrice": 1,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    }
+  },
+  "INPAINT_MODELS": {
+    "firered-image-edit": {
+      "id": "firered-image-edit",
+      "veniceId": "firered-image-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.04,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "FireRed Edit",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "FireRed Edit \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 5,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "qwen-edit-uncensored": {
+      "id": "qwen-edit-uncensored",
+      "veniceId": "qwen-edit-uncensored",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.04,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Edit Uncensored",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Qwen Edit Uncensored \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 5,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "grok-imagine-edit": {
+      "id": "grok-imagine-edit",
+      "veniceId": "grok-imagine-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.03,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Grok Imagine",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Grok Imagine \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 3,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "grok-imagine-quality-edit": {
+      "id": "grok-imagine-quality-edit",
+      "veniceId": "grok-imagine-quality-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.06,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Grok Imagine High Quality",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Grok Imagine High Quality \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 7,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "qwen-image-2-edit": {
+      "id": "qwen-image-2-edit",
+      "veniceId": "qwen-image-2-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.05,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Image 2",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Qwen Image 2 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "qwen-image-2-pro-edit": {
+      "id": "qwen-image-2-pro-edit",
+      "veniceId": "qwen-image-2-pro-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.1,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Image 2 Pro",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Qwen Image 2 Pro \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 12,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "wan-2-7-pro-edit": {
+      "id": "wan-2-7-pro-edit",
+      "veniceId": "wan-2-7-pro-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.094,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Wan 2.7 Pro Edit",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Wan 2.7 Pro Edit \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 11,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "flux-2-max-edit": {
+      "id": "flux-2-max-edit",
+      "veniceId": "flux-2-max-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.12,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Flux 2 Max",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Flux 2 Max \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 15,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "gpt-image-2-edit": {
+      "id": "gpt-image-2-edit",
+      "veniceId": "gpt-image-2-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.34,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "GPT Image 2",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "GPT Image 2 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 42,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "gpt-image-1-5-edit": {
+      "id": "gpt-image-1-5-edit",
+      "veniceId": "gpt-image-1-5-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.31,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "GPT Image 1.5",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "GPT Image 1.5 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 38,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "nano-banana-2-edit": {
+      "id": "nano-banana-2-edit",
+      "veniceId": "nano-banana-2-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.1,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana 2",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Nano Banana 2 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 12,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "nano-banana-pro-edit": {
+      "id": "nano-banana-pro-edit",
+      "veniceId": "nano-banana-pro-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.18,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana Pro",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Nano Banana Pro \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 22,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "nano-banana-2-lite-edit": {
+      "id": "nano-banana-2-lite-edit",
+      "veniceId": "nano-banana-2-lite-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.06,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana 2 Lite",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Nano Banana 2 Lite \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 7,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "luma-uni-1-edit": {
+      "id": "luma-uni-1-edit",
+      "veniceId": "luma-uni-1-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.06,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Luma Uni-1",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Luma Uni-1 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 7,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "luma-uni-1-max-edit": {
+      "id": "luma-uni-1-max-edit",
+      "veniceId": "luma-uni-1-max-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.13,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Luma Uni-1 Max",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Luma Uni-1 Max \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 16,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "seedream-v5-lite-edit": {
+      "id": "seedream-v5-lite-edit",
+      "veniceId": "seedream-v5-lite-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.05,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V5 Lite",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Seedream V5 Lite \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "seedream-v5-pro-edit": {
+      "id": "seedream-v5-pro-edit",
+      "veniceId": "seedream-v5-pro-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.06,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V5 Pro",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Seedream V5 Pro \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 7,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
+    },
+    "seedream-v4-edit": {
+      "id": "seedream-v4-edit",
+      "veniceId": "seedream-v4-edit",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerEdit": 0.05,
+      "markupPercent": 25,
+      "category": "inpaint",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V4.5",
+      "capabilities": [
+        "image-edit",
+        "inpaint"
+      ],
+      "description": "Seedream V4.5 \u2014 Venice image edit / inpaint model.",
+      "creditsPrice": 6,
+      "creditsPerMillionInput": 0,
+      "creditsPerMillionOutput": 0
     }
   }
 }
