@@ -54,7 +54,7 @@ function selectProviderWeighted(weights: Map<Provider, number>, available: Provi
   return activeProviders[activeProviders.length - 1];
 }
 
-export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, model: string): string | null {
+export function getModelIdForProvider(modelDef: ModelDef | null, provider: Provider, _model: string): string | null {
   if (!modelDef) {
     return null;
   }
@@ -95,11 +95,11 @@ async function getAvailableProviders(): Promise<Provider[]> {
   return providers;
 }
 
-async function selectFromWeights(weights: Map<Provider, number>, modelDef: ModelDef | null, model: string): Promise<{ provider: Provider; providerModelId: string } | null> {
+async function selectFromWeights(weights: Map<Provider, number>, modelDef: ModelDef | null, _model: string): Promise<{ provider: Provider; providerModelId: string } | null> {
   const availableProviders = await getAvailableProviders();
   const selected = selectProviderWeighted(weights, availableProviders);
   if (!selected || !canUseProvider(modelDef, selected)) return null;
-  const providerModelId = getModelIdForProvider(modelDef, selected, model);
+  const providerModelId = getModelIdForProvider(modelDef, selected, _model);
   if (!providerModelId) return null;
   return { provider: selected, providerModelId };
 }

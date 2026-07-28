@@ -173,7 +173,7 @@ function ModelsPageInner() {
   // Extract unique values for filter options
   const allInputModalities = useMemo(() => {
     const modalities = new Set<string>();
-    safeModels.forEach((model) => {
+    safeModels.forEach(() => {
       // Since we don't have modality info in our Model type, we'll need to get it from the raw API data
       // For now, we'll use common modalities based on what we saw in the API
       ["text", "image", "audio", "video"].forEach((mod) => modalities.add(mod));
@@ -183,7 +183,7 @@ function ModelsPageInner() {
 
   const allOutputModalities = useMemo(() => {
     const modalities = new Set<string>();
-    safeModels.forEach((model) => {
+    safeModels.forEach(() => {
       ["text", "image", "audio", "video"].forEach((mod) => modalities.add(mod));
     });
     return Array.from(modalities).sort();

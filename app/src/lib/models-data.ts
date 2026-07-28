@@ -290,7 +290,7 @@ function deriveModality(entry: ApiModelEntry): Modality {
 	return "chat";
 }
 
-function derivePriceUnit(modality: Modality, pricing: ApiModelEntry["pricing"]): string | undefined {
+function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"]): string | undefined {
 	if (modality === "chat" || modality === "embedding") return "/M tokens";
 	if (modality === "image") return "/image";
 	if (modality === "video") return "/generation";

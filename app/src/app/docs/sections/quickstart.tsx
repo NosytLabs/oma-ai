@@ -16,6 +16,31 @@ const AgentSessionDemo = dynamic(
 	},
 );
 
+// Compact per-modality curl blocks. Each block's code defaults to a
+// bash snippet; the placeholder blocks for music/upscale/inpaint use
+// comments because those Venice endpoints aren't yet wired up on
+// /v1/* (they live on Venice directly — see references).
+function ModalityExample({ title, code }: { title: string; code: string }) {
+	const looksLikeCurl = code.trimStart().startsWith("curl");
+	return (
+		<div className="rounded-lg border border-border bg-surface/50 p-4">
+			<div className="mb-2 flex items-center justify-between">
+				<span className="text-xs font-semibold text-text-secondary font-mono uppercase tracking-wider">
+					{title}
+				</span>
+				{looksLikeCurl && (
+					<span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
+						cURL
+					</span>
+				)}
+			</div>
+			<pre className="overflow-x-auto rounded-md bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
+{code}
+			</pre>
+		</div>
+	);
+}
+
 export function QuickStartSection() {
 	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key_here" \\
@@ -24,31 +49,6 @@ export function QuickStartSection() {
     "model": "llama-3.2-3b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`;
-
-	// Compact per-modality curl blocks. Each block's code defaults to a
-	// bash snippet; the placeholder blocks for music/upscale/inpaint use
-	// comments because those Venice endpoints aren't yet wired up on
-	// /v1/* (they live on Venice directly — see references).
-	function ModalityExample({ title, code }: { title: string; code: string }) {
-		const looksLikeCurl = code.trimStart().startsWith("curl");
-		return (
-			<div className="rounded-lg border border-border bg-surface/50 p-4">
-				<div className="mb-2 flex items-center justify-between">
-					<span className="text-xs font-semibold text-text-secondary font-mono uppercase tracking-wider">
-						{title}
-					</span>
-					{looksLikeCurl && (
-						<span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
-							cURL
-						</span>
-					)}
-				</div>
-				<pre className="overflow-x-auto rounded-md bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
-{code}
-				</pre>
-			</div>
-		);
-	}
 
 	return (
 		<AnimatedSection>

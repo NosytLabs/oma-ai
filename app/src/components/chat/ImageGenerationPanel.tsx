@@ -8,7 +8,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useImageGeneration } from "@/lib/use-image-generation";
 
 // Live catalog from /v1/models — kept in sync with server/models.json IMAGE_MODELS.

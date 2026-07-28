@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, BarChart3, Clock, CreditCard, Flame, Key, RefreshCw, TrendingUp, Users, Zap } from "lucide-react";
+import { Activity, BarChart3, Clock, CreditCard, Flame, Key, RefreshCw, TrendingUp, Users, Zap } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";

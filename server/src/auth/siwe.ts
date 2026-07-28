@@ -1,5 +1,4 @@
 import { SiweMessage } from "siwe";
-import { nanoid } from "nanoid";
 import { customAlphabet } from "nanoid";
 
 // EIP-4361 nonces must match `[a-zA-Z0-9]{8,}` — nanoid's default alphabet
