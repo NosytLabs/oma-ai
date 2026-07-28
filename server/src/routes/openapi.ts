@@ -13,7 +13,7 @@ const openapiSpec = {
     title: "OMA AI API",
     version: "2.1.0",
     description:
-      "Open Model Access AI inference gateway. Access 96+ models across multiple providers with automatic failover.\n\n" +
+      "Open Model Access AI inference gateway. Access 288+ models across 9 modalities — chat, image, video, TTS, embedding, ASR, music, upscale, and inpaint — routed through Venice and Gonka with automatic failover.\n\n" +
       "Pay with crypto (USDC on Base, or any chain via LiFi/CCTP) or fiat on-ramp.\n\n" +
       "Authentication: Bearer token (API key or session JWT) in the `Authorization` header.",
     contact: { name: "OMA AI", url: "https://oma-ai.com" },

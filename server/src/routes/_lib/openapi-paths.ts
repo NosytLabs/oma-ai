@@ -90,7 +90,7 @@ export const openapiPaths = {
       get: {
         tags: ["Models"],
         summary: "List available models",
-        description: "Returns all available chat, embedding, image, video, and audio models with pricing.",
+        description: "Returns all available models across 9 modalities (chat, image, video, TTS, embedding, ASR, music, upscale, inpaint) with per-token, per-image, per-generation, or per-audio-second pricing depending on modality.",
         security: [],
         operationId: "listModels",
         parameters: [
