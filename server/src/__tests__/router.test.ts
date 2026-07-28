@@ -9,6 +9,25 @@ vi.mock('../inference/provider-health.js', () => ({
   stopCacheCleanup: vi.fn(),
 }))
 
+// The polar-usage hook pulls in polar.ts → auth/middleware → siwe →
+// config.ts. Mock the middleware chain so this test stays hermetic —
+// we're testing the inference router, not auth.
+vi.mock('../auth/middleware.js', () => ({
+  sessionAuth: async (_c: any, next: () => void) => next(),
+  bearerAuth: async (c: any, next: () => void) => {
+    c.set('userId', 'user-1');
+    c.set('apiKey', { id: 'key-1', keyHash: 'hash' });
+    await next();
+  },
+  sessionOrBearerAuth: async (c: any, next: () => void) => {
+    c.set('userId', 'user-1');
+    c.set('apiKey', { id: 'key-1', keyHash: 'hash' });
+    await next();
+  },
+  requireAdmin: async (_c: any, next: () => void) => next(),
+  noAuthRetry: vi.fn(),
+}))
+
 vi.mock('../credits/index.js', () => ({
   getStakingDiscount: vi.fn().mockResolvedValue(0),
   preflightDeduction: vi.fn().mockResolvedValue(true),
