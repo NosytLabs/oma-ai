@@ -21,10 +21,11 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   try {
-    // Run the 3 aggregations in parallel (totals / byModel / byProvider) instead of
-    // sequentially. Same WHERE filter, so Postgres plans the same index scan 3x in
-    // parallel; latency drops from ~3× single-query p50 to ~1× single-query p50.
-    const [totals, byModel, byProvider] = await Promise.all([
+    // Run the 4 aggregations in parallel (totals / byModel / byProvider /
+    // dailyUsage trend) instead of sequentially. Same WHERE filter, so
+    // Postgres plans the same index scan 4x in parallel; latency drops
+    // from ~4× single-query p50 to ~1× single-query p50.
+    const [totals, byModel, byProvider, dailyUsage] = await Promise.all([
       db.select({
         totalInputTokens: sql<number>`COALESCE(SUM(${usageRecords.inputTokens}), 0)::int`,
         totalOutputTokens: sql<number>`COALESCE(SUM(${usageRecords.outputTokens}), 0)::int`,
@@ -50,6 +51,19 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
       }).from(usageRecords).where(and(eq(usageRecords.userId, userId), gte(usageRecords.createdAt, since)))
         .groupBy(usageRecords.provider)
         .orderBy(sql`SUM(${usageRecords.totalCents}) DESC`),
+      // Daily usage trend — same shape admin/usage.ts returns so the
+      // dashboard chart can reuse the AdminOverviewCharts component.
+      // date_trunc('day') returns a timestamptz; cast back to ISO text so
+      // the JSON wire format is portable.
+      db.select({
+        date: sql<string>`to_char(date_trunc('day', ${usageRecords.createdAt}), 'YYYY-MM-DD')`,
+        requests: sql<number>`count(*)::int`,
+        costCents: sql<number>`COALESCE(SUM(${usageRecords.totalCents}), 0)::numeric`,
+        inputTokens: sql<number>`COALESCE(SUM(${usageRecords.inputTokens}), 0)::int`,
+        outputTokens: sql<number>`COALESCE(SUM(${usageRecords.outputTokens}), 0)::int`,
+      }).from(usageRecords).where(and(eq(usageRecords.userId, userId), gte(usageRecords.createdAt, since)))
+        .groupBy(sql`date_trunc('day', ${usageRecords.createdAt})`)
+        .orderBy(sql`date_trunc('day', ${usageRecords.createdAt}) ASC`),
     ]);
 
     return c.json({
@@ -62,6 +76,7 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
       },
       byModel,
       byProvider,
+      dailyUsage,
     });
   } catch (err) {
     return c.json({

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../../db/client.js";
-import { usageRecords } from "../../db/schema.js";
-import { desc, sql, count } from "drizzle-orm";
+import { usageRecords, users, creditBalances } from "../../db/schema.js";
+import { desc, sql, count, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { logger } from "../../lib/logger.js";
 
@@ -117,6 +117,110 @@ usageRoutes.get("/admin/usage", async (c) => {
     });
   } catch (err) {
     logger.error({ err, period }, "Admin usage error");
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+/**
+ * GET /admin/usage/top-users?period=30d&limit=10
+ *
+ * Returns the top-N users by total cost over the period, joined with the
+ * users + creditBalances tables for display fields. Designed for the admin
+ * overview "biggest spenders" card so the operator can spot whales and
+ * investigate failed-payment cases.
+ */
+usageRoutes.get("/admin/usage/top-users", async (c) => {
+  const period = c.req.query("period") || "30d";
+  const limit = Math.min(parseInt(c.req.query("limit") ?? "10"), 100);
+  const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  try {
+    const rows = await db.select({
+      userId: usageRecords.userId,
+      address: users.address,
+      accountNumber: users.accountNumber,
+      totalRequests: count(usageRecords.id),
+      totalInputTokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)`,
+      totalOutputTokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)`,
+      totalRevenueCents: sql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      lastActivityAt: creditBalances.lastActivityAt,
+      balanceCents: creditBalances.balanceCents,
+    })
+    .from(usageRecords)
+    .innerJoin(users, eq(users.id, usageRecords.userId))
+    .leftJoin(creditBalances, eq(creditBalances.userId, usageRecords.userId))
+    .where(sql`${usageRecords.createdAt} >= ${since}`)
+    .groupBy(usageRecords.userId, users.address, users.accountNumber, creditBalances.lastActivityAt, creditBalances.balanceCents)
+    .orderBy(desc(sql`sum(${usageRecords.totalCents})`))
+    .limit(limit);
+
+    return c.json({
+      period,
+      topUsers: rows.map((r) => ({
+        userId: r.userId,
+        address: r.address,
+        accountNumber: r.accountNumber,
+        totalRequests: Number(r.totalRequests),
+        totalInputTokens: Number(r.totalInputTokens),
+        totalOutputTokens: Number(r.totalOutputTokens),
+        totalRevenue: Number(r.totalRevenueCents) / 100,
+        balanceDollars: Number(r.balanceCents ?? 0) / 100,
+        lastActivityAt: r.lastActivityAt,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err, period }, "Admin top-users error");
+    return c.json({ error: { message: "Internal server error" } }, 500);
+  }
+});
+
+/**
+ * GET /admin/usage/model-popularity?period=30d&limit=10
+ *
+ * Returns the most-requested models in the period, ordered by request count
+ * (not cost) so operators can see what's actually being used. Powers the
+ * admin "Model Popularity Ranking" card.
+ */
+usageRoutes.get("/admin/usage/model-popularity", async (c) => {
+  const period = c.req.query("period") || "30d";
+  const limit = Math.min(parseInt(c.req.query("limit") ?? "10"), 100);
+  const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  try {
+    const rows = await db.select({
+      model: usageRecords.model,
+      provider: usageRecords.provider,
+      requests: count(usageRecords.id),
+      uniqueUsers: sql<number>`count(distinct ${usageRecords.userId})`,
+      totalRevenueCents: sql<number>`coalesce(sum(${usageRecords.totalCents}), 0)`,
+      successCount: sql<number>`sum(case when ${usageRecords.status} = 'success' then 1 else 0 end)`,
+      errorCount: sql<number>`sum(case when ${usageRecords.status} != 'success' and ${usageRecords.status} is not null then 1 else 0 end)`,
+    })
+    .from(usageRecords)
+    .where(sql`${usageRecords.createdAt} >= ${since}`)
+    .groupBy(usageRecords.model, usageRecords.provider)
+    .orderBy(desc(count(usageRecords.id)))
+    .limit(limit);
+
+    return c.json({
+      period,
+      models: rows.map((r) => ({
+        model: r.model,
+        provider: r.provider,
+        requests: Number(r.requests),
+        uniqueUsers: Number(r.uniqueUsers),
+        totalRevenue: Number(r.totalRevenueCents) / 100,
+        successCount: Number(r.successCount ?? 0),
+        errorCount: Number(r.errorCount ?? 0),
+        errorRate: Number(r.requests) > 0
+          ? Number((Number(r.errorCount ?? 0) / Number(r.requests) * 100).toFixed(2))
+          : 0,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err, period }, "Admin model-popularity error");
     return c.json({ error: { message: "Internal server error" } }, 500);
   }
 });

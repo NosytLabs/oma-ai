@@ -75,7 +75,7 @@ export function polarEnabled(): boolean {
 }
 
 /** Construct the SDK client; returns `null` when env is misconfigured. */
-function getPolarClient(): Polar | null {
+export function getPolarClient(): Polar | null {
 	if (!polarEnabled()) return null;
 	return new Polar({
 		accessToken: config.POLAR_ACCESS_TOKEN,

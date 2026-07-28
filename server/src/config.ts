@@ -275,6 +275,18 @@ const envSchema = z.object({
   POLAR_HOBBY_PRODUCT_ID: z.string().min(1).optional(),
   POLAR_BUILDER_PRODUCT_ID: z.string().min(1).optional(),
   POLAR_SCALE_PRODUCT_ID: z.string().min(1).optional(),
+  /**
+   * Optional Polar Meter ID for usage-based billing. When set, every
+   * successful chat completion sends an event to Polar Meters so the
+   * customer can be billed for what they actually used. Leave unset
+   * (or `metr_…` placeholder) to disable usage tracking. See
+   * `inference/polar-usage.ts` for the event shape.
+   *
+   * Important: Polar TOS forbids reselling COMPUTE on Polar. Treat this
+   * as subscription-bundled credits (customers buy a plan, use credits
+   * inside the plan's allocation), NOT pure-usage metering.
+   */
+  POLAR_USAGE_METER_ID: z.string().min(1).optional(),
   // Public app URL — used to build absolute checkout success/cancel URLs.
   PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 });

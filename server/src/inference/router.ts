@@ -17,6 +17,7 @@ import { getCandidateProviders, recordFailover } from "./cross-provider-router.j
 import { getModelIdForProvider } from "./provider-selector.js";
 import { logger } from "../lib/logger.js";
 import { trackApiKeySpend } from "./handler-helpers.js";
+import { trackPolarUsage } from "./polar-usage.js";
 
 export { getModelPricing } from "./billing-service.js";
 export { selectProvider } from "./provider-selector.js";
@@ -409,6 +410,18 @@ export async function handleChatCompletion(
                 // Streaming previously bypassed SPEND_LIMIT_DAILY_CENTS
                 // entirely — the daily cap only ran on non-stream responses.
                 onSettled: (totalCents) => trackApiKeySpend(opts?.keyHash, Math.ceil(totalCents)),
+                // Polar usage-meter hook (dormant unless POLAR_USAGE_METER_ID
+                // is set). Fires after settle so we only meter paid requests.
+                onUsageRecorded: (info) =>
+                  trackPolarUsage({
+                    externalCustomerId: opts?.keyHash ?? userId,
+                    totalCents: info.totalCents,
+                    model: info.model,
+                    provider: info.provider,
+                    inputTokens: info.inputTokens,
+                    outputTokens: info.outputTokens,
+                    modality: "chat",
+                  }),
               }
             );
             const response = new Response(trackingStream as ReadableStream<Uint8Array>, {

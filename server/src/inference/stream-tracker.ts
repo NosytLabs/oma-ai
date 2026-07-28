@@ -146,6 +146,20 @@ export interface TrackingStreamOpts {
   /** Called with the billed totalCents after settle — used for per-key daily
    *  spend tracking, which previously never ran on the streaming path. */
   onSettled?: (totalCents: number) => void;
+  /**
+   * Optional Polar usage-meter callback. Fires after the streamed
+   * response settles successfully so the customer's metered usage
+   * stays in sync with our internal `usage_records` table. The hook is
+   * dormant unless POLAR_USAGE_METER_ID is set in .env.
+   */
+  onUsageRecorded?: (info: {
+    totalCents: number;
+    inputTokens: number;
+    outputTokens: number;
+    model: string;
+    provider: string;
+    userId: string;
+  }) => void;
 }
 
 interface StreamState {
@@ -245,6 +259,17 @@ export function createTrackingStream(
         const refund = Math.round((parseFloat(estimatedTotalCents) - billedTotalCents) * 100) / 100;
         if (refund > 0) await refundCreditsWithRetry(userId, String(refund), requestId);
         opts?.onSettled?.(billedTotalCents);
+        // Fire the Polar usage-meter hook AFTER billing settles so we
+        // only meter paid requests (not refunded / errored ones). The
+        // hook itself is dormant unless POLAR_USAGE_METER_ID is set.
+        opts?.onUsageRecorded?.({
+          totalCents: billedTotalCents,
+          inputTokens: finalInputTokens,
+          outputTokens: finalOutputTokens,
+          model: modelId,
+          provider,
+          userId,
+        });
       }
       return { inputTokens: finalInputTokens, outputTokens: finalOutputTokens, totalCents: billedTotalCents };
     } catch (err) {
