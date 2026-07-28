@@ -2656,5 +2656,507 @@
       "creditsPerMillionOutput": 10,
       "creditsPrice": 0.85
     }
+  },
+  "IMAGE_MODELS": {
+    "venice-sd35": {
+      "id": "venice-sd35",
+      "veniceId": "venice-sd35",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Venice SD35",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Venice SD35 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "flux-2-pro": {
+      "id": "flux-2-pro",
+      "veniceId": "flux-2-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.03,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Flux 2 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Flux 2 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 4
+    },
+    "flux-2-max": {
+      "id": "flux-2-max",
+      "veniceId": "flux-2-max",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.09,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Flux 2 Max",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Flux 2 Max \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 11
+    },
+    "gpt-image-1-5": {
+      "id": "gpt-image-1-5",
+      "veniceId": "gpt-image-1-5",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.26,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "GPT Image 1.5",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "GPT Image 1.5 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 32
+    },
+    "hunyuan-image-v3": {
+      "id": "hunyuan-image-v3",
+      "veniceId": "hunyuan-image-v3",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.09,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Hunyuan Image 3.0",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Hunyuan Image 3.0 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 11
+    },
+    "ideogram-v4": {
+      "id": "ideogram-v4",
+      "veniceId": "ideogram-v4",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.06,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Ideogram V4",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Ideogram V4 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 8
+    },
+    "imagineart-1.5-pro": {
+      "id": "imagineart-1.5-pro",
+      "veniceId": "imagineart-1.5-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.06,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "ImagineArt 1.5 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "ImagineArt 1.5 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 8
+    },
+    "krea-v2-large": {
+      "id": "krea-v2-large",
+      "veniceId": "krea-v2-large",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.07,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Krea v2 Large",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Krea v2 Large \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 9
+    },
+    "krea-v2-medium": {
+      "id": "krea-v2-medium",
+      "veniceId": "krea-v2-medium",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.04,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Krea v2 Medium",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Krea v2 Medium \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 5
+    },
+    "luma-uni-1": {
+      "id": "luma-uni-1",
+      "veniceId": "luma-uni-1",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Luma Uni-1",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Luma Uni-1 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "luma-uni-1-max": {
+      "id": "luma-uni-1-max",
+      "veniceId": "luma-uni-1-max",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.12,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Luma Uni-1 Max",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Luma Uni-1 Max \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 15
+    },
+    "nano-banana-2-lite": {
+      "id": "nano-banana-2-lite",
+      "veniceId": "nano-banana-2-lite",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.06,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Nano Banana 2 Lite",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Nano Banana 2 Lite \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 8
+    },
+    "recraft-v4": {
+      "id": "recraft-v4",
+      "veniceId": "recraft-v4",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Recraft V4",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Recraft V4 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "recraft-v4-pro": {
+      "id": "recraft-v4-pro",
+      "veniceId": "recraft-v4-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.29,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Recraft V4 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Recraft V4 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 36
+    },
+    "seedream-v4": {
+      "id": "seedream-v4",
+      "veniceId": "seedream-v4",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V4.5",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Seedream V4.5 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "seedream-v5-lite": {
+      "id": "seedream-v5-lite",
+      "veniceId": "seedream-v5-lite",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Seedream V5 Lite",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Seedream V5 Lite \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "qwen-image-2": {
+      "id": "qwen-image-2",
+      "veniceId": "qwen-image-2",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.05,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Image 2",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Qwen Image 2 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 6
+    },
+    "qwen-image-2-pro": {
+      "id": "qwen-image-2-pro",
+      "veniceId": "qwen-image-2-pro",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.1,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Image 2 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Qwen Image 2 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 12
+    },
+    "wan-2-7-text-to-image": {
+      "id": "wan-2-7-text-to-image",
+      "veniceId": "wan-2-7-text-to-image",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.0375,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Wan 2.7",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Wan 2.7 \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 5
+    },
+    "wan-2-7-pro-text-to-image": {
+      "id": "wan-2-7-pro-text-to-image",
+      "veniceId": "wan-2-7-pro-text-to-image",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.09375,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Wan 2.7 Pro",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Wan 2.7 Pro \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 12
+    },
+    "qwen-image": {
+      "id": "qwen-image",
+      "veniceId": "qwen-image",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.03,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Qwen Image",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Qwen Image \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 4
+    },
+    "wai-Illustrious": {
+      "id": "wai-Illustrious",
+      "veniceId": "wai-Illustrious",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Anime (WAI)",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Anime (WAI) \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "z-image-turbo": {
+      "id": "z-image-turbo",
+      "veniceId": "z-image-turbo",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Z-Image Turbo",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Z-Image Turbo \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "chroma": {
+      "id": "chroma",
+      "veniceId": "chroma",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.01,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Chroma",
+      "capabilities": [
+        "image-generation",
+        "text-to-image"
+      ],
+      "description": "Chroma \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 1
+    },
+    "bria-bg-remover": {
+      "id": "bria-bg-remover",
+      "veniceId": "bria-bg-remover",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.0,
+      "outputPricePer1M": 0.0,
+      "pricePerImage": 0.03,
+      "markupPercent": 25,
+      "category": "image",
+      "maxTokens": 1,
+      "supportsStreaming": false,
+      "displayName": "Background Remover",
+      "capabilities": [
+        "image-generation",
+        "background-removal"
+      ],
+      "description": "Background Remover \u2014 Venice-hosted image generation model.",
+      "creditsPrice": 4
+    }
   }
 }

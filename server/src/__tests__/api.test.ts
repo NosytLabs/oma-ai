@@ -166,6 +166,8 @@ vi.mock('../inference/models.js', () => ({
     { id: 'llama-3.3-70b', provider: 'venice', inputPricePer1M: 0.35, outputPricePer1M: 0.90, maxTokens: 128000, category: 'mid', capabilities: ['chat', 'code', 'tools', 'vision'] },
   ]),
   listVideoModels: vi.fn().mockResolvedValue([]),
+  listImageModels: vi.fn().mockResolvedValue([]),
+  getImageModel: vi.fn().mockResolvedValue(null),
   ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 }))
 

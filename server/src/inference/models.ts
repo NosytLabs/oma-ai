@@ -34,6 +34,7 @@ export interface VideoModelDef {
   provider: "venice";
   price: number;
   duration: string;
+  resolution?: string;
   displayName: string;
   capabilities: string[];
   description: string;
@@ -42,8 +43,34 @@ export interface VideoModelDef {
   creditsPrice: number;
 }
 
+export interface ImageModelDef {
+  id: string;
+  veniceId?: string;
+  provider: "venice";
+  primaryProvider: "venice";
+  inputPricePer1M: number;
+  outputPricePer1M: number;
+  /** Per-image wholesale price in USD (Venice charges per generation, not per token). */
+  pricePerImage: number;
+  markupPercent: number;
+  category: "image";
+  maxTokens: number;
+  supportsStreaming: boolean;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+  /** Credits charged per generated image (1 credit = $0.01). */
+  creditsPrice: number;
+  /** Optional: default width supported. */
+  defaultWidth?: number;
+  /** Optional: default height supported. */
+  defaultHeight?: number;
+  enabled?: boolean;
+}
+
 let MODEL_CATALOG: Record<string, ModelDef> = {};
 export let VIDEO_MODELS: Record<string, VideoModelDef> = {};
+export let IMAGE_MODELS: Record<string, ImageModelDef> = {};
 
 const FALLBACK_MODELS: Record<string, ModelDef> = {
   "deepseek-v3.2": {
@@ -126,6 +153,26 @@ const FALLBACK_VIDEO_MODELS: Record<string, VideoModelDef> = {
   },
 };
 
+const FALLBACK_IMAGE_MODELS: Record<string, ImageModelDef> = {
+  "venice-sd35": {
+    id: "venice-sd35",
+    veniceId: "venice-sd35",
+    provider: "venice",
+    primaryProvider: "venice",
+    inputPricePer1M: 0,
+    outputPricePer1M: 0,
+    pricePerImage: 0.01,
+    markupPercent: 25,
+    category: "image",
+    maxTokens: 1,
+    supportsStreaming: false,
+    displayName: "Venice SD35",
+    capabilities: ["image-generation", "text-to-image"],
+    description: "Stable Diffusion 3.5 served by Venice — fast, cheap, photoreal.",
+    creditsPrice: 2,
+  },
+};
+
 let catalogPromise: Promise<void> | null = null;
 
 export function ensureCatalogLoaded(): Promise<void> {
@@ -143,10 +190,12 @@ export async function reloadModelCatalog(): Promise<void> {
     const parsed = JSON.parse(data);
     MODEL_CATALOG = parsed.MODEL_CATALOG || FALLBACK_MODELS;
     VIDEO_MODELS = parsed.VIDEO_MODELS || FALLBACK_VIDEO_MODELS;
+    IMAGE_MODELS = parsed.IMAGE_MODELS || FALLBACK_IMAGE_MODELS;
     loadedFromDisk = parsed.MODEL_CATALOG !== undefined;
     logger.info({
       modelCount: Object.keys(MODEL_CATALOG).length,
       videoModelCount: Object.keys(VIDEO_MODELS).length,
+      imageModelCount: Object.keys(IMAGE_MODELS).length,
       configPath,
       source: loadedFromDisk ? 'models.json' : 'fallback',
       type: 'model_catalog_loaded'
@@ -155,6 +204,7 @@ export async function reloadModelCatalog(): Promise<void> {
     logger.warn({ configPath, error: error instanceof Error ? error.message : String(error), type: 'model_catalog_fallback' }, 'Failed to load models.json, using fallback models');
     MODEL_CATALOG = FALLBACK_MODELS;
     VIDEO_MODELS = FALLBACK_VIDEO_MODELS;
+    IMAGE_MODELS = FALLBACK_IMAGE_MODELS;
   }
   // Audit the catalog AFTER both success and failure paths so operators
   // see the same warnings no matter which catalog got loaded.
@@ -389,5 +439,32 @@ export async function listVideoModels(): Promise<Array<{
     capabilities: m.capabilities,
     description: m.description,
   }));
+}
+
+export async function listImageModels(): Promise<Array<{
+  id: string;
+  provider: string;
+  pricePerImage: number;
+  displayName: string;
+  capabilities: string[];
+  description: string;
+}>> {
+  await ensureCatalogLoaded();
+  // Image models are Venice-only today.
+  return Object.values(IMAGE_MODELS)
+    .filter((m) => m.enabled !== false && isProviderConfigured(m.provider))
+    .map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      pricePerImage: m.pricePerImage,
+      displayName: m.displayName,
+      capabilities: m.capabilities,
+      description: m.description,
+    }));
+}
+
+export async function getImageModel(id: string): Promise<ImageModelDef | null> {
+  await ensureCatalogLoaded();
+  return IMAGE_MODELS[id] ?? null;
 }
 

@@ -26,6 +26,10 @@ vi.mock('../inference/models.js', () => ({
     primaryProvider: 'gonka',
   }),
   estimateTokens: vi.fn((text: string) => Math.ceil(text.length / 4)),
+  listModels: vi.fn().mockResolvedValue([]),
+  listVideoModels: vi.fn().mockResolvedValue([]),
+  listImageModels: vi.fn().mockResolvedValue([]),
+  getImageModel: vi.fn().mockResolvedValue(null),
 }))
 
 vi.mock('../inference/billing-service.js', () => ({

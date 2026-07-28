@@ -13,7 +13,7 @@
  */
 import { Hono } from "hono";
 import { optionalAuth } from "../auth/middleware.js";
-import { listModels, getModel, listVideoModels } from "../inference/models.js";
+import { listModels, getModel, listVideoModels, listImageModels, getImageModel } from "../inference/models.js";
 import { hasConfiguredProvider } from "../inference/cross-provider-router.js";
 import { getModelPricing } from "../inference/billing-service.js";
 import { getRedisClient } from "../lib/redis-client.js";
@@ -66,7 +66,8 @@ async function customerPricePerToken(
  * OpenRouter de-facto schema helpers. Modalities and parameters are derived
  * from the capability strings in models.json (see MODEL_CATALOG entries):
  * "vision" → image input, "audio-input" → audio input, "video-input" →
- * video input, "tools"/"function-calling" → tools + tool_choice,
+ * video input, "image-generation" → image output, "video-generation" → video
+ * output, "tools"/"function-calling" → tools + tool_choice,
  * "structured-output"/"json" → response_format.
  */
 function deriveArchitecture(capabilities: readonly string[]): {
@@ -74,10 +75,13 @@ function deriveArchitecture(capabilities: readonly string[]): {
   output_modalities: string[];
 } {
   const input_modalities = ["text"];
+  const output_modalities: string[] = ["text"];
   if (capabilities.includes("vision")) input_modalities.push("image");
   if (capabilities.includes("audio-input")) input_modalities.push("audio");
   if (capabilities.includes("video-input")) input_modalities.push("video");
-  return { input_modalities, output_modalities: ["text"] };
+  if (capabilities.includes("image-generation")) output_modalities.push("image");
+  if (capabilities.includes("video-generation")) output_modalities.push("video");
+  return { input_modalities, output_modalities };
 }
 
 const BASE_SUPPORTED_PARAMETERS = [
@@ -107,6 +111,7 @@ async function buildModelsResponse(): Promise<{
 }> {
   const catalog = await listModels();
   const videoCatalog = await listVideoModels();
+  const imageCatalog = await listImageModels();
   const created = Math.floor(Date.now() / 1000);
 
   const data = [
@@ -138,6 +143,32 @@ async function buildModelsResponse(): Promise<{
         }),
       )
     ),
+    ...imageCatalog.map((m) => {
+      // Apply per-model markup so customers see the billed price.
+      const multiplier = 1 + (m.markupPercent ?? 0) / 100;
+      const retailPrice = m.pricePerImage * multiplier;
+      return {
+        id: m.id,
+        canonical_slug: m.id,
+        object: "model" as const,
+        created,
+        owned_by: "oma",
+        provider: m.provider,
+        permission: [],
+        root: m.id,
+        parent: null,
+        pricing: {
+          prompt: retailPrice.toFixed(8),
+          generation: retailPrice.toFixed(8),
+        },
+        category: "image",
+        architecture: {
+          input_modalities: ["text"],
+          output_modalities: ["image"],
+        },
+        supported_parameters: [] as string[],
+      };
+    }),
     ...videoCatalog.map((m) => ({
       id: m.id,
       canonical_slug: m.id,
@@ -208,7 +239,34 @@ modelRoutes.get("/v1/models/:model", async (c) => {
   // deploy) as absent — they are filtered from the list endpoint and would
   // only 503 on use, so don't advertise them here either.
   if (!modelInfo || modelInfo.enabled === false || !hasConfiguredProvider(modelInfo)) {
-    return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
+    // Fall through to image model lookup
+    const imgInfo = await getImageModel(modelId);
+    if (!imgInfo || imgInfo.enabled === false) {
+      return c.json({ error: { message: `Model '${modelId}' not found`, type: "invalid_request_error" } }, 404);
+    }
+    const imgMultiplier = 1 + (imgInfo.markupPercent ?? 0) / 100;
+    const imgRetailPrice = imgInfo.pricePerImage * imgMultiplier;
+    return c.json({
+      id: imgInfo.id,
+      canonical_slug: imgInfo.id,
+      object: "model",
+      created: Math.floor(Date.now() / 1000),
+      owned_by: "oma",
+      permission: [],
+      root: imgInfo.id,
+      parent: null,
+      pricing: {
+        prompt: imgRetailPrice.toFixed(8),
+        generation: imgRetailPrice.toFixed(8),
+      },
+      category: "image",
+      provider: imgInfo.provider,
+      architecture: {
+        input_modalities: ["text"],
+        output_modalities: ["image"],
+      },
+      supported_parameters: [] as string[],
+    });
   }
 
   const capabilities = modelInfo.capabilities ?? [];

@@ -138,6 +138,8 @@ vi.mock('../inference/models.js', () => ({
   estimateTokens: vi.fn().mockReturnValue(100),
   listModels: vi.fn().mockResolvedValue([]),
   listVideoModels: vi.fn().mockResolvedValue([]),
+  listImageModels: vi.fn().mockResolvedValue([]),
+  getImageModel: vi.fn().mockResolvedValue(null),
   ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 }))
 
