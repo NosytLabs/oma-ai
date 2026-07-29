@@ -1,6 +1,10 @@
 /**
- * Minimal model registry — stub for the OMA rebuild.
- * Real model catalog loading from models.json comes in a follow-up.
+ * Inference model catalog — minimal in-memory registry.
+ *
+ * Holds the small set of models OMA-AI ships with by default. Add a
+ * new provider (Venice / Gonka / Surplus / …) by extending
+ * `server/src/routes/chat/index.ts::resolveProvider()` and adding a
+ * matching entry here.
  */
 import { logger } from "../lib/logger.js";
 import { config } from "../config.js";
@@ -25,7 +29,7 @@ export interface ModelDef {
 
 let _catalog: ModelDef[] | null = null;
 
-function stub(): ModelDef[] {
+function defaultCatalog(): ModelDef[] {
   return [
     {
       id: "llama-3.3-70b",
@@ -90,13 +94,13 @@ function stub(): ModelDef[] {
 
 export async function ensureCatalogLoaded(): Promise<void> {
   if (_catalog) return;
-  _catalog = stub();
-  logger.info({ count: _catalog.length }, "[models] loaded stub catalog");
+  _catalog = defaultCatalog();
+  logger.info({ count: _catalog.length }, "[models] loaded default catalog");
 }
 
 export function listAllModels(): ModelDef[] {
   if (!_catalog) {
-    _catalog = stub();
+    _catalog = defaultCatalog();
   }
   return _catalog;
 }

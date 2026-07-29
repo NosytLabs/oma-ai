@@ -1,10 +1,8 @@
 /**
  * Health namespace: backend readiness probe (DB + Redis + dependency checks).
  *
- * IMPORTANT: do not call `/health` from the browser — Next.js owns
- * `GET /api/health` as a frontend liveness stub (no checks), which shadows
- * the Hono backend. `/ready` is proxied via the catch-all to the API and
- * returns the dependency check map the dashboard health widgets expect.
+ * Hits `GET /ready` for the rich dependency check map and `/health` for
+ * the simple liveness ping.
  */
 
 import { request } from "./client.js";

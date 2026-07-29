@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A2UI Renderer (stub)
+ * A2UI Renderer
  *
  * A2UI v0.9.1 is a server-driven UI protocol. Server responses with
  * `Content-Type: application/a2ui+json` carry a JSON envelope describing
@@ -10,14 +10,11 @@
  *
  * Spec: https://a2ui.org/specification/v0.9.1-a2ui/
  *
- * This module is a stub for the playground: it detects A2UI payloads
- * (msg.a2ui field or a2uiEnvelope-shaped JSON content) and renders the
- * basic Text/Button/Row/Column primitives using OMA design tokens.
- * Any component or surface we don't recognize falls through to plain
- * markdown rendering so the chat message is never empty.
- *
- * Once the A2UI catalog grows, replace the switch with a dispatcher
- * keyed on `component` and import dedicated subcomponents.
+ * Detects A2UI payloads (msg.a2ui field or a2uiEnvelope-shaped JSON
+ * content) and renders the basic Text/Button/Row/Column primitives
+ * using OMA design tokens. Any component or surface we don't recognize
+ * falls through to plain markdown rendering so the chat message is
+ * never empty.
  */
 
 import { m } from "@/lib/framer-motion-client";

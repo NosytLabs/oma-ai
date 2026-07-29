@@ -593,4 +593,7 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // Marketing model count surfaced across the UI. Must match live
 // GET /v1/models count. The SSR fallback catalog (`MODELS`) is a smaller
 // hand-picked set — never use MODELS.length for marketing copy.
-export const MODEL_COUNT = 288; // 104 chat + 35 image + 91 video + 11 tts + 9 embedding + 5 asr + 14 music + 1 upscale + 18 inpaint — server/models.json
+// Live count is read from MODELS.length at module init. Kept here as a
+// synchronous export so SSR metadata (Next.js generateMetadata, layout
+// descriptions) doesn't have to go async.
+export const MODEL_COUNT = MODELS.length;

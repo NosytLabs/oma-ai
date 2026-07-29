@@ -1,7 +1,9 @@
 /**
- * Minimal billing service stub.
- * Real implementation comes in a follow-up; for now returns pass-through
- * pricing so the chat routes can work.
+ * Billing helper — pass-through pricing lookup against the model catalog.
+ *
+ * The chat route calls `getModelPricing(modelId)` before deducting
+ * credits from `creditBalances`. Markup is applied at deduction time
+ * in `recordUsage`.
  */
 import { getModelById } from "./models.js";
 
