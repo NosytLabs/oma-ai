@@ -49,4 +49,25 @@ describe("app route registration", () => {
     // If this drops below 10, a route was probably accidentally removed.
     expect(routeMatches!.length).toBeGreaterThanOrEqual(10);
   });
+
+  it("does NOT have duplicate app.route registrations", () => {
+    // Regression guard: previous bug was that openapiRoutes +
+    // providersMetaRoutes were registered TWICE — first time by the
+    // sibling subagent, then again by my "restoration" fix.
+    // Hono tolerates duplicates but it doubles path-matching work
+    // and confuses future maintainers about which line is canonical.
+    const routeMatches = src.match(
+      /app\.route\(\s*"\/"\s*,\s*(\w+Routes)\s*\)/g,
+    ) ?? [];
+    const counts = new Map<string, number>();
+    for (const m of routeMatches) {
+      const name = m.match(/,\s*(\w+Routes)/)![1];
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    const duplicates = [...counts.entries()].filter(([, n]) => n > 1);
+    expect(
+      duplicates,
+      `duplicate registrations: ${duplicates.map(([k, v]) => `${k}x${v}`).join(", ")}`,
+    ).toEqual([]);
+  });
 });
