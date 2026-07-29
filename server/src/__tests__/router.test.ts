@@ -97,6 +97,9 @@ vi.mock('../inference/cross-provider-router.js', () => ({
     alternates: [],
   }),
   recordFailover: vi.fn(),
+  // Pass-through: this test uses a literal model id ('llama-3.3-70b') that
+  // is NOT in ALIAS_MAP, so the alias resolver should be a no-op identity.
+  resolveModelAlias: vi.fn().mockImplementation(async (id: string) => id),
 }))
 
 vi.mock('../inference/credit-preflight.js', () => ({

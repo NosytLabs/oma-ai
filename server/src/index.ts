@@ -120,7 +120,10 @@ app.use("*", securityHeaders);
 const corsOptions = {
   origin: (origin: string | undefined, _c: unknown): string | null => {
     if (!origin) return null;
-    if (config.NODE_ENV === "development" && origin?.startsWith("http://localhost")) return origin;
+    if (
+      config.NODE_ENV === "development" &&
+      (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))
+    ) return origin;
     const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
     for (const allowed of allowedOrigins) {
       if (allowed === "*") {
@@ -190,7 +193,6 @@ app.route("/", adminObservabilityRoutes);
 app.route("/", logRoutes);
 app.route("/", openapiRoutes);
 app.route("/", providersMetaRoutes);
-app.route("/", usageRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));
 
