@@ -103,6 +103,20 @@ describe("pixel-search routes", () => {
       mockFetch.mockRejectedValueOnce(new Error("ECONNREFUSED"));
       const res = await app.request("/v1/pixel-search/health");
       expect(res.status).toBe(502);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.status).toBe("unreachable");
+      // The hint string should mention how to start the local serve.
+      expect(typeof body.hint).toBe("string");
+      expect((body.hint as string)).toMatch(/pixelrag serve/);
+    });
+
+    it("does NOT require auth (health is a public probe)", async () => {
+      // No Authorization header → should still 200/502 (not 401).
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      );
+      const res = await app.request("/v1/pixel-search/health");
+      expect([200, 502]).toContain(res.status);
     });
   });
 

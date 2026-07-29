@@ -11,7 +11,7 @@
 // Cost: 3 cents per search query, 2 cents per pixelshot render, 10 cents per index build.
 
 import { Hono } from "hono";
-import crypto from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { promises as fs } from "node:fs";
@@ -40,20 +40,10 @@ const INDEX_COST_CENTS = 10;
 
 export const pixelSearchRoutes = new Hono<OmaEnv>();
 
-pixelSearchRoutes.use("/v1/pixel-search", bearerAuth);
-pixelSearchRoutes.use("/v1/pixel-search/*", bearerAuth);
-pixelSearchRoutes.use(
-  "/v1/pixel-search",
-  tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),
-);
-pixelSearchRoutes.use(
-  "/v1/pixel-search/*",
-  tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),
-);
-pixelSearchRoutes.use("/v1/pixel-search", spendLimit());
-pixelSearchRoutes.use("/v1/pixel-search/*", spendLimit());
-
-// ── Health (no auth) — checks local pixelrag serve ──────────────────────
+// ── Health (no auth, no rate limit, no credit spend) ──────────────────────
+// Important: defined BEFORE the auth/rate-limit middleware so users can
+// always probe whether the local pixelrag serve is up without consuming a
+// token or needing a bearer key.
 pixelSearchRoutes.get("/v1/pixel-search/health", async (c) => {
   try {
     const [health, status] = await Promise.all([
@@ -75,9 +65,33 @@ pixelSearchRoutes.get("/v1/pixel-search/health", async (c) => {
     }
     return c.json(payload);
   } catch {
-    return c.json({ status: "unreachable", upstream: null }, 502);
+    return c.json(
+      {
+        status: "unreachable",
+        upstream: null,
+        hint:
+          "Start the local pixelrag serve: pixelrag serve --index-dir " +
+          PIXELRAG_INDEX_DIR +
+          " --tiles-dir " +
+          PIXELRAG_TILES_DIR +
+          " --articles-json " +
+          PIXELRAG_ARTICLES_JSON +
+          " --model " +
+          PIXELRAG_MODEL +
+          " --device mps --port 30001",
+      },
+      502,
+    );
   }
 });
+
+// Auth + rate-limit + spend-limit apply to everything BELOW this point.
+pixelSearchRoutes.use("/v1/pixel-search/*", bearerAuth);
+pixelSearchRoutes.use(
+  "/v1/pixel-search/*",
+  tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),
+);
+pixelSearchRoutes.use("/v1/pixel-search/*", spendLimit());
 
 // ── Status — full index stats ───────────────────────────────────────────
 pixelSearchRoutes.get("/v1/pixel-search/status", async (c) => {
@@ -154,7 +168,7 @@ pixelSearchRoutes.post("/v1/pixel-search", async (c) => {
 
     const data = await res.json();
 
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
     await deductCredits(
       userId,
       totalCost,
@@ -252,7 +266,7 @@ pixelSearchRoutes.post("/v1/pixel-shot", async (c) => {
       maxBuffer: 1024 * 1024,
     });
 
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
     await deductCredits(
       userId,
       totalCost,
@@ -323,7 +337,7 @@ pixelSearchRoutes.post("/v1/pixel-index", async (c) => {
   const outIdx = index_dir ?? PIXELRAG_INDEX_DIR;
   const outTiles = tiles_dir ?? PIXELRAG_TILES_DIR;
   const cfgPath = `/tmp/pixelrag-cfg-${Date.now()}.yaml`;
-  const yaml = (await import("yaml")).default;
+  const { stringify: yamlStringify } = await import("yaml");
   const cfgObj = {
     source: { type: "local", path: source_path },
     ingest: { backend: "cdp", quality: 85, tile_height: 8192 },
@@ -331,10 +345,10 @@ pixelSearchRoutes.post("/v1/pixel-index", async (c) => {
     output: outIdx,
     tiles_dir: outTiles,
   };
-  await fs.writeFile(cfgPath, yaml.stringify(cfgObj));
+  await fs.writeFile(cfgPath, yamlStringify(cfgObj));
 
   // Deduct first, run async
-  const requestId = crypto.randomUUID();
+  const requestId = randomUUID();
   await deductCredits(
     userId,
     INDEX_COST_CENTS,
@@ -350,13 +364,20 @@ pixelSearchRoutes.post("/v1/pixel-index", async (c) => {
   trackApiKeySpend(apiKey?.keyHash, INDEX_COST_CENTS);
 
   // Spawn the build — runs in background, returns job id
-  const jobId = crypto.randomUUID();
+  const jobId = randomUUID();
   const logPath = `/tmp/pixelrag-index-${jobId}.log`;
-  const proc = spawn(
-    PIXELRAG_PYTHON,
-    ["-m", "pixelrag_index.pipelines", "build", "--config", cfgPath, force ? "--force" : ""],
-    { detached: true, stdio: ["ignore", "pipe", "pipe"] },
-  );
+  const args = [
+    "-m",
+    "pixelrag_index.pipelines",
+    "build",
+    "--config",
+    cfgPath,
+  ];
+  if (force) args.push("--force");
+  const proc = spawn(PIXELRAG_PYTHON, args, {
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 
   const logStream = (await import("node:fs")).createWriteStream(logPath);
   proc.stdout?.pipe(logStream);
