@@ -43,7 +43,7 @@ const envSchema = z.object({
   // let callers opt out per-request (private:false) for non-sensitive traffic.
   // Production should leave this unset (defaults to false).
   OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
-  // ponytail: Non-private providers (OpenRouter, Together, DeepInfra, Claude,
+  // Non-private providers (OpenRouter, Together, DeepInfra, Claude,
   // Gemini, Morpheus, AntSeed, LiteLLM) removed. OMA routes exclusively through
   // Venice-based providers (Venice direct, Surplus, CheapTokens) to guarantee
   // zero-data-retention privacy. If you need a non-private provider, add it to

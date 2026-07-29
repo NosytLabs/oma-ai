@@ -62,7 +62,7 @@ export async function settlePaymentAsync(
   const cacheKey = `${networkId}:${txHash}`;
 
   const existing = settlementCache.get(cacheKey);
-  // ponytail: a cached verified record (no receipt) is NOT a settled record;
+  // a cached verified record (no receipt) is NOT a settled record;
   // fall through to write a real settlement. Only short-circuit when the
   // existing record carries a receipt (i.e. previously settled).
   if (existing?.receipt) {
@@ -200,7 +200,7 @@ export function settlePayment(
   const cacheKey = `${networkId}:${txHash}`;
 
   const existing = settlementCache.get(cacheKey);
-  // ponytail: C2 — only short-circuit on cache hit if the existing record is a
+  // C2 — only short-circuit on cache hit if the existing record is a
   // *complete settlement* (has a receipt) AND the amount matches. The
   // /x402/verify path caches a placeholder record (settledAt:0, no receipt)
   // so settle can derive `amount` from the verify cache. Without this guard,

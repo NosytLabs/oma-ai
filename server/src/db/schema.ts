@@ -135,6 +135,10 @@ export const user = pgTable("user", {
   // OMA extension fields (see user.additionalFields in server/src/auth.ts)
   evmAddress: text("evm_address"),
   isAnonymous: boolean("is_anonymous").notNull().default(false),
+  role: text("role"),
+  banned: boolean("banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -161,6 +165,7 @@ export const session = pgTable("session", {
     .defaultNow(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  impersonatedBy: text("impersonated_by"),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

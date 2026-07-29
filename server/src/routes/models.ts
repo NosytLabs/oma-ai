@@ -1,9 +1,6 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
-import { config } from "../config.js";
-import { ensureCatalogLoaded } from "../inference/models.js";
-import { getModelPricing } from "../inference/billing-service.js";
-import { listAllModels } from "../inference/models.js";
+import { ensureCatalogLoaded, listAllModels } from "../inference/models.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
 
@@ -55,5 +52,4 @@ modelRoutes.get("/v1/models/:id", async (c) => {
   });
 });
 
-void config;
-void getModelPricing;
+

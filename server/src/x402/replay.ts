@@ -41,7 +41,7 @@ function x402NonceMemoryConsume(nonce: string): boolean {
   return true; // fresh
 }
 
-// ponytail: CRIT-2 (x402 nonce/replay). Atomic consume via Redis SET NX EX.
+// CRIT-2 (x402 nonce/replay). Atomic consume via Redis SET NX EX.
 // Returns true if the nonce is fresh (first time seen), false if already
 // consumed (replay). The TTL is short (10 min) — nonces are single-use
 // receipts that should not persist beyond the payment window.

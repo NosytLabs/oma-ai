@@ -230,6 +230,7 @@ export default function TermsPage() {
 								<dl className="text-[12px]">
 									{[
 										["Form", "API Terms of Service"],
+										["Operator", "NosytLabs"],
 										["Auth", "Wallet · SIWE"],
 										["Settlement", "USDC · Base"],
 										["Effective", ISSUED],
@@ -248,10 +249,10 @@ export default function TermsPage() {
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
 									Questions?{" "}
 									<a
-										href="mailto:legal@oma-ai.com"
+										href="mailto:hi@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
 									>
-										legal@oma-ai.com
+										hi@nosytlabs.com
 									</a>
 								</div>
 							</aside>
@@ -437,6 +438,10 @@ export default function TermsPage() {
 									"Volume discounts",
 									"Volume discounts apply to inference costs for high-usage accounts.",
 								],
+								[
+									"Card billing",
+									"Subscriptions via Polar appear as 'NOSYT' on your card statement.",
+								],
 							].map(([title, body], i) => (
 								<li
 									key={title}
@@ -527,10 +532,10 @@ export default function TermsPage() {
 							<p className="text-[11px] sm:text-xs text-text-muted">
 								Questions about these Terms?{" "}
 								<a
-									href="mailto:legal@oma-ai.com"
+									href="mailto:hi@nosytlabs.com"
 									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
 								>
-									legal@oma-ai.com
+									hi@nosytlabs.com
 								</a>
 								, or reach us via{" "}
 								<Link

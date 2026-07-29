@@ -258,4 +258,3 @@ depositRoutes.get("/v1/deposit/status", sessionOrBearerAuth, async (c) => {
   }
 });
 
-void rateLimit;

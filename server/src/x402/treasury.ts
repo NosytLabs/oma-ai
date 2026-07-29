@@ -1,7 +1,7 @@
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
-// ponytail: in tests TREASURY_BASE_ADDRESS may be unset;
+// in tests TREASURY_BASE_ADDRESS may be unset;
 // resolve defensively.
 export const SERVER_TREASURY = (config.TREASURY_BASE_ADDRESS || "").toLowerCase();
 

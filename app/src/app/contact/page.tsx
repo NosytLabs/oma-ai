@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",
 	description:
-		"Contact OMA AI for product support, privacy requests, and legal questions. Email support@oma-ai.com or privacy@oma-ai.com.",
+		"Contact OMA AI for product support, privacy requests, and legal questions. Email support@nosytlabs.com or hi@nosytlabs.com.",
 	alternates: { canonical: "/contact" },
 	openGraph: {
 		title: "Contact OMA",
@@ -26,22 +26,22 @@ const CHANNELS = [
 		icon: MessageSquare,
 		title: "Product support",
 		body: "API keys, deposits, model routing, and dashboard issues.",
-		href: "mailto:support@oma-ai.com",
-		label: "support@oma-ai.com",
+		href: "mailto:support@nosytlabs.com",
+		label: "support@nosytlabs.com",
 	},
 	{
 		icon: Shield,
 		title: "Privacy & data requests",
 		body: "Account deletion, data export, and DPA / sub-processor questions.",
-		href: "mailto:privacy@oma-ai.com",
-		label: "privacy@oma-ai.com",
+		href: "mailto:support@nosytlabs.com",
+		label: "support@nosytlabs.com",
 	},
 	{
 		icon: Mail,
 		title: "Legal",
 		body: "Terms, acceptable use, and partnership inquiries.",
-		href: "mailto:legal@oma-ai.com",
-		label: "legal@oma-ai.com",
+		href: "mailto:hi@nosytlabs.com",
+		label: "hi@nosytlabs.com",
 	},
 ] as const;
 
@@ -73,6 +73,16 @@ export default function ContactPage() {
 				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed">
 					We are a lean team. Email is the fastest channel. We typically reply
 					within five business days for privacy requests and sooner for outages.
+					OMA AI / Open Model Access is operated by{" "}
+					<a
+						href="https://www.nosytlabs.com"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-accent hover:underline underline-offset-2"
+					>
+						NosytLabs
+					</a>
+					.
 				</p>
 
 				<ul className="space-y-4">

@@ -16,7 +16,7 @@ export interface PaymentPayload {
   validBefore: number;
   validAfter: number;
   description?: string;
-  // ponytail: per-payload random nonce for replay protection (CRIT-2).
+  // per-payload random nonce for replay protection (CRIT-2).
   // Mirrors the field on `types.ts` PaymentPayload. Optional for v1 clients.
   nonce?: string;
 }
@@ -56,7 +56,7 @@ export interface SettlementRecord {
   networkId: string;
   payee: string;
   settledAt: number;
-  // ponytail: receipt is optional on a *cached verified record* written by
+  // receipt is optional on a *cached verified record* written by
   // /x402/verify. The full settlement (with receipt) is written by
   // settlePayment/settlePaymentAsync. This makes the cache state
   // distinguishable: `receipt` undefined = verified-but-not-settled;

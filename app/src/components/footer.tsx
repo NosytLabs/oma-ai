@@ -292,6 +292,17 @@ export function Footer() {
 							<span className="text-text-secondary">©</span>{" "}
 							<span suppressHydrationWarning>{CURRENT_YEAR}</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
+							<span>
+								<a
+									href="https://www.nosytlabs.com"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="hover:text-accent transition-colors"
+								>
+									by nosytlabs.com
+								</a>
+							</span>{" "}
+							<span className="text-text-tertiary">·</span>{" "}
 							<span>MIT licensed</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>base mainnet</span>{" "}

@@ -66,6 +66,6 @@ describe("POST /api/support", () => {
 		const body = (await res.json()) as { ok: boolean; ticket: string; inbox: string };
 		expect(body.ok).toBe(true);
 		expect(body.ticket).toMatch(/^sup_/);
-		expect(body.inbox).toBe("billing@oma-ai.com");
+		expect(body.inbox).toBe("support@nosytlabs.com");
 	});
 });

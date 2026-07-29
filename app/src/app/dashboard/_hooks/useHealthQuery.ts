@@ -1,4 +1,4 @@
-// ponytail: single source of truth for the /health polling cadence.
+// single source of truth for the /health polling cadence.
 // TanStack Query dedupes by queryKey, so all callers share one request stream
 // regardless of how many components mount this hook.
 

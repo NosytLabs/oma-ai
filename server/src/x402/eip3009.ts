@@ -34,7 +34,7 @@ import type { PaymentPayload, PaymentResponse } from "./types.js";
 //   authorization = JSON { from, to, value, validAfter, validBefore, nonce }
 //   payload       = PaymentPayload (payee == authorization.to)
 //
-// ponytail: EIP-3009 is GASLESS for the user — the facilitator (us) submits
+// EIP-3009 is GASLESS for the user — the facilitator (us) submits
 // the on-chain tx via FACILITATOR_PRIVATE_KEY when set. Without the private key
 // we fall back to an eth_call simulation and return a deterministic synthetic
 // txHash so the verify+settle API surface still produces a receipt.
@@ -144,7 +144,7 @@ function syntheticEip3009TxHash(auth: Eip3009Authorization, signature: Hex): Has
       auth.nonce as `0x${string}`,
     ],
   );
-  // ponytail: bind the placeholder to the signature too, so the same auth
+  // bind the placeholder to the signature too, so the same auth
   // tuple with a different signature gets a different placeholder. Concat
   // the keccak of the tuple with the first 32 bytes of the sig, then hash.
   const sigChunk = (sigHex.length >= 64 ? sigHex.slice(0, 64) : sigHex.padEnd(64, "0")) as Hex;
@@ -203,7 +203,7 @@ async function simulateEip3009Transfer(
 /**
  * Submit the on-chain transferWithAuthorization using FACILITATOR_PRIVATE_KEY.
  * Returns the real on-chain tx hash. Throws on failure (caller maps to 422).
- * ponytail: only called when FACILITATOR_PRIVATE_KEY is configured. In dev
+ * only called when FACILITATOR_PRIVATE_KEY is configured. In dev
  * (mock mode) and in production-without-key deployments we never reach this
  * code path — the verify path uses simulateEip3009Transfer instead.
  */

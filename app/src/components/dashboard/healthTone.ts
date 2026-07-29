@@ -1,4 +1,4 @@
-// ponytail: shared tone taxonomy for provider health surfaces.
+// shared tone taxonomy for provider health surfaces.
 // Single source of truth — used by ProviderHealthCard (full status table)
 // and ProviderHealthSummary (compact overview pill).
 

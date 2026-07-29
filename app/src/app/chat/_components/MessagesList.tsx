@@ -100,7 +100,7 @@ type Classification =
 	| { kind: "plain" }
 	| { kind: "a2ui"; payload: unknown };
 
-// ponytail: memoize message classification per content string so token
+// memoize message classification per content string so token
 // flushes don't trigger repeated JSON.parse + isA2UI checks per render.
 // Streaming text changes the content reference but the *classification*
 // flips at most once per assistant message (when it finishes); the cache
@@ -349,7 +349,7 @@ export function MessagesList({
 					<div className="space-y-6 md:space-y-8 pb-12">
 						<AnimatePresence mode="popLayout">
 							{deferredMessages.map((msg, index) => {
-								// ponytail: memoize the JSON-classification result per
+								// memoize the JSON-classification result per
 								// message so SSE token flushes (which replace the
 								// content array reference) don't re-parse every line
 								// on every render. The cache lives in a ref because

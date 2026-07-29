@@ -18,12 +18,9 @@ import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
 import { depositRoutes } from "./routes/deposit/index.js";
+import { exportRoutes } from "./routes/export.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
-import { db } from "./db/client.js";
-import { user } from "./db/schema.js";
-import { eq } from "drizzle-orm";
-import { auditLog } from "./middleware/audit.js";
 
 // Fail-fast admin address validation. Runs at startup, not at module
 // import, so test imports of the auth middleware don't exit the process.
@@ -99,6 +96,14 @@ app.route("/", metricsRoutes);
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
+// Agent Auth Protocol discovery document. The plugin serves it under the
+// /api/auth basePath but advertises the well-known path, so forward it.
+app.get("/.well-known/agent-configuration", (c) => {
+  const url = new URL(c.req.url);
+  url.pathname = "/api/auth/agent-configuration";
+  return auth.handler(new Request(url, c.req.raw));
+});
+
 // OMA-specific auth-adjacent routes (CSRF, /user, /keys).
 app.route("/", authRoutes);
 
@@ -106,6 +111,7 @@ app.route("/", authRoutes);
 app.route("/", modelRoutes);
 app.route("/", chatRoutes);
 app.route("/", depositRoutes);
+app.route("/", exportRoutes);
 
 // x402 payments.
 app.route("/", x402Routes);
@@ -184,9 +190,3 @@ if (config.NODE_ENV !== "test") {
 }
 
 export default app;
-
-// Self-link to avoid the unused-imports warning.
-void db;
-void user;
-void eq;
-void auditLog;

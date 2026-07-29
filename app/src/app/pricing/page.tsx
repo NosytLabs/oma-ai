@@ -709,10 +709,11 @@ export default function PricingPage() {
 					</h3>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
-							"Credits are 1:1 USD, non-redeemable, non-transferable",
-							"12-month rolling expiry from date of deposit",
-							"No credit float — credits appear after settlement",
-							"Billed per token, deducted in real-time",
+						"Credits are 1:1 USD, non-redeemable, non-transferable",
+						"12-month rolling expiry from date of deposit",
+						"No credit float — credits appear after settlement",
+						"Billed per token, deducted in real-time",
+						"Card subscriptions via Polar appear as 'NOSYT' on your statement",
 						].map((note) => (
 							<div key={note} className="flex items-start gap-2">
 								<div className="mt-1.5 h-1 w-1 rounded-full bg-amber" />

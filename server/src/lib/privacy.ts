@@ -9,7 +9,7 @@
 
 const REDACTED = "[REDACTED]";
 
-// ponytail: V6 #10 — recursive PII/sensitive-field redactor for arbitrary
+// V6 #10 — recursive PII/sensitive-field redactor for arbitrary
 // JSON-ish values (request bodies, error context, log payloads). Replaces
 // key-named credentials and value-shaped secrets with [REDACTED]. Addresses
 // (0x + 40 hex) are KEPT — they're not sensitive on their own and we need

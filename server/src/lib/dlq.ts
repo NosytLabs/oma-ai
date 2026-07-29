@@ -26,7 +26,7 @@ const DLQ_LISTS: Record<string, string> = {
   settlement: "settlement:dlq",
 };
 
-// ponytail: redact common PII patterns; upgrade to structured logging if audit demands it
+// redact common PII patterns; upgrade to structured logging if audit demands it
 function redactPii(body: string): string {
   const redacted = body
     .replace(/(sk-[a-zA-Z0-9]{20,})/g, "[REDACTED_API_KEY]")

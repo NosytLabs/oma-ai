@@ -359,7 +359,7 @@ export function ChatToolbar({
 	);
 }
 
-// ponytail: wrap the toolbar in `memo` so SSE token flushes (which
+// wrap the toolbar in `memo` so SSE token flushes (which
 // replace the messages array reference) don't re-render the entire
 // toolbar — the toolbar reads `messages.length` (via `clearChat`/`share`)
 // but doesn't render the messages themselves. The shell passes a stable

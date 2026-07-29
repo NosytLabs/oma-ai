@@ -29,7 +29,7 @@ import type { PaymentPayload, PaymentResponse, PaymentSignature } from "./types.
 // Wire shape: POST {QUICKNODE_X402_URL}/verify with the same PaymentSignature
 // shape used locally. Hosted endpoint returns { valid, txHash, amount,
 // networkId, error? } mirroring `verifyPayment`'s return.
-// ponytail: not over the top. One fetch helper, one switch on provider.
+// not over the top. One fetch helper, one switch on provider.
 
 const QUICKNODE_X402_ENABLED =
   config.X402_FACILITATOR_PROVIDER === "quicknode" &&
@@ -111,7 +111,7 @@ async function verifyUsdcTransferReceipt(
   txHash: Hash,
   payload: PaymentPayload,
 ): Promise<PaymentResponse> {
-  // ponytail: CRIT-2 — consume nonce BEFORE the on-chain RPC call. A replay
+  // CRIT-2 — consume nonce BEFORE the on-chain RPC call. A replay
   // attempt never reaches the (expensive) `eth_getTransactionReceipt`.
   const nonceResult = await consumeNonce(payload.nonce);
   if (!nonceResult.ok) {
@@ -201,7 +201,7 @@ async function verifyUsdcTransferReceipt(
 // legacy on-chain-receipt path when the request carries a tx hash in
 // `signature` (backward compatibility).
 //
-// ponytail: one dispatcher, two children. The two children have totally
+// one dispatcher, two children. The two children have totally
 // different semantics (sig-recovery vs receipt-check) so a single merged
 // function would be a 200-line branch spaghetti. The split keeps each path
 // readable and independently testable.
@@ -228,7 +228,7 @@ async function verifyEvmPayment(
     return verifyEip3009Payment(signature, authorization, payload);
   }
 
-  // ponytail: if the client sent JSON but the shape is NOT a complete
+  // if the client sent JSON but the shape is NOT a complete
   // EIP-3009 tuple, it's almost certainly a malformed EIP-3009 request.
   // Surface a clear "invalid authorization" error rather than silently
   // falling through to the legacy receipt-check path (which would then
@@ -240,7 +240,7 @@ async function verifyEvmPayment(
     };
   }
 
-  // ponytail: a 65-byte signature (132 hex chars) is the EIP-712 sig shape,
+  // a 65-byte signature (132 hex chars) is the EIP-712 sig shape,
   // NOT a 32-byte tx-hash shape. If the client sent an EIP-712-shaped sig
   // with a non-JSON authorization, they almost certainly forgot to JSON-
   // encode the EIP-3009 tuple. Reject loud with the canonical error rather
@@ -273,7 +273,7 @@ async function mockVerifyPayment(
   signature: string,
   payload: PaymentPayload,
 ): Promise<PaymentResponse> {
-  // ponytail: CRIT-2 — even mock mode must consume the nonce so a replayed
+  // CRIT-2 — even mock mode must consume the nonce so a replayed
   // mock signature does not verify twice.
   const nonceResult = await consumeNonce(payload.nonce);
   if (!nonceResult.ok) {
@@ -340,7 +340,7 @@ export async function verifyPayment(
     return result;
   }
 
-  // ponytail: route to QuickNode's hosted x402 facilitator when explicitly
+  // route to QuickNode's hosted x402 facilitator when explicitly
   // configured. Local viem-based verification is the default.
   if (QUICKNODE_X402_ENABLED) {
     const result = await quicknodeX402Verify(paymentSig);

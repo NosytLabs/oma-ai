@@ -89,7 +89,7 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
     );
   }
 
-  // ponytail: V6 #8 — pin the merchant payee on the public verify endpoint.
+  // V6 #8 — pin the merchant payee on the public verify endpoint.
   // Previously any valid USDC transfer verified regardless of who received
   // the funds, which let a third party use this endpoint to launder a
   // verification receipt for an arbitrary tx. The settle route already pins
@@ -128,7 +128,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
     return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 401);
   }
 
-  // ponytail: C2 — amount is derived from the verified cache, NEVER from the
+  // C2 — amount is derived from the verified cache, NEVER from the
   // body. Without this, a client could call `/x402/verify` with a 0.01 USDC tx,
   // get a valid receipt, then call `/x402/settle` with `amount: "1000000"` and
   // stamp a receipt claiming they paid a million dollars. The receipt signed
@@ -170,7 +170,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
     );
   }
 
-  // ponytail: log a warning when the legacy client sends body.amount, so we
+  // log a warning when the legacy client sends body.amount, so we
   // can track migration progress and surface it in the docs changelog.
   if (body.amount !== undefined) {
     logger.warn(
@@ -242,7 +242,7 @@ if (config.NODE_ENV !== "production") {
 x402Routes.post("/x402/pay-req-test",
   rateLimit({ windowMs: 60_000, maxRequests: 30 }),
   async (c) => {
-  // ponytail: refuse to mount the test route with an unset merchant address —
+  // refuse to mount the test route with an unset merchant address —
   // falling back to 0x000… lets an attacker mint a Pay-Req header with a
   // bogus payee and probe verification behavior. Returns 503 (not 500) so
   // it's clearly "intentionally disabled", not "broken".
@@ -289,7 +289,7 @@ const testPricing: Record<string, string> = {
 };
 
 const testPayeeAddress = config.TREASURY_BASE_ADDRESS;
-// ponytail: only mount the middleware test when a real merchant address is set.
+// only mount the middleware test when a real merchant address is set.
 // Falling back to the zero address would let `/x402/middleware-test` accept
 // payments to nobody and falsely report "success" — see audit X402-2026-06-14.
 if (testPayeeAddress) {

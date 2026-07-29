@@ -30,6 +30,7 @@ import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
+import { trackPolarUsage } from "../../inference/polar-usage.js";
 import { config } from "../../config.js";
 import { db } from "../../db/client.js";
 import { creditBalances, usageRecords } from "../../db/schema.js";
@@ -438,9 +439,22 @@ async function recordUsage(args: {
         status,
       },
     });
+    // Fire-and-forget: send meter event to Polar for subscription usage
+    // visibility. No-op if POLAR_USAGE_METER_ID is not configured.
+    if (status === "completed") {
+      void trackPolarUsage({
+        externalCustomerId: userId,
+        requestId,
+        model,
+        provider,
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        costCents: userCostCents,
+      });
+    }
   } catch (err) {
     logger.error({ err, requestId }, "[chat] usage record failed");
   }
 }
 
-void rateLimit;

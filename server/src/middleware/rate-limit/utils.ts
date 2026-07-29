@@ -32,7 +32,7 @@ function isTrustedProxy(ip: string): boolean {
 export function extractClientIp(c: Context<OmaEnv>): string {
   const xRealIp = c.req.header("x-real-ip");
 
-  // ponytail: H2 — when TRUSTED_PROXY_IPS is empty (the production-safe
+  // H2 — when TRUSTED_PROXY_IPS is empty (the production-safe
   // default), REFUSE to read x-forwarded-for entirely. Without this guard,
   // an attacker sends 1000 requests with `x-forwarded-for: <random>` and
   // bypasses the IP-based rate-limit bucket (each request lands in a

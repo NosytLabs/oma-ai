@@ -10,7 +10,6 @@
  *   - `./api/deposit.ts`  — `api.deposit.*` (USDC, LI.FI / CCTP, status)
  *   - `./api/resources.ts`— `api.balance`, `api.usage`, `api.models`
  *   - `./api/inference.ts`— `api.health`
- *   - `./api/admin.ts`    — `api.admin.*`
  *   - `./api/index.ts`    — composite `api` object + barrel re-exports
  *
  * All `import { api, type Foo } from '@/lib/api'` call sites continue to

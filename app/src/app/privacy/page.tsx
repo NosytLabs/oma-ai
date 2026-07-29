@@ -225,6 +225,7 @@ export default function PrivacyPage() {
 								<dl className="text-[12px]">
 									{[
 										["Scope", "All OMA surfaces"],
+										["Operator", "NosytLabs"],
 										["Logging", "Metadata only"],
 										["Sale of data", "Never"],
 										["Effective", ISSUED],
@@ -243,10 +244,10 @@ export default function PrivacyPage() {
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
 									Questions?{" "}
 									<a
-										href="mailto:privacy@oma-ai.com"
+										href="mailto:support@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
 									>
-										privacy@oma-ai.com
+										support@nosytlabs.com
 									</a>
 								</div>
 							</aside>
@@ -551,10 +552,10 @@ export default function PrivacyPage() {
 							Vendors that process limited operational data on our behalf. None
 							receive prompt or completion content. Contact{" "}
 							<a
-								href="mailto:privacy@oma-ai.com"
+								href="mailto:support@nosytlabs.com"
 								className="text-accent underline underline-offset-2"
 							>
-								privacy@oma-ai.com
+								support@nosytlabs.com
 							</a>{" "}
 							for a signed DPA.
 						</p>
@@ -611,7 +612,7 @@ export default function PrivacyPage() {
 								{
 									icon: CheckCircle2,
 									title: "Contact us",
-									body: "Email privacy@oma-ai.com for any privacy concern. We reply within five business days.",
+									body: "Email support@nosytlabs.com for any privacy concern. We reply within five business days.",
 								},
 							].map((card) => (
 								<div
@@ -644,10 +645,10 @@ export default function PrivacyPage() {
 							<p className="text-[11px] sm:text-xs text-text-muted">
 								Questions?{" "}
 								<a
-									href="mailto:privacy@oma-ai.com"
+									href="mailto:support@nosytlabs.com"
 									className="text-accent hover:underline underline-offset-2"
 								>
-									privacy@oma-ai.com
+									support@nosytlabs.com
 								</a>
 							</p>
 							<ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">

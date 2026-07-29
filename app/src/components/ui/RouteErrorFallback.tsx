@@ -53,7 +53,7 @@ export function RouteErrorFallback({
 						Home
 					</Link>
 					<a
-						href={`mailto:support@oma-ai.com?subject=${encodeURIComponent(`OMA bug report${error.digest ? ` (${error.digest.slice(0, 8)})` : ""}`)}&body=${encodeURIComponent(`Error: ${errorMessage}${error.digest ? `\nDigest: ${error.digest}` : ""}\n\nSteps to reproduce:\n1. \n\nExpected:\n\nActual:\n`)}`}
+						href={`mailto:support@nosytlabs.com?subject=${encodeURIComponent(`OMA bug report${error.digest ? ` (${error.digest.slice(0, 8)})` : ""}`)}&body=${encodeURIComponent(`Error: ${errorMessage}${error.digest ? `\nDigest: ${error.digest}` : ""}\n\nSteps to reproduce:\n1. \n\nExpected:\n\nActual:\n`)}`}
 						className="btn-secondary"
 					>
 						<Bug className="h-4 w-4" />

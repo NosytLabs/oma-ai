@@ -7,7 +7,6 @@
  * matching entry here.
  */
 import { logger } from "../lib/logger.js";
-import { config } from "../config.js";
 
 export interface ModelDef {
   id: string;
@@ -109,4 +108,4 @@ export function getModelById(id: string): ModelDef | undefined {
   return listAllModels().find((m) => m.id === id);
 }
 
-void config;
+

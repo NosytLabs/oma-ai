@@ -17,8 +17,8 @@ const PRIVACY_MANIFEST = {
 	version: "1.0.0",
 	effective_at: "2026-06-12",
 	contact: {
-		privacy_email: "privacy@oma-ai.com",
-		security_email: "security@oma-ai.com",
+		privacy_email: "support@nosytlabs.com",
+		security_email: "support@nosytlabs.com",
 	},
 	data_stored: {
 		account: {

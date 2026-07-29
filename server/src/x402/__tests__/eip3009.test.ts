@@ -117,11 +117,11 @@ const ATTACKER = '0x' + 'bb'.repeat(20)
 const { mockConfig } = vi.hoisted(() => ({
   mockConfig: {
     TREASURY_BASE_ADDRESS: '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402',
-    // ponytail: must be 'live' (not 'mock') so the verify path actually runs
+    // must be 'live' (not 'mock') so the verify path actually runs
     // and dispatches to verifyEip3009Payment / verifyUsdcTransferReceipt.
     // The viem RPC calls are mocked below, so no real network access.
     FACILITATOR_MODE: 'live',
-    // ponytail: a facilitator key, when present, switches verify to the real
+    // a facilitator key, when present, switches verify to the real
     // on-chain submit path. Tests override this per-case.
     FACILITATOR_PRIVATE_KEY: undefined,
     X402_FACILITATOR_PROVIDER: 'coinbase-cdp',
@@ -144,7 +144,7 @@ vi.mock('../../auth/middleware.js', () => ({
 import { verifyPayment, type PaymentSignature } from '../facilitator.js'
 
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-// ponytail: 65-byte EIP-712 sig placeholder. Real value recovery is mocked via
+// 65-byte EIP-712 sig placeholder. Real value recovery is mocked via
 // recoverTypedDataAddressMock; the on-the-wire shape just needs to be 132 chars.
 const VALID_SIG_HEX = '0x' + '11'.repeat(65)
 const USDC_AMOUNT_ATOMIC = 1_000_000n // 1 USDC

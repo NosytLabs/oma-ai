@@ -104,7 +104,7 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000;
 let liveModelsCache: { data: ModelOption[]; ts: number } | null = null;
 
-// ponytail: shared `["models"]` key so dashboard / settings / chat all
+// shared `["models"]` key so dashboard / settings / chat all
 // invalidate the same cache. Returns the active ModelOption[]; falls back
 // to FALLBACK_MODELS while the first request is in flight or on error.
 export function useLiveModels(): ModelOption[] {

@@ -9,7 +9,6 @@ import { balance, models, usage } from "./resources.js";
 import { credits, creditHistory } from "./credits.js";
 import { deposit } from "./deposit.js";
 import { health } from "./inference.js";
-import { admin } from "./admin.js";
 import { auth } from "./auth.js";
 
 export {
@@ -57,7 +56,6 @@ export const exportData = {
  * `api.balance.get()`, `api.usage.list()`, `api.models.list()`, etc.
  */
 export const api = {
-  admin,
   auth,
   balance,
   usage,
