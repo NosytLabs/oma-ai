@@ -3,6 +3,7 @@ import type { OmaEnv } from "../../types.js";
 import { sessionAuth, requireAdmin } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { requireFreshTotp } from "../../auth/require-fresh-totp.js";
+import { config } from "../../config.js";
 import { usersRoutes } from "./users.js";
 import { usageRoutes } from "./usage.js";
 import { revenueRoutes } from "./revenue.js";
@@ -33,18 +34,22 @@ adminRoutes.use("/v1/admin/*", rateLimit({ windowMs: 60_000, maxRequests: 100 })
 // implementation lands, the money-movement guard is already in place. Until
 // then, the handler below returns 501 with a clear message so admin clients
 // get a useful error instead of falling through to the 404 handler.
-adminRoutes.use("/admin/ledger/sweep", requireFreshTotp());
-adminRoutes.use("/v1/admin/ledger/sweep", requireFreshTotp());
+// Money-movement TOTP step-up: when REQUIRE_ADMIN_2FA is on, fail CLOSED if
+// the admin has no 2FA enrolled. Default off so existing admins aren't
+// locked out; flip on in prod once all admins have 2FA.
+const moneyTotp = requireFreshTotp({ failClosed: config.REQUIRE_ADMIN_2FA });
+adminRoutes.use("/admin/ledger/sweep", moneyTotp);
+adminRoutes.use("/v1/admin/ledger/sweep", moneyTotp);
 adminRoutes.all("/admin/ledger/sweep", (c) =>
   c.json({ error: { message: "Ledger sweep is not implemented", type: "not_implemented" } }, 501),
 );
 adminRoutes.all("/v1/admin/ledger/sweep", (c) =>
   c.json({ error: { message: "Ledger sweep is not implemented", type: "not_implemented" } }, 501),
 );
-adminRoutes.use("/admin/refunds/:id/grant", requireFreshTotp());
-adminRoutes.use("/v1/admin/refunds/:id/grant", requireFreshTotp());
-adminRoutes.use("/admin/refunds/:id/deny", requireFreshTotp());
-adminRoutes.use("/v1/admin/refunds/:id/deny", requireFreshTotp());
+adminRoutes.use("/admin/refunds/:id/grant", moneyTotp);
+adminRoutes.use("/v1/admin/refunds/:id/grant", moneyTotp);
+adminRoutes.use("/admin/refunds/:id/deny", moneyTotp);
+adminRoutes.use("/v1/admin/refunds/:id/deny", moneyTotp);
 
 adminRoutes.route("/", adminRefundRoutes);
 adminRoutes.route("/", usersRoutes);

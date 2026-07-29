@@ -23,8 +23,14 @@ import { verifyTotpCode, consumeBackupCode, TwoFactorError } from "./two-factor.
 import type { OmaEnv } from "../types.js";
 import { logger } from "../lib/logger.js";
 
-export function requireFreshTotp(options?: { allowBackupCode?: boolean }) {
+export function requireFreshTotp(options?: { allowBackupCode?: boolean; failClosed?: boolean }) {
   const allowBackupCode = options?.allowBackupCode ?? true;
+  // failClosed: when true, accounts WITHOUT 2FA enrolled are rejected (403)
+  // instead of passing through. Used on admin money routes when
+  // config.REQUIRE_ADMIN_2FA is on, so the TOTP step-up is a hard requirement
+  // rather than opt-in. When false (default), keeps the original opt-in
+  // behavior but emits a WARN so non-2FA sensitive actions are auditable.
+  const failClosed = options?.failClosed ?? false;
   return async (c: Context<OmaEnv>, next: Next) => {
     const userId = c.get("userId") as string | undefined;
     if (!userId) {
@@ -40,8 +46,23 @@ export function requireFreshTotp(options?: { allowBackupCode?: boolean }) {
       return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
     }
     if (!user.twoFactorEnabled) {
+      if (failClosed) {
+        return c.json(
+          {
+            error: {
+              message:
+                "This sensitive action requires 2FA to be enabled on your account. Enable two-factor authentication in Settings, then retry.",
+              type: "authentication_error",
+              code: "2fa_enrollment_required",
+            },
+          },
+          403,
+        );
+      }
       // 2FA not enabled — pass through. This middleware is opt-in for users
-      // who have 2FA, not a forced upgrade for everyone.
+      // who have 2FA, not a forced upgrade for everyone. Log so sensitive
+      // actions by non-2FA accounts leave an audit trail.
+      logger.warn({ userId, path: c.req.path }, "[requireFreshTotp] sensitive action by account without 2FA");
       await next();
       return;
     }

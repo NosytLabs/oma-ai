@@ -106,13 +106,17 @@ describe("network routes", () => {
     expect(body.name).toBe("default");
   });
 
-  it("GET /v1/upstream/health returns per-provider breaker state", async () => {
+  it("GET /v1/upstream/health returns coarse per-provider status", async () => {
+    // Coarsened for the public surface (S4 fix): per-provider state is a string
+    // ("ok" | "unavailable") and no circuit-breaker/latency/error internals are
+    // exposed. The detailed admin view lives at /v1/admin/observability/*.
     const res = await app.request("/v1/upstream/health");
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.count).toBe(2);
-    expect(body.providers.openai).toHaveProperty("available", true);
-    expect(body.providers.anthropic).toHaveProperty("isUp");
+    expect(body.status).toBe("ok");
+    expect(body.providers.openai).toBe("ok");
+    expect(body.providers.anthropic).toBe("ok");
     expect(body).toHaveProperty("checkedAt");
   });
 

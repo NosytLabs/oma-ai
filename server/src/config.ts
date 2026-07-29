@@ -116,6 +116,13 @@ const envSchema = z.object({
   ADMIN_WALLET_ADDRESSES: z.string().optional().default(""),
   PLATFORM_TEAM_ID: z.string().optional().default(""),
 
+  // When true, admin money-movement routes (refund grant/deny, ledger sweep)
+  // FAIL CLOSED if the acting admin has not enrolled 2FA — the TOTP step-up
+  // becomes a hard requirement instead of an opt-in. Default false so existing
+  // admins without 2FA are not locked out; enable in prod once all admins have
+  // 2FA enrolled. See auth/require-fresh-totp.ts.
+  REQUIRE_ADMIN_2FA: envBoolean.default(false),
+
   CCTP_CIRCLE_API_URL: z.string().min(1).default("https://iris-api.circle.com"),
   CCTP_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche"),
   CCTP_BASE_DOMAIN: z.coerce.number().default(6),
