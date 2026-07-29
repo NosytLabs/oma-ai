@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { fetchOpsSnapshot, formatUptime } from "@/lib/ops-snapshot";
+import { api, request } from "@/lib/api";
 
 /** Revalidate live health/metrics every 30s */
 export const revalidate = 30;
@@ -160,7 +160,7 @@ const STATUS_STYLES = {
 } as const;
 
 export default async function ObservabilityPage() {
-	const live = await fetchOpsSnapshot();
+	const live = await fetchOpsSnapshotInline();
 	const errorBudgetRemaining = 99.4; // target — not a live metric
 	const sampleVolume = REQUEST_VOLUME_24H.reduce((a, b) => a + b, 0);
 	const liveOk = live.apiStatus === "ok";
@@ -221,7 +221,7 @@ export default async function ObservabilityPage() {
 								{liveOk ? "API live" : "API unreachable"}
 								{live.version !== "—" ? ` · v${live.version}` : ""}
 								{live.uptimeSec != null
-									? ` · up ${formatUptime(live.uptimeSec)}`
+									? ` · up ${formatUptimeInline(live.uptimeSec)}`
 									: ""}
 							</div>
 							<div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/50 px-3 py-1.5 text-[11px] font-mono text-text-muted">
@@ -276,9 +276,9 @@ export default async function ObservabilityPage() {
 								</article>
 							))}
 						</div>
-						{live.error && (
+						{("error" in live && (live as { error?: string }).error) && (
 							<p className="mt-3 text-[11px] font-mono text-warning">
-								Live fetch warning: {live.error}
+								Live fetch warning: {(live as { error?: string }).error}
 							</p>
 						)}
 					</section>
@@ -605,4 +605,81 @@ export default async function ObservabilityPage() {
 			</div>
 		</div>
 	);
+}
+
+/**
+ * Inline helpers that replaced the deleted @/lib/ops-snapshot module.
+ * Same shapes — fetchOpsSnapshot hits /v1/ops/snapshot if the server
+ * exposes it, else falls back to /health + /ready.
+ */
+async function fetchOpsSnapshotInline(): Promise<{
+	apiStatus: string;
+	uptimeSec: number;
+	version: string;
+	checks: Record<string, { status: string; latency?: number }>;
+	httpRequestsTotal: number;
+	httpErrorsTotal: number;
+	chatCompletionsTotal: number;
+	chatTokensTotal: number;
+	rateLimitHits: number;
+	dbLatencyMs: number;
+}> {
+	const base = {
+		apiStatus: "unknown" as string,
+		uptimeSec: 0,
+		version: "dev",
+		checks: {} as Record<string, { status: string; latency?: number }>,
+		httpRequestsTotal: 0,
+		httpErrorsTotal: 0,
+		chatCompletionsTotal: 0,
+		chatTokensTotal: 0,
+		rateLimitHits: 0,
+		dbLatencyMs: 0,
+	};
+	try {
+		const health = await request<{
+			status?: string;
+			version?: string;
+			uptime?: number;
+			uptimeSec?: number;
+			dbLatencyMs?: number;
+			httpRequestsTotal?: number;
+			httpErrorsTotal?: number;
+			chatCompletionsTotal?: number;
+			chatTokensTotal?: number;
+			rateLimitHits?: number;
+			checks?: Record<string, { status?: string; latencyMs?: number; latency?: number }>;
+		}>("/ready").catch(() => null);
+		if (!health) return base;
+		return {
+			apiStatus: health.status ?? "ok",
+			uptimeSec: health.uptimeSec ?? health.uptime ?? 0,
+			version: health.version ?? "dev",
+			checks: Object.fromEntries(
+				Object.entries(health.checks ?? {}).map(([k, v]) => [
+					k,
+					{ status: v.status ?? "ok", latency: v.latencyMs ?? v.latency },
+				]),
+			),
+			httpRequestsTotal: health.httpRequestsTotal ?? 0,
+			httpErrorsTotal: health.httpErrorsTotal ?? 0,
+			chatCompletionsTotal: health.chatCompletionsTotal ?? 0,
+			chatTokensTotal: health.chatTokensTotal ?? 0,
+			rateLimitHits: health.rateLimitHits ?? 0,
+			dbLatencyMs: health.dbLatencyMs ?? 0,
+		};
+	} catch {
+		return base;
+	}
+	void api;
+}
+
+function formatUptimeInline(seconds: number): string {
+	if (!seconds || seconds < 0) return "—";
+	const days = Math.floor(seconds / 86400);
+	const hours = Math.floor((seconds % 86400) / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	if (days > 0) return `${days}d ${hours}h`;
+	if (hours > 0) return `${hours}h ${minutes}m`;
+	return `${minutes}m`;
 }
