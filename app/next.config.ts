@@ -36,11 +36,20 @@ const nextConfig: NextConfig = {
 		config.module.exprContextCritical = false;
 
 		if (!isServer) {
+			config.resolve.alias = {
+				...(config.resolve.alias || {}),
+				"porto/internal": false,
+			};
 			config.resolve.fallback = {
 				...config.resolve.fallback,
 				ws: false,
 				accounts: false,
 				"@metamask/connect-evm": false,
+				"@base-org/account": false,
+				"@coinbase/wallet-sdk": false,
+				"@safe-global/safe-apps-sdk": false,
+				"@safe-global/safe-apps-provider": false,
+				"@walletconnect/ethereum-provider": false,
 				porto: false,
 				"porto/internal": false,
 			};

@@ -1,6 +1,10 @@
 import { createConfig, createStorage, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+// Import the connector directly instead of the barrel. The barrel eagerly
+// resolves optional Base/Coinbase/Safe/WalletConnect/Porto adapters, which
+// adds unavailable peer warnings and unnecessary client bundle work even
+// though OMA intentionally supports the standard injected EIP-1193 path.
+import { injected } from "wagmi/connectors/injected";
 
 /**
  * RPC transport URLs.

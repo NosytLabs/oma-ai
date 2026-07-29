@@ -20,7 +20,7 @@ function clearWindowEthereum(): void {
 	if (w.window) delete w.window.ethereum;
 }
 
-vi.mock("wagmi/connectors", () => {
+vi.mock("wagmi/connectors/injected", () => {
 	// wagmi v3 connectors are created by calling injected(), etc., and
 	// each call returns a CreateConnectorFn — a function that wagmi
 	// later invokes with { emitter, chains, ... }. Track each
