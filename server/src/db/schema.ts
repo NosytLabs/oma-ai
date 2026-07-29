@@ -94,6 +94,37 @@ export const auditActionEnum = pgEnum("audit_action", [
 // =============================================================================
 // Field names and types are pinned to better-auth/adapters/drizzle contract.
 // DO NOT EDIT without bumping the Better Auth contract.
+//
+// NOTE: Better Auth's SIWE plugin expects a top-level `walletAddress`
+// table (model) — not a column on `user`.  It stores the EIP-4361
+// signed address per user so the same wallet can link multiple accounts.
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// SIWE wallet-address model  (required by better-auth siwe plugin)
+// ---------------------------------------------------------------------------
+export const walletAddress = pgTable(
+  "wallet_address",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .notNull(),
+    address: text("address").notNull(),
+    chainId: integer("chain_id").notNull(),
+    isPrimary: boolean("is_primary").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("uq_wallet_addr_user_chain")
+      .on(t.userId, t.chainId),
+    uniqueIndex("uq_wallet_addr")
+      .on(t.address)
+      .where(sql`${t.address} IS NOT NULL`),
+  ],
+);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),

@@ -3,20 +3,14 @@
 /**
  * /login — Better Auth sign-in entry point.
  *
- * Three sign-in methods, all driven by Better Auth:
+ * Two sign-in methods:
  *
- *   1. Magic link — passwordless email sign-in. Resend in prod,
- *      console.log fallback in dev. Works with any browser.
- *   2. Anonymous — "Continue as guest" — no PII, ephemeral session.
- *      Better Auth tracks it under a generated email domain so the
- *      session cookie still gets the same HttpOnly treatment.
- *   3. SIWE wallet — EIP-4361 sign-in on Base mainnet via wagmi.
+ *   1. Magic link — passwordless email sign-in via Resend (dev: console.log fallback).
+ *   2. SIWE wallet — EIP-4361 sign-in on Base mainnet via viem.
  *      Better Auth's siwe plugin owns the nonce + verify pipeline.
  *
  * Cross-cutting:
  *   - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
- *   - Use `signIn.magicLink()` / `signIn.anonymous()` / `signIn.siwe()`
- *     on the Better Auth client. No custom fetch plumbing.
  *   - Errors bubble through Better Auth — friendly messages shaped
  *     server-side; we just toast them here.
  */
@@ -24,11 +18,11 @@
 import {
 	AlertTriangle,
 	ArrowRight,
+	Coins,
 	Loader2,
 	Mail,
 	type LucideIcon,
 	Sparkles,
-	User as GuestIcon,
 	Wallet as WalletIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -41,9 +35,18 @@ import {
 } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useApiHealth } from "@/components/api-status";
-import { signIn } from "@/lib/auth-client";
+import { authClient, signIn } from "@/lib/auth-client";
+import {
+	connectWallet,
+	hasWallet,
+	OMA_CHAIN_ID,
+	signSiweMessage,
+} from "@/lib/wallet";
 
-type Method = "magic" | "anonymous" | "wallet";
+type Method = "magic" | "wallet";
+
+const SIWE_DOMAIN =
+	typeof window !== "undefined" ? window.location.host : "oma-ai.com";
 
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
@@ -110,36 +113,56 @@ function LoginInner() {
 		[email, next, toast, handleError],
 	);
 
-	const handleAnonymous = useCallback(async () => {
-		setError(null);
-		setSubmitting(true);
-		try {
-			await signIn.anonymous();
-			toast.success("Signed in as guest");
-			router.replace(next);
-		} catch (err) {
-			handleError(err, "Failed to start guest session");
-		} finally {
-			setSubmitting(false);
-		}
-	}, [router, next, toast, handleError]);
-
 	const handleSiwe = useCallback(async () => {
 		setError(null);
+		if (!hasWallet()) {
+			setError(
+				"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet, then reload.",
+			);
+			return;
+		}
 		setSubmitting(true);
 		try {
-			// Better Auth SIWE plugin handles nonce + verify.
-			// The plugin opens the configured wallet flow (window.ethereum)
-			// to capture the signature and forwards it to the server.
-			// For now we surface a "Connect wallet" CTA — the actual sign-in
-			// dance is wired through `signIn.siwe()` once the user has a
-			// connected wallet (window.ethereum injection) to sign with.
-			type SiweSignIn = (args: { walletAddress: string; callbackURL: string }) => Promise<void>;
-			const siwe = (signIn as unknown as { siwe?: SiweSignIn }).siwe;
-			if (!siwe) {
-				throw new Error("SIWE plugin not enabled on this deployment");
+			// 1. Prompt the user to connect a wallet and get their address.
+			const wallet = await connectWallet();
+			if (wallet.chainId !== OMA_CHAIN_ID) {
+				throw new Error(
+					`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
+				);
 			}
-			await siwe({ walletAddress: "", callbackURL: next });
+
+			// 2. Ask Better Auth for a server-issued nonce for this wallet.
+			const nonceResp = await authClient.siwe.nonce({
+				walletAddress: wallet.address,
+				chainId: wallet.chainId,
+			});
+			if (!nonceResp.data?.nonce) {
+				throw new Error(
+					nonceResp.error?.message ?? "Failed to get SIWE nonce from server",
+				);
+			}
+
+			// 3. Build and sign the EIP-4361 message with the user's wallet.
+			const { message, signature } = await signSiweMessage(
+				wallet.address,
+				nonceResp.data.nonce,
+				SIWE_DOMAIN,
+			);
+
+			// 4. Hand the signed payload back to Better Auth for verification.
+			//    The server's verifyMessage() callback (viem.recoverMessage)
+			//    runs; on success a session cookie is set on the response.
+			const verifyResp = await authClient.siwe.verify({
+				message,
+				signature,
+				walletAddress: wallet.address,
+				chainId: wallet.chainId,
+			});
+			if (verifyResp.error) {
+				throw new Error(verifyResp.error.message ?? "Signature verification failed");
+			}
+
+			toast.success("Wallet connected");
 			router.replace(next);
 		} catch (err) {
 			handleError(err, "Wallet sign-in failed");
@@ -159,7 +182,7 @@ function LoginInner() {
 							Choose how to sign in
 						</h2>
 						<p className="mt-1 text-xs text-text-muted">
-							Magic link by email, anonymous guest, or your wallet. No
+							Magic link by email or your wallet. No
 							password to lose.
 						</p>
 
@@ -218,19 +241,13 @@ function LoginInner() {
 									setError(null);
 								}}
 							/>
-							<TabButton
-								id="tab-guest"
-								label="Guest"
-								selected={method === "anonymous"}
-								icon={<GuestIcon className="h-3.5 w-3.5" aria-hidden="true" />}
-								onSelect={() => {
-									setMethod("anonymous");
-									setError(null);
-								}}
-							/>
 						</div>
 
 						<div className="mt-5">
+							<p className="text-sm text-text-secondary">
+								Passwordless email link or your base wallet — no
+								password to lose.
+							</p>
 							{method === "magic" && (
 								<form onSubmit={handleMagic} className="space-y-3">
 									<label
@@ -296,34 +313,9 @@ function LoginInner() {
 											"Connect wallet"
 										)}
 									</button>
-								</div>
-							)}
-
-							{method === "anonymous" && (
-								<div className="space-y-3">
-									<p className="text-sm text-text-secondary">
-										Get a free ephemeral session without an email or
-										wallet. You can link an account later from
-										settings.
-									</p>
-									<button
-										type="button"
-										onClick={() => void handleAnonymous()}
-										disabled={submitting || offline}
-										className="w-full py-3 text-sm font-semibold rounded-lg bg-accent text-void transition-colors hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										{submitting ? (
-											<>
-												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-												Starting…
-											</>
-										) : (
-											"Continue as guest →"
-										)}
-									</button>
-								</div>
-							)}
-						</div>
+							</div>
+						)}
+					</div>
 					</div>
 					<p className="mt-6 text-center text-xs text-text-muted">
 						By signing in you accept the{" "}
@@ -383,7 +375,7 @@ function BrandPitch() {
 			body: "OpenAI-compatible API. Multi-provider routing with provider failover.",
 		},
 		{
-			Icon: GuestIcon,
+			Icon: Coins,
 			title: "Crypto-native billing.",
 			body: "Credits in USDC on Base. x402 pay-per-request for agents — no card, no KYC.",
 		},

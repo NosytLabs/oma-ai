@@ -3,12 +3,8 @@
  *
  * Plugins:
  *   - magicLink:  passwordless email sign-in via Resend (dev: console.log fallback)
- *   - anonymous:  "Continue as guest" — creates a session without PII; the
- *                 user can later link an email or wallet via the settings page.
  *   - siwe:       Sign-In With Ethereum (EIP-4361) — binds a wallet to the
  *                 user row and recovers ENS names + avatars via viem.
- *   - nextCookies: must be LAST — refreshes cookies from Next.js server
- *                  actions / route handlers.
  *
  * Mounted by index.ts at `/api/auth/*`. Hono wraps the Fetch-style handler
  * directly. Server-side session reads in non-handler code use
@@ -17,54 +13,53 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
-  magicLink,
-  anonymous,
-  siwe,
+	magicLink,
+	siwe,
 } from "better-auth/plugins";
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
 import { db } from "./db/client.js";
-import { user } from "./db/schema.js";
+import * as schema from "./db/schema.js";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
 
 async function sendMagicLink({
-  email,
-  url,
+	email,
+	url,
 }: {
-  email: string;
-  url: string;
-  token: string;
-  metadata?: Record<string, unknown>;
+	email: string;
+	url: string;
+	token: string;
+	metadata?: Record<string, unknown>;
 }): Promise<void> {
-  if (!config.RESEND_API_KEY) {
-    logger.info(
-      { email, magicLink: url },
-      "[magicLink] (dev) no RESEND_API_KEY set — click the URL to sign in",
-    );
-    return;
-  }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: RESEND_FROM,
-      to: email,
-      subject: "Sign in to OMA-AI",
-      html: renderMagicLinkEmail(url),
-      text: `Sign in to OMA-AI\n\nClick this link to sign in (expires in 5 minutes):\n${url}\n\nIf you didn't request this, ignore this email.`,
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`[magicLink] Resend ${res.status}: ${body}`);
-  }
+	if (!config.RESEND_API_KEY) {
+		logger.info(
+			{ email, magicLink: url },
+			"[magicLink] (dev) no RESEND_API_KEY set — click the URL to sign in",
+		);
+		return;
+	}
+	const res = await fetch("https://api.resend.com/emails", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${config.RESEND_API_KEY}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			from: RESEND_FROM,
+			to: email,
+			subject: "Sign in to OMA-AI",
+			html: renderMagicLinkEmail(url),
+			text: `Sign in to OMA-AI\n\nClick this link to sign in (expires in 5 minutes):\n${url}\n\nIf you didn't request this, ignore this email.`,
+		}),
+	});
+	if (!res.ok) {
+		const body = await res.text();
+		throw new Error(`[magicLink] Resend ${res.status}: ${body}`);
+	}
 }
 
 function renderMagicLinkEmail(url: string): string {
@@ -87,25 +82,25 @@ function renderMagicLinkEmail(url: string): string {
 const ensClient = createPublicClient({ chain: mainnet, transport: http() });
 
 export const auth = betterAuth({
-  baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
-  secret: config.BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, { provider: "pg" }),
+	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
+	secret: config.BETTER_AUTH_SECRET,
+	database: drizzleAdapter(db, { provider: "pg", schema }),
 
-  user: {
-    additionalFields: {
-      evmAddress: {
-        type: "string",
-        required: false,
-        input: false,
-      },
-      isAnonymous: {
-        type: "boolean",
-        required: false,
-        input: false,
-        defaultValue: false,
-      },
-    },
-  },
+user: {
+		additionalFields: {
+			evmAddress: {
+				type: "string",
+				required: false,
+				input: false,
+			},
+			isAnonymous: {
+				type: "boolean",
+				required: false,
+				input: false,
+				defaultValue: false,
+			},
+		},
+	},
 
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -152,58 +147,13 @@ export const auth = betterAuth({
       disableSignUp: false,
     }),
 
-    anonymous({
-      emailDomainName: "guest.oma-ai.com",
-      onLinkAccount: async (data: any) => {
-        const anonymousUser = data?.anonymousUser?.user ?? data?.anonymousUser;
-        const newUser = data?.newUser?.user ?? data?.newUser;
-        if (!anonymousUser?.id || !newUser?.id) return;
-        if (anonymousUser.id === newUser.id) return;
-        try {
-          const { db: dbRaw } = await import("./db/client.js");
-          const {
-            deposits,
-            apiKeys,
-            creditBalances,
-            creditBatches,
-            usageRecords,
-          } = await import("./db/schema.js");
-          const { eq } = await import("drizzle-orm");
-          await dbRaw
-            .update(deposits)
-            .set({ userId: newUser.id })
-            .where(eq(deposits.userId, anonymousUser.id));
-          await dbRaw
-            .update(apiKeys)
-            .set({ userId: newUser.id })
-            .where(eq(apiKeys.userId, anonymousUser.id));
-          await dbRaw
-            .update(creditBalances)
-            .set({ userId: newUser.id })
-            .where(eq(creditBalances.userId, anonymousUser.id));
-          await dbRaw
-            .update(creditBatches)
-            .set({ userId: newUser.id })
-            .where(eq(creditBatches.userId, anonymousUser.id));
-          await dbRaw
-            .update(usageRecords)
-            .set({ userId: newUser.id })
-            .where(eq(usageRecords.userId, anonymousUser.id));
-          await dbRaw.delete(user).where(eq(user.id, anonymousUser.id));
-          logger.info(
-            { anonymousId: anonymousUser.id, newId: newUser.id },
-            "[anonymous] onLinkAccount migration complete",
-          );
-        } catch (err) {
-          logger.error({ err }, "[anonymous] onLinkAccount migration failed");
-        }
-      },
-    }),
-
     siwe({
       domain: config.PRIMARY_DOMAIN ?? "oma-ai.com",
       emailDomainName: "oma-ai.com",
-      anonymous: false,
+      // Wallet-only signups don't need an email. The wallet address is
+      // already a strong identity signal; we attach it to the user row
+      // via the additionalField on `user.evmAddress`.
+      anonymous: true,
       getNonce: async () => {
         return generateRandomString(32, "a-z", "A-Z", "0-9");
       },
