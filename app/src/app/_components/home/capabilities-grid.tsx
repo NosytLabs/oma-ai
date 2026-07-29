@@ -51,8 +51,8 @@ const CAPABILITIES: Capability[] = [
 	},
 	{
 		title: "Model Routing",
-		description:
-			"Venice primary, Surplus fallback, Gonka budget — automatic circuit-breaker failover and latency-optimized routing across all providers.",
+      description:
+        "Venice primary, Surplus fallback, OMA-AI budget — automatic circuit-breaker failover and latency-optimized routing across all providers.",
 		icon: GitBranch,
 		cell: "standard",
 	},

@@ -198,9 +198,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
 	matcher: [
+		"/dashboard",
 		"/dashboard/:path*",
+		"/admin",
 		"/admin/:path*",
+		"/settings",
 		"/settings/:path*",
+		"/deposit",
 		"/deposit/:path*",
 		// Public playground redirects (not auth-gated)
 		"/playground",
@@ -218,3 +222,5 @@ export const config = {
 		"/design/:path*",
 	],
 };
+
+export const runtime = "nodejs";
