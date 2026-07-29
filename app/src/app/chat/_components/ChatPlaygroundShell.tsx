@@ -171,7 +171,7 @@ function ShellContent({
 
 	// ─── Free message limit for guests (20/day) ───
 	const FREE_DAILY_LIMIT = 20;
-	const guestMsgCountRef = useRef(0);
+	const [guestMsgCount, setGuestMsgCount] = useState(0);
 
 	useEffect(() => {
 		if (isAuthenticated) return;
@@ -181,7 +181,7 @@ function ShellContent({
 			if (stored) {
 				const { date, count } = JSON.parse(stored);
 				const today = new Date().toISOString().slice(0, 10);
-				guestMsgCountRef.current = date === today ? count : 0;
+				setGuestMsgCount(date === today ? count : 0);
 			}
 		} catch {}
 	}, [isAuthenticated]);
@@ -189,8 +189,8 @@ function ShellContent({
 	const incrementGuestCount = useCallback(() => {
 		if (isAuthenticated) return true; // authed users have no limit
 		const today = new Date().toISOString().slice(0, 10);
-		const next = guestMsgCountRef.current + 1;
-		guestMsgCountRef.current = next;
+		const next = guestMsgCount + 1;
+		setGuestMsgCount(next);
 		try {
 			localStorage.setItem(
 				"oma-guest-msgs",
@@ -204,7 +204,7 @@ function ShellContent({
 			return false; // blocked
 		}
 		return true; // allowed
-	}, [isAuthenticated]);
+	}, [guestMsgCount, isAuthenticated]);
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -621,7 +621,7 @@ function ShellContent({
 								<LazyMessageInput
 									input={input}
 									setInput={setInput}
-									onSubmit={gatedSend}
+									onSubmit={() => { void gatedSend(); }}
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
@@ -634,7 +634,7 @@ function ShellContent({
 										{!isAuthenticated && (
 											<span className="text-accent/80">
 												{" "}
-												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCountRef.current)} free messages left
+												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCount)} free messages left
 											</span>
 										)}
 									</p>

@@ -38,12 +38,19 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import { Button } from "@/components/ui/button";
 
-const TIER_LABELS: Record<string, string> = {
-  budget: "Budget",
-  mid: "Mid-Range",
-  premium: "Premium",
-  frontier: "Frontier",
-};
+import { TIER_LABELS } from "./_lib/labels";
+
+function contextTokens(label: string): number {
+  // "1.5M" -> 1_500_000 ; "900K" -> 900_000 ; "32768" -> 32768 ; "—" -> 0
+  const s = label.trim();
+  if (!s || s === "—") return 0;
+  const last = s.slice(-1);
+  const num = parseFloat(s);
+  if (!Number.isFinite(num)) return 0;
+  if (last === "M") return num * 1_000_000;
+  if (last === "K") return num * 1_000;
+  return num;
+}
 
 const TIER_ICONS: Record<string, React.ReactNode> = {
   budget: <Zap className="h-4 w-4" />,
@@ -69,15 +76,13 @@ type SortKey =
   | "price-in"
   | "price-out"
   | "tier"
-  | "context"
-  | "newest";
+  | "context";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "name", label: "Name" },
   { value: "price-in", label: "Input Price" },
   { value: "price-out", label: "Output Price" },
   { value: "context", label: "Context Window" },
-  { value: "newest", label: "Newest" },
   { value: "tier", label: "Tier" },
 ];
 
@@ -101,15 +106,7 @@ function sortModels(models: Model[], sort: SortKey): Model[] {
       );
     case "context":
       return sorted.sort(
-        (a, b) =>
-          parseInt(b.contextLength.replace(/[KM]/g, "")) -
-          parseInt(a.contextLength.replace(/[KM]/g, ""))
-      );
-    case "newest":
-      // For now, we'll sort by name as we don't have a reliable date field
-      // In a real implementation, we'd use the created timestamp from the API
-      return sorted.sort((a, b) =>
-        a.name.localeCompare(b.name)
+        (a, b) => contextTokens(b.contextLength) - contextTokens(a.contextLength)
       );
     case "tier":
       return sorted.sort(
@@ -173,18 +170,16 @@ function ModelsPageInner() {
   // Extract unique values for filter options
   const allInputModalities = useMemo(() => {
     const modalities = new Set<string>();
-    safeModels.forEach(() => {
-      // Since we don't have modality info in our Model type, we'll need to get it from the raw API data
-      // For now, we'll use common modalities based on what we saw in the API
-      ["text", "image", "audio", "video"].forEach((mod) => modalities.add(mod));
+    safeModels.forEach((model) => {
+      (model.inputModalities ?? ["text"]).forEach((modality) => modalities.add(modality));
     });
     return Array.from(modalities).sort();
   }, [safeModels]);
 
   const allOutputModalities = useMemo(() => {
     const modalities = new Set<string>();
-    safeModels.forEach(() => {
-      ["text", "image", "audio", "video"].forEach((mod) => modalities.add(mod));
+    safeModels.forEach((model) => {
+      (model.outputModalities ?? ["text"]).forEach((modality) => modalities.add(modality));
     });
     return Array.from(modalities).sort();
   }, [safeModels]);
@@ -501,7 +496,7 @@ function ModelsPageInner() {
         </div>
 
         {/* Advanced Filters Sidebar */}
-        <div className="grid gap-6 mb-8">
+        <div className="grid gap-6 mb-8 lg:grid-cols-12">
           <div className="lg:col-span-3">
             <div className="space-y-4">
               
@@ -646,7 +641,7 @@ function ModelsPageInner() {
                     className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
                       capabilities.includes(cap)
                         ? "bg-accent text-void"
-                        : "bg-panel text-text-secondary border border-hover:border-accent"
+                        : "bg-panel text-text-secondary border border-border hover:border-accent"
                     }`}
                     >
                       {cap.charAt(0).toUpperCase() + cap.slice(1)}
@@ -655,7 +650,7 @@ function ModelsPageInner() {
                 </div>
               </div>
 
-              {/* Context Range Slider */}
+              {/* Context Range Slider (dual-thumb: low handles min, high handles max) */}
               <div>
                 <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
                   Context Window
@@ -665,26 +660,46 @@ function ModelsPageInner() {
                     <span>{formatContextRange(contextRange[0])}</span>
                     <span>{formatContextRange(contextRange[1])}</span>
                   </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={2000000}
-                    step={1000}
-                    value={JSON.stringify([contextRange[0], contextRange[1]])}
-                    onChange={(e) => {
-                      try {
-                        const [min, max] = JSON.parse(e.target.value);
-                        setContextRange([Math.min(min, max), Math.max(min, max)]);
-                      } catch {
-                        // Handle invalid JSON
-                      }
-                    }}
-                    className="w-full"
-                  />
+                  <div className="relative h-6">
+                    <input
+                      type="range"
+                      min={0}
+                      max={2000000}
+                      step={1000}
+                      value={contextRange[0]}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setContextRange([Math.min(v, contextRange[1]), contextRange[1]]);
+                      }}
+                      aria-label="Minimum context window"
+                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={2000000}
+                      step={1000}
+                      value={contextRange[1]}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setContextRange([contextRange[0], Math.max(v, contextRange[0])]);
+                      }}
+                      aria-label="Maximum context window"
+                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute top-1/2 -translate-y-1/2 h-1 bg-accent/40 rounded-full"
+                      style={{
+                        left: `${(contextRange[0] / 2000000) * 100}%`,
+                        right: `${100 - (contextRange[1] / 2000000) * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Price Range Slider */}
+              {/* Price Range Slider (dual-thumb) */}
               <div>
                 <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
                   Price (per 1M tokens)
@@ -694,22 +709,42 @@ function ModelsPageInner() {
                     <span>${formatPriceRange(priceRange[0])}</span>
                     <span>${formatPriceRange(priceRange[1])}</span>
                   </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1000}
-                    step={0.1}
-                    value={JSON.stringify([priceRange[0], priceRange[1]])}
-                    onChange={(e) => {
-                      try {
-                        const [min, max] = JSON.parse(e.target.value);
-                        setPriceRange([Math.min(min, max), Math.max(min, max)]);
-                      } catch {
-                        // Handle invalid JSON
-                      }
-                    }}
-                    className="w-full"
-                  />
+                  <div className="relative h-6">
+                    <input
+                      type="range"
+                      min={0}
+                      max={1000}
+                      step={0.1}
+                      value={priceRange[0]}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setPriceRange([Math.min(v, priceRange[1]), priceRange[1]]);
+                      }}
+                      aria-label="Minimum input price"
+                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={1000}
+                      step={0.1}
+                      value={priceRange[1]}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setPriceRange([priceRange[0], Math.max(v, priceRange[0])]);
+                      }}
+                      aria-label="Maximum input price"
+                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute top-1/2 -translate-y-1/2 h-1 bg-accent/40 rounded-full"
+                      style={{
+                        left: `${(priceRange[0] / 1000) * 100}%`,
+                        right: `${100 - (priceRange[1] / 1000) * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -865,7 +900,9 @@ function ModelsPageInner() {
                               </div>
                             </div>
                             <span className="sr-only">
-                              {`Input $${(typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens, output $${(typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?")} per 1M tokens`}
+                              {isNonChat && typeof model.pricePerUnit === "number"
+                                ? `Price ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}${model.priceUnit ?? ""}`
+                                : `Input $${typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens, output $${typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens`}
                             </span>
                           </Link>
                         );

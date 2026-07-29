@@ -132,8 +132,8 @@ const SOCIAL_LINKS = [
 		handle: "NosytLabs/oma-ai",
 	},
 	{
-		label: "Twitter",
-		href: "https://twitter.com/oma_ai",
+		label: "X (Twitter)",
+		href: "https://x.com/oma_ai",
 		icon: TwitterIcon,
 		handle: "@oma_ai",
 	},

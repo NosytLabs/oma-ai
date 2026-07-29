@@ -40,10 +40,10 @@ const tierStyles: Record<
 		border: "var(--color-border)",
 	},
 	frontier: {
-		bg: "bg-violet/20",
-		text: "text-violet",
-		glow: "var(--color-violet-dim)",
-		border: "var(--color-violet)",
+		bg: "bg-amber/20",
+		text: "text-amber",
+		glow: "var(--color-amber-dim)",
+		border: "var(--color-amber)",
 	},
 	premium: {
 		bg: "bg-violet/20",
@@ -158,7 +158,17 @@ export function ModelSelector({
 			const name = displayName(m.id, m.name);
 			const matchesSearch =
 				!q || name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
-			const matchesTier = tierFilter === "all" || m.category === tierFilter;
+			// Tier pills (incl. reasoning/coding/uncensored) match against
+			// `category`. To make the capability pills functional, derive
+			// them from the id/name when category doesn't carry the tag.
+			// (Deferred: plumb capabilities through ModelOption.)
+			let matchesTier = tierFilter === "all";
+			if (!matchesTier) {
+				if (m.category === tierFilter) matchesTier = true;
+				else if (tierFilter === "reasoning" && /(?:reason|r1|deepseek-r|o1|o3)/i.test(m.id)) matchesTier = true;
+				else if (tierFilter === "coding" && /(?:coder|codex|codestral|deepseek-coder|qwen.*coder)/i.test(m.id)) matchesTier = true;
+				else if (tierFilter === "uncensored" && /(?:uncensored|heretic|llama-3.1-unc)/i.test(m.id)) matchesTier = true;
+			}
 			return matchesSearch && matchesTier;
 		});
 	}, [search, tierFilter, MODELS]);
@@ -191,7 +201,7 @@ export function ModelSelector({
 			>
 				{/* Animated pulse dot */}
 				<span className="relative flex h-2 w-2 shrink-0">
-					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+					<span className="motion-reduce:hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
 					<span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
 				</span>
 				<span className="text-sm text-text-secondary font-mono truncate min-w-0 max-w-[12rem]">

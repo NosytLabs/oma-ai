@@ -231,7 +231,7 @@ export const MessageInputRedesigned = forwardRef<
 							>
 							<m.button
 								type="button"
-								onClick={onSubmit}
+								onClick={() => onSubmit()}
 								disabled={!hasInput || disabled}
 								title={disabled ? disabledReason ?? "Send disabled" : undefined}
 								aria-label="Send message"

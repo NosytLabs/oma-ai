@@ -189,10 +189,10 @@ export const TIER_COLORS: Record<
 		badge: "bg-violet/20 text-violet",
 	},
 	frontier: {
-		bg: "bg-violet/10",
-		text: "text-violet",
-		border: "border-violet/30",
-		badge: "bg-violet/20 text-violet",
+		bg: "bg-amber/10",
+		text: "text-amber",
+		border: "border-amber/30",
+		badge: "bg-amber/20 text-amber",
 	},
 };
 
@@ -363,6 +363,8 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
  */
 interface ApiModelEntry {
 	id: string;
+	/** Customer-facing name from the server catalog; never derive this when present. */
+	display_name?: string;
 	pricing: {
 		prompt: string;
 		completion: string | null;
@@ -420,9 +422,8 @@ export async function loadModels(): Promise<Model[]> {
 			if (!res.ok) throw new Error(`API returned ${res.status}`);
 			const json: ApiModelsResponse = await res.json();
 			const models: Model[] = json.data
-				.filter((entry: ApiModelEntry) => entry.category !== "video")
 				.map((entry: ApiModelEntry) => {
-					const name = deriveNameFromId(entry.id);
+					const name = entry.display_name?.trim() || deriveNameFromId(entry.id);
 					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");
 					const completionRaw = parseFloat(entry.pricing?.completion ?? "");
 					const inputPrice = Number.isFinite(promptRaw)
@@ -452,7 +453,10 @@ const tier: Tier =
 						outputPricePer1M: outputPrice,
 						pricePerUnit: modality === "chat" ? undefined : (Number(entry.pricing?.generation) || Number(entry.pricing?.audio_second) || inputPrice),
 						priceUnit: derivePriceUnit(modality, entry.pricing),
-						capabilities: deriveCapabilities(entry.id, name, undefined, entry.supported_parameters),
+						capabilities:
+							modality === "chat"
+								? deriveCapabilities(entry.id, name, undefined, entry.supported_parameters)
+								: [],
 						modelId: entry.id,
 						inputModalities: entry.architecture?.input_modalities ?? ["text"],
 						outputModalities: entry.architecture?.output_modalities ?? ["text"],

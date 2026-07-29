@@ -8,6 +8,9 @@ import {
 } from "@/app/models/_lib/capabilities";
 import { TIER_LABELS } from "@/app/models/_lib/labels";
 import { DEFAULT_API_URL } from "@/lib/config";
+
+// Derive canonical/OG host from env so preview/staging don't emit prod tags.
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 import {
   MODELS,
   deriveCapabilities,
@@ -105,11 +108,11 @@ export async function generateMetadata({
       openGraph: {
         title,
         description,
-        url: `https://oma-ai.com/models/${model.id}`,
+        url: `${SITE_URL}/models/${model.id}`,
         images: [{ url: "/og-image.webp", width: 1280, height: 720 }],
       },
       twitter: { card: "summary_large_image", title, description },
-      alternates: { canonical: `https://oma-ai.com/models/${model.id}` },
+      alternates: { canonical: `${SITE_URL}/models/${model.id}` },
     };
   }
   // Long-tail model from the live catalog — minimal metadata.
@@ -119,7 +122,7 @@ export async function generateMetadata({
   return {
     title: name,
     description: `${name} — served via the OMA gateway. ${formatLivePrice(livePricePer1M(live.pricing?.prompt))}/M input, ${formatLivePrice(livePricePer1M(live.pricing?.completion))}/M output.`,
-    alternates: { canonical: `https://oma-ai.com/models/${slug}` },
+    alternates: { canonical: `${SITE_URL}/models/${slug}` },
   };
 }
 

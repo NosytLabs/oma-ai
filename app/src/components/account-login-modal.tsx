@@ -251,7 +251,16 @@ export function AccountLoginModal({
 			}
 
 			const res = await fetch(
-				`${typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/account/login`,
+				`${
+					typeof window !== "undefined"
+						? "/api"
+						: process.env.NEXT_PUBLIC_API_URL ||
+						  (() => {
+								throw new Error(
+									"NEXT_PUBLIC_API_URL is not set on the server. The login modal must be triggered from the client.",
+								);
+							})()
+				}/auth/account/login`,
 				{
 					method: "POST",
 					headers,
@@ -329,7 +338,16 @@ export function AccountLoginModal({
 			}
 
 			const res = await fetch(
-				`${typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/account/create`,
+				`${
+					typeof window !== "undefined"
+						? "/api"
+						: process.env.NEXT_PUBLIC_API_URL ||
+						  (() => {
+								throw new Error(
+									"NEXT_PUBLIC_API_URL is not set on the server. The account-create modal must be triggered from the client.",
+								);
+							})()
+				}/auth/account/create`,
 				{
 					method: "POST",
 					headers,

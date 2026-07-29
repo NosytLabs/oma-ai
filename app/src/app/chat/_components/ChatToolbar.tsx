@@ -172,7 +172,6 @@ export function ChatToolbar({
 					role="tab"
 					onClick={() => setMediaMode("text")}
 					aria-selected={mediaMode === "text"}
-					aria-pressed={mediaMode === "text"}
 					title="Text chat (free OMA-AI models available)"
 					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
@@ -184,7 +183,6 @@ export function ChatToolbar({
 					role="tab"
 					onClick={() => setMediaMode("image")}
 					aria-selected={mediaMode === "image"}
-					aria-pressed={mediaMode === "image"}
 					title="Image generation (credits)"
 					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
@@ -196,7 +194,6 @@ export function ChatToolbar({
 					role="tab"
 					onClick={() => setMediaMode("video")}
 					aria-selected={mediaMode === "video"}
-					aria-pressed={mediaMode === "video"}
 					title="Video generation (credits)"
 					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
