@@ -191,8 +191,6 @@ app.route("/", networkRoutes);
 // path prefixes internally.
 app.route("/", adminObservabilityRoutes);
 app.route("/", logRoutes);
-app.route("/", openapiRoutes);
-app.route("/", providersMetaRoutes);
 
 app.notFound((c) => c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404));
 
