@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import { MotionProvider } from "@/components/motion-provider";
-import { ConnectWalletWrapper } from "@/components/ConnectWalletWrapper";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
@@ -107,15 +106,9 @@ export default function RootLayout({
 		>
 			<head>
 				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){document.documentElement.removeAttribute('data-theme');}else{document.documentElement.setAttribute('data-theme',t);}}document.documentElement.style.colorScheme='dark';}catch(e){}})();` }} />
-				<script
-					dangerouslySetInnerHTML={{
-						__html: `(function(){try{if(typeof window==='undefined')return;var hasWallet=!!(window.ethereum);if(hasWallet)return;var isWagmiChunk=function(src){if(!src)return false;return /wagmi|wallet-connect|@waku|coinbase/i.test(String(src));};var orig=window.onerror;window.onerror=function(msg,src,l,c,e){if(msg&&String(msg).indexOf("checkCrossOriginOpenerPolicy")!==-1){return true;}if(msg&&String(msg).indexOf("Cannot read properties of undefined")!==-1&&isWagmiChunk(src)){return true;}if(typeof orig==='function'){return orig.apply(this,arguments);}return false;};window.addEventListener('unhandledrejection',function(ev){var r=ev&&ev.reason;var m=r&&(r.message||String(r));var st=r&&r.stack;if(m&&String(m).indexOf("checkCrossOriginOpenerPolicy")!==-1){ev.preventDefault();return;}if(m&&String(m).indexOf("Cannot read properties of undefined")!==-1&&isWagmiChunk(st)){ev.preventDefault();}});}catch(_){}})();`,
-					}}
-				/>
 				<OrganizationJsonLd />
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
-				{/* Canonicals come from per-page metadata.alternates — do not hardcode homepage here. */}
 			</head>
 			<body className="min-h-screen bg-void text-text font-sans antialiased">
 				<a
@@ -128,20 +121,15 @@ export default function RootLayout({
 					<ToastProviderClient>
 						<MotionProvider>
 							<Providers>
-								{/* WalletProvider must wrap page content — not just the navbar —
-								    or dashboard/settings useWallet() stays on the default context
-								    (always signed-out). */}
-								<ConnectWalletWrapper>
-									<Navbar />
-									<main
-										id="main-content"
-										className="min-w-0 max-w-[100vw] overflow-x-clip pt-14 page-enter"
-										tabIndex={-1}
-									>
-										<ErrorBoundary>{children}</ErrorBoundary>
-									</main>
-									<Footer />
-								</ConnectWalletWrapper>
+								<Navbar />
+								<main
+									id="main-content"
+									className="min-w-0 max-w-[100vw] overflow-x-clip pt-14 page-enter"
+									tabIndex={-1}
+								>
+									<ErrorBoundary>{children}</ErrorBoundary>
+								</main>
+								<Footer />
 							</Providers>
 						</MotionProvider>
 					</ToastProviderClient>

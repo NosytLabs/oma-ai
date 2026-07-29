@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { useToast } from "@/components/ui/Toast";
-import { buildAuthHeaders } from "@/lib/cookies";
+import { buildAuthHeaders } from "@/lib/browser-cookies";
 
 interface VideoModel {
 	id: string;
@@ -23,13 +23,6 @@ interface VideoModel {
 }
 
 const VIDEO_MODELS: VideoModel[] = [
-	{
-		id: "seedance-2-0-text-to-video",
-		name: "Seedance 2.0",
-		provider: "Venice AI",
-		mode: "text-to-video",
-		price: 0.9,
-	},
 	{
 		id: "kling-v3-pro-text-to-video",
 		name: "Kling V3 Pro",
@@ -70,7 +63,7 @@ export function VideoGenerationPanel() {
 		"text-to-video",
 	);
 	const [prompt, setPrompt] = useState("");
-	const [model, setModel] = useState("seedance-2-0-text-to-video");
+	const [model, setModel] = useState("kling-v3-pro-text-to-video");
 	const [aspectRatio, setAspectRatio] = useState("16:9");
 	const [duration, setDuration] = useState("5s");
 	const [resolution, setResolution] = useState("720p");

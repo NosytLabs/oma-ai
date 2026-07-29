@@ -5,11 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import nextDynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
-import { ConnectWalletView } from "@/components/dashboard/ConnectWalletView";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { log } from "@/lib/logger";
 import { type TabId, type TimeRangeId } from "./_constants";
@@ -19,8 +17,6 @@ import { useDashboardData } from "./_hooks/useDashboardData";
 import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
 import { useDashboardStats } from "./_hooks/useDashboardStats";
 
-// Lazy-load the 599-line grid + chart components. Initial paint shows
-// the header + skeleton; the grid hydrates after data is fetched.
 const DashboardGrid = nextDynamic(
 	() =>
 		import("./_components/DashboardGrid").then((m) => ({
@@ -42,20 +38,28 @@ const DashboardGrid = nextDynamic(
 
 const RECENT_REQUESTS_LIMIT = 20;
 
+/** Inline auth-loading skeleton — replaces the deleted AuthSkeleton. */
+function AuthGateSkeleton() {
+	return (
+		<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+			<div className="w-full max-w-md space-y-3">
+				<div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
+				<div className="mx-auto h-4 w-48 animate-pulse rounded bg-surface-elevated/40" />
+				<div className="mx-auto h-3 w-32 animate-pulse rounded bg-surface-elevated/30" />
+			</div>
+		</div>
+	);
+}
+
 export default function DashboardPage() {
-	const { isAuthenticated, isDemo, connectEvm, isReady } = useWallet();
+	const { isAuthenticated, isReady, evmAddress } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
 
-	// Sync the active tab with ?tab=... in the URL. Validates against the
-	// TABS list so unknown values fall back to "overview" instead of
-	// showing a blank page. Allows deep-links like /dashboard?tab=health.
-	// TABS is a module-level constant — memoize once so the effect deps are stable.
 	const validTabIds = useMemo(() => TABS.map((t) => t.id), []);
 	const initialTab: TabId =
-		(searchParams?.get("tab") &&
-		validTabIds.includes(searchParams?.get("tab") as TabId))
+		(searchParams?.get("tab") && validTabIds.includes(searchParams?.get("tab") as TabId))
 			? (searchParams?.get("tab") as TabId)
 			: "overview";
 
@@ -70,7 +74,7 @@ export default function DashboardPage() {
 		error,
 		backendUnavailable,
 		refresh,
-	} = useDashboardData({ isAuthenticated, isDemo });
+	} = useDashboardData({ isAuthenticated });
 
 	const [page, setPage] = useState(1);
 	const [creating, setCreating] = useState(false);
@@ -83,7 +87,6 @@ export default function DashboardPage() {
 	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
 
-	// Keep tab state in sync with ?tab= (back/forward + deep links).
 	useEffect(() => {
 		const raw = searchParams?.get("tab");
 		const next =
@@ -100,9 +103,6 @@ export default function DashboardPage() {
 		window.history.replaceState({}, "", url.toString());
 	}, []);
 
-	// All dashboard aggregates (today/month deltas, filtered ranges, error
-	// counts, latency avg, etc.) are derived in this hook so the page can
-	// stay focused on data fetching and UI wiring.
 	const {
 		todayUsage,
 		filteredUsage,
@@ -165,18 +165,14 @@ export default function DashboardPage() {
 
 	const handleCreateKey = useCallback(async () => {
 		if (!newKeyName.trim()) return;
-		if (isDemo) {
-			toast.error("Demo mode is read-only — sign in to create API keys");
-			return;
-		}
 		setCreating(true);
 		try {
 			const key = await api.auth.createKey(newKeyName.trim());
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
-			// Install the key as the HttpOnly oma_api_key cookie so the
-			// browser chat/playground (direct-to-backend SSE) authenticates.
+			// Install the raw key as the HttpOnly oma_api_key cookie so the
+			// browser-direct SSE chat can authenticate against the backend.
 			void api.auth.installKeyCookie(key.key);
 			queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) => [
 				...(prev ?? []),
@@ -194,14 +190,10 @@ export default function DashboardPage() {
 		} finally {
 			setCreating(false);
 		}
-	}, [isDemo, newKeyName, queryClient, toast]);
+	}, [newKeyName, queryClient, toast]);
 
 	const handleRevokeKey = useCallback(
 		async (keyId: string) => {
-			if (isDemo) {
-				toast.error("Demo mode is read-only — sign in to manage keys");
-				return;
-			}
 			setRevokingId(keyId);
 			try {
 				await api.auth.deleteKey(keyId);
@@ -215,7 +207,7 @@ export default function DashboardPage() {
 				setRevokingId(null);
 			}
 		},
-		[isDemo, queryClient, toast],
+		[queryClient, toast],
 	);
 
 	const hasAnyData = Boolean(balance) || apiKeys.length > 0 || usage.length > 0;
@@ -225,40 +217,57 @@ export default function DashboardPage() {
 		setShowCreateForm(true);
 	}, [handleTabChange]);
 
-	// Wait for session restore before the sign-in wall. If meta/session is
-	// already known (middleware seeds oma_session_meta), show the app even
-	// while /api/user is still finishing — only block when we truly don't know.
-	const content = !isReady && !isAuthenticated ? (
-		<>
-									<h2 className="sr-only">Dashboard</h2>
-									<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-										<AuthSkeleton />
-									</div>
-		</>
+	const content = !isReady ? (
+		<AuthGateSkeleton />
 	) : !isAuthenticated ? (
-		<>
+		<div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 px-4 py-10">
 			<h2 className="sr-only">Dashboard</h2>
-			<ConnectWalletView onConnect={connectEvm} />
-		</>
+			<div className="surface-card w-full max-w-md p-8 text-center">
+				<p className="font-mono text-xs uppercase tracking-widest text-accent">
+					Sign in required
+				</p>
+				<h1 className="mt-2 text-2xl font-bold tracking-tight text-text-bright">
+					Open the dashboard
+				</h1>
+				<p className="mt-2 text-sm text-text-secondary">
+					Manage API keys, watch live credit balance, and review recent
+					inference usage.
+				</p>
+				<div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
+					<Link
+						href="/login?next=/dashboard"
+						className="inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+					>
+						Sign in →
+					</Link>
+					<Link
+						href="/deposit"
+						className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:border-accent/40 hover:text-text-bright"
+					>
+						Deposit USDC
+					</Link>
+				</div>
+			</div>
+		</div>
 	) : (
 		<div>
 			<div
 				id="dashboard-content"
 				className="bg-void text-text-secondary selection:bg-surface selection:text-text"
 			>
-				{isDemo && (
+				{evmAddress && (
 					<div
 						role="status"
 						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
 					>
 						<span className="uppercase tracking-wider">
-							Demo mode — mock data only. Sign in to use real credits &amp; keys.
+							Wallet connected · {evmAddress.slice(0, 6)}…{evmAddress.slice(-4)}
 						</span>
 						<Link
-							href="/login?next=/dashboard"
+							href="/settings"
 							className="shrink-0 rounded bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
-							Sign in →
+							Manage →
 						</Link>
 					</div>
 				)}

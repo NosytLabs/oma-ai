@@ -11,11 +11,17 @@ export interface NonceResponse {
 
 export interface User {
 	id: string;
-	address: string;
-	evmAddress: string | null;
-	accountNumber: string | null;
+	email: string;
+	emailVerified: boolean;
+	name: string;
+	image?: string | null;
 	createdAt: string;
-	/** Whether TOTP 2FA is enabled on the account. */
+	updatedAt?: string;
+	isAnonymous?: boolean | null;
+	// OMA extensions (mirrored from Better Auth's additionalFields in
+	// server/src/auth.ts).
+	evmAddress?: string | null;
+	/** Whether TOTP 2FA is enabled on the account (placeholder for future). */
 	twoFactorEnabled?: boolean;
 	/** Number of unused backup codes remaining after 2FA setup. */
 	backupCodesRemaining?: number;

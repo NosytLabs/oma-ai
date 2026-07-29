@@ -5,42 +5,25 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	Activity,
 	AlertTriangle,
-	CreditCard,
-	Hexagon,
 	Key,
-	KeyRound,
 	type LucideIcon,
 	Shield,
 	Sparkles,
 	User as UserIcon,
-	Wallet,
 	X,
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { type ApiKey, api, type ApiKeyWithSecret, type Session, type User } from "@/lib/api";
 import { copyToClipboard } from "@/lib/clipboard";
-
-const AccountLoginModal = nextDynamic(
-	() =>
-		import("@/components/account-login-modal").then((m) => m.AccountLoginModal),
-	{ ssr: false },
-);
 
 const ProfileSection = nextDynamic(() =>
 	import("./_components/ProfileSection").then((m) => ({
 		default: m.ProfileSection,
-	})),
-);
-const WalletsSection = nextDynamic(() =>
-	import("./_components/WalletsSection").then((m) => ({
-		default: m.WalletsSection,
 	})),
 );
 const ApiKeysSection = nextDynamic(() =>
@@ -58,13 +41,8 @@ const DangerZoneSection = nextDynamic(() =>
 		default: m.DangerZoneSection,
 	})),
 );
-const BillingSection = nextDynamic(() =>
-	import("./_components/BillingSection").then((m) => ({
-		default: m.BillingSection,
-	})),
-);
 
-type SettingsTab = "profile" | "wallets" | "api-keys" | "billing" | "sessions" | "danger";
+type SettingsTab = "profile" | "api-keys" | "sessions" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -81,22 +59,10 @@ const TABS: TabDef[] = [
 		description: "Account details",
 	},
 	{
-		id: "wallets",
-		label: "Wallets",
-		icon: Wallet,
-		description: "Wallets & account number",
-	},
-	{
 		id: "api-keys",
 		label: "API keys",
 		icon: Key,
 		description: "Programmatic access",
-	},
-	{
-		id: "billing",
-		label: "Billing",
-		icon: CreditCard,
-		description: "Auto-reload & budget alerts",
 	},
 	{
 		id: "sessions",
@@ -115,9 +81,7 @@ const TABS: TabDef[] = [
 /** Compact labels for the mobile horizontal tab strip (avoid truncation). */
 const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	profile: "Profile",
-	wallets: "Wallets",
 	"api-keys": "Keys",
-	billing: "Billing",
 	sessions: "Sessions",
 	danger: "Danger",
 };
@@ -150,90 +114,45 @@ function currentSessionFallback(): Session {
 }
 
 export default function SettingsPage() {
-	const { isAuthenticated, isDemo, connectEvm, disconnect, isReady } =
-		useWallet();
+	const { isAuthenticated, isReady, evmAddress, signOut } = useAuth();
 	const toast = useToast();
 	const searchParams = useSearchParams();
 
 	const [user, setUser] = useState<User | null>(null);
 	const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-	const [sessions, setSessions] = useState<Session[]>([]);
+	const [sessions, setSessions] = useState<Session[]>([currentSessionFallback()]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	const [deleting, setDeleting] = useState(false);
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [copied, setCopied] = useState<string | null>(null);
-	const [unlinkingEvm, setUnlinkingEvm] = useState(false);
-	const [generatingAccount, setGeneratingAccount] = useState(false);
-	const [csrfToken, setCsrfToken] = useState<string | null>(null);
-	const [showAccountLogin, setShowAccountLogin] = useState(false);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
-	// Deep-link: /settings?tab=wallets | ?tab=keys (alias for api-keys)
+	// Deep-link: /settings?tab=keys (alias for api-keys)
 	useEffect(() => {
 		const parsed = parseSettingsTab(searchParams?.get("tab") ?? null);
 		if (parsed) setActiveTab(parsed);
 	}, [searchParams]);
 
 	useEffect(() => {
-		let cancelled = false;
-		api.auth
-			.getCsrfToken()
-			.then((res) => {
-				if (!cancelled && res.token) setCsrfToken(res.token);
-			})
-			.catch(() => {
-							console.warn("CSRF token fetch failed — mutations may 403");
-						});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-
-	useEffect(() => {
 		if (!isAuthenticated) return;
 		let cancelled = false;
-		if (isDemo) {
-			setUser({
-				id: "demo-user",
-				address: "0x0000…0000",
-				evmAddress: null,
-				accountNumber: null,
-				createdAt: new Date().toISOString(),
-				twoFactorEnabled: false,
-			});
-			setApiKeys([]);
-			setSessions([
-				{
-					id: "demo-session",
-					device: "Demo preview (mock data)",
-					ip: "—",
-					lastActive: new Date().toISOString(),
-					current: true,
-				},
-			]);
-			setLoading(false);
-			return;
-		}
 		const fetchData = async () => {
 			setLoading(true);
 			setError(null);
 			try {
-				const [userData, keysData, sessionsData] = await Promise.all([
+				const [userData, keysData] = await Promise.all([
 					api.auth.getUser(),
 					api.auth.listKeys(),
-					api.auth.listSessions(),
 				]);
 				if (!cancelled) {
-					setUser(userData);
-					setApiKeys(keysData);
-					// Backend multi-session list is not shipped yet — always show
-					// at least the current browser session so the tab is useful.
-					const list = sessionsData?.length
-						? sessionsData
-						: [currentSessionFallback()];
-					setSessions(list);
+					setUser(userData ?? null);
+					setApiKeys(keysData.keys);
+					// Multi-session listing endpoint is not wired yet — always
+					// show at least the current browser session so the tab is
+					// useful.
+					setSessions([currentSessionFallback()]);
 				}
 			} catch (e: unknown) {
 				if (!cancelled) {
@@ -248,7 +167,7 @@ export default function SettingsPage() {
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthenticated, isDemo]);
+	}, [isAuthenticated]);
 
 	const handleCopy = useCallback(
 		(text: string, id: string) => {
@@ -265,23 +184,10 @@ export default function SettingsPage() {
 		[toast],
 	);
 
-	const handleUnlinkEvm = async () => {
-		setUnlinkingEvm(true);
-		try {
-			await api.auth.unlinkWallet("evm");
-			disconnect();
-		} catch (e: unknown) {
-			setError(e instanceof Error ? e.message : "Failed to unlink EVM wallet");
-		} finally {
-			setUnlinkingEvm(false);
-		}
-	};
-
 	const handleLogout = async () => {
 		setLoggingOut(true);
 		try {
-			await api.auth.logout();
-			disconnect();
+			await signOut();
 			window.location.href = "/";
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Logout failed");
@@ -293,7 +199,6 @@ export default function SettingsPage() {
 		setDeleting(true);
 		try {
 			await api.auth.deleteAccount();
-			disconnect();
 			window.location.href = "/";
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Account deletion failed");
@@ -301,36 +206,19 @@ export default function SettingsPage() {
 		}
 	};
 
-	const handleGenerateAccountNumber = async () => {
-		setGeneratingAccount(true);
-		try {
-			const result = await api.auth.createAccountNumber();
-			setUser((prev) =>
-				prev ? { ...prev, accountNumber: result.accountNumber } : null,
-			);
-			toast.success("Account number generated");
-		} catch (e: unknown) {
-			setError(
-				e instanceof Error ? e.message : "Failed to generate account number",
-			);
-		} finally {
-			setGeneratingAccount(false);
-		}
-	};
-
-	const handleRevokeKey = async (keyId: string) => {
+	const handleRevokeKey = useCallback(async (keyId: string) => {
 		await api.auth.deleteKey(keyId);
 		setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
-	};
+	}, []);
 
 	const handleCreateKey = useCallback(async (key: ApiKeyWithSecret) => {
 		setApiKeys((prev) => [...prev, key]);
 	}, []);
 
-	if (!isReady && !isAuthenticated) {
+	if (!isReady) {
 		return (
 			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-				<AuthSkeleton />
+				<div className="h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
 			</div>
 		);
 	}
@@ -354,8 +242,7 @@ export default function SettingsPage() {
 						Sign in to manage your account
 					</h1>
 					<p className="mb-6 text-center text-sm text-text-secondary">
-						Settings covers your wallets, account number, sessions, and API
-						keys.
+						Settings covers your profile, sessions, and API keys.
 					</p>
 
 					<ul className="mb-6 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
@@ -377,55 +264,32 @@ export default function SettingsPage() {
 					</ul>
 
 					<div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-						<Button
-							variant="primary"
-							size="md"
-							className="w-full sm:w-auto"
-							onClick={() => connectEvm()}
-							leftIcon={<Hexagon className="h-4 w-4" aria-hidden="true" />}
-						>
-							Connect wallet
-						</Button>
-						<Button
-							variant="secondary"
-							size="md"
-							className="w-full sm:w-auto"
-							onClick={() => setShowAccountLogin(true)}
-							leftIcon={<KeyRound className="h-4 w-4" aria-hidden="true" />}
-						>
-							Use account number
-						</Button>
-					</div>
-					<div className="mt-4 flex flex-col items-center gap-2 text-center">
 						<Link
-							href="/login?method=account&next=/settings"
-							className="text-xs text-accent underline-offset-2 hover:underline"
+							href="/login?next=/settings"
+							className="inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
 						>
-							Open full login →
+							Sign in →
 						</Link>
 						<Link
-							href="/dashboard?demo=1"
+							href="/dashboard"
 							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text"
 						>
 							<Sparkles className="h-3 w-3" aria-hidden="true" />
-							Try the dashboard in demo mode
+							Back to dashboard
 						</Link>
 					</div>
+					{evmAddress && (
+						<p className="mt-4 text-center text-[10px] font-mono text-text-muted">
+							Connected wallet: {evmAddress}
+						</p>
+					)}
 				</m.div>
-
-				{showAccountLogin && (
-					<AccountLoginModal
-						onClose={() => setShowAccountLogin(false)}
-						initialCsrfToken={csrfToken}
-					/>
-				)}
 			</div>
 		);
 	}
 
 	return (
 		<div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
-			{/* Page header */}
 			<div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
 				<m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
 					<h1 className="text-2xl font-bold tracking-tight text-text-bright">
@@ -472,11 +336,10 @@ export default function SettingsPage() {
 			</AnimatePresence>
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8 min-w-0">
-				{/* Tabs: equal-width chip row on mobile (all 5 visible), sidebar on lg+ */}
 				<div
 					role="tablist"
 					aria-label="Settings sections"
-					className="grid w-full min-w-0 grid-cols-3 gap-1 pb-1 sm:grid-cols-6 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+					className="grid w-full min-w-0 grid-cols-3 gap-1 pb-1 sm:grid-cols-4 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
 				>
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
@@ -521,7 +384,6 @@ export default function SettingsPage() {
 					})}
 				</div>
 
-				{/* Tab panel — section titles live inside each panel (no duplicate mobile label) */}
 				<div className="min-w-0">
 					{loading && !user ? (
 						<div className="space-y-3" aria-busy="true" aria-label="Loading settings">
@@ -548,19 +410,9 @@ export default function SettingsPage() {
 								{activeTab === "profile" && (
 									<ProfileSection
 										user={user}
+										evmAddress={evmAddress}
 										onUserChange={setUser}
 										onError={setError}
-									/>
-								)}
-								{activeTab === "wallets" && (
-									<WalletsSection
-										user={user}
-										onCopy={handleCopy}
-										copied={copied}
-										onGenerateAccountNumber={handleGenerateAccountNumber}
-										generatingAccount={generatingAccount}
-										onUnlinkEvm={handleUnlinkEvm}
-										unlinkingEvm={unlinkingEvm}
 									/>
 								)}
 								{activeTab === "api-keys" && (
@@ -572,7 +424,6 @@ export default function SettingsPage() {
 										onCreateKey={handleCreateKey}
 									/>
 								)}
-								{activeTab === "billing" && <BillingSection />}
 								{activeTab === "sessions" && (
 									<SessionsSection sessions={sessions} />
 								)}

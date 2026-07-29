@@ -2,12 +2,10 @@
 
 import nextDynamic from "next/dynamic";
 import { CHART_PALETTE } from "@/components/ui/charts/shared";
-import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { api, type BalanceResponse, type CreditTransaction } from "@/lib/api";
-import { DEMO_BALANCE, DEMO_TRANSACTIONS } from "@/lib/demo-fixtures";
 
 const BarChartComponent = nextDynamic(
 	() => import("@/components/ui/charts").then((m) => m.BarChartComponent),
@@ -73,14 +71,14 @@ function mapCreditTransaction(tx: CreditTransaction): CreditHistoryItem {
 }
 
 export default function CreditsPage() {
-	const { isAuthenticated, isDemo, connectEvm, isReady } = useWallet();
+	const { isAuthenticated, isReady } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 
 	const balanceQuery = useQuery({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
-		enabled: isAuthenticated && !isDemo,
+		enabled: isAuthenticated,
 		staleTime: 60_000,
 	});
 
@@ -90,23 +88,18 @@ export default function CreditsPage() {
 			const res = await api.creditHistory.list(50);
 			return res.transactions.map(mapCreditTransaction);
 		},
-		enabled: isAuthenticated && !isDemo,
+		enabled: isAuthenticated,
 		staleTime: 60_000,
 	});
 
-	const balance: BalanceResponse | null = isDemo
-		? DEMO_BALANCE
-		: (balanceQuery.data ?? null);
-	const loading = isDemo ? false : balanceQuery.isLoading;
-	const refreshing =
-		!isDemo && balanceQuery.isFetching && !balanceQuery.isLoading;
-	const error = isDemo
-		? null
-		: balanceQuery.error instanceof Error
-			? balanceQuery.error.message
-			: balanceQuery.error
-				? "Failed to load credits data"
-				: null;
+	const balance: BalanceResponse | null = balanceQuery.data ?? null;
+	const loading = balanceQuery.isLoading;
+	const refreshing = balanceQuery.isFetching && !balanceQuery.isLoading;
+	const error = balanceQuery.error instanceof Error
+		? balanceQuery.error.message
+		: balanceQuery.error
+			? "Failed to load credits data"
+			: null;
 
 	const [buyAmount, setBuyAmount] = useState("");
 	const [selectedPayment, setSelectedPayment] = useState<"usdc">("usdc");
@@ -126,7 +119,7 @@ export default function CreditsPage() {
 	const autoReloadQuery = useQuery({
 		queryKey: ["autoReload"],
 		queryFn: () => api.credits.getAutoReload(),
-		enabled: isAuthenticated && !isDemo,
+		enabled: isAuthenticated,
 		staleTime: 60_000,
 	});
 	useEffect(() => {
@@ -145,15 +138,9 @@ export default function CreditsPage() {
 		);
 	}, [autoReloadQuery.data]);
 
-	const history: CreditHistoryItem[] = useMemo(
-		() =>
-			isDemo
-				? DEMO_TRANSACTIONS.map(mapCreditTransaction)
-				: (historyQuery.data ?? []),
-		[isDemo, historyQuery.data],
-	);
-	const historyLoading = isDemo ? false : historyQuery.isLoading;
-	const historyHasResolved = isDemo ? true : historyQuery.isFetched;
+	const history: CreditHistoryItem[] = historyQuery.data ?? [];
+	const historyLoading = historyQuery.isLoading;
+	const historyHasResolved = historyQuery.isFetched;
 
 	const costData = useMemo(() => {
 		if (history.length === 0) return [];
@@ -195,10 +182,6 @@ export default function CreditsPage() {
 
 	const handleBuyCredits = () => {
 		if (!buyAmount || parseFloat(buyAmount) <= 0) return;
-		if (isDemo) {
-			toast.error("Demo mode is read-only — sign in to deposit credits");
-			return;
-		}
 		// Credits settle only after on-chain USDC confirmation on /deposit.
 		// The old /v1/credits/purchase call created a pending row and claimed
 		// success without payment — route users to the real deposit flow.
@@ -209,7 +192,7 @@ export default function CreditsPage() {
 	if (!isReady && !isAuthenticated) {
 		return (
 			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-				<AuthSkeleton />
+				<div className="h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
 			</div>
 		);
 	}
@@ -231,22 +214,13 @@ export default function CreditsPage() {
 					</m.div>
 					<h2 className="mb-3 text-2xl font-bold">Sign in to view credits</h2>
 					<p className="mb-6 text-text-muted">
-						Wallet or account number — both work for deposits and history.
+						Magic link, anonymous guest, or wallet — all three work for
+						deposits and history.
 					</p>
 					<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
 						<Link href="/login?next=/dashboard/credits" className="btn-primary py-3 px-8">
 							Sign in
 						</Link>
-						<m.button
-							type="button"
-							onClick={() => connectEvm()}
-							className="btn-secondary flex items-center gap-2 py-3 px-8"
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
-						>
-							<Zap className="h-4 w-4" />
-							Connect wallet
-						</m.button>
 					</div>
 				</div>
 			</m.div>

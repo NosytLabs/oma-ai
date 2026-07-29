@@ -1,37 +1,30 @@
 "use client";
 
-import { Calendar, Fingerprint, Shield } from "lucide-react";
-import { useWallet } from "@/components/wallet-provider";
+import { Calendar, Fingerprint, Shield, Wallet } from "lucide-react";
 import type { User } from "@/lib/api";
-import { formatDateTime } from "@/lib/utils";
-import { TwoFactorSection } from "./TwoFactorSection";
+import { formatDateTime, formatAddress } from "@/lib/utils";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
-
-function authMethodLabel(
-	authMethod: ReturnType<typeof useWallet>["authMethod"],
-): string {
-	switch (authMethod) {
-		case "siwe":
-			return "SIWE (EIP-4361) wallet auth";
-		case "account-number":
-			return "Account number";
-		default:
-			return "Not set";
-	}
-}
 
 interface ProfileSectionProps {
 	user: User | null;
+	evmAddress?: string | null;
 	onUserChange?: (user: User) => void;
 	onError?: (error: string) => void;
 }
 
+function authMethodLabel(user: User | null, evmAddress: string | null): string {
+	if (evmAddress) return "Wallet (SIWE / EIP-4361)";
+	if (user?.isAnonymous) return "Anonymous guest session";
+	if (user?.emailVerified) return "Magic-link email";
+	if (user?.email) return "Email";
+	return "Not set";
+}
+
 export function ProfileSection({
 	user,
-	onUserChange,
-	onError,
+	evmAddress,
 }: ProfileSectionProps) {
-	const { authMethod } = useWallet();
+	const linkedWallet = evmAddress ?? user?.evmAddress ?? null;
 
 	return (
 		<div>
@@ -66,9 +59,28 @@ export function ProfileSection({
 						<Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Authentication
 					</div>
-					<div className="text-sm text-text">{authMethodLabel(authMethod)}</div>
+					<div className="text-sm text-text">{authMethodLabel(user, linkedWallet)}</div>
 				</div>
 			</div>
+
+			{linkedWallet && (
+				<div className="mt-4 rounded-lg border border-border bg-void p-4">
+					<div className="flex items-center justify-between gap-4">
+						<div>
+							<div className="flex items-center gap-2 text-sm font-medium text-text-bright">
+								<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
+								Linked wallet
+							</div>
+							<div className="mt-0.5 text-xs text-text-muted">
+								SIWE (EIP-4361) on Base mainnet. Funds stay in your wallet.
+							</div>
+						</div>
+						<div className="font-mono text-xs text-accent">
+							{formatAddress(linkedWallet)}
+						</div>
+					</div>
+				</div>
+			)}
 
 			<div className="mt-6 rounded-lg border border-border bg-void p-4">
 				<div className="flex items-center justify-between gap-4">
@@ -92,12 +104,6 @@ export function ProfileSection({
 					</label>
 				</div>
 			</div>
-
-			<TwoFactorSection
-				user={user}
-				onUserChange={onUserChange ?? (() => {})}
-				onError={onError ?? (() => {})}
-			/>
 		</div>
 	);
 }

@@ -306,7 +306,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Text-to-video via Venice video models. Returns a queue id. Poll /v1/videos/retrieve.",
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
-			model: 'string (required), e.g. "seedance-2-0-text-to-video"',
+			model: 'string (required), e.g. "kling-v3-pro-text-to-video"',
 			prompt: "string (required), max 4000 chars",
 			duration: 'string (optional), e.g. "5s", "10s"',
 			aspect_ratio: 'string (optional), e.g. "16:9", "9:16"',

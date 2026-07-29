@@ -1,7 +1,6 @@
 import type { Context, Next } from "hono";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema.js";
-import { randomUUID } from "crypto";
 import { logger } from "../lib/logger.js";
 
 export type AuditAction = typeof auditLogs.$inferInsert.action;
@@ -19,14 +18,13 @@ export interface AuditLogParams {
 export async function auditLog(params: AuditLogParams): Promise<void> {
   try {
     await db.insert(auditLogs).values({
-      id: randomUUID(),
       userId: params.userId ?? null,
       action: params.action,
       resource: params.resource,
       resourceId: params.resourceId ?? null,
       ipAddress: params.ipAddress ?? null,
       userAgent: params.userAgent ?? null,
-      metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      metadata: params.metadata ?? null,
       createdAt: new Date(),
     });
   } catch (err) {

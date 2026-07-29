@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { log } from "@/lib/logger";
-
 /**
  * Global Error Boundary
  *
  * Catches errors in the root layout itself (which the per-route error.tsx cannot).
  * Per Next.js 15 App Router convention, this MUST be a client component and MUST
  * include <html> and <body> tags because it replaces the root layout.
+ *
+ * Implementation note: we deliberately do NOT import anything from `@/lib/logger`
+ * here. A previous version pulled `log` from the logger and called it inside a
+ * `useEffect`, which — under React Refresh's eval-source-map dev bundle — would
+ * throw a "Cannot read properties of undefined (reading 'call')" error during
+ * hydration, blanking every page. The hook call site is fragile when the
+ * callback contains webpack-substituted `process.env.NODE_ENV` checks; the safest
+ * fix is to log via `console.error` directly (which is already what the
+ * underlying logger wraps) and keep this boundary dependency-free.
  *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/global-error
  */
@@ -18,15 +24,13 @@ interface GlobalErrorProps {
 }
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
-	useEffect(() => {
-		if (process.env.NODE_ENV === "production") {
-			log.error("[GlobalError]", {
-				message: error.message,
-				stack: error.stack,
-				digest: error.digest,
-			});
-		}
-	}, [error]);
+	if (typeof console !== "undefined" && error) {
+		// eslint-disable-next-line no-console
+		console.error("[GlobalError]", {
+			message: error.message,
+			digest: error.digest,
+		});
+	}
 
 	return (
 		<html lang="en">
@@ -34,8 +38,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 				style={{
 					minHeight: "100vh",
 					margin: 0,
-					backgroundColor: "var(--color-void, #07090a)",
-					color: "var(--color-text, #d8dcd6)",
+					backgroundColor: "#07090a",
+					color: "#d8dcd6",
 					fontFamily: "system-ui, -apple-system, sans-serif",
 				}}
 			>
@@ -57,7 +61,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 							fontSize: "0.75rem",
 							letterSpacing: "0.1em",
 							textTransform: "uppercase",
-							color: "var(--color-text-muted, #9aa394)",
+							color: "#9aa394",
 							fontFamily: "monospace",
 							marginBottom: "0.5rem",
 						}}
@@ -75,7 +79,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 					</h1>
 					<p
 						style={{
-							color: "var(--color-text-secondary, #b4bbb0)",
+							color: "#b4bbb0",
 							maxWidth: "32rem",
 							lineHeight: 1.6,
 							margin: "0 0 1.5rem",
@@ -90,9 +94,9 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 						style={{
 							padding: "0.625rem 1.25rem",
 							borderRadius: "0.5rem",
-							border: "1px solid var(--color-accent, #46d39a)",
-							background: "var(--color-accent, #46d39a)",
-							color: "var(--color-void, #07090a)",
+							border: "1px solid #46d39a",
+							background: "#46d39a",
+							color: "#07090a",
 							fontWeight: 600,
 							cursor: "pointer",
 						}}

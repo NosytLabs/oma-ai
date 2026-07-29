@@ -15,7 +15,6 @@ import { Suspense, useMemo, useState } from "react";
 import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { PolarSubscriptionCard } from "@/components/dashboard/PolarSubscriptionCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type {
 	ApiKey,
@@ -25,10 +24,6 @@ import type {
 	CreditTransaction,
 	UsageRecord,
 } from "@/lib/api";
-import {
-	mapUsageToChartData,
-	mapUsageToModelData,
-} from "@/lib/api/usage-chart";
 import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
@@ -304,13 +299,37 @@ export function DashboardGrid(props: DashboardGridProps) {
 	const [errorDismissed, setErrorDismissed] = useState(false);
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
-	// Pass `null` so mapUsageToChartData does not re-slice to a hard-coded 7d
-	// window (which would break the 30d / all-time range selectors).
-	const usageData = useMemo(
-		() => mapUsageToChartData(usage ?? [], null),
-		[usage],
-	);
-	const modelData = useMemo(() => mapUsageToModelData(usage ?? []), [usage]);
+	// Derive the chart datasets inline — the deleted `@/lib/api/usage-chart`
+	// module was a thin adapter over these exact shapes.
+	const usageData = useMemo(() => {
+		const byDay = new Map<string, { date: string; requests: number; cost: number }>();
+		for (const r of usage ?? []) {
+			const day = r.createdAt.slice(0, 10);
+			const prev = byDay.get(day) ?? { date: day, requests: 0, cost: 0 };
+			prev.requests += 1;
+			prev.cost += Number(r.totalCents ?? "0") / 100;
+			byDay.set(day, prev);
+		}
+		return Array.from(byDay.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
+	}, [usage]);
+	const modelData = useMemo(() => {
+		const palette = ["#46d39a", "#3b82f6", "#f59e0b", "#ec4899", "#a855f7", "#ef4444"];
+		const byModel = new Map<string, { name: string; value: number; cost: number }>();
+		for (const r of usage ?? []) {
+			const prev = byModel.get(r.model) ?? {
+				name: r.model,
+				value: 0,
+				cost: 0,
+			};
+			prev.value += 1;
+			prev.cost += Number(r.totalCents ?? "0") / 100;
+			byModel.set(r.model, prev);
+		}
+		return Array.from(byModel.values())
+			.sort((a, b) => b.value - a.value)
+			.slice(0, 6)
+			.map((m, i) => ({ name: m.name, value: m.value, color: palette[i % palette.length] }));
+	}, [usage]);
 
 	return (
 		<>
@@ -422,7 +441,14 @@ export function DashboardGrid(props: DashboardGridProps) {
 								</WidgetErrorBoundary>
 							</div>
 							<WidgetErrorBoundary title="Subscription">
-								<PolarSubscriptionCard />
+								{/* Polar subscription card removed — billing is USDC deposits only. */}
+								<div className="rounded-xl border border-border bg-surface p-4 text-xs text-text-muted">
+									Billing is USDC deposits only. See{" "}
+									<Link href="/deposit" className="text-accent hover:underline">
+										/deposit
+									</Link>
+									.
+								</div>
 							</WidgetErrorBoundary>
 						</div>
 

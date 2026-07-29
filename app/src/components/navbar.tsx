@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OmaLogo } from "@/components/ui/oma-logo";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { Magnetic } from "@/components/motion";
 import { EASE_SPRING } from "@/lib/motion";
 import { ApiStatus } from "./api-status";
@@ -20,13 +20,11 @@ import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { NavbarToolsDropdown } from "./navbar/NavbarToolsDropdown";
 import { NavbarUserMenu } from "./navbar/NavbarUserMenu";
 import { ThemeToggle } from "./ThemeToggle";
-import { ImprovedConnectButton as Web3ConnectButton } from "./ui/ImprovedConnectButton";
 
 const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev";
 
 export function Navbar() {
-	const { evmAddress, isConnected, disconnect, authMethod, accountNumber } =
-		useWallet();
+	const { isAuthenticated, evmAddress, signOut } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -89,7 +87,7 @@ export function Navbar() {
 										oma
 									</span>
 								</Link>
-								{!isConnected && mounted && (
+								{!isAuthenticated && mounted && (
 									<BorderBeam
 										size="sm"
 										duration={3}
@@ -201,16 +199,19 @@ export function Navbar() {
 							<ApiStatus />
 						</div>
 
-						{isConnected ? (
+						{isAuthenticated ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
-								authMethod={authMethod}
-								accountNumber={accountNumber ?? null}
-								onDisconnect={disconnect}
+								onSignOut={signOut}
 							/>
 						) : (
 							<Magnetic strength={6}>
-								<Web3ConnectButton />
+								<Link
+									href="/login"
+									className="inline-flex h-9 items-center gap-2 rounded-sm border border-accent/40 bg-accent/10 px-3 text-xs font-semibold text-accent transition-colors hover:border-accent hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								>
+									Sign in
+								</Link>
 							</Magnetic>
 						)}
 
@@ -240,10 +241,10 @@ export function Navbar() {
 					open={mobileOpen}
 					onOpenChange={setMobileOpen}
 					toggleRef={mobileToggleRef}
-					isConnected={isConnected}
+					isConnected={isAuthenticated}
 					section={section}
 					build={build}
-					onDisconnect={disconnect}
+					onDisconnect={signOut}
 				/>
 			</nav>
 		</header>

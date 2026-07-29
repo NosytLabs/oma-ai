@@ -13,19 +13,9 @@ import {
 	type UsageRecord,
 } from "@/lib/api";
 import { useBalance } from "@/components/chat/useBalance";
-import {
-	DEMO_API_KEYS,
-	DEMO_BALANCE,
-	DEMO_BATCHES,
-	DEMO_MODELS,
-	DEMO_TRANSACTIONS,
-	DEMO_USAGE,
-} from "@/lib/demo-fixtures";
 
 interface UseDashboardDataOptions {
 	isAuthenticated: boolean;
-	/** When true, return fixtures and skip all network calls. */
-	isDemo?: boolean;
 }
 
 interface UseDashboardDataResult {
@@ -46,15 +36,16 @@ const STALE_MODELS = 300_000;
 
 /**
  * Aggregated dashboard data hook.
- * Real session: React Query against live APIs.
- * Demo session: shared fixtures, zero network.
+ * React Query against live APIs (auth + key + usage + batches + models +
+ * recent transactions). Returns null balance and empty arrays when
+ * unauthenticated so the page can render the sign-in wall without
+ * noisy loading skeletons.
  */
 export function useDashboardData({
 	isAuthenticated,
-	isDemo = false,
 }: UseDashboardDataOptions): UseDashboardDataResult {
 	const queryClient = useQueryClient();
-	const enabled = isAuthenticated && !isDemo;
+	const enabled = isAuthenticated;
 
 	const { balance: balanceData, loading: balanceLoading } = useBalance();
 	const keysQuery = useQuery({
@@ -88,52 +79,44 @@ export function useDashboardData({
 		staleTime: STALE_DEFAULT,
 	});
 
-	const apiKeys = useMemo<ApiKey[]>(
-		() => (isDemo ? DEMO_API_KEYS : (keysQuery.data ?? [])),
-		[isDemo, keysQuery.data],
-	);
+	const apiKeys = useMemo<ApiKey[]>(() => keysQuery.data?.keys ?? [], [keysQuery.data?.keys]);
 	const usage = useMemo<UsageRecord[]>(
-		() => (isDemo ? DEMO_USAGE : (usageQuery.data?.records ?? [])),
-		[isDemo, usageQuery.data?.records],
+		() => usageQuery.data?.records ?? [],
+		[usageQuery.data?.records],
 	);
 	const creditBatches = useMemo<CreditBatch[]>(
-		() => (isDemo ? DEMO_BATCHES : (batchesQuery.data?.activeBatches ?? [])),
-		[isDemo, batchesQuery.data?.activeBatches],
+		() => batchesQuery.data?.activeBatches ?? [],
+		[batchesQuery.data?.activeBatches],
 	);
 	const models = useMemo<Model[]>(
-		() => (isDemo ? DEMO_MODELS : (modelsQuery.data?.data ?? [])),
-		[isDemo, modelsQuery.data?.data],
+		() => modelsQuery.data?.data ?? [],
+		[modelsQuery.data?.data],
 	);
 	const transactions = useMemo<CreditTransaction[]>(
-		() =>
-			isDemo
-				? DEMO_TRANSACTIONS
-				: (transactionsQuery.data?.transactions ?? []),
-		[isDemo, transactionsQuery.data?.transactions],
+		() => transactionsQuery.data?.transactions ?? [],
+		[transactionsQuery.data?.transactions],
 	);
 
-	const balance: BalanceResponse | null = isDemo
-		? DEMO_BALANCE
-		: balanceData;
-	const loading = isDemo
-		? false
-		: balanceLoading ||
+	const balance: BalanceResponse | null = balanceData;
+	const loading = enabled
+		? balanceLoading ||
 			keysQuery.isLoading ||
 			usageQuery.isLoading ||
 			batchesQuery.isLoading ||
 			modelsQuery.isLoading ||
-			transactionsQuery.isLoading;
+			transactionsQuery.isLoading
+		: false;
 
-	const anyError = isDemo
-		? null
-		: keysQuery.error ||
+	const anyError = enabled
+		? keysQuery.error ||
 			usageQuery.error ||
 			batchesQuery.error ||
 			modelsQuery.error ||
-			transactionsQuery.error;
+			transactionsQuery.error
+		: null;
 
 	const backendUnavailable =
-		!isDemo &&
+		enabled &&
 		[
 			keysQuery.error,
 			usageQuery.error,
@@ -150,7 +133,7 @@ export function useDashboardData({
 				: "Failed to load dashboard data";
 
 	const refresh = useCallback(async () => {
-		if (isDemo) return;
+		if (!enabled) return;
 		await Promise.all([
 			queryClient.invalidateQueries({ queryKey: ["apiKeys"] }),
 			queryClient.invalidateQueries({ queryKey: ["usage"] }),
@@ -159,7 +142,7 @@ export function useDashboardData({
 			queryClient.invalidateQueries({ queryKey: ["recentTransactions"] }),
 			queryClient.invalidateQueries({ queryKey: ["balance"] }),
 		]);
-	}, [isDemo, queryClient]);
+	}, [enabled, queryClient]);
 
 	return {
 		balance,

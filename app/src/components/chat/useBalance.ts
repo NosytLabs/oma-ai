@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { api, type BalanceResponse } from "@/lib/api";
 import { isAuthError } from "@/lib/api/client";
 
@@ -22,20 +22,16 @@ export function useBalance(): {
 	loading: boolean;
 	refresh: () => Promise<void>;
 } {
-	const { isAuthenticated, isDemo } = useWallet();
+	const { isAuthenticated } = useAuth();
 	const toast = useToast();
 
 	const query = useQuery({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
-		// Demo mode is authenticated for UI gates but has no real session.
-		enabled: isAuthenticated && !isDemo,
-		// Slower polling (120s instead of 30s) and stop on auth errors —
-		// the old 30s + auto-refetch-on-fail created an infinite 401 loop.
-		refetchInterval: (data) => {
-			if (!data) return 120_000;
-			return 120_000;
-		},
+		enabled: isAuthenticated,
+		// Slower polling (120s) and stop on auth errors — the old 30s +
+		// auto-refetch-on-fail created an infinite 401 loop.
+		refetchInterval: 120_000,
 		staleTime: 120_000,
 		retry: false,
 	});
@@ -61,29 +57,13 @@ export function useBalance(): {
 		}
 	}, [query.error, toast]);
 
-	// Lazy import avoided: fixtures are tiny and only used for the demo path.
-	const balance: BalanceResponse | null = (() => {
-		if (!isAuthenticated) return null;
-		if (isDemo) {
-			// Inline shape matches DEMO_BALANCE without a circular import risk
-			// into the chat tree; dashboard uses demo-fixtures.ts for the rest.
-			return {
-				balanceCents: "1250",
-				totalDepositedCents: "2500",
-				totalUsedCents: "1250",
-				lastActivityAt: new Date().toISOString(),
-			};
-		}
-		return query.data ?? null;
-	})();
-	// isPending is true only with no data; isFetching covers refetches too.
-	// Prefer isLoading (pending + no data) so we don't thrash low-balance UI.
-	const loading =
-		isAuthenticated && !isDemo
-			? query.isLoading || (query.isFetching && !query.data)
-			: false;
+	const balance: BalanceResponse | null = isAuthenticated
+		? (query.data ?? null)
+		: null;
+	const loading = isAuthenticated
+		? query.isLoading || (query.isFetching && !query.data)
+		: false;
 	const refresh = async () => {
-		if (isDemo) return;
 		await query.refetch();
 	};
 

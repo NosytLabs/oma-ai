@@ -1,7 +1,7 @@
 "use client";
 
 import { useToast } from "@/components/ui/Toast";
-import { buildAuthHeaders } from "@/lib/cookies";
+import { buildAuthHeaders } from "@/lib/browser-cookies";
 import { useCallback, useState } from "react";
 
 export type ImageGenerationRequest = {

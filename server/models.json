@@ -23,7 +23,7 @@
       "creditsPerMillionInput": 193,
       "creditsPerMillionOutput": 605,
       "contextWindow": 200000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 80000
     },
     "zai-org-glm-5": {
       "id": "zai-org-glm-5",
@@ -48,7 +48,7 @@
       "creditsPerMillionInput": 125,
       "creditsPerMillionOutput": 400,
       "contextWindow": 198000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32000
     },
     "z-ai-glm-5-turbo": {
       "id": "z-ai-glm-5-turbo",
@@ -73,7 +73,7 @@
       "creditsPerMillionInput": 150,
       "creditsPerMillionOutput": 500,
       "contextWindow": 200000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "z-ai-glm-5v-turbo": {
       "id": "z-ai-glm-5v-turbo",
@@ -99,7 +99,7 @@
       "creditsPerMillionInput": 188,
       "creditsPerMillionOutput": 625,
       "contextWindow": 200000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "olafangensan-glm-4.7-flash-heretic": {
       "id": "olafangensan-glm-4.7-flash-heretic",
@@ -124,7 +124,7 @@
       "creditsPerMillionInput": 9,
       "creditsPerMillionOutput": 50,
       "contextWindow": 200000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 24000
     },
     "zai-org-glm-4.7-flash": {
       "id": "zai-org-glm-4.7-flash",
@@ -149,7 +149,7 @@
       "creditsPerMillionInput": 16,
       "creditsPerMillionOutput": 62,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "zai-org-glm-4.6": {
       "id": "zai-org-glm-4.6",
@@ -174,7 +174,7 @@
       "creditsPerMillionInput": 54,
       "creditsPerMillionOutput": 219,
       "contextWindow": 198000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "zai-org-glm-4.7": {
       "id": "zai-org-glm-4.7",
@@ -199,7 +199,7 @@
       "creditsPerMillionInput": 69,
       "creditsPerMillionOutput": 331,
       "contextWindow": 198000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "venice-uncensored-1-2": {
       "id": "venice-uncensored-1-2",
@@ -224,7 +224,7 @@
       "creditsPerMillionInput": 25,
       "creditsPerMillionOutput": 112,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 8192
     },
     "venice-uncensored-role-play": {
       "id": "venice-uncensored-role-play",
@@ -274,7 +274,7 @@
       "creditsPerMillionInput": 338,
       "creditsPerMillionOutput": 1006,
       "contextWindow": 1000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 65536
     },
     "qwen-3-7-plus": {
       "id": "qwen-3-7-plus",
@@ -301,7 +301,7 @@
       "creditsPerMillionInput": 62,
       "creditsPerMillionOutput": 250,
       "contextWindow": 1000000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "qwen-3-6-plus": {
       "id": "qwen-3-6-plus",
@@ -328,7 +328,7 @@
       "creditsPerMillionInput": 78,
       "creditsPerMillionOutput": 469,
       "contextWindow": 1000000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "qwen3-6-27b": {
       "id": "qwen3-6-27b",
@@ -355,7 +355,7 @@
       "creditsPerMillionInput": 41,
       "creditsPerMillionOutput": 406,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "qwen3-5-9b": {
       "id": "qwen3-5-9b",
@@ -381,7 +381,7 @@
       "creditsPerMillionInput": 12,
       "creditsPerMillionOutput": 19,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "qwen3-5-397b-a17b": {
       "id": "qwen3-5-397b-a17b",
@@ -408,7 +408,7 @@
       "creditsPerMillionInput": 94,
       "creditsPerMillionOutput": 562,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "qwen3-5-35b-a3b": {
       "id": "qwen3-5-35b-a3b",
@@ -435,7 +435,7 @@
       "creditsPerMillionInput": 39,
       "creditsPerMillionOutput": 156,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "qwen3-235b-a22b-thinking-2507": {
       "id": "qwen3-235b-a22b-thinking-2507",
@@ -460,7 +460,7 @@
       "creditsPerMillionInput": 56,
       "creditsPerMillionOutput": 438,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "qwen3-235b-a22b-instruct-2507": {
       "id": "qwen3-235b-a22b-instruct-2507",
@@ -484,7 +484,7 @@
       "creditsPerMillionInput": 19,
       "creditsPerMillionOutput": 94,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "qwen3-next-80b": {
       "id": "qwen3-next-80b",
@@ -508,7 +508,7 @@
       "creditsPerMillionInput": 44,
       "creditsPerMillionOutput": 238,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "qwen3-vl-235b-a22b": {
       "id": "qwen3-vl-235b-a22b",
@@ -533,7 +533,7 @@
       "creditsPerMillionInput": 26,
       "creditsPerMillionOutput": 238,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "qwen3-coder-480b-a35b-instruct-turbo": {
       "id": "qwen3-coder-480b-a35b-instruct-turbo",
@@ -557,7 +557,7 @@
       "creditsPerMillionInput": 44,
       "creditsPerMillionOutput": 188,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "google-gemma-4-26b-a4b-it": {
       "id": "google-gemma-4-26b-a4b-it",
@@ -584,7 +584,7 @@
       "creditsPerMillionInput": 16,
       "creditsPerMillionOutput": 50,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 8192
     },
     "google-gemma-4-31b-it": {
       "id": "google-gemma-4-31b-it",
@@ -611,7 +611,7 @@
       "creditsPerMillionInput": 15,
       "creditsPerMillionOutput": 45,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 8192
     },
     "gemma-4-uncensored": {
       "id": "gemma-4-uncensored",
@@ -636,7 +636,7 @@
       "creditsPerMillionInput": 20,
       "creditsPerMillionOutput": 62,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 8192
     },
     "google-gemma-3-27b-it": {
       "id": "google-gemma-3-27b-it",
@@ -661,7 +661,7 @@
       "creditsPerMillionInput": 15,
       "creditsPerMillionOutput": 25,
       "contextWindow": 198000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "grok-4-3": {
       "id": "grok-4-3",
@@ -687,7 +687,7 @@
       "creditsPerMillionInput": 178,
       "creditsPerMillionOutput": 354,
       "contextWindow": 1000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32000
     },
     "grok-4-20": {
       "id": "grok-4-20",
@@ -713,7 +713,7 @@
       "creditsPerMillionInput": 178,
       "creditsPerMillionOutput": 354,
       "contextWindow": 2000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 128000
     },
     "grok-4-20-multi-agent": {
       "id": "grok-4-20-multi-agent",
@@ -738,7 +738,7 @@
       "creditsPerMillionInput": 178,
       "creditsPerMillionOutput": 354,
       "contextWindow": 2000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 128000
     },
     "grok-build-0-1": {
       "id": "grok-build-0-1",
@@ -764,7 +764,7 @@
       "creditsPerMillionInput": 125,
       "creditsPerMillionOutput": 250,
       "contextWindow": 256000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 65536
     },
     "mistral-small-3-2-24b-instruct": {
       "id": "mistral-small-3-2-24b-instruct",
@@ -788,7 +788,7 @@
       "creditsPerMillionInput": 12,
       "creditsPerMillionOutput": 31,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "mistral-small-2603": {
       "id": "mistral-small-2603",
@@ -814,7 +814,7 @@
       "creditsPerMillionInput": 23,
       "creditsPerMillionOutput": 94,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "hermes-3-llama-3.1-405b": {
       "id": "hermes-3-llama-3.1-405b",
@@ -837,7 +837,7 @@
       "creditsPerMillionInput": 138,
       "creditsPerMillionOutput": 375,
       "contextWindow": 128000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 16384
     },
     "gemini-3-1-pro-preview": {
       "id": "gemini-3-1-pro-preview",
@@ -865,7 +865,7 @@
       "creditsPerMillionInput": 312,
       "creditsPerMillionOutput": 1875,
       "contextWindow": 1000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "gemini-3-5-flash": {
       "id": "gemini-3-5-flash",
@@ -893,7 +893,7 @@
       "creditsPerMillionInput": 194,
       "creditsPerMillionOutput": 1181,
       "contextWindow": 1000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 65536
     },
     "gemini-3-flash-preview": {
       "id": "gemini-3-flash-preview",
@@ -921,7 +921,7 @@
       "creditsPerMillionInput": 88,
       "creditsPerMillionOutput": 469,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "claude-fable-5": {
       "id": "claude-fable-5",
@@ -947,7 +947,7 @@
       "creditsPerMillionInput": 1500,
       "creditsPerMillionOutput": 7500,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "claude-opus-4-8": {
       "id": "claude-opus-4-8",
@@ -973,7 +973,7 @@
       "creditsPerMillionInput": 750,
       "creditsPerMillionOutput": 3750,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "claude-opus-4-8-fast": {
       "id": "claude-opus-4-8-fast",
@@ -999,7 +999,7 @@
       "creditsPerMillionInput": 1500,
       "creditsPerMillionOutput": 7500,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "claude-opus-4-7": {
       "id": "claude-opus-4-7",
@@ -1025,7 +1025,7 @@
       "creditsPerMillionInput": 750,
       "creditsPerMillionOutput": 3750,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "claude-opus-4-6": {
       "id": "claude-opus-4-6",
@@ -1051,7 +1051,7 @@
       "creditsPerMillionInput": 750,
       "creditsPerMillionOutput": 3750,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "claude-opus-4-5": {
       "id": "claude-opus-4-5",
@@ -1077,7 +1077,7 @@
       "creditsPerMillionInput": 750,
       "creditsPerMillionOutput": 3750,
       "contextWindow": 198000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 32768
     },
     "claude-sonnet-4-6": {
       "id": "claude-sonnet-4-6",
@@ -1103,7 +1103,7 @@
       "creditsPerMillionInput": 450,
       "creditsPerMillionOutput": 2250,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 64000
     },
     "claude-sonnet-4-5": {
       "id": "claude-sonnet-4-5",
@@ -1129,7 +1129,7 @@
       "creditsPerMillionInput": 469,
       "creditsPerMillionOutput": 2344,
       "contextWindow": 198000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 64000
     },
     "openai-gpt-oss-120b": {
       "id": "openai-gpt-oss-120b",
@@ -1154,7 +1154,7 @@
       "creditsPerMillionInput": 9,
       "creditsPerMillionOutput": 38,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "kimi-k2-5": {
       "id": "kimi-k2-5",
@@ -1180,7 +1180,7 @@
       "creditsPerMillionInput": 70,
       "creditsPerMillionOutput": 438,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "xiaomi-mimo-v2-5": {
       "id": "xiaomi-mimo-v2-5",
@@ -1208,7 +1208,7 @@
       "creditsPerMillionInput": 18,
       "creditsPerMillionOutput": 35,
       "contextWindow": 1000000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "deepseek-v4-pro": {
       "id": "deepseek-v4-pro",
@@ -1233,7 +1233,7 @@
       "creditsPerMillionInput": 206,
       "creditsPerMillionOutput": 413,
       "contextWindow": 1000000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "deepseek-v4-flash": {
       "id": "deepseek-v4-flash",
@@ -1258,7 +1258,7 @@
       "creditsPerMillionInput": 17,
       "creditsPerMillionOutput": 34,
       "contextWindow": 1000000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "deepseek-v3.2": {
       "id": "deepseek-v3.2",
@@ -1283,7 +1283,7 @@
       "creditsPerMillionInput": 41,
       "creditsPerMillionOutput": 60,
       "contextWindow": 160000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "llama-3.2-3b": {
       "id": "llama-3.2-3b",
@@ -1356,7 +1356,7 @@
       "creditsPerMillionInput": 274,
       "creditsPerMillionOutput": 2188,
       "contextWindow": 256000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 65536
     },
     "openai-gpt-52-codex": {
       "id": "openai-gpt-52-codex",
@@ -1382,7 +1382,7 @@
       "creditsPerMillionInput": 274,
       "creditsPerMillionOutput": 2188,
       "contextWindow": 256000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 65536
     },
     "openai-gpt-53-codex": {
       "id": "openai-gpt-53-codex",
@@ -1408,7 +1408,7 @@
       "creditsPerMillionInput": 274,
       "creditsPerMillionOutput": 2188,
       "contextWindow": 400000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 128000
     },
     "openai-gpt-54": {
       "id": "openai-gpt-54",
@@ -1434,7 +1434,7 @@
       "creditsPerMillionInput": 391,
       "creditsPerMillionOutput": 2350,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 131072
     },
     "openai-gpt-54-pro": {
       "id": "openai-gpt-54-pro",
@@ -1460,7 +1460,7 @@
       "creditsPerMillionInput": 4688,
       "creditsPerMillionOutput": 28125,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "openai-gpt-54-mini": {
       "id": "openai-gpt-54-mini",
@@ -1486,7 +1486,7 @@
       "creditsPerMillionInput": 117,
       "creditsPerMillionOutput": 703,
       "contextWindow": 400000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 128000
     },
     "openai-gpt-55": {
       "id": "openai-gpt-55",
@@ -1512,7 +1512,7 @@
       "creditsPerMillionInput": 781,
       "creditsPerMillionOutput": 4688,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 131072
     },
     "openai-gpt-55-pro": {
       "id": "openai-gpt-55-pro",
@@ -1538,7 +1538,7 @@
       "creditsPerMillionInput": 4688,
       "creditsPerMillionOutput": 28125,
       "contextWindow": 1000000,
-      "maxOutputTokens": 16384
+      "maxOutputTokens": 128000
     },
     "openai-gpt-4o-2024-11-20": {
       "id": "openai-gpt-4o-2024-11-20",
@@ -1588,7 +1588,7 @@
       "creditsPerMillionInput": 23,
       "creditsPerMillionOutput": 94,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "minimax-m3-preview": {
       "id": "minimax-m3-preview",
@@ -1613,7 +1613,7 @@
       "creditsPerMillionInput": 38,
       "creditsPerMillionOutput": 150,
       "contextWindow": 524288,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 65536
     },
     "minimax-m25": {
       "id": "minimax-m25",
@@ -1638,7 +1638,7 @@
       "creditsPerMillionInput": 34,
       "creditsPerMillionOutput": 119,
       "contextWindow": 198000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "mercury-2": {
       "id": "mercury-2",
@@ -1663,7 +1663,7 @@
       "creditsPerMillionInput": 39,
       "creditsPerMillionOutput": 117,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 50000
     },
     "nvidia-nemotron-3-nano-30b-a3b": {
       "id": "nvidia-nemotron-3-nano-30b-a3b",
@@ -1687,7 +1687,7 @@
       "creditsPerMillionInput": 9,
       "creditsPerMillionOutput": 38,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 16384
     },
     "nvidia-nemotron-3-ultra-550b-a55b": {
       "id": "nvidia-nemotron-3-ultra-550b-a55b",
@@ -1712,33 +1712,7 @@
       "creditsPerMillionInput": 78,
       "creditsPerMillionOutput": 391,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
-    },
-    "nvidia-nemotron-cascade-2-30b-a3b": {
-      "id": "nvidia-nemotron-cascade-2-30b-a3b",
-      "veniceId": "nvidia-nemotron-cascade-2-30b-a3b",
-      "provider": "venice",
-      "primaryProvider": "venice",
-      "inputPricePer1M": 0.14,
-      "outputPricePer1M": 0.8,
-      "markupPercent": 25,
-      "category": "budget",
-      "maxTokens": 32768,
-      "supportsStreaming": true,
-      "displayName": "Nemotron Cascade 2 30B A3B",
-      "capabilities": [
-        "chat",
-        "tools",
-        "reasoning",
-        "web-search",
-        "function-calling"
-      ],
-      "description": "Nemotron Cascade 2 30B A3B is a reasoning-optimized language model from NVIDIA, designed for efficient inference with strong reasoning capabilities across complex tasks.",
-      "creditsPerMillionInput": 18,
-      "creditsPerMillionOutput": 100,
-      "contextWindow": 32768,
-      "maxOutputTokens": 4096,
-      "enabled": false
+      "maxOutputTokens": 32768
     },
     "e2ee-venice-uncensored-24b-p": {
       "id": "e2ee-venice-uncensored-24b-p",
@@ -1831,7 +1805,7 @@
       "creditsPerMillionInput": 138,
       "creditsPerMillionOutput": 519,
       "contextWindow": 128000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "e2ee-gpt-oss-20b-p": {
       "id": "e2ee-gpt-oss-20b-p",
@@ -1855,7 +1829,7 @@
       "creditsPerMillionInput": 6,
       "creditsPerMillionOutput": 24,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "e2ee-gpt-oss-120b-p": {
       "id": "e2ee-gpt-oss-120b-p",
@@ -1879,7 +1853,7 @@
       "creditsPerMillionInput": 16,
       "creditsPerMillionOutput": 81,
       "contextWindow": 128000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "e2ee-qwen-2-5-7b-p": {
       "id": "e2ee-qwen-2-5-7b-p",
@@ -1949,7 +1923,7 @@
       "creditsPerMillionInput": 24,
       "creditsPerMillionOutput": 86,
       "contextWindow": 256000,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 32768
     },
     "e2ee-qwen3-vl-30b-a3b-p": {
       "id": "e2ee-qwen3-vl-30b-a3b-p",
@@ -1998,7 +1972,7 @@
       "creditsPerMillionInput": 138,
       "creditsPerMillionOutput": 519,
       "contextWindow": 200000,
-      "maxOutputTokens": 8192
+      "maxOutputTokens": 32768
     },
     "e2ee-qwen3-6-35b-a3b": {
       "id": "e2ee-qwen3-6-35b-a3b",
@@ -2100,7 +2074,7 @@
       "creditsPerMillionInput": 2343750,
       "creditsPerMillionOutput": 11718750,
       "contextWindow": 1000000,
-      "maxOutputTokens": 9375
+      "maxOutputTokens": 65536
     },
     "gemini-3-5-flash-lite": {
       "id": "gemini-3-5-flash-lite",
@@ -2127,7 +2101,7 @@
       "creditsPerMillionInput": 468750,
       "creditsPerMillionOutput": 3906250,
       "contextWindow": 1000000,
-      "maxOutputTokens": 3130
+      "maxOutputTokens": 65536
     },
     "zai-org-glm-5-2": {
       "id": "zai-org-glm-5-2",
@@ -2176,7 +2150,7 @@
       "creditsPerMillionInput": 13,
       "creditsPerMillionOutput": 125,
       "contextWindow": 256000,
-      "maxOutputTokens": 100000
+      "maxOutputTokens": 65536
     },
     "grok-4-5": {
       "id": "grok-4-5",
@@ -2226,7 +2200,7 @@
       "creditsPerMillionInput": 7500000,
       "creditsPerMillionOutput": 37500000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 30000
+      "maxOutputTokens": 128000
     },
     "claude-opus-5-fast": {
       "id": "claude-opus-5-fast",
@@ -2251,7 +2225,7 @@
       "creditsPerMillionInput": 15000000,
       "creditsPerMillionOutput": 75000000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 30000
+      "maxOutputTokens": 128000
     },
     "claude-sonnet-5": {
       "id": "claude-sonnet-5",
@@ -2308,8 +2282,8 @@
       "veniceId": "kimi-k3",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 4.6875,
-      "outputPricePer1M": 23.4375,
+      "inputPricePer1M": 3.75,
+      "outputPricePer1M": 18.75,
       "markupPercent": 25,
       "category": "premium",
       "maxTokens": 131072,
@@ -2323,10 +2297,10 @@
         "web-search"
       ],
       "description": "Kimi K3 is an ultra-large-scale, open-weight multimodal reasoning model from Moonshot AI. It is suited for complex coding, knowledge work, and long-horizon agentic workflows, and is particularly stron",
-      "creditsPerMillionInput": 586,
-      "creditsPerMillionOutput": 2930,
+      "creditsPerMillionInput": 469,
+      "creditsPerMillionOutput": 2344,
       "contextWindow": 1000000,
-      "maxOutputTokens": 18750
+      "maxOutputTokens": 131072
     },
     "inkling": {
       "id": "inkling",
@@ -2352,7 +2326,7 @@
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 6328125,
       "contextWindow": 1000000,
-      "maxOutputTokens": 5060
+      "maxOutputTokens": 65536
     },
     "seed-2-1-turbo": {
       "id": "seed-2-1-turbo",
@@ -2402,7 +2376,7 @@
       "creditsPerMillionInput": 4687500,
       "creditsPerMillionOutput": 9375000,
       "contextWindow": 128000,
-      "maxOutputTokens": 7500
+      "maxOutputTokens": 32768
     },
     "aion-labs-aion-3-0-mini": {
       "id": "aion-labs-aion-3-0-mini",
@@ -2426,7 +2400,7 @@
       "creditsPerMillionInput": 1093750,
       "creditsPerMillionOutput": 2187500,
       "contextWindow": 128000,
-      "maxOutputTokens": 1750
+      "maxOutputTokens": 32768
     },
     "openai-gpt-56-luna": {
       "id": "openai-gpt-56-luna",
@@ -2451,7 +2425,7 @@
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 9375000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 7500
+      "maxOutputTokens": 128000
     },
     "openai-gpt-56-luna-pro": {
       "id": "openai-gpt-56-luna-pro",
@@ -2476,7 +2450,7 @@
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 9375000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 7500
+      "maxOutputTokens": 128000
     },
     "openai-gpt-56-terra": {
       "id": "openai-gpt-56-terra",
@@ -2501,7 +2475,7 @@
       "creditsPerMillionInput": 3906250,
       "creditsPerMillionOutput": 23437500,
       "contextWindow": 1000000,
-      "maxOutputTokens": 18750
+      "maxOutputTokens": 128000
     },
     "openai-gpt-56-terra-pro": {
       "id": "openai-gpt-56-terra-pro",
@@ -2526,7 +2500,7 @@
       "creditsPerMillionInput": 3906250,
       "creditsPerMillionOutput": 23437500,
       "contextWindow": 1000000,
-      "maxOutputTokens": 18750
+      "maxOutputTokens": 128000
     },
     "openai-gpt-56-sol": {
       "id": "openai-gpt-56-sol",
@@ -2551,7 +2525,7 @@
       "creditsPerMillionInput": 7812500,
       "creditsPerMillionOutput": 46875000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 37500
+      "maxOutputTokens": 128000
     },
     "openai-gpt-56-sol-pro": {
       "id": "openai-gpt-56-sol-pro",
@@ -2576,7 +2550,7 @@
       "creditsPerMillionInput": 7812500,
       "creditsPerMillionOutput": 46875000,
       "contextWindow": 1000000,
-      "maxOutputTokens": 37500
+      "maxOutputTokens": 128000
     },
     "minimax-m27": {
       "id": "minimax-m27",
@@ -2698,36 +2672,6 @@
     }
   },
   "VIDEO_MODELS": {
-    "seedance-2-0-text-to-video": {
-      "id": "seedance-2-0-text-to-video",
-      "provider": "venice",
-      "price": 0.9,
-      "duration": "5s",
-      "displayName": "Seedance 2.0 Text-to-Video",
-      "capabilities": [
-        "text-to-video",
-        "5s"
-      ],
-      "description": "High-quality text-to-video generation with Seedance 2.0",
-      "creditsPerMillionInput": 10,
-      "creditsPerMillionOutput": 10,
-      "creditsPrice": 0.9
-    },
-    "seedance-2-0-image-to-video": {
-      "id": "seedance-2-0-image-to-video",
-      "provider": "venice",
-      "price": 1.2,
-      "duration": "5s",
-      "displayName": "Seedance 2.0 Image-to-Video",
-      "capabilities": [
-        "image-to-video",
-        "5s"
-      ],
-      "description": "Animate images into videos with Seedance 2.0",
-      "creditsPerMillionInput": 10,
-      "creditsPerMillionOutput": 10,
-      "creditsPrice": 1.2
-    },
     "kling-v3-pro-text-to-video": {
       "id": "kling-v3-pro-text-to-video",
       "provider": "venice",
@@ -2757,21 +2701,6 @@
       "creditsPerMillionInput": 10,
       "creditsPerMillionOutput": 10,
       "creditsPrice": 1.4
-    },
-    "grok-imagine-text-to-video": {
-      "id": "grok-imagine-text-to-video",
-      "provider": "venice",
-      "price": 0.85,
-      "duration": "5s",
-      "displayName": "Grok Imagine Text-to-Video",
-      "capabilities": [
-        "text-to-video",
-        "5s"
-      ],
-      "description": "Creative text-to-video generation via Grok Imagine",
-      "creditsPerMillionInput": 10,
-      "creditsPerMillionOutput": 10,
-      "creditsPrice": 0.85
     },
     "wan-2-7-text-to-video": {
       "id": "wan-2-7-text-to-video",

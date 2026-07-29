@@ -1,32 +1,44 @@
-// "sso" is reserved, not yet implemented. The sso_connections table is in
-// the schema but no auth path produces an "sso" session token today.
-export type AuthMethod = "siwe" | "account-number" | "sso" | "neon-auth";
+/**
+ * Better Auth–compatible identity union. `userId` is always set when
+ * authenticated. `authMethod` is `session` for cookie-based auth,
+ * `apiKey` for `Authorization: Bearer oma_sk_…` requests. Routes that
+ * need to distinguish can read both.
+ */
+import type { ApiKey } from "./db/schema.js";
+
+export type AuthMethod = "session" | "apiKey";
 
 export type OmaEnv = {
   Variables: {
     userId: string;
     authMethod?: AuthMethod;
     rateLimit?: { remaining: number; reset: number };
-    apiKey: {
-      id: string;
-      userId: string;
-      keyPrefix: string;
-      keyHash: string;
-      name: string;
-      active: boolean;
-      createdAt: Date;
-      allowedModels?: string[] | null;
-    } | null;
+    apiKey: ApiKey | null;
     correlationId?: string;
     payment?: { txHash?: string; amount: string; networkId: string };
     teamRole?: string;
-    /**
-     * Neon Auth user id when the request was authenticated via a Neon Auth
-     * (managed Better Auth) JWT. `userId` is still set to the OMA user id
-     * when a local mapping exists, or to the Neon Auth subject when no
-     * local user is linked. Routes that need to distinguish the two
-     * identity layers can read this.
-     */
-    neonAuthUserId?: string;
+    // Set by the Better Auth session middleware. `user` is the canonical
+    // session payload; route handlers can read it directly.
+    session?: {
+      id: string;
+      userId: string;
+      expiresAt: Date;
+      token: string;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    user?: {
+      id: string;
+      email: string;
+      name: string;
+      emailVerified: boolean;
+      image?: string | null;
+      evmAddress?: string | null;
+      isAnonymous?: boolean | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   };
 };

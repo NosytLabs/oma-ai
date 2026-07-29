@@ -46,7 +46,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaLogo } from "@/components/ui/oma-logo";
 import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/motion";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { ApiStatus } from "./api-status";
 
 type FooterLink = {
@@ -144,7 +144,7 @@ const LAST_DEPLOY = "2026-07-26";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";
-	const { isAuthenticated } = useWallet();
+	const { isAuthenticated } = useAuth();
 	const FOOTER_SECTIONS: FooterSection[] = [
 		PRODUCT,
 		TOOLS,

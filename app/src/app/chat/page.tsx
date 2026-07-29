@@ -5,7 +5,6 @@ import nextDynamic from "next/dynamic";
 import { Suspense } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 
 // Lazy-load the chat shell (framer-motion + wallet hooks) with a branded
 // ThinkingOrb fallback so first paint is never a blank main region.
@@ -66,13 +65,11 @@ export default function ChatPage() {
 			}
 		>
 			<Suspense fallback={<ChatLoadingFallback />}>
-				<LiveModelsProvider>
-					<ChatPlaygroundShell
-						variant="chat"
-						storageKey="oma_chat_conversation"
-						systemPromptKey="oma_chat_system_prompt"
-					/>
-				</LiveModelsProvider>
+				<ChatPlaygroundShell
+					variant="chat"
+					storageKey="oma_chat_conversation"
+					systemPromptKey="oma_chat_system_prompt"
+				/>
 			</Suspense>
 		</ErrorBoundary>
 	);

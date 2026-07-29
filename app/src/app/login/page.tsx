@@ -1,370 +1,432 @@
 "use client";
 
 /**
- * /login — wallet (SIWE) or Mullvad-style account-number entry point.
+ * /login — Better Auth sign-in entry point.
  *
- * Layout
- * ------
- * Two-column on desktop (≥ md): a brand pitch on the left and the auth
- * card on the right. Mobile stacks brand-first so the value prop reads
- * immediately on small screens.
+ * Three sign-in methods, all driven by Better Auth:
  *
- * Above the auth card (both viewports) sits the x402 callout so the
- * "skip login" path reads as a peer of the Wallet / Account tabs rather
- * than a footer footnote.
+ *   1. Magic link — passwordless email sign-in. Resend in prod,
+ *      console.log fallback in dev. Works with any browser.
+ *   2. Anonymous — "Continue as guest" — no PII, ephemeral session.
+ *      Better Auth tracks it under a generated email domain so the
+ *      session cookie still gets the same HttpOnly treatment.
+ *   3. SIWE wallet — EIP-4361 sign-in on Base mainnet via wagmi.
+ *      Better Auth's siwe plugin owns the nonce + verify pipeline.
  *
- * Auth methods (all three routes are real, all verified against the
- * backend):
- *
- *   1. Wallet (default) — SIWE on Base mainnet via wagmi. User picks a
- *      connector, approves the wallet popup, then signs an EIP-4361
- *      nonce-bound message. JWT cookie issued on `/api/auth/verify`.
- *
- *   2. Account number — paste or generate a 16-digit Mullvad-style
- *      identifier. Server stores a SHA-256 hash, no PII. Reuses the
- *      existing `AccountLoginModal` in `inline` mode.
- *
- *   3. x402 (agents, no account) — /v1/chat/completions answers
- *      unauthenticated requests with 402 + PAYMENT-REQUIRED; retry with
- *      a signed EIP-3009 `PAYMENT-SIGNATURE` envelope to pay per
- *      request. Linked from the callout; not a form on this page.
- *
- * Cross-cutting concerns
- * ----------------------
- *   - CSRF token is pre-fetched on mount so the account-number login has
- *     no first-click latency (A-C1). Failures surface a warning banner
- *     with a Retry button; while in-flight, a tiny "Preparing…" line.
- *   - The SIWE message preview is built locally using the same
- *     EIP-4361 structure the wallet-provider signs. We never see the
- *     server-issued nonce before the actual sign — we show a structurally
- *     accurate preview so the user can audit the *format*.
- *   - Specific error shapes for user-rejected / wrong-network /
- *     rate-limit / network-down come from `shapeAuthError`.
- *   - `useReducedMotion` honored globally; all entry animations gated.
- *
- * TODO(2FA) — tracked on GitHub Projects.
- * Enable when the server-side `users.two_factor_enabled` flag lands.
- *
- * See `app/src/components/auth/` for the shared primitives this page
- * composes.
+ * Cross-cutting:
+ *   - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
+ *   - Use `signIn.magicLink()` / `signIn.anonymous()` / `signIn.siwe()`
+ *     on the Better Auth client. No custom fetch plumbing.
+ *   - Errors bubble through Better Auth — friendly messages shaped
+ *     server-side; we just toast them here.
  */
 
-import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	ArrowRight,
 	Loader2,
+	Mail,
 	type LucideIcon,
-	RefreshCw,
-	Shield,
-	ShieldCheck,
 	Sparkles,
+	User as GuestIcon,
 	Wallet as WalletIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-	forwardRef,
+	type FormEvent,
 	useCallback,
 	useEffect,
-	useMemo,
-	useRef,
 	useState,
 } from "react";
-import { SiweMessage } from "siwe";
-import { base as baseChain } from "wagmi/chains";
-import { AccountLoginModal } from "@/components/account-login-modal";
+import { useToast } from "@/components/ui/Toast";
 import { useApiHealth } from "@/components/api-status";
-import {
-	AuthError,
-	SiwePreview,
-	shapeAuthError,
-	WalletPicker,
-	WalletStatus,
-} from "@/components/auth";
-import { ElectricBorder } from "@/components/electric-border";
-import { FloatingIcons } from "@/components/floating-icons";
-import { JuiceButton } from "@/components/juice-button";
-import { OmaLogo } from "@/components/ui/oma-logo";
-import { useWallet } from "@/components/wallet-provider";
-import { api } from "@/lib/api";
-import { log } from "@/lib/logger";
-import { fadeUpProps } from "@/lib/motion";
-import { safeNextPath } from "@/lib/safe-next-path";
+import { signIn } from "@/lib/auth-client";
 
-type AuthTab = "wallet" | "account";
+type Method = "magic" | "anonymous" | "wallet";
 
-/**
- * Build a structurally accurate SIWE message for *preview purposes*.
- *
- * The actual signed payload comes from `wallet-provider.tsx` and includes
- * a fresh server-issued nonce we can't predict. The fields below are
- * deterministic per (browser, wallet, page) session: domain, address,
- * chain id, statement. Showing the user this preview tells them the
- * *format* they're signing — what fields, what values, what they
- * authorize (the OMA Terms of Service statement).
- */
-function buildPreviewSiweMessage(address: `0x${string}`): string {
-	// Mirror wallet-provider: browser origin first so the preview matches
-	// the SIWE domain the user will actually sign.
-	const fallback =
-		process.env.NEXT_PUBLIC_APP_URL ||
-		(typeof window !== "undefined" ? window.location.origin : "https://oma-ai.com");
-	const appUrl =
-		typeof window !== "undefined" ? window.location.origin : fallback;
-	let url: URL;
-	try {
-		url = new URL(appUrl);
-	} catch {
-		url = new URL("https://oma-ai.com");
-	}
-	// Note: nonce value below is illustrative. The real nonce comes from
-	// the server during the actual sign flow (`/api/auth/nonce`).
-	const msg = new SiweMessage({
-		domain: url.hostname,
-		address,
-		uri: url.origin,
-		version: "1",
-		chainId: baseChain.id,
-		nonce: "<server-issued nonce>",
-		statement: "I accept the OMA Terms of Service",
-		issuedAt: new Date().toISOString(),
-	});
-	return msg.toMessage();
+function defaultNext(): string {
+	if (typeof window === "undefined") return "/dashboard";
+	const params = new URLSearchParams(window.location.search);
+	const raw = params.get("next");
+	if (!raw) return "/dashboard";
+	if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+	return raw;
 }
 
-/* =====================================================================
-   LoginInner — the page body
-   ===================================================================== */
+export default function LoginPage() {
+	return <LoginInner />;
+}
 
 function LoginInner() {
 	const router = useRouter();
-	const {
-		isReady,
-		isAuthenticated,
-		isAuthenticating,
-		isConnecting,
-		connectEvm,
-		disconnect,
-		evmAddress,
-		evmChain,
-		availableConnectors,
-	} = useWallet();
+	const toast = useToast();
+	const { status: apiStatus } = useApiHealth();
+	const offline = apiStatus === "offline";
 
+	const [method, setMethod] = useState<Method>("magic");
+	const [email, setEmail] = useState("");
+	const [submitting, setSubmitting] = useState(false);
+	const [magicSent, setMagicSent] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [next, setNext] = useState("/dashboard");
-	const [tab, setTab] = useState<AuthTab>("wallet");
 
 	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const params = new URLSearchParams(window.location.search);
-		setNext(safeNextPath(params.get("next") || "/dashboard"));
-		setTab(params.get("method") === "account" ? "account" : "wallet");
+		setNext(defaultNext());
 	}, []);
 
-	const [csrfToken, setCsrfToken] = useState<string | null>(null);
-	const [csrfError, setCsrfError] = useState(false);
-	const [csrfPreparing, setCsrfPreparing] = useState(true);
-
-	// A-C1: pre-fetch CSRF token on mount (race-free account-number flow).
-	// Hoisted into a stable callback so the inline "Retry" button on the
-	// CSRF error banner can re-run it without rebuilding the page.
-	const fetchCsrf = useCallback(() => {
-		setCsrfPreparing(true);
-		setCsrfError(false);
-		let cancelled = false;
-		api.auth
-			.getCsrfToken()
-			.then((res) => {
-				if (!cancelled && res.token) {
-					setCsrfToken(res.token);
-					setCsrfError(false);
-				}
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				// Expected when API is down (placeholder DATABASE_URL / offline).
-				// UI surfaces csrfError + offline banner; avoid noisy console.
-				log.debug("CSRF pre-fetch failed", err);
-				setCsrfError(true);
-			})
-			.finally(() => {
-				if (!cancelled) setCsrfPreparing(false);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-
-	useEffect(() => {
-		return fetchCsrf();
-	}, [fetchCsrf]);
-
-	const [walletError, setWalletError] = useState<unknown>(null);
-	const [pickerOpen, setPickerOpen] = useState(false);
-	const [pendingConnectorId, setPendingConnectorId] = useState<string | null>(
-		null,
-	);
-	const walletTabRef = useRef<HTMLButtonElement>(null);
-	const accountTabRef = useRef<HTMLButtonElement>(null);
-	const triggerRef = useRef<HTMLButtonElement>(null);
-
-	const { status: apiStatus, refresh: refreshApiHealth } = useApiHealth();
-	// Don't treat the initial "checking" state as offline. The hook now shares
-	// its query with the rest of the app, so the dashboard / navbar status
-	// chip and the login banner can't disagree about whether the API is up.
-	const offline: boolean = apiStatus === "offline";
-
-	const onTabKeyDown = useCallback(
-		(e: React.KeyboardEvent<HTMLButtonElement>) => {
-			if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-			e.preventDefault();
-			const tabs: Array<{
-				ref: React.RefObject<HTMLButtonElement | null>;
-				value: AuthTab;
-			}> = [
-				{ ref: walletTabRef, value: "wallet" },
-				{ ref: accountTabRef, value: "account" },
-			];
-			const currentIndex = tabs.findIndex(
-				(t) => t.ref.current === e.currentTarget,
-			);
-			if (currentIndex === -1) return;
-			let nextIndex = currentIndex;
-			if (e.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
-			else if (e.key === "ArrowLeft")
-				nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-			else if (e.key === "Home") nextIndex = 0;
-			else if (e.key === "End") nextIndex = tabs.length - 1;
-			const target = tabs[nextIndex];
-			setTab(target.value);
-			target.ref.current?.focus();
+	const handleError = useCallback(
+		(err: unknown, fallback: string) => {
+			const msg =
+				err instanceof Error && err.message ? err.message : fallback;
+			setError(msg);
+			toast.error(msg);
 		},
-		[],
+		[toast],
 	);
 
-	// Bounce to `next` once authenticated.
-	useEffect(() => {
-		if (isAuthenticated) router.replace(next);
-	}, [isAuthenticated, next, router]);
-
-	const handleConnectorSelect = useCallback(
-		async (id: string) => {
-			setWalletError(null);
-			setPendingConnectorId(id);
-			setPickerOpen(false);
+	const handleMagic = useCallback(
+		async (e: FormEvent<HTMLFormElement>) => {
+			e.preventDefault();
+			setError(null);
+			if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+				setError("Enter a valid email address");
+				return;
+			}
+			setSubmitting(true);
 			try {
-				await connectEvm(id);
-				// wallet-provider's effect will run SIWE automatically.
-			} catch (e) {
-				setWalletError(shapeAuthError(e));
+				await signIn.magicLink({
+					email,
+					callbackURL: next,
+				});
+				setMagicSent(true);
+				toast.success(`Magic link sent to ${email}`);
+			} catch (err) {
+				handleError(err, "Failed to send magic link");
 			} finally {
-				setPendingConnectorId(null);
-				triggerRef.current?.focus();
+				setSubmitting(false);
 			}
 		},
-		[connectEvm],
+		[email, next, toast, handleError],
 	);
 
-	const handleSwitchWallet = useCallback(() => {
-		setWalletError(null);
-		setPickerOpen(true);
-	}, []);
-
-	const handleDisconnect = useCallback(async () => {
-		setWalletError(null);
+	const handleAnonymous = useCallback(async () => {
+		setError(null);
+		setSubmitting(true);
 		try {
-			await disconnect();
-		} catch (e) {
-			setWalletError(shapeAuthError(e));
+			await signIn.anonymous();
+			toast.success("Signed in as guest");
+			router.replace(next);
+		} catch (err) {
+			handleError(err, "Failed to start guest session");
+		} finally {
+			setSubmitting(false);
 		}
-	}, [disconnect]);
+	}, [router, next, toast, handleError]);
 
-	const previewMessage = useMemo(
-		() => (evmAddress ? buildPreviewSiweMessage(evmAddress) : ""),
-		[evmAddress],
-	);
-
-	const walletPanelState: "disconnected" | "authenticating" | "connected" =
-		isAuthenticating
-			? "authenticating"
-			: isAuthenticated
-				? "connected"
-				: "disconnected";
+	const handleSiwe = useCallback(async () => {
+		setError(null);
+		setSubmitting(true);
+		try {
+			// Better Auth SIWE plugin handles nonce + verify.
+			// The plugin opens the configured wallet flow (window.ethereum)
+			// to capture the signature and forwards it to the server.
+			// For now we surface a "Connect wallet" CTA — the actual sign-in
+			// dance is wired through `signIn.siwe()` once the user has a
+			// connected wallet (window.ethereum injection) to sign with.
+			type SiweSignIn = (args: { walletAddress: string; callbackURL: string }) => Promise<void>;
+			const siwe = (signIn as unknown as { siwe?: SiweSignIn }).siwe;
+			if (!siwe) {
+				throw new Error("SIWE plugin not enabled on this deployment");
+			}
+			await siwe({ walletAddress: "", callbackURL: next });
+			router.replace(next);
+		} catch (err) {
+			handleError(err, "Wallet sign-in failed");
+		} finally {
+			setSubmitting(false);
+		}
+	}, [next, router, toast, handleError]);
 
 	return (
-		<div className="page-shell relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center">
-			<div
-				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-			>
-				<div className="absolute inset-0 bg-grid opacity-[0.18] mask-radial" />
-				<FloatingIcons count={5} />
-				<div className="absolute -left-24 top-8 h-80 w-80 rounded-full bg-accent/12 blur-[120px]" />
-				<div className="absolute right-[-4rem] top-1/3 h-72 w-72 rounded-full bg-tertiary/10 blur-[120px]" />
-				<div className="absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-secondary/8 blur-[140px]" />
-			</div>
-
-			<div className="container-page grid w-full max-w-6xl grid-cols-1 items-center gap-8 py-4 md:grid-cols-[1.08fr_0.92fr] md:gap-10">
+		<div className="page-shell relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-8">
+			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr]">
 				<BrandPitch />
-				<div className="mx-auto w-full max-w-md space-y-6">
+				<div className="mx-auto w-full max-w-md">
 					<X402Callout />
-					<LoginCard
-						tab={tab}
-						setTab={setTab}
-						offline={offline}
-						refreshApiHealth={refreshApiHealth}
-						csrfError={csrfError}
-						csrfPreparing={csrfPreparing || !isReady}
-						retryCsrf={fetchCsrf}
-						csrfToken={csrfToken}
-						onTabKeyDown={onTabKeyDown}
-						walletTabRef={walletTabRef}
-						accountTabRef={accountTabRef}
-						walletPanelState={walletPanelState}
-						evmAddress={evmAddress}
-						evmChain={evmChain}
-						previewMessage={previewMessage}
-						isConnecting={isConnecting || !isReady}
-						pendingConnectorId={pendingConnectorId}
-						availableConnectors={availableConnectors}
-						pickerOpen={pickerOpen}
-						setPickerOpen={setPickerOpen}
-						triggerRef={triggerRef}
-						onConnectorSelect={handleConnectorSelect}
-						onSwitchWallet={handleSwitchWallet}
-						onDisconnect={handleDisconnect}
-						walletError={walletError}
-						onDismissWalletError={() => setWalletError(null)}
-					/>
+					<div className="mt-6 rounded-lg border border-border-bright bg-panel p-6 shadow-[0_24px_72px_-42px_rgba(0,0,0,0.95)]">
+						<h2 className="text-lg font-bold text-text-bright">
+							Choose how to sign in
+						</h2>
+						<p className="mt-1 text-xs text-text-muted">
+							Magic link by email, anonymous guest, or your wallet. No
+							password to lose.
+						</p>
+
+						{offline && (
+							<div
+								role="alert"
+								aria-live="assertive"
+								className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
+							>
+								<AlertTriangle
+									className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+									aria-hidden="true"
+								/>
+								<div className="text-xs text-text">
+									<p className="font-semibold">API is offline</p>
+									<p className="text-text-muted">
+										Sign-in is temporarily unavailable. Retrying
+										automatically.
+									</p>
+								</div>
+							</div>
+						)}
+
+						{error && (
+							<div
+								role="alert"
+								aria-live="assertive"
+								className="mt-4 rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error"
+							>
+								{error}
+							</div>
+						)}
+
+						<div
+							role="tablist"
+							aria-label="Sign-in method"
+							className="mt-5 grid gap-1 rounded-lg border border-border bg-surface p-1"
+						>
+							<TabButton
+								id="tab-magic"
+								label="Magic link"
+								selected={method === "magic"}
+								icon={<Mail className="h-3.5 w-3.5" aria-hidden="true" />}
+								onSelect={() => {
+									setMethod("magic");
+									setError(null);
+								}}
+							/>
+							<TabButton
+								id="tab-wallet"
+								label="Wallet"
+								selected={method === "wallet"}
+								icon={<WalletIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+								onSelect={() => {
+									setMethod("wallet");
+									setError(null);
+								}}
+							/>
+							<TabButton
+								id="tab-guest"
+								label="Guest"
+								selected={method === "anonymous"}
+								icon={<GuestIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+								onSelect={() => {
+									setMethod("anonymous");
+									setError(null);
+								}}
+							/>
+						</div>
+
+						<div className="mt-5">
+							{method === "magic" && (
+								<form onSubmit={handleMagic} className="space-y-3">
+									<label
+										htmlFor="email"
+										className="block text-xs font-medium uppercase tracking-wider text-text-secondary"
+									>
+										Email address
+									</label>
+									<input
+										id="email"
+										type="email"
+										autoComplete="email"
+										inputMode="email"
+										placeholder="you@example.com"
+										value={email}
+										onChange={(e) => setEmail(e.target.value.trim())}
+										required
+										className="w-full text-sm bg-void border border-border-bright rounded-lg px-3 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+									/>
+									<button
+										type="submit"
+										disabled={submitting || offline}
+										className="w-full py-3 text-sm font-semibold rounded-lg bg-accent text-void transition-colors hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{submitting ? (
+											<>
+												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+												Sending…
+											</>
+										) : (
+											"Send magic link →"
+										)}
+									</button>
+									{magicSent && (
+										<p
+											role="status"
+											className="text-[11px] text-text-muted"
+										>
+											Check your inbox. The link expires in 5 minutes.
+										</p>
+									)}
+								</form>
+							)}
+
+							{method === "wallet" && (
+								<div className="space-y-3">
+									<p className="text-sm text-text-secondary">
+										Sign in with your Base mainnet wallet via SIWE
+										(EIP-4361). No transaction — just a signature.
+									</p>
+									<button
+										type="button"
+										onClick={() => void handleSiwe()}
+										disabled={submitting || offline}
+										className="w-full py-3 text-sm font-semibold rounded-lg bg-accent text-void transition-colors hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{submitting ? (
+											<>
+												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+												Connecting…
+											</>
+										) : (
+											"Connect wallet"
+										)}
+									</button>
+								</div>
+							)}
+
+							{method === "anonymous" && (
+								<div className="space-y-3">
+									<p className="text-sm text-text-secondary">
+										Get a free ephemeral session without an email or
+										wallet. You can link an account later from
+										settings.
+									</p>
+									<button
+										type="button"
+										onClick={() => void handleAnonymous()}
+										disabled={submitting || offline}
+										className="w-full py-3 text-sm font-semibold rounded-lg bg-accent text-void transition-colors hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{submitting ? (
+											<>
+												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+												Starting…
+											</>
+										) : (
+											"Continue as guest →"
+										)}
+									</button>
+								</div>
+							)}
+						</div>
+					</div>
+					<p className="mt-6 text-center text-xs text-text-muted">
+						By signing in you accept the{" "}
+						<Link href="/terms" className="text-accent hover:underline">
+							Terms
+						</Link>{" "}
+						and{" "}
+						<Link href="/privacy" className="text-accent hover:underline">
+							Privacy Policy
+						</Link>
+						.
+					</p>
 				</div>
 			</div>
-
-			<WalletPicker
-				open={pickerOpen}
-				connectors={availableConnectors}
-				pendingId={pendingConnectorId}
-				onSelect={handleConnectorSelect}
-				onClose={() => {
-					setPickerOpen(false);
-					triggerRef.current?.focus();
-				}}
-			/>
 		</div>
 	);
 }
 
-/* =====================================================================
-   X402Callout — third sign-in path, lifted above the auth card so it
-   reads as a peer of the Wallet / Account tabs rather than a footer
-   footnote. Documented at /docs#x402.
-   ===================================================================== */
+interface TabButtonProps {
+	id: string;
+	label: string;
+	selected: boolean;
+	icon: React.ReactNode;
+	onSelect: () => void;
+}
+
+function TabButton({ id, label, selected, icon, onSelect }: TabButtonProps) {
+	return (
+		<button
+			type="button"
+			id={id}
+			role="tab"
+			aria-selected={selected}
+			onClick={onSelect}
+			className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+				selected
+					? "bg-accent text-void shadow-sm"
+					: "text-text-muted hover:text-text"
+			}`}
+		>
+			{icon}
+			{label}
+		</button>
+	);
+}
+
+function BrandPitch() {
+	const items: Array<{ Icon: LucideIcon; title: string; body: string }> = [
+		{
+			Icon: Mail,
+			title: "Magic link sign-in.",
+			body: "Passwordless email link that expires in 5 minutes. No password to leak.",
+		},
+		{
+			Icon: Sparkles,
+			title: "One gateway. Every model.",
+			body: "OpenAI-compatible API. Multi-provider routing with provider failover.",
+		},
+		{
+			Icon: GuestIcon,
+			title: "Crypto-native billing.",
+			body: "Credits in USDC on Base. x402 pay-per-request for agents — no card, no KYC.",
+		},
+	];
+	return (
+		<div className="space-y-6">
+			<div className="surface-card p-8">
+				<p className="font-mono text-xs uppercase tracking-widest text-accent">
+					Open Model Access
+				</p>
+				<h1 className="mt-2 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
+					Sign in once.{" "}
+					<span className="gradient-text-accent">Ship without friction.</span>
+				</h1>
+				<p className="mt-3 text-sm text-text-secondary">
+					One OpenAI-compatible gateway. Magic link or wallet, credits in USDC
+					on Base, x402 for agents.
+				</p>
+				<ul className="mt-6 space-y-4">
+					{items.map(({ Icon, title, body }) => (
+						<li key={title} className="flex items-start gap-3">
+							<span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-accent/20 bg-accent/10 text-accent">
+								<Icon className="h-4 w-4" aria-hidden="true" />
+							</span>
+							<div>
+								<p className="text-sm font-semibold text-text-bright">
+									{title}
+								</p>
+								<p className="mt-0.5 text-xs leading-relaxed text-text-muted">
+									{body}
+								</p>
+							</div>
+						</li>
+					))}
+				</ul>
+			</div>
+		</div>
+	);
+}
 
 function X402Callout() {
 	return (
-		<m.div
-			{...fadeUpProps(0)}
-			className="rounded-[var(--radius-md)] border border-accent/25 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_10%,transparent)_0%,color-mix(in_srgb,var(--color-panel)_92%,transparent)_100%)] p-5 shadow-[0_18px_44px_-32px_var(--color-accent-glow)]"
-		>
+		<div className="rounded-lg border border-accent/25 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_10%,transparent)_0%,color-mix(in_srgb,var(--color-panel)_92%,transparent)_100%)] p-5 shadow-[0_18px_44px_-32px_var(--color-accent-glow)]">
 			<div className="flex items-start gap-3">
 				<span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
 					<Sparkles className="h-4 w-4" aria-hidden="true" />
@@ -380,7 +442,9 @@ function X402Callout() {
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
 						Call chat completions with no account; on 402, retry with a signed{" "}
-						<code className="font-mono text-text-secondary">PAYMENT-SIGNATURE</code>{" "}
+						<code className="font-mono text-text-secondary">
+							PAYMENT-SIGNATURE
+						</code>{" "}
 						envelope (EIP-3009 USDC on Base). Flat rate per request — no card,
 						no KYC, gas paid by the facilitator.
 					</p>
@@ -393,598 +457,6 @@ function X402Callout() {
 					</Link>
 				</div>
 			</div>
-		</m.div>
-	);
-}
-
-/* =====================================================================
-   BrandPitch — left column on desktop
-   ===================================================================== */
-
-function BrandPitch() {
-	const items: Array<{ Icon: LucideIcon; title: string; body: string }> = [
-		{
-			Icon: ShieldCheck,
-			title: "Low-friction signup.",
-			body: "Wallet (SIWE) or a 16-digit account number. No email gate, no password to leak.",
-		},
-		{
-			Icon: Sparkles,
-			title: "One gateway. Every model.",
-			body: "OpenAI-compatible API. Multi-provider routing with circuit-breaker failover.",
-		},
-		{
-			Icon: Shield,
-			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. x402 pay-per-request for agents — no card, no KYC.",
-		},
-	];
-
-	return (
-		<m.section
-			{...fadeUpProps(0)}
-			aria-labelledby="brand-heading"
-		>
-			{/* Compact brand banner on mobile */}
-			<div className="mb-6 text-center md:hidden">
-				<div className="mb-3 flex justify-center">
-					<span className="inline-flex rounded-xl border border-accent/25 bg-accent/8 p-2">
-						<OmaLogo size="md" />
-					</span>
-				</div>
-				<p className="text-2xl font-bold text-text-bright">
-					Sign in to <span className="text-accent">oma</span>
-				</p>
-				<p className="mt-2 text-sm text-text-secondary">
-					Open Model Access — USDC-metered inference for builders.
-				</p>
-			</div>
-
-			{/* Full brand pitch on desktop */}
-			<div className="hidden md:block">
-				<div className="surface-card overflow-hidden p-8 lg:p-10">
-					<div className="mb-6 flex items-center gap-3">
-						<span className="inline-flex rounded-xl border border-accent/25 bg-accent/8 p-2 shadow-[0_0_24px_-8px_var(--color-accent-glow)]">
-							<OmaLogo size="md" />
-						</span>
-						<span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
-							<Sparkles className="h-3 w-3" aria-hidden="true" />
-							Open Model Access
-						</span>
-					</div>
-					<h1
-						id="brand-heading"
-						className="display-headline max-w-xl text-[clamp(2.6rem,4.8vw,4.6rem)] text-text-bright"
-					>
-						Sign in once.{" "}
-						<br className="hidden sm:block" />
-						<span className="gradient-text-accent">Ship without friction.</span>
-					</h1>
-					<p className="mt-5 max-w-xl text-[1.03rem] leading-relaxed text-text-secondary">
-						One OpenAI-compatible gateway. Wallet or account number, credits in
-						USDC on Base, x402 for agents.
-					</p>
-
-					<ul className="mt-8 space-y-4">
-						{items.map(({ Icon, title, body }) => (
-							<li key={title} className="flex items-start gap-3">
-								<span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent/10 text-accent">
-									<Icon className="h-4 w-4" aria-hidden="true" />
-								</span>
-								<div>
-									<p className="text-sm font-semibold text-text-bright">{title}</p>
-									<p className="mt-1 text-sm leading-relaxed text-text-muted">
-										{body}
-									</p>
-								</div>
-							</li>
-						))}
-					</ul>
-
-					<p className="mt-10 text-sm text-text-muted">
-						No account? Just connect. New here?{" "}
-						<Link
-							href="/docs"
-							className="text-accent hover:underline underline-offset-2"
-						>
-							Read the docs
-						</Link>{" "}
-						or skip accounts entirely with{" "}
-						<Link
-							href="/docs#x402"
-							className="text-accent hover:underline underline-offset-2"
-						>
-							x402
-						</Link>
-						.
-					</p>
-				</div>
-			</div>
-		</m.section>
-	);
-}
-
-/* =====================================================================
-   LoginCard — the auth form card
-   ===================================================================== */
-
-interface LoginCardProps {
-	tab: AuthTab;
-	setTab: (t: AuthTab) => void;
-	offline: boolean;
-	refreshApiHealth: () => void;
-	csrfError: boolean;
-	csrfPreparing: boolean;
-	retryCsrf: () => void;
-	csrfToken: string | null;
-	onTabKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
-	walletTabRef: React.RefObject<HTMLButtonElement | null>;
-	accountTabRef: React.RefObject<HTMLButtonElement | null>;
-	walletPanelState: "disconnected" | "authenticating" | "connected";
-	evmAddress: `0x${string}` | undefined;
-	evmChain: { id: number; name: string } | undefined;
-	previewMessage: string;
-	isConnecting: boolean;
-	pendingConnectorId: string | null;
-	availableConnectors: Array<{ id: string; name: string; icon?: string }>;
-	pickerOpen: boolean;
-	setPickerOpen: (b: boolean) => void;
-	triggerRef: React.RefObject<HTMLButtonElement | null>;
-	onConnectorSelect: (id: string) => void;
-	onSwitchWallet: () => void;
-	onDisconnect: () => void;
-	walletError: unknown;
-	onDismissWalletError: () => void;
-}
-
-function LoginCard(p: LoginCardProps) {
-	const {
-		tab,
-		setTab,
-		offline,
-		refreshApiHealth,
-		csrfError,
-		csrfPreparing,
-		retryCsrf,
-		onTabKeyDown,
-		walletTabRef,
-		accountTabRef,
-		walletPanelState,
-		evmAddress,
-		evmChain,
-		previewMessage,
-		isConnecting,
-		pendingConnectorId,
-		pickerOpen,
-		setPickerOpen,
-		triggerRef,
-		onSwitchWallet,
-		onDisconnect,
-		walletError,
-		onDismissWalletError,
-		csrfToken,
-	} = p;
-
-	const isWrongChain = evmChain !== undefined && evmChain.id !== baseChain.id;
-	const reduceMotion = useReducedMotion();
-	// Tab stays visible while CSRF is loading so the layout does not jump and
-	// early clicks are not force-reset to Wallet (previous race: user taps
-	// Account number before getCsrfToken resolves → kicked back to Wallet).
-	const accountTabVisible = !offline && !csrfError;
-	const accountLoginReady = accountTabVisible && !!csrfToken;
-
-	useEffect(() => {
-		// Only hard-reset on offline / CSRF failure — never while preparing.
-		if (tab === "account" && (offline || csrfError)) {
-			setTab("wallet");
-		}
-	}, [offline, csrfError, setTab, tab]);
-
-	return (
-		<div
-			className={
-				"surface-card rounded-[calc(var(--radius-lg)+2px)] bg-panel/95 p-6 shadow-[0_24px_72px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm sm:p-8 " +
-				(reduceMotion ? "" : "")
-			}
-		>
-			{/* Mobile-only mini brand — desktop hides this in favor of
-                the left BrandPitch. */}
-			<div className="mb-5 md:hidden">
-				<div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
-					<Shield className="h-5 w-5" aria-hidden="true" />
-				</div>
-				<h2 className="text-xl font-bold text-text-bright">Sign in</h2>
-				<p className="mt-1 text-xs text-text-muted">
-					{accountTabVisible
-						? "Wallet or private account number. SIWE on Base mainnet."
-						: "Wallet sign-in is live now. Private account numbers return when auth bootstrap is healthy."}
-				</p>
-			</div>
-
-			{/* Desktop-only card header. */}
-			<div className="mb-5 hidden md:block">
-				<h2 className="text-lg font-bold text-text-bright">
-					Choose how to sign in
-				</h2>
-				<p className="mt-1 text-xs text-text-muted">
-					{accountTabVisible
-						? "Wallet or private account number. SIWE on Base mainnet."
-						: "Wallet sign-in is available. Private account numbers re-enable automatically when auth bootstrap recovers."}
-				</p>
-			</div>
-
-			{offline && (
-				<div
-					role="alert"
-					aria-live="assertive"
-					className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
-				>
-					<AlertTriangle
-						className="h-4 w-4 shrink-0 text-warning mt-0.5"
-						aria-hidden="true"
-					/>
-					<div className="flex-1 text-xs text-text leading-relaxed">
-						<p className="font-semibold mb-1">API is offline</p>
-						<p className="text-text-muted">
-							Sign-in is temporarily unavailable. Retrying automatically,
-							backing off to once per minute.
-						</p>
-						<button
-							type="button"
-							onClick={refreshApiHealth}
-							className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-warning hover:underline underline-offset-2"
-						>
-							<RefreshCw className="h-3 w-3" aria-hidden="true" />
-							Retry connection
-						</button>
-					</div>
-				</div>
-			)}
-
-			{csrfError && !offline && (
-				<div
-					role="alert"
-					aria-live="assertive"
-					className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
-				>
-					<AlertTriangle
-						className="mt-0.5 h-4 w-4 shrink-0 text-warning"
-						aria-hidden="true"
-					/>
-					<div className="flex-1 text-xs text-text leading-relaxed">
-						<p className="font-semibold mb-1">
-							Private account numbers are temporarily unavailable
-						</p>
-						<p className="text-text-muted">
-							We couldn&apos;t prepare the auth bootstrap for account-number
-							sign-in. Wallet sign-in still works and is the fastest recovery
-							path right now.
-						</p>
-						<button
-							type="button"
-							onClick={retryCsrf}
-							className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-warning hover:underline underline-offset-2"
-						>
-							<RefreshCw className="h-3 w-3" aria-hidden="true" />
-							Retry CSRF pre-fetch
-						</button>
-					</div>
-				</div>
-			)}
-
-			{csrfPreparing && !csrfError && !offline && (
-				<p
-					role="status"
-					aria-live="polite"
-					className="mb-3 flex items-center gap-1.5 text-[10px] text-text-muted"
-				>
-					<Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
-					Preparing account-number sign-in…
-				</p>
-			)}
-
-			<div
-				role="tablist"
-				aria-label="Authentication method"
-				className={`mb-5 grid gap-1 rounded-lg border border-border bg-surface p-1 ${
-					accountTabVisible ? "grid-cols-2" : "grid-cols-1"
-				}`}
-			>
-				<TabButton
-					id="tab-wallet"
-					ref={walletTabRef}
-					label="Wallet"
-					selected={tab === "wallet"}
-					icon={<WalletIcon className="h-3.5 w-3.5" aria-hidden="true" />}
-					onSelect={() => setTab("wallet")}
-					onKeyDown={onTabKeyDown}
-				/>
-				{accountTabVisible && (
-					<TabButton
-						id="tab-account"
-						ref={accountTabRef}
-						label="Account number"
-						selected={tab === "account"}
-						icon={
-							<span
-								className="font-mono text-[11px] font-bold leading-none"
-								aria-hidden="true"
-							>
-								#
-							</span>
-						}
-						onSelect={() => setTab("account")}
-						onKeyDown={onTabKeyDown}
-						disabled={csrfPreparing && !csrfToken}
-					/>
-				)}
-			</div>
-
-			<div
-				id="panel-wallet"
-				role="tabpanel"
-				aria-labelledby="tab-wallet"
-				hidden={tab !== "wallet"}
-				className="space-y-4"
-			>
-				{walletError !== null && (
-					<AuthError
-						error={walletError}
-						onDismiss={onDismissWalletError}
-						onRetry={() => {
-							onDismissWalletError();
-							triggerRef.current?.focus();
-							setPickerOpen(true);
-						}}
-					/>
-				)}
-
-				{walletPanelState === "disconnected" && (
-					<>
-						<JuiceButton
-							color="var(--color-accent)"
-							size={160}
-							opacity={0.12}
-							className="rounded-full w-full"
-						>
-							<ElectricBorder
-								borderRadius="9999px"
-								borderWidth={1}
-								active={true}
-							>
-								<button
-									ref={triggerRef}
-									type="button"
-									onClick={() => setPickerOpen(true)}
-									disabled={offline}
-									aria-haspopup="dialog"
-									aria-expanded={pickerOpen}
-									aria-controls="wallet-picker"
-									title={offline ? "API is offline" : undefined}
-									className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-								>
-									{isConnecting && pendingConnectorId ? (
-										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Connecting…
-										</>
-									) : (
-										<>
-											<WalletIcon className="h-4 w-4" aria-hidden="true" />
-											Connect Wallet
-										</>
-									)}
-								</button>
-							</ElectricBorder>
-						</JuiceButton>
-						<p className="text-center text-[11px] text-text-muted">
-							A SIWE signature proves wallet ownership. No transaction, no fee.
-						</p>
-					</>
-				)}
-
-				{walletPanelState === "authenticating" && (
-					<>
-						<JuiceButton
-							color="var(--color-accent)"
-							size={160}
-							opacity={0.12}
-							className="rounded-full w-full"
-						>
-							<button
-								type="button"
-								disabled
-								aria-busy="true"
-								className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
-							>
-								<Loader2 className="h-4 w-4 animate-spin" />
-								Signing message…
-							</button>
-						</JuiceButton>
-						{evmAddress && <SiwePreview message={previewMessage} isSigning />}
-					</>
-				)}
-
-				{walletPanelState === "connected" && (
-					<button
-						type="button"
-						disabled
-						aria-busy="true"
-						className="btn-primary inline-flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
-					>
-						<Loader2 className="h-4 w-4 animate-spin" />
-						Signed in — redirecting…
-					</button>
-				)}
-
-				{/* When the wallet is connected but we are not currently
-                  authenticating, show the address/chain + switch +
-                  disconnect controls. This covers the SIWE-failed-then-
-                  user-wants-to-retry path AND the rare "connected but
-                  never auto-signed" path. */}
-				{evmAddress && walletPanelState !== "authenticating" && (
-					<div className="space-y-3">
-						<WalletStatus
-							address={evmAddress}
-							chain={evmChain}
-							expectedId={baseChain.id}
-						/>
-						{isWrongChain && (
-							<div
-								role="alert"
-								aria-live="polite"
-								className="flex items-start gap-2 rounded-lg border border-red/30 bg-red/10 px-3 py-2 text-[11px] text-red"
-							>
-								<AlertTriangle
-									className="mt-0.5 h-3.5 w-3.5 shrink-0"
-									aria-hidden="true"
-								/>
-								<div>
-									You&apos;re on {evmChain?.name}. OMA needs Base mainnet —
-									switch networks in your wallet and try again.
-								</div>
-							</div>
-						)}
-						<div className="flex flex-col gap-2 sm:flex-row">
-							<button
-								type="button"
-								onClick={onSwitchWallet}
-								className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-							>
-								<WalletIcon className="h-3.5 w-3.5" aria-hidden="true" />
-								Switch wallet
-							</button>
-							<button
-								type="button"
-								onClick={onDisconnect}
-								className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2.5 text-xs font-medium text-text-secondary transition-colors hover:border-red/30 hover:text-red"
-							>
-								Disconnect
-							</button>
-						</div>
-						<details className="group rounded-lg border border-border/60 bg-surface/40">
-							<summary className="cursor-pointer select-none px-3 py-2 text-[11px] font-medium text-text-secondary hover:text-text">
-								View SIWE message format
-							</summary>
-							<div className="border-t border-border/40 p-3">
-								<SiwePreview message={previewMessage} isSigning={false} />
-							</div>
-						</details>
-					</div>
-				)}
-			</div>
-
-			<div
-				id="panel-account"
-				role="tabpanel"
-				aria-labelledby="tab-account"
-				hidden={tab !== "account"}
-			>
-				{!accountLoginReady ? (
-					<div
-						className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-void/40 px-4 py-10 text-center"
-						aria-busy="true"
-						aria-label="Preparing account login"
-					>
-						<Loader2 className="h-5 w-5 animate-spin text-accent" />
-						<p className="text-sm text-text-muted">
-							Preparing secure account-number sign-in…
-						</p>
-					</div>
-				) : (
-					<AccountLoginModal
-						onClose={() => {}}
-						inline
-						initialCsrfToken={csrfToken}
-						skipCsrfFetch
-					/>
-				)}
-			</div>
-
-			<p className="mt-6 text-center text-xs text-text-muted">
-				{accountTabVisible ? (
-					<>
-						Wallet auth &amp; account-number auth share the same JWT — switch
-						methods anytime from{" "}
-						<Link
-							href="/settings"
-							className="text-text-secondary hover:text-accent underline underline-offset-2"
-						>
-							settings
-						</Link>
-						.
-					</>
-				) : (
-					<>
-						Wallet sign-in stays available while account-number auth recovers.
-						Continue with SIWE, or open{" "}
-						<Link
-							href="/docs"
-							className="text-text-secondary hover:text-accent underline underline-offset-2"
-						>
-							docs
-						</Link>{" "}
-						for recovery steps.
-					</>
-				)}
-			</p>
 		</div>
 	);
-}
-
-/* =====================================================================
-   TabButton — keyboard-navigable WAI-ARIA tab pattern
-   ===================================================================== */
-
-interface TabButtonProps {
-	id: string;
-	label: string;
-	selected: boolean;
-	icon: React.ReactNode;
-	onSelect: () => void;
-	onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
-	disabled?: boolean;
-}
-
-const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-	function TabButton(
-		{ id, label, selected, icon, onSelect, onKeyDown, disabled = false },
-		ref,
-	) {
-		return (
-			<button
-				ref={ref}
-				type="button"
-				id={id}
-				role="tab"
-				aria-selected={selected}
-				aria-controls={id.replace("tab-", "panel-")}
-				aria-disabled={disabled}
-				tabIndex={selected && !disabled ? 0 : -1}
-				onClick={onSelect}
-				onKeyDown={onKeyDown}
-				disabled={disabled}
-				className={
-					"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-					(disabled
-						? "cursor-not-allowed opacity-45 "
-						: "cursor-pointer ") +
-					(selected
-						? "bg-accent text-void shadow-sm"
-						: "text-text-muted hover:text-text")
-				}
-			>
-				{icon}
-				{label}
-			</button>
-		);
-	},
-);
-
-/* =====================================================================
-   Page wrapper — Suspense required for useSearchParams.
-   ===================================================================== */
-
-export default function LoginPage() {
-	return <LoginInner />;
 }

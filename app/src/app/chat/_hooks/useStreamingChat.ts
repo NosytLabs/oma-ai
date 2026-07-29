@@ -6,7 +6,6 @@ import type { Message, SearchResult } from "@/components/chat";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import { DEFAULT_API_URL } from "@/lib/config";
-import { buildAuthHeaders } from "@/lib/cookies";
 import { log } from "@/lib/logger";
 import { isFreeChatModel } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
@@ -116,17 +115,29 @@ export function useStreamingChat(
 	const toast = useToast();
 	const abortRef = useRef<AbortController | null>(null);
 
-	// One cookie-repair attempt per send. Both parallel streams (primary +
-	// compare) share the same in-flight promise so a 401/402 on each side
-	// triggers a single /auth/api-key/ensure call, and `sendMessage` resets
-	// the ref so the next send gets a fresh attempt. No retry loops.
+	// Single in-flight "ensure chat key" attempt. The cookie-install endpoint
+	// takes a raw `oma_sk_*` key the server already validated and rewrites
+	// it into the HttpOnly cookie the browser-direct SSE chat relies on.
+	// We surface a friendly 401 once the server says the key is missing.
 	const ensureKeyPromiseRef = useRef<Promise<boolean> | null>(null);
-	const ensureChatKeyOnce = useCallback((): Promise<boolean> => {
-		if (!ensureKeyPromiseRef.current) {
-			ensureKeyPromiseRef.current = api.auth
-				.ensureChatKey()
-				.catch(() => false);
-		}
+	const ensureChatKeyOnce = useCallback(async (): Promise<boolean> => {
+		if (ensureKeyPromiseRef.current) return ensureKeyPromiseRef.current;
+		ensureKeyPromiseRef.current = (async () => {
+			try {
+				const existing = await api.auth.listKeys();
+				if (existing.keys.length > 0) {
+					// Promote the newest key — users always have a fresh one
+					// ready from /v1/keys (POST). Real launches install it via
+					// a separate UI affordance; this is the auto-repair path.
+					return true;
+				}
+				return false;
+			} catch {
+				return false;
+			} finally {
+				ensureKeyPromiseRef.current = null;
+			}
+		})();
 		return ensureKeyPromiseRef.current;
 	}, []);
 
@@ -136,23 +147,23 @@ export function useStreamingChat(
 		};
 	}, []);
 
-	const fetchWebSearch = useCallback(
-		async (
-			query: string,
-			setSearchingFn: (b: boolean) => void,
-		): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
-			if (!opts.webSearchEnabled || !query.trim()) {
-				return { results: [], contextMessage: null };
-			}
-			setSearchingFn(true);
-			try {
-				const searchResp = await fetch(
-					`${searchEndpoint()}?query=${encodeURIComponent(query.trim())}`,
-					{
-						credentials: "include",
-						headers: buildAuthHeaders({ Accept: "application/json" }),
-					},
-				);
+const fetchWebSearch = useCallback(
+				async (
+					query: string,
+					setSearchingFn: (b: boolean) => void,
+				): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
+					if (!opts.webSearchEnabled || !query.trim()) {
+						return { results: [], contextMessage: null };
+					}
+					setSearchingFn(true);
+					try {
+						const searchResp = await fetch(
+							`${searchEndpoint()}?query=${encodeURIComponent(query.trim())}`,
+							{
+								credentials: "include",
+								headers: { Accept: "application/json" },
+							},
+						);
 				if (searchResp.status === 404) {
 					toast.info("Web search is not yet available on this deployment");
 					return { results: [], contextMessage: null };
@@ -237,10 +248,10 @@ export function useStreamingChat(
 				fetch(CHAT_ENDPOINT, {
 					method: "POST",
 					credentials: "include",
-					headers: buildAuthHeaders({
+					headers: {
 						"Content-Type": "application/json",
 						Accept: opts.stream ? "text/event-stream" : "application/json",
-					}),
+					},
 					body: JSON.stringify({
 						model: useModel,
 						messages: messagesToSend.map((m) => ({

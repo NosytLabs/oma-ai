@@ -200,7 +200,8 @@ export async function createApiKey(
     })
     .returning();
   return {
-    key: raw,
+    rawKey: raw,
+    key: created,
     prefix: keyPrefix,
     id: created.id,
     name: created.name,
@@ -273,8 +274,8 @@ export function shouldRecommendRotation(createdAt: Date): boolean {
   return ageDays >= KEY_ROTATION_WARNING_DAYS;
 }
 
-export async function listApiKeys(userId: string) {
-  const results = await db.select({
+export async function listApiKeys(userId: string, includeRevoked = false) {
+  const baseSelect = {
     id: apiKeys.id,
     keyPrefix: apiKeys.keyPrefix,
     name: apiKeys.name,
@@ -283,8 +284,14 @@ export async function listApiKeys(userId: string) {
     expiresAt: apiKeys.expiresAt,
     createdAt: apiKeys.createdAt,
     allowedModels: apiKeys.allowedModels,
-  }).from(apiKeys).where(eq(apiKeys.userId, userId));
-  return results;
+  };
+  if (includeRevoked) {
+    return db.select(baseSelect).from(apiKeys).where(eq(apiKeys.userId, userId));
+  }
+  return db
+    .select(baseSelect)
+    .from(apiKeys)
+    .where(and(eq(apiKeys.userId, userId), eq(apiKeys.active, true)));
 }
 
 export async function getApiKey(userId: string, keyId: string) {

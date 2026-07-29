@@ -1,265 +1,81 @@
 /**
- * Auth namespace: SIWE + account-number login + API key listing.
+ * Auth + API-key CRUD for the dashboard.
+ *
+ * Most auth flows (sign-in, sign-out, magic-link, anonymous, SIWE,
+ * session, list-sessions, delete-account) are handled by the Better
+ * Auth client — see `app/src/lib/auth-client.ts`. This module is
+ * reserved for the OMA-specific server endpoints that aren't covered
+ * by Better Auth: API-key CRUD + the HttpOnly `oma_api_key` cookie
+ * installer that powers browser-direct SSE chat.
  */
+import { request } from "./client.js";
+import type { ApiKey, ApiKeyWithSecret, User } from "./types.js";
 
-import { DEFAULT_API_URL } from "@/lib/config";
-import { getAuthToken, request } from "./client.js";
-import type {
-	ApiKey,
-	ApiKeyWithSecret,
-	NonceResponse,
-	Session,
-	User,
-	VerifyResponse,
-	WalletResponse,
-} from "./types.js";
-
-/**
- * Auth requests must go through the Next.js /api/* proxy in the browser so
- * that cookies (csrf_token, oma_session) live on the same origin as the
- * page. Direct cross-origin calls to the backend would carry cookies under
-	 * localhost only, and the auth/CSRF round-trip would fail.
- */
-const isBrowser = () => typeof window !== "undefined";
+export interface AuthSessionResponse {
+  user: User;
+}
 
 /**
- * Map backend paths through /api/... proxy in browser so cookies live
- * on the same origin (localhost:3399) instead of the backend port (3001).
+ * Fetch the current user via Better Auth's session lookup.
+ * Endpoint: GET /user (server validates the Better Auth session cookie).
  */
-const p = (path: string) => (isBrowser() ? `/api${path}` : path);
+async function getCurrentUser(): Promise<User | null> {
+  try {
+    return await request<User>("/user");
+  } catch {
+    return null;
+  }
+}
 
 export const auth = {
-	getCsrfToken() {
-		return request<{ token: string }>(p("/auth/csrf-token"));
-	},
+  getUser: () => getCurrentUser(),
 
-	createAccountNumber() {
-		return request<{ accountNumber: string }>(p("/auth/account/create"), {
-			method: "POST",
-		});
-	},
+  listKeys(): Promise<{ keys: ApiKey[] }> {
+    return request<{ keys: ApiKey[] }>("/v1/keys");
+  },
 
-	loginWithAccountNumber(accountNumber: string) {
-		return request<{ token: string; address: string; hasApiKey: boolean }>(
-			p("/auth/account/login"),
-			{
-				method: "POST",
-				body: JSON.stringify({ accountNumber }),
-			},
-		);
-	},
+  createKey(name: string): Promise<ApiKeyWithSecret> {
+    return request<ApiKeyWithSecret>("/v1/keys", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  },
 
-	getNonce(address: string) {
-		return request<NonceResponse>(p("/auth/nonce"), {
-			method: "POST",
-			body: JSON.stringify({ address }),
-		});
-	},
+  deleteKey(id: string): Promise<{ success: boolean; id: string }> {
+    return request<{ success: boolean; id: string }>(`/v1/keys/${id}`, {
+      method: "DELETE",
+    });
+  },
 
-	verify(message: string, signature: string, type: "siwe") {
-		return request<VerifyResponse>(p("/auth/verify"), {
-			method: "POST",
-			body: JSON.stringify({ message, signature, type }),
-		});
-	},
+  /**
+   * Install the raw API key as an HttpOnly cookie so browser-direct
+   * SSE chat can authenticate against the backend. The key never
+   * leaves the browser except in the Set-Cookie header.
+   */
+  installKeyCookie(key: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>("/v1/keys/install", {
+      method: "POST",
+      body: JSON.stringify({ key }),
+    });
+  },
 
-	wallet(message: string, signature: string) {
-		return request<WalletResponse>(p("/auth/wallet"), {
-			method: "POST",
-			body: JSON.stringify({ message, signature }),
-		});
-	},
+  /**
+   * Clear the HttpOnly API key cookie (forget the key on the
+   * browser without invalidating it server-side).
+   */
+  logoutKeyCookie(): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>("/v1/keys/logout", {
+      method: "POST",
+    });
+  },
 
-	logout() {
-		return request<void>(p("/auth/logout"), { method: "POST" });
-	},
-
-	unlinkWallet(type: "evm") {
-		return request<void>(p(`/auth/wallet/${type}`), { method: "DELETE" });
-	},
-
-	/**
-	 * Returns the signed-in user, or `null` when there is no session.
-	 * The Next proxy responds 204 for anonymous callers (avoids console
-	 * 401 noise on every public page). The core client maps 204 → undefined.
-	 */
-	getUser() {
-		return request<User | undefined>(p("/user")).then((u) => u ?? null);
-	},
-
-	deleteAccount() {
-		return request<void>(p("/account"), { method: "DELETE" });
-	},
-
-	listKeys() {
-		// Server returns `keyPrefix`; UI/types use `prefix`. Normalize here.
-		return request<{
-			keys: Array<ApiKey & { keyPrefix?: string; active?: boolean }>;
-		}>(p("/keys")).then((res) =>
-			(res.keys ?? []).map((k) => ({
-				id: k.id,
-				name: k.name,
-				prefix: k.prefix || k.keyPrefix || "",
-				createdAt: k.createdAt,
-				lastUsedAt: k.lastUsedAt ?? null,
-			})),
-		);
-	},
-
-	listSessions() {
-		// Backend multi-session list is not shipped yet. Avoid a guaranteed
-		// 404 round-trip that only shows up as console noise; settings builds
-		// a "this device" fallback client-side.
-		return Promise.resolve([] as Session[]);
-	},
-
-	/**
-	 * Enter read-only demo mode. There is no backend `/auth/demo` endpoint —
-	 * demo is a middleware cookie set when the user lands on a protected path
-	 * with `?demo=1` (see `src/middleware.ts`). This helper just navigates.
-	 */
-	startDemo() {
-		if (typeof window !== "undefined") {
-			window.location.assign("/dashboard?demo=1");
-		}
-		return Promise.resolve({ success: true as const, expiresIn: 86_400 });
-	},
-
-	createKey(name: string) {
-		return request<ApiKeyWithSecret>(p("/keys"), {
-			method: "POST",
-			body: JSON.stringify({ name }),
-		});
-	},
-
-	/**
-	 * Install the freshly created API key as the HttpOnly `oma_api_key`
-	 * cookie so browser-direct calls (chat/playground SSE streams that
-	 * can't go through the buffering /api proxy) authenticate.
-	 *
-	 * Two paths, tried in order:
-	 * 1. Direct to the backend origin with the in-memory session JWT —
-	 *    required in production where the API lives on its own host and
-	 *    a `__Host-` cookie set via the app-origin proxy would never be
-	 *    sent cross-origin.
-	 * 2. Through the /api proxy (session cookie → Bearer translation) —
-	 *    covers the hard-reload case where the in-memory JWT is gone.
-	 *    Same-origin cookies are port-agnostic in dev, so this is fully
-	 *    sufficient there.
-	 *
-	 * Best-effort: failure just means chat asks the user to re-auth.
-	 */
-	async installKeyCookie(apiKey: string): Promise<boolean> {
-		const token = getAuthToken();
-		if (token) {
-			try {
-				const res = await fetch(`${DEFAULT_API_URL}/auth/api-key/cookie`, {
-					method: "POST",
-					credentials: "include",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({ apiKey }),
-				});
-				if (res.ok) return true;
-			} catch {
-				// fall through to the proxy path
-			}
-		}
-		try {
-			await request<{ success: boolean }>(p("/auth/api-key/cookie"), {
-				method: "POST",
-				body: JSON.stringify({ apiKey }),
-			});
-			return true;
-		} catch {
-			return false;
-		}
-	},
-
-	/**
-	 * (Re)install the HttpOnly `oma_api_key` cookie from the current session.
-	 *
-	 * `installKeyCookie` only runs at key-creation time, so a logged-in user
-	 * on a new device has a session but no chat cookie and gets 401/402 in
-	 * chat. POST /auth/api-key/ensure derives the cookie server-side from the
-	 * session — no body required.
-	 *
-	 * Same two-path strategy as `installKeyCookie`: direct-to-backend with the
-	 * in-memory session JWT first (production cross-origin cookie), then the
-	 * /api proxy (hard-reload case where the in-memory JWT is gone).
-	 *
-	 * Best-effort: failure just means chat keeps showing its auth error.
-	 */
-	async ensureChatKey(): Promise<boolean> {
-		const token = getAuthToken();
-		if (token) {
-			try {
-				const res = await fetch(`${DEFAULT_API_URL}/auth/api-key/ensure`, {
-					method: "POST",
-					credentials: "include",
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				});
-				if (res.ok) return true;
-			} catch {
-				// fall through to the proxy path
-			}
-		}
-		try {
-			const res = await request<{ success: boolean; keyPrefix: string }>(
-				p("/auth/api-key/ensure"),
-				{ method: "POST" },
-			);
-			return res?.success === true;
-		} catch {
-			return false;
-		}
-	},
-
-	deleteKey(id: string) {
-		return request<void>(p(`/keys/${id}`), { method: "DELETE" });
-	},
-
-	updateKeyRateLimits(
-		id: string,
-		limits: { rpm?: number; tpm?: number; expiresAt?: string },
-	) {
-		return request<void>(p(`/keys/${id}`), {
-			method: "PATCH",
-			body: JSON.stringify(limits),
-		});
-	},
-
-	setup2FA() {
-		return request<{
-			secret: string;
-			qrCodeDataUrl: string;
-			otpauthUri: string;
-			backupCodes: string[];
-		}>(p("/auth/2fa/setup"), { method: "POST" });
-	},
-
-	verify2FA(code: string) {
-		return request<{ success: boolean }>(p("/auth/2fa/verify"), {
-			method: "POST",
-			body: JSON.stringify({ code }),
-		});
-	},
-
-	disable2FA(code: string) {
-		return request<{ success: boolean }>(p("/auth/2fa/disable"), {
-			method: "POST",
-			body: JSON.stringify({ code }),
-		});
-	},
-
-	getBackupCodes() {
-		return request<{ backupCodes: string[]; remaining: number }>(
-			p("/auth/2fa/backup-codes"),
-			{ method: "GET" },
-		);
-	},
+  /**
+   * Delete the current account. The Better Auth user + all API keys
+   * + credit balances are removed by the server in a single cascade.
+   */
+  deleteAccount(): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>("/account", {
+      method: "DELETE",
+    });
+  },
 };

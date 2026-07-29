@@ -70,12 +70,17 @@ const envSchema = z.object({
   // "0" disables the 402 challenge path; requires TREASURY_BASE_ADDRESS.
   X402_CHAT_PRICE_USD: z.string().regex(/^\d+(\.\d+)?$/).default("0.10"),
   PORT: z.coerce.number().default(3001),
-  JWT_SECRET: z.string().min(32).default("dev-secret-change-me-in-prod-32ch"),
-  // JWT_SECRET_PREVIOUS enables zero-downtime key rotation. When set, tokens
-  // signed with the previous secret remain valid (for verification) until they
-  // expire or are rotated out. New tokens are always signed with JWT_SECRET.
-  // Optional — leave unset on fresh deployments.
-  JWT_SECRET_PREVIOUS: z.string().min(32).optional(),
+  // Better Auth — replaces the legacy JWT_SECRET / CSRF_SECRET. Better Auth
+  // manages its own session signing + CSRF; we just need to provide a
+  // 32+ char secret. Generate one per environment with `openssl rand -hex 32`.
+  BETTER_AUTH_SECRET: z.string().min(32).default("dev-better-auth-secret-change-me-in-prod-32ch"),
+  // The base URL Better Auth uses to build callback URLs. In dev = the Next
+  // app's port (:3000). In prod = PUBLIC_APP_URL. Falls back to the API URL
+  // if neither is set.
+  BETTER_AUTH_URL: z.string().url().optional(),
+  // Resend API key for magic-link emails. Unset = dev mode (logs to stdout).
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM: z.string().min(1).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
   CORS_ORIGIN: z.string().default("http://localhost:3001"),
   // Canonical production domain. Used as the SIWE `domain` bind target
@@ -87,6 +92,10 @@ const envSchema = z.object({
   // Falls back to the production domain; production deployments can override
   // (e.g. staging environments).
   PUBLIC_API_URL: z.string().url().default("https://api.oma-ai.com"),
+  // PUBLIC_APP_URL — the Next.js app origin. Used by Better Auth's
+  // trustedOrigins and as the baseURL fallback for session cookie domain.
+  // Falls back to localhost in dev.
+  PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
   ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
   // Shared secret for the /internal/jobs/:name trigger endpoints (GitHub
   // Actions cron). Endpoints return 503 when unset — fail closed.
@@ -169,7 +178,8 @@ const envSchema = z.object({
 
   TINYFISH_API_KEY: z.string().optional(),
 
-  // CSRF protection secret (required for session-based auth flows)
+  // CSRF protection — Better Auth manages its own CSRF tokens internally.
+  // Kept here for legacy callers; honored as a no-op alias.
   CSRF_SECRET: z.string().min(32).default("dev-csrf-secret-change-me-in-prod-32ch"),
 
   // Weighted load balancing for provider failover (format: "venice:70,surplus:30")
@@ -260,24 +270,22 @@ const envSchema = z.object({
   QUICKNODE_X402_URL: z.string().url().optional(),
   QUICKNODE_X402_API_KEY: z.string().min(1).optional(),
 
-  // ===========================================================================
-  // Neon Auth (managed Better Auth service).
-  //
-  // When NEON_AUTH_URL is set, sessionAuth() in auth/middleware.ts falls
-  // back to verifying tokens against the JWKS at NEON_AUTH_JWKS_URL after
-  // the local HS256 check fails. The two paths are independent — setting
-  // these does NOT change how SIWE / account-number / API-key
-  // tokens are issued or verified. Provision via the Neon MCP:
-  //   mcp__neon__provision_neon_auth → mcp__neon__get_neon_auth_config
-  // ===========================================================================
-  NEON_AUTH_URL: z.string().url().optional(),
-  NEON_AUTH_JWKS_URL: z.string().url().optional(),
-  NEON_AUTH_ENABLED: envBoolean.default(true),
   // Polar.sh merchant of record configuration
   POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
   POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
   POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
   POLAR_SERVER: z.string().url().optional().default("https://api.polar.sh"),
+
+  // USDC deposit receiver on Base. Operator wallet that credits user balances
+  // after on-chain transfer confirmation. Empty in dev = surface a 503 instead
+  // of accepting deposits to nowhere.
+  USDC_DEPOSIT_ADDRESS: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  USDC_DEPOSIT_NETWORK: z.enum(["base"]).default("base"),
+  USDC_DEPOSIT_MIN_CENTS: z.coerce.number().int().positive().default(100),  // $1
+  USDC_DEPOSIT_MAX_CENTS: z.coerce.number().int().positive().default(1000000), // $10,000
   // Per-plan Polar product UUIDs. Get these from Polar dashboard → Products.
   POLAR_HOBBY_PRODUCT_ID: z.string().min(1).optional(),
   POLAR_BUILDER_PRODUCT_ID: z.string().min(1).optional(),
@@ -294,8 +302,6 @@ const envSchema = z.object({
    * inside the plan's allocation), NOT pure-usage metering.
    */
   POLAR_USAGE_METER_ID: z.string().min(1).optional(),
-  // Public app URL — used to build absolute checkout success/cancel URLs.
-  PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 });
 
 export type Config = z.infer<typeof envSchema>;
@@ -328,8 +334,16 @@ export { ADMIN_WALLET_ADDRESSES_SET };
 const validProductionEnvironments: string[] = ["production", "staging", "prod", "preview"];
 const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
 
-if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
-  console.error("[FATAL] CSRF_SECRET must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
+// Better Auth prod guards — fail fast on insecure defaults before any
+// request is served. The dev defaults are obviously insecure (32-z char
+// "dev-better-auth-secret..." bookmark reveals the intent).
+if (isProductionEnv && config.BETTER_AUTH_SECRET.startsWith("dev-")) {
+  console.error("[FATAL] BETTER_AUTH_SECRET must not be a dev placeholder in production. Run `openssl rand -hex 32` and set the result.");
+  process.exit(1);
+}
+
+if (isProductionEnv && config.BETTER_AUTH_SECRET.length < 64) {
+  console.error("[FATAL] BETTER_AUTH_SECRET must be at least 64 hex characters in production for adequate entropy.");
   process.exit(1);
 }
 
@@ -362,44 +376,15 @@ if (isProductionEnv) {
   }
 }
 
-if (isProductionEnv && INSECURE_DEFAULTS.includes(config.JWT_SECRET)) {
-  console.error("[FATAL] JWT_SECRET must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
+if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
+  console.error("[FATAL] CSRF_SECRET must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
   process.exit(1);
 }
 
-if (isProductionEnv && config.JWT_SECRET.length < 40) {
-  console.error("[FATAL] JWT_SECRET must be at least 40 characters in production for adequate entropy.");
-  process.exit(1);
-}
-
-// JWT_SECRET_PREVIOUS is optional but if set, must also follow the same
-// minimum-entropy rules as the current secret. Equal to JWT_SECRET is
-// pointless (rotation is a no-op) — reject so misconfigurations fail loudly.
-// OPERATIONAL NOTE: when rotating because JWT_SECRET was compromised,
-// UNSET JWT_SECRET_PREVIOUS in addition to rotating. Keeping it set means
-// the compromised key still verifies tokens (fallback path) until they expire.
-if (config.JWT_SECRET_PREVIOUS) {
-  if (INSECURE_DEFAULTS.includes(config.JWT_SECRET_PREVIOUS)) {
-    console.error("[FATAL] JWT_SECRET_PREVIOUS must not be a known insecure default. Set a strong secret (>= 32 chars).");
-    process.exit(1);
-  }
-  if (config.JWT_SECRET_PREVIOUS === config.JWT_SECRET) {
-    console.error("[FATAL] JWT_SECRET_PREVIOUS must differ from JWT_SECRET. Equal values make rotation a no-op.");
-    process.exit(1);
-  }
-  if (isProductionEnv && config.JWT_SECRET_PREVIOUS.length < 40) {
-    console.error("[FATAL] JWT_SECRET_PREVIOUS must be at least 40 characters in production for adequate entropy (matches JWT_SECRET).");
-    process.exit(1);
-  }
-}
-
-// SECURITY: Warn when JWT_SECRET_PREVIOUS is retained in production after rotation grace period.
-// Previous key can still verify attacker-minted tokens until all tokens signed with it expire.
-if (isProductionEnv && config.JWT_SECRET_PREVIOUS) {
-  logger.warn(
-    "[SECURITY] JWT_SECRET_PREVIOUS is set in production — unset after rotation grace period completes. Previous key can still verify attacker-minted tokens."
-  );
-}
+// Legacy JWT_SECRET / JWT_SECRET_PREVIOUS production guards removed —
+// Better Auth owns all session signing now. The env vars still exist as
+// inert config keys so deployments that haven't rotated their .env yet
+// don't break at startup.
 
 // SECURITY (A12): Require a Base RPC endpoint in production.
 if (isProductionEnv && !config.CHAIN_RPC_URL) {

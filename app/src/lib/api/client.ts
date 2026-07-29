@@ -3,297 +3,169 @@ import { DEFAULT_API_URL } from "@/lib/config";
 /**
  * Core HTTP client for the oma-ai frontend.
  *
- * - In the browser: `/api/*` paths go through the Next.js server (same origin)
- *   so the rewrite proxy handles forwarding to the backend. This ensures cookies
- *   (CSRF, session) are set on the same origin as the page.
- * - Non-`/api` paths (e.g. `/v1/models`) go directly to the backend.
- * - On the server (SSR): uses `NEXT_PUBLIC_API_URL` to reach the backend
- *   directly.
- */
-/**
- * Browser paths always go through the Next.js `/api` proxy so the HttpOnly
- * session cookie can be translated to `Authorization: Bearer` server-side.
- * Direct browser→:3001 calls would 401 after a hard reload (in-memory JWT gone).
+ * - In the browser: paths go through the Next.js server (same origin)
+ *   so the rewrite proxy handles forwarding to the backend. The
+ *   Better Auth session cookie is sent on every same-origin request.
+ * - On the server (SSR): uses `NEXT_PUBLIC_API_URL` to reach the
+ *   backend directly.
  */
 function toBrowserPath(path: string): string {
-	if (path.startsWith("/api")) return path;
-	return `/api${path.startsWith("/") ? path : `/${path}`}`;
+  if (path.startsWith("/api")) return path;
+  return `/api${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 function getBaseUrl(path: string): string {
-	// Browser: relative URL → same-origin Next.js API proxy
-	if (typeof window !== "undefined" && path.startsWith("/api")) return "";
-	return DEFAULT_API_URL;
+  if (typeof window !== "undefined" && path.startsWith("/api")) return "";
+  return DEFAULT_API_URL;
 }
 
 /**
- * B1 fix: in-memory JWT cache.
- *
- * The canonical session cookie is HttpOnly (`__Host-oma_session` in production,
- * `oma_session` in dev), so `document.cookie` no longer exposes the JWT.
- * Without an `Authorization` header, every browser→backend call would 401
- * because the Next.js catch-all and dedicated route proxies both rely on
- * reading the cookie server-side and forwarding it as `Authorization: Bearer
- * <jwt>` (the Hono backend's `sessionAuth` middleware only inspects that
- * header).
- *
- * To keep the client-side API helper working for the brief window between
- * receiving a fresh JWT and the next page reload (and for any non-`/api`
- * direct call), we mirror the token into a module-level cache that callers
- * populate via `setAuthToken(token)` whenever they get a fresh JWT in a
- * response body. `clearSession()` / logout handlers call `setAuthToken(null)`
- * to drop the cached copy.
- *
- * The HttpOnly cookie remains the authoritative copy for hard-reloads and
- * server-side middleware checks; this cache is a fast-path convenience, not
- * a security boundary. XSS exfiltration risk is unchanged because the token
- * already lives in JS-readable memory by the time the SPA holds it — the
- * HttpOnly cookie is what made it unreadable to other-page JS, not in-memory
- * state owned by the app itself.
+ * Response cache with TTL support. Used for /v1/balance, /v1/models.
  */
-let cachedToken: string | null = null;
-
-/** Set or clear the in-memory JWT used to populate `Authorization` headers. */
-export function setAuthToken(token: string | null): void {
-	cachedToken = token;
-}
-
-/** Read the currently cached JWT, if any. Returns null when no session. */
-export function getAuthToken(): string | null {
-	return cachedToken;
-}
-
-/**
- * Request deduplication — prevents duplicate concurrent requests.
- * Keyed by method + path + first 64 chars of body JSON.
- */
-const pendingRequests = new Map<string, Promise<unknown>>();
-
-interface CacheEntry<T> {
-	data: T;
-	timestamp: number;
-	ttl: number;
-}
-
-/** Response cache with TTL support. Used for /v1/balance, /v1/models. */
-const cache = new Map<string, CacheEntry<unknown>>();
-const DEFAULT_TTL = 60_000; // 60s default
-export const STALE_TTL = 300_000; // 5 min for stale-while-revalidate
+const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+const DEFAULT_TTL = 60_000;
+const STALE_TTL = 300_000;
 const REQUEST_TIMEOUT_MS = 30_000;
+
+export { STALE_TTL };
 
 /**
  * Custom error class for API errors with proper typing.
  */
 export class ApiError extends Error {
-	status: number;
-	body: unknown;
-	isNetworkError: boolean;
+  status: number;
+  body: unknown;
+  isNetworkError: boolean;
 
-	constructor(
-		status: number,
-		message: string,
-		body?: unknown,
-		isNetworkError = false,
-	) {
-		super(`[${status}] ${message}`);
-		this.name = "ApiError";
-		this.status = status;
-		this.body = body;
-		this.isNetworkError = isNetworkError;
-	}
+  constructor(
+    status: number,
+    message: string,
+    body?: unknown,
+    isNetworkError = false,
+  ) {
+    super(`[${status}] ${message}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+    this.isNetworkError = isNetworkError;
+  }
 }
 
 /**
  * Thrown when the browser can't reach the backend at all (network error).
- * Different from ApiError — backend being down is not the same as a 500.
  */
 export class BackendUnavailableError extends Error {
-	constructor() {
-		super(
-			"Backend server is not reachable. Please ensure the API server is started (configured via NEXT_PUBLIC_API_URL).",
-		);
-		this.name = "BackendUnavailableError";
-	}
+  constructor() {
+    super(
+      "Backend server is not reachable. Please ensure the API server is started (configured via NEXT_PUBLIC_API_URL).",
+    );
+    this.name = "BackendUnavailableError";
+  }
 }
 
 /**
  * True when an error from the API client represents an expired/invalid
- * session (HTTP 401/403 from a Bearer-authenticated endpoint). The
- * playground uses this to surface a one-time toast on session expiry
- * instead of letting the credits pill silently disappear.
+ * session (HTTP 401/403).
  */
 export function isAuthError(err: unknown): boolean {
-	if (err instanceof ApiError) {
-		return err.status === 401 || err.status === 403;
-	}
-	// Some callers throw raw Errors with a `status` property when the
-	// request helper isn't on the path — accept those too.
-	const anyErr = err as { status?: number } | null | undefined;
-	return anyErr?.status === 401 || anyErr?.status === 403;
+  if (err instanceof ApiError) {
+    return err.status === 401 || err.status === 403;
+  }
+  const anyErr = err as { status?: number } | null | undefined;
+  return anyErr?.status === 401 || anyErr?.status === 403;
 }
 
 /** Get a cached entry by key. Returns null if missing or beyond STALE_TTL. */
 export function getCached<T>(key: string): T | null {
-	const entry = cache.get(key) as CacheEntry<T> | undefined;
-	if (!entry) return null;
-	const age = Date.now() - entry.timestamp;
-	if (age > STALE_TTL) {
-		cache.delete(key);
-		return null;
-	}
-	return entry.data;
+  const entry = cache.get(key);
+  if (!entry) return null;
+  const age = Date.now() - entry.timestamp;
+  if (age > STALE_TTL) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data as T;
 }
 
 /** Set a cache entry. Defaults to DEFAULT_TTL (60s). */
 export function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
-	cache.set(key, { data, timestamp: Date.now(), ttl });
+  cache.set(key, { data, timestamp: Date.now(), ttl });
 }
 
 /**
- * Options accepted by `request()`. Extends the standard `RequestInit` with
- * a `responseType` discriminator so callers can ask for a `Blob` (CSV/JSON
- * export downloads) instead of the default JSON parse.
+ * Options accepted by `request()`. Extends the standard `RequestInit`
+ * with a `responseType` discriminator so callers can ask for a `Blob`
+ * (CSV/JSON export downloads) instead of the default JSON parse.
  */
 export interface RequestOptions extends RequestInit {
-	/**
-	 * How to interpret a successful response body.
-	 * - `'json'` (default) — parse the body as JSON and return it as `T`.
-	 * - `'blob'` — return the body as a `Blob` (for binary downloads such as
-	 *   CSV/JSON exports). The caller casts `T` to `Blob`.
-	 *
-	 * Error responses are still parsed as JSON when possible so we can
-	 * surface a typed `ApiError` regardless of the requested response type.
-	 */
-	responseType?: "json" | "blob";
+  responseType?: "json" | "blob";
 }
 
 /**
- * Core request function.
- * - Deduplicates in-flight requests
- * - 30s timeout via AbortController
- * - Injects `Authorization: Bearer <token>` from the in-memory cache populated
- *   by `setAuthToken()` (browser only). The HttpOnly session cookie is the
- *   authoritative copy; this cache is the client-side fast-path so non-`/api`
- *   direct calls and the in-page request helper can attach the header without
- *   re-reading the cookie.
- * - Throws `ApiError` on non-2xx, `BackendUnavailableError` on network failure
+ * Core request function. The Better Auth session cookie is sent on
+ * every same-origin browser request automatically (HttpOnly, secure
+ * when applicable). Server-side requests can pass `Authorization: Bearer`
+ * via `opts.headers` if needed.
  */
 export async function request<T>(
-	path: string,
-	opts: RequestOptions = {},
+  path: string,
+  opts: RequestOptions = {},
 ): Promise<T> {
-	// Lightweight dedup key: method + path + first 200 chars of body (if any).
-	// Full JSON.stringify is wasteful for dedup — we only need enough to distinguish
-	// different request payloads.
-	const bodyPrefix = opts.body ? JSON.stringify(opts.body).slice(0, 200) : "";
-	const responseType = opts.responseType ?? "json";
-	const requestKey = `${opts.method || "GET"}:${path}:${bodyPrefix}`;
+  const { responseType = "json", ...fetchOpts } = opts;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(fetchOpts.headers as Record<string, string> | undefined),
+  };
 
-	if (pendingRequests.has(requestKey)) {
-		return pendingRequests.get(requestKey) as Promise<T>;
-	}
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-		Accept: "application/json",
-		...(opts.headers as Record<string, string> | undefined),
-	};
+  try {
+    const resolvedPath =
+      typeof window !== "undefined" ? toBrowserPath(path) : path;
+    const res = await fetch(`${getBaseUrl(resolvedPath)}${resolvedPath}`, {
+      ...fetchOpts,
+      headers,
+      credentials: "same-origin",
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-	if (typeof window !== "undefined") {
-		// B1 fix: source the bearer token from the in-memory cache populated
-		// by wallet-provider.tsx / account-login-modal.tsx when they receive a
-		// fresh JWT in a /v1/auth/* response body. document.cookie no longer
-		// exposes the JWT because the canonical cookie is HttpOnly — using
-		// the cache avoids a cookie round-trip on every request and keeps
-		// direct-to-backend calls (non-/api paths) authenticated.
-		const cached = getAuthToken();
-		if (cached) {
-			headers.Authorization = `Bearer ${cached}`;
-		}
+    if (!res.ok) {
+      let message = res.statusText;
+      let body: unknown;
+      try {
+        body = await res.json();
+        if (body && typeof body === "object" && "error" in body) {
+          const errVal = (body as { error: unknown }).error;
+          if (typeof errVal === "string") {
+            message = errVal;
+          } else if (
+            errVal &&
+            typeof errVal === "object" &&
+            "message" in errVal
+          ) {
+            message = String((errVal as { message: unknown }).message);
+          } else {
+            message = res.statusText;
+          }
+        }
+      } catch {
+        // Non-JSON body — fall back to status text
+      }
+      throw new ApiError(res.status, message, body);
+    }
 
-		// Inject x-csrf-token for state-changing requests. The server sets the
-		// csrf_token (dev) or __Host-csrf_token (prod) cookie (env-dependent,
-		// see server cookies.ts) and expects the same value echoed in
-		// x-csrf-token header. GET requests don't need it.
-		// H6 fix: check both cookie names so prod __Host-csrf_token is found.
-		const method = (opts.method || "GET").toUpperCase();
-		if (method !== "GET" && method !== "HEAD") {
-			try {
-				const cookies = document.cookie.split("; ");
-				const csrfCookie = cookies.find(
-					(c) => c.startsWith("csrf_token=") || c.startsWith("__Host-csrf_token="),
-				);
-				if (csrfCookie && !headers["x-csrf-token"]) {
-					const token = decodeURIComponent(csrfCookie.split("=")[1]);
-					if (token) headers["x-csrf-token"] = token;
-				}
-			} catch {
-				// Cookie access denied — skip
-			}
-		}
-	}
-
-	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-	const { responseType: _ignored, ...fetchOpts } = opts;
-
-	const fetchPromise = (async () => {
-		try {
-			const resolvedPath =
-				typeof window !== "undefined" ? toBrowserPath(path) : path;
-			const res = await fetch(`${getBaseUrl(resolvedPath)}${resolvedPath}`, {
-				...fetchOpts,
-				headers,
-				credentials: "same-origin",
-				signal: controller.signal,
-			});
-
-			clearTimeout(timeoutId);
-
-			if (!res.ok) {
-				let message = res.statusText;
-				let body: unknown;
-				try {
-					body = await res.json();
-					if (body && typeof body === "object" && "error" in body) {
-						const errVal = (body as { error: unknown }).error;
-						if (typeof errVal === "string") {
-							message = errVal;
-						} else if (
-							errVal &&
-							typeof errVal === "object" &&
-							"message" in errVal
-						) {
-							message = String((errVal as { message: unknown }).message);
-						} else {
-							message = res.statusText;
-						}
-					}
-				} catch {
-					// Non-JSON body — fall back to status text
-				}
-				throw new ApiError(res.status, message, body);
-			}
-
-			if (res.status === 204) return undefined as T;
-			if (responseType === "blob") return (await res.blob()) as T;
-			return (await res.json()) as T;
-		} catch (error) {
-			clearTimeout(timeoutId);
-			if (error instanceof TypeError && error.message.includes("fetch")) {
-				throw new BackendUnavailableError();
-			}
-			if (error instanceof ApiError) throw error;
-			throw error;
-		}
-	})();
-
-	pendingRequests.set(requestKey, fetchPromise);
-
-	try {
-		return await fetchPromise;
-	} finally {
-		pendingRequests.delete(requestKey);
-	}
+    if (res.status === 204) return undefined as T;
+    if (responseType === "blob") return (await res.blob()) as T;
+    return (await res.json()) as T;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new BackendUnavailableError();
+    }
+    if (error instanceof ApiError) throw error;
+    throw error;
+  }
 }

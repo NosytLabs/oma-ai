@@ -7,54 +7,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { EASE_SPRING } from "@/lib/motion";
-import type { AuthMethod } from "../wallet-context";
 import { useClickOutside } from "./_hooks/useClickOutside";
 
 interface NavbarUserMenuProps {
-	/**
-	 * The connected EVM address, if any. Account-number-only users
-	 * (`authMethod === "account-number"`) have no EVM address; the menu
-	 * still renders for them with a hashed account-number label.
-	 */
-	evmAddress: string | undefined;
-	authMethod: AuthMethod;
-	accountNumber: string | null;
-	onDisconnect: () => void | Promise<void>;
+	evmAddress: string | null;
+	onSignOut: () => Promise<void>;
 }
 
 const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
 
 /**
- * Format an account number for the trigger label. We don't want to
- * surface the full 16 digits in a 6rem-wide pill (would truncate
- * inconsistently across locales), so we show a stable 4-digit prefix
- * + 4-digit suffix with a dot separator. This is the same approach
- * Mullvad VPN uses for its account number UI.
+ * User dropdown — only rendered when a Better Auth session is active.
+ * Shows the linked EVM address (if any), API keys / settings / credits
+ * links, and a confirmation-gated sign-out.
  */
-const shortAccountNumber = (n: string) =>
-	n.length >= 9 ? `${n.slice(0, 4)}…${n.slice(-4)}` : n;
-
-/**
- * User dropdown shown only when the wallet is connected. Self-manages
- * open/close state. Click-outside closes via `useClickOutside`. Escape
- * closes without focus restore (matches the original user-menu behavior —
- * deliberately asymmetric with the tools dropdown).
- *
- * Resets to closed on route change to preserve the original navbar's
- * "all menus close on navigation" semantics.
- *
- * Logout requires a confirmation prompt because the JWT is the only
- * credential — particularly for account-number users, where the number
- * itself is the secret. A click that nukes the session without an
- * "are you sure?" is a real footgun (e.g. on touch devices where a
- * stray tap fires instantly).
- */
-export function NavbarUserMenu({
-	evmAddress,
-	authMethod,
-	accountNumber,
-	onDisconnect,
-}: NavbarUserMenuProps) {
+export function NavbarUserMenu({ evmAddress, onSignOut }: NavbarUserMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
@@ -62,7 +29,6 @@ export function NavbarUserMenu({
 	const prefersReduced = useReducedMotion();
 	const pathname = usePathname();
 
-	// Close the user menu on every route change.
 	useEffect(() => {
 		setOpen(false);
 		setConfirming(false);
@@ -85,9 +51,6 @@ export function NavbarUserMenu({
 		return () => document.removeEventListener("keydown", onKey);
 	}, [open]);
 
-	// Reset confirm/disconnect state when the menu closes so reopening
-	// it starts clean — without this, the next open could land in a
-	// half-armed "are you sure?" state.
 	useEffect(() => {
 		if (!open) {
 			setConfirming(false);
@@ -95,27 +58,14 @@ export function NavbarUserMenu({
 		}
 	}, [open]);
 
-	// Render trigger label based on auth method. Wallet users get the
-	// short address; account-number users get a 4-dot-4 sample of their
-	// number. Either way the trigger never reveals the *full* secret in
-	// the navbar.
-	const triggerLabel = evmAddress
-		? shortAddress(evmAddress)
-		: accountNumber
-			? shortAccountNumber(accountNumber)
-			: "session";
-
-	const triggerTitle = evmAddress
-		? evmAddress
-		: accountNumber
-			? `Account number ${accountNumber}`
-			: "Active session";
+	const triggerLabel = evmAddress ? shortAddress(evmAddress) : "session";
+	const triggerTitle = evmAddress ?? "Active session";
 
 	const handleConfirmDisconnect = async () => {
 		if (disconnecting) return;
 		setDisconnecting(true);
 		try {
-			await onDisconnect();
+			await onSignOut();
 		} finally {
 			setDisconnecting(false);
 			setOpen(false);
@@ -174,13 +124,8 @@ export function NavbarUserMenu({
 								Active session
 							</p>
 							<p className="mt-1 truncate text-xs text-accent">
-								{evmAddress ?? (accountNumber ? `account:${accountNumber}` : "session")}
+								{evmAddress ?? "session"}
 							</p>
-							{authMethod === "account-number" && !evmAddress && (
-								<p className="mt-0.5 text-[10px] uppercase tracking-widest text-text-muted">
-									account-number login
-								</p>
-							)}
 						</div>
 						<Link
 							href="/dashboard"
@@ -218,7 +163,7 @@ export function NavbarUserMenu({
 								className="flex w-full items-center gap-3 px-4 py-3 text-left text-xs text-error/80 transition-colors hover:bg-error-dim hover:text-error focus-visible:outline-none focus-visible:bg-error-dim focus-visible:text-error"
 							>
 								<LogOut className="h-3 w-3" aria-hidden="true" />
-								terminate session
+								sign out
 							</button>
 						) : (
 							<div
@@ -231,15 +176,14 @@ export function NavbarUserMenu({
 									id="user-disconnect-title"
 									className="text-[11px] font-semibold text-error"
 								>
-									Terminate session?
+									Sign out?
 								</p>
 								<p
 									id="user-disconnect-body"
 									className="mt-1 text-[10px] leading-relaxed text-text-secondary"
 								>
-									{authMethod === "account-number"
-										? "You'll need your account number to sign back in. There's no recovery — write it down first."
-										: "You'll need your wallet to sign back in."}
+									You&apos;ll need to sign in again with the same method
+									(magic link, anonymous, or wallet).
 								</p>
 								<div className="mt-2 grid grid-cols-2 gap-1">
 									<button

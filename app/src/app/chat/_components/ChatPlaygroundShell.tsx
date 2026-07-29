@@ -15,7 +15,7 @@ import type { ExampleConversation, Message } from "@/components/chat";
 import { balanceToDollars, useBalance } from "@/components/chat/useBalance";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
-import { useWallet } from "@/components/wallet-provider";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
 import {
 	FREE_DEFAULT_CHAT_MODEL,
@@ -139,7 +139,7 @@ function ShellContent({
 	} = usePlaygroundState();
 
 	const toast = useToast();
-	const { isAuthenticated, isDemo } = useWallet();
+	const { isAuthenticated } = useAuth();
 	const { balance, loading: balanceLoading } = useBalance();
 	const balanceDollars = balanceToDollars(balance);
 	const LOW_BALANCE_THRESHOLD = 1;
@@ -148,7 +148,6 @@ function ShellContent({
 	const isLowBalance =
 		isChat &&
 		isAuthenticated &&
-		!isDemo &&
 		balance != null &&
 		!balanceLoading &&
 		balanceDollars < LOW_BALANCE_THRESHOLD;
@@ -326,14 +325,14 @@ function ShellContent({
 	// switch them to a paid model that 401/402s without a key.
 	const pickModelForGuest = useCallback(
 		(candidate?: string) => {
-			if (isAuthenticated && !isDemo) {
+			if (isAuthenticated) {
 				return candidate;
 			}
 			if (candidate && isFreeChatModel(candidate)) return candidate;
 			if (isFreeChatModel(model)) return model;
 			return FREE_DEFAULT_CHAT_MODEL;
 		},
-		[isAuthenticated, isDemo, model],
+		[isAuthenticated, model],
 	);
 
 	const handlePreset = useCallback(
@@ -507,14 +506,14 @@ function ShellContent({
 					aria-label="Chat messages"
 					className="flex-1 flex flex-col min-w-0 border-r border-border relative"
 				>
-					{isDemo && (
+					{!isAuthenticated && (
 						<div
 							role="status"
 							className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-accent/10 border-b border-accent/25 text-xs text-accent font-mono"
 						>
 							<span className="tracking-wide">
-								Demo mode — mock dashboard data. Free OMA-AI chat still works
-								without sign-in on this page.
+								Free OMA-AI chat works without sign-in. Sign in for paid models,
+								higher limits, and saved conversations.
 							</span>
 							<Link
 								href="/login?next=/chat"

@@ -1,16 +1,40 @@
+/**
+ * Auth middleware for Hono routes.
+ *
+ * Two independent paths:
+ *
+ *   bearerAuth          — API key auth (Authorization: Bearer oma_sk_… or
+ *                         the HttpOnly oma_api_key cookie). Used for the
+ *                         OpenAI-compatible /v1/* gateway surface.
+ *
+ *   sessionAuth         — Better Auth session cookie. The Next.js middleware
+ *                         decodes the HttpOnly cookie; this middleware
+ *                         re-verifies it on the server side by calling the
+ *                         Better Auth API. Used for dashboard / settings /
+ *                         /admin.
+ *
+ *   sessionOrBearerAuth — accept either (used on /v1/usage and friends where
+ *                         a logged-in dashboard user OR a CLI key should
+ *                         both work).
+ *
+ * The legacy JWT (HS256) verifySessionToken path was REMOVED in this
+ * rebuild — Better Auth signs the session cookie itself.
+ */
 import type { Context, Next } from "hono";
-import { validateApiKey, shouldRecommendRotation, isIpAllowedByList } from "./api-keys.js";
-import { verifySessionToken } from "./siwe.js";
-import { verifyNeonAuthToken, isNeonAuthConfigured } from "./neon-auth.js";
-import { db } from "../db/client.js";
-import { users, teamMembers } from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import {
+  validateApiKey,
+  isIpAllowedByList,
+  shouldRecommendRotation,
+} from "./api-keys.js";
+import { auth } from "../auth.js";
 import type { OmaEnv } from "../types.js";
 import type { ApiKey } from "../db/schema.js";
 import { config, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { logger } from "../lib/logger.js";
-import { enforceTwoFactor } from "./two-factor-gate.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { user } from "../db/schema.js";
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -18,87 +42,128 @@ function isValidEthereumAddress(address: string): boolean {
   return ETH_ADDRESS_REGEX.test(address);
 }
 
-function validateAdminAddresses(): void {
+export function initAuth(): void {
+  const validProductionEnvironments = ["production", "staging", "preview"];
+  if (!validProductionEnvironments.includes(config.NODE_ENV)) return;
   if (!config.ADMIN_WALLET_ADDRESSES) return;
 
-  const addresses = config.ADMIN_WALLET_ADDRESSES.split(",").map((a) => a.trim()).filter(Boolean);
+  const addresses = config.ADMIN_WALLET_ADDRESSES.split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
 
   for (const address of addresses) {
     if (!isValidEthereumAddress(address)) {
-      logger.fatal({ address }, "[FATAL] ADMIN_WALLET_ADDRESSES contains invalid Ethereum address");
+      logger.fatal(
+        { address },
+        "[FATAL] ADMIN_WALLET_ADDRESSES contains invalid Ethereum address",
+      );
       process.exit(1);
     }
-  }
-}
-
-const validProductionEnvironments = ["production", "staging", "preview"];
-const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
-
-// Fail-fast startup validation moved off module top-level so importing this
-// module (e.g. in tests, or in route files loaded before the server starts)
-// does not trigger process.exit. Call initAuth() from the server entry point
-// at startup instead (M2).
-export function initAuth(): void {
-  if (isProductionEnv) {
-    validateAdminAddresses();
   }
 }
 
 // SEC-7: singleflight dedup. Concurrent requests for the same key share
 // one in-flight validateApiKey() promise so the underlying DB transaction
 // (with its SELECT ... FOR UPDATE + lastUsedAt write) runs at most once
-// per key. The lock is cleared on both success and failure so a later
-// request can retry a transient failure.
+// per key.
 type SingleflightRecord = { promise: Promise<unknown> };
 const singleflightInflight = new Map<string, SingleflightRecord>();
 
-async function singleflight<T>(key: string, fn: () => Promise<T> | T): Promise<T> {
+async function singleflight<T>(
+  key: string,
+  fn: () => Promise<T> | T,
+): Promise<T> {
   const existing = singleflightInflight.get(key);
   if (existing) return existing.promise as Promise<T>;
   const promise = (async () => {
-    try { return await fn(); } finally { singleflightInflight.delete(key); }
+    try {
+      return await fn();
+    } finally {
+      singleflightInflight.delete(key);
+    }
   })();
   singleflightInflight.set(key, { promise });
   return promise;
 }
 
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
-  // Accept the API key from either the Authorization header (server-to-server,
-  // CLI tools, custom integrations) OR the `oma_api_key` / `__Host-oma_api_key`
-  // HttpOnly cookie (browser requests where JS cannot read HttpOnly cookies).
   let rawKey: string | null = null;
   const authHeader = c.req.header("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
     rawKey = authHeader.slice(7);
   } else {
     const cookieHeader = c.req.header("Cookie") || "";
-    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
+    const match = cookieHeader.match(
+      /(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/,
+    );
     if (match) rawKey = decodeURIComponent(match[1]);
   }
   if (!rawKey) {
-    return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
+    return c.json(
+      {
+        error: {
+          message: "Missing or invalid Authorization header",
+          type: "authentication_error",
+        },
+      },
+      401,
+    );
   }
 
   let apiKey: ApiKey | null;
   try {
-    // SEC-7: dedup concurrent validateApiKey calls per raw key.
-    apiKey = (await singleflight(`apikey:${rawKey}`, () => validateApiKey(rawKey!))) as ApiKey | null;
+    apiKey = (await singleflight(`apikey:${rawKey}`, () =>
+      validateApiKey(rawKey!),
+    )) as ApiKey | null;
   } catch (err) {
-    logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[bearerAuth] validateApiKey threw");
-    return c.json({ error: { message: "Invalid API key", type: "authentication_error" } }, 401);
+    logger.error(
+      {
+        err: err instanceof Error ? err.message : String(err),
+        type: "auth_validation_error",
+      },
+      "[bearerAuth] validateApiKey threw",
+    );
+    return c.json(
+      {
+        error: { message: "Invalid API key", type: "authentication_error" },
+      },
+      401,
+    );
   }
 
   if (!apiKey) {
-    return c.json({ error: { message: "Invalid API key", type: "authentication_error" } }, 401);
+    return c.json(
+      {
+        error: { message: "Invalid API key", type: "authentication_error" },
+      },
+      401,
+    );
   }
-  if (apiKey.expired) {
-    return c.json({ error: { message: "API key expired", type: "authentication_error", code: "expired_api_key" } }, 401);
+  if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+    return c.json(
+      {
+        error: {
+          message: "API key expired",
+          type: "authentication_error",
+          code: "expired_api_key",
+        },
+      },
+      401,
+    );
   }
-  // G3: IP allowlist enforcement — null/empty list means no restriction.
   if (apiKey.ipAllowlist && apiKey.ipAllowlist.length > 0) {
     const clientIp = extractClientIp(c);
     if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
-      return c.json({ error: { message: "IP not allowed for this API key", type: "forbidden", code: "ip_not_allowed" } }, 403);
+      return c.json(
+        {
+          error: {
+            message: "IP not allowed for this API key",
+            type: "forbidden",
+            code: "ip_not_allowed",
+          },
+        },
+        403,
+      );
     }
   }
   c.set("apiKey", apiKey);
@@ -110,180 +175,77 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 }
 
 /**
- * Accept either a session JWT (dashboard / SIWE / account-number) OR an API key.
- * Dashboard pages send the session cookie as Bearer via the Next proxy; CLI and
- * agents send `oma_sk_…` keys. Without this dual path, logged-in users hit
- * "Invalid API key" on /v1/balance and /v1/credits/* while /v1/usage works
- * (sessionAuth-only).
+ * Better Auth session middleware. Reads the HttpOnly session cookie set by
+ * the Better Auth handler and resolves it to a { userId, session } pair
+ * via `auth.api.getSession`. Sets the same Hono context keys as bearerAuth
+ * so downstream route handlers don't have to care which path was used.
  */
-export async function sessionOrBearerAuth(c: Context<OmaEnv>, next: Next) {
-  const authHeader = c.req.header("Authorization");
-  const cookieHeader = c.req.header("Cookie") || "";
-
-  let raw: string | null = null;
-  if (authHeader?.startsWith("Bearer ")) {
-    raw = authHeader.slice(7);
-  } else {
-    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
-    if (match) raw = decodeURIComponent(match[1]);
-  }
-
-  if (!raw) {
+export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
+  const headers = new Headers();
+  for (const [k, v] of c.req.raw.headers) headers.set(k, v);
+  const session = await auth.api.getSession({ headers });
+  if (!session?.user) {
     return c.json(
-      { error: { message: "Missing or invalid Authorization header", type: "authentication_error" } },
+      {
+        error: {
+          message: "Unauthorized",
+          type: "authentication_error",
+        },
+      },
       401,
     );
   }
-
-  // JWT-shaped tokens: try session verification first (HS256 session cookies).
-  if (raw.split(".").length === 3) {
-    try {
-      const session = (await verifySessionToken(raw)) as {
-        userId: string;
-        authMethod: string;
-      } | null;
-      if (session?.userId) {
-        c.set("userId", session.userId);
-        c.set(
-          "authMethod",
-          session.authMethod as "siwe" | "account-number" | "sso" | "neon-auth",
-        );
-        await next();
-        return;
-      }
-    } catch (err) {
-      logger.debug(
-        { err: err instanceof Error ? err.message : String(err) },
-        "[sessionOrBearerAuth] session verify failed; trying API key",
-      );
-    }
-  }
-
-  // Fall through to API key validation (oma_sk_… or opaque keys).
-  return bearerAuth(c, next);
+  c.set("userId", session.user.id);
+  c.set("session", session.session);
+  c.set("user", session.user);
+  await next();
 }
 
-export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: { message: "Missing or invalid Authorization header", type: "authentication_error" } }, 401);
-  }
-  const token = authHeader.slice(7);
-
-  // Path 1: local HS256 session token (SIWE / account-number / sso).
-  let session: { userId: string; authMethod: string } | null;
-  try {
-    session = (await verifySessionToken(token)) as { userId: string; authMethod: string } | null;
-  } catch (err) {
-    logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[sessionAuth] verifySessionToken threw");
-    session = null;
-  }
-
-  if (session) {
-    c.set("userId", session.userId);
-    c.set("authMethod", session.authMethod as "siwe" | "account-number" | "sso" | "neon-auth");
-
-    const [user] = await db.select({ twoFactorEnabled: users.twoFactorEnabled }).from(users).where(eq(users.id, session.userId)).limit(1);
-    if (user?.twoFactorEnabled) {
-      const [userWithSecret] = await db
-        .select({ twoFactorSecret: users.twoFactorSecret })
-        .from(users)
-        .where(eq(users.id, session.userId))
-        .limit(1);
-      const result = await enforceTwoFactor(
-        session.userId,
-        userWithSecret?.twoFactorSecret,
-        c.req.header("X-2FA-Code"),
-      );
-      if (!result.ok) {
-        return c.json(
-          {
-            error: {
-              message: result.message,
-              type: result.status === 429 ? "rate_limited" : "authentication_error",
-              ...(result.code ? { code: result.code } : {}),
-            },
-          },
-          result.status,
-        );
-      }
-    }
-
+/**
+ * Accept either a Better Auth session cookie OR an API key. Used on
+ * endpoints that work for both browser users (dashboard) and CLI / agents
+ * (Bearer key).
+ */
+export async function sessionOrBearerAuth(
+  c: Context<OmaEnv>,
+  next: Next,
+) {
+  // Try session first.
+  const headers = new Headers();
+  for (const [k, v] of c.req.raw.headers) headers.set(k, v);
+  const session = await auth.api.getSession({ headers });
+  if (session?.user) {
+    c.set("userId", session.user.id);
+    c.set("session", session.session);
+    c.set("user", session.user);
     await next();
     return;
   }
-
-  // Path 2: Neon Auth (managed Better Auth) JWT via JWKS. This is a
-  // pure-additive parallel path. When NEON_AUTH_URL is unset, this is
-  // a no-op and we 401 below. Neon-Auth-authenticated requests skip
-  // the local 2FA gate because Better Auth enforces its own session
-  // policies server-side.
-  if (isNeonAuthConfigured()) {
-    let neonAuth: Awaited<ReturnType<typeof verifyNeonAuthToken>> | null = null;
-    try {
-      neonAuth = await verifyNeonAuthToken(token);
-    } catch (err) {
-      logger.error(
-        { err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' },
-        "[sessionAuth] verifyNeonAuthToken threw",
-      );
-      neonAuth = null;
-    }
-    if (neonAuth) {
-      c.set("neonAuthUserId", neonAuth.neonAuthUserId);
-      // If a local OMA user row is linked to this Neon Auth user, we
-      // populate userId + authMethod so downstream code that only
-      // reads `c.get('userId')` continues to work. The linking is
-      // best-effort and read-only here — Neon Auth sign-in is the
-      // authoritative identity, the local row is just convenience
-      // for billing / credits / API key rows.
-      const [linked] = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.neonAuthUserId, neonAuth.neonAuthUserId))
-        .limit(1);
-      if (linked) {
-        c.set("userId", linked.id);
-      } else {
-        c.set("userId", `neon-auth:${neonAuth.neonAuthUserId}`);
-      }
-      c.set("authMethod", "neon-auth");
-      await next();
-      return;
-    }
-  }
-
-  return c.json({ error: { message: "Invalid or expired session token", type: "authentication_error" } }, 401);
+  // Fall through to API key.
+  return bearerAuth(c, next);
 }
 
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
-  let rawKey: string | null = null;
   const authHeader = c.req.header("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    rawKey = authHeader.slice(7);
-  } else {
-    const cookieHeader = c.req.header("Cookie") || "";
-    const match = cookieHeader.match(/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/);
-    if (match) rawKey = decodeURIComponent(match[1]);
-  }
-  if (rawKey) {
+    const rawKey = authHeader.slice(7);
     let apiKey: ApiKey | null;
     try {
-      apiKey = (await validateApiKey(rawKey)) as ApiKey | null;
-    } catch (err) {
-      logger.error({ err: err instanceof Error ? err.message : String(err), type: 'auth_validation_error' }, "[optionalAuth] validateApiKey threw");
+      apiKey = (await singleflight(`apikey:${rawKey}`, () =>
+        validateApiKey(rawKey!),
+      )) as ApiKey | null;
+    } catch {
       await next();
       return;
     }
     if (apiKey) {
-      // ponytail: v7 H1 — enforce IP allowlist on optionalAuth too. Previously
-      // a key with ipAllowlist set would be accepted from any IP if the route
-      // used optionalAuth instead of bearerAuth.
-      if (apiKey.ipAllowlist && Array.isArray(apiKey.ipAllowlist) && apiKey.ipAllowlist.length > 0) {
+      if (
+        apiKey.ipAllowlist &&
+        Array.isArray(apiKey.ipAllowlist) &&
+        apiKey.ipAllowlist.length > 0
+      ) {
         const clientIp = extractClientIp(c);
         if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
-          // optionalAuth doesn't return errors — it just doesn't set the context.
-          // Drop the key silently so the route treats the request as anonymous.
           await next();
           return;
         }
@@ -291,51 +253,53 @@ export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
       c.set("apiKey", apiKey);
       c.set("userId", apiKey.userId);
     }
+    return next();
+  }
+  // No Bearer — check for session cookie
+  const headers = new Headers();
+  for (const [k, v] of c.req.raw.headers) headers.set(k, v);
+  const session = await auth.api.getSession({ headers });
+  if (session?.user) {
+    c.set("userId", session.user.id);
+    c.set("session", session.session);
+    c.set("user", session.user);
   }
   await next();
 }
-
-const PLATFORM_TEAM_ID = config.PLATFORM_TEAM_ID || "";
 
 export function requireAdmin() {
   return async (c: Context<OmaEnv>, next: Next) => {
     const userId = c.get("userId");
     if (!userId) {
-      return c.json({ error: { message: "Authentication required", type: "unauthorized" } }, 401);
+      return c.json(
+        {
+          error: { message: "Authentication required", type: "unauthorized" },
+        },
+        401,
+      );
     }
 
     if (ADMIN_WALLET_ADDRESSES_SET.size > 0) {
-      const [user] = await db
-        .select({ address: users.address })
-        .from(users)
-        .where(eq(users.id, userId))
+      const [u] = await db
+        .select({ evmAddress: user.evmAddress })
+        .from(user)
+        .where(eq(user.id, userId))
         .limit(1);
-      if (user?.address && ADMIN_WALLET_ADDRESSES_SET.has(user.address.toLowerCase())) {
+      if (
+        u?.evmAddress &&
+        ADMIN_WALLET_ADDRESSES_SET.has(u.evmAddress.toLowerCase())
+      ) {
         c.set("teamRole", "owner");
         await next();
         return;
       }
     }
 
-    // SECURITY (A1): Never accept teamId from client. PLATFORM_TEAM_ID must be
-    // the only source. If unset, reject immediately — do not fall back to
-    // query params or headers (those allowed any team member to bypass admin).
-    const teamId = PLATFORM_TEAM_ID;
-    if (!teamId) {
-      return c.json({ error: { message: "Admin access required", type: "forbidden" } }, 403);
-    }
-
-    const [membership] = await db
-      .select({ role: teamMembers.role })
-      .from(teamMembers)
-      .where(and(eq(teamMembers.userId, userId), eq(teamMembers.teamId, teamId)))
-      .limit(1);
-
-    if (!membership || !["admin", "owner"].includes(membership.role)) {
-      return c.json({ error: { message: "Admin access required", type: "forbidden" } }, 403);
-    }
-
-    c.set("teamRole", membership.role);
-    await next();
+    return c.json(
+      {
+        error: { message: "Admin access required", type: "forbidden" },
+      },
+      403,
+    );
   };
 }

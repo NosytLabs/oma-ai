@@ -16,9 +16,23 @@ import { ScrambleText } from "@/components/scramble-text";
 import { FloatingIcons } from "@/components/floating-icons";
 import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
-import { ImageGeneration } from "img-fx";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { springs } from "@/components/motion";
+
+// img-fx pulls in `three` (WebGL). It must never enter the server bundle —
+// SSR-importing it breaks the standalone build ("Cannot find module
+// ./vendor-chunks/three.js"). Load it client-only; render an aspect-ratio
+// skeleton until the effect chunk arrives to avoid layout shift.
+const ImageGeneration = dynamic(
+	() => import("img-fx").then((mod) => mod.ImageGeneration),
+	{
+		ssr: false,
+		loading: () => (
+			<div className="aspect-[16/9] w-full animate-pulse bg-panel" />
+		),
+	},
+);
 
 function reveal(index: number) {
 	return {

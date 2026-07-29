@@ -1,18 +1,41 @@
+/**
+ * Database schema.
+ *
+ * Clean rebuild for Better Auth (magic link + anonymous + SIWE wallet).
+ * OMA-specific tables stay focused: API keys, credit ledger, deposits, usage
+ * records, x402 settlements, audit log.
+ *
+ * Tables REMOVED in this rebuild (vs the prior monolith):
+ *   - teams / teamMembers / ssoConnections   (no team surface yet)
+ *   - subscriptions / plans / invoices      (Polar-billing parked; not wired)
+ *   - budgetAlerts / budgetAlertHistory     (no email/webhook surface)
+ *   - adminConfig / rateLimitOverrides      (config moved to env)
+ *   - depositRecoveries / depositNotifications / withdrawals (not wired)
+ *   - byokKeys                              (BYOK was never launched)
+ *   - polar* (4 tables)                      (Polar billing parked)
+ *   - twoFactorBackupCodes                  (Better Auth 2FA plugin when needed)
+ *   - signingKeys                           (pinning scheme was experimental)
+ *   - audit_action enum removed twoFactor enum (kept the rest)
+ */
 import {
   pgTable,
-  uuid,
   text,
-  numeric,
   timestamp,
-  integer,
   boolean,
   jsonb,
   index,
-  pgEnum,
   uniqueIndex,
+  numeric,
+  integer,
+  pgEnum,
+  uuid,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+// =============================================================================
+// Enums
+// =============================================================================
 
 export const depositStatusEnum = pgEnum("deposit_status", [
   "pending",
@@ -32,43 +55,141 @@ export const depositTypeEnum = pgEnum("deposit_type", [
 ]);
 
 export const providerEnum = pgEnum("provider", [
-	"venice",
-	"tinyfish",
-	"surplus",
-	"gonka",
+  "venice",
+  "tinyfish",
+  "surplus",
+  "gonka",
 ]);
 
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  address: text("address").unique(), // Nullable: post-0030 wallet links carry EVM separately; account-only users have null
-  evmAddress: text("evm_address"), // EVM-only address (post-0030). Nullable; partial unique index in DB.
-  accountNumber: text("account_number"), // 16-digit numeric (unique, nullable)
-  accountNumberHash: text("account_number_hash"), // SHA256 hash for lookup
-  twoFactorSecret: text("two_factor_secret"),
-  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
-  nonce: text("nonce").notNull(), // TTL: expired after 10min (checked in siwe.ts); production cleanup via cron
-  // Neon Auth (managed Better Auth) linkage. Set when the user signs in
-  // via the Neon Auth host so we can join on the OMA users row from
-  // /auth/middleware.ts's sessionAuth() Neon Auth path. Nullable: SIWE /
-  // account-number users never have this set.
-  neonAuthUserId: text("neon_auth_user_id"),
-  neonAuthLinkedAt: timestamp("neon_auth_linked_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-}, (t) => [
-  // idx_users_address removed — UNIQUE constraint on `address` (line 42) already provides an index
-  index("idx_users_evm_address").on(t.evmAddress),
-  index("idx_users_account_number_hash").on(t.accountNumberHash),
-  index("idx_users_neon_auth_user_id").on(t.neonAuthUserId),
-  index("idx_users_nonce_not_null").on(t.updatedAt).where(sql`${t.nonce} != ''`),
+export const refundStatusEnum = pgEnum("refund_status", [
+  "pending",
+  "granted",
+  "denied",
 ]);
+
+export const auditActionEnum = pgEnum("audit_action", [
+  "USER_LOGIN",
+  "USER_LOGOUT",
+  "API_KEY_CREATED",
+  "API_KEY_REVOKED",
+  "USER_CREATED",
+  "USER_UPDATED",
+  "USER_DELETED",
+  "WALLET_LINKED",
+  "WALLET_UNLINKED",
+  "DEPOSIT_CREATED",
+  "DEPOSIT_COMPLETED",
+  "DEPOSIT_FAILED",
+  "REFUND_GRANTED",
+  "REFUND_DENIED",
+  "PROVIDER_TEST_FAILED",
+  "PROVIDER_TEST_SUCCESS",
+  "RATE_LIMIT_OVERRIDE_SET",
+  "RATE_LIMIT_OVERRIDE_REMOVED",
+  "ACCOUNT_LOGIN_RATE_LIMITED",
+]);
+
+// =============================================================================
+// Better Auth core tables
+// =============================================================================
+// Field names and types are pinned to better-auth/adapters/drizzle contract.
+// DO NOT EDIT without bumping the Better Auth contract.
+
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  // OMA extension fields (see user.additionalFields in server/src/auth.ts)
+  evmAddress: text("evm_address"),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdateFn(() => new Date()),
+}, (t) => [
+  uniqueIndex("idx_user_evm_address_unique")
+    .on(t.evmAddress)
+    .where(sql`${t.evmAddress} IS NOT NULL`),
+  index("idx_user_is_anonymous").on(t.isAnonymous),
+]);
+
+export const session = pgTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+}, (t) => [
+  index("session_user_id_idx").on(t.userId),
+]);
+
+export const account = pgTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at", {
+    withTimezone: true,
+  }),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+    withTimezone: true,
+  }),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (t) => [
+  index("account_user_id_idx").on(t.userId),
+]);
+
+export const verification = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (t) => [
+  index("verification_identifier_idx").on(t.identifier),
+]);
+
+// =============================================================================
+// OMA domain tables
+// =============================================================================
 
 export const apiKeys = pgTable(
   "api_keys",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     keyPrefix: text("key_prefix").notNull(),
     keyHash: text("key_hash").notNull(),
@@ -76,107 +197,92 @@ export const apiKeys = pgTable(
     active: boolean("active").default(true).notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
-    ipAllowlist: text("ip_allowlist").array(), // G3: null/empty = no restriction
-    allowedModels: text("allowed_models").array(), // null/empty = no restriction
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [index("idx_api_keys_hash").on(t.keyHash), index("idx_api_keys_user").on(t.userId), index("idx_api_keys_user_active").on(t.userId, t.active)]
-);
-
-// User-scoped HMAC signing public keys (pinned via /v1/signing/pin).
-export const signingKeys = pgTable(
-  "signing_keys",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    ipAllowlist: text("ip_allowlist").array(),
+    allowedModels: text("allowed_models").array(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
       .notNull(),
-    apiKeyId: uuid("api_key_id")
-      .references(() => apiKeys.id, { onDelete: "cascade" }),
-    publicKey: text("public_key").notNull(),
-    name: text("name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
-    index("idx_signing_keys_user").on(t.userId),
-    index("idx_signing_keys_api_key").on(t.apiKeyId),
-  ]
-);
-
-export type ApiKey = Omit<typeof apiKeys.$inferSelect, "allowedModels"> & { expired?: boolean; ipAllowlist?: string[] | null; allowedModels?: string[] | null };
-
-// ponytail: 2FA backup codes (migration 0031). Plaintext shown once at
-// enrollment; only SHA-256 hashes stored; `used_at` flips to now() on redemption.
-// Consumed by auth/two-factor.ts. Partial index on `user_id WHERE used_at IS NULL`
-// is the hot path for "how many unused codes does this user have".
-export const twoFactorBackupCodes = pgTable(
-  "two_factor_backup_codes",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    codeHash: text("code_hash").notNull(),
-    usedAt: timestamp("used_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_2fa_backup_codes_user").on(t.userId),
-    index("idx_2fa_backup_codes_user_unused").on(t.userId).where(sql`${t.usedAt} IS NULL`),
-    index("idx_2fa_backup_codes_hash").on(t.codeHash),
+    index("idx_api_keys_hash").on(t.keyHash),
+    index("idx_api_keys_user").on(t.userId),
+    index("idx_api_keys_user_active").on(t.userId, t.active),
   ],
 );
+
+export type ApiKey = Omit<typeof apiKeys.$inferSelect, never> & { expired?: boolean };
 
 export const deposits = pgTable(
   "deposits",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     type: depositTypeEnum("type").notNull(),
     amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }).notNull(),
-    creditsIssued: numeric("credits_issued", { precision: 18, scale: 8 }).notNull(),
+    creditsIssued: numeric("credits_issued", {
+      precision: 18,
+      scale: 8,
+    }).notNull(),
     txHash: text("tx_hash"),
     fromCoin: text("from_coin"),
     toCoin: text("to_coin"),
     depositAddress: text("deposit_address"),
     status: depositStatusEnum("status").default("pending").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (t) => [
     index("idx_deposits_user").on(t.userId),
     index("idx_deposits_status").on(t.status),
     index("idx_deposits_txhash").on(t.txHash),
-    // Unique constraint on txHash for dedup — partial because txHash is NULL for pending deposits
-    uniqueIndex("idx_deposits_txhash_unique").on(t.txHash).where(sql`${t.txHash} is not null`),
+    uniqueIndex("idx_deposits_txhash_unique")
+      .on(t.txHash)
+      .where(sql`${t.txHash} is not null`),
     index("idx_deposits_user_status").on(t.userId, t.status),
     index("idx_deposits_created_at").on(t.createdAt),
-  ]
+  ],
 );
 
 export const creditBalances = pgTable("credit_balances", {
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
+  userId: text("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
     .primaryKey(),
-  balanceCents: numeric("balance_cents", { precision: 18, scale: 2 }).default("0").notNull(),
-  totalDepositedCents: numeric("total_deposited_cents", { precision: 18, scale: 2 }).default("0").notNull(),
-  totalUsedCents: numeric("total_used_cents", { precision: 18, scale: 2 }).default("0").notNull(),
-  lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
+  balanceCents: numeric("balance_cents", { precision: 18, scale: 2 })
+    .default("0")
+    .notNull(),
+  totalDepositedCents: numeric("total_deposited_cents", {
+    precision: 18,
+    scale: 2,
+  })
+    .default("0")
+    .notNull(),
+  totalUsedCents: numeric("total_used_cents", { precision: 18, scale: 2 })
+    .default("0")
+    .notNull(),
+  lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdateFn(() => new Date()),
 });
 
 export const usageRecords = pgTable(
   "usage_records",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    requestId: text("request_id").notNull(), // Unique request identifier for audit trail
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    requestId: text("request_id").notNull(),
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    apiKeyId: uuid("api_key_id")
-      .references(() => apiKeys.id, { onDelete: "set null" }),
+    apiKeyId: uuid("api_key_id").references(() => apiKeys.id, {
+      onDelete: "set null",
+    }),
     model: text("model").notNull(),
     provider: providerEnum("provider").notNull(),
     inputTokens: integer("input_tokens").notNull().default(0),
@@ -187,88 +293,92 @@ export const usageRecords = pgTable(
     latencyMs: integer("latency_ms"),
     status: text("status").default("completed").notNull(),
     refundedAt: timestamp("refunded_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     index("idx_usage_api_key").on(t.apiKeyId),
     index("idx_usage_request").on(t.requestId),
     uniqueIndex("uq_usage_request_id").on(t.requestId),
     index("idx_usage_user_created").on(t.userId, t.createdAt),
-    index("idx_usage_records_analytics").on(t.createdAt, t.model, t.provider, t.costCents),
-    index("idx_usage_user_created_model").on(t.userId, t.createdAt, t.model),
-    index("idx_usage_user_status_created").on(t.userId, t.status, t.createdAt),
-  ]
+    index("idx_usage_records_analytics").on(
+      t.createdAt,
+      t.model,
+      t.provider,
+      t.costCents,
+    ),
+    index("idx_usage_user_created_model").on(
+      t.userId,
+      t.createdAt,
+      t.model,
+    ),
+  ],
 );
-
-export const providerHealth = pgTable("provider_health", {
-  provider: providerEnum("provider").primaryKey(),
-  isUp: boolean("is_up").default(true).notNull(),
-  latencyMs: integer("latency_ms"),
-  errorRate: numeric("error_rate", { precision: 5, scale: 4 }).default("0").notNull(),
-  lastCheckAt: timestamp("last_check_at", { withTimezone: true }).defaultNow().notNull(),
-  cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
-});
 
 export const creditBatches = pgTable(
   "credit_batches",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
-  remainingCents: numeric("remaining_cents", { precision: 18, scale: 2 }).notNull(),
+    amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
+    remainingCents: numeric("remaining_cents", {
+      precision: 18,
+      scale: 2,
+    }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     paymentMethod: text("payment_method").default("usdc"),
-    depositId: uuid("deposit_id")
-      .references(() => deposits.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    depositId: uuid("deposit_id").references(() => deposits.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     index("idx_credit_batches_user").on(t.userId),
     index("idx_credit_batches_deposit").on(t.depositId),
     index("idx_credit_batches_expiry").on(t.expiresAt),
-    // idx_credit_batches_user_remaining removed — idx_credit_batches_remaining_positive (partial)
-    // covers the same access pattern for the hot path (remainingCents > 0)
-    index("idx_credit_batches_user_expiry_remaining").on(t.userId, t.expiresAt, t.remainingCents),
-    index("idx_credit_batches_remaining_positive").on(t.userId).where(sql`${t.remainingCents} > 0`),
-    index("idx_credit_batches_expiring").on(t.userId, t.remainingCents, t.expiresAt).where(sql`${t.remainingCents} > 0`),
-  ]
+    index("idx_credit_batches_user_expiry_remaining").on(
+      t.userId,
+      t.expiresAt,
+      t.remainingCents,
+    ),
+    index("idx_credit_batches_remaining_positive")
+      .on(t.userId)
+      .where(sql`${t.remainingCents} > 0`),
+  ],
 );
 
-
-
-export const autoReloadSettings = pgTable(
-  "auto_reload_settings",
-  {
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .primaryKey(),
-    enabled: boolean("enabled").default(false).notNull(),
-    thresholdCents: numeric("threshold_cents", { precision: 18, scale: 2 }).default("500").notNull(),
-    reloadAmountCents: numeric("reload_amount_cents", { precision: 18, scale: 2 }).default("10000").notNull(),
-    spendLimitCents: numeric("spend_limit_cents", { precision: 18, scale: 2 }).default("100000").notNull(),
-    paymentMethod: text("payment_method").default("usdc"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-  }
-);
-
-import { relations } from "drizzle-orm";
-
-export const usersRelations = relations(users, ({ many }) => ({
-  apiKeys: many(apiKeys),
-  deposits: many(deposits),
-  creditBalances: many(creditBalances),
-  usageRecords: many(usageRecords),
-  creditBatches: many(creditBatches),
-  autoReloadSettings: many(autoReloadSettings),
-  teamMemberships: many(teamMembers),
-  budgetAlerts: many(budgetAlerts),
-  budgetAlertHistory: many(budgetAlertHistory),
-  subscriptions: many(subscriptions),
-}));
+export const autoReloadSettings = pgTable("auto_reload_settings", {
+  userId: text("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .primaryKey(),
+  enabled: boolean("enabled").default(false).notNull(),
+  thresholdCents: numeric("threshold_cents", { precision: 18, scale: 2 })
+    .default("500")
+    .notNull(),
+  reloadAmountCents: numeric("reload_amount_cents", {
+    precision: 18,
+    scale: 2,
+  })
+    .default("10000")
+    .notNull(),
+  spendLimitCents: numeric("spend_limit_cents", { precision: 18, scale: 2 })
+    .default("100000")
+    .notNull(),
+  paymentMethod: text("payment_method").default("usdc"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdateFn(() => new Date()),
+});
 
 export const settlements = pgTable(
   "settlements",
@@ -279,350 +389,93 @@ export const settlements = pgTable(
     networkId: text("network_id").notNull(),
     payee: text("payee").notNull(),
     receipt: text("receipt").notNull(),
-    settledAt: timestamp("settled_at", { withTimezone: true }).defaultNow().notNull(),
+    settledAt: timestamp("settled_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
-    uniqueIndex("idx_settlements_txhash_network_unique").on(t.txHash, t.networkId),
+    uniqueIndex("idx_settlements_txhash_network_unique").on(
+      t.txHash,
+      t.networkId,
+    ),
     index("idx_settlements_txhash").on(t.txHash),
     index("idx_settlements_network").on(t.networkId),
     index("idx_settlements_payee").on(t.payee),
-    index("idx_settlements_txhash_network_payee").on(t.txHash, t.networkId, t.payee),
-  ]
+  ],
 );
-
-export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
-  user: one(users, { fields: [apiKeys.userId], references: [users.id] }),
-  usageRecords: many(usageRecords),
-}));
-
-// Operator refund queue. Admin grants/denies pending requests and writes
-// REFUND_GRANTED / REFUND_DENIED audit-log rows. Source: `credits/refunds.ts`.
-export const refundStatusEnum = pgEnum("refund_status", ["pending", "granted", "denied"]);
 
 export const refundRequests = pgTable(
   "refund_requests",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    depositId: uuid("deposit_id")
-      .references(() => deposits.id, { onDelete: "set null" }),
+    depositId: uuid("deposit_id").references(() => deposits.id, {
+      onDelete: "set null",
+    }),
     amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
     reason: text("reason").notNull(),
     status: refundStatusEnum("status").notNull().default("pending"),
     notes: text("notes"),
-    decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
+    decidedBy: text("decided_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     decidedAt: timestamp("decided_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     index("idx_refund_requests_status_created").on(t.status, t.createdAt),
     index("idx_refund_requests_user").on(t.userId),
     index("idx_refund_requests_deposit").on(t.depositId),
-    index("idx_refund_requests_decided_by").on(t.decidedBy),
-  ]
+  ],
 );
 
-export const depositsRelations = relations(deposits, ({ one, many }) => ({
-  user: one(users, { fields: [deposits.userId], references: [users.id] }),
-  creditBatches: many(creditBatches),
-}));
-
-export const creditBalancesRelations = relations(creditBalances, ({ one }) => ({
-  user: one(users, { fields: [creditBalances.userId], references: [users.id] }),
-}));
-
-export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
-  user: one(users, { fields: [usageRecords.userId], references: [users.id] }),
-  apiKey: one(apiKeys, { fields: [usageRecords.apiKeyId], references: [apiKeys.id] }),
-}));
-
-export const creditBatchesRelations = relations(creditBatches, ({ one }) => ({
-  user: one(users, { fields: [creditBatches.userId], references: [users.id] }),
-  deposit: one(deposits, { fields: [creditBatches.depositId], references: [deposits.id] }),
-}));
-
-
-
-export const autoReloadSettingsRelations = relations(autoReloadSettings, ({ one }) => ({
-  user: one(users, { fields: [autoReloadSettings.userId], references: [users.id] }),
-}));
-
-
-
-export const stakingTiers = pgTable(
-  "staking_tiers",
-  {
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .primaryKey(),
-    omaStaked: numeric("oma_staked", { precision: 18, scale: 2 }).default("0").notNull(),
-    discountPercent: integer("discount_percent").default(0).notNull(),
-    cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-  }
-);
-
-export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member", "billing"]);
-
-export const teams = pgTable("teams", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  billingEmail: text("billing_email"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-});
-
-export const teamMembers = pgTable(
-  "team_members",
-  {
-    teamId: uuid("team_id")
-      .references(() => teams.id, { onDelete: "cascade" })
-      .notNull(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    role: teamRoleEnum("role").default("member").notNull(),
-    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.teamId, t.userId] }),
-    index("idx_team_members_team").on(t.teamId),
-    index("idx_team_members_user").on(t.userId),
-  ]
-);
-
-// Reserved for future SSO / SAML / OIDC team-scoped connections. Not yet
-// wired into the auth surface — keep the table so the migration stays
-// additive (no schema-rebuild on rollout), but expect callers to be added
-// when SSO is implemented.
-export const ssoConnections = pgTable(
-  "sso_connections",
+export const webhookSubscriptions = pgTable(
+  "webhook_subscriptions",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    teamId: uuid("team_id")
-      .references(() => teams.id, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    provider: text("provider").notNull(),
-    domain: text("domain").notNull().unique(),
-    metadata: jsonb("metadata"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
+    url: text("url").notNull(),
+    event: text("event").notNull(),
+    events: text("events").array(),
+    secret: text("secret"),
+    active: boolean("active").default(true).notNull(),
+    lastNotificationAt: timestamp("last_notification_at", {
+      withTimezone: true,
+    }),
+    lastNotificationStatus: text("last_notification_status"),
+    notificationCount: integer("notification_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
-    index("idx_sso_connections_team").on(t.teamId),
-    index("idx_sso_connections_domain").on(t.domain),
-  ]
+    index("idx_webhook_subscriptions_user").on(t.userId),
+    index("idx_webhook_subscriptions_active").on(t.userId, t.active),
+  ],
 );
-
-export const teamsRelations = relations(teams, ({ many }) => ({
-  members: many(teamMembers),
-  ssoConnections: many(ssoConnections),
-}));
-
-export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
-  team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
-  user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
-}));
-
-export const ssoConnectionsRelations = relations(ssoConnections, ({ one }) => ({
-  team: one(teams, { fields: [ssoConnections.teamId], references: [teams.id] }),
-}));
-
-export const budgetAlertTypeEnum = pgEnum("budget_alert_type", [
-  "50_percent",
-  "75_percent",
-  "90_percent",
-  "100_percent",
-]);
-
-export const notificationChannelEnum = pgEnum("notification_channel", [
-  "email",
-  "webhook",
-  "both",
-]);
-
-export const budgetAlerts = pgTable(
-  "budget_alerts",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    budgetLimitCents: numeric("budget_limit_cents", { precision: 18, scale: 2 }).notNull(),
-    alertThresholds: integer("alert_thresholds").array().default([50, 75, 90, 100]).notNull(), // SYNC-39: migrated from text to integer[]
-    emailEnabled: boolean("email_enabled").default(true).notNull(),
-    webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
-    webhookUrl: text("webhook_url"),
-    lastAlertAt: timestamp("last_alert_at", { withTimezone: true }),
-    dailyLimitCents: numeric("daily_limit_cents", { precision: 18, scale: 2 }),
-    weeklyLimitCents: numeric("weekly_limit_cents", { precision: 18, scale: 2 }),
-    monthlyLimitCents: numeric("monthly_limit_cents", { precision: 18, scale: 2 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-  },
-  (t) => [
-    index("idx_budget_alerts_user").on(t.userId),
-  ]
-);
-
-export const budgetAlertHistory = pgTable(
-  "budget_alert_history",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    alertType: budgetAlertTypeEnum("alert_type").notNull(),
-    thresholdPercent: integer("threshold_percent").notNull(),
-    spentCents: numeric("spent_cents", { precision: 18, scale: 2 }).notNull(),
-    budgetLimitCents: numeric("budget_limit_cents", { precision: 18, scale: 2 }).notNull(),
-    notificationSent: boolean("notification_sent").default(false).notNull(),
-    notificationChannel: notificationChannelEnum("notification_channel"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_budget_alert_history_user").on(t.userId),
-    index("idx_budget_alert_history_created").on(t.createdAt),
-    index("idx_budget_alert_history_user_alert").on(t.userId, t.alertType),
-  ]
-);
-
-export const budgetAlertsRelations = relations(budgetAlerts, ({ one }) => ({
-  user: one(users, { fields: [budgetAlerts.userId], references: [users.id] }),
-}));
-
-export const budgetAlertHistoryRelations = relations(budgetAlertHistory, ({ one }) => ({
-  user: one(users, { fields: [budgetAlertHistory.userId], references: [users.id] }),
-}));
-
-export const subscriptionStatusEnum = pgEnum("subscription_status", [
-  "active",
-  "canceled",
-  "past_due",
-  "expired",
-]);
-
-export const plans = pgTable("plans", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull().unique(),
-  price: integer("price").notNull(),
-  credits: integer("credits").notNull(),
-  features: jsonb("features").notNull().default("[]"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-});
-
-export const subscriptions = pgTable(
-  "subscriptions",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    planId: uuid("plan_id")
-      .references(() => plans.id, { onDelete: "set null" })
-      .notNull(),
-    status: subscriptionStatusEnum("status").default("active").notNull(),
-    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
-    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
-    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-  },
-  (t) => [
-    index("idx_subscriptions_user").on(t.userId),
-    index("idx_subscriptions_plan").on(t.planId),
-    index("idx_subscriptions_status").on(t.status),
-    index("idx_subscriptions_period_end").on(t.currentPeriodEnd),
-  ]
-);
-
-export const invoiceStatusEnum = pgEnum("invoice_status", [
-  "draft",
-  "pending",
-  "paid",
-  "overdue",
-  "cancelled",
-]);
-
-export const invoices = pgTable(
-  "invoices",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    invoiceNumber: text("invoice_number").notNull().unique(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
-    status: invoiceStatusEnum("status").default("draft").notNull(),
-    lineItems: jsonb("line_items").notNull(), // SYNC-39: migrated from text to jsonb
-    dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_invoices_user").on(t.userId),
-    index("idx_invoices_status").on(t.status),
-    index("idx_invoices_number").on(t.invoiceNumber),
-    index("idx_invoices_due_date").on(t.dueDate),
-  ]
-);
-
-export const invoicesRelations = relations(invoices, ({ one }) => ({
-  user: one(users, { fields: [invoices.userId], references: [users.id] }),
-}));
-
-export const auditActionEnum = pgEnum("audit_action", [
-  "USER_LOGIN",
-  "USER_LOGOUT",
-  "API_KEY_CREATED",
-  "API_KEY_REVOKED",
-  "USER_CREATED",
-  "USER_UPDATED",
-  "USER_DELETED",
-  "TEAM_MEMBER_ADDED",
-  "TEAM_MEMBER_REMOVED",
-  "TEAM_MEMBER_ROLE_CHANGED",
-  "DEPOSIT_CREATED",
-  "DEPOSIT_COMPLETED",
-  "DEPOSIT_FAILED",
-  "WITHDRAWAL_CREATED",
-  "WITHDRAWAL_COMPLETED",
-  "WITHDRAWAL_FAILED",
-  "FEE_CHANGED",
-  "RATE_LIMIT_OVERRIDE_SET",
-  "RATE_LIMIT_OVERRIDE_REMOVED",
-  "SPEND_LIMIT_CHANGED",
-  "BUDGET_ALERT_CHANGED",
-  "ACCOUNT_LOGIN_RATE_LIMITED",
-  "PROVIDER_TEST_FAILED",
-  "PROVIDER_TEST_SUCCESS",
-  "REFUND_GRANTED",
-  "REFUND_DENIED",
-  // ponytail: post-0030 wallet lifecycle events. wallet-link.ts writes these
-  // on every link/unlink/rotate. Live DB enum migration was added by 0030.
-  "WALLET_LINKED",
-  "WALLET_UNLINKED",
-  "WALLET_ROTATED",
-  "ACCOUNT_NUMBER_ROTATED",
-  "ACCOUNT_NUMBER_RECOVERED",
-]);
 
 export const auditLogs = pgTable(
   "audit_logs",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "set null" }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     action: auditActionEnum("action").notNull(),
     resource: text("resource").notNull(),
-    resourceId: uuid("resource_id"),
+    resourceId: text("resource_id"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     metadata: jsonb("metadata"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     index("idx_audit_logs_user").on(t.userId),
@@ -630,367 +483,10 @@ export const auditLogs = pgTable(
     index("idx_audit_logs_resource").on(t.resource),
     index("idx_audit_logs_resource_id").on(t.resourceId),
     index("idx_audit_logs_created").on(t.createdAt),
-    // idx_audit_logs_user_action + idx_audit_logs_user_created removed —
-    // idx_audit_logs_user_action_created (3-col composite) covers both prefix access patterns
-    index("idx_audit_logs_user_action_created").on(t.userId, t.action, t.createdAt),
-    index("idx_audit_logs_action_created").on(t.action, t.createdAt),
-  ]
-);
-
-export const plansRelations = relations(plans, ({ many }) => ({
-  subscriptions: many(subscriptions),
-}));
-
-export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
-  user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
-  plan: one(plans, { fields: [subscriptions.planId], references: [plans.id] }),
-}));
-
-export const adminConfig = pgTable(
-  "admin_config",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    key: text("key").notNull().unique(),
-    value: text("value").notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdateFn(() => new Date()),
-  },
-  (t) => [index("idx_admin_config_key").on(t.key)]
-);
-
-export const rateLimitOverrides = pgTable(
-  "rate_limit_overrides",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    targetType: text("target_type").notNull(),
-    targetId: uuid("target_id").notNull(),
-    rpm: integer("rpm"),
-    tpm: integer("tpm"),
-    expiresAt: timestamp("expires_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_rate_limit_overrides_target").on(t.targetType, t.targetId),
-    index("idx_rate_limit_overrides_expiry").on(t.expiresAt),
-  ]
-);
-
-export const recoveryStatusEnum = pgEnum("recovery_status", [
-  "pending",
-  "completed",
-  "rejected",
-  "expired",
-]);
-
-export const depositRecoveries = pgTable(
-  "deposit_recoveries",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    originalTxHash: text("original_tx_hash").notNull(),
-    recoveryTxHash: text("recovery_tx_hash"),
-    amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }).notNull(),
-    status: recoveryStatusEnum("status").default("pending").notNull(),
-    rejectionReason: text("rejection_reason"),
-    completedBy: uuid("completed_by"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("idx_deposit_recoveries_user").on(t.userId),
-    index("idx_deposit_recoveries_status").on(t.status),
-    index("idx_deposit_recoveries_original_tx").on(t.originalTxHash),
-    index("idx_deposit_recoveries_created").on(t.createdAt),
-  ]
-);
-
-export const depositNotifications = pgTable(
-  "deposit_notifications",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    depositId: uuid("deposit_id")
-      .references(() => deposits.id, { onDelete: "cascade" })
-      .notNull(),
-    type: text("type").notNull(),
-    status: text("status").notNull(),
-    amountUsd: numeric("amount_usd", { precision: 18, scale: 8 }),
-    creditsIssued: numeric("credits_issued", { precision: 18, scale: 8 }),
-    txHash: text("tx_hash"),
-    method: text("method"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    notifiedAt: timestamp("notified_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("idx_deposit_notifications_user").on(t.userId),
-    index("idx_deposit_notifications_deposit").on(t.depositId),
-    index("idx_deposit_notifications_created").on(t.createdAt),
-  ]
-);
-
-export const webhookSubscriptions = pgTable(
-  "webhook_subscriptions",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    url: text("url").notNull(),
-    event: text("event").notNull(),
-    events: text("events").array(), // SYNC-39: migrated from text to text[]
-    secret: text("secret"),
-    active: boolean("active").default(true).notNull(),
-    lastNotificationAt: timestamp("last_notification_at", { withTimezone: true }),
-    lastNotificationStatus: text("last_notification_status"),
-    notificationCount: integer("notification_count").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_webhook_subscriptions_user").on(t.userId),
-    index("idx_webhook_subscriptions_active").on(t.userId, t.active),
-  ]
-);
-
-export const depositRecoveriesRelations = relations(depositRecoveries, ({ one }) => ({
-  user: one(users, { fields: [depositRecoveries.userId], references: [users.id] }),
-}));
-
-export const depositNotificationsRelations = relations(depositNotifications, ({ one }) => ({
-  user: one(users, { fields: [depositNotifications.userId], references: [users.id] }),
-  deposit: one(deposits, { fields: [depositNotifications.depositId], references: [deposits.id] }),
-}));
-
-export const webhookSubscriptionsRelations = relations(webhookSubscriptions, ({ one }) => ({
-  user: one(users, { fields: [webhookSubscriptions.userId], references: [users.id] }),
-}));
-
-export const withdrawalStatusEnum = pgEnum("withdrawal_status", [
-  "pending",
-  "processing",
-  "completed",
-  "failed",
-  "cancelled",
-]);
-
-export const withdrawals = pgTable(
-  "withdrawals",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    type: text("type").notNull(),
-    amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
-    netAmountCents: numeric("net_amount_cents", { precision: 18, scale: 2 }).notNull(),
-    feeCents: numeric("fee_cents", { precision: 18, scale: 2 }).notNull(),
-    toAddress: text("to_address").notNull(),
-    chainId: text("chain_id").default("8453").notNull(),
-    status: withdrawalStatusEnum("status").default("pending").notNull(),
-    txHash: text("tx_hash"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("idx_withdrawals_user").on(t.userId),
-    index("idx_withdrawals_status").on(t.status),
-    index("idx_withdrawals_txhash").on(t.txHash),
-    index("idx_withdrawals_user_status").on(t.userId, t.status),
-    index("idx_withdrawals_created_at").on(t.createdAt),
-  ]
-);
-
-export const withdrawalsRelations = relations(withdrawals, ({ one }) => ({
-  user: one(users, { fields: [withdrawals.userId], references: [users.id] }),
-}));
-
-export const byokKeys = pgTable(
-  "byok_keys",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    byokKeyId: text("byok_key_id").notNull().unique(),
-    provider: text("provider").notNull(),
-    name: text("name").notNull(),
-    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).defaultNow().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_byok_keys_provider").on(t.provider),
-    index("idx_byok_keys_byok_id").on(t.byokKeyId),
-  ]
-);
-
-// ============================================================================
-// POLAR.SH BILLING TABLES
-// Migration: server/src/db/migrations/0035_polar_sh_schema.sql
-// ============================================================================
-//
-// These tables back the /v1/polar/* routes and the webhook handler. They were
-// created via the SQL migration first (so they exist in production DBs) and
-// are now also registered with Drizzle so we can query them through the ORM.
-//
-// IMPORTANT: do NOT introduce raw SQL `.selectFrom(...)` Kysely-style usage on
-// these tables — the server uses Drizzle, not Kysely. The earlier polar scaffold
-// was buggy because it tried to. Stick to `db.select()`, `db.insert()`,
-// `db.update()` here.
-
-/**
- * `polarCustomers` links an OMA-AI `users.id` to a Polar.sh `customer_id`.
- * One user has at most one Polar customer (unique on both `userId` and
- * `polarCustomerId`). When the user first hits a /v1/polar/* endpoint, we
- * create the Polar customer via `polar.customers.create({ externalId: userId })`
- * and persist the link here.
- */
-export const polarCustomers = pgTable(
-  "polar_customers",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull()
-      .unique(),
-    polarCustomerId: text("polar_customer_id").notNull().unique(),
-    email: text("email"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_polar_customers_user_id").on(t.userId),
-    index("idx_polar_customers_polar_id").on(t.polarCustomerId),
+    index("idx_audit_logs_user_action_created").on(
+      t.userId,
+      t.action,
+      t.createdAt,
+    ),
   ],
 );
-
-/**
- * `polarSubscriptions` mirrors the active subscription state for the linked
- * Polar customer. We upsert on every `subscription.created` /
- * `subscription.updated` / `subscription.canceled` webhook. UI reads this
- * table to show "Active until <date>" badges on the dashboard / settings.
- */
-export const polarSubscriptions = pgTable(
-  "polar_subscriptions",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    customerId: uuid("customer_id")
-      .references(() => polarCustomers.id, { onDelete: "cascade" })
-      .notNull(),
-    polarSubscriptionId: text("polar_subscription_id").notNull().unique(),
-    polarProductId: text("polar_product_id").notNull(),
-    status: text("status").notNull().default("active"),
-    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
-    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
-    cancelAtPeriodEnd: integer("cancel_at_period_end").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_polar_subscriptions_customer_id").on(t.customerId),
-    index("idx_polar_subscriptions_polar_id").on(t.polarSubscriptionId),
-    index("idx_polar_subscriptions_status").on(t.status),
-  ],
-);
-
-/**
- * `polarOrders` records each successful Polar payment. Created on
- * `order.paid` / `payment.succeeded` webhooks. Drives the "Recent invoices"
- * table on the dashboard.
- */
-export const polarOrders = pgTable(
-  "polar_orders",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    customerId: uuid("customer_id")
-      .references(() => polarCustomers.id, { onDelete: "cascade" })
-      .notNull(),
-    polarOrderId: text("polar_order_id").notNull().unique(),
-    polarProductId: text("polar_product_id").notNull(),
-    amount: integer("amount").notNull(),
-    currency: text("currency").notNull().default("usd"),
-    status: text("status").notNull().default("completed"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_polar_orders_customer_id").on(t.customerId),
-    index("idx_polar_orders_polar_id").on(t.polarOrderId),
-  ],
-);
-
-/**
- * `polarLicenseKeys` records lifetime / perpetual license keys issued via
- * Polar.sh. Used by `/v1/polar/license/validate` for activation checks.
- */
-export const polarLicenseKeys = pgTable(
-  "polar_license_keys",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    customerId: uuid("customer_id")
-      .references(() => polarCustomers.id, { onDelete: "cascade" })
-      .notNull(),
-    polarOrderId: text("polar_order_id").notNull(),
-    licenseKey: text("license_key").notNull().unique(),
-    status: text("status").notNull().default("active"),
-    activatedAt: timestamp("activated_at", { withTimezone: true }),
-    lastValidatedAt: timestamp("last_validated_at", { withTimezone: true }),
-    validationCount: integer("validation_count").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_polar_license_keys_customer_id").on(t.customerId),
-    index("idx_polar_license_keys_polar_order_id").on(t.polarOrderId),
-    index("idx_polar_license_keys_license_key").on(t.licenseKey),
-  ],
-);
-
-/**
- * `polarWebhookEvents` is an audit log of every inbound Polar webhook.
- * Dedupe on `polarEventId` (Polar may redeliver). `processed=1` after the
- * handler returns successfully; `errorMessage` populated on failure.
- * Surface in the admin console for debugging failed deliveries.
- */
-export const polarWebhookEvents = pgTable(
-  "polar_webhook_events",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    polarEventId: text("polar_event_id").notNull().unique(),
-    eventType: text("event_type").notNull(),
-    payload: text("payload").notNull(),
-    processed: integer("processed").default(0).notNull(),
-    errorMessage: text("error_message"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("idx_polar_webhook_events_event_type").on(t.eventType),
-    index("idx_polar_webhook_events_processed").on(t.processed),
-  ],
-);
-
-// Relations
-export const polarCustomersRelations = relations(polarCustomers, ({ one, many }) => ({
-  user: one(users, { fields: [polarCustomers.userId], references: [users.id] }),
-  subscriptions: many(polarSubscriptions),
-  orders: many(polarOrders),
-  licenseKeys: many(polarLicenseKeys),
-}));
-
-export const polarSubscriptionsRelations = relations(polarSubscriptions, ({ one }) => ({
-  customer: one(polarCustomers, {
-    fields: [polarSubscriptions.customerId],
-    references: [polarCustomers.id],
-  }),
-}));
-
-export const polarOrdersRelations = relations(polarOrders, ({ one }) => ({
-  customer: one(polarCustomers, {
-    fields: [polarOrders.customerId],
-    references: [polarCustomers.id],
-  }),
-}));
-
-export const polarLicenseKeysRelations = relations(polarLicenseKeys, ({ one }) => ({
-  customer: one(polarCustomers, {
-    fields: [polarLicenseKeys.customerId],
-    references: [polarCustomers.id],
-  }),
-}));
