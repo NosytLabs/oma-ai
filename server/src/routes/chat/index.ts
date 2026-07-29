@@ -1,18 +1,26 @@
 /**
- * OpenAI-compatible chat completions — proxy through Venice AI.
+ * OpenAI-compatible chat completions — multi-provider proxy.
  *
- * The only wired provider right now. Routes a single userId-keyed chat
- * call to https://api.venice.ai/api/v1/chat/completions and:
+ * Routes a single userId-keyed chat call to the upstream matching the
+ * requested model's `provider` field, and:
  *
  *   - Streams the OpenAI-shaped SSE back to the browser unchanged.
- *   - Estimates prompt/completion token counts (Venice doesn't always
- *     include `usage` in streamed chunks).
+ *   - Estimates prompt/completion token counts (some upstreams don't
+ *     always include `usage` in streamed chunks).
  *   - Deducts credits from `creditBalances` after a successful call
  *     (5xx failures leave the balance alone).
  *   - Records one row per request into `usageRecords` for the dashboard.
  *
- * Adds a small provider markup on top of Venice's per-token cost
+ * Adds a small provider markup on top of the upstream's per-token cost
  * (defined in the `ModelDef.markupPercent` field).
+ *
+ * Wired providers (see `inference/models.ts` for the catalog):
+ *
+ *   venice — Venice AI (privacy-first, OpenAI-compatible).
+ *             https://api.venice.ai/api/v1/chat/completions
+ *   gonka  — Gonka decentralized inference broker (OpenBroker by
+ *             default). OpenAI-compatible. Used as the cheap tier for
+ *             large-context / tool-use requests.
  */
 import { Hono } from "hono";
 import { z } from "zod";
@@ -46,6 +54,67 @@ const chatSchema = z.object({
   tools: z.array(z.any()).optional(),
   tool_choice: z.any().optional(),
 });
+
+/** Provider-specific request envelope. Both backends are OpenAI-compatible. */
+interface ProviderRoute {
+  baseUrl: string;
+  apiKey: string;
+  /** Translate OMA model id → upstream model id (Venice, OpenBroker). */
+  upstreamModel: (omaModelId: string, gonkaId?: string) => string;
+  /** Strip provider-only fields the upstream doesn't accept. */
+  extraBody: (body: Record<string, unknown>) => Record<string, unknown>;
+  /** Surface the upstream provider name in audit + usage rows. */
+  providerLabel: "venice" | "gonka";
+}
+
+function resolveProvider(provider: string, gonkaId?: string): ProviderRoute {
+  if (provider === "gonka") {
+    if (!config.GONKA_API_KEY) {
+      throw new ProviderError(
+        "Gonka/OpenBroker API key not configured (set GONKA_API_KEY in the server env).",
+        503,
+      );
+    }
+    return {
+      baseUrl: `${config.GONKA_API_URL}/v1`,
+      apiKey: config.GONKA_API_KEY,
+      upstreamModel: (id, gid) => gid ?? id,
+      extraBody: (body) => body, // OpenAI-compatible — pass through
+      providerLabel: "gonka",
+    };
+  }
+  // default: venice
+  if (!config.VENICE_API_KEY) {
+    throw new ProviderError(
+      "Inference provider not configured (VENICE_API_KEY missing).",
+      503,
+    );
+  }
+  return {
+    baseUrl: `${config.VENICE_API_URL}/api/v1`,
+    apiKey: config.VENICE_API_KEY,
+    upstreamModel: (id) => id,
+    extraBody: (body) => ({
+      ...body,
+      // Venice privacy: force private mode unless the operator explicitly
+      // enabled non-private opt-out. Other providers ignore this field.
+      venice_parameters: {
+        private: !config.OMMA_ALLOW_NON_PRIVATE_VENICE,
+      },
+    }),
+    providerLabel: "venice",
+  };
+}
+
+class ProviderError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ProviderError";
+  }
+}
 
 /** Rough token estimate when the upstream doesn't report usage. */
 function estimateTokens(text: string): number {
@@ -99,26 +168,33 @@ chatRoutes.post(
     }
     const userId = c.get("userId");
     const pricing = getModelPricing(model);
-    const upstreamUrl = `${config.VENICE_API_URL}/api/v1/chat/completions`;
-    const upstreamModel = modelDef.veniceId ?? modelDef.id;
-    const veniceKey = config.VENICE_API_KEY;
-    if (!veniceKey) {
-      return c.json(
-        {
-          error: {
-            message: "Inference provider not configured (VENICE_API_KEY missing).",
-            type: "server_error",
+
+    // Resolve upstream provider (Venice vs Gonka/OpenBroker).
+    let route: ProviderRoute;
+    try {
+      route = resolveProvider(modelDef.provider, modelDef.gonkaId);
+    } catch (err) {
+      if (err instanceof ProviderError) {
+        return c.json(
+          {
+            error: { message: err.message, type: "not_configured" },
           },
-        },
-        503,
-      );
+          err.status as 400 | 401 | 402 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503,
+        );
+      }
+      throw err;
     }
+    const upstreamUrl = `${route.baseUrl}/chat/completions`;
+    const upstreamModel = route.upstreamModel(
+      modelDef.veniceId ?? modelDef.id,
+      modelDef.gonkaId,
+    );
 
     const requestId = `chatcmpl-${crypto.randomUUID()}`;
     const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
     const promptTokens = estimateTokens(promptText);
 
-    const upstreamBody = {
+    const upstreamBody = route.extraBody({
       model: upstreamModel,
       messages: messages.map((m) => ({
         role: m.role,
@@ -129,22 +205,17 @@ chatRoutes.post(
       ...(max_tokens ? { max_tokens } : {}),
       ...(temperature !== undefined ? { temperature } : {}),
       ...(top_p !== undefined ? { top_p } : {}),
-      // Venice privacy: force private mode unless the operator explicitly
-      // enabled non-private opt-out.
-      venice_parameters: {
-        private: !config.OMMA_ALLOW_NON_PRIVATE_VENICE,
-      },
-    };
+    });
 
     const upstreamResp = await fetch(upstreamUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${veniceKey}`,
+        Authorization: `Bearer ${route.apiKey}`,
       },
       body: JSON.stringify(upstreamBody),
     }).catch((err) => {
-      logger.error({ err }, "[chat] upstream fetch failed");
+      logger.error({ err, provider: route.providerLabel }, "[chat] upstream fetch failed");
       return null;
     });
 
@@ -208,7 +279,7 @@ chatRoutes.post(
               await recordUsage({
                 userId,
                 model,
-                provider: "venice",
+                provider: route.providerLabel,
                 promptTokens,
                 outputTokens,
                 pricing,
@@ -276,7 +347,7 @@ chatRoutes.post(
     await recordUsage({
       userId,
       model,
-      provider: "venice",
+      provider: route.providerLabel,
       promptTokens: data?.usage?.prompt_tokens ?? promptTokens,
       outputTokens: completionTokens,
       pricing,
@@ -291,7 +362,7 @@ chatRoutes.post(
 async function recordUsage(args: {
   userId: string;
   model: string;
-  provider: "venice";
+  provider: "venice" | "gonka";
   promptTokens: number;
   outputTokens: number;
   pricing: ReturnType<typeof getModelPricing>;

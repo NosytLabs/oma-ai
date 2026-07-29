@@ -169,14 +169,47 @@ strings), `context_length`, and `supported_parameters`. The
 fallback for SSR metadata so layout descriptions and `MODEL_COUNT`
 work without an async fetch.
 
+### Wired Providers
+
+- **Venice AI** (`https://api.venice.ai/api/v1`) — privacy-first
+  OpenAI-compatible. Set `VENICE_API_KEY`.
+- **Gonka / OpenBroker** (`https://api.openbroker.gonka.gg/v1`) —
+  decentralized provable-inference broker. Set `GONKA_API_KEY`
+  (sign up at https://openbroker.gonka.gg/register).
+
+The chat route (`server/src/routes/chat/index.ts`) dispatches by the
+model's `provider` field and transparently swaps base URLs,
+upstream model IDs, and per-provider request envelopes.
+
 ### Model Tiers (representative)
-| Tier | Examples | Price range (input / 1M tokens) |
-|------|----------|-----------------------------------|
-| **Premium** | `claude-sonnet-4-5` | ~$3.13 |
-| **Budget** | `llama-3.3-70b` | ~$0.45 |
-| **Experimental** | `minimax-m2.7` (gonka) | ~$0.30 |
+| Tier | Examples | Provider | Price range (input / 1M tokens) |
+|------|----------|----------|-----------------------------------|
+| **Premium** | `claude-sonnet-4-5` | Venice | ~$3.13 |
+| **Budget** | `llama-3.3-70b` | Venice | ~$0.45 |
+| **Cheap (Gonka)** | `kimi-k2.6` | OpenBroker | ~$0.15 |
+| **Cheap (Gonka)** | `minimax-m2.7` | OpenBroker | ~$0.30 |
 
 See `GET /v1/models` for the live, complete catalog.
+
+### Drop-in OpenAI SDK usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="oma_sk_...",          # mint one at POST /v1/keys
+    base_url="https://api.oma-ai.com/v1",
+)
+resp = client.chat.completions.create(
+    model="kimi-k2.6",
+    messages=[{"role": "user", "content": "hi"}],
+)
+print(resp.choices[0].message.content)
+```
+
+Works identically in **Claude Code**, **OpenCode**, **Cursor**,
+**Cline**, **Aider**, and any other OpenAI-compatible client —
+just point the base URL at OMA and paste your `oma_sk_*` key.
 
 ---
 
