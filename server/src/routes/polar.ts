@@ -606,5 +606,3 @@ async function polarWebhookHandler(c: Context<OmaEnv>) {
 // Dual-mount: same handler at /webhooks/polar AND /api/webhook/polar.
 polarRoutes.post("/webhooks/polar", polarWebhookHandler);
 polarRoutes.post("/api/webhook/polar", polarWebhookHandler);
-
-export default polarRoutes;

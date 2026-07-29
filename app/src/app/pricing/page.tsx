@@ -36,7 +36,6 @@ interface PricedModel {
 
 const VENDOR_DISPLAY: Record<string, string> = {
 	Venice: "Venice",
-	Gonka: "OMA-AI",
 };
 
 function toPricedModel(m: Model): PricedModel {
