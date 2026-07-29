@@ -16,7 +16,15 @@ export interface ModelDef {
   outputPricePer1M: number;
   markupPercent: number;
   category: "budget" | "mid" | "premium" | "frontier";
+  /**
+   * Conservative default output-token budget (feeds billing's maxTokens/4
+   * heuristic). This is NOT the advertised context window — see contextWindow.
+   */
   maxTokens: number;
+  /** True advertised context window in tokens (exposed as /v1/models `context_length`). */
+  contextWindow?: number;
+  /** Maximum completion/output tokens the upstream allows. */
+  maxOutputTokens?: number;
   supportsStreaming: boolean;
   displayName: string;
   capabilities: string[];
@@ -404,15 +412,17 @@ export async function reloadModelCatalog(): Promise<void> {
 }
 
 /**
- * Emits a WARN for every model whose `markupPercent` is missing or <= 0.
- * Selling Venice compute at 0% markup = direct revenue leak. Operators see
- * the warning once per process (not per request) at startup.
+ * Emits a WARN for every paid model whose `markupPercent` is missing or <= 0.
+ * Explicitly free models (both token prices are zero) are intentionally exempt:
+ * their zero markup is a product decision, not a loss-making paid route.
+ * Operators see the warning once per process (not per request) at startup.
  */
 function auditMarkupSanity(catalog: Record<string, ModelDef>): void {
   if (!catalog) return;
   const offenders: Array<{ id: string; markupPercent: number }> = [];
   for (const [id, def] of Object.entries(catalog)) {
-    if (!Number.isFinite(def?.markupPercent) || def.markupPercent <= 0) {
+    const isExplicitlyFree = def?.inputPricePer1M === 0 && def?.outputPricePer1M === 0;
+    if (!isExplicitlyFree && (!Number.isFinite(def?.markupPercent) || def.markupPercent <= 0)) {
       offenders.push({ id, markupPercent: def?.markupPercent ?? NaN });
     }
   }
@@ -583,6 +593,7 @@ export async function listModels(): Promise<Array<{
   inputPricePer1M: number;
   outputPricePer1M: number;
   maxTokens: number;
+  contextWindow?: number;
   displayName: string;
   capabilities: string[];
   description: string;
@@ -600,7 +611,10 @@ export async function listModels(): Promise<Array<{
       provider: m.primaryProvider,
       inputPricePer1M: m.inputPricePer1M,
       outputPricePer1M: m.outputPricePer1M,
+      // maxTokens stays the conservative default-output-budget field; the
+      // true advertised context window is contextWindow (see routes/models.ts).
       maxTokens: m.maxTokens,
+      contextWindow: m.contextWindow,
       displayName: m.displayName,
       capabilities: m.capabilities,
       description: m.description,

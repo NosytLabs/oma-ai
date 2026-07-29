@@ -143,7 +143,9 @@ async function buildModelsResponse(): Promise<{
             parent: null,
             pricing,
             category: m.category,
-            context_length: m.maxTokens,
+            // Advertise the true context window; fall back to maxTokens only
+            // for legacy entries that never set contextWindow.
+            context_length: m.contextWindow ?? m.maxTokens,
             architecture: deriveArchitecture(capabilities),
             supported_parameters: deriveSupportedParameters(capabilities),
           };
@@ -444,7 +446,7 @@ modelRoutes.get("/v1/models/:model", async (c) => {
       modelInfo.outputPricePer1M,
     ),
     category: modelInfo.category,
-    context_length: modelInfo.maxTokens,
+    context_length: modelInfo.contextWindow ?? modelInfo.maxTokens,
     supports_streaming: modelInfo.supportsStreaming,
     provider: modelInfo.provider,
     architecture: deriveArchitecture(capabilities),

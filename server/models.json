@@ -5,8 +5,8 @@
       "veniceId": "zai-org-glm-5-1",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 1.75,
-      "outputPricePer1M": 5.5,
+      "inputPricePer1M": 1.54,
+      "outputPricePer1M": 4.84,
       "markupPercent": 25,
       "category": "mid",
       "maxTokens": 200000,
@@ -20,8 +20,8 @@
         "function-calling"
       ],
       "description": "GLM-5.1 is the next-generation large language model developed by Zhiyuan AI, featuring significantly enhanced reasoning capabilities, improved instruction following, and support for multiple languages",
-      "creditsPerMillionInput": 219,
-      "creditsPerMillionOutput": 688,
+      "creditsPerMillionInput": 193,
+      "creditsPerMillionOutput": 605,
       "contextWindow": 200000,
       "maxOutputTokens": 8192
     },
@@ -106,8 +106,8 @@
       "veniceId": "olafangensan-glm-4.7-flash-heretic",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.14,
-      "outputPricePer1M": 0.8,
+      "inputPricePer1M": 0.07,
+      "outputPricePer1M": 0.4,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 200000,
@@ -121,8 +121,8 @@
         "function-calling"
       ],
       "description": "GLM-4.7-Flash-Heretic is an uncensored experimental variant of GLM-4.7-Flash, optimized for creative freedom and unfiltered dialogue with fast inference speed.",
-      "creditsPerMillionInput": 18,
-      "creditsPerMillionOutput": 100,
+      "creditsPerMillionInput": 9,
+      "creditsPerMillionOutput": 50,
       "contextWindow": 200000,
       "maxOutputTokens": 4096
     },
@@ -156,8 +156,8 @@
       "veniceId": "zai-org-glm-4.6",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.54,
-      "outputPricePer1M": 2.19,
+      "inputPricePer1M": 0.43,
+      "outputPricePer1M": 1.75,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 198000,
@@ -171,8 +171,8 @@
         "function-calling"
       ],
       "description": "GLM-4.6 is a large language model developed by Zhiyuan AI, featuring strong reasoning capabilities and support for multiple languages. Supports the largest context window for processing extensive text",
-      "creditsPerMillionInput": 68,
-      "creditsPerMillionOutput": 274,
+      "creditsPerMillionInput": 54,
+      "creditsPerMillionOutput": 219,
       "contextWindow": 198000,
       "maxOutputTokens": 4096
     },
@@ -515,8 +515,8 @@
       "veniceId": "qwen3-vl-235b-a22b",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.25,
-      "outputPricePer1M": 1.5,
+      "inputPricePer1M": 0.21,
+      "outputPricePer1M": 1.9,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 128000,
@@ -530,8 +530,8 @@
         "function-calling"
       ],
       "description": "Qwen3-VL 235B vision-language model with MoE architecture. The most powerful VL model in the Qwen series with superior visual perception, OCR, and multimodal reasoning.",
-      "creditsPerMillionInput": 31,
-      "creditsPerMillionOutput": 188,
+      "creditsPerMillionInput": 26,
+      "creditsPerMillionOutput": 238,
       "contextWindow": 128000,
       "maxOutputTokens": 4096
     },
@@ -564,8 +564,8 @@
       "veniceId": "google-gemma-4-26b-a4b-it",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.1625,
-      "outputPricePer1M": 0.5,
+      "inputPricePer1M": 0.13,
+      "outputPricePer1M": 0.4,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 256000,
@@ -581,8 +581,8 @@
         "video-input"
       ],
       "description": "Gemma 4 26B A4B is a Mixture-of-Experts model from Google DeepMind with 26B total parameters and only 4B active per token, offering fast inference at high quality. It handles text, image, and video in",
-      "creditsPerMillionInput": 20,
-      "creditsPerMillionOutput": 62,
+      "creditsPerMillionInput": 16,
+      "creditsPerMillionOutput": 50,
       "contextWindow": 256000,
       "maxOutputTokens": 4096
     },
@@ -1187,8 +1187,8 @@
       "veniceId": "xiaomi-mimo-v2-5",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.175,
-      "outputPricePer1M": 0.35,
+      "inputPricePer1M": 0.14,
+      "outputPricePer1M": 0.28,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 1000000,
@@ -1205,8 +1205,8 @@
         "video-input"
       ],
       "description": "MiMo-V2.5 is Xiaomi's native omnimodal model with strong agentic capabilities, supporting text, image, video, and audio understanding in a unified architecture. Built on a sparse Mixture-of-Experts ba",
-      "creditsPerMillionInput": 22,
-      "creditsPerMillionOutput": 44,
+      "creditsPerMillionInput": 18,
+      "creditsPerMillionOutput": 35,
       "contextWindow": 1000000,
       "maxOutputTokens": 4096
     },
@@ -1215,8 +1215,8 @@
       "veniceId": "deepseek-v4-pro",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 1.73,
-      "outputPricePer1M": 3.796,
+      "inputPricePer1M": 1.65,
+      "outputPricePer1M": 3.301,
       "markupPercent": 25,
       "category": "mid",
       "maxTokens": 1000000,
@@ -1230,8 +1230,8 @@
         "function-calling"
       ],
       "description": "DeepSeek V4 Pro is a 1.6T-parameter Mixture-of-Experts model with 49B active parameters and a 1M-token context window. Built for advanced reasoning, coding, and long-horizon agentic workflows with a h",
-      "creditsPerMillionInput": 216,
-      "creditsPerMillionOutput": 474,
+      "creditsPerMillionInput": 206,
+      "creditsPerMillionOutput": 413,
       "contextWindow": 1000000,
       "maxOutputTokens": 8192
     },
@@ -1240,8 +1240,8 @@
       "veniceId": "deepseek-v4-flash",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.17,
-      "outputPricePer1M": 0.35,
+      "inputPricePer1M": 0.138,
+      "outputPricePer1M": 0.275,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 1000000,
@@ -1255,8 +1255,8 @@
         "function-calling"
       ],
       "description": "DeepSeek V4 Flash is an efficiency-optimized 284B-parameter Mixture-of-Experts model with 13B active parameters and a 1M-token context window. Tuned for fast inference and high-throughput workloads wh",
-      "creditsPerMillionInput": 21,
-      "creditsPerMillionOutput": 44,
+      "creditsPerMillionInput": 17,
+      "creditsPerMillionOutput": 34,
       "contextWindow": 1000000,
       "maxOutputTokens": 4096
     },
@@ -1620,8 +1620,8 @@
       "veniceId": "minimax-m25",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.34,
-      "outputPricePer1M": 1.19,
+      "inputPricePer1M": 0.27,
+      "outputPricePer1M": 0.95,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 198000,
@@ -1635,8 +1635,8 @@
         "function-calling"
       ],
       "description": "MiniMax-M2.5 is a state-of-the-art large language model optimized for coding, agentic workflows, and modern application development with enhanced reasoning capabilities.",
-      "creditsPerMillionInput": 42,
-      "creditsPerMillionOutput": 149,
+      "creditsPerMillionInput": 34,
+      "creditsPerMillionOutput": 119,
       "contextWindow": 198000,
       "maxOutputTokens": 4096
     },
@@ -1737,7 +1737,8 @@
       "creditsPerMillionInput": 18,
       "creditsPerMillionOutput": 100,
       "contextWindow": 32768,
-      "maxOutputTokens": 4096
+      "maxOutputTokens": 4096,
+      "enabled": false
     },
     "e2ee-venice-uncensored-24b-p": {
       "id": "e2ee-venice-uncensored-24b-p",
@@ -2098,7 +2099,8 @@
       "description": "Gemini 3.6 Flash is a high speed, high value thinking model with 1M context, designed for agentic workflows, multi-turn chat, and coding assistance. It delivers near Pro level reasoning with substanti",
       "creditsPerMillionInput": 2343750,
       "creditsPerMillionOutput": 11718750,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 9375
     },
     "gemini-3-5-flash-lite": {
       "id": "gemini-3-5-flash-lite",
@@ -2124,7 +2126,8 @@
       "description": "Gemini 3.5 Flash-Lite is the fastest, most cost-efficient Gemini 3.5 model with 1M context, ideal for everyday questions, summarization, and lightweight coding tasks.",
       "creditsPerMillionInput": 468750,
       "creditsPerMillionOutput": 3906250,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 3130
     },
     "zai-org-glm-5-2": {
       "id": "zai-org-glm-5-2",
@@ -2147,15 +2150,16 @@
       "description": "GLM-5.2 is the next-generation large language model developed by Zhiyuan AI, featuring significantly enhanced reasoning capabilities, improved instruction following, and support for multiple languages",
       "creditsPerMillionInput": 1750000,
       "creditsPerMillionOutput": 5500000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 131072
     },
     "qwen3-6-35b-a3b": {
       "id": "qwen3-6-35b-a3b",
       "veniceId": "qwen3-6-35b-a3b",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 0.15,
-      "outputPricePer1M": 1,
+      "inputPricePer1M": 0.1,
+      "outputPricePer1M": 1.0,
       "markupPercent": 25,
       "category": "budget",
       "maxTokens": 65536,
@@ -2169,9 +2173,10 @@
         "web-search"
       ],
       "description": "Qwen 3.6 35B A3B is a fast mixture-of-experts model with 35B total parameters and ~3B active per token. Strong at agentic coding, STEM reasoning, and tool use, with a native 256K context window.",
-      "creditsPerMillionInput": 187500,
-      "creditsPerMillionOutput": 1250000,
-      "contextWindow": 256000
+      "creditsPerMillionInput": 13,
+      "creditsPerMillionOutput": 125,
+      "contextWindow": 256000,
+      "maxOutputTokens": 100000
     },
     "grok-4-5": {
       "id": "grok-4-5",
@@ -2195,7 +2200,8 @@
       "description": "Grok 4.5 is xAI's intelligent coding model for agentic software engineering and workflow tasks, with function calling, structured outputs, and a 500K-token context window.",
       "creditsPerMillionInput": 2837500,
       "creditsPerMillionOutput": 8500000,
-      "contextWindow": 500000
+      "contextWindow": 500000,
+      "maxOutputTokens": 32000
     },
     "claude-opus-5": {
       "id": "claude-opus-5",
@@ -2219,7 +2225,8 @@
       "description": "Claude Opus 5 is Anthropic's most capable model in the Opus family. It delivers major gains over Opus 4.8 in agentic coding, professional knowledge work, and long-horizon reasoning, with a 1M token co",
       "creditsPerMillionInput": 7500000,
       "creditsPerMillionOutput": 37500000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 30000
     },
     "claude-opus-5-fast": {
       "id": "claude-opus-5-fast",
@@ -2243,7 +2250,8 @@
       "description": "Claude Opus 5 (Fast) is a speed-optimized variant of Anthropic's most capable Opus model, offering the same 1M token context window and strong performance across agentic coding, professional knowledge",
       "creditsPerMillionInput": 15000000,
       "creditsPerMillionOutput": 75000000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 30000
     },
     "claude-sonnet-5": {
       "id": "claude-sonnet-5",
@@ -2267,7 +2275,8 @@
       "description": "Claude Sonnet 5 is Anthropic's latest Sonnet model, substantially improving on Sonnet 4.6 in coding and agentic work and reaching near-Opus quality on many tasks. It features a 1M token context window",
       "creditsPerMillionInput": 3750000,
       "creditsPerMillionOutput": 18750000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000
     },
     "kimi-k2-7-code": {
       "id": "kimi-k2-7-code",
@@ -2291,15 +2300,16 @@
       "description": "Kimi K2.7 Code is Moonshot AI's coding-focused agentic model built on Kimi K2.6, with 1T total parameters and 32B active parameters. It always operates in thinking mode, supports text and image input,",
       "creditsPerMillionInput": 937500,
       "creditsPerMillionOutput": 4375000,
-      "contextWindow": 256000
+      "contextWindow": 256000,
+      "maxOutputTokens": 65536
     },
     "kimi-k3": {
       "id": "kimi-k3",
       "veniceId": "kimi-k3",
       "provider": "venice",
       "primaryProvider": "venice",
-      "inputPricePer1M": 3.75,
-      "outputPricePer1M": 18.75,
+      "inputPricePer1M": 4.6875,
+      "outputPricePer1M": 23.4375,
       "markupPercent": 25,
       "category": "premium",
       "maxTokens": 131072,
@@ -2313,9 +2323,10 @@
         "web-search"
       ],
       "description": "Kimi K3 is an ultra-large-scale, open-weight multimodal reasoning model from Moonshot AI. It is suited for complex coding, knowledge work, and long-horizon agentic workflows, and is particularly stron",
-      "creditsPerMillionInput": 4687500,
-      "creditsPerMillionOutput": 23437500,
-      "contextWindow": 1000000
+      "creditsPerMillionInput": 586,
+      "creditsPerMillionOutput": 2930,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 18750
     },
     "inkling": {
       "id": "inkling",
@@ -2340,7 +2351,8 @@
       "description": "Inkling is a general-purpose multimodal model from Thinking Machines Lab that accepts text, image, and audio inputs and generates text. It is a 66-layer sparse MoE (975B total / 41B active) with hybri",
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 6328125,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 5060
     },
     "seed-2-1-turbo": {
       "id": "seed-2-1-turbo",
@@ -2365,7 +2377,8 @@
       "description": "Seed 2.1 Turbo (Dola-Seed-2.1) is ByteDance\u2019s next-generation multimodal model for the coding and agent era, with engineering-grade code delivery, long-horizon agent execution, and upgraded GUI and vi",
       "creditsPerMillionInput": 781250,
       "creditsPerMillionOutput": 3906250,
-      "contextWindow": 256000
+      "contextWindow": 256000,
+      "maxOutputTokens": 65536
     },
     "aion-labs-aion-3-0": {
       "id": "aion-labs-aion-3-0",
@@ -2388,7 +2401,8 @@
       "description": "Aion 3.0 is a multi-model roleplaying and storytelling system from AionLabs, built on the GLM family of models. Multiple specialized models collaborate on each response to produce stronger narrative s",
       "creditsPerMillionInput": 4687500,
       "creditsPerMillionOutput": 9375000,
-      "contextWindow": 128000
+      "contextWindow": 128000,
+      "maxOutputTokens": 7500
     },
     "aion-labs-aion-3-0-mini": {
       "id": "aion-labs-aion-3-0-mini",
@@ -2411,7 +2425,8 @@
       "description": "Aion 3.0 Mini is a multi-model roleplaying and storytelling system from AionLabs, built on the DeepSeek family of models. Multiple specialized models collaborate on each response to produce stronger n",
       "creditsPerMillionInput": 1093750,
       "creditsPerMillionOutput": 2187500,
-      "contextWindow": 128000
+      "contextWindow": 128000,
+      "maxOutputTokens": 1750
     },
     "openai-gpt-56-luna": {
       "id": "openai-gpt-56-luna",
@@ -2435,7 +2450,8 @@
       "description": "GPT-5.6 Luna is a fast, cost-efficient model in OpenAI's GPT-5.6 series. It is suited for high-volume, latency-sensitive tasks such as chat, classification, and lightweight agentic workflows, providin",
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 9375000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 7500
     },
     "openai-gpt-56-luna-pro": {
       "id": "openai-gpt-56-luna-pro",
@@ -2459,7 +2475,8 @@
       "description": "GPT-5.6 Luna Pro is the same underlying model as GPT-5.6 Luna, served with reasoning.mode set to pro for higher-quality responses on complex tasks.",
       "creditsPerMillionInput": 1562500,
       "creditsPerMillionOutput": 9375000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 7500
     },
     "openai-gpt-56-terra": {
       "id": "openai-gpt-56-terra",
@@ -2483,7 +2500,8 @@
       "description": "GPT-5.6 Terra is a balanced model in OpenAI's GPT-5.6 series, positioned between the flagship Sol tier and the cost-efficient Luna tier. It is suited for everyday coding, reasoning, and agentic tasks ",
       "creditsPerMillionInput": 3906250,
       "creditsPerMillionOutput": 23437500,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 18750
     },
     "openai-gpt-56-terra-pro": {
       "id": "openai-gpt-56-terra-pro",
@@ -2507,7 +2525,8 @@
       "description": "GPT-5.6 Terra Pro is the same underlying model as GPT-5.6 Terra, served with reasoning.mode set to pro for higher-quality responses on complex tasks.",
       "creditsPerMillionInput": 3906250,
       "creditsPerMillionOutput": 23437500,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 18750
     },
     "openai-gpt-56-sol": {
       "id": "openai-gpt-56-sol",
@@ -2531,7 +2550,8 @@
       "description": "GPT-5.6 Sol is the flagship model in OpenAI's GPT-5.6 series. It is suited for complex reasoning, coding, and agentic workflows, and is particularly strong at command-line and multi-step coding tasks ",
       "creditsPerMillionInput": 7812500,
       "creditsPerMillionOutput": 46875000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 37500
     },
     "openai-gpt-56-sol-pro": {
       "id": "openai-gpt-56-sol-pro",
@@ -2555,7 +2575,8 @@
       "description": "GPT-5.6 Sol Pro is the same underlying model as GPT-5.6 Sol, served with reasoning.mode set to pro for higher-quality responses on complex tasks.",
       "creditsPerMillionInput": 7812500,
       "creditsPerMillionOutput": 46875000,
-      "contextWindow": 1000000
+      "contextWindow": 1000000,
+      "maxOutputTokens": 37500
     },
     "minimax-m27": {
       "id": "minimax-m27",
@@ -2578,7 +2599,8 @@
       "description": "MiniMax-M2.7 is a next-generation large language model designed for autonomous, real-world productivity with advanced agentic capabilities through multi-agent collaboration.",
       "creditsPerMillionInput": 468750,
       "creditsPerMillionOutput": 1875000,
-      "contextWindow": 198000
+      "contextWindow": 198000,
+      "maxOutputTokens": 32768
     },
     "kimi-k2-6": {
       "id": "kimi-k2-6",
@@ -2599,7 +2621,80 @@
       "description": "Moonshot AI Kimi K2.6 - free via OpenBroker/Gonka",
       "creditsPerMillionInput": 0,
       "creditsPerMillionOutput": 0,
-      "contextWindow": 256000
+      "contextWindow": 256000,
+      "maxOutputTokens": 8192
+    },
+    "e2ee-glm-5-2-p": {
+      "id": "e2ee-glm-5-2-p",
+      "veniceId": "e2ee-glm-5-2-p",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 1.75,
+      "outputPricePer1M": 5.75,
+      "markupPercent": 25,
+      "category": "mid",
+      "maxTokens": 524288,
+      "supportsStreaming": true,
+      "displayName": "GLM 5.2 (E2EE)",
+      "capabilities": [
+        "chat",
+        "tools",
+        "reasoning",
+        "web-search"
+      ],
+      "description": "GLM 5.2 running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
+      "creditsPerMillionInput": 219,
+      "creditsPerMillionOutput": 719,
+      "contextWindow": 524288,
+      "maxOutputTokens": 32768
+    },
+    "e2ee-qwen3-6-27b": {
+      "id": "e2ee-qwen3-6-27b",
+      "veniceId": "e2ee-qwen3-6-27b",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.346,
+      "outputPricePer1M": 3.46,
+      "markupPercent": 25,
+      "category": "budget",
+      "maxTokens": 256000,
+      "supportsStreaming": true,
+      "displayName": "Qwen 3.6 27B (E2EE)",
+      "capabilities": [
+        "chat",
+        "tools",
+        "reasoning",
+        "web-search"
+      ],
+      "description": "Qwen 3.6 27B FP8 running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
+      "creditsPerMillionInput": 43,
+      "creditsPerMillionOutput": 433,
+      "contextWindow": 256000,
+      "maxOutputTokens": 32768
+    },
+    "e2ee-deepseek-v4-flash": {
+      "id": "e2ee-deepseek-v4-flash",
+      "veniceId": "e2ee-deepseek-v4-flash",
+      "provider": "venice",
+      "primaryProvider": "venice",
+      "inputPricePer1M": 0.182,
+      "outputPricePer1M": 0.373,
+      "markupPercent": 25,
+      "category": "budget",
+      "maxTokens": 1000000,
+      "supportsStreaming": true,
+      "displayName": "DeepSeek V4 Flash (E2EE)",
+      "capabilities": [
+        "chat",
+        "tools",
+        "reasoning",
+        "web-search"
+      ],
+      "description": "DeepSeek V4 Flash running in a Trusted Execution Environment (TEE). Hardware attestation evidence is available for independent verification of enclave identity and configuration.",
+      "creditsPerMillionInput": 23,
+      "creditsPerMillionOutput": 47,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 8192
     }
   },
   "VIDEO_MODELS": {

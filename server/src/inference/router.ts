@@ -13,7 +13,7 @@ import {
   PROVIDER_ERROR_TYPES,
   setErrorAttributes,
 } from "../tracing.js";
-import { getCandidateProviders, recordFailover } from "./cross-provider-router.js";
+import { getCandidateProviders, recordFailover, resolveModelAlias } from "./cross-provider-router.js";
 import { getModelIdForProvider } from "./provider-selector.js";
 import { logger } from "../lib/logger.js";
 import { trackApiKeySpend } from "./handler-helpers.js";
@@ -225,7 +225,18 @@ export async function handleChatCompletion(
       span.setAttribute(LLM_ATTRS.API_KEY_ID, apiKeyId);
       span.setAttribute(LLM_ATTRS.USER_ID, userId);
 
-      const modelId = body.model;
+      // Resolve OpenAI-name aliases (gpt-4o -> openai-gpt-4o-2024-11-20, etc.)
+      // so OpenAI-style callers route to real catalog models with correct
+      // billing + provider selection. Mutate body.model so upstream providers
+      // receive the resolved real id; keep the requested name as a span
+      // attribute for traceability.
+      const requestedModel = body.model;
+      const modelId = await resolveModelAlias(requestedModel);
+      if (modelId !== requestedModel) {
+        body.model = modelId;
+        span.setAttribute("llm.requested_model", requestedModel);
+        span.setAttribute(LLM_ATTRS.MODEL, modelId);
+      }
       const model = await getModel(modelId);
 
       // OMA-AI free catalog models (provider=gonka / OpenBroker): no credits,

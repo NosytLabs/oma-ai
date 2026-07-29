@@ -37,7 +37,7 @@ describe("searchWeb", () => {
   });
 
   it("uses Wikipedia keyless fallback when TinyFish is not configured", async () => {
-    const fetchMock = vi.fn(() =>
+    const fetchMock = vi.fn<typeof fetch>(() =>
       Promise.resolve(
         new Response(
           JSON.stringify([
@@ -78,7 +78,7 @@ describe("searchWeb", () => {
       total_results: 1,
       page: 1,
     };
-    const fetchMock = vi.fn(() =>
+    const fetchMock = vi.fn<typeof fetch>(() =>
       Promise.resolve(
         new Response(JSON.stringify(payload), {
           status: 200,

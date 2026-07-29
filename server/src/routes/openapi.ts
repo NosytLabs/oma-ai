@@ -173,7 +173,7 @@ const openapiSpec = {
         type: "object",
         required: ["model", "messages"],
         properties: {
-          model: { type: "string", description: "Model ID (e.g. 'gpt-4o', 'claude-sonnet-4-20250514')" },
+          model: { type: "string", description: "Model ID (e.g. 'claude-opus-5', 'claude-sonnet-5')" },
           messages: {
             type: "array",
             items: { $ref: "#/components/schemas/ChatMessage" },

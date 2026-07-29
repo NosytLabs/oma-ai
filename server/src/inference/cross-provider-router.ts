@@ -8,9 +8,12 @@ const PROVIDER_ID_FIELDS: ReadonlyArray<{ provider: Provider; field: keyof Model
   { provider: "gonka", field: "gonkaId" },
 ];
 
-const ALIAS_MAP: Record<string, string> = {
+export const ALIAS_MAP: Record<string, string> = {
   llama: "llama-3.3-70b",
   auto: "deepseek-v3.2",
+  "gpt-4o": "openai-gpt-4o-2024-11-20",
+  "gpt-4o-mini": "openai-gpt-4o-mini-2024-07-18",
+  "gpt-3.5-turbo": "llama-3.3-70b",
 };
 
 export interface FailoverEvent {
