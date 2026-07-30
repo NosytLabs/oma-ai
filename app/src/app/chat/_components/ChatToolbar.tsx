@@ -60,7 +60,10 @@ export interface ChatToolbarProps {
 	webSearchEnabled: boolean;
 	setWebSearchEnabled: Dispatch<SetStateAction<boolean>>;
 	mediaMode?: "text" | "image" | "video";
-	setMediaMode?: Dispatch<SetStateAction<"text" | "image" | "video">>;
+	// 2026-07-30: the IMAGE/VIDEO modes are not exposed in the UI anymore
+	// (no underlying endpoints). The setter type is now a no-op —
+	// accept any MediaMode-shaped value but the type is "text"-only.
+	setMediaMode?: Dispatch<SetStateAction<"text">>;
 	searching: boolean;
 	isAuthenticated: boolean;
 	balance: BalanceResponse | null;
@@ -160,48 +163,13 @@ export function ChatToolbar({
 			)
 		) : null;
 
-	const mediaTabs =
-		isChat && setMediaMode ? (
-			<div
-				className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
-				role="tablist"
-				aria-label="Playground mode"
-			>
-				<button
-					type="button"
-					role="tab"
-					onClick={() => setMediaMode("text")}
-					aria-selected={mediaMode === "text"}
-					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<MessageSquare className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Chat</span>
-				</button>
-				<button
-					type="button"
-					role="tab"
-					onClick={() => setMediaMode("image")}
-					aria-selected={mediaMode === "image"}
-					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<ImageIcon className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Image</span>
-				</button>
-				<button
-					type="button"
-					role="tab"
-					onClick={() => setMediaMode("video")}
-					aria-selected={mediaMode === "video"}
-					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<Film className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Video</span>
-				</button>
-			</div>
-		) : null;
+	// 2026-07-30: removed IMAGE and VIDEO tabs. The underlying endpoints
+	// (/v1/images, /v1/video) don't exist yet — the tabs were
+	// placeholders that just hid the composer. Until those endpoints
+	// ship, keep the tab strip minimal so users don't click into a
+	// dead state. Restore the tablist when the corresponding routes
+	// land.
+	const mediaTabs = null;
 
 	const webSearchBtn = (
 		<button

@@ -72,9 +72,6 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		expect(compare).toHaveLength(1);
 	});
 
-	it("keeps mode tabs for chat/image/video", () => {
-		render(<ChatToolbar {...baseProps} />);
-		const tabs = screen.getAllByRole("tab");
-		expect(tabs.length).toBe(3);
-	});
+	// 2026-07-30: IMAGE and VIDEO tabs were removed (no endpoints yet).
+	// Re-enable when /v1/images and /v1/video ship.
 });

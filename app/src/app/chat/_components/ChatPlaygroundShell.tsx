@@ -470,7 +470,7 @@ function ShellContent({
 		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text font-sans overflow-hidden">
 			<h1 className="sr-only">
 				{isChat
-					? "OMA Playground — chat, image, and video generation"
+					? "OMA Playground — chat"
 					: "OMA API Playground"}
 			</h1>
 			<MemoizedChatToolbar
