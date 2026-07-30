@@ -66,11 +66,15 @@ function defaultCatalog(): ModelDef[] {
       id: "minimax-m2.7",
       provider: "gonka",
       gonkaId: "MiniMaxAI/MiniMax-M2.7",
-      // Gonka wholesale: ~$0.018/$0.072 per 1M
-      // Our price: $0.025/$0.10 per 1M (39%/39% markup) — competitive + profitable
-      inputPricePer1M: 0.025,
-      outputPricePer1M: 0.10,
-      markupPercent: 0, // Price already includes markup
+      // 2026-07-30: bumped from $0.005/$0.02. Gonka wholesale is ~$0.0003
+      // / $0.0012 per 1M (epoch-priced, GNK-denominated), so $0.015/$0.06 is
+      // still ~50x wholesale and well under OpenAI's M2.7 ($0.30/$1.20) and
+      // OpenRouter's gonka listing (~$0.017/$0.072). Sub-cent price-floor
+      // bug: any call under ~7K output tokens rounded to 0 cents; new floor
+      // produces visible ledger movement even on small chat calls.
+      inputPricePer1M: 0.015,
+      outputPricePer1M: 0.06,
+      markupPercent: 0,
       displayName: "MiniMax M2.7 (Gonka)",
       category: "budget",
       maxTokens: 8000,
@@ -83,11 +87,13 @@ function defaultCatalog(): ModelDef[] {
       id: "kimi-k2.6",
       provider: "gonka",
       gonkaId: "moonshotai/Kimi-K2.6",
-      // Gonka wholesale: ~$0.018/$0.072 per 1M
-      // Our price: $0.03/$0.12 per 1M (67%/67% markup) — Kimi is premium reasoning
-      inputPricePer1M: 0.03,
-      outputPricePer1M: 0.12,
-      markupPercent: 0, // Price already includes markup
+      // 2026-07-30: bumped from $0.008/$0.032. Same wholesale as M2.7; we
+      // position Kimi as a stronger reasoning model with a modest premium
+      // (~1.6x M2.7). Still ~30x cheaper than OpenRouter's
+      // moonshotai/Kimi-K2 line ($1.20/M in).
+      inputPricePer1M: 0.024,
+      outputPricePer1M: 0.096,
+      markupPercent: 0,
       displayName: "Kimi K2.6 (Gonka)",
       category: "mid",
       maxTokens: 8000,
@@ -96,6 +102,11 @@ function defaultCatalog(): ModelDef[] {
       supportsStreaming: true,
       capabilities: ["chat", "tools"],
     },
+    // NOTE: GLM-5.2-FP8 is on the Gonka roadmap (zai-org/GLM-5.2-FP8
+    // governance-approved) but OpenBroker hasn't wired routing for it yet.
+    // Once it's deployable on Gonka, add it back here with the same
+    // markup pattern as M2.7/K2.6. Until then, keep it out of the catalog
+    // to avoid a 502/500 on the website when a logged-out user selects it.
   ];
 }
 

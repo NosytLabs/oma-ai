@@ -238,39 +238,54 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
   const userCostCents = upstreamCostCents * markupMultiplier;
   const markupCents = userCostCents - upstreamCostCents;
 
+  // Anonymous free-tier requests have no BetterAuth user. The DB schema
+  // enforces a FK on usage_records.user_id, and there's no credit balance
+  // to deduct. The daily-limit middleware already tracks anon usage in
+  // Redis. Skip the DB write entirely for anon to avoid the FK throw.
+  const isAnonymous = userId === "anonymous" || !userId;
+
   try {
     await db.transaction(async (tx) => {
-      // Only deduct credits if not free website chat
-      if (status === "completed" && !skipBilling) {
-        const balanceRows = await tx
-          .select()
-          .from(creditBalances)
-          .where(eq(creditBalances.userId, userId))
-          .limit(1);
-        if (balanceRows.length > 0) {
-          await tx
-            .update(creditBalances)
-            .set({
+      // Only deduct credits if not free website chat AND user is authed.
+      // Upsert: seed a fresh credit row on first call (with the configured
+      // free-trial cents) instead of silently letting the call go free when
+      // the user has no balance row. Without this, every new user gets free
+      // inference forever and the ledger never moves.
+      if (status === "completed" && !skipBilling && !isAnonymous) {
+        const freeTrialCents = String(config.FREE_SIGNUP_CENTS ?? 0);
+        await tx
+          .insert(creditBalances)
+          .values({
+            userId,
+            balanceCents: freeTrialCents,
+            totalDepositedCents: freeTrialCents,
+            totalUsedCents: "0",
+          })
+          .onConflictDoUpdate({
+            target: creditBalances.userId,
+            set: {
               balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${userCostCents.toFixed(4)}::numeric, 0)`,
               totalUsedCents: sql`${creditBalances.totalUsedCents}::numeric + ${userCostCents.toFixed(4)}::numeric`,
               lastActivityAt: sql`NOW()`,
-            })
-            .where(eq(creditBalances.userId, userId));
-        }
+            },
+          });
       }
-      // Always record usage (for analytics), but mark as free tier
-      await tx.insert(usageRecords).values({
-        requestId,
-        userId,
-        model,
-        provider,
-        inputTokens: promptTokens,
-        outputTokens,
-        costCents: skipBilling ? "0" : upstreamCostCents.toFixed(4),
-        markupCents: skipBilling ? "0" : markupCents.toFixed(4),
-        totalCents: skipBilling ? "0" : userCostCents.toFixed(4),
-        status: skipBilling ? "free_tier" : status,
-      });
+      // Only persist usage for authenticated users. Anonymous free-tier
+      // is tracked in Redis by the daily-limit middleware.
+      if (!isAnonymous) {
+        await tx.insert(usageRecords).values({
+          requestId,
+          userId,
+          model,
+          provider,
+          inputTokens: promptTokens,
+          outputTokens,
+          costCents: skipBilling ? "0" : upstreamCostCents.toFixed(4),
+          markupCents: skipBilling ? "0" : markupCents.toFixed(4),
+          totalCents: skipBilling ? "0" : userCostCents.toFixed(4),
+          status: skipBilling ? "free_tier" : status,
+        });
+      }
     });
     await auditLog({
       userId,
@@ -287,7 +302,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
         status,
       },
     });
-    if (status === "completed") {
+    if (status === "completed" && !isAnonymous) {
       void trackPolarUsage({
         externalCustomerId: userId,
         requestId,

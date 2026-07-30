@@ -143,6 +143,12 @@ const envSchema = z.object({
   // Applied per-model via ModelPricing.markup in billing-service.ts.
   OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
 
+  // Free signup credit — credits minted to a brand-new user on first
+  // sign-in. 100 = $1.00 at 1 credit = 1 cent. Set to 0 to disable the
+  // free trial. Without this, /v1/balance reads 0 forever and users
+  // hit "insufficient_balance" on their first real call.
+  FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(100),
+
   // Tiered markup strategy (best practice: higher margin on cheap models,
   // lower on frontier — price-sensitive buyers absorb cost on budget tiers,
   // frontier buyers are inelastic and won't tolerate steep markup).

@@ -28,6 +28,7 @@ import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
 import { db } from "./db/client.js";
 import * as schema from "./db/schema.js";
+import { creditBalances } from "./db/schema.js";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 import { ensureCatalogLoaded, listAllModels } from "./inference/models.js";
@@ -43,6 +44,30 @@ async function sendMagicLink({
 	token: string;
 	metadata?: Record<string, unknown>;
 }): Promise<void> {
+	// Dev / failover — log the magic-link URL to stdout when Resend is unset
+	// OR when Resend rejects (e.g. unverified sender domain). Don't block auth
+	// for misconfigured production email.
+	const sendViaResend = async () => {
+		const res = await fetch("https://api.resend.com/emails", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${config.RESEND_API_KEY}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				from: RESEND_FROM,
+				to: email,
+				subject: "Sign in to OMA-AI",
+				html: renderMagicLinkEmail(url),
+				text: `Sign in to OMA-AI\n\nClick this link to sign in (expires in 5 minutes):\n${url}\n\nIf you didn't request this, ignore this email.`,
+			}),
+		});
+		if (!res.ok) {
+			const body = await res.text().catch(() => "");
+			throw new Error(`[magicLink] Resend ${res.status}: ${body.slice(0, 200)}`);
+		}
+	};
+
 	if (!config.RESEND_API_KEY) {
 		logger.info(
 			{ email, magicLink: url },
@@ -50,23 +75,13 @@ async function sendMagicLink({
 		);
 		return;
 	}
-	const res = await fetch("https://api.resend.com/emails", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${config.RESEND_API_KEY}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			from: RESEND_FROM,
-			to: email,
-			subject: "Sign in to OMA-AI",
-			html: renderMagicLinkEmail(url),
-			text: `Sign in to OMA-AI\n\nClick this link to sign in (expires in 5 minutes):\n${url}\n\nIf you didn't request this, ignore this email.`,
-		}),
-	});
-	if (!res.ok) {
-		const body = await res.text();
-		throw new Error(`[magicLink] Resend ${res.status}: ${body}`);
+	try {
+		await sendViaResend();
+	} catch (err) {
+		logger.warn(
+			{ err: (err as Error).message, email, magicLink: url },
+			"[magicLink] Resend failed — falling back to console log so you can still sign in",
+		);
 	}
 }
 
@@ -120,6 +135,38 @@ export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
 	secret: config.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: "pg", schema }),
+
+	databaseHooks: {
+		// Seed the user's credit balance on first sign-in so they have
+		// something to spend before they hit a deposit path. Without this,
+		// /v1/balance returns 0 forever and the user silently bypasses
+		// billing (proxy.ts used to read the row and skip the deduction
+		// when no row existed — fixed in 2026-07-30 audit).
+		user: {
+			create: {
+				after: async (createdUser) => {
+					const freeTrialCents = String(config.FREE_SIGNUP_CENTS ?? 0);
+					if (Number(freeTrialCents) <= 0) return;
+					try {
+						await db
+							.insert(creditBalances)
+							.values({
+								userId: createdUser.id,
+								balanceCents: freeTrialCents,
+								totalDepositedCents: freeTrialCents,
+								totalUsedCents: "0",
+							})
+							.onConflictDoNothing();
+					} catch (err) {
+						logger.warn(
+							{ err, userId: createdUser.id },
+							"[auth] failed to seed free-trial credit balance",
+						);
+					}
+				},
+			},
+		},
+	},
 
 user: {
 		additionalFields: {
@@ -182,11 +229,25 @@ user: {
       secure: config.NODE_ENV === "production",
       path: "/",
     },
-    ...(config.PUBLIC_APP_URL?.includes(".")
+    ...(config.NODE_ENV === "production" && config.PUBLIC_APP_URL?.includes(".")
       ? {
           crossSubDomainCookies: {
             enabled: true,
             domain: config.PUBLIC_APP_URL.replace(/^https?:\/\//, "").split("/")[0],
+          },
+        }
+      : {}),
+    // Dev: share cookies across ports (3000 frontend + 3001 backend) so
+    // sign-in works on both. Production sets the explicit domain above;
+    // dev stays on host-only cookies. Setting sameSite: "lax" + secure:false
+    // lets the browser send cookies over http on localhost.
+    ...(config.NODE_ENV !== "production"
+      ? {
+          defaultCookieAttributes: {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: false,
+            path: "/",
           },
         }
       : {}),

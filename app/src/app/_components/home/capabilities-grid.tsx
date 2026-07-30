@@ -8,10 +8,9 @@
 import {
 	Coins,
 	GitBranch,
-	Image as ImageIcon,
 	MessageSquare,
 	ShieldCheck,
-	Video,
+	Zap,
 } from "lucide-react";
 import { Reveal, childFadeUp } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
@@ -30,43 +29,43 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "LLM Chat",
 		description:
-			"Venice-powered chat completions: Claude, GPT, Gemini, DeepSeek, Llama, Qwen — one API key, one OpenAI-compatible schema. Streaming, function-calling, vision inputs included.",
+			"Venice + Gonka chat completions: Claude, Llama, plus MiniMax-M2.7 and Kimi-K2.6 on decentralized Gonka — one API key, one OpenAI-compatible schema. Streaming, function-calling, and tool use included.",
 		icon: MessageSquare,
 		cell: "hero",
 		example: "POST /v1/chat/completions",
 	},
 	{
-		title: "Image Generation",
+		title: "Cheap-by-default",
 		description:
-			"Bring your own key for FLUX, SDXL, Imagen — or route any provider behind the same endpoint. Pay per image, not per minute.",
-		icon: ImageIcon,
+			"Pay-per-token on Gonka at $0.015/M input (M2.7) and $0.024/M (Kimi K2.6) — ~50x cheaper than OpenAI, with no markup on the budget tier. Premium Claude still on Venice at $2.50/M.",
+		icon: Zap,
 		cell: "standard",
 	},
 	{
-		title: "Video Generation",
+		title: "Tool Calling & Streaming",
 		description:
-			"Text-to-video and image-to-video via the same gateway. Per-second billing, automatic provider failover when keys are configured.",
-		icon: Video,
+			"Native OpenAI-style function calling, JSON-schema tools, and Server-Sent Events streaming. Re-use your existing OpenAI SDK by swapping the base URL — no migration, no lock-in.",
+		icon: ShieldCheck,
 		cell: "tinted",
 	},
 	{
 		title: "Model Routing",
       description:
-        "Venice primary, Surplus fallback, OMA-AI budget — automatic circuit-breaker failover and latency-optimized routing across all providers.",
+        "Venice for premium models, Gonka for cheap models. Per-model routing, automatic retry on transient failures, and a health-checked provider registry so a slow upstream never blocks your chat.",
 		icon: GitBranch,
 		cell: "standard",
 	},
 	{
 		title: "Crypto-Native Billing",
 		description:
-			"USDC on Base at 1:1 USD. x402 pay-per-request for agents — no pre-funding, no subscriptions. Also supports LI.FI / CCTP from 100+ assets.",
+			"USDC on Base at 1:1 USD. x402 pay-per-request for agents — no pre-funding, no subscriptions. Per-call ledger shows every request, model, and exact cents charged.",
 		icon: Coins,
 		cell: "standard",
 	},
 	{
-		title: "Wallet-Based Auth",
+		title: "Magic Link or Wallet",
 		description:
-			"Sign in with any Ethereum wallet (SIWE). Low-friction signup — no email, no password, no card. Your wallet is your account.",
+			"Sign in with email magic link (Resend) or Sign-In With Ethereum (SIWE). Same account either way — mint API keys, top up USDC, and chat from any device.",
 		icon: ShieldCheck,
 		cell: "standard",
 	},

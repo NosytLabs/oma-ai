@@ -365,6 +365,7 @@ interface ApiModelEntry {
 	id: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
 	display_name?: string;
+	owned_by?: string;
 	pricing: {
 		prompt: string;
 		completion: string | null;
@@ -375,7 +376,9 @@ interface ApiModelEntry {
 	};
 	category: string;
 	context_length: number | null;
-	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus"). */
+	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus").
+	 * Backends differ: OMA + Pollinations return `provider`, OpenRouter returns
+	 * `owned_by`, etc. The loader picks whichever is present. */
 	provider?: string;
 	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
 	supported_parameters?: string[];
@@ -429,6 +432,10 @@ export async function loadModels(): Promise<Model[]> {
 					// API returns prices per 1M tokens already — no conversion needed
 					const inputPrice = Number.isFinite(promptRaw) ? promptRaw : 0;
 					const outputPrice = Number.isFinite(completionRaw) ? completionRaw : 0;
+					// Backends vary: OMA returns `provider`, OpenRouter returns `owned_by`,
+					// Pollinations returns `organization`. Accept any of them.
+					const rawProvider =
+						entry.provider ?? entry.owned_by ?? entry.architecture?.output_modalities?.[0];
 const tier: Tier =
 		entry.category === "budget" ||
 		entry.category === "mid" ||
@@ -440,7 +447,7 @@ const tier: Tier =
 					return {
 						id: entry.id,
 						name,
-						provider: normalizeProvider(entry.provider),
+						provider: normalizeProvider(rawProvider),
 						tier,
 						modality,
 						description: deriveDescription(entry.id, name, undefined, modality),
@@ -522,8 +529,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "OMA-AI",
 			category: "budget",
 			maxTokens: 204800, // OpenBroker docs: 204,800 context
-			inputPricePer1M: 0.017, // verified Gonka base rate @ $0.017/1M (2026-07-14)
-			outputPricePer1M: 0.017,
+			inputPricePer1M: 0.015, // matches server/src/inference/models.ts (2026-07-30)
+			outputPricePer1M: 0.06,
 			capabilities: ["chat"],
 		},
 		"claude-opus-4-8": {
@@ -587,10 +594,10 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	return grouped;
 }
 
-// Marketing model count surfaced across the UI. Must match live
-// GET /v1/models count. The SSR fallback catalog (`MODELS`) is a smaller
-// hand-picked set — never use MODELS.length for marketing copy.
-// Live count is read from MODELS.length at module init. Kept here as a
-// synchronous export so SSR metadata (Next.js generateMetadata, layout
-// descriptions) doesn't have to go async.
-export const MODEL_COUNT = MODELS.length;
+// Marketing model count surfaced across the UI. Must match the live
+// `GET /v1/models` count of 4 chat models (2 Venice + 2 Gonka) as of
+// 2026-07-30. The SSR fallback catalog (`MODELS`) below is a *smaller*
+// hand-picked set used for build-time metadata only — using
+// `MODELS.length` here produced "7+ models" copy that didn't match the
+// real catalog.
+export const MODEL_COUNT = 4;

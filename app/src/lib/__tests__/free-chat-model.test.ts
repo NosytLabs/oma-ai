@@ -13,7 +13,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 
 	it("allows known free OMA-AI model ids without provider hint", () => {
 		expect(isFreeChatModel("minimax-m2.7")).toBe(true);
-		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
+		expect(isFreeChatModel("kimi-k2.6")).toBe(true);
 	});
 
 	it("allows OMA-AI provider even for unknown ids", () => {

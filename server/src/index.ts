@@ -21,6 +21,9 @@ import { anthropicRoutes } from "./routes/anthropic/index.js";
 import { depositRoutes } from "./routes/deposit/index.js";
 import { exportRoutes } from "./routes/export.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
+import { usageRoutes } from "./routes/usage.js";
+import { openapiRoutes } from "./routes/openapi.js";
+import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 
@@ -83,8 +86,28 @@ const corsOptions = {
   },
   credentials: true,
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization", "PAYMENT-SIGNATURE", "PAYMENT-REQUIRED"],
-  exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
+  // Include X-OMA-Source so website chat can identify itself for the free
+  // daily tier (20 anon / 100 signed-in) vs API key auth (credit-billed).
+  // Without this, CORS preflight rejects the browser request outright.
+  allowHeaders: [
+    "Content-Type",
+    "Authorization",
+    "PAYMENT-SIGNATURE",
+    "PAYMENT-REQUIRED",
+    "X-OMA-Source",
+    "X-Correlation-ID",
+    "X-Requested-With",
+  ],
+  exposeHeaders: [
+    "X-RateLimit-Limit",
+    "X-RateLimit-Remaining",
+    "X-RateLimit-Reset",
+    "Retry-After",
+    "X-DailyLimit-Limit",
+    "X-DailyLimit-Remaining",
+    "X-DailyLimit-Reset",
+    "X-Request-ID",
+  ],
   maxAge: 86400,
 };
 
@@ -94,6 +117,7 @@ app.use("*", metricsMiddleware);
 // Public operational routes.
 app.route("/", healthRoutes);
 app.route("/", metricsRoutes);
+app.route("/", openapiRoutes);
 
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
@@ -118,6 +142,13 @@ app.route("/", exportRoutes);
 
 // x402 payments.
 app.route("/", x402Routes);
+
+// Daily usage / quota endpoint for the website chat free-tier counter.
+app.route("/", dailyUsageRoutes);
+app.route("/", usageRoutes);
+
+// Admin / operator dashboard endpoints.
+app.route("/", adminRoutes);
 
 app.notFound((c) =>
   c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),

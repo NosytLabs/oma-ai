@@ -154,8 +154,8 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(screen.getByText("LLM Chat")).toBeInTheDocument();
-			expect(screen.getByText("Image Generation")).toBeInTheDocument();
-			expect(screen.getByText("Video Generation")).toBeInTheDocument();
+			expect(screen.getByText("Cheap-by-default")).toBeInTheDocument();
+			expect(screen.getByText("Tool Calling & Streaming")).toBeInTheDocument();
 			expect(screen.getByText("Model Routing")).toBeInTheDocument();
 			expect(screen.getByText("Crypto-Native Billing")).toBeInTheDocument();
 		});
