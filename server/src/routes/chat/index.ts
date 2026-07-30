@@ -24,17 +24,19 @@
  */
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
-import { trackPolarUsage } from "../../inference/polar-usage.js";
-import { config } from "../../config.js";
-import { db } from "../../db/client.js";
-import { creditBalances, usageRecords } from "../../db/schema.js";
-import { auditLog } from "../../middleware/audit.js";
+import {
+  callProvider,
+  createStreamingProxy,
+  parseNonStreamingResponse,
+  ProviderError,
+  estimateTokens,
+  flattenMessageContent,
+} from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
 
 const chatSchema = z.object({
@@ -55,88 +57,6 @@ const chatSchema = z.object({
   tools: z.array(z.any()).optional(),
   tool_choice: z.any().optional(),
 });
-
-/** Provider-specific request envelope. Both backends are OpenAI-compatible. */
-interface ProviderRoute {
-  baseUrl: string;
-  apiKey: string;
-  /** Translate OMA model id → upstream model id (Venice, OpenBroker). */
-  upstreamModel: (omaModelId: string, gonkaId?: string) => string;
-  /** Strip provider-only fields the upstream doesn't accept. */
-  extraBody: (body: Record<string, unknown>) => Record<string, unknown>;
-  /** Surface the upstream provider name in audit + usage rows. */
-  providerLabel: "venice" | "gonka";
-}
-
-function resolveProvider(provider: string, gonkaId?: string): ProviderRoute {
-  if (provider === "gonka") {
-    if (!config.GONKA_API_KEY) {
-      throw new ProviderError(
-        "Gonka/OpenBroker API key not configured (set GONKA_API_KEY in the server env).",
-        503,
-      );
-    }
-    return {
-      baseUrl: `${config.GONKA_API_URL}/v1`,
-      apiKey: config.GONKA_API_KEY,
-      upstreamModel: (id, gid) => gid ?? id,
-      extraBody: (body) => body, // OpenAI-compatible — pass through
-      providerLabel: "gonka",
-    };
-  }
-  // default: venice
-  if (!config.VENICE_API_KEY) {
-    throw new ProviderError(
-      "Inference provider not configured (VENICE_API_KEY missing).",
-      503,
-    );
-  }
-  return {
-    baseUrl: `${config.VENICE_API_URL}/api/v1`,
-    apiKey: config.VENICE_API_KEY,
-    upstreamModel: (id) => id,
-    extraBody: (body) => ({
-      ...body,
-      // Venice privacy: force private mode unless the operator explicitly
-      // enabled non-private opt-out. Other providers ignore this field.
-      venice_parameters: {
-        private: !config.OMMA_ALLOW_NON_PRIVATE_VENICE,
-      },
-    }),
-    providerLabel: "venice",
-  };
-}
-
-class ProviderError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "ProviderError";
-  }
-}
-
-/** Rough token estimate when the upstream doesn't report usage. */
-function estimateTokens(text: string): number {
-  return Math.max(1, Math.ceil(text.length / 4));
-}
-
-function flattenMessageContent(content: string | unknown[]): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (part && typeof part === "object" && "text" in part) {
-          return String((part as { text: unknown }).text ?? "");
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
 
 export const chatRoutes = new Hono<OmaEnv>();
 
@@ -159,7 +79,7 @@ chatRoutes.post(
         400,
       );
     }
-    const { model, messages, stream, max_tokens, temperature, top_p } = parsed.data;
+    const { model, messages, stream, max_tokens, temperature, top_p, tools, tool_choice } = parsed.data;
     const modelDef = getModelById(model);
     if (!modelDef) {
       return c.json(
@@ -169,292 +89,70 @@ chatRoutes.post(
     }
     const userId = c.get("userId");
     const pricing = getModelPricing(model);
+    const requestId = `chatcmpl-${crypto.randomUUID()}`;
 
-    // Resolve upstream provider (Venice vs Gonka/OpenBroker).
-    let route: ProviderRoute;
+    const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
+    const promptTokens = estimateTokens(promptText);
+
     try {
-      route = resolveProvider(modelDef.provider, modelDef.gonkaId);
+      const upstreamResp = await callProvider({
+        modelId: model,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          ...(m.name ? { name: m.name } : {}),
+        })),
+        stream,
+        max_tokens,
+        temperature,
+        top_p,
+        tools,
+        tool_choice,
+        userId,
+        requestId,
+      });
+
+      if (stream) {
+        c.header("Content-Type", "text/event-stream");
+        c.header("Cache-Control", "no-cache, no-transform");
+        c.header("X-Accel-Buffering", "no");
+        const proxyStream = createStreamingProxy(upstreamResp, {
+          userId,
+          model,
+          provider: modelDef.provider as "venice" | "gonka",
+          promptTokens,
+          pricing,
+          requestId,
+        });
+        return c.body(proxyStream, 200);
+      }
+
+      const { data } = await parseNonStreamingResponse(upstreamResp, {
+        userId,
+        model,
+        provider: modelDef.provider as "venice" | "gonka",
+        promptTokens,
+        pricing,
+        requestId,
+      });
+
+      return c.json(data);
     } catch (err) {
       if (err instanceof ProviderError) {
         return c.json(
           {
-            error: { message: err.message, type: "not_configured" },
+            error: { message: err.message, type: err.status >= 500 ? "server_error" : "upstream_error" },
           },
           err.status as 400 | 401 | 402 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503,
         );
       }
-      throw err;
-    }
-    const upstreamUrl = `${route.baseUrl}/chat/completions`;
-    const upstreamModel = route.upstreamModel(
-      modelDef.veniceId ?? modelDef.id,
-      modelDef.gonkaId,
-    );
-
-    const requestId = `chatcmpl-${crypto.randomUUID()}`;
-    const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
-    const promptTokens = estimateTokens(promptText);
-
-    const upstreamBody = route.extraBody({
-      model: upstreamModel,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-        ...(m.name ? { name: m.name } : {}),
-      })),
-      stream,
-      ...(max_tokens ? { max_tokens } : {}),
-      ...(temperature !== undefined ? { temperature } : {}),
-      ...(top_p !== undefined ? { top_p } : {}),
-    });
-
-    const upstreamResp = await fetch(upstreamUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${route.apiKey}`,
-      },
-      body: JSON.stringify(upstreamBody),
-    }).catch((err) => {
-      logger.error({ err, provider: route.providerLabel }, "[chat] upstream fetch failed");
-      return null;
-    });
-
-    if (!upstreamResp) {
+      logger.error({ err, model }, "[chat] unexpected error");
       return c.json(
-        {
-          error: {
-            message: "Upstream inference provider unreachable",
-            type: "server_error",
-          },
-        },
-        502,
+        { error: { message: "Internal server error", type: "server_error" } },
+        500,
       );
     }
-
-    if (!upstreamResp.ok) {
-      const status = upstreamResp.status as number;
-      const errBody = await upstreamResp.text().catch(() => "");
-      logger.warn(
-        { status, model, errBody: errBody.slice(0, 300) },
-        "[chat] upstream returned non-2xx",
-      );
-      // Surface 4xx/5xx as-is so clients can react; never bill on 5xx.
-      const safeStatus = status >= 500 ? 502 : status;
-      return c.json(
-        {
-          error: {
-            message:
-              status >= 500
-                ? "Inference provider temporarily unavailable"
-                : `Upstream ${status}: ${errBody.slice(0, 200)}`,
-            type: status >= 500 ? "server_error" : "upstream_error",
-          },
-        },
-        safeStatus as 400 | 401 | 402 | 403 | 404 | 409 | 422 | 429 | 500 | 502,
-      );
-    }
-
-    // ── Streaming branch: pipe SSE chunks back, accumulate usage ───────
-    if (stream) {
-      if (!upstreamResp.body) {
-        return c.json(
-          { error: { message: "Upstream stream empty", type: "server_error" } },
-          502,
-        );
-      }
-      c.header("Content-Type", "text/event-stream");
-      c.header("Cache-Control", "no-cache, no-transform");
-      c.header("X-Accel-Buffering", "no");
-      const reader = upstreamResp.body.getReader();
-      const decoder = new TextDecoder();
-      let outputTokens = 0;
-      let upstreamStatus: "completed" | "error" = "completed";
-
-      const stream = new ReadableStream<Uint8Array>({
-        async pull(controller) {
-          try {
-            const { done, value } = await reader.read();
-            if (done) {
-              controller.close();
-              await recordUsage({
-                userId,
-                model,
-                provider: route.providerLabel,
-                promptTokens,
-                outputTokens,
-                pricing,
-                requestId,
-                status: upstreamStatus,
-              });
-              return;
-            }
-            const text = decoder.decode(value, { stream: true });
-            // Count `content` token deltas. `reasoning`/chain-of-thought deltas
-            // are counted separately by Venice but we treat them as output for
-            // billing since the model "produced" them for the user.
-            for (const line of text.split("\n")) {
-              if (!line.startsWith("data:")) continue;
-              const payload = line.slice(5).trim();
-              if (!payload || payload === "[DONE]") continue;
-              try {
-                const obj = JSON.parse(payload);
-                const choice = obj.choices?.[0];
-                const delta = choice?.delta?.content ?? choice?.delta?.reasoning_content;
-                if (typeof delta === "string" && delta.length > 0) {
-                  outputTokens += estimateTokens(delta);
-                }
-                if (obj.usage?.completion_tokens) {
-                  outputTokens = obj.usage.completion_tokens;
-                }
-              } catch {
-                // ignore unparseable SSE lines
-              }
-            }
-            controller.enqueue(value);
-          } catch (err) {
-            logger.warn({ err }, "[chat] stream read failed");
-            upstreamStatus = "error";
-            controller.error(err);
-            try {
-              await reader.cancel();
-            } catch {}
-          }
-        },
-        cancel() {
-          reader.cancel().catch(() => {});
-        },
-      });
-
-      return c.body(stream, 200);
-    }
-
-    // ── Non-streaming branch: parse JSON, return OpenAI shape ───────────
-    const data = await upstreamResp.json().catch(() => null);
-    if (!data) {
-      return c.json(
-        { error: { message: "Invalid upstream response", type: "server_error" } },
-        502,
-      );
-    }
-
-    const completionText =
-      data?.choices?.[0]?.message?.content ??
-      flattenMessageContent(data?.choices?.[0]?.message?.content ?? "") ??
-      "";
-    const reported = data?.usage?.completion_tokens;
-    const completionTokens =
-      typeof reported === "number" && reported > 0 ? reported : estimateTokens(completionText);
-    await recordUsage({
-      userId,
-      model,
-      provider: route.providerLabel,
-      promptTokens: data?.usage?.prompt_tokens ?? promptTokens,
-      outputTokens: completionTokens,
-      pricing,
-      requestId,
-      status: "completed",
-    });
-
-    return c.json(data);
   },
 );
 
-async function recordUsage(args: {
-  userId: string;
-  model: string;
-  provider: "venice" | "gonka";
-  promptTokens: number;
-  outputTokens: number;
-  pricing: ReturnType<typeof getModelPricing>;
-  requestId: string;
-  status: "completed" | "error";
-}): Promise<void> {
-  const {
-    userId,
-    model,
-    provider,
-    promptTokens,
-    outputTokens,
-    pricing,
-    requestId,
-    status,
-  } = args;
-  const totalTokens = promptTokens + outputTokens;
-  const upstreamCostCents =
-    (promptTokens / 1_000_000) * pricing.inputPer1M +
-    (outputTokens / 1_000_000) * pricing.outputPer1M;
-  const markupMultiplier = 1 + pricing.markup / 100;
-  const userCostCents = upstreamCostCents * markupMultiplier;
-  const markupCents = userCostCents - upstreamCostCents;
-
-  try {
-    await db.transaction(async (tx) => {
-      if (status === "completed") {
-        // Deduct only on success. We use a single guarded update — if
-        // the user has no row or insufficient balance we leave it
-        // alone and continue to record the usage with status=completed.
-        // (Real money > bookkeeping; real launch will refund or hard-fail.)
-        const balanceRows = await tx
-          .select()
-          .from(creditBalances)
-          .where(eq(creditBalances.userId, userId))
-          .limit(1);
-        if (balanceRows.length > 0) {
-          await tx
-            .update(creditBalances)
-            .set({
-              balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${userCostCents.toFixed(4)}::numeric, 0)`,
-              totalUsedCents: sql`${creditBalances.totalUsedCents}::numeric + ${userCostCents.toFixed(4)}::numeric`,
-              lastActivityAt: sql`NOW()`,
-            })
-            .where(eq(creditBalances.userId, userId));
-        }
-      }
-      await tx.insert(usageRecords).values({
-        requestId,
-        userId,
-        model,
-        provider,
-        inputTokens: promptTokens,
-        outputTokens,
-        costCents: upstreamCostCents.toFixed(4),
-        markupCents: markupCents.toFixed(4),
-        totalCents: userCostCents.toFixed(4),
-        status,
-      });
-    });
-    await auditLog({
-      userId,
-      action: "USER_CREATED",
-      resource: "chat_completion",
-      resourceId: requestId,
-      metadata: {
-        model,
-        provider,
-        promptTokens,
-        outputTokens,
-        totalTokens,
-        costCents: userCostCents.toFixed(4),
-        status,
-      },
-    });
-    // Fire-and-forget: send meter event to Polar for subscription usage
-    // visibility. No-op if POLAR_USAGE_METER_ID is not configured.
-    if (status === "completed") {
-      void trackPolarUsage({
-        externalCustomerId: userId,
-        requestId,
-        model,
-        provider,
-        promptTokens,
-        outputTokens,
-        totalTokens,
-        costCents: userCostCents,
-      });
-    }
-  } catch (err) {
-    logger.error({ err, requestId }, "[chat] usage record failed");
-  }
-}
-
+export { ProviderError, estimateTokens, flattenMessageContent };

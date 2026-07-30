@@ -287,16 +287,16 @@ export const creditBalances = pgTable("credit_balances", {
   userId: text("user_id")
     .references(() => user.id, { onDelete: "cascade" })
     .primaryKey(),
-  balanceCents: numeric("balance_cents", { precision: 18, scale: 2 })
+  balanceCents: numeric("balance_cents", { precision: 18, scale: 8 })
     .default("0")
     .notNull(),
   totalDepositedCents: numeric("total_deposited_cents", {
     precision: 18,
-    scale: 2,
+    scale: 8,
   })
     .default("0")
     .notNull(),
-  totalUsedCents: numeric("total_used_cents", { precision: 18, scale: 2 })
+  totalUsedCents: numeric("total_used_cents", { precision: 18, scale: 8 })
     .default("0")
     .notNull(),
   lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
@@ -323,9 +323,9 @@ export const usageRecords = pgTable(
     provider: providerEnum("provider").notNull(),
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
-    costCents: numeric("cost_cents", { precision: 18, scale: 2 }).notNull(),
-    markupCents: numeric("markup_cents", { precision: 18, scale: 2 }).notNull(),
-    totalCents: numeric("total_cents", { precision: 18, scale: 2 }).notNull(),
+    costCents: numeric("cost_cents", { precision: 18, scale: 8 }).notNull(),
+    markupCents: numeric("markup_cents", { precision: 18, scale: 8 }).notNull(),
+    totalCents: numeric("total_cents", { precision: 18, scale: 8 }).notNull(),
     latencyMs: integer("latency_ms"),
     status: text("status").default("completed").notNull(),
     refundedAt: timestamp("refunded_at", { withTimezone: true }),

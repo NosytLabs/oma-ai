@@ -62,8 +62,10 @@ function defaultCatalog(): ModelDef[] {
       id: "minimax-m2.7",
       provider: "gonka",
       gonkaId: "MiniMaxAI/MiniMax-M2.7",
-      inputPricePer1M: 0.30,
-      outputPricePer1M: 1.20,
+      // Gonka wholesale: ~$0.018/$0.072 per 1M (gonkabroker.com reference)
+      // With 30% markup: $0.023/$0.094 per 1M — competitive with market
+      inputPricePer1M: 0.018,
+      outputPricePer1M: 0.072,
       markupPercent: 30,
       displayName: "MiniMax M2.7 (Gonka)",
       category: "budget",
@@ -77,8 +79,10 @@ function defaultCatalog(): ModelDef[] {
       id: "kimi-k2.6",
       provider: "gonka",
       gonkaId: "moonshotai/Kimi-K2.6",
-      inputPricePer1M: 0.15,
-      outputPricePer1M: 0.60,
+      // Gonka wholesale: ~$0.018/$0.072 per 1M (similar to MiniMax)
+      // With 30% markup: $0.023/$0.094 per 1M — competitive with market
+      inputPricePer1M: 0.018,
+      outputPricePer1M: 0.072,
       markupPercent: 30,
       displayName: "Kimi K2.6 (Gonka)",
       category: "budget",

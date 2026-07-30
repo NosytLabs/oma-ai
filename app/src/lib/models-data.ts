@@ -426,12 +426,9 @@ export async function loadModels(): Promise<Model[]> {
 					const name = entry.display_name?.trim() || deriveNameFromId(entry.id);
 					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");
 					const completionRaw = parseFloat(entry.pricing?.completion ?? "");
-					const inputPrice = Number.isFinite(promptRaw)
-						? promptRaw * 1_000_000
-						: 0;
-					const outputPrice = Number.isFinite(completionRaw)
-						? completionRaw * 1_000_000
-						: 0;
+					// API returns prices per 1M tokens already — no conversion needed
+					const inputPrice = Number.isFinite(promptRaw) ? promptRaw : 0;
+					const outputPrice = Number.isFinite(completionRaw) ? completionRaw : 0;
 const tier: Tier =
 		entry.category === "budget" ||
 		entry.category === "mid" ||

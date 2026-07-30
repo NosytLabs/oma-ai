@@ -17,6 +17,7 @@ import { healthRoutes } from "./routes/health.js";
 import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
+import { anthropicRoutes } from "./routes/anthropic/index.js";
 import { depositRoutes } from "./routes/deposit/index.js";
 import { exportRoutes } from "./routes/export.js";
 import type { OmaEnv } from "./types.js";
@@ -110,6 +111,7 @@ app.route("/", authRoutes);
 // OpenAI-compatible gateway surface.
 app.route("/", modelRoutes);
 app.route("/", chatRoutes);
+app.route("/", anthropicRoutes);
 app.route("/", depositRoutes);
 app.route("/", exportRoutes);
 
