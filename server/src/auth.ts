@@ -129,7 +129,18 @@ function renderOTPEmail(email: string, otp: string, type: string): string {
 </body></html>`;
 }
 
-const ensClient = createPublicClient({ chain: mainnet, transport: http() });
+// 2026-07-30: viem's default mainnet RPC is unreliable for ENS
+// lookups (saw 521 from eth.llamarpc.com on a fresh install). Honor a
+// configurable RPC URL (ETH_RPC_URL) and fall back to the public
+// defaults. This matters because the SIWE plugin calls this client
+// on every wallet sign-in — a flaky RPC means failed sign-ups with
+// a confusing 500.
+const ensRpcUrl =
+	config.ETH_RPC_URL ?? "https://cloudflare-eth.com";
+const ensClient = createPublicClient({
+	chain: mainnet,
+	transport: http(ensRpcUrl),
+});
 
 export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",

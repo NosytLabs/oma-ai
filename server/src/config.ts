@@ -57,6 +57,11 @@ const envSchema = z.object({
   // Production requires CHAIN_RPC_URL (or the QUICKNODE_RPC_URL alias below).
   CHAIN_RPC_URL: z.string().min(1).optional(),
   CHAIN_RPC_URL_FALLBACK: z.string().optional(),
+
+  // 2026-07-30: dedicated Ethereum mainnet RPC for ENS lookups
+  // (SIWE plugin). viem's default mainnet transport is unreliable;
+  // cloudflare-eth.com is a safer default.
+  ETH_RPC_URL: z.string().url().optional(),
   // QuickNode aliases — folded into CHAIN_RPC_URL* after parse (alias wins).
   QUICKNODE_RPC_URL: z.string().url().optional(),
   QUICKNODE_RPC_URL_FALLBACK: z.string().url().optional(),

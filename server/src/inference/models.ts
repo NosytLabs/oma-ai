@@ -102,11 +102,14 @@ function defaultCatalog(): ModelDef[] {
       supportsStreaming: true,
       capabilities: ["chat", "tools"],
     },
-    // NOTE: GLM-5.2-FP8 is on the Gonka roadmap (zai-org/GLM-5.2-FP8
-    // governance-approved) but OpenBroker hasn't wired routing for it yet.
-    // Once it's deployable on Gonka, add it back here with the same
-    // markup pattern as M2.7/K2.6. Until then, keep it out of the catalog
-    // to avoid a 502/500 on the website when a logged-out user selects it.
+    // NOTE: GLM-5.2-FP8 (zai-org/GLM-5.2-FP8) is on the Gonka /v1/models
+    // registry but the actual OpenBroker returns "unsupported model" on a
+    // chat call (verified 2026-07-30 — returns 400 with the supported
+    // list containing only MiniMax-M2.7 and Kimi-K2.6). Likely a
+    // governance-approved model awaiting devshard routing. Once a chat
+    // call to zai-org/GLM-5.2-FP8 succeeds, add it back here with the
+    // same markup pattern as M2.7/K2.6. Until then, keep it out of the
+    // catalog to avoid surfacing a 502/500 on the website.
   ];
 }
 
