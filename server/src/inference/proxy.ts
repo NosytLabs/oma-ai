@@ -112,6 +112,8 @@ export interface CallProviderOptions {
   requestId: string;
   /** Optional override: force a specific provider for testing. */
   providerOverride?: "venice" | "gonka";
+  /** Skip credit deduction for free website chat */
+  skipBilling?: boolean;
 }
 
 /**
@@ -210,6 +212,8 @@ export interface RecordUsageArgs {
   pricing: ReturnType<typeof getModelPricing>;
   requestId: string;
   status: "completed" | "error";
+  /** Skip credit deduction for free website chat */
+  skipBilling?: boolean;
 }
 
 /** Record usage, deduct credits, emit audit log, and send Polar meter event. */
@@ -223,6 +227,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
     pricing,
     requestId,
     status,
+    skipBilling = false,
   } = args;
   const totalTokens = promptTokens + outputTokens;
   // Pricing fields are in DOLLARS per 1M tokens; multiply by 100 for cents.
@@ -235,7 +240,8 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 
   try {
     await db.transaction(async (tx) => {
-      if (status === "completed") {
+      // Only deduct credits if not free website chat
+      if (status === "completed" && !skipBilling) {
         const balanceRows = await tx
           .select()
           .from(creditBalances)
@@ -252,6 +258,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
             .where(eq(creditBalances.userId, userId));
         }
       }
+      // Always record usage (for analytics), but mark as free tier
       await tx.insert(usageRecords).values({
         requestId,
         userId,
@@ -259,10 +266,10 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
         provider,
         inputTokens: promptTokens,
         outputTokens,
-        costCents: upstreamCostCents.toFixed(4),
-        markupCents: markupCents.toFixed(4),
-        totalCents: userCostCents.toFixed(4),
-        status,
+        costCents: skipBilling ? "0" : upstreamCostCents.toFixed(4),
+        markupCents: skipBilling ? "0" : markupCents.toFixed(4),
+        totalCents: skipBilling ? "0" : userCostCents.toFixed(4),
+        status: skipBilling ? "free_tier" : status,
       });
     });
     await auditLog({
@@ -306,6 +313,8 @@ export interface StreamingProxyArgs {
   pricing: ReturnType<typeof getModelPricing>;
   requestId: string;
   outputTokens?: number;
+  /** Skip credit deduction for free website chat */
+  skipBilling?: boolean;
 }
 
 /**

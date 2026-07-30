@@ -20,6 +20,7 @@ import { chatRoutes } from "./routes/chat/index.js";
 import { anthropicRoutes } from "./routes/anthropic/index.js";
 import { depositRoutes } from "./routes/deposit/index.js";
 import { exportRoutes } from "./routes/export.js";
+import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 

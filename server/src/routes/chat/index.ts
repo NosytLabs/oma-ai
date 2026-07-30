@@ -25,8 +25,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import type { OmaEnv } from "../../types.js";
-import { sessionOrBearerAuth } from "../../auth/middleware.js";
+import { sessionOrBearerAuth, optionalAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
+import { dailyUsageLimit, DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../../middleware/daily-limit.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
 import {
@@ -38,6 +39,11 @@ import {
   flattenMessageContent,
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
+
+/** Check if model is a free Gonka model for website chat */
+function isFreeWebsiteModel(modelId: string): boolean {
+  return modelId === "minimax-m2.7" || modelId === "kimi-k2.6";
+}
 
 const chatSchema = z.object({
   model: z.string(),
@@ -63,7 +69,8 @@ export const chatRoutes = new Hono<OmaEnv>();
 chatRoutes.post(
   "/v1/chat/completions",
   rateLimit({ windowMs: 60_000, maxRequests: 60 }),
-  sessionOrBearerAuth,
+  dailyUsageLimit(),
+  optionalAuth,
   async (c) => {
     const body = await c.req.json().catch(() => null);
     const parsed = chatSchema.safeParse(body);
@@ -87,7 +94,29 @@ chatRoutes.post(
         404,
       );
     }
+
     const userId = c.get("userId");
+    const source = c.req.header("X-OMA-Source");
+    const isWebsiteRequest = source === "website";
+    const isFreeModel = isFreeWebsiteModel(model);
+
+    // Website chat with free Gonka models: allow anonymous, skip billing
+    // API requests or non-free models: require auth and bill credits
+    const isFreeWebsiteChat = isWebsiteRequest && isFreeModel;
+    
+    if (!isFreeWebsiteChat && !userId) {
+      return c.json(
+        {
+          error: {
+            message: "Authentication required. Sign in for free website chat, or use an API key.",
+            type: "authentication_error",
+            code: "auth_required",
+          },
+        },
+        401,
+      );
+    }
+
     const pricing = getModelPricing(model);
     const requestId = `chatcmpl-${crypto.randomUUID()}`;
 
@@ -108,8 +137,9 @@ chatRoutes.post(
         top_p,
         tools,
         tool_choice,
-        userId,
+        userId: userId ?? "anonymous",
         requestId,
+        skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat
       });
 
       if (stream) {
@@ -117,23 +147,25 @@ chatRoutes.post(
         c.header("Cache-Control", "no-cache, no-transform");
         c.header("X-Accel-Buffering", "no");
         const proxyStream = createStreamingProxy(upstreamResp, {
-          userId,
+          userId: userId ?? "anonymous",
           model,
           provider: modelDef.provider as "venice" | "gonka",
           promptTokens,
           pricing,
           requestId,
+          skipBilling: isFreeWebsiteChat,
         });
         return c.body(proxyStream, 200);
       }
 
       const { data } = await parseNonStreamingResponse(upstreamResp, {
-        userId,
+        userId: userId ?? "anonymous",
         model,
         provider: modelDef.provider as "venice" | "gonka",
         promptTokens,
         pricing,
         requestId,
+        skipBilling: isFreeWebsiteChat,
       });
 
       return c.json(data);

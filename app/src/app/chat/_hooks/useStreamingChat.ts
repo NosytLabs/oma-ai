@@ -251,6 +251,7 @@ const fetchWebSearch = useCallback(
 					headers: {
 						"Content-Type": "application/json",
 						Accept: opts.stream ? "text/event-stream" : "application/json",
+						"X-OMA-Source": "website", // Identify website chat for free tier
 					},
 					body: JSON.stringify({
 						model: useModel,
