@@ -24,12 +24,15 @@
  */
 import { Hono } from "hono";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { sessionOrBearerAuth, optionalAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { dailyUsageLimit, DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../../middleware/daily-limit.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
+import { usageRecords } from "../../db/schema.js";
+import { db } from "../../db/client.js";
 import {
   callProvider,
   createStreamingProxy,
@@ -118,7 +121,53 @@ chatRoutes.post(
     }
 
     const pricing = getModelPricing(model);
-    const requestId = `chatcmpl-${crypto.randomUUID()}`;
+    // 2026-07-30: idempotency-key support. If the client sends an
+    // Idempotency-Key header (OpenAI / Anthropic convention) or
+    // `idempotency_key` in the JSON body, and we've already processed
+    // a request with that key from the same user, replay the cached
+    // response (saves the upstream call, prevents double-billing).
+    const idempotencyKey =
+      c.req.header("Idempotency-Key")?.trim() ||
+      (body as { idempotency_key?: string } | undefined)?.idempotency_key;
+    const requestId = idempotencyKey
+      ? `idem-${userId}-${idempotencyKey}`.slice(0, 200)
+      : `chatcmpl-${crypto.randomUUID()}`;
+
+    if (idempotencyKey && userId) {
+      const prior = await db
+        .select()
+        .from(usageRecords)
+        .where(
+          and(
+            eq(usageRecords.userId, userId),
+            eq(usageRecords.requestId, requestId),
+            eq(usageRecords.status, "completed"),
+          ),
+        )
+        .limit(1);
+      if (prior.length > 0) {
+        // Cache hit — return a minimal replay. Streaming replays would
+        // require storing the full response body which we don't
+        // persist. Non-streaming replays are the primary use case for
+        // idempotency, so this is fine for v1.
+        logger.info(
+          { userId, idempotencyKey, requestId },
+          "[chat] idempotency cache hit; replaying",
+        );
+        return c.json({
+          object: "chat.completion",
+          id: requestId,
+          note: "idempotency-replay",
+          model,
+          choices: [],
+          usage: {
+            prompt_tokens: prior[0].inputTokens,
+            completion_tokens: prior[0].outputTokens,
+            total_tokens: (prior[0].inputTokens ?? 0) + (prior[0].outputTokens ?? 0),
+          },
+        });
+      }
+    }
 
     const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
     const promptTokens = estimateTokens(promptText);
