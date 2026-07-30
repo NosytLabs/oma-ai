@@ -133,8 +133,11 @@ cd server && pnpm run dev     # Backend (Hono API) :3001
 ### Inference (OpenAI-Compatible)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/v1/chat/completions` | Chat completion (streaming + non-streaming) |
+| POST | `/v1/chat/completions` | Chat completion (streaming + non-streaming, tool calls) |
 | GET | `/v1/models` | Model catalog |
+| GET | `/v1/usage` | Paginated per-call usage (model, provider, tokens, cents) — session or API key |
+| GET | `/v1/usage/today` | Today's free-tier counter (anon IP / authed user) |
+| GET | `/openapi.json` | OpenAPI 3.1 spec for the public surface |
 
 ### API Keys
 | Method | Endpoint | Description |
@@ -182,12 +185,12 @@ model's `provider` field and transparently swaps base URLs,
 upstream model IDs, and per-provider request envelopes.
 
 ### Model Tiers (representative)
-| Tier | Examples | Provider | Price range (input / 1M tokens) |
-|------|----------|----------|-----------------------------------|
-| **Premium** | `claude-sonnet-4-5` | Venice | ~$3.13 |
-| **Budget** | `llama-3.3-70b` | Venice | ~$0.45 |
-| **Cheap (Gonka)** | `kimi-k2.6` | OpenBroker | ~$0.15 |
-| **Cheap (Gonka)** | `minimax-m2.7` | OpenBroker | ~$0.30 |
+| Tier | Examples | Provider | Price (input / 1M tokens) |
+|------|----------|----------|------------------------------|
+| **Premium** | `claude-sonnet-4-5` | Venice | $2.50 |
+| **Mid** | `llama-3.3-70b` | Venice | $0.35 |
+| **Cheap (Gonka)** | `kimi-k2.6` | OpenBroker | $0.024 |
+| **Cheap (Gonka)** | `minimax-m2.7` | OpenBroker | $0.015 |
 
 See `GET /v1/models` for the live, complete catalog.
 
