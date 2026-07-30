@@ -33,9 +33,11 @@ function defaultCatalog(): ModelDef[] {
     {
       id: "llama-3.3-70b",
       provider: "venice",
-      inputPricePer1M: 0.45,
-      outputPricePer1M: 0.45,
-      markupPercent: 25,
+      // Market rate: ~$0.23/1M input (Deepinfra). Venice is privacy-focused premium.
+      // Our price: $0.35/$0.35 per 1M — competitive for private inference
+      inputPricePer1M: 0.35,
+      outputPricePer1M: 0.35,
+      markupPercent: 0, // Price already includes margin
       displayName: "Llama 3.3 70B",
       category: "mid",
       maxTokens: 2000,
@@ -47,9 +49,11 @@ function defaultCatalog(): ModelDef[] {
     {
       id: "claude-sonnet-4-5",
       provider: "venice",
-      inputPricePer1M: 3.13,
-      outputPricePer1M: 15,
-      markupPercent: 25,
+      // Market rate: Claude Sonnet 5 is $2/$10 per 1M. Venice premium for privacy.
+      // Our price: $2.50/$12 per 1M — competitive for private Claude access
+      inputPricePer1M: 2.50,
+      outputPricePer1M: 12,
+      markupPercent: 0, // Price already includes margin
       displayName: "Claude Sonnet 4.5",
       category: "premium",
       maxTokens: 4000,
