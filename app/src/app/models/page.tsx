@@ -37,6 +37,7 @@ import {
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import { Button } from "@/components/ui/button";
+import { ModelLogo } from "@/components/ui/model-logo";
 
 import { TIER_LABELS } from "./_lib/labels";
 
@@ -568,9 +569,9 @@ function ModelsPageInner() {
 
               {/* Input Modalities */}
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
+                <h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
                   Input Modalities
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {allInputModalities.map((mod) => (
                     <button
@@ -582,7 +583,7 @@ function ModelsPageInner() {
                           : [...inputModalities, mod];
                         setInputModalities(newMods);
                       }}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
                       inputModalities.includes(mod)
                         ? "bg-accent text-void"
                         : "bg-panel text-text-secondary border border-border hover:border-accent"
@@ -596,9 +597,9 @@ function ModelsPageInner() {
 
               {/* Output Modalities */}
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
+                <h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
                   Output Modalities
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {allOutputModalities.map((mod) => (
                     <button
@@ -610,7 +611,7 @@ function ModelsPageInner() {
                           : [...outputModalities, mod];
                         setOutputModalities(newMods);
                       }}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
                       outputModalities.includes(mod)
                         ? "bg-accent text-void"
                         : "bg-panel text-text-secondary border border-border hover:border-accent"
@@ -624,9 +625,9 @@ function ModelsPageInner() {
 
               {/* Capabilities */}
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
+                <h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
                   Capabilities
-                </h3>
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {allCapabilities.map((cap) => (
                     <button
@@ -638,7 +639,7 @@ function ModelsPageInner() {
                           : [...capabilities, cap];
                         setCapabilities(newCaps);
                       }}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
                       capabilities.includes(cap)
                         ? "bg-accent text-void"
                         : "bg-panel text-text-secondary border border-border hover:border-accent"
@@ -652,15 +653,15 @@ function ModelsPageInner() {
 
               {/* Context Range Slider (dual-thumb: low handles min, high handles max) */}
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
+                <h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
                   Context Window
-                </h3>
+                </h2>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-text-muted">
                     <span>{formatContextRange(contextRange[0])}</span>
                     <span>{formatContextRange(contextRange[1])}</span>
                   </div>
-                  <div className="relative h-6">
+                  <div className="relative h-8">
                     <input
                       type="range"
                       min={0}
@@ -672,7 +673,7 @@ function ModelsPageInner() {
                         setContextRange([Math.min(v, contextRange[1]), contextRange[1]]);
                       }}
                       aria-label="Minimum context window"
-                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
                     />
                     <input
                       type="range"
@@ -685,7 +686,7 @@ function ModelsPageInner() {
                         setContextRange([contextRange[0], Math.max(v, contextRange[0])]);
                       }}
                       aria-label="Maximum context window"
-                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
                     />
                     <div
                       aria-hidden
@@ -701,15 +702,15 @@ function ModelsPageInner() {
 
               {/* Price Range Slider (dual-thumb) */}
               <div>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted mb-2">
+                <h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
                   Price (per 1M tokens)
-                </h3>
+                </h2>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-text-muted">
                     <span>${formatPriceRange(priceRange[0])}</span>
                     <span>${formatPriceRange(priceRange[1])}</span>
                   </div>
-                  <div className="relative h-6">
+                  <div className="relative h-8">
                     <input
                       type="range"
                       min={0}
@@ -721,7 +722,7 @@ function ModelsPageInner() {
                         setPriceRange([Math.min(v, priceRange[1]), priceRange[1]]);
                       }}
                       aria-label="Minimum input price"
-                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
                     />
                     <input
                       type="range"
@@ -734,7 +735,7 @@ function ModelsPageInner() {
                         setPriceRange([priceRange[0], Math.max(v, priceRange[0])]);
                       }}
                       aria-label="Maximum input price"
-                      className="absolute inset-0 w-full h-2 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
                     />
                     <div
                       aria-hidden
@@ -764,9 +765,9 @@ function ModelsPageInner() {
                           {group.icon}
                         </span>
                       )}
-                      <h2 className="text-xl font-bold text-text-bright">
+                      <h3 className="text-xl font-bold text-text-bright">
                         {group.label}
-                      </h2>
+                      </h3>
                       <span className="text-xs text-text-muted font-mono">
                         ({group.models.length})
                       </span>
@@ -787,13 +788,16 @@ function ModelsPageInner() {
                             className="group relative rounded-md border border-border bg-panel p-4 transition-[border-color,box-shadow] hover:border-accent/50 hover:shadow-[0_0_15px_var(--color-accent-dim)] h-full flex flex-col"
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-text-bright truncate">
-                                  {model.name ?? "Unknown"}
-                                </p>
-                                <p className="text-xs text-text-muted mt-0.5 font-mono truncate">
-                                  {model.id}
-                                </p>
+                              <div className="min-w-0 flex-1 flex items-start gap-2.5">
+                                <ModelLogo modelId={model.id} size={28} className="mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-text-bright truncate">
+                                    {model.name ?? "Unknown"}
+                                  </p>
+                                  <p className="text-xs text-text-muted mt-0.5 font-mono truncate">
+                                    {model.id}
+                                  </p>
+                                </div>
                               </div>
                               <div className="flex flex-col items-end gap-1 shrink-0">
                                 {model.provider && (

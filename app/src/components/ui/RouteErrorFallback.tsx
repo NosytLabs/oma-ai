@@ -4,6 +4,7 @@ import { AlertTriangle, Bug, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { log } from "@/lib/logger";
+import { Button } from "@/components/ui/button";
 
 interface RouteErrorFallbackProps {
 	error: Error & { digest?: string };
@@ -44,21 +45,32 @@ export function RouteErrorFallback({
 				</p>
 
 				<div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-					<button type="button" onClick={reset} className="btn-primary">
-						<RefreshCw className="h-4 w-4" />
-						Retry
-					</button>
-					<Link href="/" className="btn-secondary">
-						<Home className="h-4 w-4" />
-						Home
-					</Link>
-					<a
-						href={`mailto:support@nosytlabs.com?subject=${encodeURIComponent(`OMA bug report${error.digest ? ` (${error.digest.slice(0, 8)})` : ""}`)}&body=${encodeURIComponent(`Error: ${errorMessage}${error.digest ? `\nDigest: ${error.digest}` : ""}\n\nSteps to reproduce:\n1. \n\nExpected:\n\nActual:\n`)}`}
-						className="btn-secondary"
+					<Button
+						type="button"
+						onClick={reset}
+						variant="primary"
+						leftIcon={<RefreshCw className="h-4 w-4" />}
 					>
-						<Bug className="h-4 w-4" />
-						Report
-					</a>
+						Retry
+					</Button>
+					<Button
+						asChild
+						variant="secondary"
+						leftIcon={<Home className="h-4 w-4" />}
+					>
+						<Link href="/">Home</Link>
+					</Button>
+					<Button
+						asChild
+						variant="secondary"
+						leftIcon={<Bug className="h-4 w-4" />}
+					>
+						<a
+							href={`mailto:support@nosytlabs.com?subject=${encodeURIComponent(`OMA bug report${error.digest ? ` (${error.digest.slice(0, 8)})` : ""}`)}&body=${encodeURIComponent(`Error: ${errorMessage}${error.digest ? `\nDigest: ${error.digest}` : ""}\n\nSteps to reproduce:\n1. \n\nExpected:\n\nActual:\n`)}`}
+						>
+							Report
+						</a>
+					</Button>
 				</div>
 
 				{error.digest && (

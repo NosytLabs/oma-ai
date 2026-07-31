@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { ensureCatalogLoaded, listAllModels } from "../inference/models.js";
+import { getModelPricingOverride } from "./admin/index.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
 
@@ -10,19 +11,28 @@ modelRoutes.get("/v1/models", async (c) => {
   const models = listAllModels();
   return c.json({
     object: "list",
-    data: models.map((m) => ({
-      id: m.id,
-      object: "model",
-      created: Math.floor(Date.now() / 1000),
-      owned_by: m.provider ?? "oma",
-      context_length: m.contextWindow ?? 0,
-      supports_streaming: m.supportsStreaming,
-      supports_tools: m.capabilities?.includes("tools") ?? false,
-      pricing: {
-        prompt: m.inputPricePer1M,
-        completion: m.outputPricePer1M,
-      },
-    })),
+    data: models.map((m) => {
+      // Admin-set pricing override wins over the catalog default so that
+      // dashboards, chat cost pills, and billing all see the same number
+      // as the admin's pricing editor.
+      const override = getModelPricingOverride(m.id);
+      return {
+        id: m.id,
+        object: "model",
+        created: Math.floor(Date.now() / 1000),
+        owned_by: m.provider ?? "oma",
+        display_name: m.displayName,
+        provider: m.provider,
+        category: m.category,
+        context_length: m.contextWindow ?? 0,
+        supports_streaming: m.supportsStreaming,
+        supports_tools: m.capabilities?.includes("tools") ?? false,
+        pricing: {
+          prompt: override?.inputPricePer1M ?? m.inputPricePer1M,
+          completion: override?.outputPricePer1M ?? m.outputPricePer1M,
+        },
+      };
+    }),
   });
 });
 
@@ -37,17 +47,21 @@ modelRoutes.get("/v1/models/:id", async (c) => {
       404,
     );
   }
+  const override = getModelPricingOverride(m.id);
   return c.json({
     id: m.id,
     object: "model",
     created: Math.floor(Date.now() / 1000),
     owned_by: m.provider ?? "oma",
+    display_name: m.displayName,
+    provider: m.provider,
+    category: m.category,
     context_length: m.contextWindow ?? 0,
     supports_streaming: m.supportsStreaming,
     supports_tools: m.capabilities?.includes("tools") ?? false,
     pricing: {
-      prompt: m.inputPricePer1M,
-      completion: m.outputPricePer1M,
+      prompt: override?.inputPricePer1M ?? m.inputPricePer1M,
+      completion: override?.outputPricePer1M ?? m.outputPricePer1M,
     },
   });
 });

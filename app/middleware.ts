@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionViaBackend } from "@/lib/auth";
 
 /**
  * /middleware.ts — Better Auth session gate.
@@ -88,14 +88,18 @@ export async function middleware(request: NextRequest) {
   const hasDemo = request.cookies.get(DEMO_COOKIE_NAME)?.value === "1";
   if (hasDemo && demoAllowed) return NextResponse.next();
 
-  // Better Auth session check. The browser already sent the HttpOnly
-  // session cookie; we forward it to Better Auth's getSession and trust
-  // its answer.
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
+  // Better Auth session check. We forward to the Hono backend's
+  // /api/auth/get-session (POST) via HTTP — the local Better Auth instance
+  // is configured without a DB and would return null from its in-memory
+  // adapter. This keeps DB-state in one place.
+  let session: { user?: { id?: string } } | null = null;
+  try {
+    session = await getSessionViaBackend(request);
+  } catch (err) {
+    console.warn("[middleware] session check failed", err);
+  }
 
-  if (!session) {
+  if (!session?.user?.id) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);

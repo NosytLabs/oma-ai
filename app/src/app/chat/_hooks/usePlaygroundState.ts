@@ -19,19 +19,15 @@ export type ExportStatus = "default" | "loading" | "success" | "error";
 export type ShareStatus = "default" | "success" | "error";
 
 /**
- * Media mode toggles between text chat, image generation, and video
- * generation panels. Synced with `?mode=text|image|video` so deep links
- * and redirects from /image-generation + /video-generation work.
+ * Media mode is now fixed to "text" only — image/video generation
+ * panels were removed as the endpoints don't exist yet.
+ * Kept for URL parsing compatibility with legacy redirects.
  */
-export type MediaMode = "text" | "image" | "video";
+export type MediaMode = "text";
 
-const MEDIA_MODES: readonly MediaMode[] = ["text", "image", "video"] as const;
+const MEDIA_MODES: readonly MediaMode[] = ["text"] as const;
 
-export function parseMediaMode(raw: string | null | undefined): MediaMode {
-	const v = (raw ?? "").trim().toLowerCase();
-	if (v === "image" || v === "img") return "image";
-	if (v === "video" || v === "vid") return "video";
-	if (v === "text" || v === "chat" || v === "") return "text";
+export function parseMediaMode(_raw: string | null | undefined): MediaMode {
 	return "text";
 }
 
@@ -173,7 +169,7 @@ export function usePlaygroundState(
 	// the compare slot to the second free model so guests never see a paid
 	// Venice model they can't call without signing in.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("kimi-k2-6");
+	const [compareModel, setCompareModel] = useState<string>("kimi-k2.6");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---

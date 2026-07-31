@@ -16,9 +16,16 @@ export interface AuditLogParams {
 }
 
 export async function auditLog(params: AuditLogParams): Promise<void> {
+  // Anonymous free-tier traffic uses the literal "anonymous" sentinel as
+  // a userId. The audit_logs.user_id column has a FK to user.id, so we
+  // cannot insert "anonymous" — silently skip the audit row for anon.
+  // (The rate-limit middleware + Redis daily counter already cover anon.)
+  if (params.userId === "anonymous" || !params.userId) {
+    return;
+  }
   try {
     await db.insert(auditLogs).values({
-      userId: params.userId ?? null,
+      userId: params.userId,
       action: params.action,
       resource: params.resource,
       resourceId: params.resourceId ?? null,

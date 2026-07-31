@@ -279,20 +279,28 @@ export function requireAdmin() {
       );
     }
 
-    if (ADMIN_WALLET_ADDRESSES_SET.size > 0) {
-      const [u] = await db
-        .select({ evmAddress: user.evmAddress })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1);
-      if (
-        u?.evmAddress &&
-        ADMIN_WALLET_ADDRESSES_SET.has(u.evmAddress.toLowerCase())
-      ) {
-        c.set("teamRole", "owner");
-        await next();
-        return;
-      }
+    // Admin gate — accept either (1) user.role === 'admin' OR
+    // (2) the user's linked EVM wallet is in ADMIN_WALLET_ADDRESSES.
+    const [u] = await db
+      .select({ evmAddress: user.evmAddress, role: user.role })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (u?.role === "admin") {
+      c.set("teamRole", "owner");
+      await next();
+      return;
+    }
+
+    if (
+      ADMIN_WALLET_ADDRESSES_SET.size > 0 &&
+      u?.evmAddress &&
+      ADMIN_WALLET_ADDRESSES_SET.has(u.evmAddress.toLowerCase())
+    ) {
+      c.set("teamRole", "owner");
+      await next();
+      return;
     }
 
     return c.json(

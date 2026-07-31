@@ -2,16 +2,17 @@
 
 import { formatAddress } from "@/lib/utils";
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
-import { Key, LogOut, Settings, Zap } from "lucide-react";
+import { Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { EASE_SPRING } from "@/lib/motion";
+import { EASE_SPRING } from "@/lib/animation";
 import { useClickOutside } from "./_hooks/useClickOutside";
 
 interface NavbarUserMenuProps {
 	evmAddress: string | null;
 	onSignOut: () => Promise<void>;
+	isAdmin?: boolean;
 }
 
 const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
@@ -21,7 +22,7 @@ const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
  * Shows the linked EVM address (if any), API keys / settings / credits
  * links, and a confirmation-gated sign-out.
  */
-export function NavbarUserMenu({ evmAddress, onSignOut }: NavbarUserMenuProps) {
+export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: NavbarUserMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
@@ -154,6 +155,17 @@ export function NavbarUserMenu({ evmAddress, onSignOut }: NavbarUserMenuProps) {
 							<Settings className="h-3 w-3" aria-hidden="true" />
 							<span>settings</span>
 						</Link>
+						{isAdmin && (
+							<Link
+								href="/admin"
+								role="menuitem"
+								className="flex items-center gap-3 px-4 py-3 text-xs text-accent transition-colors hover:bg-accent-dim focus-visible:outline-none focus-visible:bg-accent-dim"
+								onClick={() => setOpen(false)}
+							>
+								<ShieldCheck className="h-3 w-3" aria-hidden="true" />
+								<span>admin dashboard</span>
+							</Link>
+						)}
 						<div className="my-1 h-px bg-border" aria-hidden="true" />
 						{!confirming ? (
 							<button

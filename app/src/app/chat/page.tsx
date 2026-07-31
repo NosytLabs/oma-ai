@@ -51,7 +51,7 @@ export default function ChatPage() {
 					<h2 className="text-lg font-medium text-text mb-2">
 						Chat encountered an error
 					</h2>
-					<p className="text-sm text-text-muted mb-4">
+					<p className="text-sm text-text-secondary mb-4">
 						Please try refreshing the page
 					</p>
 					<button

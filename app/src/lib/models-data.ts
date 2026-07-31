@@ -358,7 +358,7 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 /**
  * Interface matching the OpenAI-style models returned by GET /v1/models.
- * The live API returns 90+ models with pricing, category, and context_length
+ * The live API returns 22 curated models with pricing, category, and context_length
  * but NOT displayName, description, or capabilities — those are derived here.
  */
 interface ApiModelEntry {
@@ -484,84 +484,181 @@ const tier: Tier =
 
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
- * pages that need a synchronous `MODELS` / `MODEL_COUNT`. The actual
- * catalog is bigger (89 chat entries today; video excluded) and is loaded
- * lazily via `loadModels()` from the client; this subset covers the
- * most-used pricing/tier entries so SSR markup never goes blank.
+ * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
+ * curated server catalog (24 models) — keep in sync with
+ * server/src/inference/models.ts.
  */
 const FALLBACK_CATALOG: RawCatalog = {
 	MODEL_CATALOG: {
-		// Prices/categories below mirror server/models.json (the billing source
-		// of truth) as of 2026-07-26 — keep them in sync when the catalog moves.
-		"qwen3-235b-a22b-instruct-2507": {
-			id: "qwen3-235b-a22b-instruct-2507",
-			displayName: "Qwen3 235B Instruct",
+		"claude-opus-5": {
+			id: "claude-opus-5",
+			displayName: "Claude Opus 5",
 			provider: "Venice",
-			category: "budget",
+			category: "frontier",
 			maxTokens: 16384,
-			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.75,
-			capabilities: ["chat", "reasoning"],
+			inputPricePer1M: 6.0,
+			outputPricePer1M: 30.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"openai-gpt-56-sol": {
+			id: "openai-gpt-56-sol",
+			displayName: "GPT-5.6 Sol",
+			provider: "Venice",
+			category: "frontier",
+			maxTokens: 16384,
+			inputPricePer1M: 6.25,
+			outputPricePer1M: 37.5,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"claude-sonnet-5": {
+			id: "claude-sonnet-5",
+			displayName: "Claude Sonnet 5",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 3.0,
+			outputPricePer1M: 15.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"openai-gpt-54": {
+			id: "openai-gpt-54",
+			displayName: "GPT-5.4",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 3.13,
+			outputPricePer1M: 18.8,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"kimi-k3": {
+			id: "kimi-k3",
+			displayName: "Kimi K3",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 3.75,
+			outputPricePer1M: 18.75,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"openai-gpt-52": {
+			id: "openai-gpt-52",
+			displayName: "GPT-5.2",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 2.19,
+			outputPricePer1M: 17.5,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"grok-4-5": {
+			id: "grok-4-5",
+			displayName: "Grok 4.5",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 2.27,
+			outputPricePer1M: 6.8,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"zai-org-glm-5-2": {
+			id: "zai-org-glm-5-2",
+			displayName: "GLM 5.2",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 1.4,
+			outputPricePer1M: 4.4,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"deepseek-v4-pro": {
+			id: "deepseek-v4-pro",
+			displayName: "DeepSeek V4 Pro",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 16384,
+			inputPricePer1M: 1.65,
+			outputPricePer1M: 3.3,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"gemini-3-5-flash": {
+			id: "gemini-3-5-flash",
+			displayName: "Gemini 3.5 Flash",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 16384,
+			inputPricePer1M: 1.55,
+			outputPricePer1M: 9.45,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"gemini-3-flash-preview": {
+			id: "gemini-3-flash-preview",
+			displayName: "Gemini 3 Flash",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 0.7,
+			outputPricePer1M: 3.75,
+			capabilities: ["chat", "fast", "tools"],
 		},
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
 			provider: "Venice",
-			category: "budget",
-			maxTokens: 4096,
+			category: "mid",
+			maxTokens: 8192,
 			inputPricePer1M: 0.7,
 			outputPricePer1M: 2.8,
-			capabilities: ["chat"],
+			capabilities: ["chat", "tools"],
 		},
-		"llama-3.2-3b": {
-			id: "llama-3.2-3b",
-			displayName: "Llama 3.2 3B",
+		"deepseek-v4-flash": {
+			id: "deepseek-v4-flash",
+			displayName: "DeepSeek V4 Flash",
 			provider: "Venice",
 			category: "budget",
-			maxTokens: 4096,
+			maxTokens: 16384,
+			inputPricePer1M: 0.138,
+			outputPricePer1M: 0.275,
+			capabilities: ["chat", "fast", "tools"],
+		},
+		"mistral-small-2603": {
+			id: "mistral-small-2603",
+			displayName: "Mistral Small 4",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 8192,
+			inputPricePer1M: 0.1875,
+			outputPricePer1M: 0.75,
+			capabilities: ["chat", "fast", "tools"],
+		},
+		"qwen3-235b-a22b-instruct-2507": {
+			id: "qwen3-235b-a22b-instruct-2507",
+			displayName: "Qwen3 235B",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 16384,
 			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.6,
-			capabilities: ["chat", "fast"],
+			outputPricePer1M: 0.75,
+			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
 			displayName: "MiniMax M2.7",
 			provider: "OMA-AI",
 			category: "budget",
-			maxTokens: 204800, // OpenBroker docs: 204,800 context
-			inputPricePer1M: 0.015, // matches server/src/inference/models.ts (2026-07-30)
+			maxTokens: 8192,
+			inputPricePer1M: 0.015,
 			outputPricePer1M: 0.06,
-			capabilities: ["chat"],
+			capabilities: ["chat", "tools"],
 		},
-		"claude-opus-4-8": {
-			id: "claude-opus-4-8",
-			displayName: "Claude Opus 4.8",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 128000,
-			inputPricePer1M: 6,
-			outputPricePer1M: 30,
-			capabilities: ["chat", "reasoning", "coding"],
-		},
-		"claude-sonnet-4-5": {
-			id: "claude-sonnet-4-5",
-			displayName: "Claude Sonnet 4.5",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 64000,
-			inputPricePer1M: 3.75,
-			outputPricePer1M: 18.75,
-			capabilities: ["chat", "coding"],
-		},
-		"claude-opus-4-8-fast": {
-			id: "claude-opus-4-8-fast",
-			displayName: "Claude Opus 4.8 Fast",
-			provider: "Venice",
-			category: "frontier",
-			maxTokens: 128000,
-			inputPricePer1M: 12,
-			outputPricePer1M: 60,
-			capabilities: ["chat", "reasoning", "coding", "fast"],
+		"kimi-k2.6": {
+			id: "kimi-k2.6",
+			displayName: "Kimi K2.6",
+			provider: "OMA-AI",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 0.024,
+			outputPricePer1M: 0.096,
+			capabilities: ["chat", "reasoning", "tools"],
 		},
 	},
 };
@@ -595,9 +692,7 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count of 4 chat models (2 Venice + 2 Gonka) as of
-// 2026-07-30. The SSR fallback catalog (`MODELS`) below is a *smaller*
-// hand-picked set used for build-time metadata only — using
-// `MODELS.length` here produced "7+ models" copy that didn't match the
-// real catalog.
-export const MODEL_COUNT = 4;
+// `GET /v1/models` count — 22 curated chat models (20 Venice + 2 Gonka)
+// as of 2026-07-31. The SSR fallback catalog (`MODELS`) below is a
+// hand-picked subset used for build-time metadata only.
+export const MODEL_COUNT = 22;

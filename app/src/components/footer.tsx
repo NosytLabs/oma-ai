@@ -45,7 +45,7 @@ import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaLogo } from "@/components/ui/oma-logo";
-import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/motion";
+import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/animation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ApiStatus } from "./api-status";
 
@@ -290,7 +290,7 @@ export function Footer() {
 					<div className="flex flex-col gap-3 py-5 text-[11px] text-text-muted sm:flex-row sm:items-center sm:justify-between">
 						<p className="font-mono tabular-nums">
 							<span className="text-text-secondary">©</span>{" "}
-							<span suppressHydrationWarning>{CURRENT_YEAR}</span>{" "}
+							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>
 								<a
@@ -323,7 +323,7 @@ export function Footer() {
 								href="https://github.com/NosytLabs/oma-ai"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
+								className="inline-flex items-center gap-1 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
 							>
 								github <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
 							</a>

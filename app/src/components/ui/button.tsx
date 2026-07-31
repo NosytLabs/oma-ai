@@ -34,31 +34,31 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
 	primary: cn(
-		"border border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]",
+		"btn-primary border border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]",
 		"bg-[linear-gradient(135deg,var(--color-accent),var(--color-accent-hover))] text-[var(--color-accent-fg)] font-semibold",
-		"hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-12px_var(--color-accent-glow)]",
-		"active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+		"hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_14px_30px_-10px_var(--color-accent-glow)]",
+		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
 		"shadow-[0_10px_26px_-16px_var(--color-accent-glow)]",
 	),
 	secondary: cn(
-		"bg-[color-mix(in_srgb,var(--color-surface-elevated)_90%,transparent)] text-text-primary border border-[color-mix(in_srgb,var(--color-border-bright)_48%,var(--color-border))]",
-		"hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:bg-[var(--color-surface)] hover:shadow-[0_12px_28px_-18px_rgba(0,0,0,0.8)]",
-		"active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+		"btn-secondary bg-[color-mix(in_srgb,var(--color-surface-elevated)_90%,transparent)] text-text-primary border border-[color-mix(in_srgb,var(--color-border-bright)_48%,var(--color-border))]",
+		"hover:-translate-y-0.5 hover:scale-[1.01] hover:border-accent hover:text-accent hover:bg-[var(--color-surface)] hover:shadow-[0_12px_28px_-18px_rgba(70,211,154,0.3)]",
+		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
 	),
 	ghost: cn(
-		"bg-transparent text-text-secondary",
-		"hover:text-text-primary hover:bg-[var(--color-surface)]",
-		"active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+		"bg-transparent text-text-secondary transition-all",
+		"hover:text-text-primary hover:bg-[var(--color-surface)] hover:scale-[1.02]",
+		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed",
 	),
 	outline: cn(
 		"bg-transparent text-text-primary border border-border-bright",
-		"hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]",
-		"active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+		"hover:-translate-y-0.5 hover:scale-[1.01] hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] hover:shadow-[0_8px_20px_-10px_rgba(70,211,154,0.25)]",
+		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
 	),
 	destructive: cn(
 		"bg-[color-mix(in_srgb,var(--color-error)_15%,transparent)] text-error border border-[color-mix(in_srgb,var(--color-error)_30%,transparent)]",
-		"hover:bg-[color-mix(in_srgb,var(--color-error)_22%,transparent)] hover:border-error",
-		"active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+		"hover:bg-[color-mix(in_srgb,var(--color-error)_22%,transparent)] hover:border-error hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_8px_20px_-10px_rgba(248,113,113,0.3)]",
+		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
 	),
 };
 
@@ -89,7 +89,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		const classes = cn(
 			"inline-flex items-center justify-center",
 			"font-sans whitespace-nowrap select-none tracking-[-0.01em]",
-			"transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out",
+			"transition-[background-color,border-color,box-shadow,color,transform,opacity] duration-300 ease-[var(--ease-spring)]",
+"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void",
 			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void",
 			"disabled:pointer-events-none",
 			VARIANT_STYLES[variant],
@@ -97,32 +98,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			className,
 		);
 
-		const content = (
+		const innerContent = (
 			<>
 				{loading ? (
-					<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+					<Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden="true" />
 				) : (
 					leftIcon
 				)}
-				{children}
+				<span className={cn("transition-opacity duration-200", loading && "opacity-80")}>
+					{children}
+				</span>
 				{!loading && rightIcon}
 			</>
 		);
 
 		if (asChild) {
-			// When asChild, Slot merges className/ref into the child element.
-			// Wrap icon + text in a <span> so Slot never receives a Fragment
-			// (Fragment cannot accept className, causing React warnings).
 			return (
 				<Slot ref={ref} className={classes}>
-					<span className="inline-flex items-center gap-2">
-						{loading ? (
-							<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-						) : (
-							leftIcon
-						)}
-						{children}
-						{!loading && rightIcon}
+					<span className="relative z-10 inline-flex items-center gap-[inherit] justify-center w-full h-full pointer-events-none">
+						{innerContent}
 					</span>
 				</Slot>
 			);
@@ -136,7 +130,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 				disabled={disabled || loading}
 				{...rest}
 			>
-				{content}
+				<span className="relative z-10 inline-flex items-center gap-[inherit] justify-center w-full h-full pointer-events-none">
+					{innerContent}
+				</span>
 			</button>
 		);
 	},

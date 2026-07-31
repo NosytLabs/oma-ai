@@ -15,8 +15,9 @@
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, Lock, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { displayName } from "@/lib/model-utils";
+import { displayName, isFreeChatModel } from "@/lib/model-utils";
 import { type TierFilter, useSharedLiveModels } from "./chat-message-shared";
+import { ModelLogo } from "@/components/ui/model-logo";
 
 interface ModelSelectorProps {
 	model: string;
@@ -147,10 +148,14 @@ export function ModelSelector({
 		};
 	}, [open]);
 
-	// Show ALL models in the dropdown. Free models (OMA-AI provider) work
-	// without auth; paid models (Venice) require sign-in. Guests see a lock
-	// icon on paid models and trigger the auth prompt on click.
-	const isFreeModel = (m: { provider?: string }) => m.provider === "OMA-AI";
+	// Show ALL models in the dropdown. Free models work without auth;
+	// paid models (Venice) require sign-in. Guests see a lock icon on
+	// paid models and trigger the auth prompt on click. Use isFreeChatModel
+	// (which checks the FREE_CHAT_MODEL_IDS set) so model-id-based free
+	// detection works regardless of whether the live API returned
+	// `provider` or `owned_by`.
+	const isFreeModel = (m: { id: string; provider?: string }) =>
+		isFreeChatModel(m.id, m.provider);
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase();
@@ -193,8 +198,7 @@ export function ModelSelector({
 				className={`
           flex items-center gap-3 bg-void border border-border
           hover:border-accent/40 transition-all duration-200
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-          focus-visible:ring-offset-2 focus-visible:ring-offset-void
+          btn-primary
           min-w-0 group
           ${compact ? "w-full justify-between px-2 py-1.5" : "px-3 py-2"}
         `}
@@ -246,7 +250,7 @@ export function ModelSelector({
 										className="
                       w-full pl-9 pr-3 py-2 bg-void border border-border
                       text-sm text-text-secondary font-mono placeholder-text-muted
-                      focus:border-accent/50 focus:ring-1 focus:ring-accent/20
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void
                       transition-all duration-200
                     "
 									/>
@@ -359,6 +363,7 @@ export function ModelSelector({
 											)}
 											<div className="min-w-0">
 												<div className="text-sm font-mono truncate flex items-center gap-1.5">
+													<ModelLogo modelId={modelItem.id} size={16} />
 													{name}
 													{free && (
 														<span className="text-[9px] px-1 py-0.5 bg-accent/15 text-accent font-mono uppercase tracking-wide shrink-0">

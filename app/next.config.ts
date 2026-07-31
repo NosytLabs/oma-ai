@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
 	eslint: { ignoreDuringBuilds: false },
 	typescript: { ignoreBuildErrors: false },
 
+	// Next.js 15 dev server sends `Content-Encoding: gzip` on streamed RSC
+	// responses while the body is plain text — Chrome logs
+	// ERR_CONTENT_DECODING_FAILED and renders an empty page (e.g. /models).
+	// Disable dev compression; production uses a reverse proxy for gzip.
+	compress: false,
+
 	output: "standalone",
 	outputFileTracingRoot: __dirname,
 

@@ -24,8 +24,7 @@ import { Loader2, Send, Sparkles } from "lucide-react";
 import { MetalFx } from "metal-fx";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
-import { Magnetic } from "@/components/motion";
-import { EASE_SPRING } from "@/lib/motion";
+import { Magnetic, EASE_SPRING } from "@/lib/animation";
 
 interface MessageInputProps {
 	input: string;
@@ -139,7 +138,7 @@ export const MessageInputRedesigned = forwardRef<
 		!reduceMotion && (loading || (focused && hasInput));
 
 	return (
-		<div className="relative">
+		<div className="relative z-10 bg-void">
 			<BorderBeam
 				size={loading ? "pulse-inner" : "line"}
 				colorVariant={loading ? "ocean" : "mono"}
@@ -151,13 +150,14 @@ export const MessageInputRedesigned = forwardRef<
 				className="w-full"
 			>
 			<div
-				className="
-            glass relative flex items-end px-2 py-2 rounded-xl
-            transition-all duration-300
-            border border-border
-            focus-within:border-accent/50
-            focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)]
-          "
+className="
+             glass relative flex items-end px-2 py-2 rounded-xl
+             transition-all duration-300
+             border border-border
+             focus-within:border-accent/50
+             focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)]
+             chat-scrollbar
+           "
 				role="group"
 				aria-label="New message"
 				aria-busy={loading}
@@ -179,13 +179,13 @@ export const MessageInputRedesigned = forwardRef<
 					maxLength={100 * 1024}
 					inputMode="text"
 					enterKeyHint="send"
-					className="
-              flex-1 resize-none bg-transparent px-3 md:px-4 py-3
-              text-text-bright placeholder-text-muted
-              outline-none text-[15px] leading-relaxed font-sans
-              focus:ring-0
-              min-h-[52px]
-            "
+className="
+               flex-1 resize-none bg-transparent px-3 md:px-4 py-3
+               text-text-bright placeholder-text-muted
+               outline-none text-[15px] leading-relaxed font-sans
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void
+               min-h-[52px]
+             "
 					disabled={loading}
 					style={{ minHeight: "52px", maxHeight: "200px" }}
 					onInput={handleInput}
@@ -201,9 +201,7 @@ export const MessageInputRedesigned = forwardRef<
 								className="
                     flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
-                    transition-all duration-200
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger
-                    focus-visible:ring-offset-2 focus-visible:ring-offset-void
+                    btn-destructive
                     relative min-h-[44px] min-w-[44px]
                   "
 							>
@@ -241,17 +239,16 @@ export const MessageInputRedesigned = forwardRef<
 									hasInput && !reduceMotion ? { scale: 1.04 } : undefined
 								}
 								transition={EASE_SPRING}
-								className={`
-                    flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
-                    font-semibold transition-all duration-200 min-h-[44px] min-w-[44px]
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                    focus-visible:ring-offset-2 focus-visible:ring-offset-void
-                    ${
+className={`
+                     flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
+                     font-semibold transition-all duration-200 min-h-[44px] min-w-[44px]
+                     btn-primary
+                     ${
 											hasInput
-												? "bg-accent text-text-inverse hover:bg-accent-hover shadow-[0_0_20px_-4px_var(--color-accent-glow)]"
+												? ""
 												: "bg-surface-elevated text-text-muted opacity-40 cursor-not-allowed"
 										}
-                  `}
+                   `}
 							>
 								<Send className="w-4 h-4" />
 							</m.button>

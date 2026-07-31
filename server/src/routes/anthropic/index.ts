@@ -14,7 +14,6 @@ import { getModelById, listAllModels } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
 import {
   callProvider,
-  createStreamingProxy,
   parseNonStreamingResponse,
   ProviderError,
   estimateTokens,

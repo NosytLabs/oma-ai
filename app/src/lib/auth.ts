@@ -12,6 +12,7 @@
  */
 import { betterAuth } from "better-auth";
 import { magicLink, anonymous, siwe } from "better-auth/plugins";
+import type { NextRequest } from "next/server";
 
 const BETTER_AUTH_URL =
   process.env.BETTER_AUTH_URL ??
@@ -38,8 +39,10 @@ export const auth = betterAuth({
         // for local dev where the Next process needs to log the link
         // directly. In production, the magic link is sent by the API
         // server (server/src/auth.ts -> sendMagicLink).
-        // eslint-disable-next-line no-console
-        console.log(`[Better Auth/magicLink] (next dev) ${email} -> ${url}`);
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.log(`[Better Auth/magicLink] (next dev) ${email} -> ${url}`);
+        }
       },
       expiresIn: 60 * 5,
     }),
@@ -70,3 +73,36 @@ export const auth = betterAuth({
     }),
   ],
 });
+
+/**
+ * Server-side getSession call that forwards the cookie to the canonical
+ * Hono backend. The local Better Auth instance has no DB configured
+ * (it's a thin proxy) — going through HTTP keeps DB state in one place.
+ *
+ * Returns null on any error (treat as not-authed; middleware will
+ * redirect to /login?next=…).
+ */
+export async function getSessionViaBackend(
+  request: Request | NextRequest,
+): Promise<{ user?: { id?: string; role?: string | null } } | null> {
+  const headers: Record<string, string> = {};
+  const cookie = request.headers.get("cookie");
+  if (cookie) headers.cookie = cookie;
+
+  // Direct backend call (server-to-server). In dev this hits localhost:3001.
+  const target = `${BETTER_AUTH_URL.replace(/\/$/, "")}/api/auth/get-session`;
+  try {
+    const res = await fetch(target, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+      // Avoid hanging if the API is offline — bubble up as null session.
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { user?: { id?: string; role?: string | null } } | null;
+    return data;
+  } catch {
+    return null;
+  }
+}

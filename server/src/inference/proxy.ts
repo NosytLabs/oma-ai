@@ -6,7 +6,6 @@
  * route through the same provider selection, streaming, billing, and
  * usage-recording pipeline.
  */
-import type { OmaEnv } from "../types.js";
 import { getModelById } from "./models.js";
 import { getModelPricing } from "./billing-service.js";
 import { trackPolarUsage } from "./polar-usage.js";
@@ -15,7 +14,7 @@ import { db } from "../db/client.js";
 import { creditBalances, usageRecords } from "../db/schema.js";
 import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 /** Provider-specific request envelope. Both backends are OpenAI-compatible. */
 interface ProviderRoute {
@@ -39,7 +38,7 @@ class ProviderError extends Error {
   }
 }
 
-function resolveProvider(provider: string, gonkaId?: string): ProviderRoute {
+function resolveProvider(provider: string, _gonkaId?: string): ProviderRoute {
   if (provider === "gonka") {
     if (!config.GONKA_API_KEY) {
       throw new ProviderError(
@@ -121,14 +120,14 @@ export interface CallProviderOptions {
  * Returns the raw upstream Response object for the caller to translate/stream as needed.
  */
 export async function callProvider(opts: CallProviderOptions): Promise<Response> {
-  const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice, userId, requestId, providerOverride } = opts;
+  const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice, providerOverride } = opts;
 
   const modelDef = getModelById(modelId);
   if (!modelDef) {
     throw new ProviderError(`Model ${modelId} not found`, 404);
   }
 
-  const pricing = getModelPricing(modelId);
+  const _pricing = getModelPricing(modelId);
 
   // Resolve upstream provider (Venice vs Gonka/OpenBroker).
   let route: ProviderRoute;
@@ -149,7 +148,7 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
   );
 
   const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
-  const promptTokens = estimateTokens(promptText);
+  const _promptTokens = estimateTokens(promptText);
 
   const upstreamBody = route.extraBody({
     model: upstreamModel,
@@ -391,14 +390,16 @@ export function createStreamingProxy(
           }
         }
         controller.enqueue(value);
-      } catch (err) {
-        logger.warn({ err }, "[proxy] stream read failed");
-        upstreamStatus = "error";
-        controller.error(err);
-        try {
-          await reader.cancel();
-        } catch {}
-      }
+        } catch (err) {
+          logger.warn({ err }, "[proxy] stream read failed");
+          upstreamStatus = "error";
+          controller.error(err);
+          try {
+            await reader.cancel();
+          } catch (cancelErr) {
+            logger.warn({ err: cancelErr }, "[proxy] reader cancel failed");
+          }
+        }
     },
     cancel() {
       reader.cancel().catch(() => {});

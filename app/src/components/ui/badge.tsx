@@ -1,5 +1,5 @@
 import { cn } from "@/components/ui/utils";
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 
 /**
  * Badge — small label primitive.
@@ -18,6 +18,9 @@ export type BadgeVariant =
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 	variant?: BadgeVariant;
+	showDot?: boolean;
+	pulseDot?: boolean;
+	interactive?: boolean;
 }
 
 const VARIANT_STYLES: Record<BadgeVariant, string> = {
@@ -42,19 +45,70 @@ const VARIANT_STYLES: Record<BadgeVariant, string> = {
 
 export function Badge({
 	variant = "subtle",
+	showDot,
+	pulseDot = false,
+	interactive = false,
 	className,
+	children,
 	...rest
 }: BadgeProps) {
+	const shouldShowDot = showDot ?? ["accent", "success", "warning"].includes(variant);
+	const isInteractive = interactive || !!rest.onClick;
+
+	const dotColors: Record<BadgeVariant, string> = {
+		subtle: "bg-text-muted/60",
+		accent: "bg-accent",
+		success: "bg-success",
+		warning: "bg-warning",
+		outline: "bg-text-secondary/50",
+		solid: "bg-[var(--color-void)]",
+	};
+
+	const handleKeyDown = (e: KeyboardEvent<HTMLSpanElement>) => {
+		if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+			e.preventDefault();
+			const clickEvent = e as unknown as MouseEvent<HTMLSpanElement>;
+			rest.onClick?.(clickEvent);
+		}
+	};
+
 	return (
 		<span
 			className={cn(
 				"inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5",
-				"text-xs font-medium font-mono tracking-wide",
-				"transition-colors duration-200",
+				"text-xs font-medium font-mono tracking-wide select-none",
+				"transition-all duration-300 ease-[var(--ease-spring-tight)]",
 				VARIANT_STYLES[variant],
+				isInteractive && [
+					"cursor-pointer hover:-translate-y-0.5 hover:brightness-110",
+					"hover:shadow-[0_4px_12px_rgba(70,211,154,0.15)]",
+					"active:scale-95 active:translate-y-0",
+					"focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-void",
+				],
 				className,
 			)}
+			role={isInteractive ? "button" : undefined}
+			tabIndex={isInteractive ? 0 : undefined}
+			onKeyDown={handleKeyDown}
 			{...rest}
-		/>
+		>
+			{shouldShowDot && (
+				<span className="relative flex h-1.5 w-1.5 shrink-0">
+					{(pulseDot || ["success", "accent"].includes(variant)) && (
+						<span className={cn(
+							"absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping",
+							variant === "success" && "bg-success",
+							variant === "accent" && "bg-accent",
+							variant === "warning" && "bg-warning",
+							variant === "subtle" && "bg-text-muted",
+							variant === "outline" && "bg-text-secondary",
+							variant === "solid" && "bg-[var(--color-void)]",
+						)} />
+					)}
+					<span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColors[variant])} />
+				</span>
+			)}
+			{children}
+		</span>
 	);
 }

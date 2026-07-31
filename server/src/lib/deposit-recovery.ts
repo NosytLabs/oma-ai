@@ -1,0 +1,175 @@
+import { createPublicClient, parseAbi, getAddress, formatUnits } from "viem";
+import { db } from "../db/client.js";
+import { creditBalances, deposits } from "../db/schema.js";
+import { eq, and, sql } from "drizzle-orm";
+import { logger } from "../lib/logger.js";
+
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+const USDC_DECIMALS = 6;
+const MIN_DEPOSIT_CENTS = 100;
+
+const TRANSFER_ABI = parseAbi([
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+]);
+
+interface TransferEvent {
+  transactionHash: string;
+  args: {
+    from: string;
+    to: string;
+    value: bigint;
+  };
+}
+
+export function extractUserIdFromMemo(data: string): string | null {
+  try {
+    const hex = data.startsWith("0x") ? data.slice(2) : data;
+    const memo = Buffer.from(hex, "hex").toString("utf8");
+    if (!memo.startsWith("oma-")) return null;
+    const prefix = memo.slice(4);
+    if (prefix.length < 8) return null;
+    return `usr_${prefix.slice(0, 8)}`;
+  } catch {
+    return null;
+  }
+}
+
+export async function processTransfer(
+  client: ReturnType<typeof createPublicClient>,
+  event: TransferEvent,
+  depositAddress: string,
+): Promise<void> {
+  const { transactionHash, args } = event;
+  const txHash = transactionHash;
+
+  if (args.to.toLowerCase() !== depositAddress.toLowerCase()) return;
+
+  const amountUsdCents = Math.round(Number(formatUnits(args.value, USDC_DECIMALS)) * 100);
+  if (amountUsdCents < MIN_DEPOSIT_CENTS) {
+    logger.debug({ txHash, amountUsdCents }, "[deposit-recovery] skipping dust transfer");
+    return;
+  }
+
+  const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
+  const userId = tx.input ? extractUserIdFromMemo(tx.input) : null;
+
+  if (!userId) {
+    logger.debug({ txHash, input: tx.input }, "[deposit-recovery] no valid memo in transaction input");
+    return;
+  }
+
+  const [existingDeposit] = await db
+    .select()
+    .from(deposits)
+    .where(and(eq(deposits.userId, userId), eq(deposits.txHash, txHash)))
+    .limit(1);
+
+  if (existingDeposit) {
+    if (existingDeposit.status === "completed") {
+      logger.debug({ txHash, userId }, "[deposit-recovery] deposit already completed, skipping");
+      return;
+    }
+
+    await db
+      .update(deposits)
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        creditsIssued: existingDeposit.amountUsd,
+      })
+      .where(eq(deposits.id, existingDeposit.id));
+
+    await db
+      .insert(creditBalances)
+      .values({
+        userId,
+        balanceCents: Math.round(Number(existingDeposit.amountUsd) * 100).toString(),
+        totalDepositedCents: Math.round(Number(existingDeposit.amountUsd) * 100).toString(),
+        totalUsedCents: "0",
+        lastActivityAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditBalances.userId,
+        set: {
+          balanceCents: sql`${creditBalances.balanceCents} + ${Math.round(Number(existingDeposit.amountUsd) * 100)}`,
+          totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${Math.round(Number(existingDeposit.amountUsd) * 100)}`,
+          lastActivityAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
+    return;
+  }
+
+  const amountUsd = (amountUsdCents / 100).toFixed(2);
+  const [created] = await db
+    .insert(deposits)
+    .values({
+      userId,
+      type: "usdc_direct",
+      amountUsd,
+      creditsIssued: amountUsd,
+      txHash,
+      depositAddress,
+      status: "completed",
+      completedAt: new Date(),
+    })
+    .returning();
+
+  await db
+    .insert(creditBalances)
+    .values({
+      userId,
+      balanceCents: Math.round(amountUsdCents).toString(),
+      totalDepositedCents: Math.round(amountUsdCents).toString(),
+      totalUsedCents: "0",
+      lastActivityAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: creditBalances.userId,
+      set: {
+        balanceCents: sql`${creditBalances.balanceCents} + ${Math.round(amountUsdCents)}`,
+        totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${Math.round(amountUsdCents)}`,
+        lastActivityAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+  logger.info({ txHash, userId, depositId: created.id, amountUsdCents }, "[deposit-recovery] created and completed deposit, credited balance");
+}
+
+export async function runRecoveryIteration(
+  client: ReturnType<typeof createPublicClient>,
+  depositAddress: string,
+  fromBlock: bigint,
+): Promise<bigint> {
+  try {
+    const currentBlock = await client.getBlockNumber();
+    if (currentBlock <= fromBlock) {
+      return fromBlock;
+    }
+
+    const logs = await client.getLogs({
+      address: USDC_BASE,
+      fromBlock,
+      toBlock: currentBlock,
+      event: TRANSFER_ABI[0],
+      args: { to: getAddress(depositAddress) },
+    });
+
+    for (const log of logs) {
+      try {
+        const event = log as unknown as TransferEvent;
+        await processTransfer(client, event, depositAddress);
+      } catch (err) {
+        logger.error({ err, txHash: log.transactionHash }, "[deposit-recovery] failed to process transfer, continuing");
+      }
+    }
+
+    return currentBlock;
+  } catch (err) {
+    logger.error({ err, fromBlock }, "[deposit-recovery] iteration failed, will retry from same block");
+    return fromBlock;
+  }
+}

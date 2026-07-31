@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "AI Models Catalog — pricing & capabilities",
-	description: `Browse ${MODEL_COUNT}+ AI models including Claude, Llama, Qwen, DeepSeek, and more. Compare pricing across Venice AI and multi-provider routes. OpenAI-compatible.`,
+	description: `Browse ${MODEL_COUNT} live AI models — Claude Sonnet 4.5, Llama 3.3 70B, MiniMax M2.7, Kimi K2.6 — with transparent per-token pricing across Venice and OMA-AI providers. OpenAI-compatible.`,
 	keywords: [
 		"AI models",
 		"Claude",

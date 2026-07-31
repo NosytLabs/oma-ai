@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
-import { MotionProvider } from "@/components/motion-provider";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
@@ -113,7 +113,7 @@ export default function RootLayout({
 			<body className="min-h-screen bg-void text-text font-sans antialiased">
 				<a
 					href="#main-content"
-					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)]"
+					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus:outline-none focus-visible:outline-accent"
 				>
 					Skip to main content
 				</a>

@@ -49,6 +49,51 @@ interface ErrorClassification {
 function classifyError(error: string): ErrorClassification {
 	const lower = error.toLowerCase();
 
+	// Rate limit errors must be checked BEFORE auth — the daily-limit error
+	// string contains "Sign in for 100 requests/day" which would otherwise
+	// be misclassified as an auth failure.
+	if (
+		lower.includes("daily") ||
+		lower.includes("rate limit") ||
+		lower.includes("429") ||
+		lower.includes("too many")
+	) {
+		// Daily free limit — a quota, not a transient rate-limit. Different
+		// copy and a signup CTA instead of a useless RETRY button.
+		if (
+			lower.includes("daily") ||
+			lower.includes("free limit") ||
+			lower.includes("free messages")
+		) {
+			const resetMs = (() => {
+				const m = error.match(/resets?\s*in\s*~?(\d+)\s*h/i);
+				if (m) return parseInt(m[1], 10) * 3600_000;
+				const m2 = error.match(/resets?\s*in\s*~?(\d+)\s*m/i);
+				if (m2) return parseInt(m2[1], 10) * 60_000;
+				return null;
+			})();
+			return {
+				type: "rateLimit",
+				label: "DAILY LIMIT REACHED",
+				suggestion: resetMs
+					? `Your 20 free messages for today are used. Sign in for 100/day, or upgrade for unlimited. Resets in ~${Math.round(resetMs / 3600_000)}h.`
+					: "Your 20 free messages for today are used. Sign in for 100/day, or upgrade for unlimited.",
+				action: { label: "SIGN IN", href: "/login" },
+			};
+		}
+		// Transient rate limit — per-minute / per-second throttle.
+		const retryMatch = error.match(/retry[---_ ]after[:\s]*(\d+)/i);
+		const waitSeconds = retryMatch ? parseInt(retryMatch[1], 10) : null;
+		return {
+			type: "rateLimit",
+			label: "RATE LIMITED",
+			suggestion: waitSeconds
+				? `Wait ${waitSeconds}s before retrying`
+				: "Too many requests — wait a moment and try again",
+			action: { label: "RETRY" },
+		};
+	}
+
 	// Auth errors
 	if (
 		lower.includes("auth") ||
@@ -79,28 +124,6 @@ function classifyError(error: string): ErrorClassification {
 			action: {
 				label: "TOP UP",
 				href: "/deposit",
-			},
-		};
-	}
-
-	// Rate limit errors
-	if (
-		lower.includes("rate limit") ||
-		lower.includes("429") ||
-		lower.includes("too many")
-	) {
-		// Try to extract retry-after from error
-		const retryMatch = error.match(/retry[---_ ]after[:\s]*(\d+)/i);
-		const waitSeconds = retryMatch ? parseInt(retryMatch[1], 10) : null;
-
-		return {
-			type: "rateLimit",
-			label: "RATE LIMITED",
-			suggestion: waitSeconds
-				? `Wait ${waitSeconds}s before retrying`
-				: "Too many requests — wait a moment and try again",
-			action: {
-				label: "RETRY",
 			},
 		};
 	}

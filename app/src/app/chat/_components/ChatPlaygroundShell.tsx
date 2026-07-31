@@ -627,8 +627,8 @@ function ShellContent({
 									disabled={false}
 								/>
 
-								<div className="flex items-center justify-between mt-2 px-0.5 gap-3">
-									<p className="text-[11px] text-text-muted tracking-wide shrink-0 font-mono">
+								<div className="mt-2 flex flex-col items-stretch gap-1.5 px-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+									<p className="text-[11px] text-text-muted tracking-wide font-mono min-w-0 break-words sm:shrink-0">
 										Enter send · Shift+Enter newline
 										{!isAuthenticated && (
 											<span className="text-accent/80">

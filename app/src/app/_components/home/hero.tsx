@@ -18,7 +18,7 @@ import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { springs } from "@/components/motion";
+import { springs } from "@/lib/animation";
 
 // img-fx pulls in `three` (WebGL). It must never enter the server bundle —
 // SSR-importing it breaks the standalone build ("Cannot find module
@@ -215,6 +215,8 @@ export function Hero() {
 										alt="OMA AI inference gateway preview"
 										width={1280}
 										height={720}
+										priority
+										fetchPriority="high"
 										className="h-auto w-full"
 									/>
 								</ImageGeneration>

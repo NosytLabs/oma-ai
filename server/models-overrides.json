@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-30T11:16:53.778Z",
+  "overrides": {
+    "minimax-m2.7": {
+      "inputPricePer1M": 0.015,
+      "outputPricePer1M": 0.06,
+      "updatedAt": "2026-07-30T11:16:53.776Z"
+    }
+  }
+}

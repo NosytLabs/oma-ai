@@ -8,7 +8,7 @@ import {
 	TabPill,
 	springs,
 	easings,
-} from "@/components/motion";
+} from "@/lib/animation";
 
 /**
  * /design/motion — internal motion reference page.

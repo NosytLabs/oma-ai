@@ -5,8 +5,9 @@ import { ChevronDown, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { EASE_SPRING, EASE_SPRING_SOFT } from "@/lib/motion";
+import { EASE_SPRING, EASE_SPRING_SOFT } from "@/lib/animation";
 import { useClickOutside } from "./_hooks/useClickOutside";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { isCurrentPath, toolsLinks } from "./_lib/nav-links";
 
 interface NavbarToolsDropdownProps {
@@ -29,7 +30,9 @@ export function NavbarToolsDropdown({
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
-	const isToolsActive = toolsLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
+	const { isAdmin } = useAuth();
+	const visibleLinks = toolsLinks.filter((l) => !l.adminOnly || isAdmin);
+	const isToolsActive = visibleLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
 
 	useClickOutside(containerRef, open, () => onOpenChange(false));
 
@@ -70,7 +73,7 @@ export function NavbarToolsDropdown({
 				>
 					{isToolsActive && !open && (
 						<m.span
-							layoutId="nav-active"
+							layoutId="nav-active-tools"
 							aria-hidden="true"
 							className="absolute inset-0 rounded-sm bg-accent-dim"
 							transition={EASE_SPRING_SOFT}
@@ -113,11 +116,11 @@ export function NavbarToolsDropdown({
 						style={{ transformOrigin: "top left" }}
 						className={`absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]`}
 					>
-						<p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-widest text-text-tertiary">
-							tools
-						</p>
-						<ul className="space-y-1">
-							{toolsLinks.map((link) => {
+					<p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-widest text-text-tertiary">
+						tools
+					</p>
+					<ul className="space-y-1">
+						{visibleLinks.map((link) => {
 								const Icon = link.icon;
 								const isActive = isCurrentPath(pathname ?? "/", link.href);
 								return (

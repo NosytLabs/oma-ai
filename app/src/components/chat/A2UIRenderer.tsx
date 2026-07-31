@@ -18,6 +18,7 @@
  */
 
 import { m } from "@/lib/framer-motion-client";
+import { Button } from "@/components/ui/button";
 import { AlertCircle, ChevronRight, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -157,27 +158,13 @@ function renderComponent(
 		case "button": {
 			const label = String(props.label ?? props.text ?? "BUTTON");
 			const url = props.url ? String(props.url) : undefined;
-			const className =
-				"inline-flex items-center gap-1 px-3 py-1.5 border border-success/30 bg-success/10 text-success text-[11px] font-mono font-bold uppercase tracking-widest hover:bg-success/20 transition-colors mb-2";
 			if (url) {
 				return (
-					<a
-						key={node.id}
-						href={url}
-						target="_blank"
-						rel="noopener noreferrer"
-						className={className}
-					>
-						{label}
-						<ExternalLink className="w-3 h-3" />
-					</a>
+					<Button asChild variant="primary" leftIcon={<ExternalLink className="w-3 h-3" />}> <a key={node.id} href={url} target="_blank" rel="noopener noreferrer">{label}</a> </Button>
 				);
 			}
 			return (
-				<button key={node.id} className={className} type="button">
-					{label}
-					<ChevronRight className="w-3 h-3" />
-				</button>
+				<Button key={node.id} variant="primary" rightIcon={<ChevronRight className="w-3 h-3" />}>{label}</Button>
 			);
 		}
 		case "row":

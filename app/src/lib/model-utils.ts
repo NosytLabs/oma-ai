@@ -14,7 +14,7 @@ export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
 /** Known free catalog ids (provider=gonka). Keep in sync with server/models.json. */
 export const FREE_CHAT_MODEL_IDS = new Set([
 	"minimax-m2.7",
-	"kimi-k2-6",
+	"kimi-k2.6",
 ]);
 
 /**
@@ -149,10 +149,10 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		category: cat,
 		provider,
 		inputPer1M: m.pricing?.prompt
-			? parseFloat(m.pricing.prompt) * 1_000_000
+			? parseFloat(m.pricing.prompt)
 			: 0,
 		outputPer1M: m.pricing?.completion
-			? parseFloat(m.pricing.completion) * 1_000_000
+			? parseFloat(m.pricing.completion)
 			: 0,
 		ctx: m.context_length ? formatCtx(m.context_length) : "128K",
 	};

@@ -14,6 +14,13 @@
  *
  *   - Uses `force-dynamic` so Next.js never caches the proxy result.
  *
+ *   - Reads the upstream body as ArrayBuffer and rebuilds the Response.
+ *     This prevents the `ERR_CONTENT_DECODING_FAILED` browser error
+ *     that occurs when a streamed fetch() forwards `Content-Encoding:
+ *     gzip` from upstream while undici auto-decompresses only when
+ *     the body is consumed via `.text()` / `.json()` / `.arrayBuffer()`
+ *     — a raw `Response.body` ReadableStream bypasses that path.
+ *
  * If the backend is offline the request returns 502 with a clear
  * error message — never silently fails.
  */
@@ -43,7 +50,7 @@ async function proxyAuth(request: NextRequest): Promise<Response> {
 	let upstream: Response;
 	try {
 		upstream = await fetch(target, init);
-	} catch (err) {
+	} catch (_err) {
 		return new Response(
 			JSON.stringify({
 				error: {
@@ -58,15 +65,24 @@ async function proxyAuth(request: NextRequest): Promise<Response> {
 		);
 	}
 
-	// Mirror status + relevant headers + body back to the client.
+	// Read the upstream body fully so undici transparently decompresses
+	// gzipped/br responses. We rebuild a fresh Response with the decoded
+	// bytes and a sanitized header set (no `Content-Encoding` / `Content-Length`).
+	const body = await upstream.arrayBuffer();
+
 	const outHeaders = new Headers();
 	for (const [k, v] of upstream.headers.entries()) {
-		if (HOP_BY_HOP.has(k.toLowerCase())) continue;
+		const lk = k.toLowerCase();
+		if (HOP_BY_HOP.has(lk)) continue;
+		if (RESPONSE_DECODED_HEADERS.has(lk)) continue;
 		outHeaders.append(k, v);
+	}
+	if (!outHeaders.has("content-length")) {
+		outHeaders.set("content-length", String(body.byteLength));
 	}
 	// Ensure the browser accepts Set-Cookie from the proxy response.
 	outHeaders.set("access-control-allow-credentials", "true");
-	return new Response(upstream.body, {
+	return new Response(body, {
 		status: upstream.status,
 		statusText: upstream.statusText,
 		headers: outHeaders,
@@ -83,6 +99,13 @@ const HOP_BY_HOP = new Set([
 	"transfer-encoding",
 	"upgrade",
 	"host",
+	"content-length",
+]);
+
+// Headers that describe a decoded representation and must not be forwarded
+// after we materialize the upstream body (we already produced plain bytes).
+const RESPONSE_DECODED_HEADERS = new Set([
+	"content-encoding",
 	"content-length",
 ]);
 

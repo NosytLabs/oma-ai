@@ -46,6 +46,12 @@ export interface Message {
 	// separate `reasoning_content` stream. Captured alongside `content` so the
 	// thinking phase is visible instead of blank.
 	reasoning?: string;
+	// Upstream returned `finish_reason: "length"` — the response was cut off
+	// mid-stream (most often because the reasoning phase consumed too much of
+	// the token budget). The UI shows a RETRY hint so the user knows the
+	// answer is incomplete rather than reacting to unbalanced markdown.
+	truncated?: boolean;
+	finishReason?: "stop" | "length" | "content_filter" | "tool_calls" | "function_call" | null;
 }
 
 export interface ModelOption {
@@ -102,20 +108,21 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 });
 
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000;
-let liveModelsCache: { data: ModelOption[]; ts: number } | null = null;
+const LIVE_MODELS_CACHE_VERSION = 2; // bump to invalidate stale caches after pricing-fix
+let liveModelsCache: { data: ModelOption[]; ts: number; v: number } | null = null;
 
 // shared `["models"]` key so dashboard / settings / chat all
 // invalidate the same cache. Returns the active ModelOption[]; falls back
 // to FALLBACK_MODELS while the first request is in flight or on error.
 export function useLiveModels(): ModelOption[] {
 	const [models, setModels] = useState<ModelOption[]>(() =>
-		liveModelsCache && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS
+		liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS
 			? liveModelsCache.data
 			: FALLBACK_MODELS,
 	);
 
 	useEffect(() => {
-		if (liveModelsCache && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS)
+		if (liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS)
 			return;
 		let cancelled = false;
 		api
@@ -129,7 +136,7 @@ export function useLiveModels(): ModelOption[] {
 					)
 					.map(mapLiveModel);
 				if (mapped.length === 0) return;
-				liveModelsCache = { data: mapped, ts: Date.now() };
+				liveModelsCache = { data: mapped, ts: Date.now(), v: LIVE_MODELS_CACHE_VERSION };
 				setModels(mapped);
 			})
 			.catch(() => {

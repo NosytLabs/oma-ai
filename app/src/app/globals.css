@@ -253,13 +253,13 @@
 
 	/* No light mode right now — the site is dark-first by design. */
 	html {
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-		text-rendering: optimizeLegibility;
-		/* Prevent long code lines / decorative blurs from causing page-level
-		   horizontal scroll on mobile (especially / and /docs). */
-		overflow-x: clip;
-		max-width: 100%;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	/* Prevent long code lines / decorative blurs from causing page-level
+	horizontal scroll on mobile (especially / and /docs). */
+	overflow-x: hidden;
+	max-width: 100%;
 	}
 
 	body {
@@ -270,7 +270,7 @@
 		line-height: 1.6;
 		font-feature-settings: "ss01", "cv11";
 		min-height: 100dvh;
-		overflow-x: clip;
+		overflow-x: hidden;
 		max-width: 100%;
 	}
 
@@ -315,7 +315,18 @@
    ========================================================================== */
 
 @layer components {
-	/* ---------- Page layout shells ---------- */
+/* Chat y-scrollbar for better mobile/desktop experience */
+.chat-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-accent) var(--color-surface-elevated);
+}
+@media (max-width: 700px) {
+    .chat-scrollbar {
+        scrollbar-width: auto;
+    }
+}
+
+/* ---------- Page layout shells ---------- */
 
 	.page-shell {
 		position: relative;
@@ -1115,6 +1126,26 @@
 		transform: translateY(-2px);
 		border-color: var(--color-border-hi);
 		box-shadow: var(--shadow-md);
+	}
+}
+
+@utility skeleton-sweep {
+	background: linear-gradient(
+		90deg,
+		var(--color-surface-elevated) 25%,
+		var(--color-surface-hi) 50%,
+		var(--color-surface-elevated) 75%
+	);
+	background-size: 200% 100%;
+	animation: shimmer-sweep 1.8s infinite linear;
+}
+
+@keyframes shimmer-sweep {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
 	}
 }
 

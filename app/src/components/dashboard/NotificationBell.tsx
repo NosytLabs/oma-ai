@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { springs } from "@/components/motion";
+import { springs } from "@/lib/animation";
 import {
 	ArrowUpRight,
 	Bell,

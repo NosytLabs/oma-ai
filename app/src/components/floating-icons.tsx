@@ -22,7 +22,7 @@ import { useReducedMotion } from "@/lib/framer-motion-client";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
-const DEFAULT_SYMBOLS = ["₿", "Ξ", "◎", "Ð", "Ł", "◈", "◆", "₮", "₳"];
+const DEFAULT_SYMBOLS = ["✦", "⬡", "◈", "⟐", "◉", "⊕", "◇", "△", "₿", "Ξ", "◎"];
 
 interface FloatingIconsProps {
 	count?: number;
@@ -59,37 +59,41 @@ export function FloatingIcons({
 		return { sym, seed, x, y, sz, spd, delay, wobble };
 	});
 
-	// Always render the container to avoid hydration mismatch (useReducedMotion
-	// returns false on server, true on client). When reduced motion is preferred,
-	// render symbols statically without animation.
+	// CRITICAL: render only on the client. The container itself is fine on the
+	// server, but the floating icons carry pure-decoration Math.random-free
+	// coordinates that still mismatch the SSR snapshot because of how
+	// `useReducedMotion` resolves differently between SSR (null) and the
+	// browser (boolean). Rendering an empty placeholder on the server and
+	// populating on `useEffect` avoids the hydration mismatch entirely.
 	return (
 		<div
 			aria-hidden="true"
 			className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ""}`}
 		>
-			{items.map((item, i) => {
-				const style: CSSProperties = {
-					position: "absolute",
-					left: `${item.x}%`,
-					top: `${item.y}%`,
-					fontSize: `${item.sz}px`,
-					opacity,
-					color: "var(--color-accent)",
-					["--float-wobble" as string]: `${item.wobble}px`,
-					transform: `rotate(${item.seed}deg)`,
-					...(isClient && prefersReduced
-						? {}
-						: {
-								animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
-								willChange: "transform" as const,
-							}),
-				};
-				return (
-					<span key={i} style={style}>
-						{item.sym}
-					</span>
-				);
-			})}
+			{isClient &&
+				items.map((item, i) => {
+					const style: CSSProperties = {
+						position: "absolute",
+						left: `${item.x}%`,
+						top: `${item.y}%`,
+						fontSize: `${item.sz}px`,
+						opacity,
+						color: "var(--color-accent)",
+						["--float-wobble" as string]: `${item.wobble}px`,
+						transform: `rotate(${item.seed}deg)`,
+						...(prefersReduced
+							? {}
+							: {
+									animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
+									willChange: "transform" as const,
+								}),
+					};
+					return (
+						<span key={i} style={style}>
+							{item.sym}
+						</span>
+					);
+				})}
 		</div>
 	);
 }

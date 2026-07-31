@@ -198,9 +198,14 @@ depositAddress,
         message:
           "Deposit recorded. Watcher will credit your balance after on-chain confirmation (typically <60s on Base).",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // txHash unique index — already submitted.
-      if (err?.code === "23505" || /unique/i.test(String(err?.message ?? ""))) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code?: string }).code === "23505"
+      ) {
         const [existing] = await db
           .select()
           .from(deposits)

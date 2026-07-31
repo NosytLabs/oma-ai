@@ -5,7 +5,7 @@
  */
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
-import { optionalAuth, sessionAuth } from "../auth/middleware.js";
+import { optionalAuth } from "../auth/middleware.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { db } from "../db/client.js";

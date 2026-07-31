@@ -25,7 +25,6 @@ interface GlobalErrorProps {
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
 	if (typeof console !== "undefined" && error) {
-		// eslint-disable-next-line no-console
 		console.error("[GlobalError]", {
 			message: error.message,
 			digest: error.digest,

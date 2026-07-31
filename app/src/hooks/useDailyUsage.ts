@@ -7,8 +7,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { useToast } from "@/components/ui/Toast";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 const DAILY_LIMIT_ANONYMOUS = 20;
@@ -27,9 +26,8 @@ export interface DailyUsageResponse {
  * Polls the server every 10 seconds to stay current.
  */
 export function useDailyUsage() {
-  const { isAuthenticated } = useAuth();
-  const toast = useToast();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+   const { isAuthenticated } = useAuth();
+   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const query = useQuery({
     queryKey: ["daily-usage"],

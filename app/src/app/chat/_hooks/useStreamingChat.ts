@@ -323,6 +323,16 @@ const fetchWebSearch = useCallback(
 				let lastUpdateTime = 0;
 				let lastFlushedContent = "";
 				let lastFlushedReasoning = "";
+				// Track upstream finish_reason so the UI can show a TRUNCATED
+				// hint when the response was cut off by max_tokens (typical for
+				// reasoning models that burn the token budget on `…`).
+				let finishReason:
+					| "stop"
+					| "length"
+					| "content_filter"
+					| "tool_calls"
+					| "function_call"
+					| null = null;
 
 				const flushToState = (force = false) => {
 					const now = Date.now();
@@ -349,6 +359,8 @@ const fetchWebSearch = useCallback(
 									tokens: tokenCount,
 									outputTokens: realTokenCount || estimateTokens(accumulated),
 									latency: now - startTime,
+									truncated: finishReason === "length",
+									finishReason,
 									searchResults:
 										searchResults.length > 0
 											? searchResults
@@ -362,6 +374,81 @@ const fetchWebSearch = useCallback(
 
 				let sseBuffer = "";
 				const SSE_BUFFER_MAX_BYTES = 1024 * 1024; // 1 MB cap to prevent unbounded growth
+				// State machine for routing content tokens. Some models (MiniMax-M2.7,
+				// DeepSeek R1, Qwen QwQ) wrap their reasoning inside  and 
+				// tags inside the `content` field rather than emitting a separate
+				// `reasoning_content` delta. We watch for those tags and route the
+				// enclosed text into `accumulatedReasoning` so the rendered
+				// answer never shows the raw markup.
+				const THINK_OPEN = "<think>";
+				const THINK_CLOSE = "</think>";
+				let inThinkingBlock = false;
+				// Carry-over buffer for partial tag matches that span two SSE chunks.
+				let tagCarry = "";
+				const routeToken = (token: string) => {
+					if (!token) return;
+					// Splice the carry-over so partial tags that arrived in the
+					// previous chunk now line up with the next one.
+					const stream = tagCarry + token;
+					tagCarry = "";
+					let cursor = 0;
+					while (cursor < stream.length) {
+						if (!inThinkingBlock) {
+							// Look for the next `` opening tag.
+							const openIdx = stream.indexOf(THINK_OPEN, cursor);
+							if (openIdx === -1) {
+								// No more tags in this slice. Before flushing, keep
+								// the last few chars as carry-over so a partial tag
+								// that landed at the chunk boundary isn't lost.
+								const safeLen = Math.max(0, stream.length - (THINK_OPEN.length - 1));
+								const safeSlice = stream.slice(cursor, safeLen);
+								const tail = stream.slice(safeLen);
+								if (safeSlice) {
+									appendToContent(safeSlice);
+								}
+								tagCarry = tail;
+								break;
+							}
+							// Flush the prose before the tag, then drop the tag itself.
+							const before = stream.slice(cursor, openIdx);
+							if (before) appendToContent(before);
+							cursor = openIdx + THINK_OPEN.length;
+							inThinkingBlock = true;
+						} else {
+							// Inside a thinking block — look for the closing tag.
+							const closeIdx = stream.indexOf(THINK_CLOSE, cursor);
+							if (closeIdx === -1) {
+								const safeLen = Math.max(0, stream.length - (THINK_CLOSE.length - 1));
+								const safeSlice = stream.slice(cursor, safeLen);
+								const tail = stream.slice(safeLen);
+								if (safeSlice) appendToReasoning(safeSlice);
+								tagCarry = tail;
+								break;
+							}
+							const inside = stream.slice(cursor, closeIdx);
+							if (inside) appendToReasoning(inside);
+							cursor = closeIdx + THINK_CLOSE.length;
+							inThinkingBlock = false;
+						}
+					}
+				};
+				const appendToContent = (chunk: string) => {
+					if (!chunk) return;
+					if (accumulated.length < MAX_MESSAGE_LENGTH) {
+						accumulated += chunk;
+					} else if (!accumulated.endsWith("[response truncated at 100 KB]")) {
+						// Surface truncation exactly once so the user
+						// knows the response was capped, instead of
+						// silently dropping content.
+						accumulated += "\n\n…[response truncated at 100 KB]";
+					}
+				};
+				const appendToReasoning = (chunk: string) => {
+					if (!chunk) return;
+					if (accumulatedReasoning.length < MAX_MESSAGE_LENGTH) {
+						accumulatedReasoning += chunk;
+					}
+				};
 				const processData = (raw: string) => {
 					const data = raw.trim();
 					if (!data || data === "[DONE]") return;
@@ -370,14 +457,7 @@ const fetchWebSearch = useCallback(
 						const choice = parsed.choices?.[0];
 						const delta = choice?.delta?.content;
 						if (delta) {
-							if (accumulated.length < MAX_MESSAGE_LENGTH) {
-								accumulated += delta;
-							} else if (!accumulated.endsWith("[response truncated at 100 KB]")) {
-								// Surface truncation exactly once so the user
-								// knows the response was capped, instead of
-								// silently dropping content.
-								accumulated += "\n\n…[response truncated at 100 KB]";
-							}
+							routeToken(delta);
 							flushToState();
 						}
 						// Reasoning models (DeepSeek R1, Claude extended thinking) emit
@@ -386,9 +466,7 @@ const fetchWebSearch = useCallback(
 						// instead of showing blank while the model reasons.
 						const reasoningDelta = choice?.delta?.reasoning_content;
 						if (reasoningDelta) {
-							if (accumulatedReasoning.length < MAX_MESSAGE_LENGTH) {
-								accumulatedReasoning += reasoningDelta;
-							}
+							appendToReasoning(reasoningDelta);
 							flushToState();
 						}
 						// OpenAI streams emit a final chunk with `usage` when
@@ -396,6 +474,14 @@ const fetchWebSearch = useCallback(
 						// unconditionally). Prefer the real count over our estimate.
 						if (parsed.usage?.total_tokens) {
 							realTokenCount = parsed.usage.total_tokens;
+						}
+						// Capture finish_reason from the upstream so we can flag the
+						// message as truncated. The "length" reason means the model
+						// hit the max_tokens budget mid-answer and the response is
+						// incomplete — show a TRUNCATED hint in the UI.
+						const reason = choice?.finish_reason;
+						if (reason && reason !== null) {
+							finishReason = reason as typeof finishReason;
 						}
 					} catch (err) {
 						log.warn("Failed to parse streaming response", err);

@@ -25,7 +25,7 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { sql, desc, eq, gte, and, count } from "drizzle-orm";
+import { sql, desc, eq, gte, count } from "drizzle-orm";
 import * as nodeFs from "node:fs";
 import * as nodePath from "node:path";
 import type { OmaEnv } from "../../types.js";
@@ -193,7 +193,7 @@ async function persistOverride(
 
 	persistQueue = persistQueue
 		.then(async () => {
-			let next: PersistedOverridesFile = {
+			const next: PersistedOverridesFile = {
 				schemaVersion: 1,
 				updatedAt: new Date().toISOString(),
 				overrides: { ...Object.fromEntries(pricingOverrides), [modelId]: override },
@@ -541,7 +541,9 @@ adminRoutes.get("/v1/admin/health", async (c) => {
   try {
     await db.execute(sql`SELECT 1`);
     dbOk = true;
-  } catch {}
+  } catch (err) {
+    logger.warn({ err }, "admin/health db ping failed");
+  }
   return c.json({
     status: "ok",
     version: "2.1.0",

@@ -29,7 +29,6 @@ import {
   integer,
   pgEnum,
   uuid,
-  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 

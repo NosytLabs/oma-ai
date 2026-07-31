@@ -17,7 +17,7 @@
  * live in `@/components/motion` — see that directory's README.
  */
 
-import { springs } from "@/components/motion/springs";
+import { springs } from "./springs";
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
 import { useRevealInView } from "@/lib/use-reveal-in-view";

@@ -5,7 +5,7 @@ import { CornerDownLeft, Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { EASE_OUT, staggerContainer } from "@/lib/motion";
+import { EASE_OUT, staggerContainer } from "@/lib/animation";
 import { ApiStatus } from "../api-status";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { accountHrefs, isCurrentPath, mobileGroups } from "./_lib/nav-links";

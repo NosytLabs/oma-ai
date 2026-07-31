@@ -6,8 +6,19 @@
 
 import { ArrowRight, Bot, CreditCard } from "lucide-react";
 import Link from "next/link";
-import { BorderBeam } from "border-beam";
+import dynamic from "next/dynamic";
 import { Reveal } from "@/app/_components/home/reveal";
+
+// BorderBeam ships a useState initializer that reads
+// `window.matchMedia("(prefers-color-scheme: dark)")` — server picks
+// "light", client picks "dark", the rendered keyframes diverge, and
+// React throws a hydration mismatch. Loading it client-only avoids
+// the SSR render entirely (the beam is decoration; not worth a
+// hydration error).
+const BorderBeam = dynamic(
+	() => import("border-beam").then((mod) => mod.BorderBeam),
+	{ ssr: false },
+);
 
 export function X402Banner() {
 	return (

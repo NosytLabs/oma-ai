@@ -23,6 +23,7 @@ import { exportRoutes } from "./routes/export.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
 import { openapiRoutes } from "./routes/openapi.js";
+import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
@@ -146,6 +147,9 @@ app.route("/", x402Routes);
 // Daily usage / quota endpoint for the website chat free-tier counter.
 app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
+
+// Polar.sh checkout + webhook (no auth on /webhooks/polar; signature-verified).
+app.route("/", polarRoutes);
 
 // Admin / operator dashboard endpoints.
 app.route("/", adminRoutes);

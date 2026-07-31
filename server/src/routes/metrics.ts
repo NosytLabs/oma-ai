@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
+import type { Context } from "hono";
 
 export const metricsRoutes = new Hono<OmaEnv>();
 
@@ -7,12 +8,13 @@ export const metricsRoutes = new Hono<OmaEnv>();
 const counters: Record<string, number> = {};
 const histograms: Record<string, number[]> = {};
 
-export function metricsMiddleware(c: any, next: any) {
+export function metricsMiddleware(c: Context<OmaEnv>, next: () => Promise<void>) {
   const start = Date.now();
   return next().then(() => {
     const duration = Date.now() - start;
     const key = `${c.req.method} ${c.req.routePath ?? c.req.path}`;
-    counters[key] = (counters[key] ?? 0) + 1;
+    (counters[key] ??= 0);
+    counters[key]++;
     (histograms[key] ??= []).push(duration);
   });
 }

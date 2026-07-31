@@ -138,7 +138,10 @@ export default function CreditsPage() {
 		);
 	}, [autoReloadQuery.data]);
 
-	const history: CreditHistoryItem[] = historyQuery.data ?? [];
+	const history = useMemo<CreditHistoryItem[]>(
+		() => historyQuery.data ?? [],
+		[historyQuery.data],
+	);
 	const historyLoading = historyQuery.isLoading;
 	const historyHasResolved = historyQuery.isFetched;
 

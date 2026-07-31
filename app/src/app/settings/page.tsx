@@ -7,6 +7,7 @@ import {
 	AlertTriangle,
 	Key,
 	type LucideIcon,
+	Palette,
 	Shield,
 	Sparkles,
 	User as UserIcon,
@@ -26,6 +27,11 @@ const ProfileSection = nextDynamic(() =>
 		default: m.ProfileSection,
 	})),
 );
+const AppearanceSection = nextDynamic(() =>
+	import("./_components/AppearanceSection").then((m) => ({
+		default: m.AppearanceSection,
+	})),
+);
 const ApiKeysSection = nextDynamic(() =>
 	import("./_components/ApiKeysSection").then((m) => ({
 		default: m.ApiKeysSection,
@@ -42,7 +48,7 @@ const DangerZoneSection = nextDynamic(() =>
 	})),
 );
 
-type SettingsTab = "profile" | "api-keys" | "sessions" | "danger";
+type SettingsTab = "profile" | "appearance" | "api-keys" | "sessions" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -57,6 +63,12 @@ const TABS: TabDef[] = [
 		label: "Profile",
 		icon: UserIcon,
 		description: "Account details",
+	},
+	{
+		id: "appearance",
+		label: "Appearance",
+		icon: Palette,
+		description: "Accent theme",
 	},
 	{
 		id: "api-keys",
@@ -81,6 +93,7 @@ const TABS: TabDef[] = [
 /** Compact labels for the mobile horizontal tab strip (avoid truncation). */
 const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	profile: "Profile",
+	appearance: "Theme",
 	"api-keys": "Keys",
 	sessions: "Sessions",
 	danger: "Danger",
@@ -90,6 +103,7 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	if (!raw) return null;
 	if (raw === "keys") return "api-keys";
+	if (raw === "appearance" || raw === "theme") return "appearance";
 	if (TABS.some((tab) => tab.id === raw)) return raw as SettingsTab;
 	return null;
 }
@@ -415,6 +429,7 @@ export default function SettingsPage() {
 										onError={setError}
 									/>
 								)}
+								{activeTab === "appearance" && <AppearanceSection />}
 								{activeTab === "api-keys" && (
 									<ApiKeysSection
 										apiKeys={apiKeys}

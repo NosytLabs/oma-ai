@@ -22,7 +22,7 @@ import { useRevealInView } from "@/lib/use-reveal-in-view";
 // interrupted reveals (Page Down, fast scroll) integrate from the current
 // position instead of snapping. Honors prefers-reduced-motion via framer's
 // MotionConfig — these springs resolve instantly when the user opts out.
-import { springs } from "@/components/motion";
+import { springs } from "@/lib/animation";
 import { useEffect, useState, type ReactNode } from "react";
 
 const fadeUpVariant: Variants = {

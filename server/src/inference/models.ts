@@ -1,10 +1,14 @@
 /**
- * Inference model catalog — minimal in-memory registry.
+ * Inference model catalog — curated best-in-class models.
  *
- * Holds the small set of models OMA-AI ships with by default. Add a
- * new provider (Venice / Gonka / Surplus / …) by extending
- * `server/src/routes/chat/index.ts::resolveProvider()` and adding a
- * matching entry here.
+ * 24 models across 4 tiers, sourced from Venice AI (12 chat) and
+ * Gonka/OpenBroker (2 direct). Prices below are *wholesale base* — OMA
+ * applies a 25% markup on Venice models at billing time (see
+ * billing-service.ts). Gonka prices are already user-facing (margin
+ * built-in, markupPercent = 0).
+ *
+ * Add a new provider by extending `resolveProvider()` in proxy.ts and
+ * adding matching entries here.
  */
 import { logger } from "../lib/logger.js";
 
@@ -28,95 +32,353 @@ export interface ModelDef {
 
 let _catalog: ModelDef[] | null = null;
 
+// ---------------------------------------------------------------------------
+// Curated catalog — best models per tier.
+//
+// Venice pricing source: docs.venice.ai/overview/pricing (2026-07-31)
+// Gonka pricing: developer-verified (models.ts git history 2026-07-30)
+//
+// Prices stored here are *upstream base* (what OMA pays Venice/Gonka).
+// billing-service.ts applies markupPercent at checkout:
+//   user_cost = base * (1 + markupPercent/100)
+//
+// For Venice models markupPercent = 25 (OMA's platform margin).
+// For Gonka models markupPercent = 0 (margin already in the low price).
+// ---------------------------------------------------------------------------
+
+const VENICE_MODELS: ModelDef[] = [
+  // ── Frontier ──────────────────────────────────────────────────────────
+  {
+    id: "claude-opus-5",
+    provider: "venice",
+    inputPricePer1M: 6.0,
+    outputPricePer1M: 30.0,
+    markupPercent: 25,
+    displayName: "Claude Opus 5",
+    category: "frontier",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+  {
+    id: "openai-gpt-56-sol",
+    provider: "venice",
+    inputPricePer1M: 6.25,
+    outputPricePer1M: 37.5,
+    markupPercent: 25,
+    displayName: "GPT-5.6 Sol",
+    category: "frontier",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+
+  // ── Premium ───────────────────────────────────────────────────────────
+  {
+    id: "claude-sonnet-5",
+    provider: "venice",
+    inputPricePer1M: 3.0,
+    outputPricePer1M: 15.0,
+    markupPercent: 25,
+    displayName: "Claude Sonnet 5",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+  {
+    id: "openai-gpt-54",
+    provider: "venice",
+    inputPricePer1M: 3.13,
+    outputPricePer1M: 18.8,
+    markupPercent: 25,
+    displayName: "GPT-5.4",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "kimi-k3",
+    provider: "venice",
+    inputPricePer1M: 3.75,
+    outputPricePer1M: 18.75,
+    markupPercent: 25,
+    displayName: "Kimi K3",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "openai-gpt-52",
+    provider: "venice",
+    inputPricePer1M: 2.19,
+    outputPricePer1M: 17.5,
+    markupPercent: 25,
+    displayName: "GPT-5.2",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 256_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "grok-4-5",
+    provider: "venice",
+    inputPricePer1M: 2.27,
+    outputPricePer1M: 6.8,
+    markupPercent: 25,
+    displayName: "Grok 4.5",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 500_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "zai-org-glm-5-2",
+    provider: "venice",
+    inputPricePer1M: 1.4,
+    outputPricePer1M: 4.4,
+    markupPercent: 25,
+    displayName: "GLM 5.2",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+
+  // ── Mid ───────────────────────────────────────────────────────────────
+  {
+    id: "deepseek-v4-pro",
+    provider: "venice",
+    inputPricePer1M: 1.65,
+    outputPricePer1M: 3.3,
+    markupPercent: 25,
+    displayName: "DeepSeek V4 Pro",
+    category: "mid",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+  {
+    id: "gemini-3-5-flash",
+    provider: "venice",
+    inputPricePer1M: 1.55,
+    outputPricePer1M: 9.45,
+    markupPercent: 25,
+    displayName: "Gemini 3.5 Flash",
+    category: "mid",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "gemini-3-flash-preview",
+    provider: "venice",
+    inputPricePer1M: 0.7,
+    outputPricePer1M: 3.75,
+    markupPercent: 25,
+    displayName: "Gemini 3 Flash",
+    category: "mid",
+    maxTokens: 8192,
+    contextWindow: 256_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "fast", "tools"],
+  },
+  {
+    id: "llama-3.3-70b",
+    provider: "venice",
+    inputPricePer1M: 0.7,
+    outputPricePer1M: 2.8,
+    markupPercent: 25,
+    displayName: "Llama 3.3 70B",
+    category: "mid",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "tools"],
+  },
+  {
+    id: "zai-org-glm-5-1",
+    provider: "venice",
+    inputPricePer1M: 1.54,
+    outputPricePer1M: 4.84,
+    markupPercent: 25,
+    displayName: "GLM 5.1",
+    category: "mid",
+    maxTokens: 16384,
+    contextWindow: 200_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "qwen3-coder-480b-a35b-instruct-turbo",
+    provider: "venice",
+    inputPricePer1M: 0.35,
+    outputPricePer1M: 1.5,
+    markupPercent: 25,
+    displayName: "Qwen3 Coder 480B",
+    category: "mid",
+    maxTokens: 16384,
+    contextWindow: 256_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "coding", "tools"],
+  },
+  {
+    id: "qwen-3-7-plus",
+    provider: "venice",
+    inputPricePer1M: 0.5,
+    outputPricePer1M: 2.0,
+    markupPercent: 25,
+    displayName: "Qwen 3.7 Plus",
+    category: "mid",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+
+  // ── Budget ────────────────────────────────────────────────────────────
+  {
+    id: "deepseek-v4-flash",
+    provider: "venice",
+    inputPricePer1M: 0.138,
+    outputPricePer1M: 0.275,
+    markupPercent: 25,
+    displayName: "DeepSeek V4 Flash",
+    category: "budget",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "fast", "tools"],
+  },
+  {
+    id: "mistral-small-2603",
+    provider: "venice",
+    inputPricePer1M: 0.1875,
+    outputPricePer1M: 0.75,
+    markupPercent: 25,
+    displayName: "Mistral Small 4",
+    category: "budget",
+    maxTokens: 8192,
+    contextWindow: 256_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "fast", "tools"],
+  },
+  {
+    id: "xiaomi-mimo-v2-5",
+    provider: "venice",
+    inputPricePer1M: 0.14,
+    outputPricePer1M: 0.28,
+    markupPercent: 25,
+    displayName: "Xiaomi MiMo V2.5",
+    category: "budget",
+    maxTokens: 16384,
+    contextWindow: 1_000_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "fast"],
+  },
+  {
+    id: "qwen3-235b-a22b-instruct-2507",
+    provider: "venice",
+    inputPricePer1M: 0.15,
+    outputPricePer1M: 0.75,
+    markupPercent: 25,
+    displayName: "Qwen3 235B",
+    category: "budget",
+    maxTokens: 16384,
+    contextWindow: 128_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "mercury-2",
+    provider: "venice",
+    inputPricePer1M: 0.3125,
+    outputPricePer1M: 0.9375,
+    markupPercent: 25,
+    displayName: "Mercury 2",
+    category: "budget",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "fast"],
+  },
+];
+
+// ── Gonka (OpenBroker) ────────────────────────────────────────────────
+// Prices are user-facing (margin built-in). markupPercent = 0.
+const GONKA_MODELS: ModelDef[] = [
+  {
+    id: "minimax-m2.7",
+    provider: "gonka",
+    gonkaId: "MiniMaxAI/MiniMax-M2.7",
+    inputPricePer1M: 0.015,
+    outputPricePer1M: 0.06,
+    markupPercent: 0,
+    displayName: "MiniMax M2.7",
+    category: "budget",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "tools"],
+  },
+  {
+    id: "kimi-k2.6",
+    provider: "gonka",
+    gonkaId: "moonshotai/Kimi-K2.6",
+    inputPricePer1M: 0.024,
+    outputPricePer1M: 0.096,
+    markupPercent: 0,
+    displayName: "Kimi K2.6",
+    category: "mid",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+];
+
 function defaultCatalog(): ModelDef[] {
-  return [
-    {
-      id: "llama-3.3-70b",
-      provider: "venice",
-      // Market rate: ~$0.23/1M input (Deepinfra). Venice is privacy-focused premium.
-      // Our price: $0.35/$0.35 per 1M — competitive for private inference
-      inputPricePer1M: 0.35,
-      outputPricePer1M: 0.35,
-      markupPercent: 0, // Price already includes margin
-      displayName: "Llama 3.3 70B",
-      category: "mid",
-      maxTokens: 2000,
-      contextWindow: 131072,
-      maxOutputTokens: 8192,
-      supportsStreaming: true,
-      capabilities: ["chat"],
-    },
-    {
-      id: "claude-sonnet-4-5",
-      provider: "venice",
-      // Market rate: Claude Sonnet 5 is $2/$10 per 1M. Venice premium for privacy.
-      // Our price: $2.50/$12 per 1M — competitive for private Claude access
-      inputPricePer1M: 2.50,
-      outputPricePer1M: 12,
-      markupPercent: 0, // Price already includes margin
-      displayName: "Claude Sonnet 4.5",
-      category: "premium",
-      maxTokens: 4000,
-      contextWindow: 200000,
-      maxOutputTokens: 8192,
-      supportsStreaming: true,
-      capabilities: ["chat", "tools"],
-    },
-    {
-      id: "minimax-m2.7",
-      provider: "gonka",
-      gonkaId: "MiniMaxAI/MiniMax-M2.7",
-      // 2026-07-30: bumped from $0.005/$0.02. Gonka wholesale is ~$0.0003
-      // / $0.0012 per 1M (epoch-priced, GNK-denominated), so $0.015/$0.06 is
-      // still ~50x wholesale and well under OpenAI's M2.7 ($0.30/$1.20) and
-      // OpenRouter's gonka listing (~$0.017/$0.072). Sub-cent price-floor
-      // bug: any call under ~7K output tokens rounded to 0 cents; new floor
-      // produces visible ledger movement even on small chat calls.
-      inputPricePer1M: 0.015,
-      outputPricePer1M: 0.06,
-      markupPercent: 0,
-      displayName: "MiniMax M2.7 (Gonka)",
-      category: "budget",
-      maxTokens: 8000,
-      contextWindow: 128000,
-      maxOutputTokens: 8192,
-      supportsStreaming: true,
-      capabilities: ["chat", "tools"],
-    },
-    {
-      id: "kimi-k2.6",
-      provider: "gonka",
-      gonkaId: "moonshotai/Kimi-K2.6",
-      // 2026-07-30: bumped from $0.008/$0.032. Same wholesale as M2.7; we
-      // position Kimi as a stronger reasoning model with a modest premium
-      // (~1.6x M2.7). Still ~30x cheaper than OpenRouter's
-      // moonshotai/Kimi-K2 line ($1.20/M in).
-      inputPricePer1M: 0.024,
-      outputPricePer1M: 0.096,
-      markupPercent: 0,
-      displayName: "Kimi K2.6 (Gonka)",
-      category: "mid",
-      maxTokens: 8000,
-      contextWindow: 128000,
-      maxOutputTokens: 8192,
-      supportsStreaming: true,
-      capabilities: ["chat", "tools"],
-    },
-    // NOTE: GLM-5.2-FP8 (zai-org/GLM-5.2-FP8) is on the Gonka /v1/models
-    // registry but the actual OpenBroker returns "unsupported model" on a
-    // chat call (verified 2026-07-30 — returns 400 with the supported
-    // list containing only MiniMax-M2.7 and Kimi-K2.6). Likely a
-    // governance-approved model awaiting devshard routing. Once a chat
-    // call to zai-org/GLM-5.2-FP8 succeeds, add it back here with the
-    // same markup pattern as M2.7/K2.6. Until then, keep it out of the
-    // catalog to avoid surfacing a 502/500 on the website.
-  ];
+  return [...VENICE_MODELS, ...GONKA_MODELS];
 }
 
 export async function ensureCatalogLoaded(): Promise<void> {
   if (_catalog) return;
   _catalog = defaultCatalog();
-  logger.info({ count: _catalog.length }, "[models] loaded default catalog");
+  logger.info({ count: _catalog.length }, "[models] loaded curated catalog");
 }
 
 export function listAllModels(): ModelDef[] {
@@ -129,5 +391,3 @@ export function listAllModels(): ModelDef[] {
 export function getModelById(id: string): ModelDef | undefined {
   return listAllModels().find((m) => m.id === id);
 }
-
-

@@ -5,6 +5,11 @@
  * The "Models live" figure is fetched from the running API so the label
  * is only ever true. Falls back to the build-time MODEL_COUNT if the
  * backend is unreachable (honest: shows the catalog size, not a lie).
+ *
+ * Hydration: the first paint always renders the build-time MODEL_COUNT
+ * to match the server output. The live count swaps in *after* mount via
+ * the `aria-live` element so screen readers announce the update without
+ * triggering a React hydration mismatch.
  */
 
 import { useEffect, useState } from "react";
@@ -58,6 +63,10 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] = 
 export function StatsStrip() {
 	const liveCount = useLiveModelCount();
 	const stats = STATS.map((s) =>
+		// Only swap the value on the *client* — server renders the
+		// build-time MODEL_COUNT, client swaps to the live number
+		// after the first fetch resolves. Returning the same value
+		// for the initial paint avoids a React hydration mismatch.
 		s.live && liveCount != null
 			? { ...s, value: `${liveCount}+`, hint: "live now · Venice + routing" }
 			: s,

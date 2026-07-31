@@ -105,7 +105,7 @@
           "per_token_markup": "No per-token markup - pricing based on log volume",
           "subscription_fees": "$49/month Production (100K logs, 30-day retention) + $9 per 100K additional",
           "free_tier": "Developer: 10K logs/month, 3-day log retention, 30-day metrics, free forever",
-          "enterprise_options": "Custom: 10M+ logs, SSO, VPC, HIPAA/SOC2, RBAC, custom retention 90+ days. Typical $2K-10K+/month"
+          "enterprise_options": "Custom: 10M+ logs, SSO, VPC, HIPAA/SOC2, RBAC, custom retention 90 days. Typical $2K-10K+/month"
         },
         "failover_and_routing": {
           "capabilities": [
@@ -308,7 +308,7 @@
           "Fine-tuning at scale: full FT, LoRA, DPO",
           "Dedicated Container Inference for generative media",
           "Provisioned Throughput: 99% uptime SLA",
-          "200+ open source models, 68 free models",
+          "22 curated models live",
           "Multi-modal video generation: $0.14-$3.20/video",
           "GPU cluster access: 8-4000+ GPUs (H100, H200, B200)",
           "Cached-input pricing: 5-10x discounts on repeated prompts"
@@ -515,7 +515,7 @@
       },
       {
         "category": "Model Catalog Reality",
-        "insight": "OpenRouter 400+ models/70+ providers, Portkey 1600+ claimed, LiteLLM 1892/140+, Together 200+ (mostly OSS), Cloudflare 20+, OMA-AI 50+ via Venice. Raw counts misleading - Together optimizes fewer models deeply, OpenRouter/LiteLLM aggregate broadly. Quality vs quantity trade-off matters more than count."
+        "insight": "OpenRouter claims 400+ models/70+ providers, Portkey 1600+, LiteLLM 1892/140+, Together 200+ (mostly OSS), Cloudflare 20+, OMA-AI 22 curated models via Venice. Raw counts misleading—OMA-AI surfaces 22 live models."
       },
       {
         "category": "Free Tier Strategies",

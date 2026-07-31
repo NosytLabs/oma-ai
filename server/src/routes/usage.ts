@@ -16,7 +16,7 @@
  */
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, desc, eq, gte, lte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";

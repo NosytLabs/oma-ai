@@ -25,6 +25,7 @@ export interface BetterAuthUser {
 	updatedAt: Date | string;
 	isAnonymous?: boolean | null;
 	evmAddress?: string | null;
+	role?: string | null;
 }
 
 export interface BetterAuthSession {
@@ -49,6 +50,8 @@ export interface UseAuthResult {
 	isReady: boolean;
 	error: Error | null;
 	evmAddress: string | null;
+	role: string | null;
+	isAdmin: boolean;
 	signOut: () => Promise<void>;
 	refresh: () => Promise<void>;
 }
@@ -58,6 +61,7 @@ export function useAuth(): UseAuthResult {
 	const data = (session.data ?? null) as unknown as BetterAuthSession | null;
 	const user = data?.user ?? null;
 	const evmAddress = (user?.evmAddress as string | null | undefined) ?? null;
+	const role = (user?.role as string | null | undefined) ?? null;
 
 	// Better Auth's useSession is client-side. SSR initially has no
 	// session until the first client-side fetch resolves; mark `isReady`
@@ -75,6 +79,8 @@ export function useAuth(): UseAuthResult {
 		isReady,
 		error: session.error as Error | null,
 		evmAddress,
+		role,
+		isAdmin: role === "admin",
 		async signOut() {
 			await betterSignOut();
 		},

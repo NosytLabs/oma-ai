@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 import { ElectricBorder } from "@/components/electric-border";
+import { ModelLogo } from "@/components/ui/model-logo";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import {
 	BreadcrumbListJsonLd,
@@ -298,8 +299,9 @@ export default function PricingPage() {
 					<h1 className="h1-page text-text-bright">Transparent usage pricing for every model.</h1>
 					<p className="page-intro">
 						See model costs first, then choose how to pay. OMA bills per token
-						or per request, with no subscriptions, no lock-in, and no hidden
-						platform fee layered on top of the quoted rates.
+						or per request, with no subscriptions, no lock-in. Base provider
+						rates are shown below — a 25% platform fee is applied at billing
+						for Venice-routed models. Gonka models have no additional fee.
 					</p>
 					<div className="meta-strip">
 							<span>{modelCount + generationModels.length} live models</span>
@@ -436,13 +438,16 @@ export default function PricingPage() {
 												}}
 												className={`border-b border-border/50 transition-colors hover:bg-surface-elevated/50 ${i % 2 === 1 ? "bg-surface-elevated/30" : ""}`}
 											>
-												<td className="px-4 py-3">
+											<td className="px-4 py-3">
+												<div className="flex items-center gap-2">
+													<ModelLogo modelId={mm.id} size={18} />
 													<span className="text-sm font-medium text-text-bright">
 														{mm.name}
 													</span>
-													<span className="ml-2 text-xs text-text-secondary font-mono hidden sm:inline">
-														{mm.id}
-													</span>
+												</div>
+												<span className="ml-7 text-xs text-text-secondary font-mono hidden sm:inline">
+													{mm.id}
+												</span>
 												</td>
 												<td className="px-4 py-3">
 													<span
@@ -476,6 +481,13 @@ export default function PricingPage() {
 							<div className="sm:hidden flex items-center justify-center py-2 text-[10px] sm:text-xs text-text-muted">
 								<span className="font-mono">Swipe to scroll &rarr;</span>
 							</div>
+						</div>
+						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
+							<p className="text-xs text-text-muted">
+								Prices shown are base provider rates. OMA applies a 25% platform
+								fee at billing for Venice models. Gonka-routed models (MiniMax M2.7,
+								Kimi K2.6) have no additional markup.
+							</p>
 						</div>
 					</div>
 				</div>

@@ -8,8 +8,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OmaLogo } from "@/components/ui/oma-logo";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { Magnetic } from "@/components/motion";
-import { EASE_SPRING } from "@/lib/motion";
+import { Magnetic, EASE_SPRING } from "@/lib/animation";
 import { ApiStatus } from "./api-status";
 import {
 	isCurrentPath,
@@ -24,7 +23,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev";
 
 export function Navbar() {
-	const { isAuthenticated, evmAddress, signOut } = useAuth();
+	const { isAuthenticated, evmAddress, signOut, isAdmin } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -203,6 +202,7 @@ export function Navbar() {
 							<NavbarUserMenu
 								evmAddress={evmAddress}
 								onSignOut={signOut}
+								isAdmin={isAdmin}
 							/>
 						) : (
 							<Magnetic strength={6}>

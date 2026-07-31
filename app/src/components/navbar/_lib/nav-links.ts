@@ -6,6 +6,7 @@ import {
 	type LucideIcon,
 	Network,
 	Newspaper,
+	ShieldCheck,
 	Tag,
 	Terminal,
 } from "lucide-react";
@@ -15,6 +16,8 @@ export interface NavItem {
 	label: string;
 	icon: LucideIcon;
 	desc?: string;
+	/** When true, only admins see this link. */
+	adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -61,6 +64,13 @@ export const toolsLinks: NavItem[] = [
 		label: "Changelog",
 		icon: Newspaper,
 		desc: "Release notes",
+	},
+	{
+		href: "/admin",
+		label: "Admin",
+		icon: ShieldCheck,
+		desc: "Operator dashboard",
+		adminOnly: true,
 	},
 ];
 

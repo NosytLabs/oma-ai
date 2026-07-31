@@ -19,6 +19,7 @@ const eslintConfig = [
 			"coverage/**",
 			"next-env.d.ts",
 			"**/*.js",
+			"**/*.cjs",
 			"!*.test.js",
 			"!*.config.js",
 			"scripts/**",

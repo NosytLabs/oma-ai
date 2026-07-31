@@ -22,7 +22,7 @@
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { ThinkingOrb } from "thinking-orbs";
 import {
-	Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, RefreshCw, Search, User,
+	AlertTriangle, Bot, Brain, Check, ChevronDown, ChevronUp, Clock, Copy, RefreshCw, Search, User,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -155,18 +155,17 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
       `}
 		>
 			{/* ─── AVATAR: Glowing orb for assistant, sharp badge for user ─── */}
-			<div className="relative shrink-0">
+<div className="relative shrink-0">
 				<div
 					className={`
-            w-10 h-10 flex items-center justify-center relative z-10
-            ${
+						w-10 h-10 flex items-center justify-center relative z-20
+						${
 							isUser
 								? "bg-accent/15 border border-accent/40 text-accent"
 								: "bg-surface border border-border text-text-muted"
 						}
-          `}
+					`}
 					style={{
-						// User: sharp corners. Assistant: slight radius for softness
 						borderRadius: isUser ? "2px" : "8px",
 					}}
 				>
@@ -208,8 +207,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 			</div>
 
 			{/* ─── MESSAGE BODY ─── */}
-			<div
-				className={`flex flex-col max-w-[min(100%,42rem)] sm:max-w-[80%] ${isUser ? "items-end" : "items-start"}`}
+<div
+					className={`min-w-0 max-w-full flex-1 basis-0 sm:max-w-[80%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
 			>
 				{/* Search Sources */}
 				{msg.searchResults && msg.searchResults.length > 0 && (
@@ -236,7 +235,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				{/* ─── THE BUBBLE ─── */}
 				<div
 					className={`
-            relative px-5 py-4 leading-relaxed font-mono text-sm
+            relative max-w-full min-w-0 px-4 py-4 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-5
             ${
 							isUser
 								? "bg-accent/8 border border-accent/25 text-text border-r-0"
@@ -272,31 +271,40 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					{isUser ? (
 						<p className="whitespace-pre-wrap break-words">{msg.content}</p>
 					) : (
-						<div className="markdown-content font-sans text-[15px] leading-relaxed" aria-live="polite">
-							<ReactMarkdown
-								remarkPlugins={[remarkGfm]}
-								components={{
-									code({ className, children, ...props }) {
-										const match = /language-(\w+)/.exec(className || "");
-										const text = String(children ?? "");
-										const isInline = !match && !text.includes("\n");
-										return isInline ? (
-											<code
-												className="px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-xs"
-												{...props}
-											>
-												{children}
-											</code>
-										) : (
-											<CodeBlock className={className}>
-												{text.replace(/\n$/, "")}
-											</CodeBlock>
-										);
-									},
-								}}
-							>
-								{msg.content}
-							</ReactMarkdown>
+						<div className="markdown-content max-w-full min-w-0 break-words font-sans text-[15px] leading-relaxed [overflow-wrap:anywhere]" aria-live="polite">
+							{/* While the model is still streaming, render plain text —
+							    ReactMarkdown would otherwise emit literal `**` and other
+							    punctuation for partial markdown tokens. We swap to the
+							    markdown renderer the moment streaming ends so the final
+							    answer gets full formatting (bold, code, lists, links). */}
+							{isStreaming ? (
+								<p className="whitespace-pre-wrap break-words">{msg.content}</p>
+							) : (
+								<ReactMarkdown
+									remarkPlugins={[remarkGfm]}
+									components={{
+										code({ className, children, ...props }) {
+											const match = /language-(\w+)/.exec(className || "");
+											const text = String(children ?? "");
+											const isInline = !match && !text.includes("\n");
+											return isInline ? (
+												<code
+													className="px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-xs"
+													{...props}
+												>
+													{children}
+												</code>
+											) : (
+												<CodeBlock className={className}>
+													{text.replace(/\n$/, "")}
+												</CodeBlock>
+											);
+										},
+									}}
+								>
+									{msg.content}
+								</ReactMarkdown>
+							)}
 							{isActivelyStreaming && (
 								<span
 									className="caret-blink inline-block align-baseline"
@@ -323,8 +331,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				{/* ─── METADATA ROW ─── */}
 				<div
 					className={`
-            flex items-center gap-3 mt-2 text-[10px] text-text-muted font-mono
-            ${isUser ? "flex-row-reverse" : "flex-row"}
+            mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted font-mono
+            ${isUser ? "flex-row-reverse" : "flex-row"} select-none
           `}
 				>
 					<span className="opacity-60">{time}</span>
@@ -340,6 +348,15 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							{formatTime(msg.latency)}
 						</span>
 					)}
+					{!isUser && msg.truncated && (
+						<span
+							className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning/10 border border-warning/30 text-warning text-[9px] font-mono uppercase tracking-wider"
+							title="The model hit the max_tokens budget mid-answer. Hit Retry to get a complete response."
+						>
+							<AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
+							Truncated
+						</span>
+					)}
 					{!isUser && msg.content && !loading && (
 						<>
 							<button
@@ -347,7 +364,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								onClick={handleCopy}
 								aria-label={copied ? "Copied to clipboard" : "Copy message"}
 								className="
-                flex items-center gap-1 px-2 py-1 min-h-[32px]
+                flex items-center gap-1 px-2 py-1 min-h-[44px] min-w-[44px]
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
                 hover:text-success transition-all duration-200
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
@@ -362,12 +379,12 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								{copied ? "COPIED" : "COPY"}
 							</button>
 							{isLastAssistant && onRegenerate && (
-								<button
-									type="button"
-									onClick={onRegenerate}
-									aria-label="Regenerate response"
-									className="
-                flex items-center gap-1 px-2 py-1 min-h-[32px]
+<button
+								type="button"
+								onClick={onRegenerate}
+								aria-label="Regenerate response"
+								className="
+                flex items-center gap-1 px-2 py-1 min-h-[44px] min-w-[44px]
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
                 hover:text-accent transition-all duration-200
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
@@ -480,22 +497,25 @@ function CodeBlock({
 	}, [code]);
 
 	return (
-		<div className="relative group my-4">
+		<div className="relative group my-4 w-full min-w-0 max-w-full">
 			{/* Language badge */}
 			{className?.includes("language-") && (
-				<div className="absolute top-0 left-0 px-2 py-1 bg-surface-elevated border-b border-r border-border text-[9px] font-mono text-text-muted uppercase tracking-wider">
+				<div className="absolute top-0 left-0 z-10 px-2 py-1 bg-surface-elevated border-b border-r border-border text-[9px] font-mono text-text-muted uppercase tracking-wider">
 					{className.replace("language-", "")}
 				</div>
 			)}
-			<pre
-				className="
-          bg-void text-text p-4 pt-8 overflow-x-auto text-xs leading-relaxed
-          border border-border font-mono
-          group-hover:border-accent/20 transition-colors duration-300
-        "
-			>
-				<code className={className}>{code}</code>
-			</pre>
+			<div className="chat-scrollbar max-w-full overflow-x-auto">
+				<pre
+					className="
+            block w-max max-w-full min-w-full bg-void text-text p-4 pt-8 text-xs leading-relaxed
+            border border-border font-mono
+            group-hover:border-accent/20 transition-colors duration-300
+            chat-scrollbar
+          "
+				>
+					<code className={className}>{code}</code>
+				</pre>
+			</div>
 			<button
 				type="button"
 				onClick={handleCopy}

@@ -2,7 +2,7 @@
 
 import { m } from "@/lib/framer-motion-client";
 import { Coins, Hexagon } from "lucide-react";
-import { blurIn } from "@/lib/motion";
+import { blurIn } from "@/lib/animation";
 
 export function UnifiedDepositHeader() {
 	return (
