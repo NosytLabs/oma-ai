@@ -17,7 +17,7 @@ import { ScrambleText } from "@/components/scramble-text";
 import { FloatingIcons } from "@/components/floating-icons";
 import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
-import Image from "next/image";
+import { LiveRequestCard } from "./LiveRequestCard";
 import { springs } from "@/lib/animation";
 
 // Entrance animation props. Until the page has been live a moment
@@ -71,7 +71,7 @@ export function Hero() {
 									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
 									aria-hidden="true"
 								/>
-								OpenAI-compatible · Buy credits · Card or USDC
+								OpenAI-compatible · card credits · USDC · x402
 							</span>
 						</m.div>
 
@@ -79,11 +79,11 @@ export function Hero() {
 							{...reveal(1, entrance)}
 							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight"
 						>
-							<span className="block">AI inference,</span>
+							<span className="block">One API.</span>
 							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
-								paid per request,
+								Every model.
 							</span>
-							<span className="block">by card or USDC.</span>
+							<span className="block">Pay your way.</span>
 						</m.h1>
 
 						<m.p
@@ -91,10 +91,9 @@ export function Hero() {
 							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text sm:text-[1.125rem]"
 							style={{ textWrap: "pretty" }}
 						>
-							One gateway, {MODEL_COUNT}+ models underneath. Buy credits with a
-							card via Polar, deposit USDC on Base, or use x402
-							pay-per-request for agents — all through one OpenAI-compatible
-							API.
+							Access {MODEL_COUNT}+ models through one OpenAI-compatible endpoint.
+							Buy credits with Visa, Mastercard, or Apple Pay through Polar,
+							deposit USDC on Base, or let agents pay per request with x402.
 						</m.p>
 
 						<m.div
@@ -142,17 +141,10 @@ export function Hero() {
 							</Link>
 							<Link
 								href="/pricing"
-								className="btn-outline inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"
+								className="group/pricing inline-flex h-12 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold text-text-secondary transition-colors hover:text-accent"
 							>
-								See pricing
-								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-							</Link>
-							<Link
-								href="/models"
-								className="group/vlm inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-2 text-[12px] font-mono text-text-muted transition-colors hover:text-text-bright whitespace-nowrap"
-							>
-								Live Models · {MODEL_COUNT}+
-								<ArrowRight className="h-3 w-3 text-accent transition-transform duration-200 group-hover/vlm:translate-x-0.5" aria-hidden="true" />
+								Pricing
+								<ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/pricing:translate-x-0.5" aria-hidden="true" />
 							</Link>
 						</m.div>
 
@@ -178,7 +170,12 @@ export function Hero() {
 							</li>
 							<li className="inline-flex items-center gap-1.5">
 								<span className="h-1 w-1 rounded-full bg-tertiary" />
-								Account number login
+								<Link
+									href="/models"
+									className="text-text-secondary transition-colors hover:text-accent"
+								>
+									{MODEL_COUNT}+ live models
+								</Link>
 							</li>
 							<li className="inline-flex items-center gap-1.5">
 								<span className="h-1 w-1 rounded-full bg-tertiary" />
@@ -200,62 +197,7 @@ export function Hero() {
 							aria-hidden="true"
 							className="absolute -inset-4 rounded-2xl bg-accent/[0.06] blur-2xl"
 						/>
-						<div className="relative overflow-hidden rounded-xl border border-border-hi bg-surface-elevated/90 shadow-xl backdrop-blur-sm">
-							<div className="border-b border-border p-3">
-								<div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-border bg-panel">
-									<Image
-										src="/og-image.webp"
-										alt="OMA AI inference gateway preview"
-										width={1280}
-										height={720}
-										priority
-										fetchPriority="high"
-										sizes="(min-width: 1024px) 32rem, 100vw"
-										className="h-full w-full object-cover"
-									/>
-									<div
-										aria-hidden="true"
-										className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-void/60 via-transparent to-accent/10"
-									/>
-								</div>
-							</div>
-							<div className="flex items-center gap-2 border-b border-border px-4 py-3">
-								<span className="h-2 w-2 rounded-full bg-error/80" />
-								<span className="h-2 w-2 rounded-full bg-warning/80" />
-								<span className="h-2 w-2 rounded-full bg-success/80" />
-								<span className="ml-2 font-mono text-[11px] text-text-muted">
-									POST /v1/chat/completions
-								</span>
-								<span className="ml-auto rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] text-accent">
-									200 OK · 142ms
-								</span>
-							</div>
-							<pre className="max-w-full overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
-								<code className="block w-max min-w-full">
-									<span className="text-info">curl</span> https://api.oma-ai.com
-									/v1/chat/completions \{"\n"}
-									{"  "}
-									<span className="text-text-muted">-H</span>{" "}
-									<span className="text-[var(--color-secondary)]">
-										&quot;Authorization: Bearer $OMA_KEY&quot;
-									</span>{" "}
-									\{"\n"}
-									{"  "}
-									<span className="text-text-muted">-d</span>{" "}
-									<span className="text-[var(--color-secondary)]">
-										&apos;{`{"model":"llama-3.3-70b","messages":[...]}`}&apos;
-									</span>
-									{"\n\n"}
-									<span className="text-text-muted">
-										{"// billed in USDC · settled on Base"}
-									</span>
-									{"\n"}
-									<span className="text-accent">
-										{`{ "id": "chatcmpl_…", "usage": { "total_tokens": 87 } }`}
-									</span>
-								</code>
-							</pre>
-						</div>
+						<LiveRequestCard className="relative" />
 					</m.div>
 				</div>
 			</div>

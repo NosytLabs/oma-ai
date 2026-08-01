@@ -50,8 +50,8 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] = 
 	},
 	{
 		label: "Auth",
-		value: "SIWE",
-		hint: "wallet or account number",
+		value: "2 ways",
+		hint: "magic link or SIWE wallet",
 	},
 	{
 		label: "Settlement",

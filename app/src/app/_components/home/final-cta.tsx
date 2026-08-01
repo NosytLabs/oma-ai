@@ -31,9 +31,9 @@ export function FinalCTA() {
 								</span>
 							</h2>
 							<p className="text-lg text-text-secondary max-w-xl leading-relaxed">
-								Card, wallet, or account number — credits land instantly and
-								one OpenAI-compatible API does the rest. First call in under a
-								minute.
+								Buy credits by card through Polar or deposit USDC on Base. One
+								OpenAI-compatible API handles every model, with x402 available for
+								agent-native payments.
 							</p>
 						</div>
 
@@ -55,10 +55,10 @@ export function FinalCTA() {
 									</Link>
 								</ElectricBorder>
 								<Link
-									href="/login?method=account"
+									href="/pricing"
 									className="btn-secondary inline-flex min-h-12 items-center gap-2 px-5 text-[14px]"
 								>
-									Account number
+									View pricing
 								</Link>
 							</div>
 							<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted font-mono lg:justify-end">

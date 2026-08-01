@@ -13,11 +13,11 @@ import { rateLimit } from "../../middleware/rate-limit.js";
 import { getModelById, listAllModels } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
 import {
-  callProvider,
   parseNonStreamingResponse,
   ProviderError,
   estimateTokens,
   flattenMessageContent,
+  routeRequestWithFallback,
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
 
@@ -313,7 +313,6 @@ anthropicRoutes.post(
     }
 
     const userId = c.get("userId");
-    const pricing = getModelPricing(model);
     const requestId = `msg_${crypto.randomUUID()}`;
 
     const openAIMessages = toOpenAIMessages(messages, system);
@@ -321,7 +320,7 @@ anthropicRoutes.post(
     const promptTokens = estimateTokens(promptText);
 
     try {
-      const upstreamResp = await callProvider({
+      const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
         modelId: model,
         messages: openAIMessages,
         stream,
@@ -334,24 +333,31 @@ anthropicRoutes.post(
         requestId,
       });
 
+      const actualModelDef = getModelById(actualModelId) || modelDef;
+      const actualPricing = getModelPricing(actualModelId);
+
+      // Set OMA custom response headers to indicate routing & fallback choice
+      c.header("x-provider", actualModelDef.provider);
+      c.header("x-actual-model", actualModelId);
+
       if (stream) {
         c.header("Content-Type", "text/event-stream");
         c.header("Cache-Control", "no-cache, no-transform");
         c.header("X-Accel-Buffering", "no");
-        const anthropicStream = createAnthropicStream(upstreamResp, model, requestId);
+        const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId);
         return c.body(anthropicStream, 200);
       }
 
       const { data } = await parseNonStreamingResponse(upstreamResp, {
         userId,
-        model,
-        provider: modelDef.provider as "venice" | "gonka",
+        model: actualModelId,
+        provider: actualModelDef.provider as "venice" | "gonka",
         promptTokens,
-        pricing,
+        pricing: actualPricing,
         requestId,
       });
 
-      const anthropicMsg = toAnthropicMessage(data, model, requestId);
+      const anthropicMsg = toAnthropicMessage(data, actualModelId, requestId);
       return c.json(anthropicMsg);
     } catch (err) {
       if (err instanceof ProviderError) {

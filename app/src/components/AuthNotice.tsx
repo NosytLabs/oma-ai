@@ -40,8 +40,8 @@ export function AuthNotice() {
 
 	const message =
 		auth === "expired"
-			? `Your session expired. Sign in with your wallet or account number to continue to ${targetLabel}.`
-			: `Sign in with your wallet or private account number to continue to ${targetLabel}.`;
+			? `Your session expired. Sign in by email or wallet to continue to ${targetLabel}.`
+			: `Sign in by email or wallet to continue to ${targetLabel}.`;
 
 	const dismiss = () => {
 		const url = new URL(window.location.href);

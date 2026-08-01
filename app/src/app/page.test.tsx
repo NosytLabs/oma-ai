@@ -118,9 +118,8 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		// Headline is split across elements: "AI inference, paid per request in USDC."
-		expect(h1.textContent).toMatch(/paid per request/i);
-		expect(h1.textContent).toMatch(/USDC/i);
+		expect(h1.textContent).toMatch(/Every model/i);
+		expect(h1.textContent).toMatch(/One API/i);
 	});
 
 	it("renders the primary CTA", async () => {
@@ -164,8 +163,8 @@ describe("HomePage", () => {
 	it("renders the how-it-works steps", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/sign in with wallet/i)).toBeInTheDocument();
-			expect(screen.getByText(/pay per call with usdc/i)).toBeInTheDocument();
+			expect(screen.getByText(/create your account/i)).toBeInTheDocument();
+			expect(screen.getByText(/fund credits or use x402/i)).toBeInTheDocument();
 		});
 		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});

@@ -126,7 +126,11 @@ function LineRow({ line }: { line: Line }) {
 
 	if (line.kind === "code") {
 		return (
-			<pre className="mx-3 my-2 overflow-x-auto rounded-md border border-border bg-void p-3 font-mono text-[11px] leading-relaxed text-text-secondary">
+			<pre
+				tabIndex={0}
+				aria-label="Code example output"
+				className="mx-3 my-2 overflow-x-auto rounded-md border border-border bg-void p-3 font-mono text-[11px] leading-relaxed text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent"
+			>
 				<code>{line.text}</code>
 			</pre>
 		);
@@ -177,7 +181,7 @@ export function AgentSessionDemo({ className }: { className?: string }) {
 			</div>
 
 			<div
-				className="max-h-[min(420px,55vh)] overflow-y-auto py-1"
+				className="max-h-[min(420px,55vh)] overflow-y-auto py-1 focus:outline-none focus:ring-1 focus:ring-accent"
 				role="region"
 				aria-label="Agent session demo transcript"
 				tabIndex={0}

@@ -202,6 +202,117 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
   return upstreamResp;
 }
 
+export const FALLBACK_MAP: Record<string, string[]> = {
+  // Frontier
+  "claude-opus-5": ["openai-gpt-56-sol", "claude-sonnet-5"],
+  "openai-gpt-56-sol": ["claude-opus-5", "claude-sonnet-5"],
+  
+  // Premium
+  "claude-sonnet-5": ["openai-gpt-54", "kimi-k3", "openai-gpt-52"],
+  "openai-gpt-54": ["claude-sonnet-5", "kimi-k3", "openai-gpt-52"],
+  "kimi-k3": ["claude-sonnet-5", "openai-gpt-54", "grok-4-5"],
+  "openai-gpt-52": ["openai-gpt-54", "grok-4-5"],
+  "grok-4-5": ["openai-gpt-54", "claude-sonnet-5"],
+  "zai-org-glm-5-2": ["grok-4-5", "claude-sonnet-5"],
+
+  // Mid
+  "deepseek-v4-pro": ["qwen-3-7-plus", "gemini-3-5-flash", "kimi-k2.6"],
+  "gemini-3-5-flash": ["deepseek-v4-pro", "qwen-3-7-plus", "kimi-k2.6"],
+  "gemini-3-flash-preview": ["deepseek-v4-flash", "mistral-small-2603"],
+  "llama-3.3-70b": ["deepseek-v4-pro", "qwen-3-7-plus"],
+  "zai-org-glm-5-1": ["deepseek-v4-pro", "gemini-3-5-flash"],
+  "qwen3-coder-480b-a35b-instruct-turbo": ["qwen-3-7-plus", "deepseek-v4-pro"],
+  "qwen-3-7-plus": ["deepseek-v4-pro", "gemini-3-5-flash", "kimi-k2.6"],
+
+  // Budget
+  "deepseek-v4-flash": ["mistral-small-2603", "xiaomi-mimo-v2-5", "minimax-m2.7"],
+  "mistral-small-2603": ["deepseek-v4-flash", "xiaomi-mimo-v2-5", "minimax-m2.7"],
+  "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "minimax-m2.7"],
+  "qwen3-235b-a22b-instruct-2507": ["deepseek-v4-flash", "minimax-m2.7"],
+  "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
+
+  // Gonka Free Models
+  "minimax-m2.7": ["kimi-k2.6", "deepseek-v4-flash"],
+  "kimi-k2.6": ["minimax-m2.7", "deepseek-v4-flash"],
+};
+
+/**
+ * Intelligent Router — routes a requested model with automatic retries (exponential backoff)
+ * and failover to comparable fallback models when errors occur.
+ */
+export async function routeRequestWithFallback(
+  opts: CallProviderOptions,
+): Promise<{ response: Response; actualModelId: string }> {
+  const modelId = opts.modelId;
+  const fallbacks = [modelId, ...(FALLBACK_MAP[modelId] || [])];
+
+  let lastError: Error | null = null;
+
+  for (const currentModelId of fallbacks) {
+    let attempt = 0;
+    const maxRetries = 3;
+    const modelDef = getModelById(currentModelId);
+    if (!modelDef) continue;
+
+    while (attempt <= maxRetries) {
+      try {
+        const response = await callProvider({
+          ...opts,
+          modelId: currentModelId,
+        });
+
+        if (currentModelId !== modelId) {
+          logger.info(
+            { originalModel: modelId, actualModel: currentModelId, requestId: opts.requestId },
+            "[router] Fallback model selected successfully",
+          );
+        }
+
+        return { response, actualModelId: currentModelId };
+      } catch (err: any) {
+        attempt++;
+        lastError = err;
+
+        // Transient errors include server errors (5xx) or rate limits (429)
+        const isTransient =
+          err &&
+          (err.status >= 500 || err.status === 429);
+
+        const isNetworkError =
+          !err ||
+          !err.status ||
+          err.message?.includes("unreachable") ||
+          err.message?.includes("timeout") ||
+          err.message?.includes("fetch failed");
+
+        if (attempt <= maxRetries && (isTransient || isNetworkError)) {
+          // Exponential backoff with random jitter: 100ms * 2^attempt, plus up to 50ms random jitter
+          const baseDelay = 100 * Math.pow(2, attempt - 1);
+          const jitter = Math.random() * 50;
+          const delay = Math.min(baseDelay + jitter, 2000);
+          logger.warn(
+            { modelId: currentModelId, attempt, delay, error: err?.message || String(err) },
+            "[router] Transient error calling model. Retrying after backoff...",
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Non-transient errors (like 400, 401, 403, 404), or exhausted retries:
+        // log and break to try the next fallback model.
+        logger.error(
+          { modelId: currentModelId, error: err?.message || String(err), status: err?.status },
+          "[router] Error not retryable or exhausted retries on model.",
+        );
+        break;
+      }
+    }
+  }
+
+  // If all fallbacks failed, throw the last observed error
+  throw lastError || new ProviderError("Model routing failed on all fallback attempts", 502);
+}
+
 export interface RecordUsageArgs {
   userId: string;
   model: string;

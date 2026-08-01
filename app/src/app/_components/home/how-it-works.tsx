@@ -23,9 +23,9 @@ interface Step {
 const STEPS: Step[] = [
 	{
 		n: "01",
-		title: "Sign in with wallet",
+		title: "Create your account",
 		description:
-			"Connect any EVM wallet via SIWE. Low-friction signup — no email, no password. A private account number is issued on first request.",
+			"Use a passwordless email link or sign in with an EVM wallet via SIWE. No password to remember.",
 		icon: Wallet,
 	},
 	{
@@ -37,9 +37,9 @@ const STEPS: Step[] = [
 	},
 	{
 		n: "03",
-		title: "Pay per call with USDC",
+		title: "Fund credits or use x402",
 		description:
-			"Top up with USDC on Base or skip ahead with x402 per-request payments. Metered by token, billed in real-time.",
+			"Buy credits by card through Polar, deposit USDC on Base, or let an agent settle each request with x402.",
 		icon: Rocket,
 	},
 ];
@@ -61,7 +61,7 @@ export function HowItWorks() {
 								<span className="gradient-text-accent">honest steps.</span>
 							</>
 						}
-						subhead="No credit card, no sales call, no SDK migration. The first request lands in under sixty seconds."
+						subhead="No sales call and no SDK migration. Sign in, fund credits your way, and send the first request in minutes."
 					/>
 				</Reveal>
 

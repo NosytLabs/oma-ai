@@ -9,7 +9,7 @@
 - API base URL: `https://api.oma-ai.com/v1`
 - OpenAI-compatible: drop-in for `openai-python`, `openai-node`, Vercel AI SDK,
   LangChain, raw `fetch`, and any HTTP client.
-- Auth: SIWE wallet, account number, API keys, and per-request x402 payments.
+- Auth: Magic link email, SIWE wallet, and API keys. x402 pay-per-request supported.
 - Brand: Open Model Access · accent `#46d39a` · void `#07090a`
 
 ## Documentation
@@ -43,26 +43,16 @@
 | `/v1/deposit/status` | GET | Deposit status |
 | `/health` | GET | Liveness probe |
 | `/x402/verify` | POST | Verify x402 payment receipt |
-| `/x402/settle` | POST | Settle x402 payment (session auth) |
-| `/auth/csrf-token` | GET/POST | Get CSRF token (required before mutations) |
-| `/auth/nonce` | POST | Get SIWE nonce for wallet |
-| `/auth/verify` | POST | Verify SIWE signature, start session |
-| `/auth/account/create` | POST | Create account (returns session + account number) |
-| `/auth/account/login` | POST | Login with account number |
-| `/auth/wallet` | POST | Bind additional wallet to account |
-| `/auth/logout` | POST | End session |
 | `/keys` | GET | List API keys (session auth) |
 | `/keys` | POST | Create API key (returns `oma_sk_...` once) |
 | `/keys/:id` | DELETE | Revoke API key |
-| `/keys/:id` | PATCH | Update key rate limits / expiry |
-| `/keys/:id/allowlist` | GET/PATCH | Model allowlist per key |
 
 ## Authentication
 Three modes, all served by the same endpoints:
 
 1. **API key** — `Authorization: Bearer $OMA_KEY`. Low-friction signup at
    [oma-ai.com/login](https://oma-ai.com/login).
-2. **Wallet (SIWE)** — wallet-based session; no email required.
+2. **Session** — cookie-based session for browser chat (magic link or SIWE wallet).
 3. **x402 pay-per-request** — agent-native USDC settlement on Base. No
    pre-funded account required for single-shot agent calls.
 

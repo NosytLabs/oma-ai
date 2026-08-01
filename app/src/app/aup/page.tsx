@@ -5,10 +5,8 @@
 
 import {
 	ArrowLeft,
-	CircleAlert,
 	CircleX,
 	Lock,
-	Shield,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -151,7 +149,7 @@ export default function AupPage() {
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
 										We do not permit the generation of malicious code, deceptive spam, illegal
 										content, CSAM, state-sponsored cyberattacks, or actions attempting to DDoS or
-										bypass OMA's credit or settlement systems. Violating these rules results in
+										bypass OMA&apos;s credit or settlement systems. Violating these rules results in
 										immediate account suspension and credit forfeiture.
 									</p>
 								</div>

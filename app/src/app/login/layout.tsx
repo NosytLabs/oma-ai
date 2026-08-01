@@ -3,9 +3,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Sign in to OMA — wallet or account number",
+	title: "Sign in to OMA — email or wallet",
 	description:
-		"Sign in with SIWE on Base or a private 16-digit account number. No email, no password — pay for AI inference in USDC.",
+		"Sign in with a passwordless email link or SIWE on Base. Buy AI inference credits by card through Polar or deposit USDC.",
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 };

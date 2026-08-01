@@ -89,26 +89,4 @@ export const auth = {
   }> {
     return request("/v1/history", { method: "DELETE" });
   },
-
-  /**
-   * Resolve a 16-digit account number to the wallet address that owns
-   * it. Returns `null` for unknown numbers (404 from the server).
-   * Used by the account-number sign-in shortcut on /login.
-   */
-  async lookupAccount(accountNumber: string): Promise<{
-    accountNumber: string;
-    evmAddress: string;
-  } | null> {
-    try {
-      return await request<{ accountNumber: string; evmAddress: string }>(
-        `/auth/account/lookup`,
-        {
-          method: "POST",
-          body: JSON.stringify({ accountNumber }),
-        },
-      );
-    } catch {
-      return null;
-    }
-  },
 };

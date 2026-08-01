@@ -1,4 +1,4 @@
-import { CheckCircle2, Key, Shield } from "lucide-react";
+import { Key, Mail, Shield } from "lucide-react";
 import { AnimatedSection, SectionHeading, TabbedCode } from "./shared";
 
 export function AuthenticationSection() {
@@ -103,6 +103,27 @@ func main() {
 				</div>
 			</div>
 
+			{/* ── Email Magic Link Auth ── */}
+			<div id="auth-magic" className="mt-8 scroll-mt-24">
+				<h3 className="text-lg font-semibold text-text font-display flex items-center gap-2 mb-3">
+					<Mail className="h-5 w-5 text-accent" />
+					Email Magic Link
+				</h3>
+				<p className="text-sm text-text-muted mb-4">
+					Sign in with a passwordless magic link sent to your inbox. No password to leak,
+					no password reset loops. 
+				</p>
+				<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+					<h3 className="font-semibold text-accent text-sm mb-2">How it works</h3>
+					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
+						<li>Enter your email address on the login page</li>
+						<li>Click the link sent to your inbox within 5 minutes</li>
+						<li>Your API key is generated automatically on first sign-in</li>
+						<li>Credits can be added via card (Polar) or USDC (Base) in your dashboard</li>
+					</ol>
+				</div>
+			</div>
+
 			{/* ── Wallet (SIWE) Auth ── */}
 			<div id="auth-wallet" className="mt-8 scroll-mt-24">
 				<h3 className="text-lg font-semibold text-text font-display flex items-center gap-2 mb-3">
@@ -124,47 +145,7 @@ func main() {
 				</div>
 			</div>
 
-			{/* ── Account Number Login ── */}
-			<div id="auth-account" className="mt-8 scroll-mt-24">
-				<h3 className="text-lg font-semibold text-text font-display flex items-center gap-2 mb-3">
-					<Key className="h-5 w-5 text-accent" />
-					Account Number Login
-				</h3>
-				<p className="text-sm text-text-muted mb-4">
-					No wallet? No problem. Account creation takes no username, email, or
-					password — the server allocates a random 16-digit account number that
-					is your credential, linked to your API key. Credits are managed via
-					USDC deposits to your on-chain address.
-				</p>
-				<div className="grid gap-4 sm:grid-cols-2 mb-4">
-					<div className="rounded-xl border border-border bg-surface/50 p-4">
-						<h3 className="font-semibold text-text text-sm mb-2">Flow</h3>
-						<ol className="list-decimal list-inside space-y-1 text-sm text-text-muted">
-							<li>Create an account via the login page</li>
-							<li>Receive a unique 16-digit account number (e.g. <code className="text-accent font-mono text-xs">1234 5678 9012 3456</code>) — keep it secret</li>
-							<li>Deposit USDC on Base to your on-chain address</li>
-							<li>Use the generated API key with any OpenAI-compatible SDK</li>
-						</ol>
-					</div>
-					<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
-						<h3 className="font-semibold text-accent text-sm mb-2">When to use</h3>
-						<ul className="space-y-1 text-sm text-text-muted">
-							<li className="flex items-start gap-2">
-								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-								AI agents running in server environments
-							</li>
-							<li className="flex items-start gap-2">
-								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-								Teams without crypto wallets
-							</li>
-							<li className="flex items-start gap-2">
-								<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-								Automated CI/CD pipelines
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
+
 		</AnimatedSection>
 	);
 }

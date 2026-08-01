@@ -21,6 +21,8 @@ import { RateLimitsSection } from "./sections/rate-limits";
 import { SDKsSection } from "./sections/sdks";
 import { StreamingSection } from "./sections/streaming";
 import { X402Section } from "./sections/x402";
+import { FAQSection } from "./sections/faq";
+import { GlossarySection } from "./sections/glossary";
 
 /* ==================== SIDEBAR ==================== */
 
@@ -210,6 +212,8 @@ function DocsContent() {
 						<PricingSection />
 						<X402Section />
 						<SDKsSection />
+						<FAQSection />
+						<GlossarySection />
 						<ErrorsSection />
 					</div>
 				</div>

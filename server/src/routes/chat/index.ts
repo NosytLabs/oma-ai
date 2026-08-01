@@ -34,12 +34,12 @@ import { getModelPricing } from "../../inference/billing-service.js";
 import { usageRecords } from "../../db/schema.js";
 import { db } from "../../db/client.js";
 import {
-  callProvider,
   createStreamingProxy,
   parseNonStreamingResponse,
   ProviderError,
   estimateTokens,
   flattenMessageContent,
+  routeRequestWithFallback,
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
 
@@ -120,7 +120,6 @@ chatRoutes.post(
       );
     }
 
-    const pricing = getModelPricing(model);
     // 2026-07-30: idempotency-key support. If the client sends an
     // Idempotency-Key header (OpenAI / Anthropic convention) or
     // `idempotency_key` in the JSON body, and we've already processed
@@ -173,7 +172,7 @@ chatRoutes.post(
     const promptTokens = estimateTokens(promptText);
 
     try {
-      const upstreamResp = await callProvider({
+      const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
         modelId: model,
         messages: messages.map((m) => ({
           role: m.role,
@@ -191,16 +190,23 @@ chatRoutes.post(
         skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat
       });
 
+      const actualModelDef = getModelById(actualModelId) || modelDef;
+      const actualPricing = getModelPricing(actualModelId);
+
+      // Set OMA custom response headers to indicate routing & fallback choice
+      c.header("x-provider", actualModelDef.provider);
+      c.header("x-actual-model", actualModelId);
+
       if (stream) {
         c.header("Content-Type", "text/event-stream");
         c.header("Cache-Control", "no-cache, no-transform");
         c.header("X-Accel-Buffering", "no");
         const proxyStream = createStreamingProxy(upstreamResp, {
           userId: userId ?? "anonymous",
-          model,
-          provider: modelDef.provider as "venice" | "gonka",
+          model: actualModelId,
+          provider: actualModelDef.provider as "venice" | "gonka",
           promptTokens,
-          pricing,
+          pricing: actualPricing,
           requestId,
           skipBilling: isFreeWebsiteChat,
         });
@@ -209,10 +215,10 @@ chatRoutes.post(
 
       const { data } = await parseNonStreamingResponse(upstreamResp, {
         userId: userId ?? "anonymous",
-        model,
-        provider: modelDef.provider as "venice" | "gonka",
+        model: actualModelId,
+        provider: actualModelDef.provider as "venice" | "gonka",
         promptTokens,
-        pricing,
+        pricing: actualPricing,
         requestId,
         skipBilling: isFreeWebsiteChat,
       });

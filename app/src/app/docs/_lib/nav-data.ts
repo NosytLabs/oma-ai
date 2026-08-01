@@ -2,9 +2,11 @@ import type { LucideIcon } from "lucide-react";
 import {
 	AlertCircle,
 	BookOpen,
+	Book,
 	DollarSign,
 	Gauge,
 	GitBranch,
+	HelpCircle,
 	Key,
 	Package,
 	Play,
@@ -55,8 +57,8 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "auth-key", label: "API key" },
+			{ id: "auth-magic", label: "Email Magic Link" },
 			{ id: "auth-wallet", label: "Wallet Auth (SIWE)" },
-			{ id: "auth-account", label: "Account number" },
 		],
 	},
 	{
@@ -236,6 +238,24 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "sdk-stream", label: "Streaming" },
 			{ id: "sdk-models", label: "List Models" },
 			{ id: "sdk-vercel", label: "Vercel AI SDK" },
+		],
+	},
+	{
+		id: "faq",
+		label: "FAQ",
+		icon: HelpCircle,
+		keywords: ["faq", "question", "help", "newcomer", "support"],
+		headings: [
+			{ id: "faq", label: "General Questions" },
+		],
+	},
+	{
+		id: "glossary",
+		label: "Glossary",
+		icon: Book,
+		keywords: ["glossary", "terms", "definitions", "dictionary"],
+		headings: [
+			{ id: "glossary", label: "Definitions" },
 		],
 	},
 	{

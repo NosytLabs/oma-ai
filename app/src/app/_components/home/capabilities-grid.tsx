@@ -8,24 +8,11 @@ import {
 	MessageSquare,
 	ShieldCheck,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Reveal, RevealStagger, childFadeUp } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/components/ui/utils";
 import { m } from "@/lib/framer-motion-client";
-
-const AgentSessionDemo = dynamic(
-	() =>
-		import("@/components/marketing/AgentSessionDemo").then(
-			(mod) => mod.AgentSessionDemo,
-		),
-	{
-		ssr: false,
-		loading: () => <Skeleton className="h-[380px] w-full rounded-xl" />,
-	},
-);
 
 interface Capability {
 	title: string;
@@ -64,16 +51,10 @@ const CAPABILITIES: Capability[] = [
 
 const SUPPORT_CAPABILITIES: Capability[] = [
 	{
-		title: "OpenAI-compatible chat",
+		title: "OpenAI-compatible",
 		description:
-			"Use the familiar chat completions surface with streaming, JSON-schema tools, and real models like GLM 4.7, Qwen 3.7 Max, and Venice Uncensored 1.2.",
+			"Keep your existing SDK. Change the base URL, choose a model, and stream responses with tool calling through one stable interface.",
 		icon: MessageSquare,
-	},
-	{
-		title: "Private by default",
-		description:
-			"Zero retention on prompt content, with a self-hosted option when your team needs full control.",
-		icon: ShieldCheck,
 	},
 ];
 
@@ -99,50 +80,24 @@ export function CapabilitiesGrid() {
 					/>
 				</Reveal>
 
-				<RevealStagger className="mt-14 space-y-4">
+				<RevealStagger className="mt-12 space-y-4">
 					<m.div
-						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
+						className="grid grid-cols-1 gap-4 md:grid-cols-3"
 						variants={childFadeUp}
 					>
-						<div className="md:col-span-8 md:row-span-2">
-							<LLMChatHero capability={CAPABILITIES[0]} />
-						</div>
-						<div className="md:col-span-4">
-							<PolarCtaCard />
-						</div>
-						<div className="md:col-span-4">
-							<UsdcBillingCard />
-						</div>
+						{CAPABILITIES.map((capability) => (
+							<LLMChatHero key={capability.title} capability={capability} />
+						))}
 					</m.div>
 
 					<m.div
-						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
+						className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
 						variants={childFadeUp}
 					>
-						<div className="md:col-span-8 md:row-span-2">
-							<LLMChatHero capability={CAPABILITIES[1]} />
-						</div>
-						<div className="md:col-span-4">
-							<AgentSessionCard />
-						</div>
-						<div className="md:col-span-4">
-							<X402DetailsCard />
-						</div>
-					</m.div>
-
-					<m.div
-						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
-						variants={childFadeUp}
-					>
-						<div className="md:col-span-8 md:row-span-2">
-							<LLMChatHero capability={CAPABILITIES[2]} />
-						</div>
-						<div className="md:col-span-4">
-							<CapabilityCard capability={SUPPORT_CAPABILITIES[0]} />
-						</div>
-						<div className="md:col-span-4">
-							<CapabilityCard capability={SUPPORT_CAPABILITIES[1]} />
-						</div>
+						<PolarCtaCard />
+						<UsdcBillingCard />
+						<X402DetailsCard />
+						<CapabilityCard capability={SUPPORT_CAPABILITIES[0]} />
 					</m.div>
 				</RevealStagger>
 			</div>
@@ -157,15 +112,16 @@ function LLMChatHero({ capability }: { capability: Capability }) {
 			whileHover={{ y: -4 }}
 			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
 			className={cn(
-				"relative h-full overflow-hidden",
-				"rounded-[var(--radius-md)] p-7 sm:p-8",
-				"bg-gradient-to-br from-[color-mix(in_srgb,var(--color-accent)_14%,var(--color-panel))] via-[var(--color-panel)] to-[var(--color-panel)]",
-				"border border-[color-mix(in_srgb,var(--color-accent)_30%,var(--color-border))]",
-				"min-h-[280px] md:min-h-[320px] tilt-card sheen",
+				"group relative h-full overflow-hidden",
+				"rounded-[var(--radius-lg)] p-6",
+				"bg-gradient-to-br from-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] via-[var(--color-panel)] to-[var(--color-panel)]",
+				"border border-[color-mix(in_srgb,var(--color-accent)_28%,var(--color-border))]",
+				"min-h-[260px] tilt-card sheen",
+				"transition-shadow duration-300 group-hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)]",
 			)}
 		>
 			<div
-				className="absolute inset-0 -z-10 opacity-30"
+				className="absolute inset-0 -z-10 opacity-30 transition-opacity duration-500 group-hover:opacity-50"
 				style={{
 					background:
 						"radial-gradient(ellipse at 90% 0%, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent 60%)",
@@ -177,18 +133,27 @@ function LLMChatHero({ capability }: { capability: Capability }) {
 				aria-hidden="true"
 				className="absolute inset-0 -z-10 bg-grid opacity-[0.18] mask-radial"
 			/>
+			{/* Animated corner tick — gives the card a "live" feel */}
+			<span
+				aria-hidden="true"
+				className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.07] px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-accent"
+			>
+				<span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+				live
+			</span>
 			<div className="flex items-start gap-4">
 				<div
 					className={cn(
-						"flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)]",
+						"flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
 						"bg-accent text-[var(--color-accent-fg)]",
+						"shadow-[0_8px_24px_-12px_var(--color-accent-glow)]",
 					)}
 				>
 					<Icon className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
 				</div>
 				<div className="flex-1 min-w-0">
 					<div className="flex flex-wrap items-center gap-2">
-						<h3 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-text-bright">
+						<h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-text-bright">
 							{capability.title}
 						</h3>
 						{capability.badge && (
@@ -197,7 +162,7 @@ function LLMChatHero({ capability }: { capability: Capability }) {
 							</span>
 						)}
 					</div>
-					<p className="mt-3 text-base text-text leading-relaxed max-w-xl">
+					<p className="mt-3 text-[15px] text-text leading-relaxed max-w-xl">
 						{capability.description}
 					</p>
 					{capability.example && (
@@ -217,26 +182,26 @@ function PolarCtaCard() {
 		<Link
 			href="/deposit?method=card"
 			aria-label="Buy credits with a card via Polar"
-			className="group relative flex h-full min-h-[280px] md:min-h-[320px] flex-col overflow-hidden rounded-[var(--radius-md)] border-2 border-accent bg-[color-mix(in_srgb,var(--color-accent)_10%,var(--color-panel))] p-6 sm:p-7"
+			className="group relative flex h-full min-h-[250px] flex-col overflow-hidden rounded-[var(--radius-lg)] border-2 border-accent bg-[color-mix(in_srgb,var(--color-accent)_10%,var(--color-panel))] p-6 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_var(--color-accent-glow)] active:scale-[0.99]"
 		>
-			<span className="absolute top-3 right-3 rounded-full bg-accent px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--color-accent-fg)]">
+			<span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.16em] text-[var(--color-accent-fg)]">
 				New
 			</span>
 			<div
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10 opacity-50"
+				className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-70"
 				style={{
 					background:
 						"radial-gradient(circle at 70% 100%, color-mix(in srgb, var(--color-accent) 35%, transparent), transparent 65%)",
 				}}
 			/>
-			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-sm)] bg-accent text-[var(--color-accent-fg)]">
+			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-accent text-[var(--color-accent-fg)] shadow-[0_8px_24px_-12px_var(--color-accent-glow)]">
 				<Banknote className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-5 font-heading text-2xl font-bold tracking-tight text-text-bright">
 				Pay with card
 			</h3>
-			<p className="mt-3 text-sm text-text leading-relaxed">
+			<p className="mt-3 text-[14px] text-text leading-relaxed">
 				Buy credits via Polar with Visa, Mastercard, or Apple Pay. Credits land the
 				moment the payment settles.
 			</p>
@@ -248,7 +213,7 @@ function PolarCtaCard() {
 						aria-hidden="true"
 					/>
 				</span>
-				<span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+				<span className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted">
 					via Polar
 				</span>
 			</div>
@@ -262,51 +227,40 @@ function UsdcBillingCard() {
 			whileHover={{ y: -4 }}
 			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
 			className={cn(
-				"relative h-full overflow-hidden",
-				"rounded-[var(--radius-md)]",
+				"group relative h-full overflow-hidden",
+				"rounded-[var(--radius-lg)]",
 				"border border-[color-mix(in_srgb,var(--color-info)_28%,var(--color-border))]",
 				"bg-[color-mix(in_srgb,var(--color-info)_8%,var(--color-panel))]",
-				"p-6 sm:p-7 min-h-[260px] flex flex-col",
+				"p-6 min-h-[250px] flex flex-col",
+				"transition-shadow duration-300 group-hover:shadow-[0_24px_60px_-30px_color-mix(in_srgb,var(--color-info)_60%,transparent)]",
 			)}
 		>
 			<div
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10 opacity-40"
+				className="pointer-events-none absolute inset-0 -z-10 opacity-40 transition-opacity duration-500 group-hover:opacity-55"
 				style={{
 					background:
 						"radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--color-info) 25%, transparent), transparent 60%)",
 				}}
 			/>
-			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-sm)] bg-info/15 text-info">
+			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-info/15 text-info">
 				<Coins className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-5 font-heading text-xl font-bold tracking-tight text-text-bright">
 				USDC on Base deposit
 			</h3>
-			<p className="mt-3 text-sm text-text leading-relaxed">
+			<p className="mt-3 text-[14px] text-text leading-relaxed">
 				Deposit USDC on Base at 1:1 USD. Settlement is immediate on confirmation,
 				with a per-call ledger showing every request and exact credits charged.
 			</p>
 			<div className="mt-auto pt-5 flex flex-wrap gap-2">
-				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-info">
+				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-info">
 					USDC · Base
 				</span>
-				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-info">
+				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-info">
 					1:1 USD
 				</span>
 			</div>
-		</m.article>
-	);
-}
-
-function AgentSessionCard() {
-	return (
-		<m.article
-			whileHover={{ y: -4 }}
-			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className="surface-card tilt-card sheen relative h-full min-h-[220px] overflow-hidden p-2"
-		>
-			<AgentSessionDemo className="border-0 shadow-none [&_[role=region]]:max-h-[190px]" />
 		</m.article>
 	);
 }
@@ -315,15 +269,15 @@ function X402DetailsCard() {
 	return (
 		<Link
 			href="/docs#x402"
-			className="surface-card tilt-card sheen group relative flex h-full min-h-[220px] flex-col p-6 sm:p-7"
+			className="surface-card tilt-card sheen group relative flex h-full min-h-[250px] flex-col rounded-[var(--radius-lg)] p-6 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)] active:scale-[0.99]"
 		>
-			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
+			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
 				<Link2 className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-4 font-heading text-lg font-semibold tracking-tight text-text-bright">
 				x402 technical details
 			</h3>
-			<p className="mt-2 text-sm text-text leading-relaxed">
+			<p className="mt-2 text-[14px] text-text leading-relaxed">
 				See the payment challenge, settlement headers, Base network details, and a
 				complete agent request flow.
 			</p>
@@ -344,20 +298,20 @@ function CapabilityCard({ capability }: { capability: Capability }) {
 		<m.article
 			whileHover={{ y: -4 }}
 			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className="surface-card tilt-card sheen relative h-full p-6 sm:p-7 min-h-[180px] flex flex-col"
+			className="surface-card tilt-card sheen relative h-full rounded-[var(--radius-lg)] p-6 min-h-[250px] flex flex-col transition-shadow duration-300 hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)]"
 		>
 			{capability.badge && (
-				<span className="absolute top-3 right-3 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
+				<span className="absolute top-3 right-3 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-accent">
 					{capability.badge}
 				</span>
 			)}
-			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
+			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
 				<Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-4 font-heading text-lg font-semibold tracking-tight text-text-bright">
 				{capability.title}
 			</h3>
-			<p className="mt-2 text-sm text-text leading-relaxed">
+			<p className="mt-2 text-[14px] text-text leading-relaxed">
 				{capability.description}
 			</p>
 		</m.article>
