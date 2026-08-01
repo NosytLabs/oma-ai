@@ -29,6 +29,7 @@ import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
+import { rateLimit } from "./middleware/rate-limit.js";
 import { db } from "./db/client.js";
 import { siteSettings } from "./db/schema.js";
 import { runRecoveryIteration } from "./lib/deposit-recovery.js";
@@ -183,6 +184,7 @@ app.route("/", metricsRoutes);
 app.route("/", openapiRoutes);
 
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
+app.use("/api/auth/*", rateLimit({ windowMs: 60_000, maxRequests: 30, keyPrefix: "auth" }));
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // Agent Auth Protocol discovery document. The plugin serves it under the
