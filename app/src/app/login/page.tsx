@@ -42,6 +42,7 @@ import {
 } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useApiHealth } from "@/components/api-status";
+import { OmaWordmark } from "@/components/ui/oma-logo";
 import { authClient, signIn } from "@/lib/auth-client";
 import {
 	connectWallet,
@@ -540,16 +541,14 @@ function BrandPitch() {
 		{
 			Icon: Coins,
 			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. x402 pay-per-request for agents — no card, no KYC.",
+			body: "Credits in USDC on Base. x402 pay-per-request for agents — wallet-based, no card needed.",
 		},
 	];
 	return (
 		<div className="space-y-6">
 			<div className="surface-card p-8">
-				<p className="font-mono text-xs uppercase tracking-widest text-accent">
-					Open Model Access
-				</p>
-				<h1 className="mt-2 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
+				<OmaWordmark size="md" />
+				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
 					Sign in once.{" "}
 					<span className="gradient-text-accent">Ship without friction.</span>
 				</h1>
@@ -600,8 +599,8 @@ function X402Callout() {
 						<code className="font-mono text-text-secondary">
 							PAYMENT-SIGNATURE
 						</code>{" "}
-						envelope (EIP-3009 USDC on Base). Flat rate per request — no card,
-						no KYC, gas paid by the facilitator.
+						envelope (EIP-3009 USDC on Base). Flat rate per request — wallet-based,
+						no card needed, gas paid by the facilitator.
 					</p>
 					<Link
 						href="/docs#x402"
