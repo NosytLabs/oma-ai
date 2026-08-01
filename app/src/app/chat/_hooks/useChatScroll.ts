@@ -32,6 +32,7 @@ export interface UseChatScrollResult {
 export function useChatScroll(
 	loading: boolean,
 	_messages: unknown[],
+	_deferredMessages: unknown[] = [],
 ): UseChatScrollResult {
 	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -48,6 +49,28 @@ export function useChatScroll(
 			behavior: loading ? "auto" : "smooth",
 		});
 	}, [loading]);
+
+	// On mount with restored history, snap to the latest message so
+	// returning users aren't anchored at the top of a long thread. The
+	// list renders via useDeferredValue, which lags one render behind —
+	// keying off the deferred count (not the source array) guarantees we
+	// scroll on the render where the DOM actually contains the messages.
+	const mountedRef = useRef(false);
+	const deferredCount = _deferredMessages.length;
+	useEffect(() => {
+		if (mountedRef.current || deferredCount === 0) return;
+		mountedRef.current = true;
+		const scroll = () => {
+			const el = scrollContainerRef.current;
+			if (el) {
+				el.scrollTop = el.scrollHeight;
+				isNearBottomRef.current = true;
+			}
+		};
+		scroll();
+		const raf = requestAnimationFrame(scroll);
+		return () => cancelAnimationFrame(raf);
+	}, [deferredCount]);
 
 	const handleScroll = useCallback(() => {
 		const el = scrollContainerRef.current;

@@ -1,6 +1,7 @@
 /**
- * Ensures the playground toolbar does not double-mount WEB / COMPARE
- * (skeptic: mobile had primary strip + sm:hidden strip both rendering WEB).
+ * Ensures the playground toolbar renders exactly one COMPARE control.
+ * The web-search toggle moved into the composer (MessageInputRedesign),
+ * so it no longer lives in the toolbar.
  */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -34,8 +35,6 @@ const baseProps = {
 	setModel: vi.fn(),
 	paramsOpen: false,
 	setParamsOpen: vi.fn(),
-	webSearchEnabled: false,
-	setWebSearchEnabled: vi.fn(),
 	mediaMode: "text" as const,
 	setMediaMode: vi.fn(),
 	searching: false,
@@ -60,11 +59,8 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		cleanup();
 	});
 
-	it("renders exactly one web-search toggle and one compare control", () => {
+	it("renders exactly one compare control (WEB toggle lives in the composer)", () => {
 		render(<ChatToolbar {...baseProps} />);
-
-		const web = screen.getAllByRole("button", { name: /toggle web search/i });
-		expect(web).toHaveLength(1);
 
 		const compare = screen.getAllByRole("button", {
 			name: /compare models/i,

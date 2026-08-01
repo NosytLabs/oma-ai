@@ -477,7 +477,7 @@ export function UnifiedDepositInterface({
 								Deposit recorded
 							</h3>
 							<p className="mt-1 text-sm text-text-secondary">
-								Your balance will update automatically once the watcher
+								Your credit balance will update automatically once the watcher
 								confirms the on-chain transfer (typically &lt; 60 s on Base).
 							</p>
 							<button

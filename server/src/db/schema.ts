@@ -525,3 +525,13 @@ export const auditLogs = pgTable(
     ),
   ],
 );
+
+export const siteSettings = pgTable("site_settings", {
+  id: text("id").primaryKey().default("default"),
+  maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+  cardPaymentsEnabled: boolean("card_payments_enabled").notNull().default(true),
+  cryptoPaymentsEnabled: boolean("crypto_payments_enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

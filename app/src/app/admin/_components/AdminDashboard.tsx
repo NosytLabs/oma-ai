@@ -75,6 +75,26 @@ type RecentRow = {
 	createdAt: string;
 };
 
+type AdminSettings = {
+	maintenanceMode: boolean;
+	cardPaymentsEnabled: boolean;
+	cryptoPaymentsEnabled: boolean;
+};
+
+type AdminUser = {
+	id: string;
+	name: string | null;
+	email: string | null;
+	evmAddress: string | null;
+	role: string;
+	banned: boolean;
+	isAnonymous: boolean;
+	createdAt: string;
+	balanceCents: number;
+	totalUsedCents: number;
+	totalDepositedCents: number;
+};
+
 type Integration = {
 	polar: {
 		configured: boolean;
@@ -197,6 +217,13 @@ export function AdminDashboard() {
 	const [checkoutSuccess, setCheckoutSuccess] = useState("");
 	const [checkoutCancel, setCheckoutCancel] = useState("");
 	const [checkoutResult, setCheckoutResult] = useState<PolarCheckout | null>(null);
+	const [settings, setSettings] = useState<AdminSettings | null>(null);
+	const [updatingSettings, setUpdatingSettings] = useState(false);
+	const [users, setUsers] = useState<AdminUser[]>([]);
+	const [selectedUserHistory, setSelectedUserHistory] = useState<RecentRow[] | null>(null);
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	const [loadingHistory, setLoadingHistory] = useState(false);
+	const [creditAdjustAmount, setCreditAdjustAmount] = useState<Record<string, string>>({});
 
 	const refreshAll = useCallback(async () => {
 		setLoading(true);
@@ -213,7 +240,7 @@ export function AdminDashboard() {
 				return;
 			}
 
-			const [u, m, r, h, i] = await Promise.all([
+			const [u, m, r, h, i, s, uData] = await Promise.all([
 				adminFetch<UsageResponse>(`/v1/admin/usage?window=${windowSel}`),
 				adminFetch<{ data: ModelRow[] }>(`/v1/admin/models`),
 				adminFetch<{ data: RecentRow[] }>(
@@ -221,12 +248,16 @@ export function AdminDashboard() {
 				),
 				adminFetch<Health>(`/v1/admin/health`),
 				adminFetch<Integration>(`/v1/admin/integrations`),
+			adminFetch<AdminSettings & { id?: string }>("/v1/admin/settings"),
+			adminFetch<{ data: AdminUser[] }>("/v1/admin/users"),
 			]);
 			setUsage(u);
 			setModels(m.data);
 			setRecent(r.data);
 			setHealth(h);
 			setIntegrations(i);
+			setSettings(s);
+			setUsers(uData.data);
 		} catch (err) {
 			toast.error(`Failed to load admin data: ${(err as Error).message}`);
 		} finally {
@@ -248,6 +279,93 @@ export function AdminDashboard() {
 			toast.error(`Promote failed: ${(err as Error).message}`);
 		} finally {
 			setPromoting(false);
+		}
+	};
+
+	const handleToggleSetting = async (key: "maintenanceMode" | "cardPaymentsEnabled" | "cryptoPaymentsEnabled") => {
+		if (!settings) return;
+		setUpdatingSettings(true);
+		const newValue = !settings[key];
+		try {
+			const res = await adminFetch<{ success: boolean; settings: AdminSettings }>("/v1/admin/settings", {
+				method: "PATCH",
+				body: JSON.stringify({ [key]: newValue }),
+			});
+			if (res.success) {
+				setSettings(res.settings);
+				toast.success(`Platform setting updated successfully.`);
+			}
+		} catch (err) {
+			toast.error(`Failed to update setting: ${(err as Error).message}`);
+		} finally {
+			setUpdatingSettings(false);
+		}
+	};
+
+	const handleToggleBan = async (userId: string, currentBanned: boolean) => {
+		setUpdatingSettings(true);
+		try {
+			const res = await adminFetch<{ success: boolean; user: Pick<AdminUser, "id" | "banned"> }>(`/v1/admin/users/${userId}`, {
+				method: "PATCH",
+				body: JSON.stringify({ banned: !currentBanned }),
+			});
+			if (res.success) {
+				setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, banned: res.user.banned } : u));
+				toast.success(res.user.banned ? "User suspended successfully" : "User unsuspended successfully");
+			}
+		} catch (err) {
+			toast.error(`Failed to update user status: ${(err as Error).message}`);
+		} finally {
+			setUpdatingSettings(false);
+		}
+	};
+
+	const handleCreditAdjust = async (userId: string, isTopUp: boolean) => {
+		const amountStr = creditAdjustAmount[userId] || "";
+		const amountCents = Math.round(parseFloat(amountStr) * 100);
+		if (isNaN(amountCents) || amountCents <= 0) {
+			toast.error("Please enter a valid USD amount");
+			return;
+		}
+		setUpdatingSettings(true);
+		const delta = isTopUp ? amountCents : -amountCents;
+		try {
+			const res = await adminFetch<{ success: boolean; user: Pick<AdminUser, "id" | "balanceCents" | "totalDepositedCents"> }>(`/v1/admin/users/${userId}`, {
+				method: "PATCH",
+				body: JSON.stringify({ creditBalanceCentsDelta: delta }),
+			});
+			if (res.success) {
+				setUsers((prev) =>
+					prev.map((u) =>
+						u.id === userId
+							? {
+									...u,
+									balanceCents: res.user.balanceCents,
+									totalDepositedCents: res.user.totalDepositedCents,
+								}
+							: u
+					)
+				);
+				toast.success(`Credits adjusted successfully.`);
+				setCreditAdjustAmount((prev) => ({ ...prev, [userId]: "" }));
+			}
+		} catch (err) {
+			toast.error(`Credit adjustment failed: ${(err as Error).message}`);
+		} finally {
+			setUpdatingSettings(false);
+		}
+	};
+
+	const handleViewUserHistory = async (userId: string) => {
+		setSelectedUserId(userId);
+		setLoadingHistory(true);
+		try {
+			const res = await adminFetch<{ data: RecentRow[] }>(`/v1/admin/usage/recent?limit=50&userId=${userId}`);
+			setSelectedUserHistory(res.data);
+		} catch (err) {
+			toast.error(`Failed to load user history: ${(err as Error).message}`);
+		} finally {
+			setLoadingHistory(false);
 		}
 	};
 
@@ -500,6 +618,111 @@ export function AdminDashboard() {
 				</div>
 			</section>
 
+			{settings && (
+				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
+					<div>
+						<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+							Platform Controls
+						</h2>
+						<p className="text-xs text-text-muted mt-0.5">
+							Toggle runtime gates, payments, and global maintenance mode.
+						</p>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-3">
+						{/* Maintenance Mode */}
+						<div className="flex flex-col justify-between p-4 rounded-lg border border-border bg-surface-elevated/40">
+							<div className="space-y-1">
+								<div className="flex items-center gap-2">
+									<AlertTriangle className={`h-4 w-4 ${settings.maintenanceMode ? "text-error animate-pulse" : "text-text-muted"}`} />
+									<span className="text-sm font-medium">Maintenance Mode</span>
+								</div>
+								<p className="text-xs text-text-muted">
+									Blocks all non-admin gateway requests with a 503 message.
+								</p>
+							</div>
+							<div className="mt-4 flex items-center justify-between">
+								<span className={`text-xs font-mono px-2 py-0.5 rounded ${settings.maintenanceMode ? "bg-error/10 text-error" : "bg-text-muted/10 text-text-muted"}`}>
+									{settings.maintenanceMode ? "ACTIVE (BLOCKED)" : "INACTIVE (ONLINE)"}
+								</span>
+								<button
+									type="button"
+									disabled={updatingSettings}
+									onClick={() => handleToggleSetting("maintenanceMode")}
+									className={`text-xs px-3 py-1.5 rounded-md border font-medium transition ${
+										settings.maintenanceMode
+											? "bg-error/10 border-error/40 text-error hover:bg-error/20"
+											: "bg-surface border-border hover:bg-surface-elevated"
+									}`}
+								>
+									Toggle
+								</button>
+							</div>
+						</div>
+
+						{/* Card Payments */}
+						<div className="flex flex-col justify-between p-4 rounded-lg border border-border bg-surface-elevated/40">
+							<div className="space-y-1">
+								<div className="flex items-center gap-2">
+									<CreditCard className={`h-4 w-4 ${settings.cardPaymentsEnabled ? "text-success" : "text-text-muted"}`} />
+									<span className="text-sm font-medium">Card Payments (Polar)</span>
+								</div>
+								<p className="text-xs text-text-muted">
+									Controls if users can purchase Credits using Stripe / Card.
+								</p>
+							</div>
+							<div className="mt-4 flex items-center justify-between">
+								<span className={`text-xs font-mono px-2 py-0.5 rounded ${settings.cardPaymentsEnabled ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+									{settings.cardPaymentsEnabled ? "ENABLED" : "DISABLED"}
+								</span>
+								<button
+									type="button"
+									disabled={updatingSettings}
+									onClick={() => handleToggleSetting("cardPaymentsEnabled")}
+									className={`text-xs px-3 py-1.5 rounded-md border font-medium transition ${
+										!settings.cardPaymentsEnabled
+											? "bg-error/10 border-error/40 text-error hover:bg-error/20"
+											: "bg-surface border-border hover:bg-surface-elevated"
+									}`}
+								>
+									Toggle
+								</button>
+							</div>
+						</div>
+
+						{/* Crypto Payments */}
+						<div className="flex flex-col justify-between p-4 rounded-lg border border-border bg-surface-elevated/40">
+							<div className="space-y-1">
+								<div className="flex items-center gap-2">
+									<Coins className={`h-4 w-4 ${settings.cryptoPaymentsEnabled ? "text-success" : "text-text-muted"}`} />
+									<span className="text-sm font-medium">Crypto Payments (x402)</span>
+								</div>
+								<p className="text-xs text-text-muted">
+									Controls if users can make USDC direct deposits on Base.
+								</p>
+							</div>
+							<div className="mt-4 flex items-center justify-between">
+								<span className={`text-xs font-mono px-2 py-0.5 rounded ${settings.cryptoPaymentsEnabled ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+									{settings.cryptoPaymentsEnabled ? "ENABLED" : "DISABLED"}
+								</span>
+								<button
+									type="button"
+									disabled={updatingSettings}
+									onClick={() => handleToggleSetting("cryptoPaymentsEnabled")}
+									className={`text-xs px-3 py-1.5 rounded-md border font-medium transition ${
+										!settings.cryptoPaymentsEnabled
+											? "bg-error/10 border-error/40 text-error hover:bg-error/20"
+											: "bg-surface border-border hover:bg-surface-elevated"
+									}`}
+								>
+									Toggle
+								</button>
+							</div>
+						</div>
+					</div>
+				</section>
+			)}
+
 			{integrations && (
 				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
 					<h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-text-muted">
@@ -659,6 +882,208 @@ export function AdminDashboard() {
 					</div>
 				)}
 			</section>
+
+			{/* User Directory */}
+			{users.length > 0 && (
+				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+								User Directory
+							</h2>
+							<p className="text-xs text-text-muted mt-0.5">
+								Manage permissions, edit Credits, and audit individual user request logs.
+							</p>
+						</div>
+						<span className="text-xs text-text-muted">
+							{users.length} registered accounts
+						</span>
+					</div>
+
+					<div className="overflow-x-auto">
+						<table className="w-full text-xs text-left">
+							<thead className="border-b border-border text-text-muted uppercase tracking-wider text-[10px]">
+								<tr>
+									<th className="py-2 text-left">User details</th>
+									<th className="py-2 text-center">Status</th>
+									<th className="py-2 text-right">Deposited</th>
+									<th className="py-2 text-right">Used</th>
+									<th className="py-2 text-right">Credits</th>
+									<th className="py-2 text-center">Credit Adjust (USD)</th>
+									<th className="py-2 text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{users.map((u) => {
+									const isTargetHistory = selectedUserId === u.id;
+									return (
+										<tr key={u.id} className="border-b border-border/30 hover:bg-surface-elevated/20 transition-colors">
+											<td className="py-3">
+												<div className="font-semibold text-text-bright flex items-center gap-1.5">
+													{u.name || "Anonymous User"}
+													{u.role === "admin" && (
+														<span className="bg-accent/15 text-accent border border-accent/20 rounded px-1.5 py-0.5 text-[9px] font-mono uppercase">
+															Admin
+														</span>
+													)}
+												</div>
+												<div className="text-text-muted font-mono text-[10px] mt-0.5 space-y-0.5">
+													{u.email && <div>email: {u.email}</div>}
+													{u.evmAddress && <div className="break-all">wallet: {u.evmAddress}</div>}
+													<div className="text-[9px]">ID: {u.id} · joined {new Date(u.createdAt).toLocaleDateString()}</div>
+												</div>
+											</td>
+											<td className="py-3 text-center">
+												<span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ${
+													u.banned
+														? "bg-error/15 text-error border border-error/25"
+														: "bg-success/15 text-success border border-success/25"
+												}`}>
+													{u.banned ? "Suspended" : "Active"}
+												</span>
+											</td>
+											<td className="py-3 text-right font-mono font-medium">
+												{centsToDollars(u.totalDepositedCents)}
+											</td>
+											<td className="py-3 text-right font-mono text-text-secondary">
+												{centsToDollars(u.totalUsedCents)}
+											</td>
+											<td className="py-3 text-right font-mono font-semibold text-text-bright">
+												{centsToDollars(u.balanceCents)}
+											</td>
+											<td className="py-3">
+												<div className="flex items-center justify-center gap-1 max-w-[160px] mx-auto">
+													<input
+														type="number"
+														step="0.1"
+														min="0.01"
+														placeholder="$5.00"
+														value={creditAdjustAmount[u.id] || ""}
+														onChange={(e) => setCreditAdjustAmount((prev) => ({ ...prev, [u.id]: e.target.value }))}
+														className="w-16 rounded border border-border bg-surface-elevated px-2 py-1 text-right text-xs focus:border-accent outline-none"
+													/>
+													<button
+														type="button"
+														disabled={updatingSettings}
+														onClick={() => handleCreditAdjust(u.id, true)}
+														className="rounded border border-success/30 bg-success/10 px-1.5 py-1 text-[10px] font-semibold text-success hover:bg-success/20"
+													>
+														+
+													</button>
+													<button
+														type="button"
+														disabled={updatingSettings}
+														onClick={() => handleCreditAdjust(u.id, false)}
+														className="rounded border border-error/30 bg-error/10 px-1.5 py-1 text-[10px] font-semibold text-error hover:bg-error/20"
+													>
+														-
+													</button>
+												</div>
+											</td>
+											<td className="py-3 text-right space-y-1.5">
+												<div className="flex justify-end gap-1.5">
+													<button
+														type="button"
+														disabled={updatingSettings}
+														onClick={() => handleToggleBan(u.id, u.banned)}
+														className={`rounded px-2.5 py-1 text-[10px] font-medium border transition-colors ${
+															u.banned
+																? "bg-success/10 border-success/30 text-success hover:bg-success/20"
+																: "bg-error/10 border-error/30 text-error hover:bg-error/20"
+														}`}
+													>
+														{u.banned ? "Unsuspend" : "Suspend"}
+													</button>
+													<button
+														type="button"
+														disabled={updatingSettings || loadingHistory}
+														onClick={() => handleViewUserHistory(u.id)}
+														className={`rounded px-2.5 py-1 text-[10px] font-medium border border-border bg-surface hover:bg-surface-elevated transition-colors ${
+															isTargetHistory ? "border-accent text-accent" : "text-text"
+														}`}
+													>
+														History
+													</button>
+												</div>
+											</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+					</div>
+
+					{/* Individual User History Portal */}
+					{selectedUserId && (
+						<div className="border-t border-border pt-4 mt-2 space-y-3">
+							<div className="flex items-center justify-between">
+								<h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
+									<ChevronRight className="w-3.5 h-3.5" />
+									History logs for user: <span className="font-mono text-[10px] text-accent font-normal bg-accent/10 px-1.5 py-0.5 rounded">{selectedUserId}</span>
+								</h3>
+								<button
+									type="button"
+									onClick={() => {
+										setSelectedUserId(null);
+										setSelectedUserHistory(null);
+									}}
+									className="text-xs text-text-muted hover:text-text"
+								>
+									Close history
+								</button>
+							</div>
+
+							{loadingHistory ? (
+								<div className="flex items-center gap-1.5 text-xs text-text-muted py-2">
+									<Loader2 className="h-3.5 w-3.5 animate-spin" /> Fetching logs...
+								</div>
+							) : selectedUserHistory === null || selectedUserHistory.length === 0 ? (
+								<p className="text-xs text-text-muted py-2">
+									No request history found for this user in the specified limit.
+								</p>
+							) : (
+								<div className="overflow-x-auto max-h-[250px] overflow-y-auto rounded border border-border bg-panel/30">
+									<table className="w-full text-[11px] text-left">
+										<thead className="border-b border-border bg-surface-elevated/40 text-[9px] uppercase text-text-muted">
+											<tr>
+												<th className="p-2">When</th>
+												<th className="p-2">Request ID</th>
+												<th className="p-2">Model</th>
+												<th className="p-2 text-right">Tokens</th>
+												<th className="p-2 text-right">Cost</th>
+												<th className="p-2">Status</th>
+											</tr>
+										</thead>
+										<tbody>
+											{selectedUserHistory.map((h) => (
+												<tr key={h.id} className="border-b border-border/20 hover:bg-surface-elevated/10">
+													<td className="p-2 text-text-muted">{timeAgo(h.createdAt)}</td>
+													<td className="p-2 font-mono text-[9px] text-text-secondary">{h.requestId.slice(0, 16)}…</td>
+													<td className="p-2 font-mono">{h.model}</td>
+													<td className="p-2 text-right font-mono">
+														{h.inputTokens.toLocaleString()}/{h.outputTokens.toLocaleString()}
+													</td>
+													<td className="p-2 text-right font-mono">{centsToDollars(Number(h.totalCents))}</td>
+													<td className="p-2">
+														<span className={`rounded px-1 py-0.2 text-[9px] ${
+															h.status === "completed" || h.status === "free_tier"
+																? "bg-accent/15 text-accent"
+																: "bg-error/15 text-error"
+														}`}>
+															{h.status}
+														</span>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							)}
+						</div>
+					)}
+				</section>
+			)}
+
 			{/* Polar Management */}
 			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
 				<div className="mb-3 flex items-center justify-between">

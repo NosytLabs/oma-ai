@@ -284,7 +284,7 @@ const envSchema = z.object({
   POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
   POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
   POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
-  POLAR_SERVER: z.string().url().optional().default("https://api.polar.sh"),
+  POLAR_SERVER: z.enum(["production", "sandbox"]).optional().default("production"),
 
   // USDC deposit receiver on Base. Operator wallet that credits user balances
   // after on-chain transfer confirmation. Empty in dev = surface a 503 instead

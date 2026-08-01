@@ -33,7 +33,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<button
 				type="button"
 				onClick={() => setMobileOpen(!mobileOpen)}
-				className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
+				className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
 				aria-label={
 					mobileOpen ? "Close navigation menu" : "Open navigation menu"
 				}
@@ -136,7 +136,7 @@ function DocsContent() {
 				<FloatingIcons count={4} />
 			</div>
 
-		<div className="page-shell">
+			<div className="relative min-w-0">
 			<Sidebar activeId={activeId} />
 
 			<div className="min-w-0">
@@ -213,8 +213,8 @@ function DocsContent() {
 						<ErrorsSection />
 					</div>
 				</div>
+				</div>
 			</div>
-		</div>
 		</div>
 	);
 }

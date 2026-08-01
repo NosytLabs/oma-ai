@@ -150,15 +150,14 @@ describe("HomePage", () => {
 		});
 	});
 
-	it("renders the capabilities section", async () => {
+	it("renders the capabilities section as three pillars", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText("LLM Chat")).toBeInTheDocument();
-			expect(screen.getByText("Pay with Card")).toBeInTheDocument();
-			expect(screen.getByText("Tool Calling & Streaming")).toBeInTheDocument();
-			expect(screen.getByText("Model Routing")).toBeInTheDocument();
-			expect(screen.getByText("Crypto-Native Billing")).toBeInTheDocument();
-			expect(screen.getByText(/Magic Link.*Wallet.*Account #/i)).toBeInTheDocument();
+			expect(screen.getByText("Pay with credits")).toBeInTheDocument();
+			expect(screen.getByText("Agents pay per request")).toBeInTheDocument();
+			expect(screen.getByText("Routing & privacy")).toBeInTheDocument();
+			expect(screen.getByText("Pay with card")).toBeInTheDocument();
+			expect(screen.getByText("USDC on Base deposit")).toBeInTheDocument();
 		});
 	});
 

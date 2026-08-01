@@ -68,7 +68,7 @@ if (payReq.ok) {
 				id="x402"
 				icon={<Zap className="h-5 w-5" />}
 				title="x402 Payments"
-				subtitle="USDC top-ups on Base via the x402 payment envelope. No card, no KYC."
+				subtitle="USDC top-ups on Base via the x402 payment envelope. Wallet-based, no card needed."
 			/>
 
 			<div id="x402-what" className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-6 scroll-mt-24">
@@ -80,7 +80,7 @@ if (payReq.ok) {
 						</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Agents can call chat completions with no account and no
-							pre-funded balance. An unauthenticated request returns HTTP 402
+							pre-funded credits. An unauthenticated request returns HTTP 402
 							with a{" "}
 							<code className="text-accent font-mono">PAYMENT-REQUIRED</code>{" "}
 							header carrying the flat per-request price. Sign a USDC{" "}
@@ -128,7 +128,7 @@ if (payReq.ok) {
 					Use <code className="text-accent font-mono">viem</code> or{" "}
 					<code className="text-accent font-mono">ethers</code> directly to
 					sign USDC payment authorizations. No first-party SDK is required.
-					An agent holding a funded Base wallet can top up its own balance and
+					An agent holding a funded Base wallet can top up its own credits and
 					keep working — no human in the loop.
 				</p>
 				<CodeBlock code={agentCode} lang="javascript" />
@@ -144,7 +144,7 @@ if (payReq.ok) {
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
-							No card, no KYC, no bank account
+							Wallet-based, no card or bank account needed
 						</li>
 						<li className="flex items-start gap-2">
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}

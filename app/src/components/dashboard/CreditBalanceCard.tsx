@@ -50,7 +50,7 @@ function CreditBalanceCardComponent({
 					<h2 className="text-sm font-semibold text-text-bright">
 						Credit balance
 					</h2>
-					<p className="mt-0.5 text-[11px] text-text-muted">Available funds</p>
+					<p className="mt-0.5 text-[11px] text-text-muted">Available credits</p>
 				</div>
 				<div className="flex h-8 w-8 items-center justify-center border border-success/20 bg-success/10 text-success">
 					<span className="text-xs font-mono">$</span>
@@ -63,7 +63,7 @@ function CreditBalanceCardComponent({
 						// Never flash a fake $0.00 while the balance query is in flight.
 						<span
 							className="inline-block h-10 w-36 animate-pulse rounded bg-surface-elevated/60"
-							aria-label="Loading balance"
+							aria-label="Loading credit balance"
 							aria-busy="true"
 						/>
 					) : !balance ? (
@@ -83,7 +83,7 @@ function CreditBalanceCardComponent({
 					{balance
 						? `Total deposited: $${formatCents(balance.totalDepositedCents)}`
 						: loading
-							? "Loading balance…"
+							? "Loading credits…"
 							: "Total deposited: $0.00"}
 				</div>
 			</div>
@@ -112,7 +112,7 @@ function CreditBalanceCardComponent({
 				</Link>
 				<Link
 					href="/deposit"
-					aria-label="Deposit funds"
+					aria-label="Add credits"
 					className="group flex flex-1 items-center justify-center border border-border-bright bg-void px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-text-muted hover:text-text focus-ring active:bg-surface"
 				>
 					Deposit

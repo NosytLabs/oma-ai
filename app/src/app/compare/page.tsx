@@ -28,7 +28,7 @@ const competitors: { key: string; name: string; tagline: string; ours?: boolean 
 
 type RowKey =
 	| "x402"
-	| "anonymous_auth"
+	| "private_auth"
 	| "free_tier"
 	| "credit_card_required"
 	| "circuit_breaker"
@@ -39,14 +39,14 @@ type RowKey =
 	| "webhooks"
 	| "usdc_native"
 	| "siwe"
-	| "anonymous_account"
+	| "secure_account"
 	| "open_source"
 	| "lowest_input_price"
 	| "agent_sdk";
 
 const rows: { key: RowKey; label: string; note?: string }[] = [
 	{ key: "x402", label: "x402 pay-per-request (HTTP 402)", note: "Crypto-native, gasless for agents" },
-	{ key: "anonymous_auth", label: "Private auth (low-friction signup)" },
+	{ key: "private_auth", label: "Private auth (low-friction signup)" },
 	{ key: "free_tier", label: "Genuine free tier", note: "Not just a trial — ongoing" },
 	{ key: "credit_card_required", label: "Requires credit card", note: "Inverted — ✓ means it requires one" },
 	{ key: "circuit_breaker", label: "Circuit-breaker failover" },
@@ -57,7 +57,7 @@ const rows: { key: RowKey; label: string; note?: string }[] = [
 	{ key: "webhooks", label: "Webhook notifications" },
 	{ key: "usdc_native", label: "USDC native settlement" },
 	{ key: "siwe", label: "Sign-In With Ethereum (SIWE)" },
-	{ key: "anonymous_account", label: "Mullvad-style account numbers" },
+	{ key: "secure_account", label: "Quiet, secure account numbers" },
 	{ key: "open_source", label: "Open source" },
 	{
 		key: "lowest_input_price",
@@ -77,7 +77,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 		openrouter: "no",
 		together: "no",
 	},
-	anonymous_auth: {
+	private_auth: {
 		oma: "yes",
 		portkey: "no",
 		litellm: "no",
@@ -154,7 +154,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 		openrouter: "partial",
 		together: "no",
 	},
-	anonymous_account: {
+	secure_account: {
 		oma: "yes",
 		portkey: "no",
 		litellm: "no",
@@ -222,11 +222,11 @@ const summaryCards = [
 	},
 	{
 		title: "Privacy-first by default",
-		body: "Mullvad-style account numbers, SIWE for wallet users. No credit-card signup. Privacy is the default, not a premium tier.",
+		body: "Secure account numbers, SIWE for wallet users. No credit-card signup. Privacy is the default, not a premium tier.",
 	},
 	{
 		title: "Free tier, structurally",
-		body: "Cheapest budget tier is via OMA-AI. 10K free users costs ~$50/mo at base rate (cheaper than most SaaS bills). No credit card.",
+		body: "Most cost-effective tier is via OMA-AI. 10K free users costs ~$50/mo at base rate (more affordable than most SaaS bills). No credit card.",
 	},
 	{
 		title: "Multi-provider + circuit breaker",

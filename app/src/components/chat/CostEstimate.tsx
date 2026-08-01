@@ -2,7 +2,7 @@
 
 import { Coins, MessageSquare } from "lucide-react";
 import { estimateTokens } from "@/lib/text";
-import { useLiveModels } from "./chat-message-shared";
+import { useSharedLiveModels } from "./chat-message-shared";
 
 interface CostEstimateProps {
 	inputText: string;
@@ -25,7 +25,7 @@ export function CostEstimate({
 	model,
 	maxTokens,
 }: CostEstimateProps) {
-	const MODELS = useLiveModels();
+	const MODELS = useSharedLiveModels();
 	const selectedModel = MODELS.find((m) => m.id === model);
 	// Fallback rate when the model isn't in the live catalog (e.g. a stale
 	// ?model=invalid-model URL): use a generic $1 per 1M tokens instead of
@@ -48,7 +48,7 @@ export function CostEstimate({
 	const inputCredits = inputCost.toFixed(4);
 
 	return (
-		<div className="flex items-center gap-3 text-[10px] font-mono text-text-muted uppercase tracking-wider">
+		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
 			<div className="flex items-center gap-1.5">
 				<MessageSquare className="w-3 h-3" />
 				<span>{inputTokens} TK</span>

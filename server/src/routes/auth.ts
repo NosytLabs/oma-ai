@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { user } from "../db/schema.js";
+import { user, usageRecords, auditLogs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
@@ -161,6 +161,36 @@ authRoutes.delete("/v1/keys/:id", sessionAuth, async (c) => {
   return c.json({ success: true, id });
 });
 
+// ============================================================
+// /v1/history — wipe usage history + audit trail WITHOUT deleting
+// the account. GDPR "right to forget" for telemetry while the
+// user's balance, API keys, and identity stay intact.
+// ============================================================
+authRoutes.delete("/v1/history", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const [usage, audit] = await Promise.all([
+    db.delete(usageRecords).where(eq(usageRecords.userId, userId)),
+    db.delete(auditLogs).where(eq(auditLogs.userId, userId)),
+  ]);
+  // Write ONE fresh audit row so moderators can still see the wipe
+  // happened (the previous trail is intentionally gone).
+  await auditLog({
+    userId,
+    action: "USER_UPDATED",
+    resource: "history",
+    resourceId: userId,
+    metadata: { action: "wipe_history" },
+  });
+  return c.json({
+    success: true,
+    deleted: {
+      usageRecords: usage.rowCount ?? 0,
+      auditLogs: audit.rowCount ?? 0,
+    },
+  });
+});
+
+// ============================================================
 // POST /v1/keys/install — install the given raw key as an HttpOnly
 // cookie on the current response. Used by the dashboard after minting
 // a key, so the browser's SSE chat can authenticate against the Hono

@@ -20,8 +20,7 @@
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { BorderBeam } from "border-beam";
-import { Loader2, Send, Sparkles } from "lucide-react";
-import { MetalFx } from "metal-fx";
+import { Loader2, Search, Send, Sparkles } from "lucide-react";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { Magnetic, EASE_SPRING } from "@/lib/animation";
@@ -43,6 +42,9 @@ interface MessageInputProps {
 	disabled?: boolean;
 	/** Optional reason surfaced to the user when `disabled` is true. */
 	disabledReason?: string;
+	/** Web-search toggle rendered inside the composer (primary location). */
+	webSearchEnabled?: boolean;
+	setWebSearchEnabled?: (v: boolean) => void;
 }
 
 const INPUT_HINTS = [
@@ -66,6 +68,8 @@ export const MessageInputRedesigned = forwardRef<
 		textareaRef: externalTextareaRef,
 		disabled = false,
 		disabledReason,
+		webSearchEnabled = false,
+		setWebSearchEnabled,
 	},
 	forwardedRef,
 ) {
@@ -153,7 +157,6 @@ export const MessageInputRedesigned = forwardRef<
 className="
              glass relative flex items-end px-2 py-2 rounded-xl
              transition-all duration-300
-             border border-border
              focus-within:border-accent/50
              focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)]
              chat-scrollbar
@@ -191,6 +194,36 @@ className="
 					onInput={handleInput}
 				/>
 
+				{setWebSearchEnabled && (
+					<div className="p-1 flex items-center self-end">
+						<button
+							type="button"
+							onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+							aria-pressed={webSearchEnabled}
+							aria-label="Toggle web search — ground responses in live internet data"
+							title="Web search — ground responses in live internet data"
+							className={`
+                flex h-12 md:h-11 items-center justify-center gap-1.5 rounded-full px-3
+                font-mono text-[10px] font-semibold uppercase tracking-wider
+                transition-all duration-200 min-h-[44px]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+                active:translate-y-[1px]
+                ${
+									webSearchEnabled
+										? "bg-surface text-success border border-success/30 shadow-[0_0_16px_-6px_var(--color-success-glow)]"
+										: "bg-void text-text-muted border border-border hover:bg-surface hover:text-text hover:border-accent/40"
+								}
+              `}
+						>
+							<Search
+								className={`h-3.5 w-3.5 ${webSearchEnabled ? "text-success" : ""}`}
+								aria-hidden="true"
+							/>
+							<span className="hidden sm:inline">WEB</span>
+						</button>
+					</div>
+				)}
+
 				<div className="p-1">
 					{loading ? (
 						<Magnetic strength={4}>
@@ -218,15 +251,6 @@ className="
 						</Magnetic>
 					) : (
 						<Magnetic strength={6}>
-							<MetalFx
-								variant="circle"
-								preset="chromatic"
-								theme="auto"
-								strength={hasInput && !disabled ? 0.75 : 0.2}
-								paused={reduceMotion || !hasInput || disabled}
-								disableGlow={reduceMotion || !hasInput}
-								normalizeHostStyles={false}
-							>
 							<m.button
 								type="button"
 								onClick={() => onSubmit()}
@@ -239,20 +263,31 @@ className="
 									hasInput && !reduceMotion ? { scale: 1.04 } : undefined
 								}
 								transition={EASE_SPRING}
-className={`
-                     flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
-                     font-semibold transition-all duration-200 min-h-[44px] min-w-[44px]
-                     btn-primary
+								className={`
+                     group/send relative flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
+                     rounded-xl font-semibold transition-all duration-200 min-h-[44px] min-w-[44px]
                      ${
-											hasInput
-												? ""
-												: "bg-surface-elevated text-text-muted opacity-40 cursor-not-allowed"
+											hasInput && !disabled
+												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"
+												: "bg-surface-elevated/80 text-text-tertiary border border-border cursor-not-allowed"
 										}
                    `}
 							>
-								<Send className="w-5 h-5 drop-shadow-[0_2px_4px_var(--color-accent-glow)]" strokeWidth={2.4} />
+								<Send
+									className={`w-5 h-5 transition-transform duration-200 ${
+										hasInput && !disabled
+											? "drop-shadow-[0_2px_4px_var(--color-accent-glow)] group-hover/send:translate-x-0.5 group-hover/send:-translate-y-0.5"
+											: ""
+									}`}
+									strokeWidth={hasInput && !disabled ? 2.4 : 1.8}
+								/>
+								{hasInput && !disabled && !reduceMotion && (
+									<span
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-accent/30"
+									/>
+								)}
 							</m.button>
-							</MetalFx>
 						</Magnetic>
 					)}
 				</div>

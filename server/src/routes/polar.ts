@@ -6,8 +6,10 @@
  *   POST /webhooks/polar        — handle Polar webhook events
  *
  * The checkout route creates a Polar checkout for the authenticated
- * user based on the chosen plan. On `subscription.created` (via the
- * webhook), we credit the user's balance with the plan's allocation.
+ * user based on the chosen plan. On `order.paid` (via the webhook),
+ * we credit the user's balance with the plan's allocation. Products
+ * are one-time credit purchases (no recurring billing); `order.refunded`
+ * drains the granted credits.
  *
  * Plans (configurable via env):
  *   hobby   — POLAR_HOBBY_PRODUCT_ID    — 1000 credits ($10)
@@ -28,7 +30,7 @@ import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
-import { creditBalances } from "../db/schema.js";
+import { creditBalances, siteSettings } from "../db/schema.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { emitDepositMatched } from "../lib/deposit-events.js";
@@ -45,7 +47,7 @@ function getPolarClient(): Polar | null {
 	if (!config.POLAR_ACCESS_TOKEN) return null;
 	return new Polar({
 		accessToken: config.POLAR_ACCESS_TOKEN,
-		server: (config.POLAR_SERVER as "production" | "sandbox") ?? "production",
+		server: config.POLAR_SERVER,
 	});
 }
 
@@ -78,6 +80,25 @@ polarRoutes.post(
 				400,
 			);
 		}
+
+		// Check if card payments are disabled by admin
+		try {
+			const [settings] = await db.select({ cardPaymentsEnabled: siteSettings.cardPaymentsEnabled }).from(siteSettings).limit(1);
+			if (settings && !settings.cardPaymentsEnabled) {
+				return c.json(
+					{
+						error: {
+							message: "Card payments are temporarily disabled by the administrator.",
+							type: "service_unavailable",
+						},
+					},
+					503,
+				);
+			}
+		} catch (err) {
+			logger.error({ err }, "[polar] failed to check site settings for card payments");
+		}
+
 		const polar = getPolarClient();
 		if (!polar) {
 			return c.json(
@@ -107,7 +128,6 @@ polarRoutes.post(
 		const session = await polar.checkouts.create({
 			products: [String(productId)],
 			successUrl: parsed.data.successUrl ?? `${config.PUBLIC_APP_URL}/dashboard?checkout=success`,
-			customerEmail: undefined, // server uses auth'd email if any
 			metadata: { userId, plan: parsed.data.plan, credits: plan.credits },
 		});
 		return c.json({
@@ -196,7 +216,7 @@ async function creditUser(userId: string, credits: number, source: string): Prom
 	emitDepositMatched({
 		id: `polar-${Date.now()}`,
 		userId,
-		type: "subscription",
+		type: "card",
 		amountUsd: (credits / 100).toFixed(2),
 		creditsIssued: credits.toString(),
 		txHash: null,
@@ -210,6 +230,26 @@ async function revokeUser(userId: string): Promise<void> {
 	// We don't drain existing credits on cancel — they remain usable.
 	// The user just won't be eligible for the next renewal's allocation.
 	logger.info({ userId }, "[polar] subscription canceled (existing credits retained)");
+}
+
+async function drainUser(userId: string, credits: number): Promise<void> {
+	await db
+		.insert(creditBalances)
+		.values({
+			userId,
+			balanceCents: "0",
+			totalDepositedCents: "0",
+			totalUsedCents: "0",
+		})
+		.onConflictDoUpdate({
+			target: creditBalances.userId,
+			set: {
+				balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
+				totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
+				lastActivityAt: sql`NOW()`,
+			},
+		});
+	logger.info({ userId, credits }, "[polar] refunded; credits drained");
 }
 
 /**
@@ -248,8 +288,27 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 	const creditsRaw = metadata.credits;
 	const credits = typeof creditsRaw === "number" ? creditsRaw : plan ? PLAN_CREDITS[plan].credits : null;
 
-	// Handle events
-	if (event.type === "subscription.created" || event.type === "subscription.active" || event.type === "subscription.updated") {
+	// One-time credit purchases. Metadata set on the checkout is copied to
+	// the resulting order, so we can credit the exact amount the user paid for.
+	if (event.type === "order.paid") {
+		if (userId && credits) {
+			await creditUser(userId, credits, event.type);
+		} else {
+			logger.warn(
+				{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
+				"[polar] order.paid missing userId or credits; check product/metadata",
+			);
+		}
+	} else if (event.type === "order.refunded") {
+		if (userId && credits) {
+			await drainUser(userId, credits);
+		} else {
+			logger.warn(
+				{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
+				"[polar] order.refunded missing userId or credits; check product/metadata",
+			);
+		}
+	} else if (event.type === "subscription.created" || event.type === "subscription.active" || event.type === "subscription.updated") {
 		if (userId && credits) {
 			if (event.data?.status === "active" || event.data?.status === "trialing" || event.type === "subscription.active") {
 				await creditUser(userId, credits, event.type);

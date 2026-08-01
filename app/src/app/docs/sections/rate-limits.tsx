@@ -16,7 +16,7 @@ export function RateLimitsSection() {
 				subtitle="One set of limits for every key — no plan tiers. Enforced per API key (or per IP for unauthenticated requests)."
 			/>
 
-			<div id="rl-limits" className="mb-6 overflow-hidden rounded-xl border border-border scroll-mt-24">
+			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="Default rate limits">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">
@@ -44,7 +44,7 @@ export function RateLimitsSection() {
 				</table>
 			</div>
 
-			<div id="rl-models" className="mb-6 overflow-hidden rounded-xl border border-border scroll-mt-24">
+			<div id="rl-models" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24">
 				<div className="border-b border-border bg-surface/50 px-4 py-3">
 					<h3 className="font-semibold text-text text-sm">
 						Per-Model Overrides

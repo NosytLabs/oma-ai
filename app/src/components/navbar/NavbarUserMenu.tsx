@@ -2,7 +2,7 @@
 
 import { formatAddress } from "@/lib/utils";
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
-import { Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
+import { ChevronDown, Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -90,11 +90,13 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 				aria-haspopup="menu"
 				aria-controls="user-menu"
 			>
-				<span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-					<span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
-					<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
-				</span>
 				<span className="max-w-[6rem] truncate font-mono">{triggerLabel}</span>
+				<ChevronDown
+					className={`h-3 w-3 text-text-tertiary transition-transform duration-200 ${
+						open ? "rotate-180" : ""
+					}`}
+					aria-hidden="true"
+				/>
 			</button>
 
 			<AnimatePresence>
@@ -194,8 +196,8 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 									id="user-disconnect-body"
 									className="mt-1 text-[10px] leading-relaxed text-text-secondary"
 								>
-									You&apos;ll need to sign in again with the same method
-									(magic link, anonymous, or wallet).
+								You&apos;ll need to sign in again with the same method
+								(magic link, guest, or wallet).
 								</p>
 								<div className="mt-2 grid grid-cols-2 gap-1">
 									<button

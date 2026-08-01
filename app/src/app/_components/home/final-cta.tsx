@@ -31,8 +31,9 @@ export function FinalCTA() {
 								</span>
 							</h2>
 							<p className="text-lg text-text-secondary max-w-xl leading-relaxed">
-								Wallet or account number, credits in USDC on Base, one
-								OpenAI-compatible API. First call in under a minute.
+								Card, wallet, or account number — credits land instantly and
+								one OpenAI-compatible API does the rest. First call in under a
+								minute.
 							</p>
 						</div>
 

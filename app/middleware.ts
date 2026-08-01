@@ -101,7 +101,7 @@ export async function middleware(request: NextRequest) {
 
   if (!session?.user?.id) {
     const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("next", pathname);
+    redirectUrl.searchParams.set("next", pathname + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 

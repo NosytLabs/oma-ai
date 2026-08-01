@@ -1,8 +1,9 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
+import { useRevealInView } from "@/lib/use-reveal-in-view";
 import { MODEL_COUNT, MODELS, type Model } from "@/lib/models-data";
 import { SyntaxHighlighter } from "../_components/SyntaxHighlighter";
 
@@ -539,29 +540,12 @@ export function AnimatedSection({
 	children: ReactNode;
 	delay?: number;
 }) {
-	const [visible, setVisible] = useState(false);
-	const ref = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const el = ref.current;
-		if (!el) return;
-		const obs = new IntersectionObserver(
-			([e]) => {
-				if (e.isIntersecting) {
-					setVisible(true);
-					obs.unobserve(el);
-				}
-			},
-			{ threshold: 0.1 },
-		);
-		obs.observe(el);
-		return () => obs.disconnect();
-	}, []);
+	const { ref, show } = useRevealInView<HTMLDivElement>({ amount: 0.05, once: true });
 
 	return (
 		<div
 			ref={ref}
-			className={`transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+			className={`transition-all duration-500 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
 			style={{ transitionDelay: `${delay}ms` }}
 		>
 			{children}

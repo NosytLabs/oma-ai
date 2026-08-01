@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "API Chat playground",
 	description:
-		"Interactive AI chat playground. Test models, compare responses, stream completions. Pay per token with crypto.",
+		"Interactive AI chat playground. Test models, compare responses, stream completions. Pay per use with card or crypto.",
 	alternates: { canonical: "/chat" },
 	// Session-gated — keep out of the public index.
 	robots: { index: false, follow: false },

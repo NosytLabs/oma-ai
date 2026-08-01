@@ -139,6 +139,30 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
       401,
     );
   }
+
+  // Check if owner is banned
+  try {
+    const [u] = await db
+      .select({ banned: user.banned })
+      .from(user)
+      .where(eq(user.id, apiKey.userId))
+      .limit(1);
+    if (u?.banned) {
+      return c.json(
+        {
+          error: {
+            message: "Your OMA-AI account has been suspended by the administrator.",
+            type: "forbidden",
+            code: "account_suspended",
+          },
+        },
+        403,
+      );
+    }
+  } catch (err) {
+    logger.error({ err }, "[bearerAuth] failed to check if user is banned");
+  }
+
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
     return c.json(
       {
@@ -195,6 +219,30 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
       401,
     );
   }
+
+  // Check if user is banned
+  try {
+    const [u] = await db
+      .select({ banned: user.banned })
+      .from(user)
+      .where(eq(user.id, session.user.id))
+      .limit(1);
+    if (u?.banned) {
+      return c.json(
+        {
+          error: {
+            message: "Your OMA-AI account has been suspended by the administrator.",
+            type: "forbidden",
+            code: "account_suspended",
+          },
+        },
+        403,
+      );
+    }
+  } catch (err) {
+    logger.error({ err }, "[sessionAuth] failed to check if user is banned");
+  }
+
   c.set("userId", session.user.id);
   c.set("session", session.session);
   c.set("user", session.user);

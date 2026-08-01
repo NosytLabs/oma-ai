@@ -49,7 +49,7 @@ export function AgentDemoSection() {
 							{[
 								"Drop-in OpenAI SDK / any agent that takes a base URL",
 								"Budget → frontier routing with circuit-breaker failover",
-								"Pay per token in USDC — or x402 for agent wallets",
+								"Pay per use in USDC — or x402 for agent wallets",
 							].map((item) => (
 								<li key={item} className="flex items-start gap-2">
 									<span

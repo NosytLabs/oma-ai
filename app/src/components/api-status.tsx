@@ -121,7 +121,13 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5">
+      <div
+        className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-2.5 py-1"
+        role="status"
+        aria-live="polite"
+        aria-label={`API Status: ${info.text}`}
+        title={`API status: ${info.text} — polls /api/health every 30s`}
+      >
         <span className={`relative flex h-2 w-2`}>
           {status === "checking" && (
             <span
@@ -132,12 +138,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
             className={`relative inline-flex rounded-full h-2 w-2 ${info.dotClass}`}
           />
         </span>
-        <span
-          role="status"
-          aria-live="polite"
-          aria-label={`API Status: ${info.text}`}
-          className={`text-[10px] ${info.className}`}
-        >
+        <span className={`text-[11px] ${info.className}`}>
           {info.text}
         </span>
       </div>
@@ -145,7 +146,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
         <button
           type="button"
           onClick={handleRetry}
-          className="flex items-center gap-1 text-[10px] text-text-muted hover:text-text transition-colors"
+          className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors"
           aria-label="Retry connection"
         >
           <RefreshCw className="h-3 w-3" />

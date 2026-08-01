@@ -39,7 +39,7 @@ export function PricingSection() {
 				subtitle="Per-model pricing. Input and output priced per million tokens."
 			/>
 
-			<div id="pricing-table" className="mb-6 rounded-xl border border-border overflow-hidden scroll-mt-24">
+			<div id="pricing-table" className="mb-6 rounded-xl border border-border overflow-x-auto overscroll-x-contain scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">

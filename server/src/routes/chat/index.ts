@@ -19,7 +19,7 @@
  *   venice — Venice AI (privacy-first, OpenAI-compatible).
  *             https://api.venice.ai/api/v1/chat/completions
  *   gonka  — Gonka decentralized inference broker (OpenBroker by
- *             default). OpenAI-compatible. Used as the cheap tier for
+ *             default). OpenAI-compatible. Used as the cost-effective tier for
  *             large-context / tool-use requests.
  */
 import { Hono } from "hono";

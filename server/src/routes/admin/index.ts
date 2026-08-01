@@ -31,7 +31,7 @@ import * as nodePath from "node:path";
 import type { OmaEnv } from "../../types.js";
 import { requireAdmin, sessionAuth } from "../../auth/middleware.js";
 import { db } from "../../db/client.js";
-import { user, usageRecords, auditLogs, creditBalances } from "../../db/schema.js";
+import { user, usageRecords, auditLogs, creditBalances, siteSettings } from "../../db/schema.js";
 import { listAllModels, getModelById } from "../../inference/models.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
@@ -377,8 +377,9 @@ adminRoutes.get("/v1/admin/usage", async (c) => {
 
 adminRoutes.get("/v1/admin/usage/recent", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") ?? "50"), 200);
+  const filterUserId = c.req.query("userId")?.trim();
   try {
-    const rows = await db
+    let query = db
       .select({
         id: usageRecords.id,
         requestId: usageRecords.requestId,
@@ -392,9 +393,15 @@ adminRoutes.get("/v1/admin/usage/recent", async (c) => {
         status: usageRecords.status,
         createdAt: usageRecords.createdAt,
       })
-      .from(usageRecords)
-      .orderBy(desc(usageRecords.createdAt))
-      .limit(limit);
+      .from(usageRecords);
+
+    if (filterUserId) {
+      // @ts-ignore
+      query = query.where(eq(usageRecords.userId, filterUserId));
+    }
+
+    // @ts-ignore
+    const rows = await query.orderBy(desc(usageRecords.createdAt)).limit(limit);
     return c.json({ data: rows, count: rows.length });
   } catch (err) {
     logger.error({ err }, "[admin/usage/recent] failed");
@@ -445,6 +452,128 @@ adminRoutes.get("/v1/admin/users", async (c) => {
   } catch (err) {
     logger.error({ err }, "[admin/users] failed");
     return c.json({ error: { message: "user query failed" } }, 500);
+  }
+});
+
+const updateUserSchema = z.object({
+  banned: z.boolean().optional(),
+  role: z.string().optional(),
+  creditBalanceCentsDelta: z.number().optional(),
+});
+
+// PATCH /v1/admin/users/:id — update user details (banned, role, credit balance delta)
+adminRoutes.patch("/v1/admin/users/:id", async (c) => {
+  const targetId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = updateUserSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid request payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  try {
+    // 1. Fetch user to verify they exist + get baseline for audit logs
+    const [existing] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, targetId))
+      .limit(1);
+    if (!existing) {
+      return c.json({ error: { message: "User not found" } }, 404);
+    }
+
+    const [existingBal] = await db
+      .select()
+      .from(creditBalances)
+      .where(eq(creditBalances.userId, targetId))
+      .limit(1);
+
+    const updateFields: Partial<typeof user.$inferSelect> = {
+      updatedAt: new Date(),
+    };
+    if (parsed.data.banned !== undefined) {
+      updateFields.banned = parsed.data.banned;
+    }
+    if (parsed.data.role !== undefined) {
+      updateFields.role = parsed.data.role;
+    }
+
+    // 2. Perform updates
+    await db.update(user).set(updateFields).where(eq(user.id, targetId));
+
+    if (parsed.data.creditBalanceCentsDelta !== undefined) {
+      const delta = parsed.data.creditBalanceCentsDelta;
+      await db
+        .insert(creditBalances)
+        .values({
+          userId: targetId,
+          balanceCents: delta.toString(),
+          totalDepositedCents: delta > 0 ? delta.toString() : "0",
+          totalUsedCents: "0",
+        })
+        .onConflictDoUpdate({
+          target: creditBalances.userId,
+          set: {
+            balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric + ${delta}::numeric, 0)`,
+            totalDepositedCents: delta > 0
+              ? sql`${creditBalances.totalDepositedCents}::numeric + ${delta}::numeric`
+              : creditBalances.totalDepositedCents,
+            lastActivityAt: sql`NOW()`,
+          },
+        });
+    }
+
+    // 3. Fetch final state for return + audit
+    const [finalUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, targetId))
+      .limit(1);
+    const [finalBal] = await db
+      .select()
+      .from(creditBalances)
+      .where(eq(creditBalances.userId, targetId))
+      .limit(1);
+
+    const adminId = c.get("userId");
+    if (adminId) {
+      await auditLog({
+        userId: adminId,
+        action: "USER_UPDATED",
+        resource: "user",
+        resourceId: targetId,
+        metadata: {
+          before: {
+            user: existing,
+            balance: existingBal ? Number(existingBal.balanceCents) : 0,
+          },
+          after: {
+            user: finalUser,
+            balance: finalBal ? Number(finalBal.balanceCents) : 0,
+          },
+        },
+      });
+    }
+
+    return c.json({
+      success: true,
+      user: {
+        ...finalUser,
+        balanceCents: finalBal ? Number(finalBal.balanceCents) : 0,
+        totalUsedCents: finalBal ? Number(finalBal.totalUsedCents) : 0,
+        totalDepositedCents: finalBal ? Number(finalBal.totalDepositedCents) : 0,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, targetId }, "[admin/users/patch] update failed");
+    return c.json({ error: { message: "Failed to update user" } }, 500);
   }
 });
 
@@ -692,4 +821,105 @@ adminRoutes.get("/v1/admin/polar/subscriptions", async (c) => {
   } catch (err) {
     return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
   }
+});
+
+// GET /v1/site-settings (public)
+adminRoutes.get("/v1/site-settings", async (c) => {
+  try {
+    let [settings] = await db.select().from(siteSettings).limit(1);
+    if (!settings) {
+      [settings] = await db
+        .insert(siteSettings)
+        .values({ id: "default" })
+        .returning();
+    }
+    return c.json({
+      maintenanceMode: settings.maintenanceMode,
+      cardPaymentsEnabled: settings.cardPaymentsEnabled,
+      cryptoPaymentsEnabled: settings.cryptoPaymentsEnabled,
+    });
+  } catch (err) {
+    logger.error({ err }, "[settings] failed to fetch site settings");
+    return c.json({
+      maintenanceMode: false,
+      cardPaymentsEnabled: true,
+      cryptoPaymentsEnabled: true,
+    });
+  }
+});
+
+// GET /v1/admin/settings (admin-protected)
+adminRoutes.get("/v1/admin/settings", async (c) => {
+  let [settings] = await db.select().from(siteSettings).limit(1);
+  if (!settings) {
+    [settings] = await db
+      .insert(siteSettings)
+      .values({ id: "default" })
+      .returning();
+  }
+  return c.json(settings);
+});
+
+const patchSettingsSchema = z.object({
+  maintenanceMode: z.boolean().optional(),
+  cardPaymentsEnabled: z.boolean().optional(),
+  cryptoPaymentsEnabled: z.boolean().optional(),
+});
+
+// PATCH /v1/admin/settings (admin-protected)
+adminRoutes.patch("/v1/admin/settings", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = patchSettingsSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid settings payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  let [settings] = await db.select().from(siteSettings).limit(1);
+  if (!settings) {
+    [settings] = await db
+      .insert(siteSettings)
+      .values({ id: "default" })
+      .returning();
+  }
+
+  const before = { ...settings };
+  const updateData: Partial<typeof settings> = {
+    updatedAt: new Date(),
+  };
+  if (parsed.data.maintenanceMode !== undefined) {
+    updateData.maintenanceMode = parsed.data.maintenanceMode;
+  }
+  if (parsed.data.cardPaymentsEnabled !== undefined) {
+    updateData.cardPaymentsEnabled = parsed.data.cardPaymentsEnabled;
+  }
+  if (parsed.data.cryptoPaymentsEnabled !== undefined) {
+    updateData.cryptoPaymentsEnabled = parsed.data.cryptoPaymentsEnabled;
+  }
+
+  const [updated] = await db
+    .update(siteSettings)
+    .set(updateData)
+    .where(eq(siteSettings.id, "default"))
+    .returning();
+
+  const userId = c.get("userId");
+	if (userId) {
+		await auditLog({
+			userId,
+			action: "USER_UPDATED",
+			resource: "site_settings",
+			resourceId: "default",
+			metadata: { before, after: updated },
+		});
+	}
+
+  return c.json({ success: true, settings: updated });
 });

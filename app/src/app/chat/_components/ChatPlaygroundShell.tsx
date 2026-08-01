@@ -247,7 +247,7 @@ function ShellContent({
 		isScrolledAway,
 		handleScroll,
 		jumpToBottom,
-	} = useChatScroll(loading, messages);
+	} = useChatScroll(loading, messages, deferredMessages);
 
 	const { sendMessage, abortRef } = useStreamingChat({
 		messagesRef,
@@ -479,8 +479,6 @@ function ShellContent({
 				setModel={setModel}
 				paramsOpen={paramsOpen}
 				setParamsOpen={setParamsOpen}
-				webSearchEnabled={webSearchEnabled}
-				setWebSearchEnabled={setWebSearchEnabled}
 				mediaMode={mediaMode}
 				setMediaMode={setMediaMode}
 				searching={searching}
@@ -534,7 +532,7 @@ function ShellContent({
 									aria-hidden="true"
 								/>
 								Low credits — ${balanceDollars.toFixed(2)} (image/video require
-								balance)
+								credits)
 							</span>
 							<Link
 								href="/deposit"
@@ -631,6 +629,8 @@ function ShellContent({
 									loading={loading}
 									textareaRef={inputRef}
 									disabled={false}
+									webSearchEnabled={webSearchEnabled}
+									setWebSearchEnabled={setWebSearchEnabled}
 								/>
 
 								<div className="mt-2.5 flex flex-col items-stretch gap-1.5 px-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">

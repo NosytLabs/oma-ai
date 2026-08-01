@@ -161,16 +161,16 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 						w-10 h-10 flex items-center justify-center relative z-20
 						${
 							isUser
-								? "bg-accent/15 border border-accent/40 text-accent"
+								? "bg-accent/10 border border-accent/30 text-accent"
 								: "bg-surface border border-border text-text-muted"
 						}
 					`}
 					style={{
-						borderRadius: isUser ? "2px" : "8px",
+						borderRadius: isUser ? "6px" : "10px",
 					}}
 				>
 					{isUser ? (
-						<User className="w-5 h-5" strokeWidth={1.5} />
+						<User className="w-4 h-4" strokeWidth={1.75} />
 					) : isStreaming ? (
 						prefersReducedMotion ? (
 							<span
@@ -182,7 +182,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 											: "Composing response"
 								}
 								role="status"
-								className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
+								className="relative inline-flex h-4 w-4 items-center justify-center"
 							>
 								<span className="absolute inline-flex h-full w-full rounded-full bg-accent/40 animate-ping" />
 								<span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -208,13 +208,13 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							/>
 						)
 					) : (
-						<Bot className="w-5 h-5" strokeWidth={1.5} />
+						<Bot className="w-4 h-4" strokeWidth={1.75} />
 					)}
 				</div>
 				{/* Ambient glow behind assistant avatar */}
 				{!isUser && (
 					<div
-						className="absolute inset-0 -z-10 blur-xl opacity-30"
+						className="absolute inset-0 -z-10 blur-xl opacity-40"
 						style={{
 							background:
 								"radial-gradient(circle, var(--color-accent-glow), transparent 70%)",
@@ -225,7 +225,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 
 			{/* ─── MESSAGE BODY ─── */}
 <div
-					className={`min-w-0 max-w-full flex-1 basis-0 sm:max-w-[80%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
+					className={`min-w-[8rem] max-w-full flex-1 sm:max-w-[78%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
 			>
 				{/* Search Sources */}
 				{msg.searchResults && msg.searchResults.length > 0 && (
@@ -252,21 +252,21 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				{/* ─── THE BUBBLE ─── */}
 				<div
 					className={`
-            relative max-w-full min-w-0 px-4 py-4 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-5
+            relative inline-block max-w-full px-4 py-3.5 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-5
             ${
 							isUser
-								? "bg-accent/8 border border-accent/25 text-text border-r-0"
+								? "bg-accent/[0.08] border border-accent/25 text-text border-r-0"
 								: "bg-surface/60 border border-border text-text-secondary border-l-0"
 						}
           `}
 					style={{
 						// Asymmetric border-radius for visual interest
 						borderRadius: isUser
-							? "12px 2px 12px 12px" // Sharp top-right (toward avatar)
-							: "2px 12px 12px 12px", // Sharp top-left (toward avatar)
+							? "14px 4px 14px 14px" // Sharp top-right (toward avatar)
+							: "4px 14px 14px 14px", // Sharp top-left (toward avatar)
 						// Subtle depth on assistant messages
 						boxShadow: isUser
-							? "none"
+							? "0 0 0 1px rgba(70,211,154,0.05), 0 4px 16px -8px var(--color-accent-glow)"
 							: "var(--shadow-message-inset)",
 					}}
 				>
@@ -449,28 +449,63 @@ function ReasoningBlock({
 	prefersReducedMotion: boolean;
 }) {
 	return (
-		<div className="mb-2 w-full border border-border/40 bg-surface/20 overflow-hidden">
+		<div className="mb-3 w-full border border-border/40 bg-surface/20 overflow-hidden rounded-sm">
 			<button
 				type="button"
 				onClick={onToggle}
 				aria-expanded={expanded}
+				aria-controls="reasoning-content"
 				className="
-          w-full flex items-center justify-between px-4 py-2
-          hover:bg-surface-elevated/30 transition-colors
+          group/reason w-full flex items-center justify-between px-4 py-2.5
+          hover:bg-surface-elevated/40 transition-colors
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-void
         "
 			>
-				<span className="flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider">
-					<Brain className="w-3.5 h-3.5" />
-					Thinking
+				<span className="flex items-center gap-2.5 text-[11px] font-mono uppercase tracking-wider">
+					{isStreaming ? (
+						prefersReducedMotion ? (
+							<span
+								className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
+								aria-hidden="true"
+							>
+								<span className="absolute inline-flex h-full w-full rounded-full bg-accent/40 animate-ping" />
+								<span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+							</span>
+						) : (
+							<ThinkingOrb
+								state="solving"
+								size={20}
+								theme="auto"
+								aria-hidden="true"
+							/>
+						)
+					) : (
+						<Brain className="w-3.5 h-3.5 text-accent/80" />
+					)}
+					<span
+						className={
+							isStreaming
+								? "text-accent"
+								: "text-text-secondary group-hover/reason:text-text-bright"
+						}
+					>
+						{isStreaming ? "Thinking" : "Reasoning"}
+					</span>
 					{isStreaming && (
 						<span
-							className="relative flex h-3.5 w-3.5 items-center justify-center"
+							className="hidden sm:inline-flex items-center gap-1 text-text-muted/80 normal-case tracking-normal"
 							aria-hidden="true"
 						>
-							<span className="absolute inline-flex h-full w-full rounded-full bg-warning/40 animate-ping" />
-							<span className="relative inline-flex h-2 w-2 rounded-full bg-warning" />
+							<span className="w-1 h-1 rounded-full bg-text-muted/60 animate-pulse" />
+							<span
+								className="w-1 h-1 rounded-full bg-text-muted/60 animate-pulse"
+								style={{ animationDelay: "150ms" }}
+							/>
+							<span
+								className="w-1 h-1 rounded-full bg-text-muted/60 animate-pulse"
+								style={{ animationDelay: "300ms" }}
+							/>
 						</span>
 					)}
 				</span>
@@ -483,6 +518,7 @@ function ReasoningBlock({
 			<AnimatePresence>
 				{expanded && (
 					<m.div
+						id="reasoning-content"
 						initial={prefersReducedMotion ? { height: "auto" } : { height: 0 }}
 						animate={{ height: "auto" }}
 						exit={prefersReducedMotion ? { height: "auto" } : { height: 0 }}

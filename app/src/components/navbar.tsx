@@ -70,9 +70,9 @@ export function Navbar() {
 			}`}
 		>
 			<nav aria-label="Main navigation" className="w-full">
-				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
-					<div className="flex min-w-0 items-center gap-2 sm:gap-4 min-w-0">
+					<div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:gap-4 min-w-0">
 						<Magnetic strength={6}>
 							<div className="relative inline-block">
 								<Link
@@ -101,7 +101,7 @@ export function Navbar() {
 
 						<span
 							aria-hidden="true"
-							className="hidden xl:inline-block h-3 w-px bg-border"
+							className="hidden 2xl:inline-block h-3 w-px bg-border"
 						/>
 
 						{/* Section label — only show for sub-routes that aren't already
@@ -114,7 +114,7 @@ export function Navbar() {
 							if (onPrimaryLink) return null;
 							return (
 								<span
-									className="hidden xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] sm:text-xs text-text-muted tabular-nums"
+									className="hidden 2xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] sm:text-xs text-text-muted tabular-nums"
 									aria-label={`Current section: ${section}`}
 								>
 									<span className="text-text-tertiary">~/</span>
@@ -174,7 +174,7 @@ export function Navbar() {
 					</div>
 
 					{/* RIGHT: actions */}
-					<div className="flex shrink-0 items-center gap-1 sm:gap-2">
+					<div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 						<m.a
 							href="https://github.com/NosytLabs/oma-ai"
 							target="_blank"
@@ -209,6 +209,11 @@ export function Navbar() {
 							<ApiStatus />
 						</div>
 
+						<span
+							aria-hidden="true"
+							className="hidden md:inline-block mx-1 h-4 w-px bg-border/60"
+						/>
+
 						{isAuthenticated && !isDemo ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
@@ -219,9 +224,19 @@ export function Navbar() {
 							<Magnetic strength={6}>
 								<Link
 									href="/login"
-									className="inline-flex h-9 items-center gap-2 rounded-sm border border-accent/40 bg-accent/10 px-3 text-xs font-semibold text-accent transition-colors hover:border-accent hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:inline-flex"
+									className="inline-flex h-9 items-center gap-1.5 rounded-md border border-accent/40 bg-accent/[0.08] px-3.5 text-xs font-semibold text-accent transition-all duration-200 hover:border-accent/70 hover:bg-accent/15 hover:shadow-[0_0_18px_-6px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
 									Sign in
+									<svg
+										className="h-3 w-3 opacity-70"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										aria-hidden="true"
+									>
+										<path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+									</svg>
 								</Link>
 							</Magnetic>
 						)}

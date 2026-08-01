@@ -22,7 +22,7 @@ import type { OmaEnv } from "../../types.js";
 import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { db } from "../../db/client.js";
-import { creditBalances, deposits } from "../../db/schema.js";
+import { creditBalances, deposits, siteSettings } from "../../db/schema.js";
 import { auditLog } from "../../middleware/audit.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
@@ -64,6 +64,25 @@ depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
 
 depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, async (c) => {
   const userId = c.get("userId");
+
+  // Check if crypto deposits are disabled by admin
+  try {
+    const [settings] = await db.select({ cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled }).from(siteSettings).limit(1);
+    if (settings && !settings.cryptoPaymentsEnabled) {
+      return c.json(
+        {
+          error: {
+            message: "USDC deposits are temporarily disabled by the administrator.",
+            type: "service_unavailable",
+          },
+        },
+        503,
+      );
+    }
+  } catch (err) {
+    logger.error({ err }, "[deposit] failed to check site settings for crypto payments");
+  }
+
   if (!config.USDC_DEPOSIT_ADDRESS) {
     return c.json(
       {
@@ -115,6 +134,25 @@ depositRoutes.post(
   sessionOrBearerAuth,
   async (c) => {
     const userId = c.get("userId");
+
+    // Check if crypto deposits are disabled by admin
+    try {
+      const [settings] = await db.select({ cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled }).from(siteSettings).limit(1);
+      if (settings && !settings.cryptoPaymentsEnabled) {
+        return c.json(
+          {
+            error: {
+              message: "USDC deposits are temporarily disabled by the administrator.",
+              type: "service_unavailable",
+            },
+          },
+          503,
+        );
+      }
+    } catch (err) {
+      logger.error({ err }, "[deposit] failed to check site settings for crypto payments");
+    }
+
     if (!config.USDC_DEPOSIT_ADDRESS) {
       return c.json(
         {

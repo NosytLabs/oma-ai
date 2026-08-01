@@ -110,11 +110,34 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000;
 const LIVE_MODELS_CACHE_VERSION = 4; // bump to invalidate stale caches after display-name fix
 let liveModelsCache: { data: ModelOption[]; ts: number; v: number } | null = null;
+// Dedupes concurrent mounts: while a fetch is in flight, further consumers
+// subscribe to the same promise instead of firing their own request.
+let liveModelsInFlight: Promise<ModelOption[]> | null = null;
+
+function fetchLiveModels(): Promise<ModelOption[]> {
+	if (liveModelsInFlight) return liveModelsInFlight;
+	liveModelsInFlight = api
+		.models.list()
+		.then((data) => {
+			if (!data?.data?.length) return [];
+			const mapped = (data.data as unknown[])
+				.filter(
+					(m): m is LiveModelRaw =>
+						isLiveModelRaw(m) && m.category !== "video",
+				)
+				.map(mapLiveModel);
+			return mapped;
+		})
+		.finally(() => {
+			liveModelsInFlight = null;
+		});
+	return liveModelsInFlight;
+}
 
 // shared `["models"]` key so dashboard / settings / chat all
 // invalidate the same cache. Returns the active ModelOption[]; falls back
 // to FALLBACK_MODELS while the first request is in flight or on error.
-export function useLiveModels(): ModelOption[] {
+export function useLiveModels(enabled = true): ModelOption[] {
 	const [models, setModels] = useState<ModelOption[]>(() =>
 		liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS
 			? liveModelsCache.data
@@ -122,20 +145,13 @@ export function useLiveModels(): ModelOption[] {
 	);
 
 	useEffect(() => {
+		if (!enabled) return;
 		if (liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS)
 			return;
 		let cancelled = false;
-		api
-			.models.list()
-			.then((data) => {
-				if (cancelled || !data?.data?.length) return;
-				const mapped = (data.data as unknown[])
-					.filter(
-						(m): m is LiveModelRaw =>
-							isLiveModelRaw(m) && m.category !== "video",
-					)
-					.map(mapLiveModel);
-				if (mapped.length === 0) return;
+		fetchLiveModels()
+			.then((mapped) => {
+				if (cancelled || mapped.length === 0) return;
 				liveModelsCache = { data: mapped, ts: Date.now(), v: LIVE_MODELS_CACHE_VERSION };
 				setModels(mapped);
 			})
@@ -145,7 +161,7 @@ export function useLiveModels(): ModelOption[] {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [enabled]);
 
 	return models;
 }
@@ -177,7 +193,8 @@ export function LiveModelsProvider({ children }: LiveModelsProviderProps) {
  */
 export function useSharedLiveModels(): ModelOption[] {
 	const context = useContext(LiveModelsContext);
-	// Always call the hook to satisfy rules-of-hooks, then return conditionally.
-	const fallback = useLiveModels();
+	// Always call the hook to satisfy rules-of-hooks; the effect is a no-op
+	// (no duplicate fetch) when a provider is present.
+	const fallback = useLiveModels(context === null);
 	return context !== null ? context : fallback;
 }

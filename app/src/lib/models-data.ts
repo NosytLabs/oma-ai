@@ -319,10 +319,7 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
  * (e.g. "Minimax M2" → "MiniMax 2.7") without forking the SSR fallback.
  * Keyed by lower-cased model id.
  */
-const DISPLAY_NAME_OVERRIDES: Record<string, string> = {
-	"minimax-m2.7": "MiniMax 2.7",
-	"kimi-k2.6": "Kimi K2.6",
-};
+const DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
 
 function deriveNameFromId(id: string): string {
 	// Convert model IDs like "qwen3-235b-a22b-instruct-2507" to display names

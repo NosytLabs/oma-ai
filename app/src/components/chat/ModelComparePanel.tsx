@@ -4,7 +4,7 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { Columns2, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Message } from "./chat-message-shared";
-import { useLiveModels } from "./chat-message-shared";
+import { useSharedLiveModels } from "./chat-message-shared";
 import { ModelSelector } from "./ModelSelectorRedesign";
 
 interface ModelComparePanelProps {
@@ -36,7 +36,7 @@ export function ModelComparePanel({
 	loading,
 	compareMessages,
 }: ModelComparePanelProps) {
-	const models = useLiveModels();
+	const models = useSharedLiveModels();
 	const [localPrompt, setLocalPrompt] = useState(prompt);
 
 	useEffect(() => {

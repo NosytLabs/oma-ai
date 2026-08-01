@@ -14,7 +14,7 @@ interface ProfileSectionProps {
 
 function authMethodLabel(user: User | null, evmAddress: string | null): string {
 	if (evmAddress) return "Wallet (SIWE / EIP-4361)";
-	if (user?.isAnonymous) return "Anonymous guest session";
+	if (user?.isAnonymous) return "Guest session";
 	if (user?.emailVerified) return "Magic-link email";
 	if (user?.email) return "Email";
 	return "Not set";

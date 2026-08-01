@@ -10,7 +10,7 @@ const { chromium } = require('/Users/tyson/Desktop/Code/products/OMA-AI/app/node
 const fs = require('fs');
 const path = require('path');
 
-const OUT_DIR = '/Users/tyson/Desktop/Code/products/OMA-AI/audit-screenshots/2026-07-31';
+const OUT_DIR = '/Users/tyson/Desktop/Code/products/OMA-AI/.audit-2026-08-01';
 const REPORT_PATH = path.join(OUT_DIR, 'audit-report.json');
 const SUMMARY_PATH = path.join(OUT_DIR, 'audit-summary.md');
 

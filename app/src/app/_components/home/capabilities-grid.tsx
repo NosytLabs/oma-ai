@@ -1,73 +1,79 @@
 "use client";
 
-/**
- * CapabilitiesGrid — section 3 of the homepage.
- * Editorial bento: asymmetric 12-col grid with 4 story clusters.
- * Row 1: "LLM Chat" hero (8 cols) + "Pay with Card" Polar highlight (4 cols).
- * Row 2: "Crypto-Native" USDC (4 cols, tall) + 3 stacked standard cards (8 cols).
- * Row 3: 3 standard cards (routing, tool calling, private).
- * Each cluster uses a distinct visual treatment so the section reads
- * as a content magazine, not a "features grid".
- */
-
 import {
 	ArrowUpRight,
 	Banknote,
 	Coins,
-	GitBranch,
-	KeyRound,
+	Link2,
 	MessageSquare,
 	ShieldCheck,
-	Wallet,
-	Wand2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Reveal, RevealStagger, childFadeUp } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/components/ui/utils";
 import { m } from "@/lib/framer-motion-client";
 
-type CapabilityCell = "hero" | "polar" | "usdc" | "standard";
+const AgentSessionDemo = dynamic(
+	() =>
+		import("@/components/marketing/AgentSessionDemo").then(
+			(mod) => mod.AgentSessionDemo,
+		),
+	{
+		ssr: false,
+		loading: () => <Skeleton className="h-[380px] w-full rounded-xl" />,
+	},
+);
 
 interface Capability {
 	title: string;
 	description: string;
 	icon: typeof MessageSquare;
-	cell: CapabilityCell;
 	badge?: string;
 	example?: string;
 }
 
 const CAPABILITIES: Capability[] = [
 	{
-		title: "LLM Chat",
+		title: "Pay with credits",
 		description:
-			"One OpenAI-compatible schema. Claude, Llama, MiniMax 2.7, Kimi K2.6 — plus decentralized Gonka. Streaming, JSON-schema tools, and server-sent events all included.",
-		icon: MessageSquare,
-		cell: "hero",
-		badge: "22+ models",
-		example: "POST /v1/chat/completions",
+			"Buy credits upfront at 1:1 USD. Credits are non-redeemable and expire 12 months after deposit, so your spend stays clear and predictable.",
+		icon: Coins,
+		badge: "1:1 USD",
+		example: "credits → inference",
 	},
 	{
-		title: "Tool Calling & Streaming",
+		title: "Agents pay per request",
 		description:
-			"Native OpenAI-style function calling, JSON-schema tools, and SSE. Swap the base URL — no migration, no lock-in.",
-		icon: Wand2,
-		cell: "standard",
+			"x402 lets an agent settle each inference request directly on Base. No pre-funding, subscriptions, or API key required.",
+		icon: Link2,
+		badge: "x402",
+		example: "HTTP 402 → USDC",
 	},
 	{
-		title: "Model Routing",
+		title: "Routing & privacy",
 		description:
-			"Venice for premium models. Gonka for cost-effective. Per-model routing, automatic retry on transient failures, and a health-checked provider registry.",
-		icon: GitBranch,
-		cell: "standard",
-	},
-	{
-		title: "Private by Default",
-		description:
-			"Zero data retention on prompt content. Self-hosted deployment for full control. Circuit-breaker failover keeps requests flowing.",
+			"Route across multiple providers with health checks and circuit-breaker failover, while zero data retention keeps prompt content private.",
 		icon: ShieldCheck,
-		cell: "standard",
+		badge: "zero retention",
+		example: "OMA → provider → response",
+	},
+];
+
+const SUPPORT_CAPABILITIES: Capability[] = [
+	{
+		title: "OpenAI-compatible chat",
+		description:
+			"Use the familiar chat completions surface with streaming, JSON-schema tools, and real models like GLM 4.7, Qwen 3.7 Max, and Venice Uncensored 1.2.",
+		icon: MessageSquare,
+	},
+	{
+		title: "Private by default",
+		description:
+			"Zero retention on prompt content, with a self-hosted option when your team needs full control.",
+		icon: ShieldCheck,
 	},
 ];
 
@@ -84,43 +90,59 @@ export function CapabilitiesGrid() {
 						eyebrow="Capabilities"
 						headline={
 							<>
-								One API.
+								Three pillars.
 								<br />
-								<span className="text-accent italic-accent">
-									Every model underneath.
-								</span>
+								<span className="text-accent italic-accent">One gateway.</span>
 							</>
 						}
-						subhead="Drop-in OpenAI compatibility plus routing, failover, and billing that works for humans and agents alike. Card, USDC, or x402."
+						subhead="Pay upfront or per request, then route every call through one private, OpenAI-compatible gateway."
 					/>
 				</Reveal>
 
-				<RevealStagger className="mt-14 grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4">
-					{/* Row 1 — 8 + 4 */}
-					<m.div className="md:col-span-8" variants={childFadeUp}>
-						<LLMChatHero capability={CAPABILITIES[0]} />
-					</m.div>
-					<m.div className="md:col-span-4" variants={childFadeUp}>
-						<PolarCtaCard />
-					</m.div>
-
-					{/* Row 2 — 4 tall + 4 + 4 (leaves USDC card spanning 2 rows) */}
-					<m.div className="md:col-span-4 md:row-span-2" variants={childFadeUp}>
-						<UsdcBillingCard />
-					</m.div>
-					<m.div className="md:col-span-4" variants={childFadeUp}>
-						<CapabilityCard capability={CAPABILITIES[1]} />
-					</m.div>
-					<m.div className="md:col-span-4" variants={childFadeUp}>
-						<CapabilityCard capability={CAPABILITIES[2]} />
+				<RevealStagger className="mt-14 space-y-4">
+					<m.div
+						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
+						variants={childFadeUp}
+					>
+						<div className="md:col-span-8 md:row-span-2">
+							<LLMChatHero capability={CAPABILITIES[0]} />
+						</div>
+						<div className="md:col-span-4">
+							<PolarCtaCard />
+						</div>
+						<div className="md:col-span-4">
+							<UsdcBillingCard />
+						</div>
 					</m.div>
 
-					{/* Row 4 — 8 + 4 — auth + private. Auth lives next to USDC continuation. */}
-					<m.div className="md:col-span-8" variants={childFadeUp}>
-						<AuthLoginCard />
+					<m.div
+						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
+						variants={childFadeUp}
+					>
+						<div className="md:col-span-8 md:row-span-2">
+							<LLMChatHero capability={CAPABILITIES[1]} />
+						</div>
+						<div className="md:col-span-4">
+							<AgentSessionCard />
+						</div>
+						<div className="md:col-span-4">
+							<X402DetailsCard />
+						</div>
 					</m.div>
-					<m.div className="md:col-span-4" variants={childFadeUp}>
-						<CapabilityCard capability={CAPABILITIES[3]} />
+
+					<m.div
+						className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4"
+						variants={childFadeUp}
+					>
+						<div className="md:col-span-8 md:row-span-2">
+							<LLMChatHero capability={CAPABILITIES[2]} />
+						</div>
+						<div className="md:col-span-4">
+							<CapabilityCard capability={SUPPORT_CAPABILITIES[0]} />
+						</div>
+						<div className="md:col-span-4">
+							<CapabilityCard capability={SUPPORT_CAPABILITIES[1]} />
+						</div>
 					</m.div>
 				</RevealStagger>
 			</div>
@@ -139,7 +161,7 @@ function LLMChatHero({ capability }: { capability: Capability }) {
 				"rounded-[var(--radius-md)] p-7 sm:p-8",
 				"bg-gradient-to-br from-[color-mix(in_srgb,var(--color-accent)_14%,var(--color-panel))] via-[var(--color-panel)] to-[var(--color-panel)]",
 				"border border-[color-mix(in_srgb,var(--color-accent)_30%,var(--color-border))]",
-				"min-h-[280px] md:min-h-[320px]",
+				"min-h-[280px] md:min-h-[320px] tilt-card sheen",
 			)}
 		>
 			<div
@@ -212,11 +234,11 @@ function PolarCtaCard() {
 				<Banknote className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-5 font-heading text-2xl font-bold tracking-tight text-text-bright">
-				Pay with Card
+				Pay with card
 			</h3>
 			<p className="mt-3 text-sm text-text leading-relaxed">
-				Buy credits with Visa, Mastercard, or Apple Pay via Polar. No wallet, no
-				USDC. Credits land the moment the payment settles.
+				Buy credits via Polar with Visa, Mastercard, or Apple Pay. Credits land the
+				moment the payment settles.
 			</p>
 			<div className="mt-auto pt-5 flex items-center justify-between">
 				<span className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
@@ -259,58 +281,60 @@ function UsdcBillingCard() {
 				<Coins className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
 			</div>
 			<h3 className="mt-5 font-heading text-xl font-bold tracking-tight text-text-bright">
-				Crypto-Native Billing
+				USDC on Base deposit
 			</h3>
 			<p className="mt-3 text-sm text-text leading-relaxed">
-				USDC on Base at 1:1 USD. x402 pay-per-request for agents — no
-				pre-funding, no subscriptions. Per-call ledger shows every request and
-				exact cents charged.
+				Deposit USDC on Base at 1:1 USD. Settlement is immediate on confirmation,
+				with a per-call ledger showing every request and exact credits charged.
 			</p>
 			<div className="mt-auto pt-5 flex flex-wrap gap-2">
 				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-info">
 					USDC · Base
 				</span>
 				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-info">
-					x402 per-call
+					1:1 USD
 				</span>
 			</div>
 		</m.article>
 	);
 }
 
-function AuthLoginCard() {
+function AgentSessionCard() {
 	return (
 		<m.article
 			whileHover={{ y: -4 }}
 			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className="surface-card tilt-card sheen relative h-full p-6 sm:p-7 min-h-[220px] flex flex-col"
+			className="surface-card tilt-card sheen relative h-full min-h-[220px] overflow-hidden p-2"
 		>
-			<div className="flex items-center gap-3">
-				<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
-					<Wallet className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-				</div>
-				<h3 className="font-heading text-lg font-semibold tracking-tight text-text-bright">
-					Magic Link, Wallet, or Account #
-				</h3>
-			</div>
-			<p className="mt-3 text-sm text-text leading-relaxed">
-				Sign in with email magic link, Sign-In With Ethereum (SIWE), or a 16-digit
-				account number. Same account either way — mint keys, top up, chat from
-				any device.
-			</p>
-			<div className="mt-auto pt-4 flex flex-wrap gap-2">
-				<span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-void/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary">
-					<KeyRound className="h-3 w-3 text-accent" aria-hidden="true" />
-					Magic link
-				</span>
-				<span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-void/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary">
-					Wallet
-				</span>
-				<span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-void/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary">
-					Account #
-				</span>
-			</div>
+			<AgentSessionDemo className="border-0 shadow-none [&_[role=region]]:max-h-[190px]" />
 		</m.article>
+	);
+}
+
+function X402DetailsCard() {
+	return (
+		<Link
+			href="/docs#x402"
+			className="surface-card tilt-card sheen group relative flex h-full min-h-[220px] flex-col p-6 sm:p-7"
+		>
+			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
+				<Link2 className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+			</div>
+			<h3 className="mt-4 font-heading text-lg font-semibold tracking-tight text-text-bright">
+				x402 technical details
+			</h3>
+			<p className="mt-2 text-sm text-text leading-relaxed">
+				See the payment challenge, settlement headers, Base network details, and a
+				complete agent request flow.
+			</p>
+			<span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+				Read the protocol
+				<ArrowUpRight
+					className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+					aria-hidden="true"
+				/>
+			</span>
+		</Link>
 	);
 }
 

@@ -47,8 +47,13 @@ const DangerZoneSection = nextDynamic(() =>
 		default: m.DangerZoneSection,
 	})),
 );
+const PrivacySection = nextDynamic(() =>
+	import("./_components/PrivacySection").then((m) => ({
+		default: m.PrivacySection,
+	})),
+);
 
-type SettingsTab = "profile" | "appearance" | "api-keys" | "sessions" | "danger";
+type SettingsTab = "profile" | "appearance" | "api-keys" | "sessions" | "privacy" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -83,6 +88,12 @@ const TABS: TabDef[] = [
 		description: "Active devices",
 	},
 	{
+		id: "privacy",
+		label: "Privacy",
+		icon: Shield,
+		description: "Your data",
+	},
+	{
 		id: "danger",
 		label: "Danger",
 		icon: Shield,
@@ -96,6 +107,7 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	appearance: "Theme",
 	"api-keys": "Keys",
 	sessions: "Sessions",
+	privacy: "Privacy",
 	danger: "Danger",
 };
 
@@ -442,6 +454,7 @@ export default function SettingsPage() {
 								{activeTab === "sessions" && (
 									<SessionsSection sessions={sessions} />
 								)}
+								{activeTab === "privacy" && <PrivacySection user={user} />}
 								{activeTab === "danger" && (
 									<DangerZoneSection
 										onDeleteAccount={handleDeleteAccount}

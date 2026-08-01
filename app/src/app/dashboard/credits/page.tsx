@@ -217,7 +217,7 @@ export default function CreditsPage() {
 					</m.div>
 					<h2 className="mb-3 text-2xl font-bold">Sign in to view credits</h2>
 					<p className="mb-6 text-text-muted">
-						Magic link, anonymous guest, or wallet — all three work for
+						Magic link, account number, or wallet — all three work for
 						deposits and history.
 					</p>
 					<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -254,7 +254,7 @@ export default function CreditsPage() {
 					</div>
 					<h1 className="h1-utility text-text-bright">Credits</h1>
 					<p className="mt-1 text-sm text-text-muted">
-						Balance, purchases, and usage breakdown
+						Credits, purchases, and usage breakdown
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
@@ -311,7 +311,7 @@ export default function CreditsPage() {
 						</div>
 						<div>
 							<h2 className="text-lg font-semibold text-text-bright">
-								Current Balance
+								Current Credits
 							</h2>
 							<p className="text-xs text-text-muted">Available credits</p>
 						</div>
@@ -477,7 +477,7 @@ export default function CreditsPage() {
 										Auto-reload credits
 									</p>
 									<p className="text-sm text-text-muted">
-										Automatically purchase credits when balance falls below
+										Automatically purchase credits when credits fall below
 										threshold
 									</p>
 								</div>

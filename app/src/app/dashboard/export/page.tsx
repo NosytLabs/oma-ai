@@ -53,7 +53,7 @@ export default function ExportPage() {
         <div className="border border-border bg-void p-5">
           <h2 className="text-sm font-semibold text-text-bright">Summary</h2>
           <p className="mt-1 mb-4 text-[11px] text-text-muted">
-            Aggregated balance, total deposited, and total used.
+          Aggregated credits, total deposited, and total used.
           </p>
           <div className="flex flex-wrap gap-3">
             <ExportDataButton kind="summary" format="json" label="Summary (JSON)" />

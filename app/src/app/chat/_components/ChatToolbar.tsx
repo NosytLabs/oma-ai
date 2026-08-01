@@ -8,7 +8,6 @@ import {
 	Columns2,
 	Download,
 	Keyboard,
-	Search,
 	Settings2,
 	Share2,
 	Trash2,
@@ -53,8 +52,6 @@ export interface ChatToolbarProps {
 	setModel: Dispatch<SetStateAction<string>>;
 	paramsOpen: boolean;
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
-	webSearchEnabled: boolean;
-	setWebSearchEnabled: Dispatch<SetStateAction<boolean>>;
 	mediaMode?: "text" | "image" | "video";
 	// 2026-07-30: the IMAGE/VIDEO modes are not exposed in the UI anymore
 	// (no underlying endpoints). The setter type is now a no-op —
@@ -90,7 +87,7 @@ export interface ChatToolbarProps {
  *
  * Four functional clusters, left → right:
  *   1. Brand mark + model selector + parameters toggle
- *   2. Web search toggle, media mode (text/image/video), searching badge
+ *   2. Media mode (text/image/video), searching badge
  *   3. Stats bar (desktop / mobile variants), credit balance pill
  *   4. Compare mode, share, shortcuts, export, clear
  *
@@ -104,8 +101,6 @@ export function ChatToolbar({
 	setModel,
 	paramsOpen,
 	setParamsOpen,
-	webSearchEnabled,
-	setWebSearchEnabled,
 	searching,
 	isAuthenticated,
 	balance,
@@ -134,7 +129,7 @@ export function ChatToolbar({
 					aria-label={`Credit balance: ${balanceDollars.toFixed(2)} dollars. Click to add credits.`}
 					data-state={isLowBalance ? "low" : "ok"}
 					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10`}
-					title="Credits balance — click to deposit"
+					title="Credit balance — click to add credits"
 				>
 					{isLowBalance ? (
 						<AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -149,7 +144,7 @@ export function ChatToolbar({
 				<span
 					className={`${btnBase} shrink-0 opacity-60`}
 					aria-label="Loading credit balance"
-					title="Loading balance…"
+					title="Loading credits…"
 				>
 					<Coins className="h-3.5 w-3.5 shrink-0" />
 					<span className="tabular-nums text-[10px] sm:text-[11px]">…</span>
@@ -165,24 +160,13 @@ export function ChatToolbar({
 	// land.
 	const mediaTabs = null;
 
-	const webSearchBtn = (
-		<button
-			type="button"
-			onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-			aria-label="Toggle web search"
-			aria-pressed={webSearchEnabled}
-			className={`${btnBase} shrink-0 min-h-[40px] min-w-[40px] ${webSearchEnabled ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-			title="Toggle Web Search"
-		>
-			<Search className="h-3.5 w-3.5" />
-			<span className="hidden sm:inline">WEB</span>
-		</button>
-	);
+	// Web search toggle moved into the composer input row (2026-08-01) —
+	// it belongs next to the send action, not in the model/status toolbar.
 
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex h-12 flex-none items-center gap-1.5 border-b border-border bg-void/95 px-1.5 sm:gap-2 sm:px-4"
+			className="flex h-12 flex-none items-center gap-2 border-b border-border bg-void/95 px-2 sm:gap-3 sm:px-5"
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
@@ -211,10 +195,9 @@ export function ChatToolbar({
 				</button>
 			</div>
 
-			{/* Primary actions always visible (mobile + desktop): mode + web search */}
+			{/* Primary actions always visible (mobile + desktop) */}
 			<div className="flex shrink-0 items-center gap-1">
 				{mediaTabs}
-				{webSearchBtn}
 				{searching && (
 					<div
 						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1 text-[10px] uppercase tracking-widest text-accent"

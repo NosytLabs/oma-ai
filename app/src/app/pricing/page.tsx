@@ -86,31 +86,60 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
-		title: "USDC on Base",
-		desc: "Direct USDC transfers at 1:1 USD rate. Settlement is immediate on confirmation.",
-		tag: null,
-		tagStyle: "",
+		title: "Card · Visa · Mastercard",
+		desc: "Buy credits with any major card via Polar. Apple Pay supported. No wallet or crypto needed.",
+		tag: "Easiest",
+		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
 	{
 		icon: Coins,
-		title: "LI.FI / CCTP",
-		desc: "Bridge or convert assets to USDC credits on Base via LI.FI / CCTP. Rate varies by asset.",
-		tag: "100+ assets",
+		title: "USDC on Base",
+		desc: "Direct USDC transfers at 1:1 USD. Settlement is immediate on confirmation. 100+ chains via LI.FI / CCTP.",
+		tag: "Crypto-native",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
 	{
 		icon: Rocket,
 		title: "x402 Pay-Per-Request",
-		desc: "Agent-native payments on Base. Each API request can settle fees without pre-funding credits.",
-		tag: "no pre-fund",
-		tagStyle: "bg-accent-dim text-accent border border-accent/30",
+		desc: "Agent-native payments on Base. Each API request settles fees on-chain without pre-funding credits.",
+		tag: "For agents",
+		tagStyle: "bg-surface text-text-secondary border border-border",
+	},
+];
+
+const POLAR_TIERS: Array<{
+	name: string;
+	price: string;
+	credits: string;
+	description: string;
+	badge?: string;
+}> = [
+	{
+		name: "Hobby",
+		price: "$10",
+		credits: "1,000 credits",
+		description: "A small, flexible start for side projects and exploration.",
+	},
+	{
+		name: "Builder",
+		price: "$50",
+		credits: "5,000 credits",
+		description: "A practical runway for production apps and autonomous agents.",
+		badge: "Recommended",
+	},
+	{
+		name: "Scale",
+		price: "$250",
+		credits: "25,000 credits",
+		description: "The best value per credit for high-volume workloads.",
+		badge: "Best value",
 	},
 ];
 
 const FAQ_ITEMS = [
 	{
 		q: "How do I add credits?",
-		a: "Deposit USDC on Base, or bridge/convert from 100+ cryptocurrencies via LI.FI / CCTP. Settlement is immediate on confirmation.",
+		a: "Buy credits with a card (Visa, Mastercard, Apple Pay) via Polar — no wallet needed — or deposit USDC on Base at 1:1 USD. Credits land the moment payment settles.",
 	},
 	{
 		q: "Do credits expire?",
@@ -118,7 +147,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC (Direct) on Base for 1:1 USD credits, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base.",
+		a: "Cards via Polar (Visa, Mastercard, Apple Pay — charges appear as 'NOSYT'), USDC direct on Base at 1:1 USD, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base for agents.",
 	},
 	{
 		q: "What is x402 pay-per-request?",
@@ -306,7 +335,7 @@ export default function PricingPage() {
 					<div className="meta-strip">
 							<span>{modelCount + generationModels.length} live models</span>
 						<span>Usage-based billing</span>
-						<span>x402 native</span>
+						<span>Card · USDC · x402</span>
 					</div>
 				</div>
 
@@ -318,30 +347,36 @@ export default function PricingPage() {
 						<p className="mt-3 text-3xl font-semibold text-text-bright">
 							{lowestInputPrice}
 						</p>
-						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
-							Lowest displayed price tier per 1M input tokens across the current
-							catalog.
-						</p>
+					<p className="mt-2 text-sm leading-relaxed text-text">
+						Lowest displayed price tier per 1M input tokens across the current
+						catalog.
+					</p>
 					</div>
-					<div className="surface-card p-5">
-						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
-							Pay your way
-						</p>
-						<p className="mt-3 text-3xl font-semibold text-text-bright">USDC or x402</p>
-						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
-							Top up credits with USDC or let agents settle each call directly on
-							Base.
-						</p>
-					</div>
+				<div className="surface-card p-5">
+					<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+						Pay your way
+					</p>
+					<p className="mt-3 text-3xl font-semibold text-text-bright">Card or USDC</p>
+					<p className="mt-2 text-sm leading-relaxed text-text">
+						Buy credits with Visa or Mastercard via Polar, or top up with USDC on
+						Base.
+					</p>
+					<p className="mt-3 text-xs leading-relaxed text-text-muted">
+						x402 pay-per-request also supported for agents —{" "}
+						<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors">
+							see below →
+						</Link>
+					</p>
+				</div>
 					<div className="surface-card p-5">
 						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
 							No contract
 						</p>
 						<p className="mt-3 text-3xl font-semibold text-text-bright">No minimums</p>
-						<p className="mt-2 text-sm leading-relaxed text-text-secondary">
-							Ship one request or one million. Credits deduct in real time with a
-							clear ledger.
-						</p>
+					<p className="mt-2 text-sm leading-relaxed text-text">
+						Ship one request or one million. Credits deduct in real time with a
+						clear ledger.
+					</p>
 					</div>
 				</div>
 
@@ -353,7 +388,7 @@ export default function PricingPage() {
 								Compare prices before you deposit.
 							</h2>
 						</div>
-						<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text-secondary md:block">
+						<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text md:block">
 							Filter by tier to find the most cost-effective model that still fits your
 							latency and context needs.
 						</p>
@@ -485,12 +520,64 @@ export default function PricingPage() {
 						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
 							<p className="text-xs text-text-muted">
 								Prices shown are base provider rates. OMA applies a 25% platform
-								fee at billing for Venice models. Gonka-routed models (MiniMax 2.7,
-								Kimi K2.6) have no additional markup.
+								fee at billing for Venice models. Gonka-routed models (GLM 4.7 Flash,
+								Qwen 3.5 9B) have no additional markup.
 							</p>
 						</div>
 					</div>
 				</div>
+
+				<section className="mb-16" aria-labelledby="polar-tiers-heading">
+					<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+						<div>
+							<p className="page-kicker">Buy credits upfront</p>
+							<h2 id="polar-tiers-heading" className="mt-3 text-2xl font-semibold text-text-bright">
+								Pay your way.
+							</h2>
+						</div>
+						<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
+							Choose a credit pack instead of managing a monthly subscription or
+							per-token invoice. Every pack is 1:1 USD.
+						</p>
+					</div>
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+						{POLAR_TIERS.map((tier) => {
+							const recommended = tier.name === "Builder";
+							return (
+								<article
+									key={tier.name}
+									className={`relative flex h-full flex-col rounded-xl border p-5 transition-colors duration-200 ${recommended ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-accent/40"}`}
+								>
+									{tier.badge && (
+										<span className="absolute -top-2.5 right-4 rounded-full bg-accent px-2.5 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void">
+											{tier.badge}
+										</span>
+									)}
+									<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
+										{tier.name}
+									</p>
+									<p className="mt-4 font-mono text-4xl font-semibold tracking-tight text-text-bright">
+										{tier.price}
+									</p>
+									<p className="mt-2 font-mono text-sm text-accent">{tier.credits}</p>
+									<p className="mt-4 min-h-12 text-sm leading-relaxed text-text-secondary">
+										{tier.description}
+									</p>
+									<Link
+										href="/deposit?method=card"
+										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 text-sm`}
+									>
+										<CreditCard className="h-4 w-4" aria-hidden="true" />
+										Buy with card
+									</Link>
+									<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
+										Powered by Polar
+									</p>
+								</article>
+							);
+						})}
+					</div>
+				</section>
 
 				{generationModels.length > 0 && (
 					<div className="mb-12">
@@ -607,7 +694,7 @@ export default function PricingPage() {
 					</div>
 				</div>
 
-				<div className="mb-12">
+				<div id="x402" className="mb-12 scroll-mt-20">
 					<div className="relative p-5 rounded-xl bg-accent-dim border border-accent/30">
 						<div className="flex items-start gap-3">
 							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
@@ -622,7 +709,7 @@ export default function PricingPage() {
 								</div>
 								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
 									Native x402 support lets applications pay for inference call by
-									call, without maintaining a prepaid balance.
+									call, without maintaining prepaid credits.
 									<Link
 										href="/docs#x402"
 										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
@@ -685,10 +772,25 @@ export default function PricingPage() {
 									className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
 								>
 									<Zap className="h-4 w-4 mr-2" />
-									Start AI Inference
+									Start building
 									<ArrowRight className="h-4 w-4 ml-2" />
 								</Link>
 							</ElectricBorder>
+						</JuiceButton>
+						<JuiceButton
+							color="var(--color-accent)"
+							size={120}
+							opacity={0.12}
+							className="rounded-full"
+						>
+							<Link
+								href="/deposit?method=card"
+								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+							>
+								<CreditCard className="h-4 w-4 mr-2" />
+									Buy credits
+
+							</Link>
 						</JuiceButton>
 						<JuiceButton
 							color="var(--color-accent)"
@@ -701,15 +803,15 @@ export default function PricingPage() {
 								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
 							>
 								<Coins className="h-4 w-4 mr-2" />
-								Deposit Crypto
+									Deposit USDC
+
 							</Link>
 						</JuiceButton>
 						<Link
 							href="/models"
-							className="text-sm text-text-secondary hover:text-accent transition-colors px-4 py-3 text-center"
+							className="font-mono text-xs text-text-muted transition-colors hover:text-accent"
 						>
-							View All Models
-							<ArrowRight className="w-4 h-4 ml-1 inline-block" />
+							View all models →
 						</Link>
 					</div>
 				</div>

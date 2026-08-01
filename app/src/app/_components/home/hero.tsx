@@ -7,7 +7,7 @@
  * and a live code strip that shows the OpenAI-compatible surface.
  */
 
-import { ArrowRight, Info, KeyRound, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -61,37 +61,40 @@ export function Hero() {
 				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 			</div>
 
-			<div className="container-page min-w-0 pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-12 lg:pb-20">
+			<div className="container-page min-w-0 pt-4 pb-12 sm:pt-6 sm:pb-16 lg:pt-8 lg:pb-20">
 				<div className="grid min-w-0 grid-cols-1 items-center gap-12 md:grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
 					{/* Copy column */}
 					<div className="min-w-0 max-w-full">
-						<m.div {...reveal(0, entrance)} className="mb-6">
+						<m.div {...reveal(0, entrance)} className="mb-5">
 							<span className="badge">
 								<span
 									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
 									aria-hidden="true"
 								/>
-								OpenAI-compatible · USDC on Base
+								OpenAI-compatible · Buy credits · Card or USDC
 							</span>
 						</m.div>
 
 						<m.h1
 							{...reveal(1, entrance)}
-							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-tight"
+							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight"
 						>
 							<span className="block">AI inference,</span>
-							<span className="italic-accent block mt-2 text-accent font-semibold text-2xl sm:text-3xl">paid per request</span>
-							<span className="block">in USDC.</span>
+							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
+								paid per request,
+							</span>
+							<span className="block">by card or USDC.</span>
 						</m.h1>
 
 						<m.p
 							{...reveal(2, entrance)}
-							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text-secondary sm:text-[1.125rem]"
+							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text sm:text-[1.125rem]"
 							style={{ textWrap: "pretty" }}
 						>
-							One gateway, {MODEL_COUNT}+ models underneath. Wallet-based auth,
-							credit billing, and x402 pay-per-request for agents — drop-in
-							OpenAI SDK compatibility.
+							One gateway, {MODEL_COUNT}+ models underneath. Buy credits with a
+							card via Polar, deposit USDC on Base, or use x402
+							pay-per-request for agents — all through one OpenAI-compatible
+							API.
 						</m.p>
 
 						<m.div
@@ -138,36 +141,24 @@ export function Hero() {
 								/>
 							</Link>
 							<Link
-								href="/models"
-								className="btn-ghost inline-flex h-12 items-center justify-center gap-2 px-3 text-[13px] text-text-muted"
+								href="/pricing"
+								className="btn-outline inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"
 							>
-								<ScrambleText
-									text="View Live Models"
-									trigger="hover"
-									as="span"
-									className="inline-block"
-								/>
-								<span className="ml-2 text-xs font-mono text-text-muted">
-									{MODEL_COUNT}+
-								</span>
+								See pricing
+								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 							</Link>
 							<Link
-								href="/docs#x402"
-								aria-label="x402 pay-per-request — learn more"
-								title="x402 is the HTTP 402 payment protocol. Agents pay per request with USDC on Base — no API key, no subscription."
-								className="group/x402 btn-ghost inline-flex h-12 items-center justify-center gap-1.5 px-3 text-[13px] text-text-muted"
+								href="/models"
+								className="group/vlm inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-2 text-[12px] font-mono text-text-muted transition-colors hover:text-text-bright whitespace-nowrap"
 							>
-								<span>x402 pay-per-request</span>
-								<Info
-									className="h-3.5 w-3.5 opacity-60 transition-opacity group-hover/x402:opacity-100"
-									aria-hidden="true"
-								/>
+								Live Models · {MODEL_COUNT}+
+								<ArrowRight className="h-3 w-3 text-accent transition-transform duration-200 group-hover/vlm:translate-x-0.5" aria-hidden="true" />
 							</Link>
 						</m.div>
 
 						<m.ul
 							{...reveal(4, entrance)}
-							className="mt-8 flex flex-wrap gap-x-3 gap-y-2 w-full text-[12px] font-mono text-text-muted sm:gap-x-5 sm:text-[13px]"
+							className="mt-9 flex flex-wrap gap-x-4 gap-y-2 w-full text-[12px] font-mono text-text-muted sm:gap-x-5 sm:text-[12.5px]"
 						>
 							<li className="inline-flex items-center gap-1.5">
 								<Zap className="h-3 w-3 text-accent" aria-hidden="true" />
@@ -183,11 +174,22 @@ export function Hero() {
 							</li>
 							<li className="inline-flex items-center gap-1.5">
 								<span className="h-1 w-1 rounded-full bg-tertiary" />
-								Pay in USDC
+								Card or USDC
 							</li>
 							<li className="inline-flex items-center gap-1.5">
 								<span className="h-1 w-1 rounded-full bg-tertiary" />
 								Account number login
+							</li>
+							<li className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-tertiary" />
+								<Link
+									href="/docs#x402"
+									aria-label="x402 pay-per-request — learn more"
+									title="x402 is the HTTP 402 payment protocol. Agents pay per request with USDC on Base — no API key, no subscription."
+									className="text-text-secondary hover:text-accent transition-colors underline-offset-4 hover:underline"
+								>
+									x402 pay-per-request
+								</Link>
 							</li>
 						</m.ul>
 					</div>

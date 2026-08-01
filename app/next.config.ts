@@ -5,28 +5,6 @@ const nextConfig: NextConfig = {
 	devIndicators: false,
 	poweredByHeader: false,
 
-	// Dev-mode static chunks must NOT be cached forever: Next 15 dev serves
-	// them with `Cache-Control: public, max-age=31536000, immutable`, so the
-	// browser keeps running stale JS after a code change (breaks hydration,
-	// event handlers, and model-name overrides) until a hard refresh.
-	// Override to no-store in dev; production keeps hashed immutable chunks.
-	async headers() {
-		if (process.env.NODE_ENV !== "production") {
-			return [
-				{
-					source: "/_next/static/:path*",
-					headers: [
-						{
-							key: "Cache-Control",
-							value: "no-cache, no-store, must-revalidate",
-						},
-					],
-				},
-			];
-		}
-		return [];
-	},
-
 	eslint: { ignoreDuringBuilds: false },
 	typescript: { ignoreBuildErrors: false },
 
@@ -118,6 +96,11 @@ const nextConfig: NextConfig = {
 	},
 
 	async headers() {
+		// Dev-mode static chunks must NOT be cached forever: without this,
+		// the browser keeps running stale JS after a code change (breaks
+		// hydration, event handlers, and model-name overrides) until a hard
+		// refresh. Production keeps hashed immutable chunks.
+		const isDev = process.env.NODE_ENV !== "production";
 		return [
 			{
 				source: "/(.*)",
@@ -130,7 +113,17 @@ const nextConfig: NextConfig = {
 					{ key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 				],
 			},
-			{ source: "/_next/static/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+			{
+				source: "/_next/static/:path*",
+				headers: [
+					{
+						key: "Cache-Control",
+						value: isDev
+							? "no-cache, no-store, must-revalidate"
+							: "public, max-age=31536000, immutable",
+					},
+				],
+			},
 			{ source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }] },
 			{ source: "/(.*)\\.(html|htm)", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate, proxy-revalidate" }] },
 		];

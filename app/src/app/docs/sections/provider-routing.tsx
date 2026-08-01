@@ -64,8 +64,8 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Decentralized budget provider via OpenBroker. Hosts MiniMax 2.7
-						and Kimi K2.6 at the lowest per-token rates in the catalog —
+						Decentralized budget provider via OpenBroker. Hosts GLM 4.7 Flash
+						and Qwen 3.5 9B at the lowest per-token rates in the catalog —
 						metered and billed like every other model.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">

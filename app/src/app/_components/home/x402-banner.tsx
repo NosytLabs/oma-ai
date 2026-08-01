@@ -50,7 +50,7 @@ export function X402Banner() {
 									Agents pay for themselves.
 								</h2>
 								<p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
-									No card. No KYC. No subscriptions. On 402, read{" "}
+									Wallet-based billing, no card needed. On 402, read{" "}
 									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
 										PAYMENT-REQUIRED
 									</code>

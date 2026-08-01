@@ -80,6 +80,17 @@ export const auth = {
   },
 
   /**
+   * Wipe usage history + audit trail WITHOUT deleting the account.
+   * GDPR right-to-forget for telemetry; balance and keys stay intact.
+   */
+  clearHistory(): Promise<{
+    success: boolean;
+    deleted: { usageRecords: number; auditLogs: number };
+  }> {
+    return request("/v1/history", { method: "DELETE" });
+  },
+
+  /**
    * Resolve a 16-digit account number to the wallet address that owns
    * it. Returns `null` for unknown numbers (404 from the server).
    * Used by the account-number sign-in shortcut on /login.

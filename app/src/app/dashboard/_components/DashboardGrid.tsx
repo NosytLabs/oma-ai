@@ -4,6 +4,8 @@ import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	Activity,
+	CreditCard,
+	Coins,
 	Inbox,
 	KeyRound,
 	type LucideIcon,
@@ -417,7 +419,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						)}
 
 						<div className="mb-6 grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem] [&>*]:bg-void">
-							<WidgetErrorBoundary title="Balance">
+							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
 									loading={loading}
@@ -440,14 +442,33 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<LazyProviderHealthSummary />
 								</WidgetErrorBoundary>
 							</div>
-							<WidgetErrorBoundary title="Subscription">
-								{/* Polar subscription card removed — billing is USDC deposits only. */}
-								<div className="rounded-xl border border-border bg-surface p-4 text-xs text-text-muted">
-									Billing is USDC deposits only. See{" "}
-									<Link href="/deposit" className="text-accent hover:underline">
-										/deposit
-									</Link>
-									.
+							<WidgetErrorBoundary title="Buy credits">
+								<div className="rounded-xl border border-border bg-surface p-4">
+									<div className="flex items-start justify-between gap-3">
+										<div>
+											<p className="text-sm font-medium text-text-bright">Buy credits</p>
+											<p className="mt-1 text-xs text-text-muted">Choose card or USDC.</p>
+										</div>
+										<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-accent">
+											Polar + USDC
+										</span>
+									</div>
+									<div className="mt-4 grid grid-cols-2 gap-2">
+										<Link
+											href="/deposit?method=card"
+											className="btn-primary inline-flex min-h-9 items-center justify-center gap-1.5 px-2 text-xs"
+										>
+											<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+											Card
+										</Link>
+										<Link
+											href="/deposit"
+											className="btn-secondary inline-flex min-h-9 items-center justify-center gap-1.5 px-2 text-xs"
+										>
+											<Coins className="h-3.5 w-3.5" aria-hidden="true" />
+											USDC
+										</Link>
+									</div>
 								</div>
 							</WidgetErrorBoundary>
 						</div>

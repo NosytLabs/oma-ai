@@ -29,6 +29,8 @@ import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
+import { db } from "./db/client.js";
+import { siteSettings } from "./db/schema.js";
 
 // Fail-fast admin address validation. Runs at startup, not at module
 // import, so test imports of the auth middleware don't exit the process.
@@ -119,6 +121,41 @@ const corsOptions = {
 
 app.use("*", cors(corsOptions));
 app.use("*", metricsMiddleware);
+
+// Global Maintenance Mode Check
+app.use("*", async (c, next) => {
+  const path = c.req.path;
+  // Bypass maintenance mode for essential system & admin endpoints
+  if (
+    path.startsWith("/api/auth/") ||
+    path === "/v1/site-settings" ||
+    path.startsWith("/v1/admin") ||
+    path === "/v1/health" ||
+    path === "/v1/metrics" ||
+    path.startsWith("/.well-known")
+  ) {
+    return await next();
+  }
+
+  try {
+    const [settings] = await db.select({ maintenanceMode: siteSettings.maintenanceMode }).from(siteSettings).limit(1);
+    if (settings?.maintenanceMode) {
+      return c.json(
+        {
+          error: {
+            message: "OMA-AI is currently undergoing scheduled maintenance. Please try again later.",
+            type: "service_unavailable",
+          },
+        },
+        503,
+      );
+    }
+  } catch (err) {
+    logger.error({ err }, "[maintenance] failed to check site settings");
+  }
+
+  await next();
+});
 
 // Public operational routes.
 app.route("/", healthRoutes);

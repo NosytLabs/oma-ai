@@ -19,6 +19,13 @@ interface StatsBarProps {
 	model?: string;
 }
 
+interface StatPillProps {
+	label: string;
+	value: string;
+	accent?: boolean;
+	title?: string;
+}
+
 function getModelPricing(modelId: string): {
 	inputPer1M: number;
 	outputPer1M: number;
@@ -31,6 +38,22 @@ function getModelPricing(modelId: string): {
 		};
 	}
 	return { inputPer1M: 0.15, outputPer1M: 0.6 };
+}
+
+function StatPill({ label, value, accent, title }: StatPillProps) {
+	return (
+		<span
+			className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10.5px] font-mono uppercase tracking-wider transition-colors ${
+				accent
+					? "border-success/30 bg-success/10 text-success"
+					: "border-border bg-surface/40 text-text-secondary hover:border-accent/30 hover:text-text"
+			}`}
+			title={title}
+		>
+			<span className="opacity-60">{label}</span>
+			<span className="font-semibold tabular-nums">{value}</span>
+		</span>
+	);
 }
 
 export function StatsBar({ messages, model = "llama-3.2-3b" }: StatsBarProps) {
@@ -47,19 +70,22 @@ export function StatsBar({ messages, model = "llama-3.2-3b" }: StatsBarProps) {
 
 	if (messages.length === 0) return null;
 
+	const msgCount = messages.filter((m) => m.role === "user").length;
+	const inCost = messages.reduce((a, m) => a + ((m.inputTokens ?? 0) / 1_000_000) * inputPer1M, 0);
+	const outCost = messages.reduce((a, m) => a + ((m.outputTokens ?? 0) / 1_000_000) * outputPer1M, 0);
+
 	return (
-		<div className="flex items-center gap-4 text-[11px] uppercase tracking-wider text-text-muted font-mono">
-			<span>
-				MSG:
-				{messages
-					.filter((m) => m.role === "user")
-					.length.toString()
-					.padStart(2, "0")}
-			</span>
+		<div className="flex items-center gap-1.5 font-mono">
+			<StatPill label="MSG" value={msgCount.toString().padStart(2, "0")} />
 			{totalTokens > 0 && (
 				<>
-					<span>TOK:{totalTokens.toString().padStart(4, "0")}</span>
-					<span className="text-success">CST:${totalCost.toFixed(4)}</span>
+					<StatPill label="TOK" value={totalTokens.toString().padStart(4, "0")} />
+					<StatPill
+						label="CST"
+						value={`$${totalCost.toFixed(4)}`}
+						accent
+						title={`Session cost — estimated from ${model} list pricing (in: $${inCost.toFixed(4)} · out: $${outCost.toFixed(4)})`}
+					/>
 				</>
 			)}
 		</div>

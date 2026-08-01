@@ -208,16 +208,16 @@ export default function NetworkPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+					<section className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16">
 						<Link
 							href="/"
-							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
+							className="mb-4 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
 							Back to home
 						</Link>
 
-						<div className="flex items-center gap-2 mb-5">
+						<div className="flex items-center gap-2 mb-4">
 							<Network className="h-4 w-4 text-accent" aria-hidden="true" />
 							<span className="text-xs uppercase tracking-[0.18em] font-mono text-accent">
 								/network

@@ -17,7 +17,7 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useId } from "react";
 import { useToast } from "@/components/ui/Toast";
-import { useLiveModels } from "./chat-message-shared";
+import { useSharedLiveModels } from "./chat-message-shared";
 
 interface SettingsPanelProps {
 	temperature: number;
@@ -283,7 +283,7 @@ export function SettingsPanel({
 	setShowAdvanced,
 	model,
 }: SettingsPanelProps) {
-	const MODELS = useLiveModels();
+	const MODELS = useSharedLiveModels();
 	const selectedModel = MODELS.find((m) => m.id === model);
 
 	return (
