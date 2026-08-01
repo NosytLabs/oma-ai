@@ -78,3 +78,4 @@ data/
 
 # Local UX audit screenshot dump (not product assets)
 .screenshots/
+*.old
