@@ -196,10 +196,11 @@ export default function PrivacyPage() {
 										deposits.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
-										We do not track, store, or sell personal information.
-										Inference requests are processed in memory and never
-										persisted. You can export or delete everything we have on
-										you from the dashboard.
+										We do not sell personal information. We retain only the
+										account and billing metadata described below. Inference
+										requests are processed in memory and never persisted.
+										You can export or delete everything we have on you from
+										the dashboard.
 									</p>
 								</div>
 							</div>
@@ -336,14 +337,14 @@ export default function PrivacyPage() {
 						aria-labelledby="auth-heading"
 						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
 					>
-						<SectionHeading title="Authentication" meta="Wallet-only sign-in" />
+						<SectionHeading title="Authentication" meta="Wallet-based authentication" />
 						<h3 id="auth-heading" className="sr-only">
 							Wallet authentication
 						</h3>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							Sign-In With Ethereum (SIWE) signatures authenticate
-							every request. Your wallet address is used to:
+							Sign-In With Ethereum (SIWE) signatures establish your
+							authenticated session. Your wallet address is used to:
 						</p>
 
 						<div className="border border-border bg-surface p-5">

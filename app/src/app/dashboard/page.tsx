@@ -334,7 +334,7 @@ export default function DashboardPage() {
 				<div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4">
 					<h2 className="font-mono text-text text-lg">Dashboard Error</h2>
 					<p className="text-sm text-text-muted max-w-md font-mono">
-						Something went wrong loading the dashboard.
+						The dashboard could not load. Retry, or check that the API server is reachable.
 					</p>
 					<button
 						type="button"

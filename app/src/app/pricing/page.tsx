@@ -772,7 +772,7 @@ export default function PricingPage() {
 									className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
 								>
 									<Zap className="h-4 w-4 mr-2" />
-									Start building
+									Get API key
 									<ArrowRight className="h-4 w-4 ml-2" />
 								</Link>
 							</ElectricBorder>

@@ -50,7 +50,7 @@ export function AvailableModelsSection() {
 			name: "Frontier",
 			color: "text-violet",
 			badge: "bg-violet/20 text-violet",
-			desc: "State-of-the-art models with maximum capability.",
+			desc: "Top-tier models for complex reasoning and generation tasks.",
 			models: models.filter((m) => m.tier === "frontier"),
 		},
 	];
