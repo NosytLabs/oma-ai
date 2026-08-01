@@ -18,25 +18,16 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 	const handleDownload = async () => {
 		setDownloading(true);
 		try {
-			const [usage, deposits, summary] = await Promise.all([
-				api.exportData.usage("json"),
-				api.exportData.deposits("json"),
-				api.exportData.summary("json"),
-			]);
-			const data = {
-				exportedAt: new Date().toISOString(),
-				accountId: user?.id ?? null,
-				usage: JSON.parse(await usage.text()),
-				deposits: JSON.parse(await deposits.text()),
-				summary: JSON.parse(await summary.text()),
-			};
-			const blob = new Blob([JSON.stringify(data, null, 2)], {
-				type: "application/json",
-			});
+			// One round-trip: server streams the full GDPR bundle
+			// (profile, API keys w/o secrets, usage, deposits,
+			// credit balance, audit logs, sessions) as a JSON
+			// attachment. The server records a DATA_EXPORT_REQUESTED
+			// audit row regardless of where the call came from.
+			const blob = await api.exportData.accountBundle();
 			const url = window.URL.createObjectURL(blob);
 			const anchor = document.createElement("a");
 			anchor.href = url;
-			anchor.download = `oma-data-${Date.now()}.json`;
+			anchor.download = `oma-data-export-${user?.id ?? "account"}.json`;
 			document.body.appendChild(anchor);
 			anchor.click();
 			anchor.remove();

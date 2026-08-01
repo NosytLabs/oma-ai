@@ -49,6 +49,19 @@ export const exportData = {
       responseType: "blob",
     });
   },
+  /**
+   * Full GDPR Article 15/20 data-export bundle: profile + API keys
+   * (no secrets) + usage records + deposits + credit balance + audit
+   * log + active sessions. Always JSON, always triggers a server-side
+   * DATA_EXPORT_REQUESTED audit row. Returned as a Blob so the browser
+   * triggers a download via anchor.click().
+   */
+  accountBundle() {
+    return request<Blob>("/v1/export/account", {
+      method: "GET",
+      responseType: "blob",
+    });
+  },
 };
 
 /**

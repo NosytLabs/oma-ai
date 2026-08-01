@@ -60,6 +60,8 @@ interface TabDef {
 	label: string;
 	icon: LucideIcon;
 	description: string;
+	/** Small badge shown next to the label (e.g. "Caution"). */
+	badge?: string;
 }
 
 const TABS: TabDef[] = [
@@ -95,9 +97,10 @@ const TABS: TabDef[] = [
 	},
 	{
 		id: "danger",
-		label: "Danger",
-		icon: Shield,
-		description: "Delete account",
+		label: "Danger zone",
+		icon: AlertTriangle,
+		description: "Irreversible actions",
+		badge: "Caution",
 	},
 ];
 
@@ -370,6 +373,7 @@ export default function SettingsPage() {
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
+						const isDanger = tab.id === "danger";
 						return (
 							<button
 								type="button"
@@ -387,20 +391,44 @@ export default function SettingsPage() {
 									}
 								}}
 								className={`group flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 text-center text-[11px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
-									isActive
-										? "border-accent/30 bg-accent/10 text-text-bright"
-										: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
+									isDanger
+										? isActive
+											? "border-error/40 bg-error/10 text-error"
+											: "border-transparent text-text-secondary hover:border-error/30 hover:bg-error/5 hover:text-error"
+										: isActive
+											? "border-accent/30 bg-accent/10 text-text-bright"
+											: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
 								}`}
 							>
 								<Icon
-									className={`h-4 w-4 shrink-0 ${isActive ? "text-accent" : "text-text-muted"}`}
+									className={`h-4 w-4 shrink-0 ${
+										isDanger
+											? "text-error"
+											: isActive
+												? "text-accent"
+												: "text-text-muted"
+									}`}
 									aria-hidden="true"
 								/>
 								<div className="min-w-0">
 									<div className="truncate font-medium lg:hidden">
 										{MOBILE_TAB_LABEL[tab.id]}
 									</div>
-									<div className="hidden font-medium lg:block">{tab.label}</div>
+									<div className="hidden items-center gap-1.5 lg:flex">
+										<span className="font-medium">{tab.label}</span>
+										{tab.badge && (
+											<span
+												className={`shrink-0 rounded-sm border px-1 py-px text-[9px] font-bold uppercase tracking-wider ${
+													isDanger
+														? "border-error/40 bg-error/10 text-error"
+														: "border-border bg-surface text-text-muted"
+												}`}
+												aria-hidden="true"
+											>
+												{tab.badge}
+											</span>
+										)}
+									</div>
 									<div className="hidden truncate text-[11px] text-text-muted lg:block">
 										{tab.description}
 									</div>

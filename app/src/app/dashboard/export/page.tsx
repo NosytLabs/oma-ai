@@ -12,6 +12,11 @@ import { ExportDataButton } from "../_components/ExportDataButton";
  *   GET /v1/export/usage        — per-request spend (model, tokens, cost, markup)
  *   GET /v1/export/deposits     — deposit history
  *   GET /v1/export/summary      — aggregated balance + totals
+ *   GET /v1/export/account      — full GDPR Article 15/20 bundle (profile +
+ *                                 API keys, usage, deposits, credit balance,
+ *                                 audit log, sessions). Returns as a JSON
+ *                                 attachment. Settings → Privacy also links
+ *                                 to this for the one-click data download.
  */
 
 export default function ExportPage() {

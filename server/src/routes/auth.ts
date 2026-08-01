@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { sessionAuth } from "../auth/middleware.js";
+import { logger } from "../lib/logger.js";
 import {
   createApiKey,
   listApiKeys,
@@ -61,13 +62,55 @@ authRoutes.delete("/account", async (c) => {
     );
   }
   const userId = session.user.id;
-  await db.delete(user).where(eq(user.id, userId));
+  const ipAddress =
+    c.req.header("x-real-ip")
+    ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? undefined;
+  const userAgent = c.req.header("user-agent") ?? undefined;
+  // Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
+  // so post-delete logs would lose the userId. The "requested" row
+  // gives compliance a non-orphaned trace that the user actually
+  // initiated the wipe.
   await auditLog({
     userId,
-    action: "USER_DELETED",
+    action: "ACCOUNT_DELETE_REQUESTED",
     resource: "users",
     resourceId: userId,
+    ipAddress,
+    userAgent,
   });
+  // Cascade FKs wipe session, account, wallet_address, api_keys,
+  // deposits, credit_balances, usage_records, credit_batches,
+  // auto_reload_settings, refund_requests, webhook_subscriptions
+  // for this user. audit_logs rows are preserved with userId=NULL
+  // (set null on the FK) so a forensic trail remains.
+  await db.delete(user).where(eq(user.id, userId));
+  // Record completion — the user is already gone, so insert the
+  // audit row directly with userId=NULL (auditLog() short-circuits
+  // on null userId to skip the anonymous sentinel). We still want
+  // the action+resource+metadata trail for compliance.
+  try {
+    await db.insert(auditLogs).values({
+      userId: null,
+      action: "ACCOUNT_DELETE_COMPLETED",
+      resource: "users",
+      resourceId: userId,
+      ipAddress: ipAddress ?? null,
+      userAgent: userAgent ?? null,
+      metadata: { previous_user_id: userId },
+      createdAt: new Date(),
+    });
+  } catch (err) {
+    logger.error(
+      { err, userId },
+      "[auth] failed to write ACCOUNT_DELETE_COMPLETED audit",
+    );
+  }
+  // Wipe the HttpOnly oma_api_key cookie so the browser doesn't keep
+  // a now-orphaned key value. The corresponding api_keys row is gone
+  // (cascade) but the cookie would still be sent on subsequent
+  // requests until it expires (7 days).
+  c.header("Set-Cookie", createLogoutCookieHeader());
   return c.json({ success: true });
 });
 
@@ -173,13 +216,18 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
     db.delete(auditLogs).where(eq(auditLogs.userId, userId)),
   ]);
   // Write ONE fresh audit row so moderators can still see the wipe
-  // happened (the previous trail is intentionally gone).
+  // happened (the previous trail is intentionally gone). The userId
+  // is preserved (audit_logs.user_id FK is `set null`, not cascade),
+  // so the userId column on this row keeps its original value.
   await auditLog({
     userId,
-    action: "USER_UPDATED",
+    action: "HISTORY_CLEARED",
     resource: "history",
     resourceId: userId,
-    metadata: { action: "wipe_history" },
+    metadata: {
+      usage_records_deleted: usage.rowCount ?? 0,
+      audit_logs_deleted: audit.rowCount ?? 0,
+    },
   });
   return c.json({
     success: true,

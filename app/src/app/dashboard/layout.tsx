@@ -1,6 +1,7 @@
 // Auth-gated product surface — render at request time only.
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -38,6 +39,20 @@ export default function DashboardLayout({
 	return (
 		<div className="min-h-[calc(100dvh-2.75rem)] bg-void text-text-secondary font-mono">
 			{children}
+			<footer className="mx-auto mt-16 max-w-5xl border-t border-border px-4 py-6 text-[10px] font-mono text-text-muted sm:px-8">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<span className="uppercase tracking-widest text-text-muted/60">
+						OMA · One gateway · Every model
+					</span>
+					<Link
+						href="/settings?tab=danger"
+						className="text-text-muted transition-colors hover:text-error"
+						aria-label="Manage or delete your account"
+					>
+						Delete account
+					</Link>
+				</div>
+			</footer>
 		</div>
 	);
 }
