@@ -90,6 +90,10 @@ export const auditActionEnum = pgEnum("audit_action", [
   "RATE_LIMIT_OVERRIDE_SET",
   "RATE_LIMIT_OVERRIDE_REMOVED",
   "ACCOUNT_LOGIN_RATE_LIMITED",
+  "USER_SUSPENDED",
+  "USER_UNSUSPENDED",
+  "CREDIT_ADJUSTED",
+  "REFUND_ISSUED",
 ]);
 
 // =============================================================================
@@ -142,6 +146,12 @@ export const user = pgTable("user", {
   banned: boolean("banned").notNull().default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  // Slice 6 (admin controls depth): dedicated suspended flag — checked by
+  // sessionAuth + bearerAuth (auth/middleware.ts) so suspended accounts
+  // are rejected at 403 even if a stale banned flag slips through.
+  // The PATCH endpoint on banned is retained for back-compat with the
+  // existing operator workflow.
+  suspended: boolean("suspended").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -154,6 +164,7 @@ export const user = pgTable("user", {
     .on(t.evmAddress)
     .where(sql`${t.evmAddress} IS NOT NULL`),
   index("idx_user_is_anonymous").on(t.isAnonymous),
+  index("idx_user_suspended").on(t.suspended),
 ]);
 
 export const session = pgTable("session", {

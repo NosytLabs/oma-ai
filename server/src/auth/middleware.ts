@@ -140,14 +140,14 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
     );
   }
 
-  // Check if owner is banned
+  // Check if owner is banned or suspended
   try {
     const [u] = await db
-      .select({ banned: user.banned })
+      .select({ banned: user.banned, suspended: user.suspended })
       .from(user)
       .where(eq(user.id, apiKey.userId))
       .limit(1);
-    if (u?.banned) {
+    if (u?.banned || u?.suspended) {
       return c.json(
         {
           error: {
@@ -160,7 +160,7 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
       );
     }
   } catch (err) {
-    logger.error({ err }, "[bearerAuth] failed to check if user is banned");
+    logger.error({ err }, "[bearerAuth] failed to check if user is banned/suspended");
   }
 
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
@@ -220,14 +220,14 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
     );
   }
 
-  // Check if user is banned
+  // Check if user is banned or suspended
   try {
     const [u] = await db
-      .select({ banned: user.banned })
+      .select({ banned: user.banned, suspended: user.suspended })
       .from(user)
       .where(eq(user.id, session.user.id))
       .limit(1);
-    if (u?.banned) {
+    if (u?.banned || u?.suspended) {
       return c.json(
         {
           error: {
@@ -240,7 +240,7 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
       );
     }
   } catch (err) {
-    logger.error({ err }, "[sessionAuth] failed to check if user is banned");
+    logger.error({ err }, "[sessionAuth] failed to check if user is banned/suspended");
   }
 
   c.set("userId", session.user.id);
@@ -330,10 +330,26 @@ export function requireAdmin() {
     // Admin gate — accept either (1) user.role === 'admin' OR
     // (2) the user's linked EVM wallet is in ADMIN_WALLET_ADDRESSES.
     const [u] = await db
-      .select({ evmAddress: user.evmAddress, role: user.role })
+      .select({ evmAddress: user.evmAddress, role: user.role, suspended: user.suspended })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
+
+    // Even admins must obey suspension (defense in depth — e.g. a
+    // compromised admin session shouldn't be able to act after the
+    // primary admin has flagged the account).
+    if (u?.suspended) {
+      return c.json(
+        {
+          error: {
+            message: "Your OMA-AI account has been suspended by the administrator.",
+            type: "forbidden",
+            code: "account_suspended",
+          },
+        },
+        403,
+      );
+    }
 
     if (u?.role === "admin") {
       c.set("teamRole", "owner");

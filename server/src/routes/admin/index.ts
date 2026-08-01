@@ -7,35 +7,55 @@
  * user can promote themselves via `POST /v1/admin/promote-self` (one
  * time, dev-only).
  *
- *   GET    /v1/admin/health            — server version + uptime + DB/Redis ping
- *   GET    /v1/admin/models           — list catalog with pricing
- *   PATCH  /v1/admin/models/:id       — adjust input/output price per 1M tokens
- *   GET    /v1/admin/usage            — aggregated usage (last 24h / 7d / 30d)
- *   GET    /v1/admin/usage/recent     — last N usage rows
- *   GET    /v1/admin/users            — list users
- *   GET    /v1/admin/audit            — audit log (last 100)
- *   POST   /v1/admin/promote-self     — (dev) promote caller to admin role
- *   GET    /v1/admin/integrations     — Polar / Gonka provider status
+ *   GET    /v1/admin/health                  — server version + uptime + DB/Redis ping
+ *   GET    /v1/admin/models                  — list catalog with pricing
+ *   PATCH  /v1/admin/models/:id              — adjust input/output price per 1M tokens
+ *   GET    /v1/admin/usage                   — aggregated usage (last 24h / 7d / 30d)
+ *   GET    /v1/admin/usage/recent            — last N usage rows
+ *   GET    /v1/admin/users                   — list users (?q=<text> for search)
+ *   PATCH  /v1/admin/users/:id               — update user (banned, role, credit delta)
+ *   POST   /v1/admin/users/:id/credits       — add/remove credits with reason
+ *   POST   /v1/admin/users/:id/suspend       — suspend user (revokes API keys)
+ *   POST   /v1/admin/users/:id/unsuspend     — unsuspend user
+ *   GET    /v1/admin/audit                   — audit log (action/userId/from/to filters + cursor pagination)
+ *   POST   /v1/admin/polar/refund            — issue Polar refund + drain credits
+ *   GET    /v1/admin/polar/payments          — list Polar payments
+ *   GET    /v1/admin/polar/customers         — list Polar customers
+ *   POST   /v1/admin/polar/checkouts         — create Polar checkout
+ *   GET    /v1/admin/polar/products          — list Polar products
+ *   GET    /v1/admin/polar/subscriptions     — list Polar subscriptions
+ *   GET    /v1/admin/settings                — site settings (admin)
+ *   PATCH  /v1/admin/settings                — update site settings
+ *   POST   /v1/admin/promote-self            — (dev) promote caller to admin role
+ *   GET    /v1/admin/integrations            — Polar / Gonka provider status
  *
  * Pricing edits write to the in-memory catalog (`inference/models.ts`).
  * Changes survive until process restart — the canonical source is
  * `models.json` on disk via `MODELS_CONFIG_PATH` or the default catalog.
  * Audit log records every pricing change.
+ *
+ * Slice 6 (admin controls depth) added:
+ *   - users search via ?q=
+ *   - dedicated credit adjustment endpoint (CREDIT_ADJUSTED audit)
+ *   - dedicated suspend / unsuspend endpoints (revokes API keys on suspend)
+ *   - Polar refund endpoint (REFUND_ISSUED audit, drains credits)
+ *   - audit log filters + cursor pagination
  */
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { sql, desc, eq, gte, count } from "drizzle-orm";
+import { sql, desc, eq, gte, count, lt, and, or, ilike } from "drizzle-orm";
 import * as nodeFs from "node:fs";
 import * as nodePath from "node:path";
 import type { OmaEnv } from "../../types.js";
 import { requireAdmin, sessionAuth } from "../../auth/middleware.js";
 import { db } from "../../db/client.js";
-import { user, usageRecords, auditLogs, creditBalances, siteSettings } from "../../db/schema.js";
+import { user, usageRecords, auditLogs, creditBalances, siteSettings, apiKeys } from "../../db/schema.js";
 import { listAllModels, getModelById } from "../../inference/models.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 import { auditLog } from "../../middleware/audit.js";
+import { adjustCredits, drainCreditsForRefund } from "./admin-controls.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
@@ -415,8 +435,34 @@ adminRoutes.get("/v1/admin/usage/recent", async (c) => {
 
 adminRoutes.get("/v1/admin/users", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") ?? "100"), 500);
+  const q = c.req.query("q")?.trim();
   try {
-    const users = await db
+    // ?q=<text> — substring search across email, evm_address, user.id, and
+    // account_number (account_number is on the live DB even though it's
+    // not in the current Drizzle schema; we use raw SQL via `sql` template
+    // so the existing Drizzle type stays clean).
+    let whereClause: ReturnType<typeof and> | undefined;
+    if (q) {
+      const pattern = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+      const idFilter = q.length > 0 ? sql<string>`${user.id}::text ILIKE ${pattern}` : sql`FALSE`;
+      const accountNumberFilter = sql<boolean>`
+        EXISTS (
+          SELECT 1 FROM "user" u2
+          WHERE u2.id = ${user.id}
+            AND u2.account_number ILIKE ${pattern}
+        )
+      `;
+      whereClause = and(
+        or(
+          ilike(user.email, pattern),
+          ilike(user.evmAddress, pattern),
+          idFilter,
+          accountNumberFilter,
+        ),
+      );
+    }
+
+    let query = db
       .select({
         id: user.id,
         name: user.name,
@@ -424,12 +470,14 @@ adminRoutes.get("/v1/admin/users", async (c) => {
         evmAddress: user.evmAddress,
         role: user.role,
         banned: user.banned,
+        suspended: user.suspended,
         isAnonymous: user.isAnonymous,
         createdAt: user.createdAt,
       })
       .from(user)
-      .orderBy(desc(user.createdAt))
-      .limit(limit);
+      .$dynamic();
+    if (whereClause) query = query.where(whereClause);
+    const users = await query.orderBy(desc(user.createdAt)).limit(limit);
 
     const balances = await db
       .select()
@@ -448,6 +496,7 @@ adminRoutes.get("/v1/admin/users", async (c) => {
         };
       }),
       count: users.length,
+      query: q ?? null,
     });
   } catch (err) {
     logger.error({ err }, "[admin/users] failed");
@@ -457,11 +506,12 @@ adminRoutes.get("/v1/admin/users", async (c) => {
 
 const updateUserSchema = z.object({
   banned: z.boolean().optional(),
+  suspended: z.boolean().optional(),
   role: z.string().optional(),
   creditBalanceCentsDelta: z.number().optional(),
 });
 
-// PATCH /v1/admin/users/:id — update user details (banned, role, credit balance delta)
+// PATCH /v1/admin/users/:id — update user details (banned, suspended, role, credit balance delta)
 adminRoutes.patch("/v1/admin/users/:id", async (c) => {
   const targetId = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -501,12 +551,28 @@ adminRoutes.patch("/v1/admin/users/:id", async (c) => {
     if (parsed.data.banned !== undefined) {
       updateFields.banned = parsed.data.banned;
     }
+    if (parsed.data.suspended !== undefined) {
+      updateFields.suspended = parsed.data.suspended;
+    }
     if (parsed.data.role !== undefined) {
       updateFields.role = parsed.data.role;
     }
 
     // 2. Perform updates
     await db.update(user).set(updateFields).where(eq(user.id, targetId));
+
+    // If the user just got suspended, revoke all active API keys so
+    // dangling bearer tokens can't keep hitting the gateway. This is
+    // defense-in-depth: the auth middleware ALSO checks suspended, but
+    // revoking is the right thing to do so we don't rely solely on the
+    // middleware check (a leaked Bearer would be re-rejected, but
+    // revoking is cleaner).
+    if (parsed.data.suspended === true && !existing.suspended) {
+      await db
+        .update(apiKeys)
+        .set({ active: false })
+        .where(and(eq(apiKeys.userId, targetId), eq(apiKeys.active, true)));
+    }
 
     if (parsed.data.creditBalanceCentsDelta !== undefined) {
       const delta = parsed.data.creditBalanceCentsDelta;
@@ -578,18 +644,395 @@ adminRoutes.patch("/v1/admin/users/:id", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// Audit log
+// Slice 6 — admin operator controls
+//   - dedicated credit adjustment endpoint with reason + CREDIT_ADJUSTED audit
+//   - dedicated suspend / unsuspend endpoints that revoke API keys + write
+//     USER_SUSPENDED / USER_UNSUSPENDED audit
 // ---------------------------------------------------------------------------
+
+const creditAdjustSchema = z.object({
+  amountCents: z.number().int(),
+  reason: z.string().trim().min(1).max(500),
+});
+
+/**
+ * POST /v1/admin/users/:id/credits — manually adjust a user's credit
+ * balance. Positive amountCents adds to the balance (and totalDepositedCents
+ * for analytics); negative drains the balance (capped at 0 so it can never
+ * go negative). Always writes a CREDIT_ADJUSTED audit entry.
+ */
+adminRoutes.post("/v1/admin/users/:id/credits", async (c) => {
+  const targetId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = creditAdjustSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid request payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  const adminId = c.get("userId");
+  if (!adminId) {
+    return c.json({ error: { message: "auth required" } }, 401);
+  }
+
+  try {
+    // 1. Verify target user exists
+    const [existing] = await db
+      .select({ id: user.id, banned: user.banned, suspended: user.suspended })
+      .from(user)
+      .where(eq(user.id, targetId))
+      .limit(1);
+    if (!existing) {
+      return c.json({ error: { message: "User not found" } }, 404);
+    }
+
+    // 2. Atomic balance update via the shared helper so the math is
+    // unit-testable (see __tests__/admin-controls.test.ts).
+    const delta = parsed.data.amountCents;
+    const adjustResult = await adjustCredits(db, targetId, delta);
+    const beforeBalanceCents = adjustResult.beforeBalanceCents;
+    const newBalanceCents = adjustResult.balanceCents;
+
+    // 4. Audit — admin operator + reason + before/after snapshot
+    await auditLog({
+      userId: adminId,
+      action: "CREDIT_ADJUSTED",
+      resource: "user_credits",
+      resourceId: targetId,
+      metadata: {
+        amountCents: delta,
+        reason: parsed.data.reason,
+        beforeBalanceCents,
+        afterBalanceCents: newBalanceCents,
+        targetUserId: targetId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      userId: targetId,
+      amountCents: delta,
+      reason: parsed.data.reason,
+      beforeBalanceCents,
+      balanceCents: newBalanceCents,
+      totalDepositedCents: adjustResult.totalDepositedCents,
+      totalUsedCents: adjustResult.totalUsedCents,
+    });
+  } catch (err) {
+    logger.error({ err, targetId }, "[admin/users/credits] adjustment failed");
+    return c.json({ error: { message: "Failed to adjust credits" } }, 500);
+  }
+});
+
+const suspendBodySchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});
+
+/**
+ * POST /v1/admin/users/:id/suspend — set user.suspended=true, revoke all
+ * active API keys for the user, and write USER_SUSPENDED audit.
+ */
+adminRoutes.post("/v1/admin/users/:id/suspend", async (c) => {
+  const targetId = c.req.param("id");
+  const body = await c.req.json().catch(() => null).catch(() => ({}));
+  // Allow empty body (no reason required for suspend)
+  const parsed = body
+    ? suspendBodySchema.safeParse(body)
+    : ({ success: true, data: { reason: undefined } } as const);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid request payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  const adminId = c.get("userId");
+  if (!adminId) {
+    return c.json({ error: { message: "auth required" } }, 401);
+  }
+
+  try {
+    const [existing] = await db
+      .select({ id: user.id, suspended: user.suspended })
+      .from(user)
+      .where(eq(user.id, targetId))
+      .limit(1);
+    if (!existing) {
+      return c.json({ error: { message: "User not found" } }, 404);
+    }
+
+    if (existing.suspended) {
+      // Idempotent — already suspended. Don't double-audit or double-revoke.
+      return c.json({
+        success: true,
+        alreadySuspended: true,
+        userId: targetId,
+      });
+    }
+
+    await db
+      .update(user)
+      .set({ suspended: true, updatedAt: new Date() })
+      .where(eq(user.id, targetId));
+
+    // Revoke all active API keys for the user. After revoke, bearerAuth
+    // would still reject on suspended= true, but revoking is the right
+    // thing for defense-in-depth (kills any in-flight singleflight
+    // cached keyHash result that hasn't yet observed the suspended flag).
+    const revoked = await db
+      .update(apiKeys)
+      .set({ active: false })
+      .where(and(eq(apiKeys.userId, targetId), eq(apiKeys.active, true)))
+      .returning({ id: apiKeys.id });
+
+    await auditLog({
+      userId: adminId,
+      action: "USER_SUSPENDED",
+      resource: "user",
+      resourceId: targetId,
+      metadata: {
+        reason: parsed.data.reason ?? null,
+        revokedApiKeyIds: revoked.map((k) => k.id),
+        targetUserId: targetId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      userId: targetId,
+      suspended: true,
+      revokedApiKeyCount: revoked.length,
+      reason: parsed.data.reason ?? null,
+    });
+  } catch (err) {
+    logger.error({ err, targetId }, "[admin/users/suspend] failed");
+    return c.json({ error: { message: "Failed to suspend user" } }, 500);
+  }
+});
+
+/**
+ * POST /v1/admin/users/:id/unsuspend — clear user.suspended=false and write
+ * USER_UNSUSPENDED audit. Does NOT auto-reissue API keys; admin must
+ * explicitly rotate if needed.
+ */
+adminRoutes.post("/v1/admin/users/:id/unsuspend", async (c) => {
+  const targetId = c.req.param("id");
+  const body = await c.req.json().catch(() => null).catch(() => ({}));
+  const parsed = body
+    ? suspendBodySchema.safeParse(body)
+    : ({ success: true, data: { reason: undefined } } as const);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid request payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  const adminId = c.get("userId");
+  if (!adminId) {
+    return c.json({ error: { message: "auth required" } }, 401);
+  }
+
+  try {
+    const [existing] = await db
+      .select({ id: user.id, suspended: user.suspended })
+      .from(user)
+      .where(eq(user.id, targetId))
+      .limit(1);
+    if (!existing) {
+      return c.json({ error: { message: "User not found" } }, 404);
+    }
+
+    if (!existing.suspended) {
+      return c.json({
+        success: true,
+        alreadyUnsuspended: true,
+        userId: targetId,
+      });
+    }
+
+    await db
+      .update(user)
+      .set({ suspended: false, updatedAt: new Date() })
+      .where(eq(user.id, targetId));
+
+    await auditLog({
+      userId: adminId,
+      action: "USER_UNSUSPENDED",
+      resource: "user",
+      resourceId: targetId,
+      metadata: {
+        reason: parsed.data.reason ?? null,
+        targetUserId: targetId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      userId: targetId,
+      suspended: false,
+      reason: parsed.data.reason ?? null,
+    });
+  } catch (err) {
+    logger.error({ err, targetId }, "[admin/users/unsuspend] failed");
+    return c.json({ error: { message: "Failed to unsuspend user" } }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Audit log — filterable + cursor-paginated (Slice 6)
+// ---------------------------------------------------------------------------
+//
+// Supported query params:
+//   ?action=<enum>     — filter by audit_action enum value
+//   ?userId=<id>       — filter by audit row's user_id (the actor for admin
+//                        actions, or the target for end-user events)
+//   ?from=<ISO>        — createdAt >= from (inclusive)
+//   ?to=<ISO>          — createdAt <= to  (inclusive)
+//   ?limit=<int>       — page size, max 500, default 100
+//   ?cursor=<base64>   — opaque cursor from a previous response's `nextCursor`.
+//                        Encodes (createdAt, id) of the last row of the
+//                        previous page so subsequent pages continue without
+//                        duplicates or gaps when new rows arrive.
+//
+// Cursor is a base64-encoded JSON `{ts: ISO, id: uuid}` so the admin UI
+// can pass through a single opaque string.
+
+interface AuditCursor {
+  ts: string;
+  id: string;
+}
+
+function encodeAuditCursor(c: AuditCursor): string {
+  return Buffer.from(JSON.stringify(c), "utf8").toString("base64url");
+}
+
+function decodeAuditCursor(raw: string): AuditCursor | null {
+  try {
+    const decoded = Buffer.from(raw, "base64url").toString("utf8");
+    const parsed = JSON.parse(decoded) as Partial<AuditCursor>;
+    if (typeof parsed.ts !== "string" || typeof parsed.id !== "string") {
+      return null;
+    }
+    return { ts: parsed.ts, id: parsed.id };
+  } catch {
+    return null;
+  }
+}
 
 adminRoutes.get("/v1/admin/audit", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") ?? "100"), 500);
+  const action = c.req.query("action")?.trim();
+  const userId = c.req.query("userId")?.trim();
+  const fromStr = c.req.query("from")?.trim();
+  const toStr = c.req.query("to")?.trim();
+  const cursorStr = c.req.query("cursor")?.trim();
+
+  // Build dynamic WHERE clause from filters + cursor
+  const filters = [];
+  if (action) {
+    filters.push(eq(auditLogs.action, action as typeof auditLogs.$inferInsert.action));
+  }
+  if (userId) {
+    filters.push(eq(auditLogs.userId, userId));
+  }
+  if (fromStr) {
+    const fromDate = new Date(fromStr);
+    if (Number.isNaN(fromDate.getTime())) {
+      return c.json(
+        { error: { message: "Invalid 'from' timestamp" } },
+        400,
+      );
+    }
+    filters.push(gte(auditLogs.createdAt, fromDate));
+  }
+  if (toStr) {
+    const toDate = new Date(toStr);
+    if (Number.isNaN(toDate.getTime())) {
+      return c.json(
+        { error: { message: "Invalid 'to' timestamp" } },
+        400,
+      );
+    }
+    filters.push(lt(auditLogs.createdAt, toDate));
+  }
+  if (cursorStr) {
+    const cursor = decodeAuditCursor(cursorStr);
+    if (!cursor) {
+      return c.json(
+        { error: { message: "Invalid cursor" } },
+        400,
+      );
+    }
+    const cursorDate = new Date(cursor.ts);
+    if (Number.isNaN(cursorDate.getTime())) {
+      return c.json(
+        { error: { message: "Invalid cursor timestamp" } },
+        400,
+      );
+    }
+    // strict-less-than to avoid duplicates on ties, with id as the
+    // tiebreaker when timestamps match (keyset pagination).
+    filters.push(
+      or(
+        lt(auditLogs.createdAt, cursorDate),
+        and(
+          eq(auditLogs.createdAt, cursorDate),
+          lt(auditLogs.id, cursor.id),
+        ),
+      )!,
+    );
+  }
+
   try {
-    const rows = await db
-      .select()
-      .from(auditLogs)
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(limit);
-    return c.json({ data: rows, count: rows.length });
+    let query = db.select().from(auditLogs).$dynamic();
+    if (filters.length > 0) {
+      query = query.where(and(...filters));
+    }
+    // Fetch limit+1 so we can detect whether there's a next page.
+    const rows = await query
+      .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
+      .limit(limit + 1);
+
+    const hasNext = rows.length > limit;
+    const page = hasNext ? rows.slice(0, limit) : rows;
+    const nextCursor =
+      hasNext && page.length > 0
+        ? encodeAuditCursor({
+            ts: page[page.length - 1].createdAt.toISOString(),
+            id: page[page.length - 1].id,
+          })
+        : null;
+
+    return c.json({
+      data: page,
+      count: page.length,
+      nextCursor,
+      filters: {
+        action: action ?? null,
+        userId: userId ?? null,
+        from: fromStr ?? null,
+        to: toStr ?? null,
+        limit,
+      },
+    });
   } catch (err) {
     logger.error({ err }, "[admin/audit] failed");
     return c.json({ error: { message: "audit query failed" } }, 500);
@@ -697,6 +1140,179 @@ function polarHeaders() {
     "Content-Type": "application/json",
   };
 }
+
+// ---------------------------------------------------------------------------
+// Slice 6 — Polar refund tool
+//   POST /v1/admin/polar/refund — issues a Polar refund and drains the
+//   corresponding credits from the user's balance. Writes REFUND_ISSUED.
+// ---------------------------------------------------------------------------
+//
+// `paymentId` here maps to Polar's `order_id` — Polar refunds are issued
+// against an order, not a payment. From the operator's perspective this is
+// the payment id surfaced by the Polar customer-portal UI. The internal
+// call to Polar uses the order_id field.
+
+const refundSchema = z.object({
+  paymentId: z.string().trim().min(1).max(200),
+  amountCents: z.number().int().positive(),
+  reason: z.string().trim().min(1).max(500),
+  // Optional: pin refund to a specific user. If omitted we look up by
+  // Polar metadata.external_customer_id (the user's id / wallet).
+  userId: z.string().trim().optional(),
+});
+
+adminRoutes.post("/v1/admin/polar/refund", async (c) => {
+  if (!config.POLAR_ACCESS_TOKEN) {
+    return c.json({ error: { message: "Polar not configured" } }, 400);
+  }
+  const body = await c.req.json().catch(() => null);
+  const parsed = refundSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          message: "Invalid refund payload",
+          issues: parsed.error.flatten(),
+        },
+      },
+      400,
+    );
+  }
+
+  const adminId = c.get("userId");
+  if (!adminId) {
+    return c.json({ error: { message: "auth required" } }, 401);
+  }
+
+  const { paymentId, amountCents, reason, userId: pinnedUserId } = parsed.data;
+
+  // 1. Issue the Polar refund via SDK if available; fall back to REST so
+  //    this works even if the SDK types drift from the live Polar API.
+  let polarRefundId: string | null = null;
+  try {
+    const { Polar } = await import("@polar-sh/sdk");
+    const polar = new Polar({
+      accessToken: config.POLAR_ACCESS_TOKEN!,
+      server: (config.POLAR_SERVER as "production" | "sandbox") ?? "production",
+    });
+    const refund = await polar.refunds.create({
+      orderId: paymentId,
+      amount: amountCents,
+      reason: "customer_request",
+      comment: reason,
+      revokeBenefits: false,
+    });
+    polarRefundId = (refund as { id?: string }).id ?? null;
+  } catch (sdkErr) {
+    // SDK path failed — fall back to REST. Polar expects `order_id` for
+    // refunds. The amount is in cents (matching the SDK call).
+    try {
+      const r = await fetch(`${config.POLAR_SERVER}/v1/refunds`, {
+        method: "POST",
+        headers: polarHeaders(),
+        body: JSON.stringify({
+          order_id: paymentId,
+          amount: amountCents,
+          reason: "customer_request",
+          comment: reason,
+          revoke_benefits: false,
+        }),
+      });
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        logger.error(
+          { err: sdkErr, status: r.status, detail, paymentId },
+          "[admin/polar/refund] Polar SDK + REST both failed",
+        );
+        return c.json(
+          {
+            error: {
+              message: `Polar refund failed: ${r.status} ${detail}`,
+            },
+          },
+          r.status as ContentfulStatusCode,
+        );
+      }
+      const polarResp = (await r.json()) as { id?: string };
+      polarRefundId = polarResp.id ?? null;
+    } catch (restErr) {
+      logger.error(
+        { err: restErr, paymentId },
+        "[admin/polar/refund] REST fallback also failed",
+      );
+      return c.json(
+        { error: { message: "Polar refund request failed" } },
+        502,
+      );
+    }
+  }
+
+  // 2. Drain credits from the user's balance. If pinnedUserId was
+  //    supplied use that; otherwise resolve via Polar's payment metadata
+  //    (REST GET /v1/payments/:id). If we cannot resolve a user we still
+  //    succeed (refund went through) but log + return a warning.
+  let resolvedUserId: string | null = pinnedUserId ?? null;
+  if (!resolvedUserId) {
+    try {
+      const r = await fetch(
+        `${config.POLAR_SERVER}/v1/payments/${encodeURIComponent(paymentId)}`,
+        { headers: polarHeaders() },
+      );
+      if (r.ok) {
+        const data = (await r.json()) as {
+          metadata?: { user_id?: string; userId?: string };
+          customer_id?: string;
+        };
+        const metaUserId = data.metadata?.user_id ?? data.metadata?.userId;
+        if (metaUserId) resolvedUserId = metaUserId;
+      }
+    } catch (err) {
+      logger.warn({ err, paymentId }, "[admin/polar/refund] could not resolve user from Polar metadata");
+    }
+  }
+
+  let drainedUserId: string | null = null;
+  let drainedBalanceCents: number | null = null;
+  if (resolvedUserId) {
+    // Delegate the SQL to the shared helper so the math is unit-testable.
+    const drainResult = await drainCreditsForRefund(
+      db,
+      resolvedUserId,
+      amountCents,
+    );
+    drainedUserId = drainResult.userId;
+    drainedBalanceCents = drainResult.balanceCents;
+  }
+
+  // 3. Audit
+  await auditLog({
+    userId: adminId,
+    action: "REFUND_ISSUED",
+    resource: "polar_refund",
+    resourceId: paymentId,
+    metadata: {
+      reason,
+      amountCents,
+      polarRefundId,
+      drainedUserId,
+      drainedBalanceCents,
+      source: "admin/polar/refund",
+    },
+  });
+
+  return c.json({
+    success: true,
+    polarRefundId,
+    paymentId,
+    amountCents,
+    reason,
+    drainedUserId,
+    drainedBalanceCents,
+    warning: drainedUserId
+      ? null
+      : "refund issued but could not resolve user — credits not drained",
+  });
+});
 
 // GET /v1/admin/polar/payments — list recent payments
 adminRoutes.get("/v1/admin/polar/payments", async (c) => {

@@ -8,13 +8,19 @@ import {
 	AlertTriangle,
 	ArrowUpRight,
 	CheckCircle2,
+	ChevronLeft,
 	ChevronRight,
+	CircleDot,
 	Coins,
 	CreditCard,
-	CircleDot,
+	Filter,
 	Loader2,
+	Lock,
+	RefreshCcw,
+	Search,
 	Settings2,
 	ShieldCheck,
+	Unlock,
 	XCircle,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -88,12 +94,74 @@ type AdminUser = {
 	evmAddress: string | null;
 	role: string;
 	banned: boolean;
+	suspended: boolean;
 	isAnonymous: boolean;
 	createdAt: string;
 	balanceCents: number;
 	totalUsedCents: number;
 	totalDepositedCents: number;
 };
+
+type AuditEntry = {
+	id: string;
+	userId: string | null;
+	action: string;
+	resource: string;
+	resourceId: string | null;
+	ipAddress: string | null;
+	userAgent: string | null;
+	metadata: Record<string, unknown> | null;
+	createdAt: string;
+};
+
+type AuditPage = {
+	data: AuditEntry[];
+	count: number;
+	nextCursor: string | null;
+	filters: {
+		action: string | null;
+		userId: string | null;
+		from: string | null;
+		to: string | null;
+		limit: number;
+	};
+};
+
+// All values currently in the audit_action enum — populated by the
+// server migration 0037 + earlier migrations. Used to render the action
+// filter <select> so admins don't have to type enum values by hand.
+const AUDIT_ACTIONS = [
+	"USER_LOGIN",
+	"USER_LOGOUT",
+	"API_KEY_CREATED",
+	"API_KEY_REVOKED",
+	"USER_CREATED",
+	"USER_UPDATED",
+	"USER_DELETED",
+	"USER_SUSPENDED",
+	"USER_UNSUSPENDED",
+	"CREDIT_ADJUSTED",
+	"REFUND_ISSUED",
+	"REFUND_GRANTED",
+	"REFUND_DENIED",
+	"DEPOSIT_CREATED",
+	"DEPOSIT_COMPLETED",
+	"DEPOSIT_FAILED",
+	"WALLET_LINKED",
+	"WALLET_UNLINKED",
+	"WALLET_ROTATED",
+	"ACCOUNT_NUMBER_ROTATED",
+	"ACCOUNT_NUMBER_RECOVERED",
+	"PROVIDER_TEST_SUCCESS",
+	"PROVIDER_TEST_FAILED",
+	"RATE_LIMIT_OVERRIDE_SET",
+	"RATE_LIMIT_OVERRIDE_REMOVED",
+	"ACCOUNT_LOGIN_RATE_LIMITED",
+	"ACCOUNT_DELETE_REQUESTED",
+	"ACCOUNT_DELETE_COMPLETED",
+	"DATA_EXPORT_REQUESTED",
+	"HISTORY_CLEARED",
+] as const;
 
 type Integration = {
 	polar: {
@@ -220,10 +288,38 @@ export function AdminDashboard() {
 	const [settings, setSettings] = useState<AdminSettings | null>(null);
 	const [updatingSettings, setUpdatingSettings] = useState(false);
 	const [users, setUsers] = useState<AdminUser[]>([]);
+	const [userSearch, setUserSearch] = useState("");
 	const [selectedUserHistory, setSelectedUserHistory] = useState<RecentRow[] | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	const [loadingHistory, setLoadingHistory] = useState(false);
 	const [creditAdjustAmount, setCreditAdjustAmount] = useState<Record<string, string>>({});
+	// Slice 6 — modals + audit log + refund form
+	const [creditAdjustModal, setCreditAdjustModal] = useState<{ userId: string; direction: "add" | "remove" } | null>(null);
+	const [creditAdjustReason, setCreditAdjustReason] = useState("");
+	const [suspendModal, setSuspendModal] = useState<{ userId: string; action: "suspend" | "unsuspend"; suspended: boolean } | null>(null);
+	const [suspendReason, setSuspendReason] = useState("");
+	const [auditEntries, setAuditEntries] = useState<AuditPage | null>(null);
+	const [auditCursor, setAuditCursor] = useState<string | null>(null);
+	const [auditCursorStack, setAuditCursorStack] = useState<string[]>([]);
+	const [auditFilters, setAuditFilters] = useState<{
+		action: string;
+		userId: string;
+		from: string;
+		to: string;
+	}>({
+		action: "",
+		userId: "",
+		from: "",
+		to: "",
+	});
+	const [auditLoading, setAuditLoading] = useState(false);
+	const [refundForm, setRefundForm] = useState({
+		paymentId: "",
+		amountCents: "",
+		reason: "",
+		userId: "",
+	});
+	const [refundSubmitting, setRefundSubmitting] = useState(false);
 
 	const refreshAll = useCallback(async () => {
 		setLoading(true);
@@ -240,6 +336,9 @@ export function AdminDashboard() {
 				return;
 			}
 
+			const qParam = userSearch.trim()
+				? `?q=${encodeURIComponent(userSearch.trim())}`
+				: "";
 			const [u, m, r, h, i, s, uData] = await Promise.all([
 				adminFetch<UsageResponse>(`/v1/admin/usage?window=${windowSel}`),
 				adminFetch<{ data: ModelRow[] }>(`/v1/admin/models`),
@@ -249,7 +348,7 @@ export function AdminDashboard() {
 				adminFetch<Health>(`/v1/admin/health`),
 				adminFetch<Integration>(`/v1/admin/integrations`),
 			adminFetch<AdminSettings & { id?: string }>("/v1/admin/settings"),
-			adminFetch<{ data: AdminUser[] }>("/v1/admin/users"),
+			adminFetch<{ data: AdminUser[] }>(`/v1/admin/users${qParam}`),
 			]);
 			setUsage(u);
 			setModels(m.data);
@@ -263,7 +362,7 @@ export function AdminDashboard() {
 		} finally {
 			setLoading(false);
 		}
-	}, [toast, windowSel]);
+	}, [toast, windowSel, userSearch]);
 
 	useEffect(() => {
 		void refreshAll();
@@ -302,24 +401,6 @@ export function AdminDashboard() {
 		}
 	};
 
-	const handleToggleBan = async (userId: string, currentBanned: boolean) => {
-		setUpdatingSettings(true);
-		try {
-			const res = await adminFetch<{ success: boolean; user: Pick<AdminUser, "id" | "banned"> }>(`/v1/admin/users/${userId}`, {
-				method: "PATCH",
-				body: JSON.stringify({ banned: !currentBanned }),
-			});
-			if (res.success) {
-				setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, banned: res.user.banned } : u));
-				toast.success(res.user.banned ? "User suspended successfully" : "User unsuspended successfully");
-			}
-		} catch (err) {
-			toast.error(`Failed to update user status: ${(err as Error).message}`);
-		} finally {
-			setUpdatingSettings(false);
-		}
-	};
-
 	const handleCreditAdjust = async (userId: string, isTopUp: boolean) => {
 		const amountStr = creditAdjustAmount[userId] || "";
 		const amountCents = Math.round(parseFloat(amountStr) * 100);
@@ -327,34 +408,189 @@ export function AdminDashboard() {
 			toast.error("Please enter a valid USD amount");
 			return;
 		}
-		setUpdatingSettings(true);
-		const delta = isTopUp ? amountCents : -amountCents;
-		try {
-			const res = await adminFetch<{ success: boolean; user: Pick<AdminUser, "id" | "balanceCents" | "totalDepositedCents"> }>(`/v1/admin/users/${userId}`, {
-				method: "PATCH",
-				body: JSON.stringify({ creditBalanceCentsDelta: delta }),
-			});
-			if (res.success) {
-				setUsers((prev) =>
-					prev.map((u) =>
-						u.id === userId
-							? {
-									...u,
-									balanceCents: res.user.balanceCents,
-									totalDepositedCents: res.user.totalDepositedCents,
-								}
-							: u
-					)
+		// Open the modal so the operator confirms with a reason before
+		// the dedicated /credits endpoint is hit. The reason is required
+		// for audit logging (Slice 6).
+		setCreditAdjustModal({ userId, direction: isTopUp ? "add" : "remove" });
+	};
+
+const handleConfirmCreditAdjust = async () => {
+	if (!creditAdjustModal) return;
+	const { userId, direction } = creditAdjustModal;
+	const amountStr = creditAdjustAmount[userId] || "";
+	const baseCents = Math.round(parseFloat(amountStr) * 100);
+	if (isNaN(baseCents) || baseCents <= 0) {
+		toast.error("Please enter a valid USD amount");
+		return;
+	}
+	const reason = creditAdjustReason.trim();
+	if (reason.length === 0) {
+		toast.error("Reason is required for credit adjustments");
+		return;
+	}
+	const signedAmount = direction === "add" ? baseCents : -baseCents;
+	setUpdatingSettings(true);
+	try {
+		const res = await adminFetch<{
+			success: boolean;
+			balanceCents: number;
+			totalDepositedCents: number;
+			totalUsedCents: number;
+		}>(`/v1/admin/users/${userId}/credits`, {
+			method: "POST",
+			body: JSON.stringify({ amountCents: signedAmount, reason }),
+		});
+		if (res.success) {
+			setUsers((prev) =>
+				prev.map((u) =>
+					u.id === userId
+						? {
+								...u,
+								balanceCents: res.balanceCents,
+								totalDepositedCents: res.totalDepositedCents,
+								totalUsedCents: res.totalUsedCents,
+							}
+						: u,
+				),
+			);
+			toast.success(`Credits ${direction === "add" ? "added" : "drained"} successfully.`);
+			setCreditAdjustAmount((prev) => ({ ...prev, [userId]: "" }));
+			setCreditAdjustReason("");
+			setCreditAdjustModal(null);
+		}
+	} catch (err) {
+		toast.error(`Credit adjustment failed: ${(err as Error).message}`);
+	} finally {
+		setUpdatingSettings(false);
+	}
+};
+
+const handleSuspendAction = (
+	userId: string,
+	suspended: boolean,
+) => {
+	setSuspendModal({ userId, action: suspended ? "suspend" : "unsuspend", suspended });
+};
+
+const handleConfirmSuspend = async () => {
+	if (!suspendModal) return;
+	const { userId, action } = suspendModal;
+	const reason = suspendReason.trim();
+	const endpoint =
+		action === "suspend"
+			? `/v1/admin/users/${userId}/suspend`
+			: `/v1/admin/users/${userId}/unsuspend`;
+	setUpdatingSettings(true);
+	try {
+		const res = await adminFetch<{
+			success: boolean;
+			revokedApiKeyCount?: number;
+		}>(endpoint, {
+			method: "POST",
+			body: JSON.stringify(reason ? { reason } : {}),
+		});
+		if (res.success) {
+			setUsers((prev) =>
+				prev.map((u) =>
+					u.id === userId ? { ...u, suspended: action === "suspend" } : u,
+				),
+			);
+			toast.success(
+				action === "suspend"
+					? `User suspended${res.revokedApiKeyCount ? ` — ${res.revokedApiKeyCount} API key(s) revoked` : ""}.`
+					: "User unsuspended.",
+			);
+			setSuspendModal(null);
+			setSuspendReason("");
+		}
+	} catch (err) {
+		toast.error(`Suspend failed: ${(err as Error).message}`);
+	} finally {
+		setUpdatingSettings(false);
+	}
+};
+
+const handleRefundSubmit = async () => {
+	if (!refundForm.paymentId.trim() || !refundForm.amountCents.trim() || !refundForm.reason.trim()) {
+		toast.error("paymentId, amount (cents), and reason are required");
+		return;
+	}
+	const amountCents = parseInt(refundForm.amountCents, 10);
+	if (isNaN(amountCents) || amountCents <= 0) {
+		toast.error("Amount must be a positive integer (cents)");
+		return;
+	}
+	setRefundSubmitting(true);
+	try {
+		const res = await adminFetch<{
+			success: boolean;
+			polarRefundId: string | null;
+			drainedUserId: string | null;
+			drainedBalanceCents: number | null;
+			warning: string | null;
+		}>("/v1/admin/polar/refund", {
+			method: "POST",
+			body: JSON.stringify({
+				paymentId: refundForm.paymentId.trim(),
+				amountCents,
+				reason: refundForm.reason.trim(),
+				userId: refundForm.userId.trim() || undefined,
+			}),
+		});
+		if (res.success) {
+			if (res.warning) {
+				toast.info(res.warning);
+			} else {
+				toast.success(
+					`Refund issued${res.polarRefundId ? ` (Polar ${res.polarRefundId.slice(0, 10)}…)` : ""}.`,
 				);
-				toast.success(`Credits adjusted successfully.`);
-				setCreditAdjustAmount((prev) => ({ ...prev, [userId]: "" }));
+			}
+			setRefundForm({ paymentId: "", amountCents: "", reason: "", userId: "" });
+		}
+	} catch (err) {
+		toast.error(`Refund failed: ${(err as Error).message}`);
+	} finally {
+		setRefundSubmitting(false);
+	}
+};
+
+const loadAudit = useCallback(
+	async (cursor: string | null, pushStack: boolean) => {
+		setAuditLoading(true);
+		try {
+			const params = new URLSearchParams();
+			if (auditFilters.action) params.set("action", auditFilters.action);
+			if (auditFilters.userId) params.set("userId", auditFilters.userId);
+			if (auditFilters.from) params.set("from", new Date(auditFilters.from).toISOString());
+			if (auditFilters.to) params.set("to", new Date(auditFilters.to).toISOString());
+			params.set("limit", "50");
+			if (cursor) params.set("cursor", cursor);
+			const url = `/v1/admin/audit${params.toString() ? `?${params.toString()}` : ""}`;
+			const page = await adminFetch<AuditPage>(url);
+			setAuditEntries(page);
+			setAuditCursor(page.nextCursor);
+			if (pushStack && cursor) {
+				setAuditCursorStack((prev) => [...prev, cursor]);
+			} else if (!pushStack && cursor === null) {
+				setAuditCursorStack([]);
 			}
 		} catch (err) {
-			toast.error(`Credit adjustment failed: ${(err as Error).message}`);
+			toast.error(`Audit log failed: ${(err as Error).message}`);
 		} finally {
-			setUpdatingSettings(false);
+			setAuditLoading(false);
 		}
-	};
+	},
+	[auditFilters, toast],
+);
+
+const handleAuditPrev = () => {
+	const stack = auditCursorStack;
+	if (stack.length === 0) return;
+	const prevCursor = stack[stack.length - 1];
+	const next = stack.slice(0, -1);
+	setAuditCursorStack(next);
+	void loadAudit(prevCursor, false);
+};
 
 	const handleViewUserHistory = async (userId: string) => {
 		setSelectedUserId(userId);
@@ -884,9 +1120,8 @@ export function AdminDashboard() {
 			</section>
 
 			{/* User Directory */}
-			{users.length > 0 && (
-				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
-					<div className="flex items-center justify-between">
+			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
+					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
 								User Directory
@@ -895,11 +1130,43 @@ export function AdminDashboard() {
 								Manage permissions, edit Credits, and audit individual user request logs.
 							</p>
 						</div>
-						<span className="text-xs text-text-muted">
-							{users.length} registered accounts
-						</span>
+						<div className="flex items-center gap-2">
+							<div className="relative">
+								<Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+								<input
+									type="text"
+									value={userSearch}
+									onChange={(e) => setUserSearch(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") void refreshAll();
+									}}
+									placeholder="email / wallet / id / account #"
+									className="w-56 rounded border border-border bg-surface-elevated pl-7 pr-2 py-1 text-xs focus:border-accent outline-none"
+								/>
+							</div>
+							<button
+								type="button"
+								onClick={() => void refreshAll()}
+								disabled={loading}
+								className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
+							>
+								<Filter className="h-3 w-3" />
+								Filter
+							</button>
+							<span className="text-xs text-text-muted">
+								{users.length} {userSearch.trim() ? "match" : "registered accounts"}
+							</span>
+						</div>
 					</div>
 
+					{users.length === 0 ? (
+						<p className="py-6 text-center text-sm text-text-muted">
+							{userSearch.trim()
+								? `No users match "${userSearch.trim()}".`
+								: "No users yet."}
+						</p>
+					) : (
+					<>
 					<div className="overflow-x-auto">
 						<table className="w-full text-xs text-left">
 							<thead className="border-b border-border text-text-muted uppercase tracking-wider text-[10px]">
@@ -935,11 +1202,11 @@ export function AdminDashboard() {
 											</td>
 											<td className="py-3 text-center">
 												<span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ${
-													u.banned
+													u.suspended || u.banned
 														? "bg-error/15 text-error border border-error/25"
 														: "bg-success/15 text-success border border-success/25"
 												}`}>
-													{u.banned ? "Suspended" : "Active"}
+													{u.suspended ? "Suspended (admin)" : u.banned ? "Suspended" : "Active"}
 												</span>
 											</td>
 											<td className="py-3 text-right font-mono font-medium">
@@ -985,14 +1252,16 @@ export function AdminDashboard() {
 													<button
 														type="button"
 														disabled={updatingSettings}
-														onClick={() => handleToggleBan(u.id, u.banned)}
-														className={`rounded px-2.5 py-1 text-[10px] font-medium border transition-colors ${
-															u.banned
+														onClick={() => handleSuspendAction(u.id, !u.suspended)}
+														title={u.suspended ? "Unsuspend user" : "Suspend user (revokes API keys)"}
+														className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-[10px] font-medium border transition-colors ${
+															u.suspended
 																? "bg-success/10 border-success/30 text-success hover:bg-success/20"
 																: "bg-error/10 border-error/30 text-error hover:bg-error/20"
 														}`}
 													>
-														{u.banned ? "Unsuspend" : "Suspend"}
+														{u.suspended ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+														{u.suspended ? "Unsuspend" : "Suspend"}
 													</button>
 													<button
 														type="button"
@@ -1081,8 +1350,9 @@ export function AdminDashboard() {
 							)}
 						</div>
 					)}
+					</>
+					)}
 				</section>
-			)}
 
 			{/* Polar Management */}
 			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
@@ -1445,6 +1715,377 @@ export function AdminDashboard() {
 					</div>
 				)}
 			</section>
+
+			{/* Refund Tool — Slice 6 */}
+			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
+				<div>
+					<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+						Issue Refund
+					</h2>
+					<p className="text-xs text-text-muted mt-0.5">
+						Refund a Polar payment and drain the corresponding credits from the
+						user&rsquo;s balance. Every refund writes a REFUND_ISSUED audit entry.
+					</p>
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div>
+						<label className="mb-1 block text-xs text-text-muted">
+							Payment / Order ID
+						</label>
+						<input
+							type="text"
+							value={refundForm.paymentId}
+							onChange={(e) => setRefundForm((prev) => ({ ...prev, paymentId: e.target.value }))}
+							placeholder="pay_xxx / ord_xxx"
+							className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-xs text-text-muted">
+							Amount (cents)
+						</label>
+						<input
+							type="number"
+							min={1}
+							value={refundForm.amountCents}
+							onChange={(e) => setRefundForm((prev) => ({ ...prev, amountCents: e.target.value }))}
+							placeholder="500 = $5.00"
+							className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+						/>
+					</div>
+					<div className="sm:col-span-2">
+						<label className="mb-1 block text-xs text-text-muted">
+							Reason (required)
+						</label>
+						<input
+							type="text"
+							value={refundForm.reason}
+							onChange={(e) => setRefundForm((prev) => ({ ...prev, reason: e.target.value }))}
+							placeholder="customer request, fraud, ..."
+							className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+						/>
+					</div>
+					<div className="sm:col-span-2">
+						<label className="mb-1 block text-xs text-text-muted">
+							User ID (optional — pin refund to a specific user)
+						</label>
+						<input
+							type="text"
+							value={refundForm.userId}
+							onChange={(e) => setRefundForm((prev) => ({ ...prev, userId: e.target.value }))}
+							placeholder="usr_xxx (leave blank to auto-resolve from Polar)"
+							className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm font-mono outline-none focus:border-accent"
+						/>
+					</div>
+				</div>
+				<div className="flex justify-end">
+					<button
+						type="button"
+						onClick={() => void handleRefundSubmit()}
+						disabled={refundSubmitting}
+						className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-4 py-2 text-sm font-medium text-warning hover:bg-warning/20 disabled:opacity-50"
+					>
+						{refundSubmitting ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<RefreshCcw className="h-4 w-4" />
+						)}
+						Issue refund
+					</button>
+				</div>
+			</section>
+
+			{/* Audit Log Viewer — Slice 6 (filters + cursor pagination) */}
+			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-3">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div>
+						<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+							Audit Log
+						</h2>
+						<p className="text-xs text-text-muted mt-0.5">
+							Filterable, paginated view of every admin and operator action.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => void loadAudit(null, false)}
+						disabled={auditLoading}
+						className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
+					>
+						{auditLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Filter className="h-3 w-3" />}
+						Load
+					</button>
+				</div>
+				<div className="grid gap-2 sm:grid-cols-4">
+					<div>
+						<label className="mb-1 block text-[10px] uppercase tracking-wide text-text-muted">
+							Action
+						</label>
+						<select
+							value={auditFilters.action}
+							onChange={(e) =>
+								setAuditFilters((prev) => ({ ...prev, action: e.target.value }))
+							}
+							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+						>
+							<option value="">All actions</option>
+							{AUDIT_ACTIONS.map((a) => (
+								<option key={a} value={a}>
+									{a}
+								</option>
+							))}
+						</select>
+					</div>
+					<div>
+						<label className="mb-1 block text-[10px] uppercase tracking-wide text-text-muted">
+							User ID
+						</label>
+						<input
+							type="text"
+							value={auditFilters.userId}
+							onChange={(e) =>
+								setAuditFilters((prev) => ({ ...prev, userId: e.target.value }))
+							}
+							placeholder="usr_xxx"
+							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-[10px] uppercase tracking-wide text-text-muted">
+							From
+						</label>
+						<input
+							type="datetime-local"
+							value={auditFilters.from}
+							onChange={(e) =>
+								setAuditFilters((prev) => ({ ...prev, from: e.target.value }))
+							}
+							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-[10px] uppercase tracking-wide text-text-muted">
+							To
+						</label>
+						<input
+							type="datetime-local"
+							value={auditFilters.to}
+							onChange={(e) =>
+								setAuditFilters((prev) => ({ ...prev, to: e.target.value }))
+							}
+							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+						/>
+					</div>
+				</div>
+
+				{auditEntries ? (
+					<div className="overflow-x-auto max-h-[420px] overflow-y-auto rounded border border-border">
+						<table className="w-full text-[11px] text-left">
+							<thead className="border-b border-border bg-surface-elevated/40 text-[9px] uppercase text-text-muted sticky top-0">
+								<tr>
+									<th className="p-2">When</th>
+									<th className="p-2">Action</th>
+									<th className="p-2">Resource</th>
+									<th className="p-2">User</th>
+									<th className="p-2">Metadata</th>
+								</tr>
+							</thead>
+							<tbody>
+								{auditEntries.data.length === 0 ? (
+									<tr>
+										<td colSpan={5} className="p-3 text-center text-text-muted">
+											No audit entries match these filters.
+										</td>
+									</tr>
+								) : (
+									auditEntries.data.map((entry) => (
+										<tr
+											key={entry.id}
+											className="border-b border-border/20 hover:bg-surface-elevated/10"
+										>
+											<td className="p-2 text-text-muted">{timeAgo(entry.createdAt)}</td>
+											<td className="p-2">
+												<span className="rounded bg-surface-elevated px-1.5 py-0.5 font-mono text-[10px]">
+													{entry.action}
+												</span>
+											</td>
+											<td className="p-2 font-mono text-text-secondary">
+												{entry.resource}
+												{entry.resourceId ? (
+													<span className="ml-1 text-text-muted">
+														· {entry.resourceId.slice(0, 12)}…
+													</span>
+												) : null}
+											</td>
+											<td className="p-2 font-mono text-text-muted">
+												{entry.userId ? entry.userId.slice(0, 12) + "…" : "—"}
+											</td>
+											<td className="p-2 font-mono text-[10px] text-text-muted truncate max-w-[280px]">
+												{entry.metadata
+													? JSON.stringify(entry.metadata).slice(0, 80) +
+													  (JSON.stringify(entry.metadata).length > 80 ? "…" : "")
+													: "—"}
+											</td>
+										</tr>
+									))
+								)}
+							</tbody>
+						</table>
+					</div>
+				) : (
+					<p className="text-xs text-text-muted py-3">
+						Click <span className="font-mono">Load</span> to fetch audit entries.
+					</p>
+				)}
+
+				{auditEntries && (
+					<div className="flex items-center justify-between text-xs text-text-muted">
+						<span>
+							{auditEntries.count} entries
+							{auditEntries.filters.action ? ` · action: ${auditEntries.filters.action}` : ""}
+							{auditEntries.filters.userId ? ` · user: ${auditEntries.filters.userId.slice(0, 12)}…` : ""}
+						</span>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => void handleAuditPrev()}
+								disabled={auditCursorStack.length === 0 || auditLoading}
+								className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
+							>
+								<ChevronLeft className="h-3 w-3" /> Prev
+							</button>
+							<button
+								type="button"
+								onClick={() => void loadAudit(auditCursor, true)}
+								disabled={!auditCursor || auditLoading}
+								className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
+							>
+								Next <ChevronRight className="h-3 w-3" />
+							</button>
+						</div>
+					</div>
+				)}
+			</section>
+
+			{/* Credit Adjust Confirmation Modal — Slice 6 */}
+			{creditAdjustModal && (
+				<div
+					role="dialog"
+					aria-modal="true"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+				>
+					<div className="w-full max-w-md rounded-lg border border-border bg-surface p-5 space-y-4 shadow-lg">
+						<div className="flex items-start justify-between">
+							<div>
+								<h3 className="text-sm font-semibold">
+									{creditAdjustModal.direction === "add" ? "Add credits" : "Drain credits"}
+								</h3>
+								<p className="text-xs text-text-muted mt-0.5">
+									{creditAdjustModal.direction === "add"
+										? `Adds ${centsToDollars(parseFloat(creditAdjustAmount[creditAdjustModal.userId] || "0") * 100)} to this user's balance and bumps totalDeposited.`
+										: `Drains up to ${centsToDollars(parseFloat(creditAdjustAmount[creditAdjustModal.userId] || "0") * 100)} from this user's balance (capped at current balance).`}
+								</p>
+							</div>
+						</div>
+						<div>
+							<label className="mb-1 block text-xs text-text-muted">
+								Reason (required, audit-logged)
+							</label>
+							<input
+								type="text"
+								autoFocus
+								value={creditAdjustReason}
+								onChange={(e) => setCreditAdjustReason(e.target.value)}
+								placeholder="Promo top-up, good-faith dispute, ..."
+								className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+							/>
+						</div>
+						<div className="flex justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setCreditAdjustModal(null);
+									setCreditAdjustReason("");
+								}}
+								className="rounded px-3 py-1.5 text-xs text-text-muted hover:text-text"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								disabled={updatingSettings || creditAdjustReason.trim().length === 0}
+								onClick={() => void handleConfirmCreditAdjust()}
+								className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+									creditAdjustModal.direction === "add"
+										? "bg-success/15 text-success border border-success/30 hover:bg-success/25"
+										: "bg-error/15 text-error border border-error/30 hover:bg-error/25"
+								} disabled:opacity-50`}
+							>
+								{creditAdjustModal.direction === "add" ? "Add credits" : "Drain credits"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Suspend / Unsuspend Confirmation Modal — Slice 6 */}
+			{suspendModal && (
+				<div
+					role="dialog"
+					aria-modal="true"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+				>
+					<div className="w-full max-w-md rounded-lg border border-border bg-surface p-5 space-y-4 shadow-lg">
+						<div>
+							<h3 className="text-sm font-semibold">
+								{suspendModal.action === "suspend" ? "Suspend user" : "Unsuspend user"}
+							</h3>
+							<p className="text-xs text-text-muted mt-0.5">
+								{suspendModal.action === "suspend"
+									? "Suspending will reject login + API requests with 403 and revoke all active API keys for this user."
+									: "Unsuspending clears the suspended flag; the user can log in again. API keys are NOT auto-reissued."}
+							</p>
+						</div>
+						<div>
+							<label className="mb-1 block text-xs text-text-muted">
+								Reason (optional, audit-logged)
+							</label>
+							<input
+								type="text"
+								autoFocus
+								value={suspendReason}
+								onChange={(e) => setSuspendReason(e.target.value)}
+								placeholder="chargeback / abuse / customer request / ..."
+								className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+							/>
+						</div>
+						<div className="flex justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setSuspendModal(null);
+									setSuspendReason("");
+								}}
+								className="rounded px-3 py-1.5 text-xs text-text-muted hover:text-text"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								disabled={updatingSettings}
+								onClick={() => void handleConfirmSuspend()}
+								className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+									suspendModal.action === "suspend"
+										? "bg-error/15 text-error border border-error/30 hover:bg-error/25"
+										: "bg-success/15 text-success border border-success/30 hover:bg-success/25"
+								} disabled:opacity-50`}
+							>
+								{suspendModal.action === "suspend" ? "Suspend" : "Unsuspend"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
