@@ -139,12 +139,12 @@ function DocsContent() {
 		<div className="page-shell">
 			<Sidebar activeId={activeId} />
 
-			<div className="min-w-0 lg:pl-72">
-				<div className="mx-auto max-w-5xl min-w-0 overflow-x-auto px-4 py-4 sm:px-6 lg:px-10">
+			<div className="min-w-0">
+				<div className="mx-auto max-w-5xl min-w-0 px-4 py-3 sm:px-6 lg:px-10">
 					<div className="page-hero mb-10 rounded-[calc(var(--radius-lg)+4px)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.92)] sm:p-8">
 						<nav
 							aria-label="Breadcrumb"
-							className="flex items-center gap-1.5 text-xs text-text-muted mb-4 font-mono"
+							className="flex items-center gap-1.5 text-xs text-text-muted mb-3 font-mono"
 						>
 							<Link href="/" className="hover:text-text transition-colors">
 								home
@@ -160,10 +160,11 @@ function DocsContent() {
 								<h1 className="display-headline mt-4 text-text-bright">
 									API Documentation
 								</h1>
-								<p className="page-intro mt-4 max-w-3xl">
+								<p className="page-intro mt-4 max-w-2xl">
 									OpenAI-compatible AI inference with wallet auth, x402
 									pay-per-request flows, and a catalog of{" "}
-									{MODEL_COUNT} models behind one endpoint.
+									{MODEL_COUNT}+ models behind one endpoint. Buy credits
+									with card via Polar, or pay per call with USDC on Base.
 								</p>
 							</div>
 							<div className="flex flex-col gap-3 lg:min-w-[15rem] lg:items-end">

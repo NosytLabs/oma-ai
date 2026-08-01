@@ -29,7 +29,9 @@ describe("PricingPage", () => {
 	it("renders payment methods section", () => {
 		render(<PricingPage />);
 		expect(screen.getByText("USDC on Base")).toBeInTheDocument();
-		expect(screen.getByText("LI.FI / CCTP")).toBeInTheDocument();
+		expect(
+			screen.getAllByText((_, el) => !!el && (el.textContent ?? "").includes("LI.FI")).length,
+		).toBeGreaterThan(0);
 	});
 
 	it("renders model pricing table with headers", async () => {

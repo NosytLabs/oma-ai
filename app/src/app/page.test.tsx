@@ -154,10 +154,11 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(screen.getByText("LLM Chat")).toBeInTheDocument();
-			expect(screen.getByText("Cheap-by-default")).toBeInTheDocument();
+			expect(screen.getByText("Pay with Card")).toBeInTheDocument();
 			expect(screen.getByText("Tool Calling & Streaming")).toBeInTheDocument();
 			expect(screen.getByText("Model Routing")).toBeInTheDocument();
 			expect(screen.getByText("Crypto-Native Billing")).toBeInTheDocument();
+			expect(screen.getByText(/Magic Link.*Wallet.*Account #/i)).toBeInTheDocument();
 		});
 	});
 
@@ -193,7 +194,7 @@ describe("HomePage", () => {
 		await waitFor(() => {
 			expect(screen.getByText(/agents pay for themselves/i)).toBeInTheDocument();
 			expect(
-				screen.getByText(/no card\. no kyc\. no subscriptions\./i),
+				screen.getByText(/wallet-based billing, no card needed/i),
 			).toBeInTheDocument();
 		});
 	});
