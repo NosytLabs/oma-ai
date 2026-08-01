@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 	robots: { index: true, follow: true },
 };
 
-const ISSUED = "2026-01-01";
+const ISSUED = "2026-08-01";
 
 const SECTIONS = [
 	{ idx: "02", id: "usage", title: "Usage", meta: "api rules" },

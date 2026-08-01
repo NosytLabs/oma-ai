@@ -36,5 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		// Legal
 		entry("/privacy", 0.25, "yearly"),
 		entry("/terms", 0.25, "yearly"),
+		entry("/aup", 0.25, "yearly"),
 	];
 }

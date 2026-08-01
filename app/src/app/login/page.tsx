@@ -485,10 +485,14 @@ function LoginInner() {
 						By signing in you accept the{" "}
 						<Link href="/terms" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
 							Terms
-						</Link>{" "}
-						and{" "}
+						</Link>
+						,{" "}
 						<Link href="/privacy" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
 							Privacy Policy
+						</Link>
+						, and{" "}
+						<Link href="/aup" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
+							Acceptable Use Policy
 						</Link>
 						.
 					</p>

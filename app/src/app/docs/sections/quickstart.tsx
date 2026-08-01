@@ -1,5 +1,7 @@
 import dynamic from "next/dynamic";
-import { Play, Terminal } from "lucide-react";
+import { Play, Terminal, Copy, Check } from "lucide-react";
+import { useState } from "react";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AnimatedSection, CodeBlock, SectionHeading, QUICK_START_STEPS } from "./shared";
 
@@ -21,18 +23,39 @@ const AgentSessionDemo = dynamic(
 // comments because those Venice endpoints aren't yet wired up on
 // /v1/* (they live on Venice directly — see references).
 function ModalityExample({ title, code }: { title: string; code: string }) {
+	const [copied, setCopied] = useState(false);
 	const looksLikeCurl = code.trimStart().startsWith("curl");
+	const isInteractive = looksLikeCurl || !code.trimStart().startsWith("#");
+
 	return (
-		<div className="rounded-lg border border-border bg-surface/50 p-4">
+		<div className="rounded-lg border border-border bg-surface/50 p-4 relative group">
 			<div className="mb-2 flex items-center justify-between">
 				<span className="text-xs font-semibold text-text-secondary font-mono uppercase tracking-wider">
 					{title}
 				</span>
-				{looksLikeCurl && (
-					<span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
-						cURL
-					</span>
-				)}
+				<div className="flex items-center gap-1.5">
+					{looksLikeCurl && (
+						<span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
+							cURL
+						</span>
+					)}
+					{isInteractive && (
+						<button
+							type="button"
+							onClick={() => {
+								void copyToClipboard(code).then((ok) => {
+									if (!ok) return;
+									setCopied(true);
+									setTimeout(() => setCopied(false), 2000);
+								});
+							}}
+							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 text-text-muted hover:text-accent"
+							aria-label={copied ? "Copied" : "Copy code"}
+						>
+							{copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+						</button>
+					)}
+				</div>
 			</div>
 			<pre className="overflow-x-auto rounded-md bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
 {code}

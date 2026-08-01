@@ -103,6 +103,7 @@ const LEGAL: FooterSection = {
 	links: [
 		{ label: "Terms", href: "/terms", icon: Gavel },
 		{ label: "Privacy", href: "/privacy", icon: ShieldCheck },
+		{ label: "AUP", href: "/aup", icon: ShieldCheck },
 		{ label: "Contact", href: "/contact" },
 	],
 };

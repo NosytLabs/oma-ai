@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 	robots: { index: true, follow: true },
 };
 
-const ISSUED = "2026-01-01";
+const ISSUED = "2026-08-01";
 
 const SECTIONS = [
 	{ idx: "02", id: "collection", title: "Collection", meta: "what we keep" },
@@ -564,6 +564,8 @@ export default function PrivacyPage() {
 								["Neon", "Database hosting", "account metadata, usage meters"],
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
+								["Resend", "Email delivery", "transactional magic link emails"],
+								["Polar", "Payment processing", "credit card checkout and subscription management"],
 							].map(([name, role, note]) => (
 								<li
 									key={name}
@@ -596,23 +598,23 @@ export default function PrivacyPage() {
 							{[
 								{
 									icon: CircleAlert,
-									title: "Request deletion",
-									body: "Ask us to remove your account data. API keys revoke immediately; usage logs age out per the Retention section above.",
+									title: "Request deletion (Art. 17 GDPR)",
+									body: "Under Article 17 of the GDPR, you have the right to erasure ('right to be forgotten'). Delete your account and all associated profile, sessions, and API keys immediately and permanently from the Danger Zone under Settings.",
 								},
 								{
 									icon: Shield,
-									title: "Revoke API keys",
-									body: "Disable any key from the dashboard at any time. Revocation is immediate and final.",
+									title: "Revoke API keys (Art. 16/18 GDPR)",
+									body: "Under Article 16/18 of the GDPR, you have the right to restrict processing. You can disable or permanently revoke any of your API keys from the dashboard at any time, instantly halting further request metering on those keys.",
 								},
 								{
 									icon: Eye,
-									title: "Export your data",
-									body: "Download deposits and usage as CSV or JSON from the dashboard.",
+									title: "Export your data (Art. 15/20 GDPR)",
+									body: "Under Articles 15 & 20 of the GDPR, you have the right to access and data portability. Download your full data-portability bundle (JSON profile, api keys list, active sessions, deposits, credit balances, and audit history) from the Privacy panel under Settings.",
 								},
 								{
 									icon: CheckCircle2,
-									title: "Contact us",
-									body: "Email support@nosytlabs.com for any privacy concern. We reply within five business days.",
+									title: "Contact our DPO (Art. 13 GDPR)",
+									body: "Under Article 13 of the GDPR, you have the right to contact us regarding your data. Email support@nosytlabs.com for any privacy, rectification, processing restriction, or data control inquiry. We reply within five business days.",
 								},
 							].map((card) => (
 								<div
