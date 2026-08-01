@@ -59,7 +59,7 @@ export const childFadeUp: Variants = {
  * then, the consumer renders plain HTML so SSR + crawlers + screenshots
  * always show real content.
  */
-function useHasBeenInView(): boolean {
+export function useHasBeenInView(): boolean {
 	const [seen, setSeen] = useState(false);
 	useEffect(() => {
 		// After first paint, schedule a small reveal delay to give any

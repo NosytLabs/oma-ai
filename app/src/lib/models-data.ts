@@ -313,7 +313,36 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 	return undefined;
 }
 
+/**
+ * Display-name overrides applied on top of whatever the upstream API returns.
+ * We use this to canonicalise names whose API string is wrong or low-quality
+ * (e.g. "Minimax M2" → "MiniMax 2.7") without forking the SSR fallback.
+ * Keyed by lower-cased model id.
+ */
+const DISPLAY_NAME_OVERRIDES: Record<string, string> = {
+	"minimax-m2.7": "MiniMax 2.7",
+	"kimi-k2.6": "Kimi K2.6",
+};
+
+function deriveNameFromId(id: string): string {
+	// Convert model IDs like "qwen3-235b-a22b-instruct-2507" to display names
+	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
+	return cleaned
+		.split(/[-_]/)
+		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+		.filter(Boolean)
+		.join(" ");
+}
+
+function normalizeDisplayName(id: string, rawName: string | undefined): string {
+	const override = DISPLAY_NAME_OVERRIDES[id.toLowerCase()];
+	if (override) return override;
+	if (rawName?.trim()) return rawName.trim();
+	return deriveNameFromId(id);
+}
+
 function toModel(entry: RawEntry): Model {
+	entry.displayName = normalizeDisplayName(entry.id, entry.displayName);
 	const tier: Tier =
 		entry.category === "budget" ||
 		entry.category === "mid" ||
@@ -389,16 +418,6 @@ interface ApiModelsResponse {
 	data: ApiModelEntry[];
 }
 
-function deriveNameFromId(id: string): string {
-	// Convert model IDs like "qwen3-235b-a22b-instruct-2507" to display names
-	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
-	return cleaned
-		.split(/[-_]/)
-		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
-		.filter(Boolean)
-		.join(" ");
-}
-
 /**
  * Load the full model catalog from the live API.
  *
@@ -426,7 +445,7 @@ export async function loadModels(): Promise<Model[]> {
 			const json: ApiModelsResponse = await res.json();
 			const models: Model[] = json.data
 				.map((entry: ApiModelEntry) => {
-					const name = entry.display_name?.trim() || deriveNameFromId(entry.id);
+					const name = normalizeDisplayName(entry.id, entry.display_name);
 					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");
 					const completionRaw = parseFloat(entry.pricing?.completion ?? "");
 					// API returns prices per 1M tokens already — no conversion needed
@@ -642,10 +661,10 @@ const FALLBACK_CATALOG: RawCatalog = {
 		},
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
-			displayName: "MiniMax M2.7",
+			displayName: "MiniMax 2.7",
 			provider: "OMA-AI",
 			category: "budget",
-			maxTokens: 8192,
+			maxTokens: 128000,
 			inputPricePer1M: 0.015,
 			outputPricePer1M: 0.06,
 			capabilities: ["chat", "tools"],
@@ -655,7 +674,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 			displayName: "Kimi K2.6",
 			provider: "OMA-AI",
 			category: "mid",
-			maxTokens: 8192,
+			maxTokens: 128000,
 			inputPricePer1M: 0.024,
 			outputPricePer1M: 0.096,
 			capabilities: ["chat", "reasoning", "tools"],

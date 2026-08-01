@@ -46,6 +46,11 @@ export interface UseAuthResult {
 	data: BetterAuthSession | null;
 	user: BetterAuthUser | null;
 	isAuthenticated: boolean;
+	/** True when only the `oma-demo-public` demo cookie is present (no real
+	 * Better Auth session). Consumers should treat this as "preview mode":
+	 * pages may render, but API-backed actions (chat, deposits, credits)
+	 * will reject with AUTH REQUIRED. UI must not claim an active session. */
+	isDemo: boolean;
 	isPending: boolean;
 	isReady: boolean;
 	error: Error | null;
@@ -63,18 +68,40 @@ export function useAuth(): UseAuthResult {
 	const evmAddress = (user?.evmAddress as string | null | undefined) ?? null;
 	const role = (user?.role as string | null | undefined) ?? null;
 
-	// Better Auth's useSession is client-side. SSR initially has no
-	// session until the first client-side fetch resolves; mark `isReady`
-	// after the first tick so consumers can gate their loading skeletons.
-	const [isReady, setIsReady] = useState(false);
+	// Demo bypass: the middleware sets `oma-demo-public` cookie when the
+	// user hits a protected page with `?demo=1`. Mirror that here so the
+	// client-side guardrails (dashboard layout, settings, etc.) see the
+	// same view the middleware allowed.
+	const [demoActive, setDemoActive] = useState(false);
 	useEffect(() => {
-		if (!session.isPending) setIsReady(true);
-	}, [session.isPending]);
+		if (typeof document === "undefined") return;
+		const read = () => {
+			const c = document.cookie
+				.split("; ")
+				.find((row) => row.startsWith("oma-demo-public="));
+			setDemoActive(c?.split("=")[1] === "1");
+		};
+		const onVisibilityChange = () => {
+			if (document.visibilityState === "visible") read();
+		};
+		read();
+		window.addEventListener("focus", read);
+		document.addEventListener("visibilitychange", onVisibilityChange);
+		return () => {
+			window.removeEventListener("focus", read);
+			document.removeEventListener("visibilitychange", onVisibilityChange);
+		};
+	}, []);
+
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => setHasMounted(true), []);
+	const isReady = hasMounted && !session.isPending;
 
 	return {
 		data,
 		user,
-		isAuthenticated: !!user,
+		isAuthenticated: !!user || demoActive,
+		isDemo: demoActive && !user,
 		isPending: session.isPending,
 		isReady,
 		error: session.error as Error | null,

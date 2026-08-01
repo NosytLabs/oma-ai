@@ -349,6 +349,16 @@ export function MessagesList({
 					<div className="space-y-6 md:space-y-8 pb-12">
 						<AnimatePresence mode="popLayout">
 							{deferredMessages.map((msg, index) => {
+								const isLast = index === deferredMessages.length - 1;
+								// Skip legacy empty assistant payloads (e.g. from
+								// failed sends before history sanitizing) — they
+								// render as hollow bubbles otherwise.
+								const emptyAssistant =
+									msg.role === "assistant" &&
+									!msg.content?.trim() &&
+									!msg.reasoning?.trim() &&
+									!(loading && isLast);
+								if (emptyAssistant) return null;
 								// memoize the JSON-classification result per
 								// message so SSE token flushes (which replace the
 								// content array reference) don't re-parse every line
@@ -365,8 +375,6 @@ export function MessagesList({
 										</div>
 									);
 								}
-								const isLast =
-									index === deferredMessages.length - 1;
 								const isLastAssistant =
 									msg.role === "assistant" && isLast;
 								return (

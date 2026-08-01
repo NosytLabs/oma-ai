@@ -61,7 +61,7 @@ export function X402Banner() {
 									— the gateway verifies, settles on-chain, and returns the
 									completion.
 								</p>
-								<div className="mt-7 flex flex-wrap gap-3">
+								<div className="mt-7 flex flex-wrap gap-3 w-full">
 									<Link
 										href="/docs#x402"
 										className="btn-primary inline-flex h-11 items-center gap-2 px-5 text-sm"
@@ -83,7 +83,7 @@ export function X402Banner() {
 								<p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-text-muted">
 									request shape
 								</p>
-								<pre className="overflow-x-auto whitespace-pre">
+								<pre className="overflow-x-auto whitespace-pre w-full">
 									{`POST /v1/chat/completions
 PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
 Content-Type: application/json

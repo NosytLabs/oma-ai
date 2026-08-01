@@ -8,12 +8,13 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/app/_components/home/reveal";
+import { ElectricBorder } from "@/components/electric-border";
 
 export function FinalCTA() {
 	return (
 		<section
 			aria-labelledby="final-cta-headline"
-			className="relative border-t border-border-subtle py-16 sm:py-20"
+			className="relative border-t border-border-subtle py-12 sm:py-16"
 		>
 			<div className="container-page">
 				<Reveal>
@@ -37,13 +38,21 @@ export function FinalCTA() {
 
 						<div className="flex flex-col gap-3 lg:items-end">
 							<div className="flex flex-wrap items-center gap-3 self-start lg:self-end">
-								<Link
-									href="/login"
-									className="btn-primary inline-flex min-h-12 items-center gap-2 px-6 text-[15px]"
+<ElectricBorder
+					borderRadius="9999px"
+					borderWidth={1}
+					color="var(--color-accent)"
+					className="electric-border-host"
+					style={{ animationDuration: "3s" }}
 								>
-									Get API key
-									<ArrowRight className="h-4 w-4" aria-hidden="true" />
-								</Link>
+									<Link
+										href="/login"
+										className="btn-primary inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-[15px]"
+									>
+										Get API key
+										<ArrowRight className="h-4 w-4" aria-hidden="true" />
+									</Link>
+								</ElectricBorder>
 								<Link
 									href="/login?method=account"
 									className="btn-secondary inline-flex min-h-12 items-center gap-2 px-5 text-[14px]"

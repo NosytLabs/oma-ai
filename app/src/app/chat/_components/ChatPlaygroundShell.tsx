@@ -552,8 +552,8 @@ function ShellContent({
 								type="button"
 								onClick={() => setSystemPromptOpen(!systemPromptOpen)}
 								aria-expanded={systemPromptOpen}
-								aria-label="Toggle system prompt"
-								className="w-full flex items-center justify-between px-4 md:px-6 py-2 text-[11px] font-mono text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors focus-ring"
+								aria-label={`Toggle system prompt panel — Instructions ${systemPrompt.trim() ? "· Active" : "· Optional"}`}
+								className="w-full flex items-center justify-between px-4 md:px-6 py-2.5 text-[11px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors focus-ring"
 							>
 								<span className="flex items-center gap-2">
 									<span
@@ -602,7 +602,13 @@ function ShellContent({
 
 					{/* Text composer only for chat mode — image/video use their own panels */}
 					{mediaMode === "text" && (
-						<div className="flex-none px-3 py-3 sm:px-4 sm:py-4 bg-void border-t border-border">
+						// Added safe-area-inset padding so the composer never sits flush
+						// against the browser edge (mobile bottom bar / iOS notch home bar)
+						// and there's breathing room above the copyright/footer.
+						<div
+							className="flex-none px-3 pt-3 pb-5 sm:px-4 sm:pt-4 sm:pb-6 bg-void border-t border-border"
+							style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+						>
 							<div className="max-w-3xl mx-auto">
 								<ChatErrorBanner
 									error={error}
@@ -627,7 +633,7 @@ function ShellContent({
 									disabled={false}
 								/>
 
-								<div className="mt-2 flex flex-col items-stretch gap-1.5 px-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+								<div className="mt-2.5 flex flex-col items-stretch gap-1.5 px-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
 									<p className="text-[11px] text-text-muted tracking-wide font-mono min-w-0 break-words sm:shrink-0">
 										Enter send · Shift+Enter newline
 										{!isAuthenticated && (

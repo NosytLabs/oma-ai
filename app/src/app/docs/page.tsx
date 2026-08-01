@@ -55,7 +55,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<aside
 				id={mobileNavId}
 				aria-label="Mobile navigation"
-				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-64 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-72 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
@@ -77,13 +77,19 @@ function Sidebar({ activeId }: { activeId: string }) {
 									key={item.id}
 									href={`#${item.id}`}
 									onClick={() => setMobileOpen(false)}
-									className={`flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
+									className={`relative flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
 										isActive
-											? "bg-accent/10 text-accent border border-accent/30"
-											: "text-text-muted hover:bg-surface hover:text-text"
+											? "bg-accent/15 text-accent border border-accent/40 font-medium"
+											: "text-text-muted hover:bg-surface hover:text-text border border-transparent"
 									}`}
 									aria-current={isActive ? "page" : undefined}
 								>
+									{isActive && (
+										<span
+											aria-hidden="true"
+											className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 rounded-r bg-accent"
+										/>
+									)}
 									<Icon className="h-4 w-4" />
 									{item.label}
 								</a>
@@ -130,11 +136,11 @@ function DocsContent() {
 				<FloatingIcons count={4} />
 			</div>
 
-		<div className="page-shell min-h-screen">
+		<div className="page-shell">
 			<Sidebar activeId={activeId} />
 
-			<div className="min-w-0 lg:pl-64">
-				<div className="mx-auto max-w-5xl min-w-0 overflow-x-clip px-4 py-4 sm:px-6 lg:px-10">
+			<div className="min-w-0 lg:pl-72">
+				<div className="mx-auto max-w-5xl min-w-0 overflow-x-auto px-4 py-4 sm:px-6 lg:px-10">
 					<div className="page-hero mb-10 rounded-[calc(var(--radius-lg)+4px)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.92)] sm:p-8">
 						<nav
 							aria-label="Breadcrumb"

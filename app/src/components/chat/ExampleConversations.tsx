@@ -73,7 +73,7 @@ async function processPayment(orderId: string) {
 
 Two concurrent requests with the same orderId can both pass the status check before either updates it. Show me a proper fix using database-level locking or an idempotency key.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "advanced",
 	},
 	{
@@ -90,7 +90,7 @@ Two concurrent requests with the same orderId can both pass the status check bef
 
 Give me the TypeScript implementation with proper types, tests, and middleware integration for Express/Hono.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "advanced",
 	},
 
@@ -121,8 +121,8 @@ LIMIT 50;
 \`\`\`
 
 The users table has 500K rows, orders has 2M, order_items has 8M. Current indexes: users(id), orders(user_id), order_items(order_id).`,
-		model: "kimi-k2-6",
-		modelName: "Kimi K2.6 (free via OMA-AI)",
+		model: "kimi-k2.6",
+		modelName: "Kimi K2.6 (free)",
 		difficulty: "moderate",
 	},
 	{
@@ -137,8 +137,8 @@ The users table has 500K rows, orders has 2M, order_items has 8M. Current indexe
 - User presence indicators — who's online
 
 Compare WebSocket, Server-Sent Events, and polling for this use case. Consider: connection overhead, browser support, scaling behind a load balancer, and what happens when a connection drops. Give me a concrete recommendation with implementation notes.`,
-		model: "kimi-k2-6",
-		modelName: "Kimi K2.6 (free via OMA-AI)",
+		model: "kimi-k2.6",
+		modelName: "Kimi K2.6 (free)",
 		difficulty: "moderate",
 	},
 
@@ -160,7 +160,7 @@ Target audience: Backend engineers who've heard of CRDTs but never implemented o
 
 Tone: Technical but conversational. Like explaining to a colleague over coffee. ~2000 words.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "moderate",
 	},
 	{
@@ -182,7 +182,7 @@ Requirements:
 
 For each name, explain the reasoning in one sentence.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "quick",
 	},
 
@@ -213,8 +213,8 @@ app.use('/api/admin/*', async (req, res, next) => {
 \`\`\`
 
 Be specific about each vulnerability and provide the corrected code.`,
-		model: "kimi-k2-6",
-		modelName: "Kimi K2.6 (free via OMA-AI)",
+		model: "kimi-k2.6",
+		modelName: "Kimi K2.6 (free)",
 		difficulty: "advanced",
 	},
 
@@ -233,7 +233,7 @@ Be specific about each vulnerability and provide the corrected code.`,
 
 Then suggest 3 passwords that would pass and 3 that would fail, with explanations.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},
@@ -247,7 +247,7 @@ Then suggest 3 passwords that would pass and 3 that would fail, with explanation
 
 Moved the rate limiter from middleware/rateLimit.ts to lib/rate-limiter.ts, switched from in-memory Map to Redis, added configurable window sizes per endpoint, and updated all route handlers to use the new interface. Old middleware is removed.`,
 		model: "minimax-m2.7",
-		modelName: "MiniMax M2.7 (free via OMA-AI)",
+		modelName: "MiniMax 2.7 (free)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},

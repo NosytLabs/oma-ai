@@ -1,5 +1,5 @@
-// Auth-gated product surface — render at request time only.
-export const dynamic = "force-dynamic";
+// Auth-gated product surface — auth is enforced client-side in the chat
+// shell (useAuth), so this page prerenders safely; metadata stays in <head>.
 
 import type { Metadata } from "next";
 

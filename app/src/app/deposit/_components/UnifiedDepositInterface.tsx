@@ -28,6 +28,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { request } from "@/lib/api";
+import { isAuthError } from "@/lib/api/client";
 
 interface DepositInstructions {
 	depositAddress: string;
@@ -85,7 +86,7 @@ export function UnifiedDepositInterface({
 	const [loadingInstructions, setLoadingInstructions] = useState(true);
 	const toast = useToast();
 	const id = useId();
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, isDemo } = useAuth();
 
 	const fetchInstructions = useCallback(async () => {
 		setLoadingInstructions(true);
@@ -93,29 +94,40 @@ export function UnifiedDepositInterface({
 			const data = await requestDepositInstructions();
 			setInstructions(data);
 		} catch (err) {
-			const msg =
-				err instanceof Error ? err.message : "Failed to load deposit instructions";
-			setError(msg);
+			// Demo sessions hit the backend with a cookie the deposit route
+			// rejects (sessionOrBearerAuth requires a real Better-Auth token,
+			// not the public-preview cookie). Hide the raw "[401] ..." text
+			// from guests — they'd never be able to resolve it themselves.
+			if (isDemo || isAuthError(err)) {
+				setError("");
+			} else {
+				const msg =
+					err instanceof Error ? err.message : "Failed to load deposit instructions";
+				setError(msg);
+			}
 		} finally {
 			setLoadingInstructions(false);
 		}
-	}, []);
+	}, [isDemo]);
 
 	const fetchRecent = useCallback(async () => {
 		try {
 			const data = await requestDepositStatus();
 			setRecent(data.deposits);
 		} catch {
-			/* non-fatal */
+			// Guest/demo sessions can't reach this endpoint — swallow quietly.
 		}
 	}, []);
 
 	useEffect(() => {
-		if (isAuthenticated) {
+		// Treat demo sessions as unauthenticated for deposit: the backend
+		// routes use sessionOrBearerAuth which rejects the demo cookie, so
+		// trying to load would just flash a confusing 401.
+		if (isAuthenticated && !isDemo) {
 			void fetchInstructions();
 			void fetchRecent();
 		}
-	}, [isAuthenticated, fetchInstructions, fetchRecent]);
+	}, [isAuthenticated, isDemo, fetchInstructions, fetchRecent]);
 
 	const handleAmountChange = (value: string) => {
 		if (value === "" || /^\d*\.?\d*$/.test(value)) setAmountUsd(value);
@@ -175,7 +187,7 @@ export function UnifiedDepositInterface({
 		setProcessingStep("");
 	};
 
-	if (!isAuthenticated) {
+	if (!isAuthenticated || isDemo) {
 		return (
 			<div className="rounded-lg border border-border-bright bg-panel p-6 text-center">
 				<ShieldCheck className="mx-auto h-8 w-8 text-accent" />
@@ -312,6 +324,7 @@ export function UnifiedDepositInterface({
 															"USDC contract",
 														)
 													}
+													aria-label="Copy USDC contract address"
 													className="font-mono text-text-secondary hover:text-accent"
 												>
 													{shortAddr(instructions.usdcContract)}
@@ -324,6 +337,7 @@ export function UnifiedDepositInterface({
 													onClick={() =>
 														void handleCopy(instructions.memo, "Memo")
 													}
+													aria-label="Copy deposit identification memo"
 													className="font-mono text-text-secondary hover:text-accent"
 												>
 													{instructions.memo}
@@ -394,7 +408,7 @@ export function UnifiedDepositInterface({
 										type="button"
 										onClick={() => void handleSubmit()}
 										disabled={!amountUsd || !txHash}
-										className="w-full py-4 text-sm font-semibold rounded-full bg-accent text-void hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+										className="btn-primary w-full py-4 text-sm rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
 									>
 										Submit deposit for verification
 									</button>

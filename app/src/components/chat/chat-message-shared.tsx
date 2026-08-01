@@ -108,7 +108,7 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 });
 
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000;
-const LIVE_MODELS_CACHE_VERSION = 2; // bump to invalidate stale caches after pricing-fix
+const LIVE_MODELS_CACHE_VERSION = 4; // bump to invalidate stale caches after display-name fix
 let liveModelsCache: { data: ModelOption[]; ts: number; v: number } | null = null;
 
 // shared `["models"]` key so dashboard / settings / chat all

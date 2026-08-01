@@ -6,7 +6,6 @@
 
 // Uses client-only FloatingIcons / ElectricBorder / JuiceButton; opt out of
 // static prerender so Next 15 doesn't crash on missing React hooks.
-export const dynamic = "force-dynamic";
 
 import {
 	ArrowLeft,

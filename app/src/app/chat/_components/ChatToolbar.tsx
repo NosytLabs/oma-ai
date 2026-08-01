@@ -11,7 +11,6 @@ import {
 	Search,
 	Settings2,
 	Share2,
-	TerminalSquare,
 	Trash2,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -187,16 +186,10 @@ export function ChatToolbar({
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
-				<div
-					className={`mr-1 hidden shrink-0 items-center gap-2 md:flex ${isChat ? "text-accent" : "text-warning"}`}
-				>
-					<TerminalSquare className="h-4 w-4" />
-					<span className="text-[11px] font-bold uppercase tracking-widest">
-						OMA
-					</span>
-				</div>
-
-				<div className="min-w-0 flex-1 sm:max-w-[220px] md:max-w-none md:flex-none">
+				{/* Compact model badge — replaces the previous "OMA · MiniMax 2.7" pill
+				    that was duplicating the navbar brand. Now just shows the current
+				    model with tier color so the active selection is always visible. */}
+				<div className="min-w-0 flex-1 sm:max-w-[200px] md:max-w-[220px]">
 					<LazyModelSelector
 						model={model}
 						setModel={setModel}
@@ -208,7 +201,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => setParamsOpen(!paramsOpen)}
-					aria-label="Toggle parameters panel (Cmd+/)"
+					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
 					className={`${btnBase} shrink-0 min-h-[36px] min-w-[36px] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
@@ -235,7 +228,7 @@ export function ChatToolbar({
 			</div>
 
 			{/* Secondary actions — scrollable on small screens, never hide media tabs */}
-			<div className="flex max-w-[40%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
+			<div className="flex max-w-[55%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
 				<div className="hidden shrink-0 md:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>
@@ -262,9 +255,9 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} hidden shrink-0 focus-ring data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success sm:inline-flex`}
+					className={`${btnBase} max-sm:hidden shrink-0 focus-ring data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success sm:inline-flex`}
 					title="Copy a link that opens this chat with the current model pre-selected"
-					aria-label="Copy a link that opens this chat with the current model pre-selected"
+					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
 					{shareStatus === "success" ? (
 						<CheckCircle2 className="h-3.5 w-3.5" />
@@ -279,9 +272,9 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} hidden shrink-0 focus-ring sm:inline-flex`}
+					className={`${btnBase} max-sm:hidden shrink-0 focus-ring sm:inline-flex`}
 					title="Keyboard shortcuts (?)"
-					aria-label="Show keyboard shortcuts"
+					aria-label="? — show keyboard shortcuts"
 				>
 					<Keyboard className="h-3.5 w-3.5" />
 					<span className="hidden lg:inline">?</span>

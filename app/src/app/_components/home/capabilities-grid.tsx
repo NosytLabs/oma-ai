@@ -29,7 +29,7 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "LLM Chat",
 		description:
-			"Venice + Gonka chat completions: Claude, Llama, plus MiniMax-M2.7 and Kimi-K2.6 on decentralized Gonka — one API key, one OpenAI-compatible schema. Streaming, function-calling, and tool use included.",
+			"Venice + Gonka chat completions: Claude, Llama, plus MiniMax 2.7 and Kimi K2.6 on decentralized Gonka — one API key, one OpenAI-compatible schema. Streaming, function-calling, and tool use included.",
 		icon: MessageSquare,
 		cell: "hero",
 		example: "POST /v1/chat/completions",
@@ -37,7 +37,7 @@ const CAPABILITIES: Capability[] = [
 	{
 		title: "Cheap-by-default",
 		description:
-			"Pay-per-token on Gonka at $0.015/M input (M2.7) and $0.024/M (Kimi K2.6) — ~50x cheaper than OpenAI, with no markup on the budget tier. Premium Claude still on Venice at $2.50/M.",
+			"Pay-per-token on Gonka at $0.015/M input (MiniMax 2.7) and $0.024/M (Kimi K2.6) — ~50x cheaper than OpenAI, with no markup on the budget tier. Premium Claude still on Venice at $2.50/M.",
 		icon: Zap,
 		cell: "standard",
 	},
@@ -120,7 +120,7 @@ function HeroCapability({ capability }: { capability: Capability }) {
 				"rounded-[var(--radius-md)] p-8",
 				"bg-gradient-to-br from-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] via-[var(--color-panel)] to-[var(--color-panel)]",
 				"border border-[color-mix(in_srgb,var(--color-accent)_30%,var(--color-border))]",
-				"min-h-[280px]",
+				"min-h-[220px] md:min-h-[230px]",
 			)}
 		>
 			<div
@@ -167,7 +167,7 @@ function CapabilityCard({ capability }: { capability: Capability }) {
 			whileHover={{ y: -4 }}
 			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
 			className={cn(
-				"surface-card h-full p-6 min-h-[180px]",
+				"surface-card h-full p-6 md:p-8 min-h-[220px] md:min-h-[230px]",
 				isTinted &&
 					"bg-[color-mix(in_srgb,var(--color-info)_8%,var(--color-panel))] border-[color-mix(in_srgb,var(--color-info)_20%,var(--color-border))]",
 			)}

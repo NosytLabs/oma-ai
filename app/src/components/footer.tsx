@@ -21,7 +21,7 @@
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │  Logo · tagline · socials                  (3 cols of nav)     │
  *   ├────────────────────────────────────────────────────────────────┤
- *   │  © 2026 · github                                             │
+ *   │  © 2026 NosytLabs. All rights reserved.                                             │
  *   └────────────────────────────────────────────────────────────────┘
  *
  * Layout (mobile):
@@ -238,7 +238,7 @@ export function Footer() {
 					<m.nav
 						variants={fadeUp}
 						aria-label="Footer navigation"
-						className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4"
+						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4"
 					>
 						{FOOTER_SECTIONS.map((section) => (
 							<div key={section.title} className="min-w-0">
@@ -258,10 +258,10 @@ export function Footer() {
 													href={link.href}
 													prefetch={false}
 													aria-current={isCurrent ? "page" : undefined}
-													className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 														isCurrent
-															? "text-accent bg-accent-dim"
-															: "text-text-secondary hover:text-accent hover:bg-surface/60"
+															? "text-accent bg-accent-dim font-semibold underline underline-offset-2"
+															: "text-text-secondary hover:text-accent hover:bg-surface/60 hover:underline underline-offset-2 hover:font-semibold"
 													}`}
 												>
 													{Icon && (

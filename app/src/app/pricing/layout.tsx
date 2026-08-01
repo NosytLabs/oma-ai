@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { MODEL_COUNT } from "@/lib/models-data";
 
 // pricing/ page is fully client; opt the segment out of static prerender.
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Transparent AI API pricing — pay per token",

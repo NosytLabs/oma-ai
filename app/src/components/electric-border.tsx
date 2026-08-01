@@ -53,6 +53,7 @@ export function ElectricBorder({
 				display: "inline-flex",
 				borderRadius,
 				overflow: "hidden",
+				transition: "transform 200ms cubic-bezier(0.16, 1, 0.3, 1)",
 				...style,
 			}}
 		>

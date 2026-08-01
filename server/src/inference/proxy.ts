@@ -251,14 +251,15 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
       // the user has no balance row. Without this, every new user gets free
       // inference forever and the ledger never moves.
       if (status === "completed" && !skipBilling && !isAnonymous) {
-        const freeTrialCents = String(config.FREE_SIGNUP_CENTS ?? 0);
+        const freeTrialCents = Number(config.FREE_SIGNUP_CENTS ?? 0);
+        const initialBalanceCents = Math.max(0, freeTrialCents - userCostCents);
         await tx
           .insert(creditBalances)
           .values({
             userId,
-            balanceCents: freeTrialCents,
-            totalDepositedCents: freeTrialCents,
-            totalUsedCents: "0",
+            balanceCents: initialBalanceCents.toFixed(4),
+            totalDepositedCents: freeTrialCents.toFixed(4),
+            totalUsedCents: userCostCents.toFixed(4),
           })
           .onConflictDoUpdate({
             target: creditBalances.userId,

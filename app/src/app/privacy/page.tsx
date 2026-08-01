@@ -4,7 +4,6 @@
  */
 
 // Imports client visuals (FloatingIcons etc); opt out of static prerender.
-export const dynamic = "force-dynamic";
 export const revalidate = 86400;
 
 import {
@@ -510,8 +509,8 @@ export default function PrivacyPage() {
 								],
 								[
 									"OMA-AI",
-										"Decentralized inference",
-										"free-tier failover; no content logging",
+									"Decentralized inference",
+									"free-tier failover; no content logging",
 								],
 								["Base", "Settlement", "on-chain transaction verification"],
 							].map(([name, role, note]) => (

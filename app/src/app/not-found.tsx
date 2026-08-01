@@ -7,7 +7,6 @@ import { OmaLogo } from "@/components/ui/oma-logo";
 // Next 15 still tries to statically prerender `/_not-found` even though
 // not-found.tsx is a server component — the synthetic shell wraps client
 // islands and crashes with `useState` null. Opt out.
-export const dynamic = "force-dynamic";
 
 /**
  * NotFound — branded 404 page.

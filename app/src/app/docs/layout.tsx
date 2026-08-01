@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 // docs/ uses client-side search/nav; opt the whole segment out of static prerender.
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "API Documentation — OpenAI-compatible gateway",

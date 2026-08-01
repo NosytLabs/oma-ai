@@ -45,7 +45,7 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] = 
 	},
 	{
 		label: "From",
-		value: "$0.01",
+		value: "$0.015",
 		hint: "per 1M tokens (budget tier)",
 	},
 	{
@@ -74,7 +74,7 @@ export function StatsStrip() {
 	return (
 		<section
 			aria-labelledby="stats-headline"
-			className="relative border-y border-border-subtle bg-[var(--color-panel)]/60 py-12 sm:py-14"
+			className="relative border-y border-border-subtle bg-[var(--color-panel)]/60 py-10 sm:py-12"
 		>
 			<div className="container-page">
 				<Reveal>

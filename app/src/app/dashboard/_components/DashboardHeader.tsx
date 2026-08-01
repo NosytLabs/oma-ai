@@ -37,6 +37,8 @@ interface DashboardHeaderProps {
 	timeRange?: TimeRangeId;
 	/** Time range change callback. */
 	onTimeRangeChange?: (range: TimeRangeId) => void;
+	/** Whether authenticated notification data may be fetched. */
+	notificationsEnabled?: boolean;
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
@@ -59,6 +61,7 @@ export function DashboardHeader({
 	onTabChange,
 	timeRange = "7d",
 	onTimeRangeChange,
+	notificationsEnabled = true,
 }: DashboardHeaderProps) {
 	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -196,7 +199,7 @@ export function DashboardHeader({
 
 				{/* Action Buttons — wrap on narrow viewports; no horizontal page overflow */}
 				<div className="flex max-w-full flex-wrap items-center gap-2">
-					<NotificationBell />
+					{notificationsEnabled && <NotificationBell />}
 					{onTimeRangeChange &&
 						(activeTab === "overview" || activeTab === "usage") && (
 							<div

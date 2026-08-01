@@ -412,14 +412,24 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 					setTimeout(() => setCopied(false), 2000);
 				});
 			}}
-			className="absolute right-3 top-3 rounded-lg border border-border/50 bg-surface/80 p-1.5 text-text-muted backdrop-blur-sm transition-all hover:border-accent/50 hover:text-accent active:scale-95"
+			className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-md border bg-surface/95 px-2.5 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider backdrop-blur-sm transition-all hover:border-accent/60 hover:text-accent active:scale-95 ${
+				copied
+					? "border-success/60 text-success"
+					: "border-border text-text-secondary"
+			}`}
 			aria-label={copied ? "Copied" : "Copy code"}
 			aria-controls={id}
 		>
 			{copied ? (
-				<Check className="h-4 w-4 text-success" />
+				<>
+					<Check className="h-3.5 w-3.5" />
+					<span>Copied</span>
+				</>
 			) : (
-				<Copy className="h-4 w-4" />
+				<>
+					<Copy className="h-3.5 w-3.5" />
+					<span>Copy</span>
+				</>
 			)}
 		</button>
 	);
@@ -450,7 +460,7 @@ export function CodeBlock({
 				tabIndex={0}
 				className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 			>
-				<pre id={id} className="m-0 max-w-full overflow-x-auto leading-relaxed">
+				<pre id={id} tabIndex={0} className="m-0 max-w-full leading-relaxed">
 					<SyntaxHighlighter code={code} lang={lang ?? "text"} />
 				</pre>
 			</section>
@@ -486,7 +496,7 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 					tabIndex={0}
 					className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 				>
-					<pre id={id} className="m-0 max-w-full overflow-x-auto leading-relaxed">
+					<pre id={id} tabIndex={0} className="m-0 max-w-full leading-relaxed">
 						<SyntaxHighlighter
 							code={tabs[active].code}
 							lang={tabs[active].lang}

@@ -51,7 +51,7 @@ func main() {
 					Models routed via OMA-AI (OpenBroker /{" "}
 					<code className="text-accent font-mono text-xs">provider: gonka</code>
 					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{" "}
-					<code className="text-accent font-mono text-xs">kimi-k2-6</code> — can be
+					<code className="text-accent font-mono text-xs">kimi-k2.6</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 					without sign-in, API key, or wallet. Rate limits still apply. Venice and
 					other paid models require an account (API key or wallet) and credits.

@@ -172,24 +172,41 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					{isUser ? (
 						<User className="w-5 h-5" strokeWidth={1.5} />
 					) : isStreaming ? (
-						<ThinkingOrb
-							state={
-								msg.searchResults && msg.searchResults.length > 0
-									? "searching"
-									: hasReasoning && !msg.content
-										? "solving"
-										: "composing"
-							}
-							size={20}
-							theme="auto"
-							aria-label={
-								msg.searchResults && msg.searchResults.length > 0
-									? "Searching the web"
-									: hasReasoning && !msg.content
-										? "Reasoning"
-										: "Composing response"
-							}
-						/>
+						prefersReducedMotion ? (
+							<span
+								aria-label={
+									msg.searchResults && msg.searchResults.length > 0
+										? "Searching the web"
+										: hasReasoning && !msg.content
+											? "Reasoning"
+											: "Composing response"
+								}
+								role="status"
+								className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
+							>
+								<span className="absolute inline-flex h-full w-full rounded-full bg-accent/40 animate-ping" />
+								<span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+							</span>
+						) : (
+							<ThinkingOrb
+								state={
+									msg.searchResults && msg.searchResults.length > 0
+										? "searching"
+										: hasReasoning && !msg.content
+											? "solving"
+											: "composing"
+								}
+								size={20}
+								theme="auto"
+								aria-label={
+									msg.searchResults && msg.searchResults.length > 0
+										? "Searching the web"
+										: hasReasoning && !msg.content
+											? "Reasoning"
+											: "Composing response"
+								}
+							/>
+						)
 					) : (
 						<Bot className="w-5 h-5" strokeWidth={1.5} />
 					)}
@@ -313,12 +330,22 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							)}
 							{isWaitingForFirstToken && (
 								<span className="inline-flex items-center gap-2 text-text-muted" role="status">
-									<ThinkingOrb
-										state="composing"
-										size={20}
-										theme="auto"
-										aria-hidden="true"
-									/>
+									{prefersReducedMotion ? (
+										<span
+											className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
+											aria-hidden="true"
+										>
+											<span className="absolute inline-flex h-full w-full rounded-full bg-accent/40 animate-ping" />
+											<span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+										</span>
+									) : (
+										<ThinkingOrb
+											state="composing"
+											size={20}
+											theme="auto"
+											aria-hidden="true"
+										/>
+									)}
 									<span className="text-xs font-mono uppercase tracking-wider">
 										Thinking…
 									</span>
@@ -331,14 +358,14 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				{/* ─── METADATA ROW ─── */}
 				<div
 					className={`
-            mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted font-mono
+            mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary font-mono
             ${isUser ? "flex-row-reverse" : "flex-row"} select-none
           `}
 				>
-					<span className="opacity-60">{time}</span>
+					<span className="text-text-secondary">{time}</span>
 					{(msg.outputTokens ??
 						(msg.content ? estimateTokens(msg.content) : 0)) > 0 && (
-						<span className="px-1.5 py-0.5 bg-surface-elevated/50 border border-border/50 text-[9px]">
+						<span className="px-1.5 py-0.5 bg-surface-elevated border border-border text-[10px] text-text-secondary">
 							TK:{msg.outputTokens ?? estimateTokens(msg.content)}
 						</span>
 					)}
@@ -438,7 +465,13 @@ function ReasoningBlock({
 					<Brain className="w-3.5 h-3.5" />
 					Thinking
 					{isStreaming && (
-						<span className="w-1.5 h-1.5 bg-warning rounded-full animate-pulse" />
+						<span
+							className="relative flex h-3.5 w-3.5 items-center justify-center"
+							aria-hidden="true"
+						>
+							<span className="absolute inline-flex h-full w-full rounded-full bg-warning/40 animate-ping" />
+							<span className="relative inline-flex h-2 w-2 rounded-full bg-warning" />
+						</span>
 					)}
 				</span>
 				{expanded ? (

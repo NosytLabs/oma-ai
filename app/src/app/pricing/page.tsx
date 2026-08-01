@@ -485,7 +485,7 @@ export default function PricingPage() {
 						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
 							<p className="text-xs text-text-muted">
 								Prices shown are base provider rates. OMA applies a 25% platform
-								fee at billing for Venice models. Gonka-routed models (MiniMax M2.7,
+								fee at billing for Venice models. Gonka-routed models (MiniMax 2.7,
 								Kimi K2.6) have no additional markup.
 							</p>
 						</div>

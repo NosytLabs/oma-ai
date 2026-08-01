@@ -30,7 +30,6 @@ import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
 
 // Opt out of static prerender — uses client-only visual components.
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Network Primitives — agent infrastructure APIs",
@@ -157,16 +156,43 @@ const PRIMITIVES: Primitive[] = [
 	},
 ];
 
-const STATUS_STYLE: Record<Primitive["status"], string> = {
-	stable: "border-success/30 bg-success/10 text-success",
-	beta: "border-warning/30 bg-warning/10 text-warning",
-	alpha: "border-info/30 bg-info/10 text-info",
+// Status pills — solid backgrounds with high-contrast text for WCAG AA
+// compliance (4.5:1). Earlier versions used 10-20% tinted fills that washed
+// out on the void surface. Now we use solid hue fills with payload text.
+const STATUS_STYLE: Record<
+	Primitive["status"],
+	{ bg: string; text: string; border: string; ring: string }
+> = {
+	stable: {
+		bg: "bg-emerald-500",
+		text: "text-void",
+		border: "border-emerald-400",
+		ring: "ring-emerald-500/40",
+	},
+	beta: {
+		bg: "bg-amber-500",
+		text: "text-void",
+		border: "border-amber-400",
+		ring: "ring-amber-500/40",
+	},
+	alpha: {
+		bg: "bg-sky-500",
+		text: "text-white",
+		border: "border-sky-400",
+		ring: "ring-sky-500/40",
+	},
 };
 
 const METHOD_COLOR: Record<Primitive["method"], string> = {
 	GET: "text-info",
 	POST: "text-accent",
-	WS: "text-tertiary",
+	WS: "text-violet",
+};
+
+const STATUS_DOT: Record<Primitive["status"], string> = {
+	stable: "bg-success",
+	beta: "bg-warning",
+	alpha: "bg-info",
 };
 
 export default function NetworkPage() {
@@ -199,10 +225,10 @@ export default function NetworkPage() {
 						</div>
 
 						<h1
-							className="h1-page text-text-bright"
+							className="h1-page text-text-bright break-words"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Programmable network{" "}</span>
+							<span className="block">Programmable network</span>
 							<span className="block text-accent">primitives for agents.</span>
 						</h1>
 
@@ -213,25 +239,42 @@ export default function NetworkPage() {
 							endpoint.
 						</p>
 
-						<div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
-							{[
-								{ label: "primitives", value: PRIMITIVES.length.toString() },
-								{ label: "stable", value: PRIMITIVES.filter((p) => p.status === "stable").length.toString() },
-								{ label: "beta", value: PRIMITIVES.filter((p) => p.status === "beta").length.toString() },
-								{ label: "alpha", value: PRIMITIVES.filter((p) => p.status === "alpha").length.toString() },
-							].map((stat) => (
-								<div
-									key={stat.label}
-									className="border border-border rounded-md p-3 bg-surface/50"
-								>
-									<p className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
-										{stat.label}
-									</p>
-									<p className="mt-1 text-2xl font-display font-bold text-accent tabular-nums">
-										{stat.value}
-									</p>
-								</div>
-							))}
+						<div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl auto-rows-fr">
+							{(() => {
+								const counts = {
+									total: PRIMITIVES.length,
+									stable: PRIMITIVES.filter((p) => p.status === "stable").length,
+									beta: PRIMITIVES.filter((p) => p.status === "beta").length,
+									alpha: PRIMITIVES.filter((p) => p.status === "alpha").length,
+								};
+								const statCards = [
+									{ label: "primitives", value: counts.total, color: "text-accent", dot: "bg-accent" },
+									{ label: "stable", value: counts.stable, color: "text-success", dot: "bg-success" },
+									{ label: "beta", value: counts.beta, color: "text-warning", dot: "bg-warning" },
+									// Hide the alpha stat card entirely when zero — avoids the
+									// confusing "0 alpha" state that previously looked like an error.
+									...(counts.alpha > 0
+										? [{ label: "alpha", value: counts.alpha, color: "text-info", dot: "bg-info" }]
+										: []),
+								];
+								return statCards.map((stat) => (
+									<div
+										key={stat.label}
+										className="flex h-full flex-col justify-between border border-border rounded-md p-3 bg-surface/50 transition-colors hover:border-border-hi"
+									>
+										<p className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-text-muted">
+											<span
+												className={`h-1.5 w-1.5 rounded-full ${stat.dot}`}
+												aria-hidden="true"
+											/>
+											{stat.label}
+										</p>
+										<p className={`mt-1.5 text-2xl font-display font-bold tabular-nums ${stat.color}`}>
+											{stat.value}
+										</p>
+									</div>
+								));
+							})()}
 						</div>
 					</section>
 
@@ -244,66 +287,93 @@ export default function NetworkPage() {
 							<h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright">
 								Eight primitives
 							</h2>
+							<p className="mt-3 text-[14px] text-text-secondary leading-relaxed">
+								Click any card to inspect the request shape, signing rules,
+								and delivery semantics.
+							</p>
 						</header>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
 							{PRIMITIVES.map((p, idx) => {
 								const Icon = p.icon;
+								const status = STATUS_STYLE[p.status];
 								return (
 									<article
 										key={p.id}
-										className="group relative border border-border rounded-lg bg-surface/40 p-5 hover:border-accent/40 transition-colors"
+										className="group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-surface/40 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface-elevated/50 hover:shadow-[0_12px_28px_-18px_rgba(0,0,0,0.9)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40"
 									>
+										{/* Accent glow that breathes on hover */}
+										<span
+											aria-hidden="true"
+											className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+										/>
+
 										<header className="flex items-start gap-3 mb-3">
-											<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-accent/30 bg-accent-dim">
-												<Icon className="h-4 w-4 text-accent" aria-hidden="true" />
+											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent/35 bg-accent-dim transition-colors group-hover:border-accent/55 group-hover:bg-accent/15">
+												<Icon
+													className="h-4 w-4 text-accent transition-transform duration-300 group-hover:scale-110"
+													aria-hidden="true"
+												/>
 											</div>
 											<div className="min-w-0 flex-1">
 												<div className="flex items-center gap-2 flex-wrap">
 													<h3 className="font-display text-[15px] font-semibold text-text-bright truncate">
 														{p.name}
 													</h3>
+													{/* Status pill — solid fill for contrast, dot for redundancy */}
 													<span
-														className={`shrink-0 inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider ${STATUS_STYLE[p.status]}`}
+														className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider ${status.bg} ${status.text} ${status.border}`}
+														aria-label={`Status: ${p.status}`}
 													>
+														<span
+															className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[p.status]}`}
+															aria-hidden="true"
+														/>
 														{p.status}
 													</span>
 												</div>
-												<p className="mt-0.5 text-[11px] font-mono text-text-muted tabular-nums">
-													<span className={METHOD_COLOR[p.method]}>{p.method}</span>
+												<p className="mt-1 text-[11px] font-mono text-text-muted tabular-nums">
+													<span
+														className={`font-semibold ${METHOD_COLOR[p.method]}`}
+													>
+														{p.method}
+													</span>
 													<span className="mx-1.5 text-text-tertiary">·</span>
-													<span>{p.endpoint}</span>
+													<span className="break-all">{p.endpoint}</span>
 												</p>
 											</div>
+											{/* Index badge — now visually anchored to the corner with consistent placement */}
+											<span
+												aria-hidden="true"
+												className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-void/60 px-1 text-[10px] font-mono tabular-nums text-text-muted"
+											>
+												{String(idx + 1).padStart(2, "0")}
+											</span>
 										</header>
 
 										<p className="text-[13px] text-text-secondary leading-relaxed mb-3">
 											{p.tagline}
 										</p>
 
-										<details className="group/details">
-											<summary className="cursor-pointer list-none text-[11px] font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-1.5 select-none">
-												<ArrowRight className="h-3 w-3 transition-transform group-open/details:rotate-90" aria-hidden="true" />
+										<details className="group/details border-t border-border pt-3">
+											<summary className="cursor-pointer list-none text-[11px] font-mono uppercase tracking-wider text-text-secondary hover:text-accent transition-colors flex items-center gap-1.5 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm">
+												<ArrowRight
+													className="h-3 w-3 transition-transform duration-200 group-open/details:rotate-90"
+													aria-hidden="true"
+												/>
 												<span>{p.name} details</span>
 											</summary>
-											<div className="mt-3 pt-3 border-t border-border space-y-3">
+											<div className="mt-3 space-y-3">
 												<p className="text-[12px] text-text-secondary leading-relaxed">
 													{p.description}
 												</p>
 												{p.example && (
-													<pre className="overflow-x-auto text-[11px] font-mono text-text-muted bg-[var(--color-void)] border border-border rounded px-3 py-2 leading-relaxed">
+													<pre className="overflow-x-auto text-[11px] font-mono text-text-secondary bg-void-deep border border-border rounded-md px-3 py-2.5 leading-relaxed">
 														<code>{p.example}</code>
 													</pre>
 												)}
 											</div>
 										</details>
-
-										<span
-											aria-hidden="true"
-											className="absolute top-2 right-3 text-[10px] font-mono text-text-tertiary tabular-nums"
-										>
-											{String(idx + 1).padStart(2, "0")}
-										</span>
 									</article>
 								);
 							})}

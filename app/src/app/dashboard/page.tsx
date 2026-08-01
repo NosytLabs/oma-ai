@@ -41,7 +41,7 @@ const RECENT_REQUESTS_LIMIT = 20;
 /** Inline auth-loading skeleton — replaces the deleted AuthSkeleton. */
 function AuthGateSkeleton() {
 	return (
-		<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+		<div className="flex items-center justify-center px-4">
 			<div className="w-full max-w-md space-y-3">
 				<div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
 				<div className="mx-auto h-4 w-48 animate-pulse rounded bg-surface-elevated/40" />
@@ -52,10 +52,12 @@ function AuthGateSkeleton() {
 }
 
 export default function DashboardPage() {
-	const { isAuthenticated, isReady, evmAddress } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
+	const isDemoView = searchParams?.get("demo") === "1" || isDemo;
+	const canLoadDashboard = isReady && isAuthenticated && !isDemoView;
 
 	const validTabIds = useMemo(() => TABS.map((t) => t.id), []);
 	const initialTab: TabId =
@@ -74,7 +76,7 @@ export default function DashboardPage() {
 		error,
 		backendUnavailable,
 		refresh,
-	} = useDashboardData({ isAuthenticated });
+	} = useDashboardData({ isAuthenticated: canLoadDashboard });
 
 	const [page, setPage] = useState(1);
 	const [creating, setCreating] = useState(false);
@@ -219,8 +221,8 @@ export default function DashboardPage() {
 
 	const content = !isReady ? (
 		<AuthGateSkeleton />
-	) : !isAuthenticated ? (
-		<div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 px-4 py-10">
+	) : !isAuthenticated && !isDemoView ? (
+		<div className="flex flex-col items-center justify-center gap-6 px-4 py-16">
 			<h2 className="sr-only">Dashboard</h2>
 			<div className="surface-card w-full max-w-md p-8 text-center">
 				<p className="font-mono text-xs uppercase tracking-widest text-accent">
@@ -236,13 +238,13 @@ export default function DashboardPage() {
 				<div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
 					<Link
 						href="/login?next=/dashboard"
-						className="inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+						className="btn-primary inline-flex h-10 items-center px-4 text-sm"
 					>
 						Sign in →
 					</Link>
 					<Link
 						href="/deposit"
-						className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:border-accent/40 hover:text-text-bright"
+						className="btn-secondary inline-flex h-10 items-center px-4 text-sm"
 					>
 						Deposit USDC
 					</Link>
@@ -283,6 +285,7 @@ export default function DashboardPage() {
 						onTabChange={handleTabChange}
 						timeRange={timeRange}
 						onTimeRangeChange={setTimeRange}
+						notificationsEnabled={canLoadDashboard}
 					/>
 
 					<DashboardGrid

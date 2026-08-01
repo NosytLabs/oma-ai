@@ -16,14 +16,14 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    // 2026-07-30: skip the deposit-recovery test temporarily — it was
-    // failing pre-audit (TypeScript: mockClient partial mock doesn't
-    // satisfy the full PublicClient type; runtime: assertions on
-    // runRecoveryIteration block number return value 500n vs mock 1000n).
-    // The lib itself is wired (server/src/lib/deposit-recovery.ts) and
-    // tested manually via the recovery flow. To be re-enabled in a
-    // follow-up session alongside the deposit-recovery.ts script.
-    exclude: ['dist/**', 'node_modules/**', 'src/__tests__/deposit-recovery.test.ts'],
+    // 2026-07-31: deposit-recovery test re-enabled after fixing two mock
+    // bugs: (1) beforeEach used clearAllMocks, which does not drop queued
+    // mockResolvedValueOnce values, so each test consumed the previous
+    // test's stale getTransaction input ("queue shift"); now uses
+    // resetAllMocks. (2) parseAbi was mocked to vi.fn() returning
+    // undefined, so TRANSFER_ABI[0] threw inside runRecoveryIteration and
+    // the outer catch returned fromBlock; now returns a real ABI shape.
+    exclude: ['dist/**', 'node_modules/**'],
     setupFiles: ['./vitest.setup.ts'],
   },
 })

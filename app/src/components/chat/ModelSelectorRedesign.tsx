@@ -194,21 +194,19 @@ export function ModelSelector({
 				onClick={() => setOpen(!open)}
 				aria-expanded={open}
 				aria-haspopup="listbox"
-				aria-label="Select AI model"
+				aria-label={`Select AI model — ${selectedName || "SELECT MODEL"}`}
 				className={`
-          flex items-center gap-3 bg-void border border-border
-          hover:border-accent/40 transition-all duration-200
-          btn-primary
-          min-w-0 group
-          ${compact ? "w-full justify-between px-2 py-1.5" : "px-3 py-2"}
+          flex items-center gap-2 bg-surface/70 border border-border-hi
+          hover:border-accent/40 hover:bg-surface transition-all duration-200
+          min-w-0 group rounded-md
+          ${compact ? "w-full justify-between px-2 py-1.5" : "px-2.5 py-1.5"}
         `}
 			>
-				{/* Animated pulse dot */}
+				{/* Status dot — static emerald indicator for active selection */}
 				<span className="relative flex h-2 w-2 shrink-0">
-					<span className="motion-reduce:hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
 					<span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
 				</span>
-				<span className="text-sm text-text-secondary font-mono truncate min-w-0 max-w-[12rem]">
+				<span className="text-[12px] text-text-bright font-mono truncate min-w-0 max-w-[12rem]">
 					{selectedName || "SELECT MODEL"}
 				</span>
 				<ChevronDown

@@ -7,34 +7,24 @@
  * and a live code strip that shows the OpenAI-compatible surface.
  */
 
-import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Info, KeyRound, Sparkles, Zap } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { PulseLines } from "@/components/pulse-lines";
+import { useHasBeenInView } from "./reveal";
 import { ScrambleText } from "@/components/scramble-text";
 import { FloatingIcons } from "@/components/floating-icons";
 import { ElectricBorder } from "@/components/electric-border";
 import { JuiceButton } from "@/components/juice-button";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import { springs } from "@/lib/animation";
 
-// img-fx pulls in `three` (WebGL). It must never enter the server bundle —
-// SSR-importing it breaks the standalone build ("Cannot find module
-// ./vendor-chunks/three.js"). Load it client-only; render an aspect-ratio
-// skeleton until the effect chunk arrives to avoid layout shift.
-const ImageGeneration = dynamic(
-	() => import("img-fx").then((mod) => mod.ImageGeneration),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="aspect-[16/9] w-full animate-pulse bg-panel" />
-		),
-	},
-);
-
-function reveal(index: number) {
+// Entrance animation props. Until the page has been live a moment
+// (`enabled`), render plain HTML so the hero copy paints immediately —
+// LCP-safe SSR, crawlers and screenshots see real content.
+function reveal(index: number, enabled: boolean) {
+	if (!enabled) return {};
 	return {
 		initial: { opacity: 0, y: 16 },
 		animate: { opacity: 1, y: 0 },
@@ -46,6 +36,7 @@ function reveal(index: number) {
 }
 
 export function Hero() {
+	const entrance = useHasBeenInView();
 	return (
 		<section className="relative overflow-hidden">
 			{/* Atmosphere */}
@@ -70,11 +61,11 @@ export function Hero() {
 				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 			</div>
 
-			<div className="container-page min-w-0 pt-16 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
-				<div className="grid min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+			<div className="container-page min-w-0 pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-12 lg:pb-20">
+				<div className="grid min-w-0 grid-cols-1 items-center gap-12 md:grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
 					{/* Copy column */}
 					<div className="min-w-0 max-w-full">
-						<m.div {...reveal(0)} className="mb-6">
+						<m.div {...reveal(0, entrance)} className="mb-6">
 							<span className="badge">
 								<span
 									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
@@ -85,17 +76,16 @@ export function Hero() {
 						</m.div>
 
 						<m.h1
-							{...reveal(1)}
-							className="h1-hero max-w-full break-words text-text-bright sm:max-w-3xl"
-							style={{ textWrap: "balance" }}
+							{...reveal(1, entrance)}
+							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-tight"
 						>
-							AI inference,{" "}
-							<span className="italic-accent">paid per request</span> in
-							USDC.
+							<span className="block">AI inference,</span>
+							<span className="italic-accent block mt-2 text-accent font-semibold text-2xl sm:text-3xl">paid per request</span>
+							<span className="block">in USDC.</span>
 						</m.h1>
 
 						<m.p
-							{...reveal(2)}
+							{...reveal(2, entrance)}
 							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text-secondary sm:text-[1.125rem]"
 							style={{ textWrap: "pretty" }}
 						>
@@ -105,7 +95,7 @@ export function Hero() {
 						</m.p>
 
 						<m.div
-							{...reveal(3)}
+							{...reveal(3, entrance)}
 							className="mt-9 flex flex-wrap items-center gap-3"
 						>
 							<JuiceButton
@@ -118,6 +108,7 @@ export function Hero() {
 									borderRadius="9999px"
 									borderWidth={1}
 									active={true}
+									className="electric-border-host"
 								>
 									<Link
 										href="/login"
@@ -162,15 +153,21 @@ export function Hero() {
 							</Link>
 							<Link
 								href="/docs#x402"
-								className="btn-ghost inline-flex h-12 items-center justify-center gap-2 px-3 text-[13px] text-text-muted"
+								aria-label="x402 pay-per-request — learn more"
+								title="x402 is the HTTP 402 payment protocol. Agents pay per request with USDC on Base — no API key, no subscription."
+								className="group/x402 btn-ghost inline-flex h-12 items-center justify-center gap-1.5 px-3 text-[13px] text-text-muted"
 							>
-								x402 pay-per-request
+								<span>x402 pay-per-request</span>
+								<Info
+									className="h-3.5 w-3.5 opacity-60 transition-opacity group-hover/x402:opacity-100"
+									aria-hidden="true"
+								/>
 							</Link>
 						</m.div>
 
 						<m.ul
-							{...reveal(4)}
-							className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-mono text-text-muted"
+							{...reveal(4, entrance)}
+							className="mt-8 flex flex-wrap gap-x-3 gap-y-2 w-full text-[12px] font-mono text-text-muted sm:gap-x-5 sm:text-[13px]"
 						>
 							<li className="inline-flex items-center gap-1.5">
 								<Zap className="h-3 w-3 text-accent" aria-hidden="true" />
@@ -196,20 +193,14 @@ export function Hero() {
 					</div>
 
 					{/* Live request card */}
-					<m.div {...reveal(3)} className="relative">
+					<m.div {...reveal(3, entrance)} className="relative w-full max-w-lg mx-auto lg:max-w-none lg:mx-0">
 						<div
 							aria-hidden="true"
-							className="absolute -inset-4 rounded-2xl bg-accent/[0.04] blur-2xl"
+							className="absolute -inset-4 rounded-2xl bg-accent/[0.06] blur-2xl"
 						/>
 						<div className="relative overflow-hidden rounded-xl border border-border-hi bg-surface-elevated/90 shadow-xl backdrop-blur-sm">
 							<div className="border-b border-border p-3">
-								<ImageGeneration
-									images="/og-image.webp"
-									strength={0.35}
-									preset="pixels-organic"
-									theme="auto"
-									className="overflow-hidden rounded-lg"
-								>
+								<div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-border bg-panel">
 									<Image
 										src="/og-image.webp"
 										alt="OMA AI inference gateway preview"
@@ -217,9 +208,14 @@ export function Hero() {
 										height={720}
 										priority
 										fetchPriority="high"
-										className="h-auto w-full"
+										sizes="(min-width: 1024px) 32rem, 100vw"
+										className="h-full w-full object-cover"
 									/>
-								</ImageGeneration>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-void/60 via-transparent to-accent/10"
+									/>
+								</div>
 							</div>
 							<div className="flex items-center gap-2 border-b border-border px-4 py-3">
 								<span className="h-2 w-2 rounded-full bg-error/80" />

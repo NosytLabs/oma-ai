@@ -231,7 +231,7 @@ export default function SettingsPage() {
 
 	if (!isReady) {
 		return (
-			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
+			<div className="flex items-center justify-center px-4 py-10">
 				<div className="h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
 			</div>
 		);
@@ -239,7 +239,7 @@ export default function SettingsPage() {
 
 	if (!isAuthenticated) {
 		return (
-			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
+			<div className="flex items-center justify-center px-4 py-10">
 				<m.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -321,7 +321,7 @@ export default function SettingsPage() {
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
-					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-all hover:border-amber/30 hover:text-amber disabled:opacity-40"
+					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-all hover:border-error/40 hover:text-error disabled:opacity-40"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
 				</button>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
 				<div
 					role="tablist"
 					aria-label="Settings sections"
-					className="grid w-full min-w-0 grid-cols-3 gap-1 pb-1 sm:grid-cols-4 lg:flex lg:w-auto lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+					className="flex w-full min-w-0 flex-row gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-col lg:overflow-visible lg:pb-0"
 				>
 					{TABS.map((tab) => {
 						const Icon = tab.icon;

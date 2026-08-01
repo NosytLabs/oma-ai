@@ -12,17 +12,14 @@ import { useState } from "react";
 // Slugs that have been observed returning 404 from
 // https://cdn.simpleicons.org. Skipped to avoid network noise + console
 // errors. Add new entries here when an upstream brand renames.
+// (Verified 2026-07-31: openai/zhipuai/zai/mistral/inceptionai 404 on the
+// CDN; everything else in LOGO_MAP resolves to a real brand icon.)
 const KNOWN_MISSING_SLUGS = new Set<string>([
   "zhipuai",
   "zai",
-  "inceptionai",
-  "inception",
-  "xai",
-  "llama",
-  "moonshot",
-  "zhipu",
-  "mistral",
   "openai",
+  "mistral",
+  "inceptionai",
 ]);
 
 interface ModelLogoProps {
@@ -99,7 +96,7 @@ const LOGO_MAP: Record<string, string> = {
   "qwen-3-7-plus": "alibabacloud",
   "qwen-3-6-plus": "alibabacloud",
 
-  // MiniMax
+  // MiniMax 2.7
   "minimax": "minimax",
   "minimax-m2.7": "minimax",
   "minimax-m3-preview": "minimax",
@@ -140,8 +137,8 @@ const PROVIDER_COLORS: Record<string, string> = {
   alibabacloud: "ff6a00",
   minimax: "7c3aed",
   xiaomi: "ff6900",
-  zhipuai: "6366f1",
-  zai: "6366f1",
+  zhipuai: "818cf8",
+  zai: "818cf8",
   inception: "3b82f6",
   inceptionai: "3b82f6",
   coinbase: "0052ff",

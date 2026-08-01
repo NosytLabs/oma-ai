@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { SITE_REDIRECTS } from "./src/lib/site-redirects";
 
 const nextConfig: NextConfig = {
+	devIndicators: false,
 	poweredByHeader: false,
 
 	eslint: { ignoreDuringBuilds: false },
@@ -136,8 +137,11 @@ function generateContentSecurityPolicy(): string {
 
 	const connectSrc = [
 		"'self'",
-		// Local API only needed in dev; harmless if present in prod builds used locally
-		...(isDev ? ["http://localhost:3001", "ws://localhost:3001", "http://127.0.0.1:3001"] : []),
+		// Local API — needed for locally-run prod builds (`next start`) where
+		// the playground streams from a local Hono backend; harmless remotely.
+		"http://localhost:3001",
+		"ws://localhost:3001",
+		"http://127.0.0.1:3001",
 		// Public RPC fallbacks used by the injected wallet for read-only chain calls
 		"https://*.infura.io",
 		"https://*.alchemy.com",
@@ -162,7 +166,6 @@ function generateContentSecurityPolicy(): string {
 		"object-src 'none'",
 		"base-uri 'self'",
 		"form-action 'self'",
-		"upgrade-insecure-requests",
 	];
 	return directives.join("; ");
 }

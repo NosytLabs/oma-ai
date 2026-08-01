@@ -251,11 +251,13 @@ export function WelcomeBanner({
 						}}
 					/>
 
-					<div className="relative max-w-4xl mx-auto px-4 md:px-8 py-5">
-						{/* ─── Header ─── */}
-						<div className="flex items-start justify-between gap-3 mb-4">
-							<div>
-								<h2 className="text-sm font-mono font-bold text-text uppercase tracking-widest">
+					<div className="relative max-w-4xl mx-auto px-4 md:px-8 py-4">
+						{/* ─── Compact header — collapses the previous 4-step grid into
+						     a single, scannable row. Less overwhelming for first-time
+						     users while still answering "what is this?" in one line. ─── */}
+						<div className="flex items-center justify-between gap-3 mb-3">
+							<div className="min-w-0 flex-1">
+								<h2 className="text-[13px] font-mono font-bold text-text uppercase tracking-widest">
 									<TypewriterText
 										text="> WELCOME TO OMA AI PLAYGROUND"
 										delay={100}
@@ -265,7 +267,7 @@ export function WelcomeBanner({
 									initial={{ opacity: 0 }}
 									animate={{ opacity: 1 }}
 									transition={{ delay: 0.6 }}
-									className="text-xs text-text-muted font-mono mt-1.5"
+									className="text-[11px] text-text-muted font-mono mt-1"
 								>
 									YOUR AI ASSISTANT · ONE KEY TO EVERY MODEL · SMART PRICING
 								</m.p>
@@ -288,12 +290,12 @@ export function WelcomeBanner({
 							</button>
 						</div>
 
-						{/* ─── Steps — Staggered reveal with descriptions ─── */}
+						{/* ─── Steps — collapsed to inline pills so the row stays under 80px tall ─── */}
 						<m.ol
 							variants={containerVariants}
 							initial="hidden"
 							animate="visible"
-							className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-5"
+							className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3 text-[11px] font-mono"
 						>
 							{STEPS.map((step) => {
 								const Icon = step.icon;
@@ -301,56 +303,45 @@ export function WelcomeBanner({
 									<m.li
 										key={step.id}
 										variants={stepVariants}
-										className="
-                      flex items-start gap-2.5 px-3 py-3
-                      border border-border/60 bg-void/60 backdrop-blur-sm
-                      hover:border-accent/30 transition-colors duration-200
-                    "
+										className="inline-flex items-center gap-1.5 text-text-secondary"
 									>
 										<span
-											className="
-                        flex items-center justify-center w-6 h-6 shrink-0 mt-0.5
-                        text-[10px] font-mono font-bold
-                      "
+											aria-hidden="true"
+											className="inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] font-mono font-bold"
 											style={{
-												border: `1px solid ${step.accent}30`,
+												backgroundColor: `${step.accent}1F`,
+												border: `1px solid ${step.accent}55`,
 												color: step.accent,
 											}}
 										>
 											{step.id}
 										</span>
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center gap-1.5">
-												<Icon className="w-3 h-3 text-text-muted shrink-0" />
-												<span className="text-xs font-mono font-bold text-text-secondary">
-													{step.label}
-												</span>
-											</div>
-											<p className="text-[10px] font-mono text-text-muted mt-0.5 leading-relaxed hidden sm:block">
-												{step.description}
-											</p>
-										</div>
+										<Icon
+											className="h-3 w-3 shrink-0 opacity-80"
+											style={{ color: step.accent }}
+											aria-hidden="true"
+										/>
+										<span className="whitespace-nowrap">{step.label}</span>
 									</m.li>
 								);
 							})}
 						</m.ol>
 
-						{/* ─── Quick model recommendation ─── */}
+						{/* ─── Compact recommendation — single line, no fill ─── */}
 						<m.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ delay: 0.5 }}
-							className="mb-4 px-3 py-2 border border-accent/20 bg-accent/5 text-[10px] font-mono text-accent/80"
+							initial={{ opacity: 0, y: 8 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.55 }}
+							className="text-[11px] text-text-secondary font-mono"
 						>
-							<span className="font-bold text-accent">TIP:</span> Not sure where
-							to start? Try{" "}
-							<span className="text-accent font-bold">MiniMax M2.7</span> for
-                reasoning + code (free via OMA-AI), or{" "}
-							<span className="text-accent font-bold">Kimi K2.6</span> for
-							analysis + research. Both are free — no sign-in required.
+							<span className="text-accent font-bold">TIP:</span>{" "}
+							<TypewriterText
+								text="Try MiniMax 2.7 for reasoning + code (free via OMA-AI), or Kimi K2.6 for analysis + research. Both are free — no sign-in required."
+								delay={900}
+							/>
 						</m.div>
 
-						{/* ─── Pro Tips (first visit only) ─── */}
+						{/* ─── Pro Tips (first visit only) — collapsed to a single inline row ─── */}
 						<AnimatePresence>
 							{showTips && (
 								<m.div
@@ -358,33 +349,34 @@ export function WelcomeBanner({
 									animate={{ height: "auto", opacity: 1 }}
 									exit={{ height: 0, opacity: 0 }}
 									transition={{ duration: 0.2 }}
-									className="overflow-hidden mb-4"
+									className="overflow-hidden mb-3"
 								>
-									<div className="flex items-center justify-between mb-2">
-										<span className="text-[10px] font-mono text-text-muted uppercase tracking-widest font-bold">
+									<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-mono text-text-muted">
+										<span className="font-bold uppercase tracking-widest text-text-secondary">
 											PRO TIPS
 										</span>
+										{PRO_TIPS.map((tip, i) => (
+											<m.span
+												key={i}
+												initial={{ opacity: 0, x: -6 }}
+												animate={{ opacity: 1, x: 0 }}
+												transition={{ delay: 0.6 + i * 0.08 }}
+												className="inline-flex items-center gap-1.5"
+											>
+												<tip.icon
+													className="h-3 w-3 shrink-0 opacity-70"
+													aria-hidden="true"
+												/>
+												<span>{tip.text}</span>
+											</m.span>
+										))}
 										<button
 											type="button"
 											onClick={dismissTips}
-											className="text-[9px] font-mono text-text-muted hover:text-text-secondary transition-colors"
+											className="ml-auto text-[9px] font-mono uppercase tracking-widest text-text-tertiary hover:text-text-secondary transition-colors"
 										>
-											GOT IT
+											Got it ✕
 										</button>
-									</div>
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-										{PRO_TIPS.map((tip, i) => (
-											<m.div
-												key={i}
-												initial={{ opacity: 0, x: -8 }}
-												animate={{ opacity: 1, x: 0 }}
-												transition={{ delay: 0.6 + i * 0.1 }}
-												className="flex items-start gap-2 px-2.5 py-2 bg-surface/50 border border-border/40 text-[10px] font-mono text-text-muted"
-											>
-												<tip.icon className="w-3 h-3 shrink-0 mt-0.5 text-text-muted/60" />
-												<span className="leading-relaxed">{tip.text}</span>
-											</m.div>
-										))}
 									</div>
 								</m.div>
 							)}
@@ -406,11 +398,11 @@ export function WelcomeBanner({
 								type="button"
 								onClick={handleGetStarted}
 								className="
-                  inline-flex items-center justify-center gap-1.5 px-5 py-2.5
+                  inline-flex items-center justify-center gap-1.5 px-4 py-2
                   bg-accent text-text-inverse text-[11px] font-mono font-bold
                   uppercase tracking-widest hover:bg-accent-hover
                   transition-all duration-200 hover:shadow-[0_0_20px_var(--color-accent-glow)]
-                  min-h-[44px]
+                  min-h-[40px]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                   focus-visible:ring-offset-2 focus-visible:ring-offset-surface
                 "
@@ -422,11 +414,11 @@ export function WelcomeBanner({
 								type="button"
 								onClick={handleViewExamples}
 								className="
-                  inline-flex items-center justify-center gap-1.5 px-5 py-2.5
+                  inline-flex items-center justify-center gap-1.5 px-4 py-2
                   border border-border text-text-secondary text-[11px] font-mono
                   font-bold uppercase tracking-widest
                   hover:bg-surface hover:border-success/30 hover:text-success
-                  transition-all duration-200 min-h-[44px]
+                  transition-all duration-200 min-h-[40px]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                   focus-visible:ring-offset-2 focus-visible:ring-offset-surface
                 "

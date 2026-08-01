@@ -25,6 +25,5 @@ export default function robots(): MetadataRoute.Robots {
 			},
 		],
 		sitemap: "https://oma-ai.com/sitemap.xml",
-		host: "https://oma-ai.com",
 	};
 }

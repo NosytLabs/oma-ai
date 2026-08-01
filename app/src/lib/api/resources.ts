@@ -24,9 +24,14 @@ export const usage = {
 	get(options?: { limit?: number }) {
 		const limit = options?.limit ?? 50;
 		return import("./client.js").then(({ request }) =>
-			request<{ records: UsageRecord[]; count: number }>(
-				`/v1/usage/recent?limit=${limit}`,
-			),
+			request<{
+				object: string;
+				data: UsageRecord[];
+				next_cursor: string | null;
+			}>(`/v1/usage?limit=${limit}`).then((body) => ({
+				records: body.data ?? [],
+				count: body.data?.length ?? 0,
+			})),
 		);
 	},
 };

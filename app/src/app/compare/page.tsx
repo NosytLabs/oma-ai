@@ -4,7 +4,6 @@ import { Check, X, Sparkles } from "lucide-react";
 
 // Imports client visuals elsewhere; opt out of static prerender so Next 15
 // doesn't crash on missing React hooks.
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "OMA vs Portkey vs LiteLLM vs OpenRouter — comparison",
@@ -447,19 +446,19 @@ Portkey is enterprise-grade but requires a credit card, account
 					<div className="flex flex-wrap gap-3 justify-center">
 						<Link
 							href="/login"
-							className="px-5 py-2.5 rounded-lg bg-accent text-void font-semibold hover:bg-accent/90 transition"
+							className="btn-primary inline-flex min-h-10 items-center px-5 text-sm"
 						>
 							Get API key
 						</Link>
 						<Link
 							href="/chat"
-							className="px-5 py-2.5 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-2 transition"
+							className="btn-secondary inline-flex min-h-10 items-center px-5 text-sm"
 						>
 							Try the playground
 						</Link>
 						<Link
 							href="/docs"
-							className="px-5 py-2.5 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-2 transition"
+							className="btn-secondary inline-flex min-h-10 items-center px-5 text-sm"
 						>
 							Read the docs
 						</Link>

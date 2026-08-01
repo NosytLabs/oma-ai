@@ -18,7 +18,9 @@ import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
 import { anthropicRoutes } from "./routes/anthropic/index.js";
+import { searchRoutes } from "./routes/search.js";
 import { depositRoutes } from "./routes/deposit/index.js";
+import { creditsRoutes } from "./routes/credits.js";
 import { exportRoutes } from "./routes/export.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
@@ -95,6 +97,7 @@ const corsOptions = {
     "Authorization",
     "PAYMENT-SIGNATURE",
     "PAYMENT-REQUIRED",
+    "X-PAYMENT",
     "X-OMA-Source",
     "X-Correlation-ID",
     "X-Requested-With",
@@ -108,6 +111,8 @@ const corsOptions = {
     "X-DailyLimit-Remaining",
     "X-DailyLimit-Reset",
     "X-Request-ID",
+    "PAYMENT-RESPONSE",
+    "X-PAYMENT-RESPONSE",
   ],
   maxAge: 86400,
 };
@@ -138,8 +143,12 @@ app.route("/", authRoutes);
 app.route("/", modelRoutes);
 app.route("/", chatRoutes);
 app.route("/", anthropicRoutes);
+app.route("/", searchRoutes);
 app.route("/", depositRoutes);
 app.route("/", exportRoutes);
+
+// Credit batches / history / auto-reload.
+app.route("/", creditsRoutes);
 
 // x402 payments.
 app.route("/", x402Routes);

@@ -12,6 +12,73 @@
  * without spinning up a full render.
  */
 import { describe, it, expect } from "vitest";
+import type { Message } from "@/components/chat";
+import { sanitizeHistory } from "../useStreamingChat";
+
+describe("sanitizeHistory", () => {
+	const m = (role: "user" | "assistant" | "system", content: string): Message => ({
+		id: `${role}-${Math.random()}`,
+		role,
+		content,
+		timestamp: Date.now(),
+	});
+
+	it("drops empty assistant placeholders (failed/aborted sends)", () => {
+		const history = [
+			m("user", "hello"),
+			m("assistant", ""),
+			m("user", "world"),
+			m("assistant", "\n\nhi"),
+		];
+		expect(sanitizeHistory(history).map((x) => x.role)).toEqual([
+			"user",
+			"assistant",
+		]);
+		expect(sanitizeHistory(history)[0].content).toBe("world");
+	});
+
+	it("collapses consecutive user messages, keeping the latest (401/402 gap)", () => {
+		const history = [
+			m("user", "What is 2+2?"),
+			m("user", "Reply with exactly: PONG"),
+			m("assistant", ""), // current-send placeholder
+		];
+		const cleaned = sanitizeHistory(history);
+		expect(cleaned).toHaveLength(1);
+		expect(cleaned[0].content).toBe("Reply with exactly: PONG");
+	});
+
+	it("keeps healthy alternation untouched", () => {
+		const history = [
+			m("user", "a"),
+			m("assistant", "b"),
+			m("user", "c"),
+			m("assistant", "d"),
+		];
+		expect(sanitizeHistory(history)).toEqual(history);
+	});
+
+	it("keeps the last message of a same-role run for assistants too", () => {
+		const history = [
+			m("user", "a"),
+			m("assistant", "one"),
+			m("assistant", "two"),
+			m("user", "b"),
+		];
+		const cleaned = sanitizeHistory(history);
+		expect(cleaned.map((x) => x.role)).toEqual(["user", "assistant", "user"]);
+		expect(cleaned[1].content).toBe("two");
+	});
+
+	it("handles empty input", () => {
+		expect(sanitizeHistory([])).toEqual([]);
+	});
+
+	it("does not drop empty system messages (search context)", () => {
+		const history = [m("system", ""), m("user", "a")];
+		expect(sanitizeHistory(history)).toHaveLength(2);
+	});
+});
 
 /**
  * Mirror of the newMessageId helper inside useStreamingChat.ts. If

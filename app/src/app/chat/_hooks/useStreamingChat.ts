@@ -10,17 +10,40 @@ import { log } from "@/lib/logger";
 import { isFreeChatModel } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
 
-// Chat completions must hit the backend directly for true SSE streaming —
-// the Next /api catch-all buffers the full body and breaks streams.
-// Web search is short JSON: prefer same-origin /api proxy (public free path)
-// so free-guest WEB mode works without CORS surprises in production.
+// Chat completions and web search both hit the backend directly — the Next
+// /api catch-all buffers the full body and breaks streams for chat, and a
+// short JSON hop doesn't gain anything from being same-origin.
 const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`;
-function searchEndpoint(): string {
-	if (typeof window !== "undefined") return "/api/v1/search";
-	return `${DEFAULT_API_URL}/v1/search`;
-}
+const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`;
 const MAX_MESSAGE_LENGTH = 100 * 1024;
 const BATCH_INTERVAL_MS = 250;
+
+/**
+ * Clean the conversation before it hits the upstream API. Two failure modes
+ * produce malformed alternation that confuses providers:
+ *
+ * 1. Empty assistant placeholders (content === "") — persisted when a send
+ *    failed mid-flight or aborted before any token arrived. Sending them as
+ *    context makes the model see a "reply" that isn't there.
+ * 2. Consecutive same-role messages — a send that 401/402'd (e.g. paid model
+ *    without an API key) leaves its user message in history with no assistant
+ *    reply, so the next send creates two user messages in a row. Providers
+ *    either reject this or (as observed with MiniMax 2.7) answer the earlier,
+ *    stale question. Keep only the last message of each run.
+ */
+export function sanitizeHistory(messages: Message[]): Message[] {
+	const cleaned: Message[] = [];
+	for (const msg of messages) {
+		if (msg.role === "assistant" && !msg.content.trim()) continue;
+		const last = cleaned[cleaned.length - 1];
+		if (last && last.role === msg.role) {
+			cleaned[cleaned.length - 1] = msg;
+		} else {
+			cleaned.push(msg);
+		}
+	}
+	return cleaned;
+}
 
 /**
  * Unique message IDs that don't collide under rapid concurrent sends.
@@ -124,14 +147,10 @@ export function useStreamingChat(
 		if (ensureKeyPromiseRef.current) return ensureKeyPromiseRef.current;
 		ensureKeyPromiseRef.current = (async () => {
 			try {
-				const existing = await api.auth.listKeys();
-				if (existing.keys.length > 0) {
-					// Promote the newest key — users always have a fresh one
-					// ready from /v1/keys (POST). Real launches install it via
-					// a separate UI affordance; this is the auto-repair path.
-					return true;
-				}
-				return false;
+				await api.auth.listKeys();
+				const created = await api.auth.createKey("Browser chat");
+				const installed = await api.auth.installKeyCookie(created.key);
+				return installed.success;
 			} catch {
 				return false;
 			} finally {
@@ -147,23 +166,26 @@ export function useStreamingChat(
 		};
 	}, []);
 
-const fetchWebSearch = useCallback(
-				async (
-					query: string,
-					setSearchingFn: (b: boolean) => void,
-				): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
-					if (!opts.webSearchEnabled || !query.trim()) {
-						return { results: [], contextMessage: null };
-					}
-					setSearchingFn(true);
-					try {
-						const searchResp = await fetch(
-							`${searchEndpoint()}?query=${encodeURIComponent(query.trim())}`,
-							{
-								credentials: "include",
-								headers: { Accept: "application/json" },
-							},
-						);
+	const fetchWebSearch = useCallback(
+		async (
+			query: string,
+			setSearchingFn: (b: boolean) => void,
+		): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
+			if (!opts.webSearchEnabled || !query.trim()) {
+				return { results: [], contextMessage: null };
+			}
+			setSearchingFn(true);
+			try {
+				const searchResp = await fetch(
+					`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query.trim())}`,
+					{
+						credentials: "include",
+						headers: { Accept: "application/json" },
+					},
+				);
+				// Backend returns 200 + empty `results` when upstream is not
+				// configured, so the only "expected" non-OK here is 404 if
+				// the route was removed. 5xx is a real error.
 				if (searchResp.status === 404) {
 					toast.info("Web search is not yet available on this deployment");
 					return { results: [], contextMessage: null };
@@ -231,9 +253,9 @@ const fetchWebSearch = useCallback(
 				signal,
 			} = params;
 
-			let messagesToSend = history;
+			let messagesToSend = sanitizeHistory(history);
 			if (searchContext) {
-				messagesToSend = [searchContext, ...history];
+				messagesToSend = [searchContext, ...messagesToSend];
 			}
 			if (opts.systemPrompt.trim()) {
 				const sysMsg: Message = {
@@ -275,13 +297,14 @@ const fetchWebSearch = useCallback(
 
 			let response = await doFetch();
 
-			// Paid models only: logged-in users on a new device have a session
-			// but no `oma_api_key` cookie, so chat 401s/402s. Free OMA-AI models
-			// never need a key — skip ensureKey so guests are not blocked.
+			// Paid models only: logged-in users on a new device may have a session
+			// but no `oma_api_key` cookie, so chat returns 401. Free OMA-AI models
+			// never need a key, and 402 means insufficient credits rather than a
+			// missing key, so only repair paid-model 401 responses.
 			const freeModel = isFreeChatModel(useModel);
 			if (
 				!freeModel &&
-				(response.status === 401 || response.status === 402) &&
+				response.status === 401 &&
 				!signal.aborted
 			) {
 				const repaired = await ensureChatKeyOnce();
@@ -374,7 +397,7 @@ const fetchWebSearch = useCallback(
 
 				let sseBuffer = "";
 				const SSE_BUFFER_MAX_BYTES = 1024 * 1024; // 1 MB cap to prevent unbounded growth
-				// State machine for routing content tokens. Some models (MiniMax-M2.7,
+				// State machine for routing content tokens. Some models (MiniMax 2.7,
 				// DeepSeek R1, Qwen QwQ) wrap their reasoning inside  and 
 				// tags inside the `content` field rather than emitting a separate
 				// `reasoning_content` delta. We watch for those tags and route the
@@ -461,10 +484,12 @@ const fetchWebSearch = useCallback(
 							flushToState();
 						}
 						// Reasoning models (DeepSeek R1, Claude extended thinking) emit
-						// `reasoning_content` separately from `content`. Capture it so the
-						// thinking phase is visible in the collapsible "Thinking" section
-						// instead of showing blank while the model reasons.
-						const reasoningDelta = choice?.delta?.reasoning_content;
+						// `reasoning_content` separately from `content`. MiniMax 2.7
+						// emits it as `reasoning`. Capture both so the thinking phase
+						// is visible in the collapsible "Thinking" section instead of
+						// showing blank while the model reasons.
+						const reasoningDelta =
+							choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
 						if (reasoningDelta) {
 							appendToReasoning(reasoningDelta);
 							flushToState();
@@ -516,6 +541,14 @@ const fetchWebSearch = useCallback(
 						handleBlock(sseBuffer);
 						sseBuffer = "";
 					}
+					// Flush any partial think-tag carry-over at end of stream —
+					// trailing content that straddled a chunk boundary would
+					// otherwise be lost forever.
+					if (tagCarry) {
+						if (inThinkingBlock) appendToReasoning(tagCarry);
+						else appendToContent(tagCarry);
+						tagCarry = "";
+					}
 					flushToState(true);
 				} finally {
 					// Always release the underlying stream — otherwise the
@@ -527,31 +560,31 @@ const fetchWebSearch = useCallback(
 					}
 				}
 				} else {
-				const data = await response.json();
-				const content = data.choices?.[0]?.message?.content || "";
-				const reasoning = data.choices?.[0]?.message?.reasoning_content || "";
-				const usage = data.usage;
-				setMsgs((prev) => {
-					const updated = [...prev];
-					const lastIdx = updated.length - 1;
-					if (lastIdx >= 0) {
-						updated[lastIdx] = {
-							...updated[lastIdx],
-							content,
-							reasoning: reasoning || undefined,
-							tokens: usage?.total_tokens || 0,
-							inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
-							outputTokens: usage?.completion_tokens || estimateTokens(content),
-							latency: Date.now() - startTime,
-							searchResults:
-								searchResults.length > 0
-									? searchResults
-									: updated[lastIdx].searchResults,
-						};
-					}
-					return updated;
-				});
-			}
+					const data = await response.json();
+					const content = data.choices?.[0]?.message?.content || "";
+					const reasoning = data.choices?.[0]?.message?.reasoning_content || "";
+					const usage = data.usage;
+					setMsgs((prev) => {
+						const updated = [...prev];
+						const lastIdx = updated.length - 1;
+						if (lastIdx >= 0) {
+							updated[lastIdx] = {
+								...updated[lastIdx],
+								content,
+								reasoning: reasoning || undefined,
+								tokens: usage?.total_tokens || 0,
+								inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
+								outputTokens: usage?.completion_tokens || estimateTokens(content),
+								latency: Date.now() - startTime,
+								searchResults:
+									searchResults.length > 0
+										? searchResults
+										: updated[lastIdx].searchResults,
+							};
+						}
+						return updated;
+					});
+				}
 		},
 		[
 			opts.systemPrompt,

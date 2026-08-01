@@ -16,7 +16,7 @@ export function TrustStrip() {
 	return (
 		<section
 			aria-label="Routing through upstream providers"
-			className="relative border-y border-border-subtle bg-[var(--color-surface)]/40 py-10 sm:py-12"
+			className="relative border-y border-border-subtle bg-[var(--color-surface)]/40 py-8 sm:py-10"
 		>
 			<div className="container-page">
 				<Reveal>

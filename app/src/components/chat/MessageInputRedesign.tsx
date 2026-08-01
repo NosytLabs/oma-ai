@@ -208,7 +208,7 @@ className="
 								{/* Rotating ring */}
 								{!reduceMotion && (
 									<m.span
-										className="absolute inset-0 border-2 border-danger/30 rounded-sm"
+										className="absolute inset-0 border-4 border-danger/60 animate-pulse rounded-full drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
 										animate={{ rotate: 360 }}
 										transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 									/>
@@ -250,7 +250,7 @@ className={`
 										}
                    `}
 							>
-								<Send className="w-4 h-4" />
+								<Send className="w-5 h-5 drop-shadow-[0_2px_4px_var(--color-accent-glow)]" strokeWidth={2.4} />
 							</m.button>
 							</MetalFx>
 						</Magnetic>

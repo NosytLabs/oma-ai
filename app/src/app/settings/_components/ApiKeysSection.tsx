@@ -111,7 +111,7 @@ export function ApiKeysSection({
 								type="button"
 								onClick={handleCreateKey}
 								disabled={creating || !newKeyName.trim()}
-								className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/80 disabled:opacity-50"
+								className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-text-inverse hover:bg-accent-bright disabled:opacity-50"
 							>
 								{creating ? (
 									<Loader2 className="h-3 w-3 animate-spin" />

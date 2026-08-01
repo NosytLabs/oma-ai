@@ -22,13 +22,14 @@ export function useBalance(): {
 	loading: boolean;
 	refresh: () => Promise<void>;
 } {
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, isDemo, isReady } = useAuth();
+	const canLoadBalance = isReady && isAuthenticated && !isDemo;
 	const toast = useToast();
 
 	const query = useQuery({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
-		enabled: isAuthenticated,
+		enabled: canLoadBalance,
 		// Slower polling (120s) and stop on auth errors — the old 30s +
 		// auto-refetch-on-fail created an infinite 401 loop.
 		refetchInterval: 120_000,
@@ -50,17 +51,15 @@ export function useBalance(): {
 			shownRef.current = true;
 			toast.error("Session expired — sign in again");
 		}
-		// Reset when the auth error clears so the toast can fire again if a new
-		// auth error occurs (e.g. user reconnects then session expires again).
-		if (!query.error) {
-			shownRef.current = false;
-		}
 	}, [query.error, toast]);
+	useEffect(() => {
+		if (canLoadBalance && query.isSuccess) shownRef.current = false;
+	}, [canLoadBalance, query.isSuccess]);
 
-	const balance: BalanceResponse | null = isAuthenticated
+	const balance: BalanceResponse | null = canLoadBalance
 		? (query.data ?? null)
 		: null;
-	const loading = isAuthenticated
+	const loading = canLoadBalance
 		? query.isLoading || (query.isFetching && !query.data)
 		: false;
 	const refresh = async () => {

@@ -18,6 +18,31 @@ export const FREE_CHAT_MODEL_IDS = new Set([
 ]);
 
 /**
+ * Live-API display-name overrides. The upstream `/v1/models` endpoint returns
+ * low-quality names for some entries (e.g. "Minimax M2" instead of "MiniMax 2.7").
+ * This map canonicalises them on the client without touching the server
+ * catalog.
+ */
+const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {
+	"minimax-m2.7": "MiniMax 2.7",
+	"kimi-k2.6": "Kimi K2.6",
+};
+
+/**
+ * Pick the canonical display name for a model coming from the live API.
+ * Used by `mapLiveModel` so the chat dropdown shows the right name even when
+ * the upstream server is stale.
+ */
+export function liveDisplayName(
+	id: string,
+	rawName: string | undefined,
+): string | undefined {
+	const override = LIVE_DISPLAY_NAME_OVERRIDES[id.toLowerCase()];
+	if (override) return override;
+	return rawName?.trim() || undefined;
+}
+
+/**
  * Whether the website chat may call completions without sign-in / API key.
  * Free OMA-AI models are resold cheaply enough to offer as guest chat.
  */
@@ -37,6 +62,14 @@ export function isFreeChatModel(
 const FRIENDLY_NAME: Record<string, string> = Object.fromEntries(
 	MODELS.map((m) => [m.id, m.name]),
 );
+
+// Override map layered ON TOP of FRIENDLY_NAME so model-name fixes don't have
+// to wait for a server-side catalog redeploy. Anything in this map wins over
+// both the static fallback name and the upstream `display_name`.
+const NAME_OVERRIDES: Record<string, string> = {
+	"minimax-m2.7": "MiniMax 2.7",
+	"kimi-k2.6": "Kimi K2.6",
+};
 
 // Parts that should stay uppercase (size specifiers, fine-tune tags, etc.)
 const RETAIN_UPPER = new Set([
@@ -94,9 +127,13 @@ function humanizeModelId(id: string): string {
 /**
  * Resolve a display name for a model: prefer the static catalog name,
  * fall back to a provided `fallback`, and ultimately humanize the raw ID.
+ * The NAME_OVERRIDES map is the highest-priority source — used to canonicalise
+ * model names whose upstream `display_name` is wrong without touching the
+ * server catalog.
  */
 export function displayName(id: string, fallback?: string): string {
 	return (
+		NAME_OVERRIDES[id.toLowerCase()] ??
 		FRIENDLY_NAME[id] ??
 		(fallback && fallback !== id ? fallback : humanizeModelId(id))
 	);
@@ -145,7 +182,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 
 	return {
 		id: m.id,
-		name: m.display_name || humanizeModelId(m.id),
+		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
 		category: cat,
 		provider,
 		inputPer1M: m.pricing?.prompt

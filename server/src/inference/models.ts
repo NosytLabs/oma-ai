@@ -346,7 +346,7 @@ const GONKA_MODELS: ModelDef[] = [
     inputPricePer1M: 0.015,
     outputPricePer1M: 0.06,
     markupPercent: 0,
-    displayName: "MiniMax M2.7",
+    displayName: "MiniMax 2.7",
     category: "budget",
     maxTokens: 8192,
     contextWindow: 128_000,

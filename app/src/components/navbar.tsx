@@ -23,7 +23,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const build = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev";
 
 export function Navbar() {
-	const { isAuthenticated, evmAddress, signOut, isAdmin } = useAuth();
+	const { isAuthenticated, isDemo, evmAddress, signOut, isAdmin } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -72,7 +72,7 @@ export function Navbar() {
 			<nav aria-label="Main navigation" className="w-full">
 				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
-					<div className="flex min-w-0 items-center gap-2 sm:gap-4">
+					<div className="flex min-w-0 items-center gap-2 sm:gap-4 min-w-0">
 						<Magnetic strength={6}>
 							<div className="relative inline-block">
 								<Link
@@ -104,13 +104,24 @@ export function Navbar() {
 							className="hidden xl:inline-block h-3 w-px bg-border"
 						/>
 
-						<span
-							className="hidden xl:inline-flex min-w-0 items-center gap-1 text-[11px] sm:text-xs text-text-muted tabular-nums"
-							aria-label={`Current section: ${section}`}
-						>
-							<span className="text-text-tertiary">~/</span>
-							<span className="truncate text-text-secondary">{section}</span>
-						</span>
+						{/* Section label — only show for sub-routes that aren't already
+						    a primary nav link. Avoids the "~/ Playground · Playground"
+						    duplication when the active page IS a primary link. */}
+						{(() => {
+							const onPrimaryLink = primaryLinks.some((l) =>
+								isCurrentPath(pathname ?? "/", l.href),
+							);
+							if (onPrimaryLink) return null;
+							return (
+								<span
+									className="hidden xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] sm:text-xs text-text-muted tabular-nums"
+									aria-label={`Current section: ${section}`}
+								>
+									<span className="text-text-tertiary">~/</span>
+									<span className="text-text-secondary">{section}</span>
+								</span>
+							);
+						})()}
 
 						{/* Primary links (desktop) */}
 						<ul className="hidden md:flex items-center gap-0.5">
@@ -198,7 +209,7 @@ export function Navbar() {
 							<ApiStatus />
 						</div>
 
-						{isAuthenticated ? (
+						{isAuthenticated && !isDemo ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
 								onSignOut={signOut}
@@ -208,7 +219,7 @@ export function Navbar() {
 							<Magnetic strength={6}>
 								<Link
 									href="/login"
-									className="inline-flex h-9 items-center gap-2 rounded-sm border border-accent/40 bg-accent/10 px-3 text-xs font-semibold text-accent transition-colors hover:border-accent hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									className="inline-flex h-9 items-center gap-2 rounded-sm border border-accent/40 bg-accent/10 px-3 text-xs font-semibold text-accent transition-colors hover:border-accent hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:inline-flex"
 								>
 									Sign in
 								</Link>
@@ -220,7 +231,7 @@ export function Navbar() {
 							ref={mobileToggleRef}
 							type="button"
 							onClick={() => setMobileOpen(!mobileOpen)}
-							className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
+							className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ring-accent/70 ring-offset-2 md:hidden"
 							aria-label={
 								mobileOpen ? "Close navigation menu" : "Open navigation menu"
 							}
@@ -241,7 +252,7 @@ export function Navbar() {
 					open={mobileOpen}
 					onOpenChange={setMobileOpen}
 					toggleRef={mobileToggleRef}
-					isConnected={isAuthenticated}
+					isConnected={isAuthenticated && !isDemo}
 					section={section}
 					build={build}
 					onDisconnect={signOut}

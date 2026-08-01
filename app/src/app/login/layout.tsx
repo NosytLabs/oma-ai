@@ -1,5 +1,4 @@
 // Auth-gated product surface — render at request time only.
-export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 

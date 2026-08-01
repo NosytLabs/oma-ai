@@ -124,7 +124,7 @@ export default function RootLayout({
 								<Navbar />
 								<main
 									id="main-content"
-									className="min-w-0 max-w-[100vw] overflow-x-clip pt-14 page-enter"
+									className="min-w-0 max-w-[100vw] overflow-x-clip page-enter"
 									tabIndex={-1}
 								>
 									<ErrorBoundary>{children}</ErrorBoundary>

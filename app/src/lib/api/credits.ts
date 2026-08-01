@@ -53,25 +53,6 @@ export const credits = {
 		}));
 	},
 
-	/**
-	 * Create a pending deposit intent. Credits are NOT issued until on-chain
-	 * USDC confirmation — real funding is via `/deposit` (USDC on Base).
-	 * Prefer routing users to `/deposit` instead of relying on this for UX.
-	 */
-	purchase(amountCents: number, paymentMethod: "usdc" = "usdc") {
-		return request<{
-			success: boolean;
-			depositId: string;
-			status: string;
-			amountCents: number;
-			paymentMethod: string;
-			message?: string;
-		}>("/v1/credits/purchase", {
-			method: "POST",
-			body: JSON.stringify({ amountCents, paymentMethod }),
-		});
-	},
-
 	getAutoReload() {
 		return request<AutoReloadSettings>("/v1/credits/auto-reload");
 	},

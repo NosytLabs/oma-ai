@@ -141,9 +141,11 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 		}
 	});
 
-	it("declares sitemap and host", () => {
+	it("declares sitemap and omits deprecated host field", () => {
 		const result = robots();
 		expect(result.sitemap).toBe("https://oma-ai.com/sitemap.xml");
-		expect(result.host).toBe("https://oma-ai.com");
+		// `host` is deprecated by Google and produces an invalid robots.txt —
+		// intentionally omitted since the 2026-07-31 audit.
+		expect(result.host).toBeUndefined();
 	});
 });

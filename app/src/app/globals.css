@@ -330,7 +330,7 @@
 
 	.page-shell {
 		position: relative;
-		min-height: calc(100dvh - 4rem);
+		min-height: calc(100dvh - 3.5rem);
 	}
 
 	.container-page {
@@ -369,13 +369,14 @@
 
 	.h1-hero {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		/* Floor slightly lower on narrow phones so long titles don't force h-scroll */
-		font-size: clamp(2.25rem, 8.2vw, 7rem);
-		line-height: 0.94;
-		letter-spacing: -0.04em;
+		/* Capped lower (5.5rem) so "paid per request" reads on one line at
+		   typical desktop widths; the floor on narrow phones is unchanged. */
+		font-size: clamp(2.25rem, 6.4vw, 5.5rem);
+		line-height: 0.98;
+		letter-spacing: -0.035em;
 		font-weight: 500;
 		max-width: 100%;
-		overflow-wrap: anywhere;
+		overflow-wrap: normal;
 	}
 
 	.h2-section {
@@ -486,6 +487,14 @@
 		transform: translateY(-0.125rem);
 		box-shadow: 0 14px 30px -12px var(--color-accent-glow);
 	}
+	/* When btn-primary lives inside an ElectricBorder, the border animation
+	   ring is anchored to the wrapper, so translating the button leaves the
+	   ring behind. Disable the translate — the ElectricBorder wrapper now
+	   handles the hover lift in lockstep with the border animation. */
+	.electric-border-host .btn-primary:hover,
+	.btn-primary.electric-border-host:hover {
+		transform: none;
+	}
 	.btn-primary:active {
 		transform: scale(0.98);
 	}
@@ -525,10 +534,17 @@
 	}
 	.btn-primary:disabled,
 	.btn-primary[aria-disabled="true"] {
-		opacity: 0.5;
+		opacity: 0.65;
 		cursor: not-allowed;
 		transform: none;
 		box-shadow: none;
+		background: var(--color-surface-elevated);
+		border-color: var(--color-border-hi);
+		color: var(--color-text-muted);
+	}
+	.btn-primary:disabled::before,
+	.btn-primary[aria-disabled="true"]::before {
+		display: none;
 	}
 
 	.btn-secondary {

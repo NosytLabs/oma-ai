@@ -98,6 +98,7 @@ export function ProfileSection({
 							className="peer sr-only"
 							checked={isSoundEnabled()}
 							onChange={(e) => setSoundEnabled(e.target.checked)}
+							aria-label="Toggle subtle success and failure sound cues"
 						/>
 						<div className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
 						<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />

@@ -194,7 +194,7 @@ export default function CreditsPage() {
 
 	if (!isReady && !isAuthenticated) {
 		return (
-			<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+			<div className="flex items-center justify-center px-4">
 				<div className="h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
 			</div>
 		);
@@ -203,7 +203,7 @@ export default function CreditsPage() {
 	if (!isAuthenticated) {
 		return (
 			<m.div
-				className="flex min-h-[calc(100vh-4rem)] items-center justify-center"
+				className="flex items-center justify-center"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 			>
@@ -585,7 +585,7 @@ export default function CreditsPage() {
 												setSavingAutoReload(false);
 											}
 										}}
-										className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-void transition-opacity hover:opacity-90 disabled:opacity-50"
+										className="btn-primary w-full py-2 text-sm"
 									>
 										{savingAutoReload ? "Saving…" : "Save"}
 									</button>

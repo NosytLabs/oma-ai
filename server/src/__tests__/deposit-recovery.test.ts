@@ -8,7 +8,7 @@ vi.mock("viem", async () => {
     createPublicClient: vi.fn(),
     http: vi.fn(),
     formatUnits: vi.fn((value: bigint) => (Number(value) / 1e6).toString()),
-    parseAbi: vi.fn(),
+    parseAbi: vi.fn(() => [{ type: "event", name: "Transfer", inputs: [] }]),
     getAddress: vi.fn((addr: string) => addr.toLowerCase()),
     base: { id: 8453, name: "Base" },
   };
@@ -51,7 +51,10 @@ const mockClient = {
 
 describe("deposit-recovery lib", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks (not clearAllMocks) so queued mockResolvedValueOnce
+    // values from prior tests are dropped; clearAllMocks keeps them and
+    // every test after the first consumed a stale value (queue shift bug).
+    vi.resetAllMocks();
     vi.mocked(db.select as any).mockReturnValue({
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),

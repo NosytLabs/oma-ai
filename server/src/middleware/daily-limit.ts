@@ -80,8 +80,13 @@ export function dailyUsageLimit() {
       return next();
     }
 
-    // Check if this is a free Gonka model
-    const body = await c.req.json().catch(() => null);
+    // Check if this is a free Gonka model.
+    // Clone the raw request first: `c.req.json()` consumes the body stream,
+    // which would leave the route handler reading an empty body.
+    const body = await c.req.raw
+      .clone()
+      .json()
+      .catch(() => null);
     const model = body?.model as string | undefined;
     
     // Only Gonka models are free on website
