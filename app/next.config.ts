@@ -5,6 +5,28 @@ const nextConfig: NextConfig = {
 	devIndicators: false,
 	poweredByHeader: false,
 
+	// Dev-mode static chunks must NOT be cached forever: Next 15 dev serves
+	// them with `Cache-Control: public, max-age=31536000, immutable`, so the
+	// browser keeps running stale JS after a code change (breaks hydration,
+	// event handlers, and model-name overrides) until a hard refresh.
+	// Override to no-store in dev; production keeps hashed immutable chunks.
+	async headers() {
+		if (process.env.NODE_ENV !== "production") {
+			return [
+				{
+					source: "/_next/static/:path*",
+					headers: [
+						{
+							key: "Cache-Control",
+							value: "no-cache, no-store, must-revalidate",
+						},
+					],
+				},
+			];
+		}
+		return [];
+	},
+
 	eslint: { ignoreDuringBuilds: false },
 	typescript: { ignoreBuildErrors: false },
 
