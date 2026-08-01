@@ -31,6 +31,8 @@ import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { db } from "./db/client.js";
 import { siteSettings } from "./db/schema.js";
+import { runRecoveryIteration } from "./lib/deposit-recovery.js";
+import { getPublicClient } from "./lib/rpc-client.js";
 
 // Fail-fast admin address validation. Runs at startup, not at module
 // import, so test imports of the auth middleware don't exit the process.
@@ -38,6 +40,24 @@ initAuth();
 
 // Boot-time model catalog load.
 void ensureCatalogLoaded();
+
+if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
+  const client = getPublicClient();
+  let fromBlock = 0n;
+  const runDepositRecovery = async (): Promise<void> => {
+    try {
+      if (fromBlock === 0n) {
+        const current = await client.getBlockNumber();
+        fromBlock = current > 1_000n ? current - 1_000n : 0n;
+      }
+      fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
+    } catch (err) {
+      logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
+    }
+  };
+  void runDepositRecovery();
+  setInterval(() => void runDepositRecovery(), 30_000).unref();
+}
 
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
   logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");

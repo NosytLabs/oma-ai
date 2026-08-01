@@ -12,7 +12,11 @@ import { getPublicClient } from "../lib/rpc-client.js";
 import { isEip3009Authorization, verifyEip3009Payment } from "./eip3009.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
 import { consumeNonce } from "./replay.js";
-import { cacheVerifiedRecord, settlementCache } from "./settlement-cache.js";
+import {
+  cacheVerifiedRecord,
+  getVerificationCacheKey,
+  settlementCache,
+} from "./settlement-cache.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse, PaymentSignature } from "./types.js";
 
@@ -278,6 +282,7 @@ async function mockVerifyPayment(
   const nonceResult = await consumeNonce(payload.nonce);
   if (!nonceResult.ok) {
     logger.warn({ reason: nonceResult.reason }, "[FACILITATOR] Mock-mode replay blocked");
+    return { valid: false, error: `Replay protection: ${nonceResult.reason}` };
   }
   logger.warn(
     { signaturePrefix: signature.slice(0, 16), scheme: payload.scheme, amount: payload.amount },
@@ -305,10 +310,7 @@ export async function verifyPayment(
   paymentSig: PaymentSignature,
 ): Promise<PaymentResponse> {
   const { signature, authorization, payload } = paymentSig;
-  // SECURITY: Include payload.nonce in the cache key so that two different
-  // nonces with the same signature cannot collide. Without this, a cached
-  // verification could bypass the nonce replay protection in consumeNonce.
-  const cacheKey = `${payload.scheme}:${payload.nonce}:${signature}`;
+  const cacheKey = getVerificationCacheKey(payload, signature);
 
   const cached = settlementCache.get(cacheKey);
   if (cached) {
@@ -336,7 +338,7 @@ export async function verifyPayment(
     }
     logger.warn("[FACILITATOR] Processing payment in mock mode -- signatures are NOT verified on-chain");
     const result = await mockVerifyPayment(signature, payload);
-    cacheVerifiedRecord(payload, result);
+    cacheVerifiedRecord(payload, result, signature);
     return result;
   }
 
@@ -344,13 +346,13 @@ export async function verifyPayment(
   // configured. Local viem-based verification is the default.
   if (QUICKNODE_X402_ENABLED) {
     const result = await quicknodeX402Verify(paymentSig);
-    cacheVerifiedRecord(payload, result);
+    cacheVerifiedRecord(payload, result, signature);
     return result;
   }
 
   if (payload.scheme === "evm") {
     const result = await verifyEvmPayment(signature, authorization, payload);
-    cacheVerifiedRecord(payload, result);
+    cacheVerifiedRecord(payload, result, signature);
     return result;
   }
 

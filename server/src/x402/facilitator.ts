@@ -29,8 +29,13 @@ import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { USDC_BASE } from "../constants.js";
 import { logger } from "../lib/logger.js";
+import { logPaymentEvent } from "../lib/payment-observability.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
-import { atomicCacheSet, settlementCache } from "./settlement-cache.js";
+import {
+  atomicCacheSet,
+  getSettlementCacheKey,
+  settlementCache,
+} from "./settlement-cache.js";
 import { settlePaymentAsync } from "./settle.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import { verifyPayment } from "./verify.js";
@@ -67,6 +72,14 @@ export type {
 // ============================================================
 // Hono Routes
 // ============================================================
+
+function paymentError(
+  code: string,
+  message: string,
+  retryable: boolean,
+): { error: { code: string; message: string; retryable: boolean; type: string } } {
+  return { error: { code, message, retryable, type: "payment_error" } };
+}
 
 export const x402Routes = new Hono<OmaEnv>();
 
@@ -197,7 +210,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
   // populated by `/x402/verify` after a successful on-chain verification.
   // If the cache has no entry for this txHash, fall back to the DB so that
   // settlements survive server restarts (CRIT-4).
-  const cacheKey = `${body.networkId}:${body.txHash}`;
+  const cacheKey = getSettlementCacheKey(body.networkId, body.txHash);
   const cached = settlementCache.get(cacheKey);
   if (cached) {
     // Use settlePaymentAsync which persists the receipt to the DB.
@@ -449,7 +462,7 @@ export function paymentMiddleware(
 
     if (paymentSig.payload?.payee?.toLowerCase() !== payeeAddress.toLowerCase()) {
       return c.json(
-        { error: { message: "Payment payee mismatch", type: "payment_error" } },
+        paymentError("x402_payee_mismatch", "Payment payee mismatch", false),
         402,
       );
     }
@@ -459,7 +472,7 @@ export function paymentMiddleware(
     // Reject underpayment first (the client is paying less than the price).
     if (requestedAtomic < requiredAtomic) {
       return c.json(
-        { error: { message: `Insufficient payment: requested ${requestedAtomic} but ${requiredAtomic} required`, type: "payment_error" } },
+        paymentError("x402_underpayment", `Insufficient payment: requested ${requestedAtomic} but ${requiredAtomic} required`, false),
         402,
       );
     }
@@ -467,16 +480,32 @@ export function paymentMiddleware(
     // verifyPayment (on-chain), not the client-supplied amount field.
     if (requestedAtomic > requiredAtomic) {
       return c.json(
-        { error: { message: `Payment amount exceeds maximum: requested ${requestedAtomic} but ${requiredAtomic} allowed`, type: "payment_error" } },
+        paymentError("x402_overpayment", `Payment amount exceeds maximum: requested ${requestedAtomic} but ${requiredAtomic} allowed`, false),
         402,
       );
     }
 
+    const startedAt = Date.now();
     const verification = await verifyPayment(paymentSig);
 
     if (!verification.valid) {
+      logPaymentEvent({
+        kind: "x402",
+        outcome: verification.error?.toLowerCase().includes("replay")
+          ? "double_spend_blocked"
+          : "rejected",
+        amountCents: Number(price) * 100,
+        signature: paymentSig.signature,
+        latencyMs: Date.now() - startedAt,
+      });
       return c.json(
-        { error: { message: verification.error ?? "Payment verification failed", type: "payment_error" } },
+        paymentError(
+          verification.error?.toLowerCase().includes("replay")
+            ? "x402_replay_detected"
+            : "x402_verification_failed",
+          verification.error ?? "Payment verification failed",
+          false,
+        ),
         402,
       );
     }
@@ -489,6 +518,13 @@ export function paymentMiddleware(
         payeeAddress,
         { idempotencyKey: paymentSig.signature },
       );
+      logPaymentEvent({
+        kind: "x402",
+        outcome: "settled",
+        amountCents: Number(verification.amount ?? paymentSig.payload.amount) * 100,
+        signature: paymentSig.signature,
+        latencyMs: Date.now() - startedAt,
+      });
     }
 
     c.set("payment", { txHash: verification.txHash, amount: verification.amount ?? paymentSig.payload.amount, networkId: verification.networkId ?? paymentSig.payload.networkId });

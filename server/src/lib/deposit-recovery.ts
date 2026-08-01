@@ -1,8 +1,9 @@
-import { createPublicClient, parseAbi, getAddress, formatUnits } from "viem";
+import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
 import { creditBalances, deposits } from "../db/schema.js";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
+import { logPaymentEvent } from "./payment-observability.js";
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const USDC_DECIMALS = 6;
@@ -11,6 +12,12 @@ const MIN_DEPOSIT_CENTS = 100;
 const TRANSFER_ABI = parseAbi([
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
+
+interface DepositRecoveryClient {
+  getTransaction(args: { hash: `0x${string}` }): Promise<{ input?: string }>;
+  getBlockNumber(): Promise<bigint>;
+  getLogs(args: Record<string, unknown>): Promise<Array<{ transactionHash?: string; args?: unknown }>>;
+}
 
 interface TransferEvent {
   transactionHash: string;
@@ -35,12 +42,13 @@ export function extractUserIdFromMemo(data: string): string | null {
 }
 
 export async function processTransfer(
-  client: ReturnType<typeof createPublicClient>,
+  client: DepositRecoveryClient,
   event: TransferEvent,
   depositAddress: string,
 ): Promise<void> {
   const { transactionHash, args } = event;
   const txHash = transactionHash;
+  const startedAt = Date.now();
 
   if (args.to.toLowerCase() !== depositAddress.toLowerCase()) return;
 
@@ -66,20 +74,41 @@ export async function processTransfer(
 
   if (existingDeposit) {
     if (existingDeposit.status === "completed") {
+      logPaymentEvent({
+        kind: "usdc_deposit",
+        outcome: "double_spend_blocked",
+        userId,
+        amountCents: amountUsdCents,
+        signature: txHash,
+        latencyMs: Date.now() - startedAt,
+      });
       logger.debug({ txHash, userId }, "[deposit-recovery] deposit already completed, skipping");
       return;
     }
 
-    await db
+  await db.transaction(async (tx) => {
+    const claimed = await tx
       .update(deposits)
       .set({
         status: "completed",
         completedAt: new Date(),
         creditsIssued: existingDeposit.amountUsd,
       })
-      .where(eq(deposits.id, existingDeposit.id));
+      .where(and(eq(deposits.id, existingDeposit.id), eq(deposits.status, "pending")))
+      .returning({ id: deposits.id });
+    if (claimed.length === 0) {
+      logPaymentEvent({
+        kind: "usdc_deposit",
+        outcome: "double_spend_blocked",
+        userId,
+        amountCents: amountUsdCents,
+        signature: txHash,
+        latencyMs: Date.now() - startedAt,
+      });
+      return;
+    }
 
-    await db
+    await tx
       .insert(creditBalances)
       .values({
         userId,
@@ -98,7 +127,16 @@ export async function processTransfer(
         },
       });
 
+    logPaymentEvent({
+      kind: "usdc_deposit",
+      outcome: "settled",
+      userId,
+      amountCents: amountUsdCents,
+      signature: txHash,
+      latencyMs: Date.now() - startedAt,
+    });
     logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
+    });
     return;
   }
 
@@ -136,11 +174,19 @@ export async function processTransfer(
       },
     });
 
+  logPaymentEvent({
+    kind: "usdc_deposit",
+    outcome: "settled",
+    userId,
+    amountCents: amountUsdCents,
+    signature: txHash,
+    latencyMs: Date.now() - startedAt,
+  });
   logger.info({ txHash, userId, depositId: created.id, amountUsdCents }, "[deposit-recovery] created and completed deposit, credited balance");
 }
 
 export async function runRecoveryIteration(
-  client: ReturnType<typeof createPublicClient>,
+  client: DepositRecoveryClient,
   depositAddress: string,
   fromBlock: bigint,
 ): Promise<bigint> {

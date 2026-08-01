@@ -142,6 +142,7 @@ vi.mock('../../auth/middleware.js', () => ({
 }))
 
 import { verifyPayment, type PaymentSignature } from '../facilitator.js'
+import { settlementCache } from '../settlement-cache.js'
 
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 // 65-byte EIP-712 sig placeholder. Real value recovery is mocked via
@@ -194,6 +195,7 @@ function makeEip3009PaymentSig(overrides: {
 describe('EIP-3009 V1 verify path', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    settlementCache.clear()
     resetChain()
     mockRedis.set.mockResolvedValue('OK')
     mockRedis.get.mockResolvedValue(null)

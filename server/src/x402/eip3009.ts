@@ -274,11 +274,21 @@ export async function verifyEip3009Payment(
     return { valid: false, error: "Invalid EIP-3009 authorization: missing required fields { from, to, value, validAfter, validBefore, nonce }" };
   }
   const auth: Eip3009Authorization = authRaw;
+  if (payload.nonce !== auth.nonce) {
+    return { valid: false, error: "Payload nonce does not match EIP-3009 authorization nonce" };
+  }
 
   // 3. Payee must equal the server-pinned merchant treasury.
   const payeeLower = auth.to.toLowerCase();
   if (SERVER_TREASURY && payeeLower !== SERVER_TREASURY) {
     return { valid: false, error: "Payee does not match configured treasury" };
+  }
+
+  if (payload.payee.toLowerCase() !== auth.to.toLowerCase()) {
+    return { valid: false, error: "Payload payee does not match EIP-3009 authorization recipient" };
+  }
+  if (payload.payFrom.toLowerCase() !== auth.from.toLowerCase()) {
+    return { valid: false, error: "Payload payFrom does not match EIP-3009 authorization sender" };
   }
 
   // 4. Amount check.

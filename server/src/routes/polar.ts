@@ -30,10 +30,11 @@ import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
-import { creditBalances, siteSettings } from "../db/schema.js";
+import { creditBalances, polarWebhookEvents, siteSettings } from "../db/schema.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { emitDepositMatched } from "../lib/deposit-events.js";
+import { logPaymentEvent } from "../lib/payment-observability.js";
 
 export const polarRoutes = new Hono<OmaEnv>();
 
@@ -157,8 +158,8 @@ function verifyPolarSignature(
 	if (!headers.id || !headers.ts || !headers.sig) return false;
 	const ts = Number(headers.ts);
 	if (!Number.isFinite(ts)) return false;
-	const drift = Math.abs(Date.now() / 1000 - ts);
-	if (drift > 5 * 60) return false; // 5-min replay window
+	const now = Math.floor(Date.now() / 1000);
+	if (ts > now + 30 || now - ts > 5 * 60) return false;
 	const expected =
 		"v1," +
 		createHmac("sha256", secret)
@@ -262,10 +263,12 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 		return c.json({ error: "webhook secret not configured" }, 503);
 	}
 	const rawBody = await c.req.text();
+	const startedAt = Date.now();
+	const eventId = c.req.header("webhook-id") ?? null;
 	const ok = verifyPolarSignature(
 		rawBody,
 		{
-			id: c.req.header("webhook-id") ?? null,
+			id: eventId,
 			ts: c.req.header("webhook-timestamp") ?? null,
 			sig: c.req.header("webhook-signature") ?? null,
 		},
@@ -281,12 +284,37 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 	} catch {
 		return c.json({ error: "invalid json" }, 400);
 	}
+	if (!eventId) {
+		return c.json({ error: "missing webhook id" }, 400);
+	}
+	try {
+		await db.insert(polarWebhookEvents).values({
+			polarEventId: eventId,
+			eventType: event.type,
+			payload: rawBody,
+			processed: 0,
+		});
+	} catch (err) {
+		if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "23505") {
+			logPaymentEvent({
+				kind: "polar",
+				outcome: "double_spend_blocked",
+				signature: eventId,
+				latencyMs: Date.now() - startedAt,
+			});
+			return c.json({ ok: true, duplicate: true });
+		}
+		logger.error({ err, eventId }, "[polar] failed to claim webhook event");
+		return c.json({ error: "webhook processing unavailable" }, 503);
+	}
 	const plan =
 		planFromProductId(event.data?.product?.id) ?? null;
 	const metadata = event.data?.metadata ?? {};
 	const userId = typeof metadata.userId === "string" ? metadata.userId : null;
 	const creditsRaw = metadata.credits;
-	const credits = typeof creditsRaw === "number" ? creditsRaw : plan ? PLAN_CREDITS[plan].credits : null;
+	const credits = typeof creditsRaw === "number" && Number.isSafeInteger(creditsRaw) && creditsRaw > 0
+		? creditsRaw
+		: null;
 
 	// One-time credit purchases. Metadata set on the checkout is copied to
 	// the resulting order, so we can credit the exact amount the user paid for.
@@ -332,5 +360,17 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 		logger.info({ type: event.type }, "[polar] webhook event (unhandled type)");
 	}
 
+	await db
+		.update(polarWebhookEvents)
+		.set({ processed: 1 })
+		.where(sql`${polarWebhookEvents.polarEventId} = ${eventId}`);
+	logPaymentEvent({
+		kind: "polar",
+		outcome: "settled",
+		userId: userId ?? undefined,
+		amountCents: credits ?? undefined,
+		signature: eventId,
+		latencyMs: Date.now() - startedAt,
+	});
 	return c.json({ ok: true });
 });

@@ -64,15 +64,31 @@ export async function atomicCacheDelete(cacheKey: string): Promise<void> {
   }
 }
 
-export function cacheVerifiedRecord(payload: PaymentPayload, result: PaymentResponse): void {
+export function getSettlementCacheKey(networkId: string, txHash: string): string {
+  return `${networkId}:${txHash.toLowerCase()}`;
+}
+
+export function getVerificationCacheKey(payload: PaymentPayload, signature: string): string {
+  return `verify:${payload.scheme}:${payload.networkId}:${payload.nonce ?? "missing"}:${signature}`;
+}
+
+export function cacheVerifiedRecord(
+  payload: PaymentPayload,
+  result: PaymentResponse,
+  signature?: string,
+): void {
   if (result.valid && result.txHash) {
-    atomicCacheSet(`${payload.networkId}:${result.txHash}`, {
+    const record: SettlementRecord = {
       txHash: result.txHash,
       amount: result.amount ?? payload.amount,
       networkId: result.networkId ?? payload.networkId,
       payee: payload.payee,
-      settledAt: 0,
-    });
+      settledAt: Date.now(),
+    };
+    atomicCacheSet(getSettlementCacheKey(payload.networkId, result.txHash), record);
+    if (signature) {
+      atomicCacheSet(getVerificationCacheKey(payload, signature), record);
+    }
   }
 }
 

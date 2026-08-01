@@ -19,6 +19,7 @@ vi.mock("../db/client.js", () => ({
     select: vi.fn(),
     insert: vi.fn(),
     update: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
@@ -69,8 +70,10 @@ describe("deposit-recovery lib", () => {
 
     vi.mocked(db.update as any).mockReturnValue({
       set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockResolvedValue({}),
+      where: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockResolvedValue([{ id: "dep_123" }]),
     });
+    vi.mocked((db as any).transaction).mockImplementation(async (fn: any) => fn(db));
 
     mockClient.getBlockNumber.mockResolvedValue(1000n);
   });
@@ -207,6 +210,30 @@ describe("deposit-recovery lib", () => {
         "[deposit-recovery] deposit already completed, skipping",
       );
       expect(db.update).not.toHaveBeenCalled();
+    });
+
+    it("blocks concurrent completion when another worker already claimed the deposit", async () => {
+      vi.mocked(db.select as any).mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValueOnce([{
+          id: "dep_123", userId: "usr_abc12345", txHash: "0xabc",
+          amountUsd: "1.00", status: "pending",
+        }]),
+      });
+      vi.mocked(db.update as any).mockReturnValueOnce({
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+      });
+      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x6f6d612d6162633132333435" });
+
+      await depositRecovery.processTransfer(mockClient as any, {
+        transactionHash: "0xabc",
+        args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
+      }, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
+
+      expect(db.insert).not.toHaveBeenCalled();
     });
 
     it("handles transaction with no input data", async () => {

@@ -12,6 +12,7 @@ import {
 import {
   atomicCacheDelete,
   atomicCacheSet,
+  getSettlementCacheKey,
   settlementCache,
 } from "./settlement-cache.js";
 import type { SettlementRecord, SettlementResponse } from "./types.js";
@@ -59,7 +60,7 @@ export async function settlePaymentAsync(
   options: SettlementOptions = {},
 ): Promise<SettlementResponse> {
   const { idempotencyKey, skipIfExists: _skipIfExists = true } = options;
-  const cacheKey = `${networkId}:${txHash}`;
+  const cacheKey = getSettlementCacheKey(networkId, txHash);
 
   const existing = settlementCache.get(cacheKey);
   // a cached verified record (no receipt) is NOT a settled record;
@@ -197,7 +198,7 @@ export function settlePayment(
   networkId: string,
   payee: string,
 ): SettlementResponse {
-  const cacheKey = `${networkId}:${txHash}`;
+  const cacheKey = getSettlementCacheKey(networkId, txHash);
 
   const existing = settlementCache.get(cacheKey);
   // C2 — only short-circuit on cache hit if the existing record is a
@@ -228,7 +229,7 @@ export function settlePayment(
 }
 
 export async function isSettledAsync(txHash: string, networkId: string): Promise<boolean> {
-  const cacheKey = `${networkId}:${txHash}`;
+  const cacheKey = getSettlementCacheKey(networkId, txHash);
   if (settlementCache.has(cacheKey)) {
     return true;
   }
@@ -237,11 +238,11 @@ export async function isSettledAsync(txHash: string, networkId: string): Promise
 }
 
 export function isSettled(txHash: string, networkId: string): boolean {
-  return settlementCache.has(`${networkId}:${txHash}`);
+  return settlementCache.has(getSettlementCacheKey(networkId, txHash));
 }
 
 export async function getSettlementReceiptAsync(txHash: string, networkId: string): Promise<string | null> {
-  const cacheKey = `${networkId}:${txHash}`;
+  const cacheKey = getSettlementCacheKey(networkId, txHash);
   const cached = settlementCache.get(cacheKey);
   if (cached?.receipt) {
     return cached.receipt;
@@ -251,7 +252,7 @@ export async function getSettlementReceiptAsync(txHash: string, networkId: strin
 }
 
 export function getSettlementReceipt(txHash: string, networkId: string): string | null {
-  const record = settlementCache.get(`${networkId}:${txHash}`);
+  const record = settlementCache.get(getSettlementCacheKey(networkId, txHash));
   return record?.receipt ?? null;
 }
 

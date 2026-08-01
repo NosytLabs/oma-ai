@@ -483,6 +483,24 @@ export const refundRequests = pgTable(
   ],
 );
 
+export const polarWebhookEvents = pgTable(
+  "polar_webhook_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    polarEventId: text("polar_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    payload: text("payload").notNull(),
+    processed: integer("processed").default(0).notNull(),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("polar_webhook_events_polar_event_id_unique").on(t.polarEventId),
+    index("idx_polar_webhook_events_event_type").on(t.eventType),
+    index("idx_polar_webhook_events_processed").on(t.processed),
+  ],
+);
+
 export const webhookSubscriptions = pgTable(
   "webhook_subscriptions",
   {
