@@ -131,7 +131,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 							</p>
 						</div>
 						<Link
-							href="/dashboard"
+							href="/dashboard?tab=api-keys"
 							role="menuitem"
 							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
 							onClick={() => setOpen(false)}

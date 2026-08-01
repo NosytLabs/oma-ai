@@ -5,7 +5,6 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	Activity,
 	AlertTriangle,
-	Key,
 	type LucideIcon,
 	Palette,
 	Shield,
@@ -14,13 +13,11 @@ import {
 	X,
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { type ApiKey, api, type ApiKeyWithSecret, type Session, type User } from "@/lib/api";
-import { copyToClipboard } from "@/lib/clipboard";
+import { api, type Session, type User } from "@/lib/api";
 
 const ProfileSection = nextDynamic(() =>
 	import("./_components/ProfileSection").then((m) => ({
@@ -30,11 +27,6 @@ const ProfileSection = nextDynamic(() =>
 const AppearanceSection = nextDynamic(() =>
 	import("./_components/AppearanceSection").then((m) => ({
 		default: m.AppearanceSection,
-	})),
-);
-const ApiKeysSection = nextDynamic(() =>
-	import("./_components/ApiKeysSection").then((m) => ({
-		default: m.ApiKeysSection,
 	})),
 );
 const SessionsSection = nextDynamic(() =>
@@ -53,7 +45,7 @@ const PrivacySection = nextDynamic(() =>
 	})),
 );
 
-type SettingsTab = "profile" | "appearance" | "api-keys" | "sessions" | "privacy" | "danger";
+type SettingsTab = "profile" | "appearance" | "sessions" | "privacy" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -76,12 +68,6 @@ const TABS: TabDef[] = [
 		label: "Appearance",
 		icon: Palette,
 		description: "Accent theme",
-	},
-	{
-		id: "api-keys",
-		label: "API keys",
-		icon: Key,
-		description: "Programmatic access",
 	},
 	{
 		id: "sessions",
@@ -108,16 +94,19 @@ const TABS: TabDef[] = [
 const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	profile: "Profile",
 	appearance: "Theme",
-	"api-keys": "Keys",
 	sessions: "Sessions",
 	privacy: "Privacy",
 	danger: "Danger",
 };
 
-/** Accept short aliases in ?tab= (e.g. keys → api-keys). */
+/**
+ * Accept short aliases in ?tab= (e.g. theme → appearance).
+ * NOTE: `api-keys` and `keys` are deliberately NOT handled here —
+ * API keys live on the Dashboard. The deep-link useEffect below
+ * redirects those URLs to /dashboard?tab=api-keys instead.
+ */
 function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	if (!raw) return null;
-	if (raw === "keys") return "api-keys";
 	if (raw === "appearance" || raw === "theme") return "appearance";
 	if (TABS.some((tab) => tab.id === raw)) return raw as SettingsTab;
 	return null;
@@ -144,25 +133,32 @@ function currentSessionFallback(): Session {
 
 export default function SettingsPage() {
 	const { isAuthenticated, isReady, evmAddress, signOut } = useAuth();
-	const toast = useToast();
+	const router = useRouter();
 	const searchParams = useSearchParams();
 
 	const [user, setUser] = useState<User | null>(null);
-	const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
 	const [sessions, setSessions] = useState<Session[]>([currentSessionFallback()]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	const [deleting, setDeleting] = useState(false);
 	const [loggingOut, setLoggingOut] = useState(false);
-	const [copied, setCopied] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
-	// Deep-link: /settings?tab=keys (alias for api-keys)
+	// Deep-link: /settings?tab=*
+	// API keys used to live here — they now live on the Dashboard, so the
+	// `api-keys` and `keys` aliases are intercepted and redirected to
+	// /dashboard?tab=api-keys. Everything else falls through to
+	// `parseSettingsTab` and updates the active tab.
 	useEffect(() => {
-		const parsed = parseSettingsTab(searchParams?.get("tab") ?? null);
+		const raw = searchParams?.get("tab") ?? null;
+		if (raw === "api-keys" || raw === "keys") {
+			router.replace("/dashboard?tab=api-keys");
+			return;
+		}
+		const parsed = parseSettingsTab(raw);
 		if (parsed) setActiveTab(parsed);
-	}, [searchParams]);
+	}, [searchParams, router]);
 
 	useEffect(() => {
 		if (!isAuthenticated) return;
@@ -171,13 +167,9 @@ export default function SettingsPage() {
 			setLoading(true);
 			setError(null);
 			try {
-				const [userData, keysData] = await Promise.all([
-					api.auth.getUser(),
-					api.auth.listKeys(),
-				]);
+				const userData = await api.auth.getUser();
 				if (!cancelled) {
 					setUser(userData ?? null);
-					setApiKeys(keysData.keys);
 					// Multi-session listing endpoint is not wired yet — always
 					// show at least the current browser session so the tab is
 					// useful.
@@ -197,21 +189,6 @@ export default function SettingsPage() {
 			cancelled = true;
 		};
 	}, [isAuthenticated]);
-
-	const handleCopy = useCallback(
-		(text: string, id: string) => {
-			void copyToClipboard(text).then((ok) => {
-				if (!ok) {
-					toast.error("Couldn't copy to clipboard");
-					return;
-				}
-				toast.success("Copied to clipboard");
-				setCopied(id);
-				setTimeout(() => setCopied(null), 2000);
-			});
-		},
-		[toast],
-	);
 
 	const handleLogout = async () => {
 		setLoggingOut(true);
@@ -234,15 +211,6 @@ export default function SettingsPage() {
 			setDeleting(false);
 		}
 	};
-
-	const handleRevokeKey = useCallback(async (keyId: string) => {
-		await api.auth.deleteKey(keyId);
-		setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
-	}, []);
-
-	const handleCreateKey = useCallback(async (key: ApiKeyWithSecret) => {
-		setApiKeys((prev) => [...prev, key]);
-	}, []);
 
 	if (!isReady) {
 		return (
@@ -271,7 +239,7 @@ export default function SettingsPage() {
 						Sign in to manage your account
 					</h1>
 					<p className="mb-6 text-center text-sm text-text-secondary">
-						Settings covers your profile, sessions, and API keys.
+						Settings covers your profile, theme, sessions, and data controls.
 					</p>
 
 					<ul className="mb-6 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
@@ -470,15 +438,6 @@ export default function SettingsPage() {
 									/>
 								)}
 								{activeTab === "appearance" && <AppearanceSection />}
-								{activeTab === "api-keys" && (
-									<ApiKeysSection
-										apiKeys={apiKeys}
-										onCopy={handleCopy}
-										copied={copied}
-										onRevokeKey={handleRevokeKey}
-										onCreateKey={handleCreateKey}
-									/>
-								)}
 								{activeTab === "sessions" && (
 									<SessionsSection sessions={sessions} />
 								)}

@@ -6,6 +6,7 @@ import {
 	ArrowUpRight,
 	BookOpen,
 	Image as ImageIcon,
+	Shield,
 	Terminal,
 	Video as VideoIcon,
 } from "lucide-react";
@@ -45,6 +46,12 @@ const ACTIONS: QuickAction[] = [
 		icon: BookOpen,
 		external: true,
 	},
+	{
+		href: "/settings?tab=privacy",
+		label: "Privacy & data",
+		description: "Export, clear history",
+		icon: Shield,
+	},
 ];
 
 interface QuickActionsProps {
@@ -68,7 +75,7 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 					</p>
 				</div>
 			</div>
-			<div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
 				{ACTIONS.map((action, i) => {
 					const Icon = action.icon;
 					const inner = (
