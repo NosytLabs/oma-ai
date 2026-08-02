@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, X, Sparkles } from "lucide-react";
+import { InViewFade } from "@/components/motion/in-view-fade";
 
 // Imports client visuals elsewhere; opt out of static prerender so Next 15
 // doesn't crash on missing React hooks.
@@ -240,6 +241,7 @@ export default function ComparePage() {
 			{/* Use a div — root layout already provides the single <main id="main-content"> landmark. */}
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
 				{/* Hero */}
+				<InViewFade>
 				<section className="py-16 text-center">
 					<div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-mono">
 						<Sparkles className="w-3 h-3" />
@@ -253,6 +255,7 @@ export default function ComparePage() {
 						current as of 2026-07.
 					</p>
 				</section>
+				</InViewFade>
 
 				{/* Summary cards */}
 				<section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">

@@ -5,6 +5,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 // Opt out of static prerender — uses client components with effects/random
@@ -67,6 +68,7 @@ export default function AboutPage() {
 					Home
 				</Link>
 
+				<InViewFade>
 				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
 					about
 				</p>
@@ -78,28 +80,28 @@ export default function AboutPage() {
 					API compatibility, multi-provider routing, and native crypto payments
 					for developers and autonomous agents.
 				</p>
+			</InViewFade>
 
 				<ul className="space-y-4 mb-14">
-					{PILLARS.map((p) => (
-						<li
-							key={p.title}
-							className="rounded-xl border border-border bg-surface p-5"
-						>
-							<div className="flex items-start gap-3">
-								<p.icon
-									className="h-5 w-5 text-accent shrink-0 mt-0.5"
-									aria-hidden="true"
-								/>
-								<div>
-									<h2 className="text-base font-semibold text-text-bright">
-										{p.title}
-									</h2>
-									<p className="mt-1 text-sm text-text-secondary leading-relaxed">
-										{p.body}
-									</p>
+					{PILLARS.map((p, i) => (
+						<InViewFade key={p.title} delay={i * 0.08} y={12}>
+							<li className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/30">
+								<div className="flex items-start gap-3">
+									<p.icon
+										className="h-5 w-5 text-accent shrink-0 mt-0.5"
+										aria-hidden="true"
+									/>
+									<div>
+										<h2 className="text-base font-semibold text-text-bright">
+											{p.title}
+										</h2>
+										<p className="mt-1 text-sm text-text-secondary leading-relaxed">
+											{p.body}
+										</p>
+									</div>
 								</div>
-							</div>
-						</li>
+							</li>
+						</InViewFade>
 					))}
 				</ul>
 

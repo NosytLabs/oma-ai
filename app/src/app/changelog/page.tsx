@@ -22,6 +22,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import AUTO_RELEASES from "@/data/auto-changelog.json";
 
 export const metadata: Metadata = {
@@ -226,8 +227,9 @@ export default function ChangelogPage() {
 			<FloatingIcons />
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
-					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+				{/* ===== HERO ===== */}
+				<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+						<InViewFade>
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -264,9 +266,11 @@ export default function ChangelogPage() {
 							/>
 							latest · v{latest.version} · {latest.codename}
 						</div>
+						</InViewFade>
 					</section>
 
 					{/* ===== LATEST RELEASE (featured) ===== */}
+					<InViewFade>
 					<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
 						<article className="relative border border-accent/30 rounded-xl overflow-hidden bg-gradient-to-br from-accent-dim via-surface to-surface">
 							<span
@@ -332,6 +336,7 @@ export default function ChangelogPage() {
 							</div>
 						</article>
 					</section>
+					</InViewFade>
 
 					{/* ===== ARCHIVE ===== */}
 					<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-border">

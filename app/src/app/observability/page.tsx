@@ -22,6 +22,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { api, request } from "@/lib/api";
+import { InViewFade } from "@/components/motion/in-view-fade";
 
 /** Revalidate live health/metrics every 30s */
 export const revalidate = 30;
@@ -168,8 +169,9 @@ export default async function ObservabilityPage() {
 		<div className="min-h-dvh bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
-					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+				{/* ===== HERO ===== */}
+				<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+						<InViewFade>
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -227,6 +229,7 @@ export default async function ObservabilityPage() {
 								charts · sample shape
 							</div>
 						</div>
+						</InViewFade>
 					</section>
 
 					{/* ===== LIVE COUNTERS ===== */}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
 import { FloatingIcons } from "@/components/floating-icons";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 // Opt out of static prerender — uses client-only FloatingIcons background.
@@ -55,6 +56,7 @@ export default function ContactPage() {
 			/>
 			<FloatingIcons />
 			<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+				<InViewFade>
 				<Link
 					href="/"
 					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-10"
@@ -83,6 +85,7 @@ export default function ContactPage() {
 					</a>
 					.
 				</p>
+				</InViewFade>
 
 				<ul className="space-y-4">
 					{CHANNELS.map((c) => (

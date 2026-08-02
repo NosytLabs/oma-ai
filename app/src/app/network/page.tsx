@@ -28,6 +28,7 @@ import Link from "next/link";
 import { ElectricBorder } from "@/components/electric-border";
 import { FloatingIcons } from "@/components/floating-icons";
 import { JuiceButton } from "@/components/juice-button";
+import { InViewFade } from "@/components/motion/in-view-fade";
 
 // Opt out of static prerender — uses client-only visual components.
 
@@ -209,6 +210,7 @@ export default function NetworkPage() {
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
 					<section className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16">
+						<InViewFade>
 						<Link
 							href="/"
 							className="mb-4 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -238,6 +240,7 @@ export default function NetworkPage() {
 							Eight primitives today. Same OpenAI-compatible auth as the inference
 							endpoint.
 						</p>
+						</InViewFade>
 
 						<div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl auto-rows-fr">
 							{(() => {
@@ -280,6 +283,7 @@ export default function NetworkPage() {
 
 					{/* ===== PRIMITIVES GRID ===== */}
 					<section className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+						<InViewFade>
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Inventory
@@ -292,6 +296,7 @@ export default function NetworkPage() {
 								and delivery semantics.
 							</p>
 						</header>
+						</InViewFade>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
 							{PRIMITIVES.map((p, idx) => {
