@@ -1,62 +1,139 @@
 "use client";
 
+/**
+ * Home · Capabilities
+ *
+ * Three-pillar bento: pay upfront, pay per request, pay with USDC. Each pillar
+ * is anchored by a single primary action, with a 4-up supporting row that
+ * surfaces the operational primitives (live models, circuit breaker, x402
+ * spec, OpenAI SDK). Layout flips to a vertical stack under `md`.
+ */
+
 import {
 	ArrowUpRight,
 	Banknote,
+	Bot,
 	Coins,
-	Link2,
-	MessageSquare,
-	ShieldCheck,
+	CreditCard,
+	Sparkles,
+	Wallet,
+	Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { Reveal, RevealStagger, childFadeUp } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
 import { m } from "@/lib/framer-motion-client";
+import { MODEL_COUNT } from "@/lib/models-data";
 
-interface Capability {
+interface Pillar {
+	id: string;
+	eyebrow: string;
 	title: string;
 	description: string;
-	icon: typeof MessageSquare;
-	badge?: string;
-	example?: string;
+	icon: typeof Coins;
+	href: string;
+	cta: string;
+	accent: "emerald" | "info" | "violet";
+	highlights: string[];
 }
 
-const CAPABILITIES: Capability[] = [
+const PILLARS: Pillar[] = [
 	{
-		title: "Pay with credits",
+		id: "card-credits",
+		eyebrow: "Card · Polar",
+		title: "Buy credits by card",
 		description:
-			"Buy credits upfront at 1:1 USD. Credits are non-redeemable and expire 12 months after deposit, so your spend stays clear and predictable.",
-		icon: Coins,
-		badge: "1:1 USD",
-		example: "credits → inference",
+			"Top up with Visa, Mastercard, or Apple Pay in seconds. Credits land the moment the payment settles and meter every request at 1:1 USD.",
+		icon: Banknote,
+		href: "/deposit?method=card",
+		cta: "Buy credits",
+		accent: "emerald",
+		highlights: ["No wallet required", "Apple Pay supported", "Instant settlement"],
 	},
 	{
+		id: "usdc-base",
+		eyebrow: "USDC · Base",
+		title: "Deposit USDC on Base",
+		description:
+			"Direct USDC deposits at 1:1 USD. Every request is metered against a transparent on-chain ledger so you see exactly where each credit goes.",
+		icon: Coins,
+		href: "/deposit",
+		cta: "Deposit USDC",
+		accent: "info",
+		highlights: ["1:1 USD", "On-chain ledger", "100+ chains via LI.FI"],
+	},
+	{
+		id: "x402",
+		eyebrow: "x402 · agents",
 		title: "Agents pay per request",
 		description:
-			"x402 lets an agent settle each inference request directly on Base. No pre-funding, subscriptions, or API key required.",
-		icon: Link2,
-		badge: "x402",
-		example: "HTTP 402 → USDC",
-	},
-	{
-		title: "Routing & privacy",
-		description:
-			"Route across multiple providers with health checks and circuit-breaker failover, while zero data retention keeps prompt content private.",
-		icon: ShieldCheck,
-		badge: "zero retention",
-		example: "OMA → provider → response",
+			"x402 lets an agent settle every inference call on Base in USDC. No account, no API key, no subscription — wallet-based and gasless.",
+		icon: Bot,
+		href: "/docs#x402",
+		cta: "Read the protocol",
+		accent: "violet",
+		highlights: ["Gasless EIP-3009", "Per-request pricing", "HTTP 402 native"],
 	},
 ];
 
-const SUPPORT_CAPABILITIES: Capability[] = [
+const SUPPORT = [
 	{
+		id: "openai",
+		icon: Sparkles,
 		title: "OpenAI-compatible",
-		description:
-			"Keep your existing SDK. Change the base URL, choose a model, and stream responses with tool calling through one stable interface.",
-		icon: MessageSquare,
+		body: "Same SDK, new baseURL. Every model, one endpoint.",
+		href: "/docs#quickstart",
 	},
-];
+	{
+		id: "routing",
+		icon: Zap,
+		title: "Live routing + failover",
+		body: `Circuit-breaker failover across ${MODEL_COUNT}+ models.`,
+		href: "/network",
+	},
+	{
+		id: "wallet",
+		icon: Wallet,
+		title: "SIWE wallet auth",
+		body: "Sign in with any Base wallet. No password to lose.",
+		href: "/docs#authentication",
+	},
+	{
+		id: "polar-info",
+		icon: CreditCard,
+		title: "Powered by Polar",
+		body: "Industry-standard checkout. Card details never touch OMA.",
+		href: "/pricing",
+	},
+] as const;
+
+const ACCENT: Record<
+	Pillar["accent"],
+	{ wrap: string; chip: string; ring: string; glow: string; iconBg: string }
+> = {
+	emerald: {
+		wrap: "border-accent/30 bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--color-panel))]",
+		chip: "bg-accent/15 text-accent border-accent/30",
+		ring: "hover:border-accent/60 focus-visible:ring-accent",
+		glow: "0 24px 60px -30px var(--color-accent-glow)",
+		iconBg: "bg-accent text-[var(--color-accent-fg)]",
+	},
+	info: {
+		wrap: "border-info/30 bg-[color-mix(in_srgb,var(--color-info)_8%,var(--color-panel))]",
+		chip: "bg-info/15 text-info border-info/30",
+		ring: "hover:border-info/60 focus-visible:ring-info",
+		glow: "0 24px 60px -30px color-mix(in srgb, var(--color-info) 60%, transparent)",
+		iconBg: "bg-info/15 text-info",
+	},
+	violet: {
+		wrap: "border-violet/30 bg-[color-mix(in_srgb,var(--color-violet)_8%,var(--color-panel))]",
+		chip: "bg-violet/15 text-violet border-violet/30",
+		ring: "hover:border-violet/60 focus-visible:ring-violet",
+		glow: "0 24px 60px -30px color-mix(in srgb, var(--color-violet) 60%, transparent)",
+		iconBg: "bg-violet/15 text-violet",
+	},
+};
 
 export function CapabilitiesGrid() {
 	return (
@@ -71,249 +148,138 @@ export function CapabilitiesGrid() {
 						eyebrow="Capabilities"
 						headline={
 							<>
-								Three pillars.
+								Three ways to pay.
 								<br />
-								<span className="text-accent italic-accent">One gateway.</span>
+								<span className="text-accent italic-accent">
+									One gateway underneath.
+								</span>
 							</>
 						}
-						subhead="Pay upfront or per request, then route every call through one private, OpenAI-compatible gateway."
+						subhead="Card, USDC, or x402 — pick the rail that fits. Every payment path funnels into the same private, OpenAI-compatible inference surface."
 					/>
 				</Reveal>
 
-				<RevealStagger className="mt-12 space-y-4">
-					<m.div
-						className="grid grid-cols-1 gap-4 md:grid-cols-3"
-						variants={childFadeUp}
-					>
-						{CAPABILITIES.map((capability) => (
-							<LLMChatHero key={capability.title} capability={capability} />
-						))}
-					</m.div>
+				<RevealStagger className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+					{PILLARS.map((pillar) => {
+						const Icon = pillar.icon;
+						const a = ACCENT[pillar.accent];
+						return (
+							<m.div
+								key={pillar.id}
+								variants={childFadeUp}
+								whileHover={{ y: -4 }}
+								transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+							>
+								<Link
+									href={pillar.href}
+									aria-label={`${pillar.title} — ${pillar.cta}`}
+									className={cn(
+										"group relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-6 transition-[transform,box-shadow] duration-200 ease-out",
+										"hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2",
+										a.wrap,
+										a.ring,
+									)}
+									style={{ boxShadow: "var(--shadow-sm)" }}
+								>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-75"
+										style={{
+											background:
+												"radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 60%)",
+										}}
+									/>
 
-					<m.div
-						className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-						variants={childFadeUp}
-					>
-						<PolarCtaCard />
-						<UsdcBillingCard />
-						<X402DetailsCard />
-						<CapabilityCard capability={SUPPORT_CAPABILITIES[0]} />
-					</m.div>
+									<div className="flex items-center justify-between">
+										<span
+											className={cn(
+												"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.16em]",
+												a.chip,
+											)}
+										>
+											{pillar.eyebrow}
+										</span>
+										<div
+											className={cn(
+												"flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)]",
+												a.iconBg,
+											)}
+										>
+											<Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+										</div>
+									</div>
+
+									<h3 className="mt-6 font-heading text-2xl font-bold tracking-tight text-text-bright">
+										{pillar.title}
+									</h3>
+									<p className="mt-3 text-[14px] leading-relaxed text-text">
+										{pillar.description}
+									</p>
+
+									<ul className="mt-5 space-y-1.5 text-[12.5px] text-text-secondary">
+										{pillar.highlights.map((h) => (
+											<li key={h} className="flex items-center gap-2">
+												<span
+													className="h-1 w-1 shrink-0 rounded-full bg-accent"
+													aria-hidden="true"
+												/>
+												{h}
+											</li>
+										))}
+									</ul>
+
+									<span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-semibold text-accent">
+										{pillar.cta}
+										<ArrowUpRight
+											className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+											aria-hidden="true"
+										/>
+									</span>
+								</Link>
+							</m.div>
+						);
+					})}
+				</RevealStagger>
+
+				<RevealStagger
+					as="ul"
+					className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+				>
+					{SUPPORT.map((s) => {
+						const Icon = s.icon;
+						return (
+							<m.li
+								key={s.id}
+								variants={childFadeUp}
+								whileHover={{ y: -3 }}
+								transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+								className="h-full"
+							>
+								<Link
+									href={s.href}
+									className="group surface-card tilt-card relative flex h-full min-h-[150px] flex-col gap-3 rounded-[var(--radius-md)] p-5 transition-shadow duration-200 hover:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								>
+									<div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
+										<Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+									</div>
+									<div>
+										<p className="text-[13.5px] font-semibold tracking-tight text-text-bright">
+											{s.title}
+										</p>
+										<p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
+											{s.body}
+										</p>
+									</div>
+									<ArrowUpRight
+										className="absolute right-4 top-4 h-3.5 w-3.5 text-text-muted opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+										aria-hidden="true"
+									/>
+								</Link>
+							</m.li>
+						);
+					})}
 				</RevealStagger>
 			</div>
 		</section>
-	);
-}
-
-function LLMChatHero({ capability }: { capability: Capability }) {
-	const Icon = capability.icon;
-	return (
-		<m.article
-			whileHover={{ y: -4 }}
-			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className={cn(
-				"group relative h-full overflow-hidden",
-				"rounded-[var(--radius-lg)] p-6",
-				"bg-gradient-to-br from-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] via-[var(--color-panel)] to-[var(--color-panel)]",
-				"border border-[color-mix(in_srgb,var(--color-accent)_28%,var(--color-border))]",
-				"min-h-[260px] tilt-card sheen",
-				"transition-shadow duration-300 group-hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)]",
-			)}
-		>
-			<div
-				className="absolute inset-0 -z-10 opacity-30 transition-opacity duration-500 group-hover:opacity-50"
-				style={{
-					background:
-						"radial-gradient(ellipse at 90% 0%, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent 60%)",
-				}}
-				aria-hidden="true"
-			/>
-			{/* Subtle grid overlay */}
-			<div
-				aria-hidden="true"
-				className="absolute inset-0 -z-10 bg-grid opacity-[0.18] mask-radial"
-			/>
-			{/* Animated corner tick — gives the card a "live" feel */}
-			<span
-				aria-hidden="true"
-				className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.07] px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-accent"
-			>
-				<span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-				live
-			</span>
-			<div className="flex items-start gap-4">
-				<div
-					className={cn(
-						"flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
-						"bg-accent text-[var(--color-accent-fg)]",
-						"shadow-[0_8px_24px_-12px_var(--color-accent-glow)]",
-					)}
-				>
-					<Icon className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
-				</div>
-				<div className="flex-1 min-w-0">
-					<div className="flex flex-wrap items-center gap-2">
-						<h3 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-text-bright">
-							{capability.title}
-						</h3>
-						{capability.badge && (
-							<span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
-								{capability.badge}
-							</span>
-						)}
-					</div>
-					<p className="mt-3 text-[15px] text-text leading-relaxed max-w-xl">
-						{capability.description}
-					</p>
-					{capability.example && (
-						<div className="mt-5 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-[var(--color-surface)] px-3 py-2 font-mono text-xs text-text-secondary">
-							<span className="text-accent">$</span>
-							<span>{capability.example}</span>
-						</div>
-					)}
-				</div>
-			</div>
-		</m.article>
-	);
-}
-
-function PolarCtaCard() {
-	return (
-		<Link
-			href="/deposit?method=card"
-			aria-label="Buy credits with a card via Polar"
-			className="group relative flex h-full min-h-[250px] flex-col overflow-hidden rounded-[var(--radius-lg)] border-2 border-accent bg-[color-mix(in_srgb,var(--color-accent)_10%,var(--color-panel))] p-6 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_var(--color-accent-glow)] active:scale-[0.99]"
-		>
-			<span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.16em] text-[var(--color-accent-fg)]">
-				New
-			</span>
-			<div
-				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-70"
-				style={{
-					background:
-						"radial-gradient(circle at 70% 100%, color-mix(in srgb, var(--color-accent) 35%, transparent), transparent 65%)",
-				}}
-			/>
-			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-accent text-[var(--color-accent-fg)] shadow-[0_8px_24px_-12px_var(--color-accent-glow)]">
-				<Banknote className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
-			</div>
-			<h3 className="mt-5 font-heading text-2xl font-bold tracking-tight text-text-bright">
-				Pay with card
-			</h3>
-			<p className="mt-3 text-[14px] text-text leading-relaxed">
-				Buy credits via Polar with Visa, Mastercard, or Apple Pay. Credits land the
-				moment the payment settles.
-			</p>
-			<div className="mt-auto pt-5 flex items-center justify-between">
-				<span className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
-					Buy credits
-					<ArrowUpRight
-						className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-						aria-hidden="true"
-					/>
-				</span>
-				<span className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted">
-					via Polar
-				</span>
-			</div>
-		</Link>
-	);
-}
-
-function UsdcBillingCard() {
-	return (
-		<m.article
-			whileHover={{ y: -4 }}
-			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className={cn(
-				"group relative h-full overflow-hidden",
-				"rounded-[var(--radius-lg)]",
-				"border border-[color-mix(in_srgb,var(--color-info)_28%,var(--color-border))]",
-				"bg-[color-mix(in_srgb,var(--color-info)_8%,var(--color-panel))]",
-				"p-6 min-h-[250px] flex flex-col",
-				"transition-shadow duration-300 group-hover:shadow-[0_24px_60px_-30px_color-mix(in_srgb,var(--color-info)_60%,transparent)]",
-			)}
-		>
-			<div
-				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -z-10 opacity-40 transition-opacity duration-500 group-hover:opacity-55"
-				style={{
-					background:
-						"radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--color-info) 25%, transparent), transparent 60%)",
-				}}
-			/>
-			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-info/15 text-info">
-				<Coins className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
-			</div>
-			<h3 className="mt-5 font-heading text-xl font-bold tracking-tight text-text-bright">
-				USDC on Base deposit
-			</h3>
-			<p className="mt-3 text-[14px] text-text leading-relaxed">
-				Deposit USDC on Base at 1:1 USD. Settlement is immediate on confirmation,
-				with a per-call ledger showing every request and exact credits charged.
-			</p>
-			<div className="mt-auto pt-5 flex flex-wrap gap-2">
-				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-info">
-					USDC · Base
-				</span>
-				<span className="rounded-full bg-info/15 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-info">
-					1:1 USD
-				</span>
-			</div>
-		</m.article>
-	);
-}
-
-function X402DetailsCard() {
-	return (
-		<Link
-			href="/docs#x402"
-			className="surface-card tilt-card sheen group relative flex h-full min-h-[250px] flex-col rounded-[var(--radius-lg)] p-6 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)] active:scale-[0.99]"
-		>
-			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
-				<Link2 className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-			</div>
-			<h3 className="mt-4 font-heading text-lg font-semibold tracking-tight text-text-bright">
-				x402 technical details
-			</h3>
-			<p className="mt-2 text-[14px] text-text leading-relaxed">
-				See the payment challenge, settlement headers, Base network details, and a
-				complete agent request flow.
-			</p>
-			<span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
-				Read the protocol
-				<ArrowUpRight
-					className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-					aria-hidden="true"
-				/>
-			</span>
-		</Link>
-	);
-}
-
-function CapabilityCard({ capability }: { capability: Capability }) {
-	const Icon = capability.icon;
-	return (
-		<m.article
-			whileHover={{ y: -4 }}
-			transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-			className="surface-card tilt-card sheen relative h-full rounded-[var(--radius-lg)] p-6 min-h-[250px] flex flex-col transition-shadow duration-300 hover:shadow-[0_24px_60px_-30px_var(--color-accent-glow)]"
-		>
-			{capability.badge && (
-				<span className="absolute top-3 right-3 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-accent">
-					{capability.badge}
-				</span>
-			)}
-			<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
-				<Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-			</div>
-			<h3 className="mt-4 font-heading text-lg font-semibold tracking-tight text-text-bright">
-				{capability.title}
-			</h3>
-			<p className="mt-2 text-[14px] text-text leading-relaxed">
-				{capability.description}
-			</p>
-		</m.article>
 	);
 }

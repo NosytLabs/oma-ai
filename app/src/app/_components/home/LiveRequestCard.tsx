@@ -27,19 +27,19 @@ const ROUNDS: DemoRound[] = [
 		model: "claude-opus-5",
 		modelLabel: "Claude Opus 5",
 		prompt: "Summarize OMA in one sentence.",
-		reply: "One gateway for 22+ models — funded by card credits or USDC.",
+		reply: "One gateway for 22+ models — buy credits by card, deposit USDC, or pay per call with x402.",
 	},
 	{
-		model: "minimax-m2.7",
-		modelLabel: "MiniMax 2.7",
+		model: "deepseek-v4-flash",
+		modelLabel: "DeepSeek V4 Flash",
 		prompt: "How do I pay without a card?",
 		reply: "Deposit USDC on Base, or use x402 for agent-native billing.",
 	},
 	{
-		model: "deepseek-v4-pro",
-		modelLabel: "DeepSeek V4 Pro",
+		model: "llama-3.3-70b",
+		modelLabel: "Llama 3.3 70B",
 		prompt: "What's the cheapest chat model?",
-		reply: "MiniMax 2.7 at $0.015 / 1M input tokens. x402 ready.",
+		reply: "Venice budget tier — about $0.015 per 1M input tokens. x402 ready.",
 	},
 ];
 

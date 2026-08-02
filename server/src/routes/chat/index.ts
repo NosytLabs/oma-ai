@@ -43,9 +43,19 @@ import {
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
 
-/** Check if model is a free Gonka model for website chat */
+/**
+ * Check if a model is eligible for the anonymous free website chat path.
+ *
+ * Criteria: the model's provider is `gonka` (the cost-effective tier
+ * routed via OpenBroker). This matches every gonka-routed model
+ * (`zai-org-glm-5-1`, `qwen-3-7-plus`, and any future gonka entry)
+ * without hardcoding ids that drift out of sync with the live catalog.
+ *
+ * Venice-routed models always require auth + credits.
+ */
 function isFreeWebsiteModel(modelId: string): boolean {
-  return modelId === "minimax-m2.7" || modelId === "kimi-k2.6";
+	const def = getModelById(modelId);
+	return !!def && def.provider === "gonka";
 }
 
 const chatSchema = z.object({

@@ -438,26 +438,18 @@ adminRoutes.get("/v1/admin/users", async (c) => {
   const q = c.req.query("q")?.trim();
   try {
     // ?q=<text> — substring search across email, evm_address, user.id, and
-    // account_number (account_number is on the live DB even though it's
-    // not in the current Drizzle schema; we use raw SQL via `sql` template
-    // so the existing Drizzle type stays clean).
+    // account_number. Schema declares accountNumber (see db/schema.ts); the
+    // typed column is preferred over the previous raw-SQL EXISTS fallback.
     let whereClause: ReturnType<typeof and> | undefined;
     if (q) {
       const pattern = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
       const idFilter = q.length > 0 ? sql<string>`${user.id}::text ILIKE ${pattern}` : sql`FALSE`;
-      const accountNumberFilter = sql<boolean>`
-        EXISTS (
-          SELECT 1 FROM "user" u2
-          WHERE u2.id = ${user.id}
-            AND u2.account_number ILIKE ${pattern}
-        )
-      `;
       whereClause = and(
         or(
           ilike(user.email, pattern),
           ilike(user.evmAddress, pattern),
           idFilter,
-          accountNumberFilter,
+          ilike(user.accountNumber, pattern),
         ),
       );
     }

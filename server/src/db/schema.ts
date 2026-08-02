@@ -146,6 +146,12 @@ export const user = pgTable("user", {
   banned: boolean("banned").notNull().default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  // OMA-specific: a memorable 16-digit account number exposed to the
+  // user as their public handle (e.g. for the deposit page memo).
+  // Nullable so existing rows aren't forced to backfill; the raw
+  // admin search at routes/admin/index.ts falls back to ILIKE on
+  // whatever shape the live column actually has.
+  accountNumber: text("account_number"),
   // Slice 6 (admin controls depth): dedicated suspended flag — checked by
   // sessionAuth + bearerAuth (auth/middleware.ts) so suspended accounts
   // are rejected at 403 even if a stale banned flag slips through.
@@ -165,6 +171,7 @@ export const user = pgTable("user", {
     .where(sql`${t.evmAddress} IS NOT NULL`),
   index("idx_user_is_anonymous").on(t.isAnonymous),
   index("idx_user_suspended").on(t.suspended),
+  index("idx_user_account_number").on(t.accountNumber),
 ]);
 
 export const session = pgTable("session", {

@@ -141,7 +141,7 @@ const SOCIAL_LINKS = [
 ];
 
 const CURRENT_YEAR = 2026;
-const LAST_DEPLOY = "2026-07-26";
+const LAST_DEPLOY = "2026-08-02";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";

@@ -152,11 +152,11 @@ describe("HomePage", () => {
 	it("renders the capabilities section as three pillars", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText("Pay with credits")).toBeInTheDocument();
+			expect(screen.getByText("Buy credits by card")).toBeInTheDocument();
+			expect(screen.getByText("Deposit USDC on Base")).toBeInTheDocument();
 			expect(screen.getByText("Agents pay per request")).toBeInTheDocument();
-			expect(screen.getByText("Routing & privacy")).toBeInTheDocument();
-			expect(screen.getByText("Pay with card")).toBeInTheDocument();
-			expect(screen.getByText("USDC on Base deposit")).toBeInTheDocument();
+			expect(screen.getByText("OpenAI-compatible")).toBeInTheDocument();
+			expect(screen.getByText("Live routing + failover")).toBeInTheDocument();
 		});
 	});
 

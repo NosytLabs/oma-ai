@@ -12,6 +12,7 @@ import type { OmaEnv } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
+import { getModelById } from "../inference/models.js";
 
 export const DAILY_LIMIT_ANONYMOUS = 20;
 export const DAILY_LIMIT_REGISTERED = 100;
@@ -88,9 +89,13 @@ export function dailyUsageLimit() {
       .json()
       .catch(() => null);
     const model = body?.model as string | undefined;
-    
-    // Only Gonka models are free on website
-    const isGonkaModel = model === "minimax-m2.7" || model === "kimi-k2.6";
+
+    // Provider-based check (was hardcoded to two non-existent model ids
+    // `minimax-m2.7` and `kimi-k2.6`, which made the daily-limit gate
+    // a no-op against the live catalog). gonka-routed models are the
+    // free tier on /chat.
+    const def = model ? getModelById(model) : null;
+    const isGonkaModel = !!def && def.provider === "gonka";
     if (!isGonkaModel) {
       return next();
     }
