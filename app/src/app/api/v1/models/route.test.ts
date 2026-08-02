@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-describe.skip("GET /api/v1/models", () => {
+describe("GET /api/v1/models", () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		vi.resetModules();
