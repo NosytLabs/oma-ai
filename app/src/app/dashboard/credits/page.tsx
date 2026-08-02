@@ -102,7 +102,7 @@ export default function CreditsPage() {
 			: null;
 
 	const [buyAmount, setBuyAmount] = useState("");
-	const [selectedPayment, setSelectedPayment] = useState<"usdc">("usdc");
+	const [selectedPayment, setSelectedPayment] = useState<"usdc" | "card">("usdc");
 
 	const [autoReload, setAutoReload] = useState(false);
 	const [autoReloadThreshold, setAutoReloadThreshold] = useState("");
@@ -185,11 +185,16 @@ export default function CreditsPage() {
 
 	const handleBuyCredits = () => {
 		if (!buyAmount || parseFloat(buyAmount) <= 0) return;
-		// Credits settle only after on-chain USDC confirmation on /deposit.
-		// The old /v1/credits/purchase call created a pending row and claimed
-		// success without payment — route users to the real deposit flow.
+		// Route to the real deposit flow. USDC settles on-chain; Card routes
+		// to the Polar checkout panel on /deposit?method=card. The old
+		// /v1/credits/purchase call created a pending row and claimed
+		// success without payment — keep going through the deposit UI.
 		const amount = encodeURIComponent(buyAmount);
-		window.location.assign(`/deposit?amount=${amount}`);
+		if (selectedPayment === "card") {
+			window.location.assign(`/deposit?method=card&amount=${amount}`);
+		} else {
+			window.location.assign(`/deposit?amount=${amount}`);
+		}
 	};
 
 	if (!isReady && !isAuthenticated) {
@@ -419,10 +424,10 @@ export default function CreditsPage() {
 							<legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
 								Payment Method
 							</legend>
-							<div className="grid grid-cols-1 gap-3">
+							<div className="grid grid-cols-2 gap-2">
 								<m.button
 									onClick={() => setSelectedPayment("usdc")}
-									className={`flex items-center gap-2 rounded-xl border py-3 px-4 transition-all ${
+									className={`flex items-center gap-2 rounded-xl border py-3 px-3 transition-all ${
 										selectedPayment === "usdc"
 											? "border-accent bg-accent/10 text-accent"
 											: "border-border bg-surface-elevated text-text-muted hover:brightness-125"
@@ -430,8 +435,29 @@ export default function CreditsPage() {
 									whileHover={{ scale: 1.02 }}
 									whileTap={{ scale: 0.98 }}
 								>
-									<div className="h-6 w-6 rounded-full bg-gradient-to-br from-accent to-blue" />
-									USDC
+									<div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-blue text-void text-[10px] font-bold">
+										$
+									</div>
+									<div className="flex flex-col items-start text-left">
+										<span className="text-sm font-semibold">USDC</span>
+										<span className="text-[10px] font-mono uppercase tracking-wider opacity-80">Base</span>
+									</div>
+								</m.button>
+								<m.button
+									onClick={() => setSelectedPayment("card")}
+									className={`flex items-center gap-2 rounded-xl border py-3 px-3 transition-all ${
+										selectedPayment === "card"
+											? "border-accent bg-accent/10 text-accent"
+											: "border-border bg-surface-elevated text-text-muted hover:brightness-125"
+									}`}
+									whileHover={{ scale: 1.02 }}
+									whileTap={{ scale: 0.98 }}
+								>
+									<CreditCard className="h-5 w-5 shrink-0" aria-hidden="true" />
+									<div className="flex flex-col items-start text-left">
+										<span className="text-sm font-semibold">Card</span>
+										<span className="text-[10px] font-mono uppercase tracking-wider opacity-80">via Polar</span>
+									</div>
 								</m.button>
 							</div>
 						</fieldset>
@@ -447,6 +473,11 @@ export default function CreditsPage() {
 								<>
 									<Zap className="h-5 w-5 mr-2" />
 									Enter amount
+								</>
+							) : selectedPayment === "card" ? (
+								<>
+									<CreditCard className="h-5 w-5 mr-2" />
+									Buy ${buyAmount} with card
 								</>
 							) : (
 								<>
