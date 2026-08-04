@@ -696,12 +696,16 @@ function ShellContent({
 								/>
 
 								<div className="mt-2 flex flex-col items-stretch gap-1 px-0.5 sm:mt-2.5 sm:gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-									<p className="hidden sm:block text-[11px] text-text-muted tracking-wide font-mono min-w-0 break-words sm:shrink-0">
-										Enter send · Shift+Enter newline
+									<p
+										id="message-hint"
+										className="text-[11px] text-text-muted tracking-wide font-mono min-w-0 break-words sm:shrink-0"
+									>
+										<span className="hidden sm:inline">Enter send · Shift+Enter newline</span>
+										<span className="sm:hidden">Tap send · hold for newline</span>
 										{!isAuthenticated && (
 											<span className="text-accent/80">
 												{" "}
-												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCount)} free messages left
+												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCount)} free left
 											</span>
 										)}
 									</p>

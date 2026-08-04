@@ -237,25 +237,32 @@ export function ChatErrorBanner({
 		? `/login?next=${encodeURIComponent(pathname)}`
 		: "/login";
 
-	// Auto-countdown for rate limits
+	// Auto-countdown only for transient per-minute rate limits (not daily quota).
 	useEffect(() => {
-		if (classification?.type === "rateLimit" && error) {
-			const retryMatch = error.match(/retry[---_ ]after[:\s]*(\d+)/i);
-			const seconds = retryMatch ? parseInt(retryMatch[1], 10) : 30;
-
-			setCountdown(seconds);
-			const interval = setInterval(() => {
-				setCountdown((prev) => {
-					if (prev === null || prev <= 1) {
-						clearInterval(interval);
-						return null;
-					}
-					return prev - 1;
-				});
-			}, 1000);
-			return () => clearInterval(interval);
+		if (classification?.type !== "rateLimit" || !error) {
+			setCountdown(null);
+			return;
 		}
-	}, [classification?.type, error]);
+		// Daily free quota uses a Sign-in CTA — no retry countdown.
+		if (classification.action?.href === "/login") {
+			setCountdown(null);
+			return;
+		}
+		const retryMatch = error.match(/retry[---_ ]after[:\s]*(\d+)/i);
+		const seconds = retryMatch ? parseInt(retryMatch[1], 10) : 30;
+
+		setCountdown(seconds);
+		const interval = setInterval(() => {
+			setCountdown((prev) => {
+				if (prev === null || prev <= 1) {
+					clearInterval(interval);
+					return null;
+				}
+				return prev - 1;
+			});
+		}, 1000);
+		return () => clearInterval(interval);
+	}, [classification, error]);
 
 	const handleRetry = useCallback(() => {
 		if (classification?.type === "auth" && classification.action?.href) return; // handled by Link
@@ -347,9 +354,44 @@ export function ChatErrorBanner({
 								</Link>
 							)}
 
-						{/* Retry button */}
+						{/* Daily free-quota exhausted → sign in (not a useless RETRY) */}
+						{classification.type === "rateLimit" &&
+							classification.action?.href === "/login" && (
+								<>
+									<Link
+										href={loginHref}
+										prefetch={false}
+										className="
+                  inline-flex items-center gap-1 px-3 py-1.5
+                  bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
+                  hover:bg-accent-hover transition-colors min-h-[32px]
+                "
+									>
+										{classification.action.label || "Sign in"}
+										<ArrowRight className="w-3 h-3" />
+									</Link>
+									<Link
+										href="/deposit"
+										prefetch={false}
+										className="
+                  inline-flex items-center gap-1 px-3 py-1.5
+                  border border-current text-[10px] font-bold uppercase tracking-wider
+                  hover:bg-white/5 transition-colors min-h-[32px]
+                "
+									>
+										Buy credits
+										<ArrowRight className="w-3 h-3" />
+									</Link>
+								</>
+							)}
+
+						{/* Retry — only for recoverable errors (not daily quota) */}
 						{classification.type !== "auth" &&
 							classification.type !== "credits" &&
+							!(
+								classification.type === "rateLimit" &&
+								classification.action?.href === "/login"
+							) &&
 							onRetry && (
 								<button
 									type="button"

@@ -203,6 +203,11 @@ export function useStreamingChat(
 					favicon?: string;
 				}>;
 				if (rawResults.length === 0) {
+					// Configured but empty, or upstream unset (server returns []).
+					// Surface once so WEB mode doesn't feel silently broken.
+					toast.info(
+						"No web results for this query — answering without live sources",
+					);
 					return { results: [], contextMessage: null };
 				}
 				const results: SearchResult[] = rawResults.map((r) => ({

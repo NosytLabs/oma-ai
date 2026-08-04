@@ -240,12 +240,13 @@ export function ChatToolbar({
 				{mediaTabs}
 				{searching && (
 					<div
-						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1 text-[10px] uppercase tracking-widest text-accent"
+						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1.5 text-[10px] uppercase tracking-widest text-accent"
 						role="status"
 						aria-live="polite"
+						aria-label="Searching the web"
 					>
-						<span className="h-1.5 w-1.5 animate-pulse bg-accent" />
-						<span className="hidden xs:inline sm:inline">SEARCH</span>
+						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+						<span>SEARCH</span>
 					</div>
 				)}
 			</div>
@@ -304,15 +305,15 @@ export function ChatToolbar({
 				</button>
 
 				{messageCount > 0 && (
-					<div className="hidden shrink-0 items-center gap-1 sm:flex">
+					<div className="flex shrink-0 items-center gap-1">
 						<button
 							type="button"
 							onClick={exportConversation}
 							disabled={exportStatus === "loading"}
 							data-state={exportStatus}
-							aria-label="Export conversation"
+							aria-label="Export conversation to JSON"
 							className={`${btnBase} focus-ring data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent`}
-							title="Export"
+							title="Export conversation (JSON)"
 						>
 							{exportStatus === "success" ? (
 								<CheckCircle2 className="h-3.5 w-3.5" />
@@ -325,9 +326,9 @@ export function ChatToolbar({
 						<button
 							type="button"
 							onClick={clearChat}
-							aria-label="Clear conversation"
+							aria-label="Clear conversation and local history"
 							className={`${btnBase} hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring`}
-							title="Clear"
+							title="Clear chat (also clears browser local history)"
 						>
 							<Trash2 className="h-3.5 w-3.5" />
 						</button>

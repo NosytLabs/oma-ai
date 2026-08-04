@@ -9,7 +9,7 @@
  * - Toggle switch has a glow effect when active
  * - Input fields have subtle inner shadow for depth
  * - Pricing section uses a glassmorphism card
- * - MCP section has a terminal-style status indicator
+ * - Agents section links OpenCode / Claude Code / Cursor base-URL setup
  */
 
 import { copyToClipboard } from "@/lib/clipboard";
@@ -178,10 +178,13 @@ function SectionDivider() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MCP CONNECTOR — Terminal-style status display
+// AGENTS CONNECTOR — OpenAI-compatible base URL for CLIs / IDEs
 // ═══════════════════════════════════════════════════════════════════
 
-function MCPConnector() {
+const AGENT_ENV_SNIPPET = `export OPENAI_API_KEY="oma_sk_your_key_here"
+export OPENAI_BASE_URL="https://api.oma-ai.com/v1"`;
+
+function AgentsConnector() {
 	const [expanded, setExpanded] = useState(false);
 	const toast = useToast();
 
@@ -193,13 +196,13 @@ function MCPConnector() {
 				aria-expanded={expanded}
 				className="
           flex items-center justify-between w-full text-[10px] font-mono
-          text-text-muted hover:text-text-muted uppercase tracking-wider
+          text-text-muted hover:text-text-secondary uppercase tracking-wider
           transition-colors
         "
 			>
 				<span className="flex items-center gap-2">
-					<span className="w-1.5 h-1.5 rounded-full bg-surface-elevated animate-pulse" />
-					MCP
+					<span className="h-1.5 w-1.5 rounded-full bg-accent/70" aria-hidden="true" />
+					Agents &amp; IDEs
 				</span>
 				{expanded ? (
 					<ChevronUp className="w-3 h-3" />
@@ -219,38 +222,51 @@ function MCPConnector() {
 						<div className="p-3 bg-void/80 border border-border/50 backdrop-blur-sm">
 							<div className="flex items-center gap-2 mb-2">
 								<span className="text-xs font-mono text-text-secondary">
-									TINYFISH
+									OPENAI-COMPATIBLE
 								</span>
-								<span className="text-[10px] px-1.5 py-0.5 font-mono uppercase bg-surface-elevated/50 text-text-muted border border-border/50">
-									NOT DETECTED
+								<span className="text-[10px] px-1.5 py-0.5 font-mono uppercase bg-success/15 text-success border border-success/30">
+									Live
 								</span>
 							</div>
-							<p className="text-[10px] text-text-muted font-mono mb-3">
-								Connect TinyFish MCP to access OMA from Claude Code, Cursor, and
-								other MCP clients.
+							<p className="text-[10px] text-text-muted font-mono mb-3 leading-relaxed">
+								Point OpenCode, Claude Code, Cursor, or any OpenAI client at
+								api.oma-ai.com/v1 with an oma_sk_ key from the dashboard.
 							</p>
 							<button
 								type="button"
 								onClick={() => {
-									void copyToClipboard(
-										"npx -y install-mcp@latest https://agent.tinyfish.ai/mcp --client claude-code",
-									).then((ok) => {
-										if (ok) toast.success("Install command copied!");
+									void copyToClipboard(AGENT_ENV_SNIPPET).then((ok) => {
+										if (ok) toast.success("Env snippet copied");
 										else toast.error("Couldn't copy to clipboard");
 									});
 								}}
 								className="
-                  w-full px-3 py-2 bg-surface border border-border text-text-muted text-xs font-mono
-                  hover:brightness-150 hover:border-accent/30 transition-all duration-200
+                  w-full px-3 py-2 bg-surface border border-border text-text-secondary text-xs font-mono
+                  hover:border-accent/40 hover:text-text transition-all duration-200
                 "
 							>
-								COPY INSTALL CMD
+								COPY ENV SNIPPET
 							</button>
 							<div className="mt-3 p-2 bg-void rounded border border-border/50">
-								<code className="text-[10px] text-text-muted font-mono break-all">
-									npx -y install-mcp@latest https://agent.tinyfish.ai/mcp
-									--client claude-code
+								<code className="text-[10px] text-text-muted font-mono break-all whitespace-pre-wrap">
+									{AGENT_ENV_SNIPPET}
 								</code>
+							</div>
+							<div className="mt-3 flex flex-wrap gap-2">
+								<a
+									href="/docs#integrations"
+									className="text-[10px] font-mono text-accent hover:underline underline-offset-2"
+								>
+									Docs → integrations
+								</a>
+								<a
+									href="/agent-skill.md"
+									className="text-[10px] font-mono text-accent hover:underline underline-offset-2"
+									target="_blank"
+									rel="noreferrer"
+								>
+									Agent skill file
+								</a>
 							</div>
 						</div>
 					</m.div>
@@ -436,7 +452,7 @@ export function SettingsPanel({
 				</div>
 			)}
 
-			<MCPConnector />
+			<AgentsConnector />
 		</div>
 	);
 }

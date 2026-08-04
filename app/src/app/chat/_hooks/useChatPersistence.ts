@@ -139,11 +139,21 @@ export function useChatPersistence({
 	useEffect(() => {
 		if (messages.length > 0) {
 			debouncedSave(messages);
+		} else {
+			// Cleared conversation — drop storage immediately so a pending
+			// debounce / beforeunload flush cannot resurrect the old thread.
+			debouncedSave.cancel();
+			lastMessagesRef.current = [];
+			try {
+				localStorage.removeItem(storageKey);
+			} catch {
+				/* quota / private mode */
+			}
 		}
 		return () => {
 			debouncedSave.cancel();
 		};
-	}, [messages, debouncedSave]);
+	}, [messages, debouncedSave, storageKey]);
 
 	// Flush pending debounced save on tab close / navigation
 	useEffect(() => {

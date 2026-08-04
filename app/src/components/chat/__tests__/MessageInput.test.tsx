@@ -93,4 +93,40 @@ describe("MessageInput", () => {
 		renderInput({ loading: true });
 		expect(screen.getByRole("textbox")).toBeDisabled();
 	});
+
+	it("toggles web search when setWebSearchEnabled is provided", () => {
+		const setWebSearchEnabled = vi.fn();
+		render(
+			<MessageInput
+				input=""
+				setInput={noop}
+				onSubmit={noop}
+				onStop={noop}
+				loading={false}
+				webSearchEnabled={false}
+				setWebSearchEnabled={setWebSearchEnabled}
+			/>,
+		);
+		const web = screen.getByRole("button", { name: /toggle web search/i });
+		expect(web).toHaveAttribute("aria-pressed", "false");
+		fireEvent.click(web);
+		expect(setWebSearchEnabled).toHaveBeenCalledWith(true);
+	});
+
+	it("shows web search as pressed when enabled", () => {
+		render(
+			<MessageInput
+				input=""
+				setInput={noop}
+				onSubmit={noop}
+				onStop={noop}
+				loading={false}
+				webSearchEnabled
+				setWebSearchEnabled={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("button", { name: /toggle web search/i }),
+		).toHaveAttribute("aria-pressed", "true");
+	});
 });

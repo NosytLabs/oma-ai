@@ -110,37 +110,50 @@ const stepVariants = {
 	},
 };
 
-// Typewriter headline
+// Typewriter headline — respects reduced-motion; full string always in a11y tree.
 function TypewriterText({ text, delay = 0 }: { text: string; delay?: number }) {
 	const [displayed, setDisplayed] = useState("");
 	const [showCursor, setShowCursor] = useState(true);
+	const [reduceMotion, setReduceMotion] = useState(false);
 
 	useEffect(() => {
-		const chars = text.split("");
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const sync = () => setReduceMotion(mq.matches);
+		sync();
+		mq.addEventListener("change", sync);
+		return () => mq.removeEventListener("change", sync);
+	}, []);
 
+	useEffect(() => {
+		if (reduceMotion) {
+			setDisplayed(text);
+			setShowCursor(false);
+			return;
+		}
+		const chars = text.split("");
 		const timeout = setTimeout(() => {
 			chars.forEach((_char, i) => {
 				setTimeout(() => {
 					setDisplayed(text.slice(0, i + 1));
-				}, i * 30); // 30ms per character — slightly faster
+				}, i * 18);
 			});
-
-			// Stop cursor after typing completes
-			setTimeout(() => setShowCursor(false), chars.length * 30 + 800);
+			setTimeout(() => setShowCursor(false), chars.length * 18 + 400);
 		}, delay);
-
 		return () => clearTimeout(timeout);
-	}, [text, delay]);
+	}, [text, delay, reduceMotion]);
 
 	return (
 		<span className="inline">
-			{displayed}
-			{showCursor && (
-				<span
-					className="inline-block w-[2px] h-[1em] bg-accent ml-0.5 align-baseline"
-					style={{ animation: "caret-blink 1.1s steps(1) infinite" }}
-				/>
-			)}
+			<span className="sr-only">{text}</span>
+			<span aria-hidden="true">
+				{displayed}
+				{showCursor && (
+					<span
+						className="inline-block w-[2px] h-[1em] bg-accent ml-0.5 align-baseline"
+						style={{ animation: "caret-blink 1.1s steps(1) infinite" }}
+					/>
+				)}
+			</span>
 		</span>
 	);
 }
@@ -257,11 +270,8 @@ export function WelcomeBanner({
 						     users while still answering "what is this?" in one line. ─── */}
 						<div className="flex items-center justify-between gap-3 mb-3">
 							<div className="min-w-0 flex-1">
-								<h2 className="text-[13px] font-mono font-bold text-text uppercase tracking-widest">
-									<TypewriterText
-										text="> WELCOME TO OMA AI PLAYGROUND"
-										delay={100}
-									/>
+								<h2 className="truncate text-[13px] font-mono font-bold text-text uppercase tracking-widest">
+									<TypewriterText text="> WELCOME TO OMA PLAYGROUND" delay={40} />
 								</h2>
 								<m.p
 									initial={{ opacity: 0 }}
@@ -336,7 +346,7 @@ export function WelcomeBanner({
 						>
 							<span className="text-accent font-bold">TIP:</span>{" "}
 							<TypewriterText
-								text="Try GLM 5.1 for reasoning + code, or DeepSeek V4 Flash for fast analysis + research. Both are free — no sign-in required."
+								text="Try MiniMax M2.7 for coding, or Kimi K2.6 for long context. Both are free guest models — no sign-in required."
 								delay={900}
 							/>
 						</m.div>

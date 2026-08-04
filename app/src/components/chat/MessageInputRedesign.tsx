@@ -154,13 +154,7 @@ export const MessageInputRedesigned = forwardRef<
 				className="w-full"
 			>
 			<div
-className="
-             glass relative flex items-end px-2 py-2 rounded-xl
-             transition-[border-color,box-shadow,background-color] duration-200 ease-out
-             focus-within:border-accent/50
-             focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)]
-             chat-scrollbar
-           "
+				className="glass relative flex items-end gap-0.5 rounded-xl px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out focus-within:border-accent/50 focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)] chat-scrollbar"
 				role="group"
 				aria-label="New message"
 				aria-busy={loading}
@@ -182,44 +176,35 @@ className="
 					maxLength={100 * 1024}
 					inputMode="text"
 					enterKeyHint="send"
-className="
-               flex-1 resize-none bg-transparent px-3 md:px-4 py-3
-               text-text-bright placeholder-text-muted
-               outline-none text-[15px] leading-relaxed font-sans
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void
-               min-h-[52px]
-             "
+					className="min-h-[52px] flex-1 resize-none bg-transparent px-3 py-3 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void md:px-4"
 					disabled={loading}
 					style={{ minHeight: "52px", maxHeight: "200px" }}
 					onInput={handleInput}
 				/>
 
 				{setWebSearchEnabled && (
-					<div className="p-1 flex items-center self-end">
+					<div className="flex items-center self-end p-1">
 						<button
 							type="button"
 							onClick={() => setWebSearchEnabled(!webSearchEnabled)}
 							aria-pressed={webSearchEnabled}
 							aria-label="Toggle web search — ground responses in live internet data"
-							title="Web search — ground responses in live internet data"
-							className={`
-                flex h-12 md:h-11 items-center justify-center gap-1.5 rounded-full px-3
-                font-mono text-[10px] font-semibold uppercase tracking-wider
-                transition-all duration-200 min-h-[44px]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                active:translate-y-[1px]
-                ${
-									webSearchEnabled
-										? "bg-surface text-success border border-success/30 shadow-[0_0_16px_-6px_var(--color-success-glow)]"
-										: "bg-void text-text-muted border border-border hover:bg-surface hover:text-text hover:border-accent/40"
-								}
-              `}
+							title={
+								webSearchEnabled
+									? "Web search on — responses use live sources when available"
+									: "Web search off — turn on to ground answers in the internet"
+							}
+							className={`flex h-12 min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 font-mono text-[10px] font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-[1px] md:h-11 ${
+								webSearchEnabled
+									? "border border-success/30 bg-surface text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
+									: "border border-border bg-void text-text-muted hover:border-accent/40 hover:bg-surface hover:text-text"
+							}`}
 						>
 							<Search
 								className={`h-3.5 w-3.5 ${webSearchEnabled ? "text-success" : ""}`}
 								aria-hidden="true"
 							/>
-							<span className="hidden sm:inline">WEB</span>
+							<span>WEB</span>
 						</button>
 					</div>
 				)}

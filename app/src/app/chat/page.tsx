@@ -16,14 +16,20 @@ const ChatPlaygroundShell = nextDynamic(
 		ssr: false,
 		loading: () => (
 			<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-				<div className="flex flex-col items-center gap-5">
+				<div className="flex flex-col items-center gap-4">
 					<ThinkingOrb
 						state="searching"
 						size={64}
 						theme="auto"
 						aria-label="Loading chat"
 					/>
-					<div className="animate-shimmer h-3 w-64 max-w-full rounded-full bg-surface-elevated" />
+					<p className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
+						Loading playground…
+					</p>
+					<div
+						className="animate-shimmer h-1.5 w-48 max-w-full rounded-full bg-surface-elevated"
+						aria-hidden="true"
+					/>
 				</div>
 			</div>
 		),

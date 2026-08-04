@@ -161,8 +161,27 @@ export function usePlaygroundState(
 	const [presPenalty, setPresPenalty] = useState<number>(0);
 	const [stream, setStream] = useState<boolean>(true);
 
-	// --- Web search ---
-	const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
+	// --- Web search (persist preference so WEB mode survives reloads) ---
+	const [webSearchEnabled, setWebSearchEnabledState] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		try {
+			return localStorage.getItem("oma_chat_web_search") === "1";
+		} catch {
+			return false;
+		}
+	});
+	const setWebSearchEnabled = useCallback((v: SetStateAction<boolean>) => {
+		setWebSearchEnabledState((prev) => {
+			const next = typeof v === "function" ? v(prev) : v;
+			try {
+				if (next) localStorage.setItem("oma_chat_web_search", "1");
+				else localStorage.removeItem("oma_chat_web_search");
+			} catch {
+				/* private mode */
+			}
+			return next;
+		});
+	}, []);
 	const [searching, setSearching] = useState<boolean>(false);
 
 	// --- System prompt ---
