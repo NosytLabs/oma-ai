@@ -39,58 +39,67 @@ export function Hero() {
 	const entrance = useHasBeenInView();
 	return (
 		<section className="relative overflow-hidden">
-			{/* Atmosphere */}
+			{/* Atmosphere — terminal void with aperture glow */}
 			<div
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-0 -z-10"
 			>
-				<div className="absolute inset-0 bg-grid opacity-[0.28] mask-radial" />
-				{/* FloatingIcons — subtly drifting crypto symbols in the background */}
-				<FloatingIcons count={6} opacity={0.06} speed={20} />
-				{/* PulseLines — Originkit-inspired sweep. Sits beneath the
-				    radial blobs; reads as ambient depth, never competes with copy. */}
+				<div className="absolute inset-0 bg-grid-animated opacity-[0.22] mask-radial" />
+				<div className="film-grain absolute inset-0 opacity-[0.35]" />
+				<FloatingIcons count={6} opacity={0.05} speed={22} />
 				<PulseLines
-					gap={42}
-					speed={9}
-					lineOpacity={0.06}
-					sweepOpacity={0.32}
-					style={{ opacity: 0.7 }}
+					gap={44}
+					speed={10}
+					lineOpacity={0.05}
+					sweepOpacity={0.28}
+					style={{ opacity: 0.65 }}
 				/>
-				<div className="absolute -left-40 top-8 h-[32rem] w-[32rem] rounded-full bg-accent/[0.09] blur-[140px]" />
-				<div className="absolute right-[-10rem] top-32 h-[26rem] w-[26rem] rounded-full bg-tertiary/[0.07] blur-[140px]" />
-				<div className="absolute bottom-0 left-1/2 h-px w-[min(90%,48rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+				<div className="absolute -left-40 top-4 h-[34rem] w-[34rem] rounded-full bg-accent/[0.10] blur-[150px]" />
+				<div className="absolute right-[-12rem] top-24 h-[28rem] w-[28rem] rounded-full bg-tertiary/[0.06] blur-[150px]" />
+				{/* Horizon rule — gateway threshold */}
+				<div className="absolute bottom-0 left-1/2 h-px w-[min(92%,52rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/45 to-transparent" />
 			</div>
 
-			<div className="container-page min-w-0 pt-4 pb-12 sm:pt-6 sm:pb-16 lg:pt-8 lg:pb-20">
-				<div className="grid min-w-0 grid-cols-1 items-center gap-12 md:grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+			<div className="container-page min-w-0 pt-5 pb-14 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20">
+				<div className="grid min-w-0 grid-cols-1 items-center gap-14 lg:grid-cols-[1.12fr_0.88fr] lg:gap-16 xl:gap-20">
 					{/* Copy column */}
 					<div className="min-w-0 max-w-full">
-						<m.div {...reveal(0, entrance)} className="mb-5">
+						<m.div
+							{...reveal(0, entrance)}
+							className="mb-6 flex flex-wrap items-center gap-3"
+						>
 							<span className="badge">
 								<span
-									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
+									className="relative flex h-1.5 w-1.5"
 									aria-hidden="true"
-								/>
+								>
+									<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40" />
+									<span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+								</span>
 								Buy credits · card · USDC · x402
+							</span>
+							<span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-text-muted sm:inline">
+								v2 · open gateway
 							</span>
 						</m.div>
 
 						<m.h1
 							{...reveal(1, entrance)}
-							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight"
+							className="h1-hero max-w-[18ch] text-text-bright"
 						>
-							{/* Trailing spaces keep screen-reader text from concatenating
-							    block lines into "API.22 curated" / "models.Credits". */}
+							{/* Trailing spaces keep SR from joining block lines. */}
 							<span className="block">One OpenAI-compatible API. </span>
-							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
+							<span className="mt-1 block italic-accent sm:mt-1.5">
 								{MODEL_COUNT} curated models.{" "}
 							</span>
-							<span className="block">Credits, USDC, or x402.</span>
+							<span className="mt-1 block sm:mt-1.5">
+								Credits, USDC, or x402.
+							</span>
 						</m.h1>
 
 						<m.p
 							{...reveal(2, entrance)}
-							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text sm:text-[1.125rem]"
+							className="mt-7 max-w-xl text-[1.0625rem] leading-[1.65] text-text-secondary sm:text-[1.125rem]"
 							style={{ textWrap: "pretty" }}
 						>
 							Route inference through a single endpoint. Fund with card via
@@ -98,23 +107,23 @@ export function Hero() {
 							with x402. Same request shape as OpenAI.
 						</m.p>
 
-						{/* First-timer callout */}
-						<m.div {...reveal(3, entrance)} className="mt-5 max-w-xl">
+						{/* First-timer callout — soft terminal panel */}
+						<m.div {...reveal(3, entrance)} className="mt-6 max-w-xl">
 							<Link
 								href="/getting-started"
-								className="group/new flex items-start gap-3 rounded-xl border border-border bg-surface/40 px-4 py-3 transition-colors hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								className="group/new flex items-start gap-3 rounded-xl border border-border/80 bg-surface/30 px-4 py-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] transition-[border-color,background-color,box-shadow] duration-200 hover:border-accent/35 hover:bg-accent/[0.04] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-accent)_12%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							>
 								<span
-									className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent"
+									className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/25 bg-accent/10 text-accent"
 									aria-hidden="true"
 								>
 									<BookOpen className="h-3.5 w-3.5" />
 								</span>
 								<span className="min-w-0">
-									<span className="block text-[13px] font-semibold text-text-bright">
+									<span className="block text-[13px] font-semibold tracking-tight text-text-bright">
 										New here? Start with free chat, then get an API key.
 									</span>
-									<span className="mt-0.5 block text-[12px] leading-relaxed text-text-secondary">
+									<span className="mt-1 block text-[12px] leading-relaxed text-text-muted">
 										No sign-up for guest chat. Walk through the first request
 										when you are ready.{" "}
 										<span className="text-accent underline-offset-4 group-hover/new:underline">
@@ -127,7 +136,7 @@ export function Hero() {
 
 						<m.div
 							{...reveal(4, entrance)}
-							className="mt-9 flex flex-wrap items-center gap-3"
+							className="mt-10 flex flex-wrap items-center gap-3"
 						>
 							<JuiceButton
 								color="var(--color-accent)"
@@ -143,7 +152,7 @@ export function Hero() {
 								>
 									<Link
 										href="/login"
-										className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px] transition-transform active:scale-[0.97]"
+										className="btn-primary inline-flex h-12 min-w-[10rem] items-center justify-center gap-2 px-6 text-[15px] transition-transform active:scale-[0.97]"
 									>
 										<KeyRound className="h-4 w-4" aria-hidden="true" />
 										<ScrambleText
@@ -173,13 +182,15 @@ export function Hero() {
 								className="group/models inline-flex h-12 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold text-text-secondary transition-colors hover:text-accent"
 							>
 								Live models
-								<span className="text-[11px] font-mono text-text-muted">· {MODEL_COUNT}</span>
+								<span className="font-mono text-[11px] text-text-muted">
+									· {MODEL_COUNT}
+								</span>
 							</Link>
 						</m.div>
 
 						<m.ul
 							{...reveal(5, entrance)}
-							className="mt-9 flex flex-wrap gap-x-4 gap-y-2 w-full text-[12px] font-mono text-text-muted sm:gap-x-5 sm:text-[12.5px]"
+							className="mt-10 flex w-full flex-wrap gap-x-5 gap-y-2.5 font-mono text-[11.5px] text-text-muted sm:text-[12px]"
 						>
 							<li className="inline-flex items-center gap-1.5">
 								<Zap className="h-3 w-3 text-accent" aria-hidden="true" />
@@ -212,7 +223,7 @@ export function Hero() {
 									href="/docs#x402"
 									aria-label="x402 pay-per-request — learn more"
 									title="x402 is the HTTP 402 payment protocol. Agents pay per request with USDC on Base — no API key, no subscription."
-									className="text-text-secondary hover:text-accent transition-colors underline-offset-4 hover:underline"
+									className="text-text-secondary underline-offset-4 transition-colors hover:text-accent hover:underline"
 								>
 									x402 pay-per-request
 								</Link>
@@ -220,13 +231,29 @@ export function Hero() {
 						</m.ul>
 					</div>
 
-					{/* Live request card */}
-					<m.div {...reveal(6, entrance)} className="relative w-full max-w-lg mx-auto lg:max-w-none lg:mx-0">
+					{/* Live request — framed as open gateway aperture */}
+					<m.div
+						{...reveal(6, entrance)}
+						className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none"
+					>
 						<div
 							aria-hidden="true"
-							className="absolute -inset-4 rounded-2xl bg-accent/[0.06] blur-2xl"
+							className="absolute -inset-6 rounded-[1.75rem] bg-accent/[0.07] blur-3xl"
 						/>
+						{/* Corner ticks = open ring / aperture */}
+						<div
+							aria-hidden="true"
+							className="aperture-frame pointer-events-none absolute -inset-3 z-10"
+						>
+							<span className="aperture-corner aperture-tl" />
+							<span className="aperture-corner aperture-tr" />
+							<span className="aperture-corner aperture-bl" />
+							<span className="aperture-corner aperture-br" />
+						</div>
 						<LiveRequestCard className="relative" />
+						<p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted lg:text-left">
+							Live demo · cycles models · no key required
+						</p>
 					</m.div>
 				</div>
 			</div>

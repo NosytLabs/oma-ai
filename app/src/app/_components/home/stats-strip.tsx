@@ -1,15 +1,8 @@
 "use client";
 
 /**
- * StatsStrip — honest product metrics (no vanity counters).
- * The "Models live" figure is fetched from the running API so the label
- * is only ever true. Falls back to the build-time MODEL_COUNT if the
- * backend is unreachable (honest: shows the catalog size, not a lie).
- *
- * Hydration: the first paint always renders the build-time MODEL_COUNT
- * to match the server output. The live count swaps in *after* mount via
- * the `aria-live` element so screen readers announce the update without
- * triggering a React hydration mismatch.
+ * StatsStrip — product facts as a terminal ledger.
+ * Live model count hydrates after mount to avoid SSR mismatch.
  */
 
 import { useEffect, useState } from "react";
@@ -63,10 +56,6 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] = 
 export function StatsStrip() {
 	const liveCount = useLiveModelCount();
 	const stats = STATS.map((s) =>
-		// Only swap the value on the *client* — server renders the
-		// build-time MODEL_COUNT, client swaps to the live number
-		// after the first fetch resolves. Returning the same value
-		// for the initial paint avoids a React hydration mismatch.
 		s.live && liveCount != null
 			? { ...s, value: `${liveCount}`, hint: "live now · Venice + Gonka" }
 			: s,
@@ -74,31 +63,52 @@ export function StatsStrip() {
 	return (
 		<section
 			aria-labelledby="stats-headline"
-			className="relative border-y border-border-subtle bg-[var(--color-panel)]/60 py-10 sm:py-12"
+			className="relative border-y border-border-subtle bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_88%,transparent),color-mix(in_srgb,var(--color-void)_92%,transparent))] py-12 sm:py-14"
 		>
+			<div
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent"
+			/>
 			<div className="container-page">
 				<Reveal>
-					<p
-						id="stats-headline"
-						className="eyebrow text-center text-text-muted mb-8"
-					>
-						Product facts
-					</p>
+					<div className="mb-9 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+						<p
+							id="stats-headline"
+							className="eyebrow text-text-muted"
+						>
+							Product facts
+						</p>
+						<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">
+							ledger · no vanity metrics
+						</p>
+					</div>
 				</Reveal>
-				<ul className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-8">
-					{stats.map((stat) => (
-						<li key={stat.label} className="text-center sm:text-left">
+				<ul className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border/60 lg:grid-cols-4">
+					{stats.map((stat, i) => (
+						<li
+							key={stat.label}
+							className="relative bg-panel/90 px-5 py-6 sm:px-6 sm:py-7"
+						>
+							{/* Ledger index */}
+							<span
+								aria-hidden="true"
+								className="absolute right-4 top-4 font-mono text-[10px] tabular-nums text-text-muted/50"
+							>
+								0{i + 1}
+							</span>
 							<Reveal>
 								<p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-muted">
 									{stat.label}
 								</p>
 								<p
 									aria-live="polite"
-									className="mt-2 text-display text-3xl sm:text-4xl tracking-tight text-text-bright"
+									className="mt-3 font-display text-[2rem] leading-none tracking-tight text-text-bright sm:text-[2.35rem]"
 								>
 									{stat.value}
 								</p>
-								<p className="mt-1.5 text-sm text-text-secondary">{stat.hint}</p>
+								<p className="mt-2.5 max-w-[16ch] text-[13px] leading-snug text-text-secondary">
+									{stat.hint}
+								</p>
 							</Reveal>
 						</li>
 					))}
