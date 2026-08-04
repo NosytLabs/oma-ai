@@ -234,7 +234,7 @@ export function Hero() {
 					{/* Live request — framed as open gateway aperture */}
 					<m.div
 						{...reveal(6, entrance)}
-						className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none"
+						className="relative mx-auto w-full min-w-0 max-w-lg lg:mx-0 lg:max-w-none"
 					>
 						<div
 							aria-hidden="true"
