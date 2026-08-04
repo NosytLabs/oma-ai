@@ -199,7 +199,33 @@ app.route("/", metricsRoutes);
 app.route("/", openapiRoutes);
 
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
-app.use("/api/auth/*", rateLimit({ windowMs: 60_000, maxRequests: 30, keyPrefix: "auth" }));
+// Session *reads* (get-session) are high-frequency: every page mount calls
+// useSession(). A shared 30/min bucket was starving SPA navigation and
+// full-site audits after a few page loads. Split the buckets:
+//   - GET get-session / session: generous (browser polling)
+//   - everything else (magic-link, SIWE, sign-out…): still strict
+const authSessionReadLimit = rateLimit({
+  windowMs: 60_000,
+  maxRequests: 180,
+  keyPrefix: "auth-session",
+});
+const authMutationLimit = rateLimit({
+  windowMs: 60_000,
+  maxRequests: 40,
+  keyPrefix: "auth",
+});
+app.use("/api/auth/*", async (c, next) => {
+  const path = c.req.path;
+  const isSessionRead =
+    c.req.method === "GET" &&
+    (path.includes("get-session") ||
+      path.endsWith("/session") ||
+      path.includes("/get-session"));
+  if (isSessionRead) {
+    return authSessionReadLimit(c, next);
+  }
+  return authMutationLimit(c, next);
+});
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // Agent Auth Protocol discovery document. The plugin serves it under the
