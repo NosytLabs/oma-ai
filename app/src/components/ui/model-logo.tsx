@@ -7,7 +7,7 @@
  * SimpleIcons is MIT-licensed with 3000+ brand icons — all fill-based
  * SVGs that accept color via the URL path (no CSS needed).
  */
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
 // Slugs that have been observed returning 404 from
 // https://cdn.simpleicons.org. Skipped to avoid network noise + console
@@ -228,8 +228,8 @@ export function ModelLogo({
         alt=""
         width={size}
         height={size}
-        className={`inline-block shrink-0 rounded ${className}`}
-        style={{ width: size, height: size }}
+        className={`model-logo-svg inline-block shrink-0 rounded ${className}`}
+        style={{ "--ml-size": `${size}px` } as CSSProperties}
         onError={() => setHasError(true)}
         loading="lazy"
         decoding="async"
@@ -247,8 +247,8 @@ export function ModelLogo({
         alt=""
         width={size}
         height={size}
-        className={`shrink-0 ${className}`}
-        style={{ width: size, height: size }}
+        className={`model-logo-svg shrink-0 ${className}`}
+        style={{ "--ml-size": `${size}px` } as CSSProperties}
         onError={() => setHasError(true)}
         loading="lazy"
       />

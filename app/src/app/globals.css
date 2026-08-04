@@ -372,6 +372,13 @@
 		font-weight: 500;
 	}
 
+	/* model-logo.tsx — sizes SVG logo tiles via an inline CSS variable so the
+   dimensions live in a stylesheet rule, not a tensor of style attributes. */
+	.model-logo-svg {
+		width: var(--ml-size, 20px);
+		height: var(--ml-size, 20px);
+	}
+
 	.h1-hero {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
 		/* Capped lower (5.5rem) so "paid per request" reads on one line at
