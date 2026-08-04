@@ -298,7 +298,7 @@ const spec = {
 			get: {
 				summary: "Web search (chat playground grounding)",
 				description:
-					"Optional auth. TinyFish when configured; otherwise DuckDuckGo HTML / Instant Answer. Always returns { query, results } (empty on total failure).",
+					"Optional auth. DuckDuckGo HTML + Instant Answer (no API key). Returns { query, results, provider: \"duckduckgo\" }; empty results on total failure.",
 				parameters: [
 					{
 						in: "query",

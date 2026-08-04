@@ -157,12 +157,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/search",
 		anchor: "ep-search",
 		title: "Web Search",
-		desc: "Web search used by the chat playground when \"Web Search\" is enabled. Returns zero results when the upstream isn't configured, so the chat can proceed without search context. Auth is optional (anonymous free-chat works).",
+		desc: "DuckDuckGo-backed search for playground WEB mode. No API key. Auth optional (anonymous free-chat works). Empty results if DDG is unreachable so chat still proceeds.",
 		auth: "Optional — Bearer key or session cookie",
 		params: [{ name: "query", type: "string", desc: "Search query (1–500 chars, required)" }],
 		body: undefined,
 		response: `{
   "query": "open model access",
+  "provider": "duckduckgo",
   "results": [
     { "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
   ]

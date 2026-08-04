@@ -162,9 +162,9 @@ const PROTOCOLS: Array<{ name: string; desc: string; href: string }> = [
 		href: "/chat",
 	},
 	{
-		name: "MCP",
-		desc: "Tinyfish MCP server exposes OMA as a tool in Claude Code, Cursor, and any other MCP-compatible client.",
-		href: "/docs#mcp",
+		name: "Web search (DuckDuckGo)",
+		desc: "Playground WEB mode grounds answers with live DuckDuckGo results via GET /v1/search — no extra API key.",
+		href: "/chat",
 	},
 	{
 		name: "x402",
@@ -414,15 +414,15 @@ export default function CapabilitiesPage() {
 									{
 										name: "OMA-AI (Gonka)",
 										privacy: "Aggregator",
-										routes: "Budget chat (Qwen3 235B, GLM 5.1)",
+										routes: "Budget chat (MiniMax M2.7, Kimi K2.6)",
 										fallback: "Auto-reroute to Venice",
 										status: "active",
 									},
 									{
-										name: "Tinyfish",
-										privacy: "Standard",
-										routes: "Web search via MCP",
-										fallback: "Disabled search, chat still works",
+										name: "DuckDuckGo",
+										privacy: "No key / no tracking of OMA queries",
+										routes: "Playground WEB search (/v1/search)",
+										fallback: "Answer without sources if empty",
 										status: "active",
 									},
 								].map((row) => (

@@ -185,8 +185,6 @@ const envSchema = z.object({
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
 
-  TINYFISH_API_KEY: z.string().optional(),
-
   // Weighted load balancing for provider failover (format: "venice:70,surplus:30")
   // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
   // If not set, defaults to sequential fallback (primary provider first, then others in order).

@@ -1,22 +1,19 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { config } from "../config.js";
 import { optionalAuth } from "../auth/middleware.js";
 import { tokenBucket } from "../middleware/rate-limit.js";
 import { logger } from "../lib/logger.js";
 
 /**
- * /v1/search (GET ?query=…) — web search used by the chat playground when
- * "Web Search" is enabled.
+ * /v1/search (GET ?query=…) — web search for the chat playground when WEB
+ * is enabled.
  *
- * Provider order:
- *   1. TinyFish (when TINYFISH_API_KEY is set and the host is reachable)
- *   2. DuckDuckGo HTML (free, no key) — primary reliable fallback
- *   3. DuckDuckGo Instant Answer API — abstract + related topics
+ * Provider: DuckDuckGo only (no API key).
+ *   1. HTML results page (html.duckduckgo.com) — best coverage
+ *   2. Instant Answer API — abstract + related topics if HTML is empty
  *
- * Auth is OPTIONAL: the anonymous free website-chat tier (gonka models,
- * X-OMA-Source: website) must be able to search without an account, exactly
- * like chat completions.
+ * Auth is OPTIONAL so anonymous free website chat can search without an
+ * account, same as free chat completions.
  */
 
 export type SearchResult = {
@@ -33,8 +30,7 @@ const querySchema = z.object({
 
 export const searchRoutes = new Hono();
 
-// Modest burst/rpm so anonymous callers can't burn upstream quota in a tight
-// loop (the route is optionalAuth — no account required, like free chat).
+// Modest anonymous budget so DDG isn't hammered from a single IP.
 searchRoutes.use(
 	"/v1/search",
 	tokenBucket({ refillRate: 2, bucketSize: 10, rpmLimit: 30 }),
@@ -42,6 +38,8 @@ searchRoutes.use(
 
 const MAX_RESULTS = 6;
 const FETCH_TIMEOUT_MS = 8_000;
+const DDG_UA =
+	"OmaSearch/1.0 (+https://oma-ai.com; playground web search; DuckDuckGo)";
 
 function hostnameOf(url: string): string | undefined {
 	try {
@@ -66,7 +64,9 @@ function decodeHtmlEntities(input: string): string {
 }
 
 function stripTags(html: string): string {
-	return decodeHtmlEntities(html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+	return decodeHtmlEntities(
+		html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+	);
 }
 
 async function fetchWithTimeout(
@@ -82,44 +82,29 @@ async function fetchWithTimeout(
 	}
 }
 
-/** TinyFish — optional paid/partner search. Host may be unreachable. */
-export async function searchTinyFish(
-	query: string,
-	apiKey: string,
-): Promise<SearchResult[]> {
-	const resp = await fetchWithTimeout("https://api.tinyfish.io/v1/search", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"X-Api-Key": apiKey,
-		},
-		body: JSON.stringify({ query, max_results: MAX_RESULTS }),
-	});
-	if (!resp.ok) {
-		logger.warn({ status: resp.status }, "[search] tinyfish non-OK");
-		return [];
+/** Deduplicate by normalized URL, keep order, cap at MAX_RESULTS. */
+export function dedupeResults(results: SearchResult[]): SearchResult[] {
+	const seen = new Set<string>();
+	const out: SearchResult[] = [];
+	for (const r of results) {
+		let key = r.url;
+		try {
+			const u = new URL(r.url);
+			key = `${u.hostname}${u.pathname}`.replace(/\/$/, "").toLowerCase();
+		} catch {
+			key = r.url.toLowerCase();
+		}
+		if (seen.has(key)) continue;
+		seen.add(key);
+		out.push(r);
+		if (out.length >= MAX_RESULTS) break;
 	}
-	const data = (await resp.json()) as {
-		results?: Array<{
-			title: string;
-			url: string;
-			snippet: string;
-			site_name?: string;
-			favicon?: string;
-		}>;
-	};
-	return (data.results ?? []).slice(0, MAX_RESULTS).map((r) => ({
-		title: r.title,
-		url: r.url,
-		snippet: r.snippet,
-		...(r.site_name ? { site_name: r.site_name } : {}),
-		...(r.favicon ? { favicon: r.favicon } : {}),
-	}));
+	return out;
 }
 
 /**
- * DuckDuckGo HTML results page. No API key. Parses classic result__a /
- * result__snippet blocks used by html.duckduckgo.com.
+ * DuckDuckGo HTML results. No API key.
+ * Parses classic result__a / result__snippet blocks.
  */
 export async function searchDuckDuckGoHtml(
 	query: string,
@@ -129,8 +114,7 @@ export async function searchDuckDuckGoHtml(
 		method: "GET",
 		headers: {
 			Accept: "text/html",
-			// DDG serves a thinner HTML page to non-browser clients without a UA.
-			"User-Agent": "OmaSearch/1.0 (+https://oma-ai.com; playground web search)",
+			"User-Agent": DDG_UA,
 		},
 	});
 	if (!resp.ok) {
@@ -139,11 +123,13 @@ export async function searchDuckDuckGoHtml(
 	}
 	const html = await resp.text();
 	const results: SearchResult[] = [];
-	// Match each result block: result__a (title+url) then optional result__snippet
 	const blockRe =
 		/<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>([\s\S]*?)(?=<a[^>]*class="[^"]*result__a|<\/div>\s*<\/div>\s*<\/div>|$)/gi;
 	let match: RegExpExecArray | null;
-	while ((match = blockRe.exec(html)) !== null && results.length < MAX_RESULTS) {
+	while (
+		(match = blockRe.exec(html)) !== null &&
+		results.length < MAX_RESULTS * 2
+	) {
 		const rawHref = decodeHtmlEntities(match[1]);
 		const title = stripTags(match[2]);
 		const tail = match[3] ?? "";
@@ -153,7 +139,6 @@ export async function searchDuckDuckGoHtml(
 		const snippet = snipMatch
 			? stripTags(snipMatch[1] || snipMatch[2] || "")
 			: "";
-		// DDG wraps outbound links as //duckduckgo.com/l/?uddg=<encoded>
 		let finalUrl = rawHref;
 		const uddg = rawHref.match(/[?&]uddg=([^&]+)/);
 		if (uddg) {
@@ -174,16 +159,16 @@ export async function searchDuckDuckGoHtml(
 			...(site ? { site_name: site } : {}),
 		});
 	}
-	return results;
+	return dedupeResults(results);
 }
 
-/** DuckDuckGo Instant Answer — abstract + RelatedTopics (no key). */
+/** DuckDuckGo Instant Answer API (no key) — abstract + RelatedTopics. */
 export async function searchDuckDuckGoInstant(
 	query: string,
 ): Promise<SearchResult[]> {
 	const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
 	const resp = await fetchWithTimeout(url, {
-		headers: { Accept: "application/json" },
+		headers: { Accept: "application/json", "User-Agent": DDG_UA },
 	});
 	if (!resp.ok) {
 		logger.warn({ status: resp.status }, "[search] ddg-instant non-OK");
@@ -214,8 +199,7 @@ export async function searchDuckDuckGoInstant(
 		});
 	}
 	const pushTopic = (t?: { Text?: string; FirstURL?: string }) => {
-		if (!t?.Text || !t.FirstURL || out.length >= MAX_RESULTS) return;
-		// Text is often "Name - description"
+		if (!t?.Text || !t.FirstURL || out.length >= MAX_RESULTS * 2) return;
 		const dash = t.Text.indexOf(" - ");
 		const title = dash > 0 ? t.Text.slice(0, dash) : t.Text.slice(0, 80);
 		const snippet = dash > 0 ? t.Text.slice(dash + 3) : t.Text;
@@ -236,35 +220,32 @@ export async function searchDuckDuckGoInstant(
 			pushTopic(topic as { Text?: string; FirstURL?: string });
 		}
 	}
-	return out.slice(0, MAX_RESULTS);
+	return dedupeResults(out);
 }
 
 /**
- * Run providers in priority order until we have results.
+ * DuckDuckGo-only search. HTML first, Instant Answer if empty.
  * Exported for unit tests with mocked fetch.
  */
-export async function runWebSearch(query: string): Promise<SearchResult[]> {
-	if (config.TINYFISH_API_KEY) {
-		try {
-			const tiny = await searchTinyFish(query, config.TINYFISH_API_KEY);
-			if (tiny.length > 0) return tiny;
-		} catch (err) {
-			logger.warn({ err }, "[search] tinyfish failed — falling back");
-		}
-	}
-
+export async function runWebSearch(query: string): Promise<{
+	results: SearchResult[];
+	provider: "duckduckgo";
+}> {
 	try {
 		const html = await searchDuckDuckGoHtml(query);
-		if (html.length > 0) return html;
+		if (html.length > 0) {
+			return { results: html, provider: "duckduckgo" };
+		}
 	} catch (err) {
 		logger.warn({ err }, "[search] ddg-html failed — trying instant answer");
 	}
 
 	try {
-		return await searchDuckDuckGoInstant(query);
+		const instant = await searchDuckDuckGoInstant(query);
+		return { results: instant, provider: "duckduckgo" };
 	} catch (err) {
 		logger.warn({ err }, "[search] ddg-instant failed");
-		return [];
+		return { results: [], provider: "duckduckgo" };
 	}
 }
 
@@ -284,10 +265,12 @@ searchRoutes.get("/v1/search", optionalAuth, async (c) => {
 	const { query } = parsed.data;
 
 	try {
-		const results = await runWebSearch(query);
-		return c.json({ query, results });
+		const { results, provider } = await runWebSearch(query);
+		c.header("X-Search-Provider", provider);
+		return c.json({ query, results, provider });
 	} catch (err) {
 		logger.warn({ err }, "[search] unexpected failure");
-		return c.json({ query, results: [] });
+		c.header("X-Search-Provider", "duckduckgo");
+		return c.json({ query, results: [], provider: "duckduckgo" as const });
 	}
 });

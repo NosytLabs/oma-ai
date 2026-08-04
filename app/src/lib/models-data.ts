@@ -66,8 +66,7 @@ export type Provider =
 	| "Venice"
 	| "Gonka"
 	| "OMA-AI"
-	| "Surplus"
-	| "Tinyfish";
+	| "Surplus";
 
 export interface Model {
 	id: string;
@@ -136,11 +135,6 @@ export const PROVIDER_COLORS: Record<
 		text: "text-warning",
 		border: "border-warning/30",
 	},
-	Tinyfish: {
-		bg: "bg-cyan-500/10",
-		text: "text-cyan-400",
-		border: "border-cyan-500/30",
-	},
 };
 
 /** Map any provider string returned by the live `/v1/models` endpoint
@@ -156,7 +150,6 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 		return "OMA-AI";
 	}
 	if (s.includes("surplus")) return "Surplus";
-	if (s.includes("tinyfish")) return "Tinyfish";
 	if (s.includes("venice")) return "Venice";
 	return "Venice";
 }
@@ -166,7 +159,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["Venice", "Gonka", "OMA-AI", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
+	return (["Venice", "Gonka", "OMA-AI", "Surplus"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }

@@ -59,7 +59,7 @@ export function isFreeChatModel(
 	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
 	const p = typeof provider === "string" ? normalizeProvider(provider) : provider;
 	// OMA-AI (own routing) and Gonka/OpenBroker (ultra-low-cost) models are
-	// free at the chat surface; Venice / Surplus / Tinyfish are paid.
+	// free at the chat surface; Venice / Surplus are paid.
 	return p === "OMA-AI" || p === "Gonka";
 }
 

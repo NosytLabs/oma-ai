@@ -52,7 +52,7 @@ Use live model ids from `GET /v1/models` (e.g. `llama-3.3-70b`, `claude-sonnet-5
 | Image generation | `POST /v1/images/generations` | $0.10 / image |
 | Video generation (async) | `POST /v1/videos/generations` | $0.92 / generation |
 | Video retrieve | `GET /v1/videos/retrieve` | free |
-| Web search (chat playground) | `GET /v1/search?query=…` | Included in chat credits |
+| Web search (DuckDuckGo) | `GET /v1/search?query=…` | Free / no key |
 
 ## Payment rails
 1. **Card credits (Polar)** — Visa, Mastercard, Apple Pay. Three plans: Hobby $10 / 1k credits, Builder $50 / 5k, Scale $250 / 25k. See `/pricing`.
