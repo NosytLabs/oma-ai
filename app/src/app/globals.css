@@ -361,9 +361,12 @@
 
 	/* ---------- Typography components ---------- */
 
+	/* .h1-page is an alias of .display-headline (unified 2026-08 so every
+	   editorial page hero shares one type scale). Collapse usages onto
+	   .display-headline over time and remove this rule. */
 	.h1-page {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(2.75rem, 5.5vw, 5rem);
+		font-size: clamp(2.5rem, 5.5vw, 4.5rem);
 		line-height: 0.98;
 		letter-spacing: -0.035em;
 		font-weight: 500;
