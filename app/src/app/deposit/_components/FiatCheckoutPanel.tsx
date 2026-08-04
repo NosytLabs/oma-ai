@@ -53,14 +53,16 @@ const PLANS: PlanCard[] = CREDIT_PLANS.map((plan, idx) => ({
   highlight: idx === 1
 }));
 
+import Image from 'next/image';
+
 function CardBrandIcons() {
 	return (
 		<>
-			<img src="/payment-methods/visa.svg" alt="Visa" width="24" height="16" className="h-4 w-auto" loading="lazy" />
-			<img src="/payment-methods/mastercard.svg" alt="Mastercard" width="24" height="16" className="h-4 w-auto" loading="lazy" />
-			<img src="/payment-methods/amex.svg" alt="American Express" width="24" height="16" className="h-4 w-auto" loading="lazy" />
-			<img src="/payment-methods/apple-pay.svg" alt="Apple Pay" width="24" height="16" className="h-4 w-auto" loading="lazy" />
-			<img src="/payment-methods/google-pay.svg" alt="Google Pay" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+			<Image src="/payment-methods/visa.svg" alt="Visa" width={24} height={16} className="h-4 w-auto" priority={false} />
+			<Image src="/payment-methods/mastercard.svg" alt="Mastercard" width={24} height={16} className="h-4 w-auto" priority={false} />
+			<Image src="/payment-methods/amex.svg" alt="American Express" width={24} height={16} className="h-4 w-auto" priority={false} />
+			<Image src="/payment-methods/apple-pay.svg" alt="Apple Pay" width={24} height={16} className="h-4 w-auto" priority={false} />
+			<Image src="/payment-methods/google-pay.svg" alt="Google Pay" width={24} height={16} className="h-4 w-auto" priority={false} />
 		</>
 	);
 }

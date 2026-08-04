@@ -33,21 +33,22 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import dynamic from "next/dynamic";
 import { useToast } from "@/components/ui/Toast";
 import { useApiHealth } from "@/components/api-status";
 import { OmaWordmark } from "@/components/ui/oma-logo";
-import { authClient, signIn } from "@/lib/auth-client";
-import {
-	connectWallet,
-	hasWallet,
-	OMA_CHAIN_ID,
-	signSiweMessage,
-} from "@/lib/wallet";
+import { signIn } from "@/lib/auth-client";
+import { Skeleton } from "@/components/ui/Skeleton";
+
+const LazyWalletSignInPanel = dynamic(
+	() => import("./_components/WalletSignInPanel"),
+	{
+		ssr: false,
+		loading: () => <Skeleton className="h-40 w-full" />,
+	},
+);
 
 type Method = "magic" | "wallet";
-
-const SIWE_DOMAIN =
-	typeof window !== "undefined" ? window.location.host : "oma-ai.com";
 
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
@@ -121,64 +122,6 @@ function LoginInner() {
 		},
 		[email, next, toast, handleError],
 	);
-
-	const handleSiwe = useCallback(async () => {
-		setError(null);
-		if (!hasWallet()) {
-			setError(
-				"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet, then reload.",
-			);
-			return;
-		}
-		setSubmitting(true);
-		try {
-			// 1. Prompt the user to connect a wallet and get their address.
-			const wallet = await connectWallet();
-			if (wallet.chainId !== OMA_CHAIN_ID) {
-				throw new Error(
-					`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
-				);
-			}
-
-			// 2. Ask Better Auth for a server-issued nonce for this wallet.
-			const nonceResp = await authClient.siwe.nonce({
-				walletAddress: wallet.address,
-				chainId: wallet.chainId,
-			});
-			if (!nonceResp.data?.nonce) {
-				throw new Error(
-					nonceResp.error?.message ?? "Failed to get SIWE nonce from server",
-				);
-			}
-
-			// 3. Build and sign the EIP-4361 message with the user's wallet.
-			const { message, signature } = await signSiweMessage(
-				wallet.address,
-				nonceResp.data.nonce,
-				SIWE_DOMAIN,
-			);
-
-			// 4. Hand the signed payload back to Better Auth for verification.
-			//    The server's verifyMessage() callback (viem.recoverMessage)
-			//    runs; on success a session cookie is set on the response.
-			const verifyResp = await authClient.siwe.verify({
-				message,
-				signature,
-				walletAddress: wallet.address,
-				chainId: wallet.chainId,
-			});
-			if (verifyResp.error) {
-				throw new Error(verifyResp.error.message ?? "Signature verification failed");
-			}
-
-			toast.success("Wallet connected");
-			router.replace(next);
-		} catch (err) {
-			handleError(err, "Wallet sign-in failed");
-		} finally {
-			setSubmitting(false);
-		}
-	}, [next, router, toast, handleError]);
 
 	return (
 		<div className="page-shell relative flex flex-col items-center justify-center px-4 py-8">
@@ -308,33 +251,16 @@ function LoginInner() {
 							)}
 
 							{method === "wallet" && (
-								<div
-									role="tabpanel"
-									id="panel-wallet"
-									aria-labelledby="tab-wallet"
-									className="space-y-3"
-								>
-									<p className="text-sm text-text-secondary">
-										Sign in with your Base mainnet wallet via SIWE
-										(EIP-4361). No transaction — just a signature.
-									</p>
-									<button
-										type="button"
-										onClick={() => void handleSiwe()}
-										disabled={submitting || offline}
-										className="btn-primary min-h-12 w-full rounded-lg disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										{submitting ? (
-											<>
-												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-												Connecting…
-											</>
-										) : (
-											"Connect wallet"
-										)}
-									</button>
-							</div>
-						)}
+								<LazyWalletSignInPanel
+									next={next}
+									offline={offline}
+									submitting={submitting}
+									setSubmitting={setSubmitting}
+									onError={handleError}
+									onSuccess={(msg) => toast.success(msg)}
+									onRedirect={(url) => router.replace(url)}
+								/>
+							)}
 
 					</div>
 					</div>

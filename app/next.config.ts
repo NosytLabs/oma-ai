@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 import { SITE_REDIRECTS } from "./src/lib/site-redirects";
+import nextBundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = nextBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
 	devIndicators: false,
@@ -183,4 +188,11 @@ function generateContentSecurityPolicy(): string {
 	return directives.join("; ");
 }
 
-export default nextConfig;
+nextConfig.experimental = {
+  serverActions: {},
+  optimizeCss: {},
+};
+
+// Note: Use `npx @next/codemod@latest next-experimental-turbo-to-turbopack .` and reference Vercel docs to migrate to turbopack advanced mode if needed.
+
+module.exports = withBundleAnalyzer(nextConfig);

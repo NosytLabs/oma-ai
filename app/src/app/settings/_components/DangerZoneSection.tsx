@@ -16,8 +16,22 @@ export function DangerZoneSection({
 	deleting,
 }: DangerZoneSectionProps) {
 	const toast = useToast();
-	const [showConfirm, setShowConfirm] = useState(false);
-	const [confirmText, setConfirmText] = useState("");
+	const [deleted, setDeleted] = useState(false);
+const [showConfirm, setShowConfirm] = useState(false);
+const [confirmText, setConfirmText] = useState("");
+	const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
+// [opencode] Removed unused: undoing, setUndoing (leftover from old undo pattern)
+
+	const handleSoftDelete = async () => {
+		setDeleted(true);
+		const timeout = setTimeout(async () => {
+			await onDeleteAccount();
+			// hard redirect happens in parent
+		}, 60000); // 60s undo window
+		setUndoTimeout(timeout);
+		toast.success("Account scheduled for deletion. Undo below within 60s.");
+	};
+// opencode patch: removed duplicate toast and useState hooks (already declared above)
 
 	const [clearing, setClearing] = useState(false);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -138,17 +152,30 @@ export function DangerZoneSection({
 
 						<AnimatePresence mode="wait">
 							{!showConfirm ? (
-								<m.button
-									initial={{ opacity: 0 }}
-									animate={{ opacity: 1 }}
-									exit={{ opacity: 0 }}
-									whileTap={{ scale: 0.98 }}
-									onClick={() => setShowConfirm(true)}
-									className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse transition-all hover:bg-error/90"
-								>
-									<Trash2 className="h-3.5 w-3.5" />
-									Delete account
-								</m.button>
+								<>
+									<m.button
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										exit={{ opacity: 0 }}
+										whileTap={{ scale: 0.98 }}
+										onClick={handleSoftDelete}
+										className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse transition-all hover:bg-error/90"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+										Delete account
+									</m.button>
+									{deleted && (
+										<button
+											onClick={() => {
+											if (undoTimeout) clearTimeout(undoTimeout);
+											setDeleted(false);
+										}}
+										className="ml-4 p-2 rounded bg-surface/80 border text-error font-semibold transition-all hover:bg-surface/100"
+										>
+											Undo delete
+										</button>
+									)}
+								</>
 							) : (
 								<m.div
 									initial={{ opacity: 0, scale: 0.95 }}

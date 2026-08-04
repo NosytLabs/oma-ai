@@ -246,8 +246,7 @@ polarRoutes.post("/api/webhook/polar", async (c) => {
     {
       method: "POST",
       headers: Object.fromEntries(req.headers.entries()),
-      body: req.body ?? req.stream,
-      duplex: req.body ? "half" : undefined,
+      body: req.body ?? undefined,
     },
   );
   const body = await res.text();
