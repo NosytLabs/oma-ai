@@ -65,7 +65,7 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "OMA-AI" | "Both" | "Surplus" | "Tinyfish";
+	provider: "Venice" | "Gonka" | "OMA-AI" | "Both" | "Surplus" | "Tinyfish";
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;

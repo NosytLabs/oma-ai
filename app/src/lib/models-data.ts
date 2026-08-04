@@ -64,6 +64,7 @@ export const MODALITY_ORDER: Modality[] = [
 ];
 export type Provider =
 	| "Venice"
+	| "Gonka"
 	| "OMA-AI"
 	| "Surplus"
 	| "Tinyfish";
@@ -113,9 +114,17 @@ export const PROVIDER_COLORS: Record<
 	{ bg: string; text: string; border: string }
 > = {
 	Venice: {
-		bg: "bg-violet/20",
-		text: "text-violet",
-		border: "border-violet/30",
+		// Keep the provider badge readable on the dark panel at small sizes;
+		// the violet border preserves the provider distinction without relying
+		// on low-contrast violet text over a translucent violet fill.
+		bg: "bg-surface",
+		text: "text-text-bright",
+		border: "border-violet/50",
+	},
+	Gonka: {
+		bg: "bg-emerald-500/10",
+		text: "text-emerald-400",
+		border: "border-emerald-500/30",
 	},
 	"OMA-AI": {
 		bg: "bg-accent/10",
@@ -139,15 +148,11 @@ export const PROVIDER_COLORS: Record<
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "Venice";
-	// Catalog + UI labels: "OMA-AI", "oma", gonka/OpenBroker upstream names
-	if (
-		s.includes("gonka") ||
-		s.includes("openbroker") ||
-		s.includes("obk") ||
-		s === "oma-ai" ||
-		s === "oma" ||
-		s.includes("oma-ai")
-	) {
+	// Catalog + UI labels: "Gonka"/"OpenBroker" upstream names
+	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) {
+		return "Gonka";
+	}
+	if (s === "oma-ai" || s === "oma" || s.includes("oma-ai")) {
 		return "OMA-AI";
 	}
 	if (s.includes("surplus")) return "Surplus";
@@ -161,7 +166,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["Venice", "OMA-AI", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
+	return (["Venice", "Gonka", "OMA-AI", "Surplus", "Tinyfish"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }
@@ -384,8 +389,9 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 /**
  * Interface matching the OpenAI-style models returned by GET /v1/models.
- * The live API returns 22 curated models with pricing, category, and context_length
- * but NOT displayName, description, or capabilities — those are derived here.
+ * The live API returns the curated chat catalog (23 models — see
+ * `MODEL_COUNT`) with pricing, category, and context_length but NOT
+ * displayName, description, or capabilities — those are derived here.
  */
 interface ApiModelEntry {
 	id: string;
@@ -501,7 +507,7 @@ const tier: Tier =
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
  * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
- * curated server catalog (24 models) — keep in sync with
+ * curated server catalog (23 models) — keep in sync with
  * server/src/inference/models.ts.
  */
 const FALLBACK_CATALOG: RawCatalog = {
@@ -656,24 +662,85 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.75,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
+		"mercury-2": {
+			id: "mercury-2",
+			displayName: "Mercury 2",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 8192,
+			inputPricePer1M: 0.3125,
+			outputPricePer1M: 0.9375,
+			capabilities: ["chat", "fast"],
+		},
+		"zai-org-glm-5-1": {
+			id: "zai-org-glm-5-1",
+			displayName: "GLM 5.1",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 16384,
+			inputPricePer1M: 1.54,
+			outputPricePer1M: 4.84,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"qwen3-coder-480b-a35b-instruct-turbo": {
+			id: "qwen3-coder-480b-a35b-instruct-turbo",
+			displayName: "Qwen3 Coder 480B",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 16384,
+			inputPricePer1M: 0.35,
+			outputPricePer1M: 1.5,
+			capabilities: ["chat", "coding", "tools"],
+		},
+		"qwen-3-7-plus": {
+			id: "qwen-3-7-plus",
+			displayName: "Qwen 3.7 Plus",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 16384,
+			inputPricePer1M: 0.5,
+			outputPricePer1M: 2.0,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"xiaomi-mimo-v2-5": {
+			id: "xiaomi-mimo-v2-5",
+			displayName: "Xiaomi MiMo V2.5",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 16384,
+			inputPricePer1M: 0.14,
+			outputPricePer1M: 0.28,
+			capabilities: ["chat", "reasoning", "fast"],
+		},
+		// ── Gonka (OpenBroker) ───────────────────────────────────────────
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
-			displayName: "MiniMax 2.7",
-			provider: "OMA-AI",
+			displayName: "MiniMax M2.7",
+			provider: "Gonka",
 			category: "budget",
-			maxTokens: 128000,
+			maxTokens: 8192,
 			inputPricePer1M: 0.015,
 			outputPricePer1M: 0.06,
-			capabilities: ["chat", "tools"],
+			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"kimi-k2.6": {
 			id: "kimi-k2.6",
 			displayName: "Kimi K2.6",
-			provider: "OMA-AI",
+			provider: "Gonka",
 			category: "mid",
-			maxTokens: 128000,
+			maxTokens: 8192,
 			inputPricePer1M: 0.024,
 			outputPricePer1M: 0.096,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"glm-5.2-fp8": {
+			id: "glm-5.2-fp8",
+			displayName: "GLM 5.2 FP8",
+			provider: "Gonka",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 0.03,
+			outputPricePer1M: 0.12,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 	},
@@ -682,8 +749,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 /**
  * Synchronous `MODELS` array for SSR metadata and the few places that
  * genuinely can't go async (Next.js `generateStaticParams`, page
- * metadata). This is the *fallback* catalog — the live catalog
- * (89 chat + 5 video = 94) is loaded lazily via `loadModels()`.
+ * metadata). This is the *fallback* catalog — the full curated catalog
+ * (23 chat models) is loaded lazily via `loadModels()`.
  */
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
@@ -708,7 +775,9 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 22 curated chat models (20 Venice + 2 Gonka)
-// as of 2026-07-31. The SSR fallback catalog (`MODELS`) below is a
-// hand-picked subset used for build-time metadata only.
-export const MODEL_COUNT = 22;
+// `GET /v1/models` count — 23 curated chat models (20 Venice + 3 Gonka)
+// as of 2026-08-03. Keep in sync with `server/src/inference/models.ts`
+// defaultCatalog() (VENICE_MODELS.length + GONKA_MODELS.length).
+// The SSR fallback catalog (`MODELS`) below mirrors the full curated
+// catalog for build-time metadata.
+export const MODEL_COUNT = 23;
