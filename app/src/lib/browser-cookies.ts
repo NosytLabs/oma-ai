@@ -23,7 +23,7 @@ const COOKIE_NAMES = [
   "oma_api_key",
 ];
 
-function getBrowserAuthToken(): string | null {
+function _getBrowserAuthToken(): string | null {
   if (typeof document === "undefined") return null;
   const all = document.cookie.split("; ");
   for (const name of COOKIE_NAMES) {

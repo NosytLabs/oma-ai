@@ -6,7 +6,7 @@ export function usdToCredits(usd: number): number {
 }
 
 /** Returns USD equivalent for a given credits amount */
-function creditsToUsd(credits: number): number {
+function _creditsToUsd(credits: number): number {
   return credits / 100;
 }
 
