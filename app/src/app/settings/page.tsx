@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { api, type User } from "@/lib/api";
@@ -113,7 +113,7 @@ function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	return null;
 }
 
-export default function SettingsPage() {
+function SettingsPageContent() {
 	const { isAuthenticated, isDemo, isReady, evmAddress, signOut } = useAuth();
 	const hasRealSession = isAuthenticated && !isDemo;
 	const router = useRouter();
@@ -296,7 +296,7 @@ export default function SettingsPage() {
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
-					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-all hover:border-error/40 hover:text-error disabled:opacity-40"
+					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,color,opacity] duration-150 ease-out hover:border-error/40 hover:text-error active:scale-[0.97] disabled:opacity-40"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
 				</button>
@@ -324,89 +324,89 @@ export default function SettingsPage() {
 				)}
 			</AnimatePresence>
 
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8 min-w-0">
-				<div className="relative lg:block">
+			<div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8">
+				<div className="relative min-w-0 lg:block">
 					{/* Mobile scroll-edge fades so users know to swipe. */}
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-bg to-transparent lg:hidden"
+						className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-bg to-transparent lg:hidden"
 					/>
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-bg to-transparent lg:hidden"
+						className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-bg to-transparent lg:hidden"
 					/>
-				<div
-					role="tablist"
-					aria-label="Settings sections"
-					className="flex w-full min-w-0 flex-row gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-col lg:overflow-visible lg:pb-0"
-				>
-					{TABS.map((tab) => {
-						const Icon = tab.icon;
-						const isActive = activeTab === tab.id;
-						const isDanger = tab.id === "danger";
-						return (
-							<button
-								type="button"
-								key={tab.id}
-								id={`tab-${tab.id}`}
-								role="tab"
-								aria-selected={isActive}
-								aria-controls={`panel-${tab.id}`}
-								onClick={() => {
-									setActiveTab(tab.id);
-									if (typeof window !== "undefined") {
-										const url = new URL(window.location.href);
-										url.searchParams.set("tab", tab.id);
-										window.history.replaceState({}, "", url.toString());
-									}
-								}}
-								className={`group flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 text-center text-[11px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
-									isDanger
-										? isActive
-											? "border-error/40 bg-error/10 text-error"
-											: "border-transparent text-text-secondary hover:border-error/30 hover:bg-error/5 hover:text-error"
-										: isActive
-											? "border-accent/30 bg-accent/10 text-text-bright"
-											: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
-								}`}
-							>
-								<Icon
-									className={`h-4 w-4 shrink-0 ${
+					<div
+						role="tablist"
+						aria-label="Settings sections"
+						className="flex w-full min-w-0 flex-row gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-col lg:overflow-visible lg:pb-0"
+					>
+						{TABS.map((tab) => {
+							const Icon = tab.icon;
+							const isActive = activeTab === tab.id;
+							const isDanger = tab.id === "danger";
+							return (
+								<button
+									type="button"
+									key={tab.id}
+									id={`tab-${tab.id}`}
+									role="tab"
+									aria-selected={isActive}
+									aria-controls={`panel-${tab.id}`}
+									onClick={() => {
+										setActiveTab(tab.id);
+										if (typeof window !== "undefined") {
+											const url = new URL(window.location.href);
+											url.searchParams.set("tab", tab.id);
+											window.history.replaceState({}, "", url.toString());
+										}
+									}}
+									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
 										isDanger
-											? "text-error"
+											? isActive
+												? "border-error/40 bg-error/10 text-error"
+												: "border-transparent text-text-secondary hover:border-error/30 hover:bg-error/5 hover:text-error"
 											: isActive
-												? "text-accent"
-												: "text-text-muted"
+												? "border-accent/30 bg-accent/10 text-text-bright"
+												: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
 									}`}
-									aria-hidden="true"
-								/>
-								<div className="min-w-0">
-									<div className="truncate font-medium lg:hidden">
-										{MOBILE_TAB_LABEL[tab.id]}
+								>
+									<Icon
+										className={`h-4 w-4 shrink-0 ${
+											isDanger
+												? "text-error"
+												: isActive
+													? "text-accent"
+													: "text-text-muted"
+										}`}
+										aria-hidden="true"
+									/>
+									<div className="min-w-0">
+										<div className="truncate font-medium lg:hidden">
+											{MOBILE_TAB_LABEL[tab.id]}
+										</div>
+										<div className="hidden items-center gap-1.5 lg:flex">
+											<span className="font-medium">{tab.label}</span>
+											{tab.badge && (
+												<span
+													className={`shrink-0 rounded-sm border px-1 py-px text-[9px] font-bold uppercase tracking-wider ${
+														isDanger
+															? "border-error/40 bg-error/10 text-error"
+															: "border-border bg-surface text-text-muted"
+													}`}
+													aria-hidden="true"
+												>
+													{tab.badge}
+												</span>
+											)}
+										</div>
+										<div className="hidden truncate text-[11px] text-text-muted lg:block">
+											{tab.description}
+										</div>
 									</div>
-									<div className="hidden items-center gap-1.5 lg:flex">
-										<span className="font-medium">{tab.label}</span>
-										{tab.badge && (
-											<span
-												className={`shrink-0 rounded-sm border px-1 py-px text-[9px] font-bold uppercase tracking-wider ${
-													isDanger
-														? "border-error/40 bg-error/10 text-error"
-														: "border-border bg-surface text-text-muted"
-												}`}
-												aria-hidden="true"
-											>
-												{tab.badge}
-											</span>
-										)}
-									</div>
-									<div className="hidden truncate text-[11px] text-text-muted lg:block">
-										{tab.description}
-									</div>
-								</div>
-							</button>
-						);
-					})}
-				</div>
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
 				<div className="min-w-0">
@@ -442,7 +442,10 @@ export default function SettingsPage() {
 								)}
 								{activeTab === "appearance" && <AppearanceSection />}
 								{activeTab === "sessions" && (
-									<SessionsSection sessions={sessions} />
+									<SessionsSection
+										sessions={sessions}
+										onSignOutCurrent={handleLogout}
+									/>
 								)}
 								{activeTab === "privacy" && <PrivacySection user={user} />}
 								{activeTab === "danger" && (
@@ -457,5 +460,35 @@ export default function SettingsPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function SettingsFallback() {
+	return (
+		<div className="mx-auto max-w-5xl px-4 py-10" aria-busy="true" aria-label="Loading settings">
+			<div className="space-y-3">
+				<Skeleton className="h-7 w-36" />
+				<Skeleton className="h-4 w-48" />
+				<div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+					<div className="flex gap-2 lg:flex-col">
+						<Skeleton className="h-12 w-full" />
+						<Skeleton className="h-12 w-full" />
+						<Skeleton className="h-12 w-full" />
+					</div>
+					<div className="space-y-3">
+						<Skeleton className="h-6 w-32" />
+						<Skeleton className="h-24 w-full" />
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export default function SettingsPage() {
+	return (
+		<Suspense fallback={<SettingsFallback />}>
+			<SettingsPageContent />
+		</Suspense>
 	);
 }

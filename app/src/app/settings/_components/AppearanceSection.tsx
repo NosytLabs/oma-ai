@@ -65,9 +65,7 @@ export function AppearanceSection() {
 									aria-hidden="true"
 									className="h-9 w-9 shrink-0 rounded-full border border-border"
 									style={{
-										background: t.id === "emerald"
-											? "linear-gradient(135deg, var(--color-accent), transparent)"
-											: `radial-gradient(circle at 50% 50%, ${THEME_SWATCH[t.id as Theme]} 0%, transparent 70%)`,
+										background: `radial-gradient(circle at 40% 35%, ${THEME_SWATCH[t.id as Theme]} 0%, ${THEME_SWATCH[t.id as Theme]}66 45%, transparent 72%)`,
 										boxShadow: isActive
 											? `0 0 18px ${THEME_SWATCH[t.id as Theme]}55`
 											: undefined,
@@ -102,3 +100,6 @@ const THEME_SWATCH: Record<Theme, string> = {
 	mono: "#e8e8e6",
 	synth: "#a78bfa",
 };
+
+// Keep swatch gradients as solid hex — CSS vars do not resolve inside
+// inline `style` background strings the same way as Tailwind utilities.

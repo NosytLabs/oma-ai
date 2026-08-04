@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Fingerprint, Shield, Wallet } from "lucide-react";
+import { useState } from "react";
 import type { User } from "@/lib/api";
 import { formatDateTime, formatAddress } from "@/lib/utils";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
@@ -25,6 +26,15 @@ export function ProfileSection({
 	evmAddress,
 }: ProfileSectionProps) {
 	const linkedWallet = evmAddress ?? user?.evmAddress ?? null;
+	const [soundOn, setSoundOn] = useState(() => {
+		if (typeof window === "undefined") return true;
+		return isSoundEnabled();
+	});
+
+	const handleSoundToggle = (checked: boolean) => {
+		setSoundEnabled(checked);
+		setSoundOn(checked);
+	};
 
 	return (
 		<div>
@@ -59,14 +69,16 @@ export function ProfileSection({
 						<Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Authentication
 					</div>
-					<div className="text-sm text-text">{authMethodLabel(user, linkedWallet)}</div>
+					<div className="text-sm text-text">
+						{authMethodLabel(user, linkedWallet)}
+					</div>
 				</div>
 			</div>
 
 			{linkedWallet && (
 				<div className="mt-4 rounded-lg border border-border bg-void p-4">
-					<div className="flex items-center justify-between gap-4">
-						<div>
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div className="min-w-0">
 							<div className="flex items-center gap-2 text-sm font-medium text-text-bright">
 								<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
 								Linked wallet
@@ -75,7 +87,7 @@ export function ProfileSection({
 								SIWE (EIP-4361) on Base mainnet. Funds stay in your wallet.
 							</div>
 						</div>
-						<div className="font-mono text-xs text-accent">
+						<div className="shrink-0 font-mono text-xs text-accent">
 							{formatAddress(linkedWallet)}
 						</div>
 					</div>
@@ -84,10 +96,8 @@ export function ProfileSection({
 
 			<div className="mt-6 rounded-lg border border-border bg-void p-4">
 				<div className="flex items-center justify-between gap-4">
-					<div>
-						<div className="text-sm font-medium text-text-bright">
-							Sound cues
-						</div>
+					<div className="min-w-0">
+						<div className="text-sm font-medium text-text-bright">Sound cues</div>
 						<div className="mt-0.5 text-xs text-text-muted">
 							Subtle chime when a task succeeds or fails.
 						</div>
@@ -96,8 +106,8 @@ export function ProfileSection({
 						<input
 							type="checkbox"
 							className="peer sr-only"
-							checked={isSoundEnabled()}
-							onChange={(e) => setSoundEnabled(e.target.checked)}
+							checked={soundOn}
+							onChange={(e) => handleSoundToggle(e.target.checked)}
 							aria-label="Toggle subtle success and failure sound cues"
 						/>
 						<div className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
