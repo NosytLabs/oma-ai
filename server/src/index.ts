@@ -232,8 +232,27 @@ app.route("/", x402Routes);
 app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
 
-// Polar.sh checkout + webhook (no auth on /webhooks/polar; signature-verified).
+// Polar.sh checkout + webhook (no auth on webhook routes; signature-verified).
+// Dual-mount per polar-integration skill: Polar dashboard may be pointed at
+// either path by operators, so both must fire the same handler.
 app.route("/", polarRoutes);
+polarRoutes.post("/api/webhook/polar", async (c) => {
+  // Re-use the same signature-verified handler body by forwarding to the
+  // canonical path. Hono routes share context; this keeps the handler logic
+  // in one place without duplicating imports.
+  const req = c.req.raw;
+  const res = await fetch(
+    `${new URL(req.url).origin}/webhooks/polar`,
+    {
+      method: "POST",
+      headers: Object.fromEntries(req.headers.entries()),
+      body: req.body ?? req.stream,
+      duplex: req.body ? "half" : undefined,
+    },
+  );
+  const body = await res.text();
+  return new Response(body, { status: res.status, headers: { "content-type": res.headers.get("content-type") ?? "application/json" } });
+});
 
 // Admin / operator dashboard endpoints.
 app.route("/", adminRoutes);

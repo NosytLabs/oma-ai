@@ -4,6 +4,8 @@
  * Endpoints:
  *   POST /v1/checkout           — create a Polar checkout session
  *   POST /webhooks/polar        — handle Polar webhook events
+ *   POST /api/webhook/polar     — alternate webhook path (Polar dashboard
+ *                                 may be pointed at either URL)
  *
  * The checkout route creates a Polar checkout for the authenticated
  * user based on the chosen plan. On `order.paid` (via the webhook),
@@ -26,7 +28,7 @@ import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Polar } from "@polar-sh/sdk";
 import { sql } from "drizzle-orm";
-import type { OmaEnv } from "../types.js";
+import type { Context, OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { db } from "../db/client.js";
@@ -254,11 +256,11 @@ async function drainUser(userId: string, credits: number): Promise<void> {
 }
 
 /**
- * POST /webhooks/polar
- * Body: raw JSON of the Polar webhook event. Headers carry the
- * signature.
+ * Shared Polar webhook handler — mounted at both /webhooks/polar and
+ * /api/webhook/polar so operators can point the Polar dashboard at either
+ * URL without breaking delivery.
  */
-polarRoutes.post("/webhooks/polar", async (c) => {
+async function polarWebhookHandler(c: Context<OmaEnv>) {
 	if (!config.POLAR_WEBHOOK_SECRET) {
 		return c.json({ error: "webhook secret not configured" }, 503);
 	}
@@ -295,7 +297,12 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 			processed: 0,
 		});
 	} catch (err) {
-		if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "23505") {
+		if (
+			err &&
+			typeof err === "object" &&
+			"code" in err &&
+			(err as { code?: string }).code === "23505"
+		) {
 			logPaymentEvent({
 				kind: "polar",
 				outcome: "double_spend_blocked",
@@ -312,12 +319,13 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 	const metadata = event.data?.metadata ?? {};
 	const userId = typeof metadata.userId === "string" ? metadata.userId : null;
 	const creditsRaw = metadata.credits;
-	const credits = typeof creditsRaw === "number" && Number.isSafeInteger(creditsRaw) && creditsRaw > 0
-		? creditsRaw
-		: null;
+	const credits =
+		typeof creditsRaw === "number" &&
+		Number.isSafeInteger(creditsRaw) &&
+		creditsRaw > 0
+			? creditsRaw
+			: null;
 
-	// One-time credit purchases. Metadata set on the checkout is copied to
-	// the resulting order, so we can credit the exact amount the user paid for.
 	if (event.type === "order.paid") {
 		if (userId && credits) {
 			await creditUser(userId, credits, event.type);
@@ -336,9 +344,17 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 				"[polar] order.refunded missing userId or credits; check product/metadata",
 			);
 		}
-	} else if (event.type === "subscription.created" || event.type === "subscription.active" || event.type === "subscription.updated") {
+	} else if (
+		event.type === "subscription.created" ||
+		event.type === "subscription.active" ||
+		event.type === "subscription.updated"
+	) {
 		if (userId && credits) {
-			if (event.data?.status === "active" || event.data?.status === "trialing" || event.type === "subscription.active") {
+			if (
+				event.data?.status === "active" ||
+				event.data?.status === "trialing" ||
+				event.type === "subscription.active"
+			) {
 				await creditUser(userId, credits, event.type);
 			} else {
 				logger.info(
@@ -352,7 +368,10 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 				"[polar] subscription event missing userId or credits; check product/metadata",
 			);
 		}
-	} else if (event.type === "subscription.canceled" || event.type === "subscription.revoked") {
+	} else if (
+		event.type === "subscription.canceled" ||
+		event.type === "subscription.revoked"
+	) {
 		if (userId) {
 			await revokeUser(userId);
 		}
@@ -373,4 +392,7 @@ polarRoutes.post("/webhooks/polar", async (c) => {
 		latencyMs: Date.now() - startedAt,
 	});
 	return c.json({ ok: true });
-});
+}
+
+polarRoutes.post("/webhooks/polar", polarWebhookHandler);
+polarRoutes.post("/api/webhook/polar", polarWebhookHandler);
