@@ -54,6 +54,8 @@
     "axe-core": "^4.12.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.22",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5.9.3",

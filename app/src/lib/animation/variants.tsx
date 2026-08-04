@@ -81,7 +81,7 @@ export const blurIn: Variants = {
    the old `fadeUp(delay)` helper used across the codebase).
    ============================================================ */
 
-export function fadeUpProps(delay = 0) {
+function fadeUpProps(delay = 0) {
 	return {
 		initial: { opacity: 0, y: 20 },
 		whileInView: { opacity: 1, y: 0 },

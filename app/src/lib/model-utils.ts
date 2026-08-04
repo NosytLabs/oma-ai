@@ -30,7 +30,7 @@ const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
  * Used by `mapLiveModel` so the chat dropdown shows the right name even when
  * the upstream server is stale.
  */
-export function liveDisplayName(
+function liveDisplayName(
 	id: string,
 	rawName: string | undefined,
 ): string | undefined {

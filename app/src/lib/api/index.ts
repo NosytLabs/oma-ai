@@ -12,7 +12,6 @@ import { health } from "./inference.js";
 import { auth } from "./auth.js";
 
 export {
-  ApiError,
   BackendUnavailableError,
   request,
   type RequestOptions,
@@ -30,7 +29,7 @@ export * from "./types.js";
  * Paths match server/src/routes/export.ts (`/v1/export/*`).
  * Dashboard ExportDataButton also hits these via same-origin fetch.
  */
-export const exportData = {
+const exportData = {
   usage(format: "csv" | "json" = "csv") {
     return request<Blob>(`/v1/export/usage?format=${format}`, {
       method: "GET",

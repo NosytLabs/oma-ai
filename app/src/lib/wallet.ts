@@ -118,4 +118,3 @@ async function readChainId(): Promise<number | null> {
 	}
 }
 
-export { viemWalletClient };

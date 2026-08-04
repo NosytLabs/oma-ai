@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
-export const A2UI_VERSION = "0.9.1";
+const A2UI_VERSION = "0.9.1";
 
 /* ─────────────────────────── types ─────────────────────────── */
 

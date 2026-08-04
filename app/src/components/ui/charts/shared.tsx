@@ -23,7 +23,7 @@ import { ResponsiveContainer } from "recharts";
 // recharts writes these strings into the rendered SVG and the browser
 // resolves them at paint time, so theme changes propagate without rebuilds.
 
-export const CHART_COLORS = {
+const CHART_COLORS = {
 	accent: "var(--color-accent)",
 	accentHover: "var(--color-accent-hover)",
 	secondary: "var(--color-secondary)",
