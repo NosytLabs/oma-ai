@@ -39,7 +39,7 @@ fi
 echo ""
 
 # 3. Environment variables verification (Server)
-echo -e "${BOLD}2. Server Environment Audit (.env)$/NC"
+echo -e "${BOLD}2. Server Environment Audit (.env)${NC}"
 SERVER_ENV="server/.env"
 
 if [ ! -f "$SERVER_ENV" ]; then
@@ -56,12 +56,20 @@ get_env_val() {
 DB_URL=$(get_env_val "DATABASE_URL")
 REDIS_URL=$(get_env_val "REDIS_URL")
 VENICE_KEY=$(get_env_val "VENICE_API_KEY")
-JWT_SECRET=$(get_env_val "JWT_SECRET")
+BETTER_AUTH_SECRET=$(get_env_val "BETTER_AUTH_SECRET")
 ENCRYPT_KEY=$(get_env_val "ENCRYPTION_KEY")
-CSRF_SECRET=$(get_env_val "CSRF_SECRET")
 FACILITATOR_MODE=$(get_env_val "FACILITATOR_MODE")
 TREASURY_ADDR=$(get_env_val "TREASURY_BASE_ADDRESS")
 CORS_ORIGIN=$(get_env_val "CORS_ORIGIN")
+ENV_FILE_NODE_ENV=$(get_env_val "NODE_ENV")
+EFFECTIVE_NODE_ENV=${NODE_ENV:-${ENV_FILE_NODE_ENV:-development}}
+
+# Development/test envs intentionally use local placeholder secrets. Keep the
+# verifier strict for deployable environments while making local audits useful.
+STRICT_SECURITY=false
+if [[ "$EFFECTIVE_NODE_ENV" == "production" || "$EFFECTIVE_NODE_ENV" == "staging" || "$EFFECTIVE_NODE_ENV" == "preview" ]]; then
+    STRICT_SECURITY=true
+fi
 
 # DB Check
 if [ -z "$DB_URL" ] || [[ "$DB_URL" == *"your_password_here"* ]]; then
@@ -87,25 +95,24 @@ else
 fi
 
 # Security Secrets check
-if [ ${#JWT_SECRET} -lt 40 ] || [[ "$JWT_SECRET" == *"your-40-char"* ]]; then
-    echo -e "  [${RED}FAIL${NC}] JWT_SECRET must be at least 40 characters and not placeholder."
-    exit 1
+if [ ${#BETTER_AUTH_SECRET} -lt 64 ] || [[ "$BETTER_AUTH_SECRET" == *"dev-*"* ]]; then
+    if [[ "$STRICT_SECURITY" == true ]]; then
+        echo -e "  [${RED}FAIL${NC}] BETTER_AUTH_SECRET must be at least 64 characters and not a dev placeholder."
+        exit 1
+    fi
+    echo -e "  [${YELLOW}WARN${NC}] BETTER_AUTH_SECRET is a development placeholder (NODE_ENV=${EFFECTIVE_NODE_ENV})."
 else
-    echo -e "  [${GREEN}PASS${NC}] JWT_SECRET meets security parameters."
+    echo -e "  [${GREEN}PASS${NC}] BETTER_AUTH_SECRET meets security parameters."
 fi
 
 if [ ${#ENCRYPT_KEY} -lt 32 ] || [[ "$ENCRYPT_KEY" == *"your-32-char"* ]]; then
-    echo -e "  [${RED}FAIL${NC}] ENCRYPTION_KEY must be at least 32 characters and not placeholder."
-    exit 1
+    if [[ "$STRICT_SECURITY" == true ]]; then
+        echo -e "  [${RED}FAIL${NC}] ENCRYPTION_KEY must be at least 32 characters and not placeholder."
+        exit 1
+    fi
+    echo -e "  [${YELLOW}WARN${NC}] ENCRYPTION_KEY is a development placeholder (NODE_ENV=${EFFECTIVE_NODE_ENV})."
 else
     echo -e "  [${GREEN}PASS${NC}] ENCRYPTION_KEY meets security parameters."
-fi
-
-if [ ${#CSRF_SECRET} -lt 32 ] || [[ "$CSRF_SECRET" == *"your-32-char"* ]]; then
-    echo -e "  [${RED}FAIL${NC}] CSRF_SECRET must be at least 32 characters and not placeholder."
-    exit 1
-else
-    echo -e "  [${GREEN}PASS${NC}] CSRF_SECRET meets security parameters."
 fi
 
 # Facilitator live check

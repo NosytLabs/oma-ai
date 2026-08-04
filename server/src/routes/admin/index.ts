@@ -29,10 +29,9 @@
  *   POST   /v1/admin/promote-self            — (dev) promote caller to admin role
  *   GET    /v1/admin/integrations            — Polar / Gonka provider status
  *
- * Pricing edits write to the in-memory catalog (`inference/models.ts`).
- * Changes survive until process restart — the canonical source is
- * `models.json` on disk via `MODELS_CONFIG_PATH` or the default catalog.
- * Audit log records every pricing change.
+ * Pricing edits write to the in-memory catalog (`inference/models.ts`) and a
+ * separate sidecar (`models-overrides.json`) so they survive process restart
+ * without mutating the read-only catalog. Audit log records every change.
  *
  * Slice 6 (admin controls depth) added:
  *   - users search via ?q=
@@ -45,15 +44,33 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import { sql, desc, eq, gte, count, lt, and, or, ilike } from "drizzle-orm";
-import * as nodeFs from "node:fs";
-import * as nodePath from "node:path";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import {
+	readModelPricingOverrides,
+	resolveModelOverridesFilePath,
+	type ModelPricingOverride,
+	type PersistedOverridesFile,
+} from "../../lib/model-overrides.js";
 import type { OmaEnv } from "../../types.js";
 import { requireAdmin, sessionAuth } from "../../auth/middleware.js";
 import { db } from "../../db/client.js";
-import { user, usageRecords, auditLogs, creditBalances, siteSettings, apiKeys } from "../../db/schema.js";
+import {
+	user,
+	usageRecords,
+	auditLogs,
+	creditBalances,
+	siteSettings,
+	apiKeys,
+	session,
+	account,
+	walletAddress,
+	verification,
+} from "../../db/schema.js";
 import { listAllModels, getModelById } from "../../inference/models.js";
-import { config } from "../../config.js";
+import { config, ADMIN_WALLET_ADDRESSES_SET } from "../../config.js";
 import { logger } from "../../lib/logger.js";
+import { polarApiBaseUrl } from "../../lib/polar-config.js";
 import { auditLog } from "../../middleware/audit.js";
 import { adjustCredits, drainCreditsForRefund } from "./admin-controls.js";
 
@@ -95,122 +112,49 @@ adminRoutes.use("/v1/admin/*", sessionAuth, requireAdmin());
 // ---------------------------------------------------------------------------
 
 /** Mutable per-model pricing overlay. Keyed by model id.
- *  Persists to MODELS_CONFIG_PATH (defaults to server/models.json) so
- *  PATCH /v1/admin/models/:id survives process restarts. The in-memory
- *  map is just a hot cache. */
+ *  Persists to the sidecar next to the catalog so PATCH /v1/admin/models/:id
+ *  survives process restarts. The in-memory map is the hot cache. */
 const pricingOverrides = new Map<
   string,
   { inputPricePer1M: number; outputPricePer1M: number; updatedAt: string }
 >();
 
 /** File-backed pricing store. Writes are atomic (tmp + rename) and
- *  guarded by a process-local mutex so concurrent PATCHes don't clobber
- *  each other. */
-function resolveOverridesFilePath(): string {
-	const envPath = process.env.MODELS_CONFIG_PATH?.trim();
-	if (envPath) return envPath;
-	// Default: server/models.json. Resolve from the *project root*, not
-	// from process.cwd(), so the file lands at <repo>/server/models.json
-	// regardless of whether the server is started from the project root
-	// (`pnpm --filter oma-server dev`) or from server/ (`cd server && dev`).
-	// We find the project root by looking for the package.json that
-	// declares the "oma-monorepo" workspace.
-	const fs = nodeFs;
-	const path = nodePath;
-	let dir = process.cwd();
-	for (let i = 0; i < 6; i++) {
-		const candidate = path.join(dir, "package.json");
-		if (fs.existsSync(candidate)) {
-			try {
-				const pkg = JSON.parse(fs.readFileSync(candidate, "utf8")) as {
-					name?: string;
-				};
-				if (pkg.name === "oma-monorepo") {
-					return path.join(dir, "server", "models.json");
-				}
-			} catch {
-				// ignore
-			}
-		}
-		const parent = path.dirname(dir);
-		if (parent === dir) break;
-		dir = parent;
-	}
-	// Fallback: relative-to-CWD
-	return path.resolve(process.cwd(), "server", "models.json");
-}
-
-const MODELS_OVERRIDES_FILE = resolveOverridesFilePath();
-
-interface PersistedOverridesFile {
-	schemaVersion: 1;
-	updatedAt: string;
-	overrides: Record<
-		string,
-		{ inputPricePer1M: number; outputPricePer1M: number; updatedAt: string }
-	>;
-}
+ * guarded by a process-local mutex so concurrent PATCHes don't clobber each
+ * other. The loader and writer intentionally share one sidecar path. */
+const MODELS_OVERRIDES_FILE = resolveModelOverridesFilePath();
 
 let persistQueue: Promise<void> = Promise.resolve();
 
 async function loadPersistedOverrides(): Promise<void> {
-	try {
-		const fs = await import("node:fs/promises");
-		const file = MODELS_OVERRIDES_FILE;
-		const raw = await fs.readFile(file, "utf8");
-		// Only load as overrides if it's the new schema (schemaVersion: 1).
-		// The file is shared with the catalog seed; the override section
-		// is embedded at a known key, but for simplicity we keep them
-		// in a separate file: server/models-overrides.json.
-		const parsed = JSON.parse(raw) as PersistedOverridesFile;
-		if (parsed?.schemaVersion === 1) {
-			for (const [modelId, override] of Object.entries(parsed.overrides ?? {})) {
-				pricingOverrides.set(modelId, override);
-			}
-			logger.info(
-				{ count: pricingOverrides.size, file },
-				"[admin] loaded pricing overrides from disk",
-			);
-		} else {
-			logger.info(
-				{ file },
-				"[admin] no pricing-override schemaVersion: 1; using in-memory defaults",
-			);
-		}
-	} catch (err: unknown) {
-		const e = err as NodeJS.ErrnoException;
-		if (e.code === "ENOENT") {
-			logger.info(
-				{ file: MODELS_OVERRIDES_FILE },
-				"[admin] no pricing-override file yet; using in-memory defaults",
-			);
-		} else {
-			logger.warn(
-				{ err, file: MODELS_OVERRIDES_FILE },
-				"[admin] failed to load pricing overrides from disk",
-			);
-		}
+	const overrides = readModelPricingOverrides(MODELS_OVERRIDES_FILE);
+	for (const [modelId, override] of Object.entries(overrides)) {
+		pricingOverrides.set(modelId, override);
+	}
+	if (Object.keys(overrides).length > 0) {
+		logger.info(
+			{ count: pricingOverrides.size, file: MODELS_OVERRIDES_FILE },
+			"[admin] loaded pricing overrides from disk",
+		);
+	} else {
+		logger.info(
+			{ file: MODELS_OVERRIDES_FILE },
+			"[admin] no valid pricing overrides on disk; using in-memory defaults",
+		);
 	}
 }
 
-void loadPersistedOverrides();
+const pricingOverridesReady = loadPersistedOverrides();
 
 async function persistOverride(
 	modelId: string,
-	override: { inputPricePer1M: number; outputPricePer1M: number; updatedAt: string },
-): Promise<void> {
-	// 2026-07-30: write to a SEPARATE file (server/models-overrides.json)
-	// rather than overwriting the catalog seed (server/models.json).
-	// Two files, one purpose each; the catalog is read-only, overrides
-	// are mutable. This keeps git diffs clean and prevents the PATCH
-	// from accidentally truncating the catalog.
-	const fs = await import("node:fs/promises");
-	const path = await import("node:path");
-	const overridesFile = path.join(
-		path.dirname(MODELS_OVERRIDES_FILE),
-		"models-overrides.json",
-	);
+	override: ModelPricingOverride,
+): Promise<boolean> {
+	// Keep the catalog read-only: pricing overrides live in a separate sidecar
+	// and are replaced atomically so an interrupted write cannot corrupt it.
+	const overridesFile = MODELS_OVERRIDES_FILE;
 
+	let persisted = true;
 	persistQueue = persistQueue
 		.then(async () => {
 			const next: PersistedOverridesFile = {
@@ -236,6 +180,7 @@ async function persistOverride(
 			next.schemaVersion = 1;
 			next.updatedAt = new Date().toISOString();
 
+			await fs.mkdir(path.dirname(overridesFile), { recursive: true });
 			const tmp = `${overridesFile}.${process.pid}.${Date.now()}.tmp`;
 			await fs.writeFile(tmp, JSON.stringify(next, null, 2), "utf8");
 			await fs.rename(tmp, overridesFile);
@@ -245,9 +190,11 @@ async function persistOverride(
 			);
 		})
 		.catch((err) => {
+			persisted = false;
 			logger.error({ err, modelId }, "[admin] failed to persist pricing override");
 		});
 	await persistQueue;
+	return persisted;
 }
 
 export function getModelPricingOverride(modelId: string) {
@@ -259,7 +206,8 @@ const patchSchema = z.object({
 	outputPricePer1M: z.number().min(0).max(1000).optional(),
 });
 
-adminRoutes.get("/v1/admin/models", (c) => {
+adminRoutes.get("/v1/admin/models", async (c) => {
+	await pricingOverridesReady;
 	const models = listAllModels().map((m) => {
 		const override = pricingOverrides.get(m.id);
 		return {
@@ -282,6 +230,7 @@ adminRoutes.get("/v1/admin/models", (c) => {
 });
 
 adminRoutes.patch("/v1/admin/models/:id", async (c) => {
+	await pricingOverridesReady;
 	const id = c.req.param("id");
 	const body = await c.req.json().catch(() => null);
 	const parsed = patchSchema.safeParse(body);
@@ -306,7 +255,12 @@ adminRoutes.patch("/v1/admin/models/:id", async (c) => {
 	// 2026-07-30: write through to disk so the override survives
 	// process restarts. Atomic via tmp + rename, serialized by
 	// persistQueue so concurrent PATCHes can't corrupt the file.
-	await persistOverride(id, next);
+	const persisted = await persistOverride(id, next);
+	if (!persisted) {
+		if (prev) pricingOverrides.set(id, prev);
+		else pricingOverrides.delete(id);
+		return c.json({ error: { message: "Pricing update could not be persisted" } }, 503);
+	}
 
 	await auditLog({
 		userId: c.get("userId"),
@@ -494,6 +448,110 @@ adminRoutes.get("/v1/admin/users", async (c) => {
     logger.error({ err }, "[admin/users] failed");
     return c.json({ error: { message: "user query failed" } }, 500);
   }
+});
+
+const adminDeleteUserSchema = z.object({
+	confirmation: z.literal("DELETE"),
+	reason: z.string().trim().min(1).max(500),
+});
+
+/**
+ * DELETE /v1/admin/users/:id — privacy-preserving operator deletion.
+ *
+ * This intentionally anonymizes instead of hard-deleting the user row:
+ * usage/billing rows keep their referential integrity, while auth material
+ * and identifying fields are removed. The operation is explicit, audited,
+ * cannot target the acting admin, and cannot remove the last admin.
+ */
+adminRoutes.delete("/v1/admin/users/:id", async (c) => {
+	const targetId = c.req.param("id");
+	const body = await c.req.json().catch(() => null);
+	const parsed = adminDeleteUserSchema.safeParse(body);
+	if (!parsed.success) {
+		return c.json(
+			{
+				error: {
+					message: "Type DELETE and provide a reason to confirm account deletion",
+					issues: parsed.error.flatten(),
+				},
+			},
+			400,
+		);
+	}
+
+	const adminId = c.get("userId");
+	if (!adminId) return c.json({ error: { message: "auth required" } }, 401);
+	if (targetId === adminId) {
+		return c.json({ error: { message: "Admins cannot delete their own account from this panel" } }, 400);
+	}
+
+	try {
+		const [existing] = await db
+			.select({ id: user.id, role: user.role, evmAddress: user.evmAddress, email: user.email })
+			.from(user)
+			.where(eq(user.id, targetId))
+			.limit(1);
+		if (!existing) return c.json({ error: { message: "User not found" } }, 404);
+
+		if (existing.evmAddress && ADMIN_WALLET_ADDRESSES_SET.has(existing.evmAddress.toLowerCase())) {
+			return c.json({ error: { message: "Cannot delete an account protected by the admin wallet allowlist" } }, 409);
+		}
+		if (existing.role === "admin") {
+			const [{ total }] = await db
+				.select({ total: count() })
+				.from(user)
+				.where(eq(user.role, "admin"));
+			if (Number(total) <= 1) {
+				return c.json({ error: { message: "Cannot delete the last administrator" } }, 409);
+			}
+		}
+
+		const anonymizedEmail = `deleted-${crypto.randomUUID()}@deleted.invalid`;
+		await db.transaction(async (tx) => {
+			// Remove login/session credentials and wallet/API-key material first.
+			await tx.delete(session).where(eq(session.userId, targetId));
+			await tx.delete(account).where(eq(account.userId, targetId));
+			await tx.delete(walletAddress).where(eq(walletAddress.userId, targetId));
+			await tx
+				.delete(verification)
+				.where(or(eq(verification.identifier, targetId), eq(verification.identifier, existing.email)));
+			await tx.update(apiKeys).set({ active: false }).where(eq(apiKeys.userId, targetId));
+			await tx
+				.update(user)
+				.set({
+					name: "Deleted user",
+					email: anonymizedEmail,
+					emailVerified: false,
+					image: null,
+					evmAddress: null,
+					accountNumber: null,
+					role: null,
+					banned: true,
+					suspended: true,
+					isAnonymous: true,
+					banReason: "Account deleted by administrator",
+					updatedAt: new Date(),
+				})
+				.where(eq(user.id, targetId));
+			await tx.insert(auditLogs).values({
+				userId: adminId,
+				action: "USER_DELETED",
+				resource: "user",
+				resourceId: targetId,
+				metadata: {
+					reason: parsed.data.reason,
+					anonymized: true,
+					previousRole: existing.role,
+				},
+				createdAt: new Date(),
+			});
+		});
+
+		return c.json({ success: true, userId: targetId, anonymized: true });
+	} catch (err) {
+		logger.error({ err, targetId, adminId }, "[admin/users/delete] anonymization failed");
+		return c.json({ error: { message: "Failed to delete user" } }, 500);
+	}
 });
 
 const updateUserSchema = z.object({
@@ -1185,7 +1243,7 @@ adminRoutes.post("/v1/admin/polar/refund", async (c) => {
     const { Polar } = await import("@polar-sh/sdk");
     const polar = new Polar({
       accessToken: config.POLAR_ACCESS_TOKEN!,
-      server: (config.POLAR_SERVER as "production" | "sandbox") ?? "production",
+      server: config.POLAR_SERVER,
     });
     const refund = await polar.refunds.create({
       orderId: paymentId,
@@ -1199,7 +1257,7 @@ adminRoutes.post("/v1/admin/polar/refund", async (c) => {
     // SDK path failed — fall back to REST. Polar expects `order_id` for
     // refunds. The amount is in cents (matching the SDK call).
     try {
-      const r = await fetch(`${config.POLAR_SERVER}/v1/refunds`, {
+      const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/refunds`, {
         method: "POST",
         headers: polarHeaders(),
         body: JSON.stringify({
@@ -1247,7 +1305,7 @@ adminRoutes.post("/v1/admin/polar/refund", async (c) => {
   if (!resolvedUserId) {
     try {
       const r = await fetch(
-        `${config.POLAR_SERVER}/v1/payments/${encodeURIComponent(paymentId)}`,
+        `${polarApiBaseUrl(config.POLAR_SERVER)}/v1/payments/${encodeURIComponent(paymentId)}`,
         { headers: polarHeaders() },
       );
       if (r.ok) {
@@ -1319,7 +1377,7 @@ adminRoutes.get("/v1/admin/polar/payments", async (c) => {
   const sort = c.req.query("sort");
   if (sort) searchParams.set("sort", sort);
   try {
-    const r = await fetch(`${config.POLAR_SERVER}/v1/payments?${searchParams.toString()}`, {
+    const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/payments?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
     if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
@@ -1341,7 +1399,7 @@ adminRoutes.get("/v1/admin/polar/customers", async (c) => {
   searchParams.set("limit", String(Math.min(limit, 100)));
   searchParams.set("offset", String(offset));
   try {
-    const r = await fetch(`${config.POLAR_SERVER}/v1/customers?${searchParams.toString()}`, {
+    const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/customers?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
     if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
@@ -1374,7 +1432,7 @@ adminRoutes.post("/v1/admin/polar/checkouts", async (c) => {
   if (successUrl) payload.successUrl = successUrl;
   if (cancelUrl) payload.cancelUrl = cancelUrl;
   try {
-    const r = await fetch(`${config.POLAR_SERVER}/v1/checkouts`, {
+    const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/checkouts`, {
       method: "POST",
       headers: polarHeaders(),
       body: JSON.stringify(payload),
@@ -1398,7 +1456,7 @@ adminRoutes.get("/v1/admin/polar/products", async (c) => {
   searchParams.set("limit", String(Math.min(limit, 100)));
   searchParams.set("offset", String(offset));
   try {
-    const r = await fetch(`${config.POLAR_SERVER}/v1/products?${searchParams.toString()}`, {
+    const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/products?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
     if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
@@ -1420,7 +1478,7 @@ adminRoutes.get("/v1/admin/polar/subscriptions", async (c) => {
   searchParams.set("limit", String(Math.min(limit, 100)));
   searchParams.set("offset", String(offset));
   try {
-    const r = await fetch(`${config.POLAR_SERVER}/v1/subscriptions?${searchParams.toString()}`, {
+    const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/subscriptions?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
     if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);

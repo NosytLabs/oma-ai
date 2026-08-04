@@ -34,6 +34,7 @@ import { getModelPricing } from "../../inference/billing-service.js";
 import { usageRecords } from "../../db/schema.js";
 import { db } from "../../db/client.js";
 import {
+  assertSufficientBalance,
   createStreamingProxy,
   parseNonStreamingResponse,
   ProviderError,
@@ -82,8 +83,10 @@ export const chatRoutes = new Hono<OmaEnv>();
 chatRoutes.post(
   "/v1/chat/completions",
   rateLimit({ windowMs: 60_000, maxRequests: 60 }),
-  dailyUsageLimit(),
+  // Authenticate before the daily limiter so signed-in website users receive
+  // the registered-user quota instead of being treated as anonymous.
   optionalAuth,
+  dailyUsageLimit(),
   async (c) => {
     const body = await c.req.json().catch(() => null);
     const parsed = chatSchema.safeParse(body);
@@ -181,7 +184,15 @@ chatRoutes.post(
     const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
     const promptTokens = estimateTokens(promptText);
 
+    // Fail before calling an upstream provider when an authenticated request
+    // has no usable credit balance. The ledger remains the final atomic guard
+    // after the provider returns, but this avoids serving obviously unpaid
+    // requests and gives the client a useful 402 response.
     try {
+      if (userId && !isFreeWebsiteChat) {
+        await assertSufficientBalance(userId, getModelPricing(model), promptTokens, max_tokens);
+      }
+
       const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
         modelId: model,
         messages: messages.map((m) => ({

@@ -189,14 +189,12 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
       "[proxy] upstream returned non-2xx",
     );
     const safeStatus = status >= 500 ? 502 : status;
-    const error = new Error(
+    throw new ProviderError(
       status >= 500
         ? "Inference provider temporarily unavailable"
         : `Upstream ${status}: ${errBody.slice(0, 200)}`,
-    ) as Error & { status: number; type: string };
-    error.status = safeStatus;
-    error.type = status >= 500 ? "server_error" : "upstream_error";
-    throw error;
+      safeStatus,
+    );
   }
 
   return upstreamResp;
@@ -246,7 +244,20 @@ export async function routeRequestWithFallback(
   const modelId = opts.modelId;
   const fallbacks = [modelId, ...(FALLBACK_MAP[modelId] || [])];
 
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
+
+  /** Narrow an `unknown` thrown value to the error fields we actually use. */
+  function readError(e: unknown): { status?: number; message?: string; name?: string } {
+    if (e && typeof e === "object") {
+      const v = e as { status?: unknown; message?: unknown; name?: unknown };
+      return {
+        status: typeof v.status === "number" ? v.status : undefined,
+        message: typeof v.message === "string" ? v.message : undefined,
+        name: typeof v.name === "string" ? v.name : undefined,
+      };
+    }
+    return {};
+  }
 
   for (const currentModelId of fallbacks) {
     let attempt = 0;
@@ -269,21 +280,22 @@ export async function routeRequestWithFallback(
         }
 
         return { response, actualModelId: currentModelId };
-      } catch (err: any) {
+      } catch (err) {
         attempt++;
         lastError = err;
+        const e = readError(err);
+        const message = e.message ?? String(err);
 
         // Transient errors include server errors (5xx) or rate limits (429)
         const isTransient =
-          err &&
-          (err.status >= 500 || err.status === 429);
+          e.status !== undefined && (e.status >= 500 || e.status === 429);
 
         const isNetworkError =
-          !err ||
-          !err.status ||
-          err.message?.includes("unreachable") ||
-          err.message?.includes("timeout") ||
-          err.message?.includes("fetch failed");
+          e.status === undefined ||
+          (typeof e.message === "string" &&
+            (e.message.includes("unreachable") ||
+              e.message.includes("timeout") ||
+              e.message.includes("fetch failed")));
 
         if (attempt <= maxRetries && (isTransient || isNetworkError)) {
           // Exponential backoff with random jitter: 100ms * 2^attempt, plus up to 50ms random jitter
@@ -291,7 +303,7 @@ export async function routeRequestWithFallback(
           const jitter = Math.random() * 50;
           const delay = Math.min(baseDelay + jitter, 2000);
           logger.warn(
-            { modelId: currentModelId, attempt, delay, error: err?.message || String(err) },
+            { modelId: currentModelId, attempt, delay, error: message },
             "[router] Transient error calling model. Retrying after backoff...",
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
@@ -301,7 +313,7 @@ export async function routeRequestWithFallback(
         // Non-transient errors (like 400, 401, 403, 404), or exhausted retries:
         // log and break to try the next fallback model.
         logger.error(
-          { modelId: currentModelId, error: err?.message || String(err), status: err?.status },
+          { modelId: currentModelId, error: message, status: e.status },
           "[router] Error not retryable or exhausted retries on model.",
         );
         break;
@@ -310,7 +322,8 @@ export async function routeRequestWithFallback(
   }
 
   // If all fallbacks failed, throw the last observed error
-  throw lastError || new ProviderError("Model routing failed on all fallback attempts", 502);
+  if (lastError) throw lastError;
+  throw new ProviderError("Model routing failed on all fallback attempts", 502);
 }
 
 export interface RecordUsageArgs {
@@ -324,6 +337,52 @@ export interface RecordUsageArgs {
   status: "completed" | "error";
   /** Skip credit deduction for free website chat */
   skipBilling?: boolean;
+}
+
+/**
+ * Estimate the maximum charge for a request before contacting the provider.
+ * Values are cents and intentionally use the requested max token budget as
+ * the worst-case output bound.
+ */
+export function estimateUserCostCents(
+  pricing: ReturnType<typeof getModelPricing>,
+  promptTokens: number,
+  maxOutputTokens?: number,
+): number {
+  const outputTokens = Math.max(0, maxOutputTokens ?? 0);
+  const upstreamCostCents =
+    ((promptTokens / 1_000_000) * pricing.inputPer1M +
+      (outputTokens / 1_000_000) * pricing.outputPer1M) *
+    100;
+  return upstreamCostCents * (1 + pricing.markup / 100);
+}
+
+/**
+ * Preflight the authenticated credit balance. This is deliberately a read
+ * only check; the transaction in recordUsage remains the authoritative final
+ * deduction and protects against concurrent callers.
+ */
+export async function assertSufficientBalance(
+  userId: string,
+  pricing: ReturnType<typeof getModelPricing>,
+  promptTokens: number,
+  maxOutputTokens?: number,
+): Promise<void> {
+  const [balance] = await db
+    .select({ balanceCents: creditBalances.balanceCents })
+    .from(creditBalances)
+    .where(sql`${creditBalances.userId} = ${userId}`)
+    .limit(1);
+  const available = Number(balance?.balanceCents ?? 0);
+  const estimated = estimateUserCostCents(pricing, promptTokens, maxOutputTokens);
+  // A zero estimate can occur for a catalog entry with missing upstream
+  // pricing; allow it through so the provider/config error remains visible.
+  if (estimated > 0 && available < estimated) {
+    throw new ProviderError(
+      `Insufficient credits. Add credits to continue (estimated maximum: $${(estimated / 100).toFixed(4)}).`,
+      402,
+    );
+  }
 }
 
 /** Record usage, deduct credits, emit audit log, and send Polar meter event. */

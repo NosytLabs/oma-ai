@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { user, usageRecords, auditLogs } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { user, session as sessionTable, usageRecords, auditLogs } from "../db/schema.js";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { sessionAuth } from "../auth/middleware.js";
@@ -47,6 +47,41 @@ authRoutes.get("/user", async (c) => {
     evmAddress: session.user.evmAddress ?? null,
     isAnonymous: session.user.isAnonymous ?? false,
     createdAt: session.user.createdAt,
+  });
+});
+
+// ============================================================
+// /sessions — active Better Auth sessions for the current user.
+// ============================================================
+authRoutes.get("/sessions", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const currentSession = c.get("session");
+  const rows = await db
+    .select({
+      id: sessionTable.id,
+      createdAt: sessionTable.createdAt,
+      expiresAt: sessionTable.expiresAt,
+      userAgent: sessionTable.userAgent,
+      ipAddress: sessionTable.ipAddress,
+    })
+    .from(sessionTable)
+    .where(
+      and(
+        eq(sessionTable.userId, userId),
+        gt(sessionTable.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(sessionTable.createdAt));
+
+  return c.json({
+    sessions: rows.map((row) => ({
+      id: row.id,
+      createdAt: row.createdAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      userAgent: row.userAgent,
+      ipAddress: row.ipAddress,
+      isCurrent: row.id === currentSession?.id,
+    })),
   });
 });
 

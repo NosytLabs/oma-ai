@@ -5,7 +5,7 @@
 **Status:** Local dev (pre-launch)  
 **Brand:** Open Model Access · void `#07090a` · accent `#46d39a` · see `BRAND.md`
 
-Self-hosted AI inference gateway. Modern UI/UX (motion system, accessibility, multi-model chat), OpenAI-compatible API, crypto payments, and comprehensive E2E tests.
+Self-hosted AI inference gateway. Modern UI/UX (motion system, accessibility, multi-model chat), OpenAI-compatible API, crypto payments, and a comprehensive Vitest suite.
 
 > **Recent Changes:**
 > - UI/animation is now fully centralized (see `/app/src/lib/animation`)
@@ -33,12 +33,12 @@ Self-hosted AI inference gateway. Modern UI/UX (motion system, accessibility, mu
 (Fast onboarding: see full details above)
 1. Clone repo, copy envs from `.env.example` as needed
 2. Start dev with `./scripts/start-dev.sh`
-3. See `/app/src/lib/animation` for UI/UX architecture, `/app/tests/e2e` for flows
+3. See `/app/src/lib/animation` for UI/UX architecture and the Vitest suites under `/app/src` and `/server/src`
 
 ---
 
 ## Modern UI/UX & Animation
-- **All animation/motion** logic and primitives centralized in `/app/src/lib/animation` — see [`README`](./app/src/lib/animation/README.md) for usage.
+- **All animation/motion** logic and primitives centralized in `/app/src/lib/animation` (`index.ts` re-exports the primitives: `Magnetic`, `SpringCard`, `ElasticCounter`, `TabPill`, springs, variants).
 - **Accessible chat UX** — keyboard accessible, full ARIA coverage, screen reader flows tested (see `/app/src/components/chat/`).
 - **All CTAs/buttons** use design-system primitives (`Button`, `JuiceButton`, `Badge`): full color/contrast, focus, and sized for accessible tap targets.
 - **SVGs/logos** are ARIA-compliant (titles, desc, aria-label/hidden). No decorative SVG escapes contrast/scannability review.
@@ -47,18 +47,19 @@ Self-hosted AI inference gateway. Modern UI/UX (motion system, accessibility, mu
 ---
 
 ## Testing & QA
-- **Unit/Integration/E2E**: Vitest for units, Playwright for flows/UX, accessible regression checks.
-- **CI:** All PRs and pushes run full test suite. See `/app/tests/e2e/`, `/app/src/lib/__tests__`, `/server/src/__tests__`.
+- **Unit/integration**: Vitest covers both packages (apps + server routes, middleware, libs, components).
+- **CI:** `npm run validate` runs typecheck + lint + tests for both packages. See `/app/src/**/__tests__`, `/server/src/**/__tests__`.
+- **Audit scripts:** `scripts/axe-audit.mjs`, `scripts/audit-site-2026-07-31.js`, `scripts/ux-audit-pages.mjs`, and `scripts/validate-launch.sh` provide a11y/UX/launch checks.
 - **Coverage philosophy:** 80%+ for business logic/critical flows, full coverage for P0 payment/gateway/PII/security.
-- **New tests:** When shipping a new endpoint or UI, include matching test.
+- **New tests:** When shipping a new endpoint or UI, include a matching test.
 
 ---
 
 ## Contributing
-- Modern animation, UI/UX, and test patterns are documented in [`/app/src/lib/animation`], [`/app/tests/e2e/`], [`docs/competitive-ui-ux.md`].
+- Modern animation, UI/UX, and test patterns live in `/app/src/lib/animation`, `/app/src/components`, and the `__tests__` directories next to the code they cover.
 - Add new providers/API/support flows as described in `/app/src/lib/models-data.ts` and `/server/src/routes/…`.
-- Before contributing large flows, review `/docs/research/competitive-ui-ux.md` for latest UI patterns, and `/docs/research/2026-07-30-ai-gateway-best-practices.md` for architecture/roadmap.
-- For questions, open an issue or join Discord.
+- Run `npm run validate` before opening a PR.
+- For questions, open an issue.
 
 ---
 
@@ -66,7 +67,7 @@ Self-hosted AI inference gateway. Modern UI/UX (motion system, accessibility, mu
 - Only compliance-mandatory audits/reports remain in `/docs/` (old reports archived under `/docs/archive/`).
 - **BRAND.md** documents design token philosophy, logos, and accessibility checklist.
 
-See headers in file for API endpoints, models, and architecture diagram. For full dev, see scripts or [CONTRIBUTING.md].
+See `app/public/llms.txt` and `server/src/routes/openapi.ts` for the public API surface. For full dev, see the scripts in `/scripts`.
 
 ---
 

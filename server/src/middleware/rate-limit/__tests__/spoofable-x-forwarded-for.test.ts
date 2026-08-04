@@ -64,11 +64,10 @@ vi.mock("../../config.js", () => ({
   config: {
     PORT: 3001,
     CORS_ORIGIN: "http://localhost:3000",
-    JWT_SECRET: "test-jwt-secret-that-is-at-least-32-chars",
+    BETTER_AUTH_SECRET: "test-better-auth-secret-that-is-at-least-32-chars-long",
     NODE_ENV: "test",
     DATABASE_URL: "postgresql://localhost:5432/oma_test",
     REDIS_URL: "redis://localhost:6379",
-    CSRF_SECRET: "test-csrf-secret-32-chars-long-enough-yes!",
     SESSION_COOKIE_TTL_MS: 60 * 60 * 1000,
     // H2: TRUSTED_PROXY_IPS is empty — the production-safe default.
     TRUSTED_PROXY_IPS: "",

@@ -154,7 +154,7 @@ describe("parseUsdcAtomic (public-surface smoke)", () => {
 
 	// Note: the re-export from `facilitator.ts` is verified manually via the
 	// single line `export { parseUsdcAtomic }` near the top of that file.
-	// Loading facilitator.ts in this test file would trigger its JWT_SECRET
-	// production-guard (auth/middleware.ts:122) and require a fully-mocked
+	// Loading facilitator.ts in this test file would initialize the full auth
+	// middleware and require a fully-mocked
 	// env to load successfully — not worth the test complexity here.
 });

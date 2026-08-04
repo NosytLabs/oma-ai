@@ -36,9 +36,9 @@ services:
       - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
 
       # Auth / crypto secrets
-      - JWT_SECRET=${JWT_SECRET}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - CSRF_SECRET=${CSRF_SECRET}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
 
@@ -54,6 +54,7 @@ services:
       - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY}
       - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
+      - USDC_DEPOSIT_ADDRESS=${USDC_DEPOSIT_ADDRESS:-${TREASURY_BASE_ADDRESS}}
       - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES}
 
       # Chain / RPC (Base mainnet)
@@ -62,7 +63,6 @@ services:
       - BASE_CHAIN_ID=${BASE_CHAIN_ID:-8453}
 
       # Onramp webhook (cross-chain deposits via LI.FI / CCTP). Server reads ONRAMP_WEBHOOK_SECRET.
-      - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

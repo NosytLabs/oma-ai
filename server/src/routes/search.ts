@@ -1,19 +1,20 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { config } from "../config.js";
-import { sessionOrBearerAuth } from "../auth/middleware.js";
+import { optionalAuth } from "../auth/middleware.js";
+import { tokenBucket } from "../middleware/rate-limit.js";
 import { logger } from "../lib/logger.js";
 
 /**
- * /v1/search — web search used by the chat playground when "Web Search" is
- * enabled. Tries TinyFish's search endpoint if TINYFISH_API_KEY is set;
- * otherwise returns an empty result set so the UI can show a friendly
- * "search not configured" toast instead of hard-404ing the chat flow.
+ * /v1/search (GET ?query=…) — web search used by the chat playground when
+ * "Web Search" is enabled. Tries TinyFish's search endpoint if
+ * TINYFISH_API_KEY is set; otherwise returns an empty result set so the UI
+ * can attach nothing and proceed without search context.
  *
- * The frontend already handles 404 with a `toast.info("Web search is not yet
- * available on this deployment")`. This implementation upgrades that path
- * to a graceful empty result with proper auth, so paying users don't see a
- * perpetual "not available" toast when the deployment is fully configured.
+ * Auth is OPTIONAL: the anonymous free website-chat tier (gonka models,
+ * X-OMA-Source: website) must be able to search without an account, exactly
+ * like chat completions. Signed-in users get the same empty-or-results
+ * response; attribution is not needed for billing here.
  */
 
 const querySchema = z.object({
@@ -22,7 +23,14 @@ const querySchema = z.object({
 
 export const searchRoutes = new Hono();
 
-searchRoutes.get("/v1/search", sessionOrBearerAuth, async (c) => {
+// Modest burst/rpm so anonymous callers can't burn Tinyfish quota in a tight
+// loop (the route is optionalAuth — no account required, like free chat).
+searchRoutes.use(
+  "/v1/search",
+  tokenBucket({ refillRate: 2, bucketSize: 10, rpmLimit: 30 }),
+);
+
+searchRoutes.get("/v1/search", optionalAuth, async (c) => {
 	const parsed = querySchema.safeParse(c.req.query());
 	if (!parsed.success) {
 		return c.json(

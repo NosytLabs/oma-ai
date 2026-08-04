@@ -129,7 +129,7 @@ const { mockConfig } = vi.hoisted(() => ({
     RECEIPT_HMAC_SECRET: 'test-receipt-hmac-secret-at-least-32-chars!',
     PORT: 3001,
     CORS_ORIGIN: 'http://localhost:3000',
-    JWT_SECRET: 'test-jwt-secret-that-is-at-least-32-chars-long!',
+    BETTER_AUTH_SECRET: 'test-better-auth-secret-that-is-at-least-32-chars-long!',
     NODE_ENV: 'test',
     DATABASE_URL: 'postgresql://localhost:5432/oma_test',
     REDIS_URL: 'redis://localhost:6379',

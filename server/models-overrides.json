@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-30T11:16:53.778Z",
+  "updatedAt": "2026-08-03T20:47:58.462Z",
   "overrides": {
-    "minimax-m2.7": {
-      "inputPricePer1M": 0.015,
-      "outputPricePer1M": 0.06,
-      "updatedAt": "2026-07-30T11:16:53.776Z"
+    "claude-opus-5": {
+      "inputPricePer1M": 6,
+      "outputPricePer1M": 30,
+      "updatedAt": "2026-08-03T20:47:58.460Z"
     }
   }
 }

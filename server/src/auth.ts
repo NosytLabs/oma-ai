@@ -44,9 +44,9 @@ async function sendMagicLink({
 	token: string;
 	metadata?: Record<string, unknown>;
 }): Promise<void> {
-	// Dev / failover — log the magic-link URL to stdout when Resend is unset
-	// OR when Resend rejects (e.g. unverified sender domain). Don't block auth
-	// for misconfigured production email.
+	// Dev / failover — log the magic-link URL only when Resend is unset in
+	// non-production. Never put bearer-like login URLs in production logs;
+	// a configured sender failure is surfaced as an auth failure instead.
 	const sendViaResend = async () => {
 		const res = await fetch("https://api.resend.com/emails", {
 			method: "POST",
@@ -69,6 +69,10 @@ async function sendMagicLink({
 	};
 
 	if (!config.RESEND_API_KEY) {
+		if (config.NODE_ENV === "production" || config.NODE_ENV === "staging" || config.NODE_ENV === "preview") {
+			logger.error({ email }, "[magicLink] RESEND_API_KEY is not configured");
+			throw new Error("Magic-link delivery is not configured");
+		}
 		logger.info(
 			{ email, magicLink: url },
 			"[magicLink] (dev) no RESEND_API_KEY set — click the URL to sign in",
@@ -78,9 +82,13 @@ async function sendMagicLink({
 	try {
 		await sendViaResend();
 	} catch (err) {
+		if (config.NODE_ENV === "production" || config.NODE_ENV === "staging" || config.NODE_ENV === "preview") {
+			logger.error({ err: (err as Error).message, email }, "[magicLink] Resend delivery failed");
+			throw err;
+		}
 		logger.warn(
 			{ err: (err as Error).message, email, magicLink: url },
-			"[magicLink] Resend failed — falling back to console log so you can still sign in",
+			"[magicLink] Resend failed — falling back to console log in development",
 		);
 	}
 }
@@ -229,6 +237,8 @@ user: {
     ...(config.PUBLIC_APP_URL ? [config.PUBLIC_APP_URL] : []),
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3123",
+    "http://127.0.0.1:3123",
   ],
 
   advanced: {

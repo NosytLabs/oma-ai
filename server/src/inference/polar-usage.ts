@@ -28,7 +28,7 @@ function getPolar(): Polar | null {
   if (!config.POLAR_ACCESS_TOKEN || !config.POLAR_USAGE_METER_ID) return null;
   polarClient = new Polar({
     accessToken: config.POLAR_ACCESS_TOKEN,
-    server: (config.POLAR_SERVER as "production" | "sandbox") ?? "production",
+    server: config.POLAR_SERVER,
   });
   return polarClient;
 }

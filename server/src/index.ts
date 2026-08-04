@@ -17,6 +17,7 @@ import { healthRoutes } from "./routes/health.js";
 import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
+import { mediaRouter } from "./routes/media.js";
 import { anthropicRoutes } from "./routes/anthropic/index.js";
 import { searchRoutes } from "./routes/search.js";
 import { depositRoutes } from "./routes/deposit/index.js";
@@ -30,6 +31,7 @@ import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { rateLimit } from "./middleware/rate-limit.js";
+import { demoModeGuard } from "./middleware/demo-mode-guard.js";
 import { db } from "./db/client.js";
 import { siteSettings } from "./db/schema.js";
 import { runRecoveryIteration } from "./lib/deposit-recovery.js";
@@ -45,7 +47,18 @@ void ensureCatalogLoaded();
 if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
   const client = getPublicClient();
   let fromBlock = 0n;
+  let isRunning = false;
   const runDepositRecovery = async (): Promise<void> => {
+    // Concurrency guard. If an iteration takes longer than the 30s
+    // interval (slow RPC, large block range), don't fire a second loop
+    // that would race on `fromBlock` and waste RPC quota.
+    if (isRunning) {
+      logger.warn(
+        "[deposit-recovery] previous iteration still running, skipping this tick",
+      );
+      return;
+    }
+    isRunning = true;
     try {
       if (fromBlock === 0n) {
         const current = await client.getBlockNumber();
@@ -54,6 +67,8 @@ if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
       fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
     } catch (err) {
       logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
+    } finally {
+      isRunning = false;
     }
   };
   void runDepositRecovery();
@@ -62,14 +77,6 @@ if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
 
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
   logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
-  process.exit(1);
-}
-
-if (config.NODE_ENV === "production" && (!config.CSRF_SECRET || config.CSRF_SECRET.length < 32)) {
-  const msg = config.CSRF_SECRET
-    ? `CSRF_SECRET length is ${config.CSRF_SECRET.length} (minimum 32).`
-    : "CSRF_SECRET is not set.";
-  logger.fatal(`[SECURITY] ${msg} Refusing to start.`);
   process.exit(1);
 }
 
@@ -178,6 +185,14 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+// Demo mode guard — blocks mutations under /v1/* when the HttpOnly
+// `oma-demo` cookie is present. See middleware/demo-mode-guard.ts
+// for rationale. Mounted AFTER the maintenance check (so a 503 for
+// maintenance still wins) and BEFORE route mounting (so it covers
+// every /v1 mutation: deposit, checkout, keys, account, credits,
+// admin, chat, media, etc. without per-route edits).
+app.use("/v1/*", demoModeGuard);
+
 // Public operational routes.
 app.route("/", healthRoutes);
 app.route("/", metricsRoutes);
@@ -201,6 +216,7 @@ app.route("/", authRoutes);
 // OpenAI-compatible gateway surface.
 app.route("/", modelRoutes);
 app.route("/", chatRoutes);
+app.route("/", mediaRouter);
 app.route("/", anthropicRoutes);
 app.route("/", searchRoutes);
 app.route("/", depositRoutes);

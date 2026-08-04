@@ -22,10 +22,22 @@ if [[ "${1:-}" == "logs" ]]; then
   exit 0
 fi
 
+# Load the deployment env file when present. Docker Compose also reads this
+# file, so the preflight and container receive the same configuration.
+if [[ -f .env.prod ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env.prod
+  set +a
+fi
+
 # sanity: required secrets present
-REQUIRED=(POSTGRES_PASSWORD JWT_SECRET ENCRYPTION_KEY CSRF_SECRET RECEIPT_HMAC_SECRET \
-          VENICE_API_KEY FACILITATOR_MODE FACILITATOR_PRIVATE_KEY \
-          TREASURY_BASE_ADDRESS CHAIN_RPC_URL)
+REQUIRED=(POSTGRES_PASSWORD BETTER_AUTH_SECRET ENCRYPTION_KEY RECEIPT_HMAC_SECRET \
+          VENICE_API_KEY FACILITATOR_MODE TREASURY_BASE_ADDRESS \
+          USDC_DEPOSIT_ADDRESS CHAIN_RPC_URL)
+if [[ "${X402_FACILITATOR_PROVIDER:-coinbase-cdp}" == "coinbase-cdp" && "${FACILITATOR_MODE:-}" == "live" ]]; then
+  REQUIRED+=(FACILITATOR_PRIVATE_KEY)
+fi
 missing=0
 for v in "${REQUIRED[@]}"; do
   if [[ -z "${!v:-}" ]]; then

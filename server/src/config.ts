@@ -7,7 +7,6 @@ const INSECURE_DEFAULTS = [
   "secret",
   "jwt-secret",
   "dev-receipt-hmac-placeholder",
-  "dev-csrf-secret-change-me-in-prod-32ch",
   "dev-encryption-key-change-me-in-prod-32ch",
 ];
 
@@ -74,8 +73,7 @@ const envSchema = z.object({
   // "0" disables the 402 challenge path; requires TREASURY_BASE_ADDRESS.
   X402_CHAT_PRICE_USD: z.string().regex(/^\d+(\.\d+)?$/).default("0.10"),
   PORT: z.coerce.number().default(3001),
-  // Better Auth — replaces the legacy JWT_SECRET / CSRF_SECRET. Better Auth
-  // manages its own session signing + CSRF; we just need to provide a
+  // Better Auth owns session signing and CSRF protection; we just need to provide a
   // 32+ char secret. Generate one per environment with `openssl rand -hex 32`.
   BETTER_AUTH_SECRET: z.string().min(32).default("dev-better-auth-secret-change-me-in-prod-32ch"),
   // The base URL Better Auth uses to build callback URLs. In dev = the Next
@@ -86,7 +84,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM: z.string().min(1).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
-  CORS_ORIGIN: z.string().default("http://localhost:3001"),
+  // Browser clients run on the Next app origin, not the API port.
+  CORS_ORIGIN: z.string().default("http://localhost:3000"),
   // Canonical production domain. Used as the SIWE `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
   // and dev default to a permissive value.
@@ -187,10 +186,6 @@ const envSchema = z.object({
   OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
 
   TINYFISH_API_KEY: z.string().optional(),
-
-  // CSRF protection — Better Auth manages its own CSRF tokens internally.
-  // Kept here for legacy callers; honored as a no-op alias.
-  CSRF_SECRET: z.string().min(32).default("dev-csrf-secret-change-me-in-prod-32ch"),
 
   // Weighted load balancing for provider failover (format: "venice:70,surplus:30")
   // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
@@ -385,16 +380,6 @@ if (isProductionEnv) {
     throw new Error("FATAL: TREASURY_BASE_ADDRESS is a placeholder address. Set a real address in production.");
   }
 }
-
-if (isProductionEnv && INSECURE_DEFAULTS.includes(config.CSRF_SECRET)) {
-  console.error("[FATAL] CSRF_SECRET must not be a known insecure default in production. Set a strong secret (>= 32 chars).");
-  process.exit(1);
-}
-
-// Legacy JWT_SECRET / JWT_SECRET_PREVIOUS production guards removed —
-// Better Auth owns all session signing now. The env vars still exist as
-// inert config keys so deployments that haven't rotated their .env yet
-// don't break at startup.
 
 // SECURITY (A12): Require a Base RPC endpoint in production.
 if (isProductionEnv && !config.CHAIN_RPC_URL) {

@@ -46,15 +46,22 @@ services:
       - CORS_ORIGIN=https://oma-ai.com,https://www.oma-ai.com
       - PUBLIC_API_URL=https://api.oma-ai.com
       # Auth / crypto secrets (passed from host env / .env.prod)
-      - JWT_SECRET=${JWT_SECRET}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-https://oma-ai.com}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://oma-ai.com}
+      - MODEL_OVERRIDES_PATH=${MODEL_OVERRIDES_PATH:-/var/lib/oma/models-overrides.json}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - CSRF_SECRET=${CSRF_SECRET}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}
       - ONRAMP_WEBHOOK_SECRET=${ONRAMP_WEBHOOK_SECRET}
       - LIFI_WEBHOOK_SECRET=${LIFI_WEBHOOK_SECRET}
       - CCTP_WEBHOOK_SECRET=${CCTP_WEBHOOK_SECRET}
       - POLAR_WEBHOOK_SECRET=${POLAR_WEBHOOK_SECRET}
       - POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN}
+      - POLAR_SERVER=${POLAR_SERVER:-production}
+      - POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID}
+      - POLAR_HOBBY_PRODUCT_ID=${POLAR_HOBBY_PRODUCT_ID}
+      - POLAR_BUILDER_PRODUCT_ID=${POLAR_BUILDER_PRODUCT_ID}
+      - POLAR_SCALE_PRODUCT_ID=${POLAR_SCALE_PRODUCT_ID}
       # AI provider API keys (active providers only — see server/src/config.ts)
       - VENICE_API_KEY=${VENICE_API_KEY}
       - GONKA_API_KEY=${GONKA_API_KEY}
@@ -66,6 +73,7 @@ services:
       - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY}
       - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}
+      - USDC_DEPOSIT_ADDRESS=${USDC_DEPOSIT_ADDRESS:-${TREASURY_BASE_ADDRESS}}
       - ADMIN_WALLET_ADDRESSES=${ADMIN_WALLET_ADDRESSES}
       # Chain / RPC (Base mainnet)
       - CHAIN_RPC_URL=${CHAIN_RPC_URL}
@@ -77,6 +85,8 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - model-overrides:/var/lib/oma
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/live"]
       interval: 30s
@@ -135,3 +145,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  model-overrides:

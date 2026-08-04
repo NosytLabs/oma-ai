@@ -56,7 +56,11 @@ vi.mock("../../auth.js", () => ({
   },
 }));
 
-import { sessionAuth, bearerAuth } from "../../auth/middleware.js";
+import {
+  sessionAuth,
+  sessionOrBearerAuth,
+  bearerAuth,
+} from "../../auth/middleware.js";
 
 // Minimal Hono context stub. We only need .req (for header reads) and
 // .json(...) (for short-circuit responses).
@@ -154,6 +158,50 @@ describe("auth middleware — suspension enforcement (Slice 6)", () => {
     const ctx = makeCtx({ sessionCookie: "oma_session=abc" });
     const next = vi.fn().mockResolvedValue(undefined);
     await sessionAuth(ctx as unknown as Parameters<typeof sessionAuth>[0], next);
+
+    expect(ctx.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it("sessionOrBearerAuth returns 403 for a suspended session", async () => {
+    mockDb = buildMockDbWithUser({ banned: false, suspended: true });
+    const { auth } = await import("../../auth.js");
+    (auth.api.getSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      user: { id: "usr_suspended_mixed" },
+      session: { id: "sess_mixed" },
+    });
+
+    const ctx = makeCtx({ sessionCookie: "oma_session=abc" });
+    const next = vi.fn();
+    const result = await sessionOrBearerAuth(
+      ctx as unknown as Parameters<typeof sessionOrBearerAuth>[0],
+      next,
+    );
+
+    expect(result).toBeDefined();
+    expect(ctx.json).toHaveBeenCalledTimes(1);
+    const [body, status] = (ctx.json as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(status).toBe(403);
+    expect(body).toMatchObject({
+      error: { code: "account_suspended", type: "forbidden" },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("sessionOrBearerAuth lets a non-suspended session through", async () => {
+    mockDb = buildMockDbWithUser({ banned: false, suspended: false });
+    const { auth } = await import("../../auth.js");
+    (auth.api.getSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      user: { id: "usr_ok_mixed" },
+      session: { id: "sess_mixed_ok" },
+    });
+
+    const ctx = makeCtx({ sessionCookie: "oma_session=abc" });
+    const next = vi.fn().mockResolvedValue(undefined);
+    await sessionOrBearerAuth(
+      ctx as unknown as Parameters<typeof sessionOrBearerAuth>[0],
+      next,
+    );
 
     expect(ctx.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledTimes(1);

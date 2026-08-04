@@ -38,6 +38,16 @@ import { user } from "../db/schema.js";
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
+// Single source of truth for the suspension rejection so bearerAuth,
+// sessionAuth, sessionOrBearerAuth, and requireAdmin can't drift apart.
+const SUSPENDED_PAYLOAD = {
+  error: {
+    message: "Your OMA-AI account has been suspended by the administrator.",
+    type: "forbidden",
+    code: "account_suspended",
+  },
+} as const;
+
 function isValidEthereumAddress(address: string): boolean {
   return ETH_ADDRESS_REGEX.test(address);
 }
@@ -84,6 +94,38 @@ async function singleflight<T>(
   })();
   singleflightInflight.set(key, { promise });
   return promise;
+}
+
+/**
+ * Shared suspension gate used by bearerAuth, sessionAuth, and the session
+ * branch of sessionOrBearerAuth. Returns a 403 Response when the user row
+ * has either the legacy `banned` flag or the Slice-6 `suspended` flag, or
+ * `undefined` when the user is clear to proceed.
+ *
+ * On DB failure it fails OPEN (logs and continues), matching the existing
+ * convention: the session/API key was already validated upstream, and
+ * failing closed here would lock out every user during a transient DB
+ * blip. Keep the 403 payload identical across all three callers so the
+ * contract can't drift.
+ */
+async function rejectIfSuspended(
+  c: Context<OmaEnv>,
+  userId: string,
+  source: "bearer" | "session" | "session-or-bearer",
+): Promise<Response | undefined> {
+  try {
+    const [u] = await db
+      .select({ banned: user.banned, suspended: user.suspended })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+    if (u?.banned || u?.suspended) {
+      return c.json(SUSPENDED_PAYLOAD, 403);
+    }
+  } catch (err) {
+    logger.error({ err }, `[${source}] failed to check if user is banned/suspended`);
+  }
+  return undefined;
 }
 
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
@@ -141,27 +183,8 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   }
 
   // Check if owner is banned or suspended
-  try {
-    const [u] = await db
-      .select({ banned: user.banned, suspended: user.suspended })
-      .from(user)
-      .where(eq(user.id, apiKey.userId))
-      .limit(1);
-    if (u?.banned || u?.suspended) {
-      return c.json(
-        {
-          error: {
-            message: "Your OMA-AI account has been suspended by the administrator.",
-            type: "forbidden",
-            code: "account_suspended",
-          },
-        },
-        403,
-      );
-    }
-  } catch (err) {
-    logger.error({ err }, "[bearerAuth] failed to check if user is banned/suspended");
-  }
+  const suspended = await rejectIfSuspended(c, apiKey.userId, "bearer");
+  if (suspended) return suspended;
 
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
     return c.json(
@@ -221,27 +244,8 @@ export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
   }
 
   // Check if user is banned or suspended
-  try {
-    const [u] = await db
-      .select({ banned: user.banned, suspended: user.suspended })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .limit(1);
-    if (u?.banned || u?.suspended) {
-      return c.json(
-        {
-          error: {
-            message: "Your OMA-AI account has been suspended by the administrator.",
-            type: "forbidden",
-            code: "account_suspended",
-          },
-        },
-        403,
-      );
-    }
-  } catch (err) {
-    logger.error({ err }, "[sessionAuth] failed to check if user is banned/suspended");
-  }
+  const suspended = await rejectIfSuspended(c, session.user.id, "session");
+  if (suspended) return suspended;
 
   c.set("userId", session.user.id);
   c.set("session", session.session);
@@ -263,6 +267,16 @@ export async function sessionOrBearerAuth(
   for (const [k, v] of c.req.raw.headers) headers.set(k, v);
   const session = await auth.api.getSession({ headers });
   if (session?.user) {
+    // Keep this branch equivalent to sessionAuth: mixed-auth routes must not
+    // become a suspension bypass just because the caller is using a browser
+    // session instead of an API key.
+    const suspended = await rejectIfSuspended(
+      c,
+      session.user.id,
+      "session-or-bearer",
+    );
+    if (suspended) return suspended;
+
     c.set("userId", session.user.id);
     c.set("session", session.session);
     c.set("user", session.user);
@@ -339,16 +353,7 @@ export function requireAdmin() {
     // compromised admin session shouldn't be able to act after the
     // primary admin has flagged the account).
     if (u?.suspended) {
-      return c.json(
-        {
-          error: {
-            message: "Your OMA-AI account has been suspended by the administrator.",
-            type: "forbidden",
-            code: "account_suspended",
-          },
-        },
-        403,
-      );
+      return c.json(SUSPENDED_PAYLOAD, 403);
     }
 
     if (u?.role === "admin") {
