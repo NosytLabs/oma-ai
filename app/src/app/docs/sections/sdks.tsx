@@ -11,7 +11,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="deepseek-v3.2",
+    model="llama-3.3-70b",
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Explain quantum computing in one sentence."}
@@ -30,7 +30,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "deepseek-v3.2",
+  model: "llama-3.3-70b",
   messages: [
     { role: "system", content: "You are a helpful assistant." },
     { role: "user", content: "Explain quantum computing in one sentence." },
@@ -39,14 +39,13 @@ const response = await client.chat.completions.create({
   max_tokens: 256,
 });
 
-// TODO: remove debug logging before shipping
   // console.log(response.choices[0].message.content);`;
 
 	const curlChatCode = `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "deepseek-v3.2",
+    "model": "llama-3.3-70b",
     "messages": [
       {"role": "system", "content": "You are a helpful assistant."},
       {"role": "user", "content": "Explain quantum computing in one sentence."}
@@ -67,7 +66,7 @@ import (
 
 func main() {
 	body, _ := json.Marshal(map[string]any{
-		"model": "deepseek-v3.2",
+		"model": "llama-3.3-70b",
 		"messages": []map[string]string{
 			{"role": "system", "content": "You are a helpful assistant."},
 			{"role": "user", "content": "Explain quantum computing in one sentence."},
@@ -208,7 +207,6 @@ const client = new OpenAI({
 
 const models = await client.models.list();
 for (const model of models.data) {
-  // TODO: remove debug logging before shipping
   // console.log(model.id);
 }`;
 
@@ -381,11 +379,10 @@ const oma = createOpenAI({
 });
 
 const { text } = await generateText({
-  model: oma('deepseek-v3.2'),
+  model: oma('llama-3.3-70b'),
   prompt: 'Explain quantum computing in one sentence.',
 });
 
-// TODO: remove debug logging before shipping
   // console.log(text);`}
 					lang="javascript"
 				/>

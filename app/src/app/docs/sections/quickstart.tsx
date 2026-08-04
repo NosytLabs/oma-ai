@@ -67,7 +67,7 @@ export function QuickStartSection() {
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "llama-3.2-3b",
+    "model": "llama-3.3-70b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`;
 
@@ -136,7 +136,7 @@ export function QuickStartSection() {
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "llama-3.2-3b",
+    "model": "llama-3.3-70b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`}
 					/>

@@ -14,6 +14,7 @@ import { AuthenticationSection } from "./sections/authentication";
 import { AvailableModelsSection } from "./sections/available-models";
 import { EndpointsSection } from "./sections/endpoints";
 import { ErrorsSection } from "./sections/errors";
+import { IntegrationsSection } from "./sections/integrations";
 import { PricingSection } from "./sections/pricing";
 import { ProviderRoutingSection } from "./sections/provider-routing";
 import { QuickStartSection } from "./sections/quickstart";
@@ -215,6 +216,7 @@ function DocsContent() {
 					<div className="space-y-16">
 						<QuickStartSection />
 						<AuthenticationSection />
+						<IntegrationsSection />
 						<EndpointsSection />
 						<AvailableModelsSection />
 						<ProviderRoutingSection />

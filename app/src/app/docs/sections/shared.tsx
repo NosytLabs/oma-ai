@@ -76,10 +76,12 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 ];
 
 // Per-model overrides — mirrors MODEL_LIMITS in
-// server/src/middleware/rate-limit/utils.ts.
+// server/src/middleware/rate-limit/utils.ts exactly.
 export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
-	{ model: "deepseek-v3.2", rpm: 60, tpm: 120000 },
 	{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
+	{ model: "deepseek-v4-flash", rpm: 60, tpm: 120000 },
+	{ model: "minimax-m2.7", rpm: 60, tpm: 120000 },
+	// Still defined on the server; not always in the curated public catalog.
 	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
 ];
 
@@ -126,6 +128,31 @@ export const ENDPOINTS: EndpointInfo[] = [
 }`,
 	},
 	{
+		method: "POST",
+		path: "/v1/messages",
+		anchor: "ep-messages",
+		title: "Anthropic Messages",
+		desc: "Anthropic-compatible Messages API for Claude Code and the Anthropic SDK. Same catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+		auth: "Bearer token (API key) or x-api-key",
+		body: {
+			model: 'string (required). OMA catalog id, e.g. "claude-sonnet-5"',
+			messages: "array of { role: user|assistant, content }",
+			max_tokens: "integer (required by Anthropic clients)",
+			system: "string or content blocks (optional)",
+			stream: "boolean. SSE when true",
+			temperature: "number (optional)",
+		},
+		response: `{
+  "id": "msg_…",
+  "type": "message",
+  "role": "assistant",
+  "content": [{ "type": "text", "text": "Hello." }],
+  "model": "claude-sonnet-5",
+  "stop_reason": "end_turn",
+  "usage": { "input_tokens": 12, "output_tokens": 8 }
+}`,
+	},
+	{
 		method: "GET",
 		path: "/v1/search",
 		anchor: "ep-search",
@@ -152,12 +179,12 @@ export const ENDPOINTS: EndpointInfo[] = [
   "object": "list",
   "data": [
     {
-      "id": "llama-3.2-3b",
+      "id": "llama-3.3-70b",
       "object": "model",
       "created": 1717194000,
       "owned_by": "oma",
       "permission": [],
-      "root": "llama-3.2-3b",
+      "root": "llama-3.3-70b",
       "parent": null,
       "pricing": { "prompt": "0.00000006", "completion": "0.00000012" },
       "category": "chat",

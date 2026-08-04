@@ -8,7 +8,7 @@ client = OpenAI(
     base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
-    model="llama-3.2-3b",
+    model="llama-3.3-70b",
     messages=[{"role": "user", "content": "Hello!"}]
 )`;
 
@@ -18,7 +18,7 @@ const client = new OpenAI({
   baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
-  model: "llama-3.2-3b",
+  model: "llama-3.3-70b",
   messages: [{ role: "user", content: "Hello!" }]
 });`;
 
@@ -50,8 +50,8 @@ func main() {
 				<p className="text-sm text-text-muted mb-2">
 					Models routed via OMA-AI (OpenBroker /{" "}
 					<code className="text-accent font-mono text-xs">provider: gonka</code>
-					) — e.g. <code className="text-accent font-mono text-xs">zai-org-glm-4.7-flash</code>,{" "}
-					<code className="text-accent font-mono text-xs">qwen3-5-9b</code> — can be
+					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{" "}
+					<code className="text-accent font-mono text-xs">kimi-k2.6</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 					without sign-in, API key, or wallet. Rate limits still apply. Venice and
 					other paid models require an account (API key or wallet) and credits.
@@ -80,7 +80,7 @@ func main() {
 						code: `curl https://api.oma-ai.com/v1/chat/completions \\
   -H "Authorization: Bearer oma_sk_your_key_here" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"llama-3.2-3b","messages":[{"role":"user","content":"Hello"}]}'`,
+  -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
 					},
 					{ label: "Python", lang: "python", code: pythonCode },
 					{ label: "JavaScript", lang: "javascript", code: jsCode },

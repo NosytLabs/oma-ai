@@ -72,7 +72,7 @@ export function RateLimitsSection() {
 					<tbody>
 						{MODEL_RATE_OVERRIDES.map((m, i) => (
 							<tr
-								key={m.model}
+								key={`${m.model}-${m.rpm}-${m.tpm}`}
 								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : ""}`}
 							>
 								<td className="px-4 py-3">

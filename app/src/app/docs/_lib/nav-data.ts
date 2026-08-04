@@ -3,6 +3,7 @@ import {
 	AlertCircle,
 	BookOpen,
 	Book,
+	Bot,
 	DollarSign,
 	Gauge,
 	GitBranch,
@@ -62,6 +63,29 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 	},
 	{
+		id: "integrations",
+		label: "Agents & IDEs",
+		icon: Bot,
+		keywords: [
+			"opencode",
+			"claude code",
+			"cursor",
+			"continue",
+			"cline",
+			"base url",
+			"openai compatible",
+			"anthropic",
+			"agent",
+			"ide",
+		],
+		headings: [
+			{ id: "int-opencode", label: "OpenCode" },
+			{ id: "int-claude-code", label: "Claude Code" },
+			{ id: "int-cursor", label: "Cursor / Continue" },
+			{ id: "int-openai-sdk", label: "OpenAI SDKs" },
+		],
+	},
+	{
 		id: "endpoints",
 		label: "Endpoints Reference",
 		icon: Terminal,
@@ -77,6 +101,7 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "ep-chat", label: "Chat completions" },
+			{ id: "ep-messages", label: "Anthropic messages" },
 			{ id: "ep-models", label: "List models" },
 			{ id: "ep-model", label: "Get model" },
 			{ id: "ep-images", label: "Image generation" },
@@ -252,7 +277,7 @@ export const NAV_ITEMS: NavItem[] = [
 		icon: HelpCircle,
 		keywords: ["faq", "question", "help", "newcomer", "support"],
 		headings: [
-			{ id: "faq", label: "General Questions" },
+			{ id: "faq-general", label: "General Questions" },
 		],
 	},
 	{
@@ -261,7 +286,7 @@ export const NAV_ITEMS: NavItem[] = [
 		icon: Book,
 		keywords: ["glossary", "terms", "definitions", "dictionary"],
 		headings: [
-			{ id: "glossary", label: "Definitions" },
+			{ id: "glossary-defs", label: "Definitions" },
 		],
 	},
 	{

@@ -15,7 +15,7 @@ from openai import OpenAI
 client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
 for attempt in range(5):
     try:
-        response = client.chat.completions.create(model="llama-3.2-3b", messages=[{"role": "user", "content": "Hi"}])
+        response = client.chat.completions.create(model="llama-3.3-70b", messages=[{"role": "user", "content": "Hi"}])
         break
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 429:
