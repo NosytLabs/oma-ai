@@ -53,6 +53,18 @@ const PLANS: PlanCard[] = CREDIT_PLANS.map((plan, idx) => ({
   highlight: idx === 1
 }));
 
+function CardBrandIcons() {
+	return (
+		<>
+			<img src="/payment-methods/visa.svg" alt="Visa" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+			<img src="/payment-methods/mastercard.svg" alt="Mastercard" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+			<img src="/payment-methods/amex.svg" alt="American Express" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+			<img src="/payment-methods/apple-pay.svg" alt="Apple Pay" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+			<img src="/payment-methods/google-pay.svg" alt="Google Pay" width="24" height="16" className="h-4 w-auto" loading="lazy" />
+		</>
+	);
+}
+
 export function FiatCheckoutPanel() {
 	const { isAuthenticated, isDemo } = useAuth();
 	const toast = useToast();
@@ -149,13 +161,16 @@ export function FiatCheckoutPanel() {
 							<span className="mt-0.5 text-[11px] text-text-muted">
 								{p.tagline}
 							</span>
-							<div className="mt-3 flex items-baseline justify-between">
+							<div className="mt-3 flex items-center justify-between">
 								<span className="text-base font-semibold text-accent">
 									{p.price}
 								</span>
 								<span className="text-[10px] font-mono text-text-muted">
 									{p.perCredit}
 								</span>
+							</div>
+							<div className="mt-2 flex items-center gap-1.5 text-text-muted">
+								<CardBrandIcons />
 							</div>
 						</label>
 					);
