@@ -3,7 +3,7 @@
 // provisions the admin user, writes ADMIN_WALLET_ADDRESSES, and
 // records an audit log entry.
 //
-// Usage: node --env-file=.env scripts/blockchain-bootstrap.mjs
+// Usage: node --env-file=.env scripts/ops/blockchain-bootstrap.mjs
 import { readFileSync, writeFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -11,7 +11,7 @@ import { sql } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 
 // --- Read DATABASE_URL from server/.env so we don't depend on --env-file flag
-const envPath = new URL("../server/.env", import.meta.url);
+const envPath = new URL("../../server/.env", import.meta.url);
 const env = readFileSync(envPath, "utf8");
 const dbUrl = env.split("\n").find((l) => l.startsWith("DATABASE_URL="))?.split("=")[1]?.trim();
 if (!dbUrl) {

@@ -1,8 +1,11 @@
 #!/bin/bash
 # OMA AI Gateway - Quick Start Script
-# Usage: ./start-dev.sh
+# Usage: ./scripts/dev/start-dev.sh  (or ./scripts/start-dev.sh)
 
-set -e
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT"
 
 echo "🚀 Starting OMA AI Gateway..."
 echo ""
@@ -14,11 +17,11 @@ NC='\033[0m' # No Color
 
 # Check for required environment variables
 check_env() {
-    if [ -z "$DATABASE_URL" ]; then
+    if [ -z "${DATABASE_URL:-}" ]; then
         echo -e "${YELLOW}⚠️  Warning: DATABASE_URL not set${NC}"
         echo "   Please set it in server/.env"
     fi
-    if [ -z "$VENICE_API_KEY" ]; then
+    if [ -z "${VENICE_API_KEY:-}" ]; then
         echo -e "${YELLOW}⚠️  Warning: VENICE_API_KEY not set${NC}"
         echo "   Please set it in server/.env"
     fi
@@ -27,20 +30,16 @@ check_env() {
 # Start server
 start_server() {
     echo -e "${GREEN}▶ Starting API server...${NC}"
-    cd server
-    npm run dev &
+    (cd "$ROOT/server" && npm run dev) &
     SERVER_PID=$!
-    cd ..
     echo "   Server PID: $SERVER_PID"
 }
 
 # Start frontend
 start_frontend() {
     echo -e "${GREEN}▶ Starting Frontend...${NC}"
-    cd app
-    npm run dev &
+    (cd "$ROOT/app" && npm run dev) &
     FRONTEND_PID=$!
-    cd ..
     echo "   Frontend PID: $FRONTEND_PID"
 }
 

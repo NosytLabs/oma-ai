@@ -29,16 +29,9 @@
 | Lockup SVG | `app/public/logos/oma-logo.svg` |
 | Apple touch (solid void bg) | `app/public/apple-touch-icon.png` |
 | Open Graph 1280×720 | `app/public/og-image.webp` |
+| Brand kit (SVG + rasters) | `app/public/logos/brand-kit/` — SVG geometry + Imagine-polished rasters |
 
-Regenerate PWA/tab rasters from SVG (always after mark edits):
-
-```bash
-rsvg-convert -w 16 -h 16 app/public/favicon.svg -o app/public/favicon-16x16.png
-rsvg-convert -w 32 -h 32 app/public/favicon.svg -o app/public/favicon-32x32.png
-rsvg-convert -w 180 -h 180 -b '#07090a' app/public/logos/oma-icon.svg -o app/public/apple-touch-icon.png
-rsvg-convert -w 192 -h 192 app/public/logos/oma-icon.svg -o app/public/logos/oma-icon-192.png
-rsvg-convert -w 512 -h 512 app/public/logos/oma-icon.svg -o app/public/logos/oma-icon-512.png
-```
+**Rasters:** use Imagine `image_edit` from the existing icon PNG (do not freeform-regen SVGs). Deploy sized PNGs to favicon/PWA paths. SVG remains the vector source for UI components.
 
 ### Brand kit (ship checklist)
 

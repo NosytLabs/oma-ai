@@ -10,13 +10,14 @@
 - OpenAI-compatible: drop-in for `openai-python`, `openai-node`, Vercel AI SDK,
   LangChain, raw `fetch`, and any HTTP client.
 - Auth: Magic link email, SIWE wallet, and API keys. x402 pay-per-request supported.
-- Model catalog: 20+ curated chat models via Venice + budget tier via OMA-AI/Gonka
+- Model catalog: 22 curated chat models (20 Venice + 2 Gonka budget tier)
   (see live list at https://oma-ai.com/models).
 - Brand: Open Model Access · accent `#46d39a` · void `#07090a`
 - Brand kit sources: `/logos/oma-wordmark.svg` (SVG + PNG), `/logos/oma-brand-card.svg` (SVG + PNG), `/favicon.svg`
 
 ## Documentation
 - [Docs home](https://oma-ai.com/docs): full API reference
+- [Agents & IDEs](https://oma-ai.com/docs#integrations): OpenCode, Claude Code, Cursor, Continue
 - [Capabilities](https://oma-ai.com/capabilities): modalities, payment rails, protocols, provider matrix
 - [Getting started](https://oma-ai.com/getting-started): 5-step quickstart for beginners and developers
 - [Model catalog](https://oma-ai.com/models): models, prices, capabilities
@@ -26,10 +27,23 @@
 - [Compare](https://oma-ai.com/compare): OMA vs Portkey / LiteLLM / OpenRouter
 - [Changelog](https://oma-ai.com/changelog): product updates
 - [API reference](https://oma-ai.com/docs#endpoints): every endpoint — auth, chat, billing, webhooks
+- [OpenAPI](https://api.oma-ai.com/openapi.json): machine-readable OpenAPI 3.1
 - [Observability](https://oma-ai.com/observability): live health + sample ops dashboard
 - [About](https://oma-ai.com/about) · [Contact](https://oma-ai.com/contact)
-- [Privacy](https://oma-ai.com/privacy) · [Terms](https://oma-ai.com/terms) · [AUP](https://oma-ai.com/aup)
+- [Privacy](https://oma-ai.com/privacy) · [Terms](https://oma-ai.com/terms) · [Acceptable use](https://oma-ai.com/terms#acceptable-use)
 - [Chat playground](https://oma-ai.com/chat): try models (sign-in or demo)
+
+## Drop-in clients (best practice)
+```bash
+# OpenAI-compatible (OpenCode, Cursor, openai-python, Vercel AI SDK)
+export OPENAI_API_KEY="oma_sk_…"
+export OPENAI_BASE_URL="https://api.oma-ai.com/v1"
+
+# Anthropic-compatible (Claude Code, Anthropic SDK)
+export ANTHROPIC_API_KEY="oma_sk_…"
+export ANTHROPIC_BASE_URL="https://api.oma-ai.com"   # client appends /v1/messages
+```
+Use live model ids from `GET /v1/models` (e.g. `llama-3.3-70b`, `claude-sonnet-5`, `minimax-m2.7`).
 
 ## Modalities
 | Modality | Endpoint | Pricing |

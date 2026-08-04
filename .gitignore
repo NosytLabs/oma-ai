@@ -36,6 +36,7 @@ test-screenshots/
 audit-screenshots/
 .audit-screenshots/
 .audit-2026-08-01/
+.visual-audit/
 screenshots/
 
 # Root-level public only (Next app assets live in app/public/)

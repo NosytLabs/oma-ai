@@ -1,6 +1,6 @@
 // axe-core a11y audit for OMA-AI public pages
-// Usage: node scripts/axe-audit.mjs
-// Uses playwright + axe-core from the app workspace.
+// Usage: node scripts/audit/axe-audit.mjs
+// Uses playwright + axe-core from the app workspace. Run from repo root.
 
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -8,7 +8,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(join(__dirname, "../app/package.json"));
+const root = join(__dirname, "../..");
+const require = createRequire(join(root, "app/package.json"));
 // @playwright/test re-exports playwright's chromium — works without a top-level
 // `playwright` dep (we only depend on `@playwright/test` in the app).
 const { chromium } = require("@playwright/test");
@@ -32,8 +33,11 @@ const PAGES = [
 	{ url: "/terms", name: "terms" },
 	{ url: "/login", name: "login" },
 	{ url: "/chat", name: "chat" },
-	{ url: "/network", name: "network" },
+	{ url: "/getting-started", name: "getting-started" },
 	{ url: "/changelog", name: "changelog" },
+	{ url: "/faq", name: "faq" },
+	{ url: "/compare", name: "compare" },
+	{ url: "/capabilities", name: "capabilities" },
 	{ url: "/dashboard", name: "dashboard", demo: true },
 	{ url: "/settings", name: "settings", demo: true },
 	{ url: "/deposit", name: "deposit", demo: true },
@@ -121,9 +125,10 @@ for (const page of PAGES) {
 await browser.close();
 await ctx.close();
 
-const reportPath = join(process.cwd(), '.opencode/audit-2026-06-13v2/axe-core-audit.json');
-const { writeFileSync, mkdirSync } = await import('node:fs');
-mkdirSync(join(process.cwd(), '.opencode/audit-2026-06-13v2'), { recursive: true });
+const { writeFileSync, mkdirSync } = await import("node:fs");
+const reportDir = join(root, ".tmp", "axe-audit");
+const reportPath = join(reportDir, "axe-core-audit.json");
+mkdirSync(reportDir, { recursive: true });
 writeFileSync(reportPath, JSON.stringify(results, null, 2));
 console.log(`\n=== AXE-CORE AUDIT SUMMARY ===`);
 console.log(`Pages scanned: ${results.summary.total}`);

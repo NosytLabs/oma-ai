@@ -25,7 +25,7 @@
 
 OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 - **Base URL:** `https://api.oma-ai.com/v1`
-- **One API for 20+ curated chat models** (Venice + OMA-AI / Gonka budget tier)
+- **One API for 22 curated chat models** (20 Venice + 2 Gonka budget tier)
   across chat completions, image generation, and video generation
 - **Pay your way:**
   1. **API key + credits** — sign in, create a key (`oma_sk_...`), buy credits
@@ -72,6 +72,21 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
   generation.
 - Always check `/v1/models` for live per-model pricing before committing to a
   long task, and prefer cheap models for bulk/mechanical work.
+
+## Pointing tools at OMA
+
+```bash
+# OpenAI-compatible (OpenCode, Cursor, openai-python, Vercel AI SDK)
+export OPENAI_API_KEY="oma_sk_…"
+export OPENAI_BASE_URL="https://api.oma-ai.com/v1"
+
+# Anthropic-compatible (Claude Code)
+export ANTHROPIC_API_KEY="oma_sk_…"
+export ANTHROPIC_BASE_URL="https://api.oma-ai.com"   # client appends /v1/messages
+```
+
+Full IDE/agent recipes: https://oma-ai.com/docs#integrations  
+OpenAPI: https://api.oma-ai.com/openapi.json
 
 ## Identity
 

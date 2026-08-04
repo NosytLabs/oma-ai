@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # OMA AI Gateway · Production Launch Validation Script
 # Performs environment audits, configuration checks, and dependency validation.
+# Usage: ./scripts/ops/validate-launch.sh  (from anywhere; cds to repo root)
 
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT"
 
 # Visual terminal colors
 RED='\033[0;31m'

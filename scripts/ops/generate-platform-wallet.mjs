@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(join(__dirname, "../server/package.json"));
+const require = createRequire(join(__dirname, "../../server/package.json"));
 const { generatePrivateKey, privateKeyToAccount } = require("viem/accounts");
 
 const privateKey = generatePrivateKey();
