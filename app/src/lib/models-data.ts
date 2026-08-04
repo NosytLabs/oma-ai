@@ -389,7 +389,7 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 /**
  * Interface matching the OpenAI-style models returned by GET /v1/models.
- * The live API returns the curated chat catalog (23 models — see
+ * The live API returns the curated chat catalog (22 models — see
  * `MODEL_COUNT`) with pricing, category, and context_length but NOT
  * displayName, description, or capabilities — those are derived here.
  */
@@ -507,7 +507,7 @@ const tier: Tier =
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
  * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
- * curated server catalog (23 models) — keep in sync with
+ * curated server catalog (22 models) — keep in sync with
  * server/src/inference/models.ts.
  */
 const FALLBACK_CATALOG: RawCatalog = {
