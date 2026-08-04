@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import nextDynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/ui/Toast";
@@ -52,6 +52,14 @@ function AuthGateSkeleton() {
 }
 
 export default function DashboardPage() {
+	return (
+		<Suspense fallback={<AuthGateSkeleton />}>
+			<DashboardPageInner />
+		</Suspense>
+	);
+}
+
+function DashboardPageInner() {
 	const { isAuthenticated, isDemo, isReady, evmAddress } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();

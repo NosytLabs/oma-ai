@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
 	type FormEvent,
+	Suspense,
 	useCallback,
 	useEffect,
 	useState,
@@ -67,8 +68,38 @@ function defaultNext(): string {
 	return safeLoginNext(params.get("next"));
 }
 
+function LoginFallback() {
+	return (
+		<div
+			className="page-shell relative flex flex-col items-center justify-center px-4 py-8"
+			aria-busy="true"
+			aria-label="Loading sign-in"
+		>
+			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr]">
+				<div className="surface-card space-y-4 p-8">
+					<Skeleton className="h-8 w-32" />
+					<Skeleton className="h-10 w-3/4" />
+					<Skeleton className="h-4 w-full" />
+					<Skeleton className="h-16 w-full" />
+					<Skeleton className="h-16 w-full" />
+				</div>
+				<div className="mx-auto w-full max-w-md space-y-4">
+					<Skeleton className="h-28 w-full rounded-lg" />
+					<Skeleton className="h-64 w-full rounded-lg" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function LoginPage() {
-	return <LoginInner />;
+	// useSearchParams requires a Suspense boundary so SSR and the first
+	// client paint share the same tree (avoids hydration attribute drift).
+	return (
+		<Suspense fallback={<LoginFallback />}>
+			<LoginInner />
+		</Suspense>
+	);
 }
 
 function LoginInner() {
