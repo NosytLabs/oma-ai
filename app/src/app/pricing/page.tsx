@@ -64,22 +64,22 @@ const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
 		title: "Card · Visa · Mastercard",
-		desc: "Buy credits with any major card via Polar. Apple Pay supported. No wallet or crypto needed.",
-		tag: "Easiest",
+		desc: "Buy credits with card via Polar (Apple Pay supported). No wallet required.",
+		tag: "Card",
 		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
 	{
 		icon: Coins,
 		title: "USDC on Base",
-		desc: "Direct USDC transfers at 1:1 USD. Settlement is immediate on confirmation.",
-		tag: "Crypto-native",
+		desc: "Transfer USDC on Base to your deposit address. Credits apply after confirmation.",
+		tag: "On-chain",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
 	{
 		icon: Rocket,
 		title: "x402 Pay-Per-Request",
-		desc: "Agent-native payments on Base. Each API request settles fees on-chain without pre-funding credits.",
-		tag: "For agents",
+		desc: "HTTP 402 settlement on Base. Agents pay per request without pre-funding credits.",
+		tag: "Agents",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
 ];
@@ -488,8 +488,8 @@ export default function PricingPage() {
 						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
 							<p className="text-xs text-text-muted">
 								Prices shown are base provider rates. OMA applies a 25% platform
-								fee at billing for Venice models. Gonka-routed models (GLM 5.1,
-								DeepSeek V4 Flash) have no additional markup.
+								fee at billing for Venice models. Gonka-routed models (MiniMax M2.7,
+								Kimi K2.6) have no additional markup.
 							</p>
 						</div>
 					</div>

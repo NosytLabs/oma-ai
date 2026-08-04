@@ -7,9 +7,13 @@ import { useEffect, useId, useState } from "react";
 import { Banknote, Coins, Zap } from "lucide-react";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
+import {
+	railByKey,
+	railStatuses,
+	type SitePaymentSettings,
+} from "@/lib/payment-rails";
 
-// Lazy-load the 950-line client interface. Pulls in viem + wagmi + the
-// payment-link API; defer until after the header paints.
+// Lazy-load the client interface. Pulls in viem + the payment-link API.
 const UnifiedDepositInterface = nextDynamic(
 	() =>
 		import("./_components/UnifiedDepositInterface").then((m) => ({
@@ -52,6 +56,7 @@ const METHODS: {
 	icon: typeof Coins;
 	tag: string;
 	desc: string;
+	rail: "usdc" | "card" | "x402";
 }[] = [
 	{
 		key: "crypto",
@@ -59,6 +64,7 @@ const METHODS: {
 		icon: Coins,
 		tag: "On-chain",
 		desc: "Send USDC on Base from any wallet.",
+		rail: "usdc",
 	},
 	{
 		key: "card",
@@ -66,6 +72,7 @@ const METHODS: {
 		icon: Banknote,
 		tag: "Visa · Mastercard",
 		desc: "Pay with card via Polar. No wallet needed.",
+		rail: "card",
 	},
 	{
 		key: "x402",
@@ -73,50 +80,37 @@ const METHODS: {
 		icon: Zap,
 		tag: "Pay-per-request",
 		desc: "Agents pay per request. No upfront deposit.",
+		rail: "x402",
 	},
 ];
 
-/** Payment method info displayed below the deposit form. */
 function PaymentMethodsInfo({
 	siteSettings,
 }: {
-	siteSettings: {
-		maintenanceMode: boolean;
-		cardPaymentsEnabled: boolean;
-		cryptoPaymentsEnabled: boolean;
-	} | null;
+	siteSettings: SitePaymentSettings | null;
 }) {
-	const methods = [
-		{
-			name: "USDC (Base)",
-			desc: "Direct deposit to the Base treasury. Instant credit once confirmed.",
-			badge: siteSettings && siteSettings.cryptoPaymentsEnabled === false
-				? "Paused"
-				: "Available",
-		},
-		{
-			name: "Card · Polar",
-			desc: "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required.",
-			badge: siteSettings && siteSettings.cardPaymentsEnabled === false
-				? "Paused"
-				: "Available",
-		},
-		{
-			name: "x402 Pay-Per-Request",
-			desc: "Gasless payments with automatic fee deduction per API request. No upfront deposit required.",
-			badge: "Agents",
-		},
-	];
+	const methods = railStatuses(siteSettings).map((r) => ({
+		name: r.label,
+		desc:
+			r.key === "usdc"
+				? "Direct deposit to the Base treasury. Instant credit once confirmed."
+				: r.key === "card"
+					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
+					: "Gasless payments with automatic fee deduction per API request. No upfront deposit required.",
+		badge: r.badge,
+		reason: r.reason,
+	}));
+
 	return (
 		<m.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.2, duration: 0.3 }}
+			transition={{ delay: 0.15, duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
 			className="mt-8 rounded-lg border border-border bg-surface/50 p-5"
 		>
-			<h3 className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-text-secondary mb-3">
-				<Zap className="w-3.5 h-3.5 text-accent" />
-				Payment Methods
+			<h3 className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
+				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+				Payment methods
 			</h3>
 			<div className="grid gap-3 sm:grid-cols-3">
 				{methods.map((m) => (
@@ -124,25 +118,61 @@ function PaymentMethodsInfo({
 						key={m.name}
 						className="rounded border border-border bg-panel p-3"
 					>
-						<div className="flex items-center justify-between mb-1">
+						<div className="mb-1 flex items-center justify-between gap-2">
 							<span className="text-sm font-semibold text-text-bright">
 								{m.name}
 							</span>
-							<span className="rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold text-accent bg-accent/10 border border-accent/20">
+							<span
+								className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+									m.badge === "Available" || m.badge === "Agents"
+										? "border-accent/20 bg-accent/10 text-accent"
+										: m.badge === "Paused"
+											? "border-warning/30 bg-warning/10 text-warning"
+											: "border-border bg-surface text-text-muted"
+								}`}
+							>
 								{m.badge}
 							</span>
 						</div>
-						<p className="text-xs text-text-secondary leading-relaxed">
+						<p className="text-xs leading-relaxed text-text-secondary">
 							{m.desc}
 						</p>
+						{m.reason && (
+							<p className="mt-1.5 text-[11px] leading-relaxed text-text-muted">
+								{m.reason}
+							</p>
+						)}
 					</div>
 				))}
 			</div>
-			<p className="mt-3 text-[10px] text-text-muted font-mono">
-				Credits are applied to your account in near real-time after payment
-				confirmation.
+			<p className="mt-3 font-mono text-[10px] text-text-muted">
+				Credits apply after payment confirmation. x402 settles per request on
+				Base without a pre-deposit.
 			</p>
 		</m.div>
+	);
+}
+
+function RailUnavailable({
+	icon: Icon,
+	title,
+	reason,
+	fallback,
+}: {
+	icon: typeof Coins;
+	title: string;
+	reason: string;
+	fallback: string;
+}) {
+	return (
+		<div className="space-y-3 rounded-lg border border-border bg-surface/50 p-6 text-center">
+			<Icon className="mx-auto h-8 w-8 text-text-muted" aria-hidden="true" />
+			<h3 className="text-md font-semibold text-text-bright">{title}</h3>
+			<p className="mx-auto max-w-md text-xs leading-relaxed text-text-secondary">
+				{reason}
+			</p>
+			<p className="mx-auto max-w-md text-[11px] text-text-muted">{fallback}</p>
+		</div>
 	);
 }
 
@@ -159,10 +189,10 @@ function X402Info() {
 							x402 — pay per request
 						</h3>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
-							Agents call the API with no account, no API key, no upfront
-							deposit. On 402 Payment Required, the facilitator signs a
-							USDC payment on Base and the request retries with a
-							PAYMENT-SIGNATURE header. Gas paid by the facilitator.
+							Agents call the API with no account, no API key, and no upfront
+							deposit. On 402 Payment Required, the client signs a USDC payment
+							on Base and retries with a PAYMENT-SIGNATURE header. Gas is paid
+							by the facilitator.
 						</p>
 					</div>
 				</div>
@@ -175,10 +205,10 @@ function X402Info() {
 				>
 					<div>
 						<div className="text-sm font-semibold text-text-bright">
-							Read the x402 spec
+							Read the x402 docs
 						</div>
 						<div className="mt-0.5 text-[11px] text-text-muted">
-							Full protocol walkthrough with curl examples
+							Protocol walkthrough with curl examples
 						</div>
 					</div>
 					<span className="text-text-muted transition-transform group-hover:translate-x-0.5">
@@ -194,7 +224,7 @@ function X402Info() {
 							Open chat
 						</div>
 						<div className="mt-0.5 text-[11px] text-text-muted">
-							Open the chat surface
+							Try the playground surface
 						</div>
 					</div>
 					<span className="text-text-muted transition-transform group-hover:translate-x-0.5">
@@ -208,25 +238,29 @@ function X402Info() {
 
 export default function DepositPage() {
 	const [method, setMethod] = useState<MethodKey>("crypto");
-	const [siteSettings, setSiteSettings] = useState<{
-		maintenanceMode: boolean;
-		cardPaymentsEnabled: boolean;
-		cryptoPaymentsEnabled: boolean;
-	} | null>(null);
+	const [siteSettings, setSiteSettings] = useState<SitePaymentSettings | null>(
+		null,
+	);
 	const tablistId = useId();
 
-	// Deep-link support: /deposit?method=card|x402|crypto. Read in an effect
-	// (not a useState initializer) so server and client render agree — a
-	// window-branching initializer causes a hydration mismatch.
 	useEffect(() => {
 		const m = new URLSearchParams(window.location.search).get("method");
 		if (m === "card" || m === "x402" || m === "crypto") setMethod(m);
 
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
-			.then((r) => r.json())
-			.then((data) => setSiteSettings(data))
-			.catch((err) => console.error("Failed to fetch site settings:", err));
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (data && typeof data === "object") {
+					setSiteSettings(data as SitePaymentSettings);
+				}
+			})
+			.catch(() => {
+				/* leave null → optimistic Available until next visit */
+			});
 	}, []);
+
+	const usdc = railByKey(siteSettings, "usdc");
+	const card = railByKey(siteSettings, "card");
 
 	return (
 		<m.div
@@ -234,7 +268,6 @@ export default function DepositPage() {
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 		>
-			{/* Ambient depth layers */}
 			<div
 				aria-hidden
 				className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
@@ -263,17 +296,17 @@ export default function DepositPage() {
 							aria-controls={`${tablistId}-panel-${m.key}`}
 							tabIndex={isActive ? 0 : -1}
 							onClick={() => setMethod(m.key)}
-							className={`flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-all ${
+							className={`flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.98] ${
 								isActive
 									? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"
 									: "text-text-muted hover:bg-surface hover:text-text"
 							}`}
 						>
-							<span className="flex items-center gap-1.5 text-[12px] font-mono font-semibold uppercase tracking-wider">
+							<span className="flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-wider">
 								<Icon className="h-3.5 w-3.5" aria-hidden="true" />
 								{m.label}
 							</span>
-							<span className="text-[10px] font-mono uppercase tracking-wider opacity-80">
+							<span className="font-mono text-[10px] uppercase tracking-wider opacity-80">
 								{m.tag}
 							</span>
 						</button>
@@ -293,34 +326,44 @@ export default function DepositPage() {
 						initial={{ opacity: 0, y: 6 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -6 }}
-						transition={{ duration: 0.2 }}
+						transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
 					>
-						{method === "crypto" && (
-							siteSettings?.cryptoPaymentsEnabled === false ? (
-								<div className="rounded-lg border border-border bg-surface/50 p-6 text-center space-y-3">
-									<Coins className="mx-auto h-8 w-8 text-text-muted" />
-									<h3 className="text-md font-semibold">USDC deposits are temporarily unavailable</h3>
-									<p className="text-xs text-text-secondary max-w-md mx-auto leading-relaxed">
-										On-chain deposits are currently paused for scheduled platform maintenance. Please check back later or pay with card.
-									</p>
-								</div>
-							) : (
+						{method === "crypto" &&
+							(usdc.actionable ? (
 								<UnifiedDepositInterface />
-							)
-						)}
-						{method === "card" && (
-							siteSettings?.cardPaymentsEnabled === false ? (
-								<div className="rounded-lg border border-border bg-surface/50 p-6 text-center space-y-3">
-									<Banknote className="mx-auto h-8 w-8 text-text-muted" />
-									<h3 className="text-md font-semibold">Card payments are temporarily unavailable</h3>
-									<p className="text-xs text-text-secondary max-w-md mx-auto leading-relaxed">
-										Card checkout and credit purchases are currently paused for system upgrades. Please use USDC direct deposit.
-									</p>
-								</div>
 							) : (
+								<RailUnavailable
+									icon={Coins}
+									title={
+										usdc.badge === "Paused"
+											? "USDC deposits are paused"
+											: "USDC deposits are not available"
+									}
+									reason={
+										usdc.reason ??
+										"This payment rail is not available right now."
+									}
+									fallback="Use card checkout or x402 pay-per-request instead."
+								/>
+							))}
+						{method === "card" &&
+							(card.actionable ? (
 								<FiatCheckoutPanel />
-							)
-						)}
+							) : (
+								<RailUnavailable
+									icon={Banknote}
+									title={
+										card.badge === "Paused"
+											? "Card payments are paused"
+											: "Card checkout is not available"
+									}
+									reason={
+										card.reason ??
+										"This payment rail is not available right now."
+									}
+									fallback="Use USDC on Base or x402 pay-per-request instead."
+								/>
+							))}
 						{method === "x402" && <X402Info />}
 					</m.div>
 				</AnimatePresence>
