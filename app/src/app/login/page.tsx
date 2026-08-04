@@ -262,6 +262,9 @@ function LoginInner() {
 										value={email}
 										onChange={(e) => setEmail(e.target.value.trim())}
 										required
+										// React 19 may disagree with the browser on an empty style attr
+										// during hydration of controlled inputs — suppress the noise.
+										suppressHydrationWarning
 										className="w-full rounded-lg border border-border-bright bg-void px-3 py-3 text-sm placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
 									/>
 									<button
