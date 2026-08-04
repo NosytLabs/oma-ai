@@ -59,8 +59,10 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 		}
 	}, [open]);
 
-	const triggerLabel = evmAddress ? shortAddress(evmAddress) : "session";
-	const triggerTitle = evmAddress ?? "Active session";
+	const triggerLabel = evmAddress ? shortAddress(evmAddress) : "Account";
+	const triggerTitle = evmAddress
+		? `Logged in · ${evmAddress}`
+		: "Logged in";
 
 	const handleConfirmDisconnect = async () => {
 		if (disconnecting) return;
@@ -124,10 +126,10 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 					>
 						<div className="border-b border-border px-4 py-3">
 							<p className="text-[11px] uppercase tracking-widest text-text-tertiary">
-								Active session
+								Logged in
 							</p>
 							<p className="mt-1 truncate text-xs text-accent">
-								{evmAddress ?? "session"}
+								{evmAddress ?? "Email account"}
 							</p>
 						</div>
 						<Link

@@ -61,13 +61,11 @@ const LOGO_MAP: Record<string, string> = {
   "meta": "meta",
   "llama": "meta",
   "llama-3.3-70b": "meta",
-  "llama-3.2-3b": "meta",
 
   // DeepSeek
   "deepseek": "deepseek",
   "deepseek-v4-pro": "deepseek",
   "deepseek-v4-flash": "deepseek",
-  "deepseek-v3.2": "deepseek",
 
   // Mistral
   "mistral": "mistral",
@@ -122,6 +120,17 @@ const LOGO_MAP: Record<string, string> = {
   "usdc": "usdcoin",
   "ethereum": "ethereum",
   "base": "coinbase",
+};
+
+/** Local tiles when SimpleIcons 404s (openai/mistral/zai/mercury). */
+const LOCAL_PROVIDER_ICONS: Record<string, string> = {
+  openai: "/logos/providers/openai.svg",
+  mistral: "/logos/providers/mistral.svg",
+  zhipuai: "/logos/providers/zai.svg",
+  zai: "/logos/providers/zai.svg",
+  inception: "/logos/providers/mercury.svg",
+  inceptionai: "/logos/providers/mercury.svg",
+  mercury: "/logos/providers/mercury.svg",
 };
 
 // Fallback colors for known providers (used by SimpleIcons CDN tinting)
@@ -187,9 +196,25 @@ export function ModelLogo({
   const slug = directSlug ?? providerSlug;
   const color = getProviderColor(slug || "6366f1");
 
-  // Try CDN logo first; verify with a HEAD request to avoid 404 noise
-  // in the console and on the network tab for slugs that don't exist
-  // upstream.
+  const localSrc = slug ? LOCAL_PROVIDER_ICONS[slug] : undefined;
+  if (localSrc && !hasError) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- local static SVG
+      <img
+        src={localSrc}
+        alt=""
+        width={size}
+        height={size}
+        className={`inline-block shrink-0 rounded ${className}`}
+        style={{ width: size, height: size }}
+        onError={() => setHasError(true)}
+        loading="lazy"
+        decoding="async"
+      />
+    );
+  }
+
+  // Try CDN logo first; skip slugs that 404 on SimpleIcons.
   if (slug && !hasError && !KNOWN_MISSING_SLUGS.has(slug)) {
     const url = `https://cdn.simpleicons.org/${slug}/${color}`;
     return (

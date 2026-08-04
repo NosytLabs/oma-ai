@@ -137,9 +137,9 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 						<m.span
 							key="badge"
 							aria-hidden="true"
-							initial={{ opacity: 0, scale: 0, x: 8, y: -8 }}
+							initial={{ opacity: 0, scale: 0.85, x: 4, y: -4 }}
 							animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-							exit={{ opacity: 0, scale: 0, x: 8, y: -8 }}
+							exit={{ opacity: 0, scale: 0.85, x: 4, y: -4 }}
 							transition={{ ...springs.magnet, delay: 0.05 }}
 							className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-void"
 						>
@@ -195,9 +195,9 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 								) : recent.length === 0 ? (
 									<m.div
 										key="empty"
-										initial={{ opacity: 0, scale: 0.7, filter: "blur(6px)" }}
-										animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-										exit={{ opacity: 0, scale: 0.7, filter: "blur(6px)" }}
+										initial={{ opacity: 0, scale: 0.96 }}
+										animate={{ opacity: 1, scale: 1 }}
+										exit={{ opacity: 0, scale: 0.96 }}
 										transition={{ ...springs.magnet }}
 										className="flex flex-col items-center gap-2 px-2 py-6 text-center"
 									>

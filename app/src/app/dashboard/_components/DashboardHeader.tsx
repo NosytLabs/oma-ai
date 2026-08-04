@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { log } from "@/lib/logger";
 import { formatTime } from "@/lib/utils";
 import { TABS, TIME_RANGES, type TabId, type TimeRangeId } from "../_constants";
 
@@ -105,7 +106,7 @@ export function DashboardHeader({
 			refreshInFlightRef.current = true;
 			Promise.resolve(onRefresh())
 				.catch((err) => {
-					console.warn("Auto-refresh failed:", err);
+					log.warn("Auto-refresh failed", err);
 				})
 				.finally(() => {
 					nextRefreshAt = Date.now() + POLL_INTERVAL_MS;

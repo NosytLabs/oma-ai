@@ -226,7 +226,6 @@ const response = await client.chat.completions.create({
     temperature: 0.7
 });
 
-// TODO: remove debug logging before shipping
 // console.log(response.choices[0].message.content);`;
 
   return (
@@ -497,7 +496,6 @@ const response = await client.chat.completions.create({
     temperature: 0.7
 });
 
-// TODO: remove debug logging before shipping
 // console.log(response.choices[0].message.content);`;
 
   return (

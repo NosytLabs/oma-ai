@@ -1,5 +1,6 @@
 import {
 	Activity,
+	BookOpen,
 	Bot,
 	Box,
 	FileText,
@@ -8,6 +9,7 @@ import {
 	Network,
 	Newspaper,
 	ShieldCheck,
+	Sparkles,
 	Tag,
 	Terminal,
 } from "lucide-react";
@@ -38,21 +40,39 @@ export const primaryLinks: NavItem[] = [
 	},
 	{ href: "/pricing", label: "Pricing", icon: Tag, desc: "Transparent cost" },
 	{ href: "/docs", label: "Docs", icon: FileText, desc: "API reference" },
+];
+
+/** Tools dropdown — secondary, off the primary path. */
+export const toolsLinks: NavItem[] = [
 	{
 		href: "/compare",
 		label: "Compare",
 		icon: GitCompare,
 		desc: "vs Portkey, LiteLLM, OpenRouter",
 	},
-];
-
-/** Tools dropdown — secondary, off the primary path. */
-export const toolsLinks: NavItem[] = [
+	{
+		href: "/capabilities",
+		label: "Capabilities",
+		icon: Sparkles,
+		desc: "Modalities · rails · protocols",
+	},
 	{
 		href: "/docs#endpoints",
 		label: "API Reference",
 		icon: Network,
 		desc: "Every endpoint, live",
+	},
+	{
+		href: "/docs#integrations",
+		label: "Agents & IDEs",
+		icon: Bot,
+		desc: "OpenCode · Claude Code · Cursor",
+	},
+	{
+		href: "/getting-started",
+		label: "Get started",
+		icon: BookOpen,
+		desc: "5-minute walkthrough",
 	},
 	{
 		href: "/observability",
@@ -68,9 +88,9 @@ export const toolsLinks: NavItem[] = [
 	},
 	{
 		href: "/agent-skill.md",
-		label: "Agent setup",
+		label: "Agent skill file",
 		icon: Bot,
-		desc: "Prompt for your AI agent",
+		desc: "Copy into your agent instructions",
 	},
 	{
 		href: "/admin",
@@ -90,7 +110,7 @@ export const mobileGroups: NavGroup[] = [
 	},
 	{
 		title: "tools",
-		caption: "modality + utility",
+		caption: "compare · learn · ops",
 		links: toolsLinks,
 	},
 ];

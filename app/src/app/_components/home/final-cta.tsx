@@ -24,16 +24,15 @@ export function FinalCTA() {
 								id="final-cta-headline"
 								className="display-headline text-text-bright"
 							>
-								Stop renting GPUs.
+								Get an API key.
 								<br />
 								<span className="gradient-text-accent">
-									Start shipping agents.
+									Call any model.
 								</span>
 							</h2>
 							<p className="text-lg text-text-secondary max-w-xl leading-relaxed">
-								Buy credits by card through Polar or deposit USDC on Base. One
-								OpenAI-compatible API handles every model, with x402 available for
-								agent-native payments.
+								Fund credits with card (Polar) or USDC on Base. Use x402 when
+								agents need to pay per request. One OpenAI-compatible surface.
 							</p>
 						</div>
 

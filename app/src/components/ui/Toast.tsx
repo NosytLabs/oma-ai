@@ -164,10 +164,15 @@ function ToastItem({
 	return (
 		<motion.div
 			layout
-			initial={{ opacity: 0, y: 15, scale: 0.9, x: 50 }}
+			initial={{ opacity: 0, y: 12, scale: 0.96, x: 24 }}
 			animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-			exit={{ opacity: 0, scale: 0.85, x: 80, transition: { duration: 0.18 } }}
-			transition={{ type: "spring", stiffness: 380, damping: 26 }}
+			exit={{
+				opacity: 0,
+				scale: 0.96,
+				x: 32,
+				transition: { duration: 0.16, ease: [0.23, 1, 0.32, 1] },
+			}}
+			transition={{ type: "spring", stiffness: 420, damping: 28 }}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 			className={cn(
@@ -190,11 +195,12 @@ function ToastItem({
 				onClick={onDismiss}
 				aria-label="Dismiss notification"
 				className={cn(
-					"rounded-md min-h-8 min-w-8 flex items-center justify-center p-1.5",
+					"rounded-md min-h-8 min-w-8 flex items-center justify-center p-1.5 shrink-0",
 					"hover:bg-text-bright/10 text-text-secondary hover:text-text-bright",
-					"transition-all duration-200 shrink-0 focus-visible:outline-none",
-					"focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-					"focus-visible:ring-offset-surface hover:rotate-90 hover:scale-105 active:scale-95",
+					"transition-[transform,color,background-color] duration-150 ease-out",
+					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+					"focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+					"active:scale-[0.97]",
 				)}
 			>
 				<X className="h-4 w-4" />

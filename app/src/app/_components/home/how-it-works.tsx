@@ -56,12 +56,12 @@ export function HowItWorks() {
 						id="how-it-works-headline"
 						headline={
 							<>
-								Ship in three
+								Three steps
 								<br />
-								<span className="gradient-text-accent">honest steps.</span>
+								<span className="gradient-text-accent">to first request.</span>
 							</>
 						}
-						subhead="No sales call and no SDK migration. Sign in, fund credits your way, and send the first request in minutes."
+						subhead="Sign in, create a key, fund credits (or use x402). Point your OpenAI SDK at OMA and call."
 					/>
 				</Reveal>
 

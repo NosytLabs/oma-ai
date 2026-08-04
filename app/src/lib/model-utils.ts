@@ -8,14 +8,23 @@
 import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
-/** Default free OMA-AI (OpenBroker/gonka) model for unauthenticated website chat. */
-export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash";
+/**
+ * Default free website-chat model. Must be provider=gonka on the server
+ * (`isFreeWebsiteModel` in server/src/routes/chat) — Venice ids require auth.
+ */
+export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
 
-/** Known free catalog ids (provider=gonka). Keep in sync with server/models.json. */
+/**
+ * Known free catalog ids (provider=gonka). Keep in sync with live
+ * GET /v1/models where provider === "gonka".
+ */
 export const FREE_CHAT_MODEL_IDS = new Set([
-	"deepseek-v4-flash",
-	"mistral-small-2603",
+	"minimax-m2.7",
+	"kimi-k2.6",
 ]);
+
+/** Canonical model id for docs / marketing code samples (paid Venice path). */
+export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
 /**
  * Live-API display-name overrides. The upstream `/v1/models` endpoint returns

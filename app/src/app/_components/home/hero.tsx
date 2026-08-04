@@ -79,11 +79,11 @@ export function Hero() {
 							{...reveal(1, entrance)}
 							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight"
 						>
-							<span className="block">One API.</span>
+							<span className="block">One OpenAI-compatible API.</span>
 							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
-								Every model.
+								{MODEL_COUNT}+ models.
 							</span>
-							<span className="block">Pay your way.</span>
+							<span className="block">Credits, USDC, or x402.</span>
 						</m.h1>
 
 						<m.p
@@ -91,12 +91,12 @@ export function Hero() {
 							className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-text sm:text-[1.125rem]"
 							style={{ textWrap: "pretty" }}
 						>
-							Access {MODEL_COUNT}+ models through one OpenAI-compatible endpoint.
-							Buy credits with Visa, Mastercard, or Apple Pay through Polar,
-							deposit USDC on Base, or let agents pay per request with x402.
+							Route inference through a single endpoint. Fund with card via
+							Polar, deposit USDC on Base, or settle agent traffic per request
+							with x402. Same request shape as OpenAI.
 						</m.p>
 
-						{/* First-timer callout — novice entry point */}
+						{/* First-timer callout */}
 						<m.div {...reveal(3, entrance)} className="mt-5 max-w-xl">
 							<Link
 								href="/getting-started"
@@ -110,13 +110,13 @@ export function Hero() {
 								</span>
 								<span className="min-w-0">
 									<span className="block text-[13px] font-semibold text-text-bright">
-										First time here? Use OMA in 5 minutes — no code, no crypto.
+										New here? Start with free chat, then get an API key.
 									</span>
 									<span className="mt-0.5 block text-[12px] leading-relaxed text-text-secondary">
-										Try the free chat (no sign-up), then follow a 5-step
-										walkthrough to your first API call.{" "}
+										No sign-up for guest chat. Walk through the first request
+										when you are ready.{" "}
 										<span className="text-accent underline-offset-4 group-hover/new:underline">
-											Start here →
+											Getting started →
 										</span>
 									</span>
 								</span>

@@ -733,16 +733,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.096,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"glm-5.2-fp8": {
-			id: "glm-5.2-fp8",
-			displayName: "GLM 5.2 FP8",
-			provider: "Gonka",
-			category: "mid",
-			maxTokens: 8192,
-			inputPricePer1M: 0.03,
-			outputPricePer1M: 0.12,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
 	},
 };
 
@@ -750,7 +740,7 @@ const FALLBACK_CATALOG: RawCatalog = {
  * Synchronous `MODELS` array for SSR metadata and the few places that
  * genuinely can't go async (Next.js `generateStaticParams`, page
  * metadata). This is the *fallback* catalog — the full curated catalog
- * (23 chat models) is loaded lazily via `loadModels()`.
+ * (22 chat models) is loaded lazily via `loadModels()`.
  */
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
@@ -775,9 +765,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 23 curated chat models (20 Venice + 3 Gonka)
-// as of 2026-08-03. Keep in sync with `server/src/inference/models.ts`
-// defaultCatalog() (VENICE_MODELS.length + GONKA_MODELS.length).
-// The SSR fallback catalog (`MODELS`) below mirrors the full curated
-// catalog for build-time metadata.
-export const MODEL_COUNT = 18;
+// `GET /v1/models` count — 22 curated chat models (20 Venice + 2 Gonka).
+// Keep in sync with `server/src/inference/models.ts` defaultCatalog().
+export const MODEL_COUNT = 22;

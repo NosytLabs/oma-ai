@@ -181,7 +181,7 @@ export default function DashboardPage() {
 				toast.error(
 					"Couldn't store your API key cookie. If chat doesn't load, check browser cookie settings.",
 				);
-				console.error("installKeyCookie failed:", err);
+				log.error("installKeyCookie failed", err);
 			});
 			queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) => [
 				...(prev ?? []),

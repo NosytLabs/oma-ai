@@ -42,7 +42,7 @@ const DEMO_LINES: Line[] = [
 	{
 		kind: "tool",
 		name: "POST /v1/chat/completions",
-		detail: 'model: "llama-3.2-3b" · stream: true',
+		detail: 'model: "llama-3.3-70b" · stream: true',
 		done: true,
 	},
 	{
@@ -53,7 +53,7 @@ const DEMO_LINES: Line[] = [
 });
 
 const stream = await client.chat.completions.create({
-  model: "llama-3.2-3b",
+  model: "llama-3.3-70b",
   stream: true,
   messages: [{ role: "user", content: "…" }],
 });`,

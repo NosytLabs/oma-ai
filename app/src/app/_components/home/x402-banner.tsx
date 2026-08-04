@@ -47,19 +47,18 @@ export function X402Banner() {
 									className="h2-section max-w-xl text-text-bright"
 									style={{ textWrap: "balance" }}
 								>
-									Agents pay for themselves.
+									HTTP 402 payments for agents.
 								</h2>
 								<p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
-									Wallet-based billing, no card needed. On 402, read{" "}
+									No pre-funded account required. On 402, read{" "}
 									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
 										PAYMENT-REQUIRED
 									</code>
-									, sign USDC on Base (EIP-3009, gasless), retry with{" "}
+									, sign USDC on Base (EIP-3009), retry with{" "}
 									<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
 										PAYMENT-SIGNATURE
-									</code>{" "}
-									— the gateway verifies, settles on-chain, and returns the
-									completion.
+									</code>
+									. The gateway verifies, settles, and returns the completion.
 								</p>
 								<div className="mt-7 flex flex-wrap gap-3 w-full">
 									<Link
@@ -89,7 +88,7 @@ PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
 Content-Type: application/json
 
 { "model": "llama-3.3-70b",
-  "messages": [...] }`}
+  "messages": [{ "role": "user", "content": "…" }] }`}
 								</pre>
 							</div>
 						</div>

@@ -72,7 +72,7 @@ export function Navbar() {
 			<nav aria-label="Main navigation" className="w-full">
 				<div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
 					{/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
-					<div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:gap-4 min-w-0">
+					<div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:gap-4">
 						<Magnetic strength={6}>
 							<div className="relative inline-block">
 								<Link
@@ -190,20 +190,23 @@ export function Navbar() {
 
 						<ThemeToggle />
 
-						<m.div
-							whileHover={prefersReduced ? undefined : { y: -1 }}
-							whileTap={prefersReduced ? undefined : { scale: 0.94 }}
-							transition={EASE_SPRING}
-							className="inline-block"
-						>
-							<Link
-								href="/settings"
-								aria-label="Settings"
-								className="inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						{/* Settings gear only when signed in — guests use Sign in / mobile account card */}
+						{isAuthenticated && !isDemo && (
+							<m.div
+								whileHover={prefersReduced ? undefined : { y: -1 }}
+								whileTap={prefersReduced ? undefined : { scale: 0.94 }}
+								transition={EASE_SPRING}
+								className="inline-block"
 							>
-								<Settings className="h-4 w-4" aria-hidden="true" />
-							</Link>
-						</m.div>
+								<Link
+									href="/settings"
+									aria-label="Settings"
+									className="inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								>
+									<Settings className="h-4 w-4" aria-hidden="true" />
+								</Link>
+							</m.div>
+						)}
 
 						<div className="hidden xl:flex items-center">
 							<ApiStatus />

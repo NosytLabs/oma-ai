@@ -36,12 +36,12 @@ const tabContentVariants = {
 	visible: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.25, ease: "easeOut" as const },
+		transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] as const },
 	},
 	exit: {
 		opacity: 0,
-		y: -8,
-		transition: { duration: 0.15, ease: "easeIn" as const },
+		y: -6,
+		transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] as const },
 	},
 };
 

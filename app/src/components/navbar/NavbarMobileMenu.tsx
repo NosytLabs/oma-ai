@@ -4,10 +4,17 @@ import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client
 import { CornerDownLeft, Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { EASE_OUT, staggerContainer } from "@/lib/animation";
 import { ApiStatus } from "../api-status";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { accountHrefs, isCurrentPath, mobileGroups } from "./_lib/nav-links";
 
 interface NavbarMobileMenuProps {
@@ -56,8 +63,15 @@ export function NavbarMobileMenu({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
+	const { isAdmin } = useAuth();
 	const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 	const [disconnecting, setDisconnecting] = useState(false);
+	const visibleGroups = mobileGroups
+		.map((group) => ({
+			...group,
+			links: group.links.filter((l) => !l.adminOnly || isAdmin),
+		}))
+		.filter((group) => group.links.length > 0);
 
 	useFocusTrap({
 		active: open,
@@ -103,7 +117,16 @@ export function NavbarMobileMenu({
 		isCurrentPath(pathname ?? "/", href),
 	);
 
-	return (
+	// Portal to document.body. The sticky header uses backdrop-blur / glass,
+	// which creates a fixed-position containing block — so a drawer rendered
+	// inside the header collapses to height 0 (top-14 + bottom-0 inside a
+	// ~56px header). Portaling escapes that trap.
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	const drawer = (
 		<AnimatePresence>
 			{open && (
 				<>
@@ -113,7 +136,7 @@ export function NavbarMobileMenu({
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						transition={{ duration: 0.2 }}
-						className="fixed inset-0 top-14 z-40 bg-void/60 backdrop-blur-sm md:hidden"
+						className="fixed inset-0 top-14 z-[60] bg-void/70 backdrop-blur-sm md:hidden"
 						aria-hidden="true"
 						onClick={() => onOpenChange(false)}
 					/>
@@ -130,7 +153,7 @@ export function NavbarMobileMenu({
 						animate={prefersReduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
 						exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
 						transition={{ duration: 0.35, ease: EASE_OUT }}
-						className="fixed top-14 right-0 bottom-0 z-50 w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
+						className="fixed top-14 right-0 bottom-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
 					>
 						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
 							{/* Status row */}
@@ -144,7 +167,7 @@ export function NavbarMobileMenu({
 
 							{/* Grouped card grid */}
 							<div className="space-y-3">
-								{mobileGroups.map((group, gi) => {
+								{visibleGroups.map((group, gi) => {
 									const isCardActive = group.links.some((link) =>
 										isCurrentPath(pathname ?? "/", link.href),
 									);
@@ -210,7 +233,7 @@ export function NavbarMobileMenu({
 								<m.div
 									initial="hidden"
 									animate="show"
-									variants={staggerContainer(0.04, mobileGroups.length * 0.05)}
+									variants={staggerContainer(0.04, visibleGroups.length * 0.05)}
 									className={`rounded-sm border bg-surface/40 p-2 transition-colors ${
 										isAccountCardActive ? "border-accent/40" : "border-border"
 									}`}
@@ -256,7 +279,7 @@ export function NavbarMobileMenu({
 											className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-red/30 px-3 py-2 text-sm font-medium text-red/80 transition-colors hover:border-red/50 hover:bg-red/10 hover:text-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
 										>
 											<LogOut className="h-4 w-4" aria-hidden="true" />
-											<span>terminate session</span>
+											<span>Sign out</span>
 										</button>
 									)}
 									{isConnected && onDisconnect && confirmDisconnect && (
@@ -270,7 +293,7 @@ export function NavbarMobileMenu({
 												id="mobile-disconnect-title"
 												className="text-xs font-semibold text-red"
 											>
-												Terminate session?
+												Sign out?
 											</p>
 											<p
 												id="mobile-disconnect-body"
@@ -324,4 +347,7 @@ export function NavbarMobileMenu({
 			)}
 		</AnimatePresence>
 	);
+
+	if (!mounted) return null;
+	return createPortal(drawer, document.body);
 }

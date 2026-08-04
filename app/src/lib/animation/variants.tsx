@@ -8,13 +8,13 @@
  * tree-shakeable with the MotionProvider in layout.tsx.
  *
  * Usage:
- *   import { staggerContainer, fadeUp } from '@/lib/motion'
+ *   import { staggerContainer, fadeUp } from '@/lib/animation'
  *   <m.ul variants={staggerContainer} initial="hidden" whileInView="show">
  *     <m.li variants={fadeUp}>…</m.li>
  *   </m.ul>
  *
- * Interactive motion components (Magnetic, SpringCard, SuccessCheck, …)
- * live in `@/components/motion` — see that directory's README.
+ * Interactive primitives like Magnetic live in `@/lib/animation`.
+ * Scroll helpers like InViewFade live in `@/components/motion`.
  */
 
 import { springs } from "./springs";
@@ -35,12 +35,6 @@ export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 // by a mass typo: 0.8 here vs 0.9 there).
 export const EASE_SPRING = springs.tab;
 export const EASE_SPRING_SOFT = springs.soft;
-
-/* ============================================================
-   VIEWPORT
-   ============================================================ */
-
-const VIEWPORT_ONCE = { once: true, margin: "-60px 0px -60px 0px" } as const;
 
 /* ============================================================
    VARIANT PRESETS — plain objects, work with `m` + `variants`
@@ -75,20 +69,6 @@ export const blurIn: Variants = {
 		transition: { duration: 0.7, ease: EASE_OUT },
 	},
 };
-
-/* ============================================================
-   CONVENIENCE: legacy fadeUp props (drop-in replacement for
-   the old `fadeUp(delay)` helper used across the codebase).
-   ============================================================ */
-
-function _fadeUpProps(delay = 0) {
-	return {
-		initial: { opacity: 0, y: 20 },
-		whileInView: { opacity: 1, y: 0 },
-		viewport: VIEWPORT_ONCE,
-		transition: { duration: 0.5, delay, ease: EASE_OUT },
-	};
-}
 
 /* ============================================================
    StaggerReveal — container + item helper

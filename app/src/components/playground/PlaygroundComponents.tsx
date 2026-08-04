@@ -56,7 +56,7 @@ function StatPill({ label, value, accent, title }: StatPillProps) {
 	);
 }
 
-export function StatsBar({ messages, model = "llama-3.2-3b" }: StatsBarProps) {
+export function StatsBar({ messages, model = "llama-3.3-70b" }: StatsBarProps) {
 	const { inputPer1M, outputPer1M } = getModelPricing(model);
 	const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0);
 	const totalCost = messages.reduce((acc, m) => {
@@ -94,7 +94,7 @@ export function StatsBar({ messages, model = "llama-3.2-3b" }: StatsBarProps) {
 
 export function MobileStatsBar({
 	messages,
-	model = "llama-3.2-3b",
+	model = "llama-3.3-70b",
 }: StatsBarProps) {
 	const { inputPer1M, outputPer1M } = getModelPricing(model);
 	const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0);

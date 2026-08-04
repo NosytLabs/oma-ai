@@ -82,7 +82,7 @@ export function StatsStrip() {
 						id="stats-headline"
 						className="eyebrow text-center text-text-muted mb-8"
 					>
-						What is actually here
+						Product facts
 					</p>
 				</Reveal>
 				<ul className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-8">

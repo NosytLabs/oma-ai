@@ -118,8 +118,9 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		expect(h1.textContent).toMatch(/Every model/i);
-		expect(h1.textContent).toMatch(/One API/i);
+		expect(h1.textContent).toMatch(/OpenAI-compatible API/i);
+		expect(h1.textContent).toMatch(/models/i);
+		expect(h1.textContent).toMatch(/USDC|x402|Credits/i);
 	});
 
 	it("renders the primary CTA", async () => {
@@ -152,10 +153,10 @@ describe("HomePage", () => {
 	it("renders the capabilities section as three pillars", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText("Prepaid API credit system")).toBeInTheDocument();
-			expect(screen.getByText("x402 HTTP protocol native")).toBeInTheDocument();
-			expect(screen.getByText("Multi-provider & privacy first")).toBeInTheDocument();
-			expect(screen.getByText("OpenAI-compatible")).toBeInTheDocument();
+			expect(screen.getByText("Prepaid credits")).toBeInTheDocument();
+			expect(screen.getByText("x402 on Base")).toBeInTheDocument();
+			expect(screen.getByText("Multi-provider routing")).toBeInTheDocument();
+			expect(screen.getAllByText("OpenAI-compatible").length).toBeGreaterThan(0);
 			expect(screen.getByText("Live routing + failover")).toBeInTheDocument();
 		});
 	});
@@ -179,7 +180,7 @@ describe("HomePage", () => {
 	it("renders the stats section with honest metrics", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			const signalEl = screen.getByText(/what is actually here/i);
+			const signalEl = screen.getByText(/product facts/i);
 			expect(signalEl).toBeInTheDocument();
 			const section = signalEl.closest("section");
 			expect(section).toBeInTheDocument();
@@ -190,9 +191,9 @@ describe("HomePage", () => {
 	it("renders the x402 banner", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/agents pay for themselves/i)).toBeInTheDocument();
+			expect(screen.getByText(/HTTP 402 payments for agents/i)).toBeInTheDocument();
 			expect(
-				screen.getByText(/wallet-based billing, no card needed/i),
+				screen.getByText(/No pre-funded account required/i),
 			).toBeInTheDocument();
 		});
 	});
@@ -200,8 +201,10 @@ describe("HomePage", () => {
 	it("renders the final CTA section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/stop renting gpus/i)).toBeInTheDocument();
-			expect(screen.getByText(/start shipping agents/i)).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: /Get an API key/i }),
+			).toBeInTheDocument();
+			expect(screen.getByText(/Call any model/i)).toBeInTheDocument();
 		});
 	});
 });

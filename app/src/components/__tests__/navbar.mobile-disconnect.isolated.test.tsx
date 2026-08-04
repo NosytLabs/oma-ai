@@ -25,6 +25,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -97,14 +98,14 @@ function renderMenu(props: Partial<React.ComponentProps<typeof NavbarMobileMenu>
 }
 
 describe("NavbarMobileMenu — disconnect flow", () => {
-	it("shows the terminate-session button when connected", () => {
+	it("shows the sign-out button when connected", () => {
 		renderMenu();
 		expect(
-			screen.getByRole("button", { name: /terminate session/i }),
+			screen.getByRole("button", { name: /^sign out$/i }),
 		).toBeInTheDocument();
 	});
 
-	it("does not show the terminate-session button when not connected", () => {
+	it("does not show the sign-out button when not connected", () => {
 		render(
 			<NavbarMobileMenu
 				open
@@ -117,22 +118,21 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 			/>,
 		);
 		expect(
-			screen.queryByRole("button", { name: /terminate session/i }),
+			screen.queryByRole("button", { name: /^sign out$/i }),
 		).toBeNull();
 	});
 
 	it("opens an inline confirmation prompt before disconnecting", () => {
 		renderMenu();
-		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^sign out$/i }));
 		// The confirm dialog must be a proper WAI-ARIA alertdialog.
-		const dialog = screen.getByRole("alertdialog", { name: /terminate session/i });
+		const dialog = screen.getByRole("alertdialog", { name: /sign out/i });
 		expect(dialog).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /^cancel$/i })).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: /^sign out$/i })).toBeInTheDocument();
-		// The trigger button must be replaced by the confirm UI.
+		// Confirmation control still says Sign out (distinct from the trigger which is gone).
 		expect(
-			screen.queryByRole("button", { name: /terminate session/i }),
-		).toBeNull();
+			screen.getAllByRole("button", { name: /^sign out$/i }).length,
+		).toBeGreaterThan(0);
 		// Disconnect MUST NOT have fired yet — clicking the trigger alone is
 		// not enough to log the user out.
 		expect(mockDisconnect).not.toHaveBeenCalled();
@@ -140,8 +140,12 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 
 	it("invokes onDisconnect only after explicit confirmation", async () => {
 		renderMenu();
-		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
 		fireEvent.click(screen.getByRole("button", { name: /^sign out$/i }));
+		// Second Sign out is the confirm action inside the alertdialog
+		const dialog = screen.getByRole("alertdialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: /^sign out$/i }),
+		);
 		await waitFor(() => {
 			expect(mockDisconnect).toHaveBeenCalledTimes(1);
 		});
@@ -149,12 +153,12 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 
 	it("Cancel returns to the menu without invoking onDisconnect", () => {
 		renderMenu();
-		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^sign out$/i }));
 		fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
 		expect(mockDisconnect).not.toHaveBeenCalled();
 		// The trigger reappears so the user can try again.
 		expect(
-			screen.getByRole("button", { name: /terminate session/i }),
+			screen.getByRole("button", { name: /^sign out$/i }),
 		).toBeInTheDocument();
 	});
 
@@ -166,8 +170,11 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 			() => new Promise<void>((r) => { resolveDisconnect = r; }),
 		);
 		renderMenu({ onDisconnect: slowDisconnect });
-		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
 		fireEvent.click(screen.getByRole("button", { name: /^sign out$/i }));
+		const dialog = screen.getByRole("alertdialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: /^sign out$/i }),
+		);
 
 		const signOutBtn = await screen.findByRole("button", { name: /signing out…/i });
 		const cancelBtn = screen.getByRole("button", { name: /^cancel$/i });
@@ -181,14 +188,9 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 		});
 	});
 
-	it("mentions account-number recovery in the confirmation copy when the session is account-number-based", () => {
-		// We pass a custom slot that mirrors the wording change in the
-		// desktop menu: account-number users get a stronger "there's no
-		// recovery" hint. The mobile version keeps a single copy because it
-		// doesn't have the authMethod context yet — but we still verify the
-		// wording is recoverable / present so it's not accidentally empty.
+	it("mentions recovery methods in the confirmation copy", () => {
 		renderMenu();
-		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^sign out$/i }));
 		expect(
 			screen.getByText(/you'?ll need your wallet or magic-link email/i),
 		).toBeInTheDocument();
