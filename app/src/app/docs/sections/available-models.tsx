@@ -7,8 +7,8 @@ import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } 
 
 export function AvailableModelsSection() {
 	// Static fallback renders immediately (SSR-safe); the live catalog
-	// (288+ entries) replaces it once /v1/models responds. Without this the
-	// docs advertised "90 models" over a 7-row table.
+	// (23 curated models) replaces it once /v1/models responds. Without this the
+	// docs advertised the wrong count over a 7-row table.
 	const [models, setModels] = useState(MODELS);
 	useEffect(() => {
 		let cancelled = false;
@@ -61,7 +61,7 @@ export function AvailableModelsSection() {
 				id="models"
 				icon={<BookOpen className="h-5 w-5" />}
 				title="Available Models"
-				subtitle={`${MODEL_COUNT} models across 9 modalities — chat, image, video, TTS, embedding, ASR, music, upscale, and inpaint.`}
+				subtitle={`${MODEL_COUNT} curated models — chat, image, and video, plus web search in the playground.`}
 			/>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -81,8 +81,7 @@ export function AvailableModelsSection() {
 						<span className="font-semibold text-text">Multimodal</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Image generation, video generation, audio transcription, and text-to-speech
-						models.
+						Image generation and video generation models alongside the full chat catalog.
 					</p>
 				</div>
 			</div>

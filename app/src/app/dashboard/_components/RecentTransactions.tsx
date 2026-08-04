@@ -47,7 +47,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 				</h2>
 				{transactions.length > 0 && (
 					<Link
-						href="/dashboard/credits"
+						href="/dashboard?tab=usage"
 						className="text-[11px] text-accent hover:underline"
 					>
 						View all →

@@ -165,8 +165,8 @@ export default async function ModelDetailPage({
   }
 
   // Long-tail model from the live catalog. Fall back to a minimal page
-  // rather than 404 — `/v1/models` returns 288+ entries, all of which the
-  // /models listing links to detail pages for.
+  // rather than 404 — `/v1/models` returns the curated catalog (23 models
+  // today), all of which the /models listing links to detail pages for.
   const live = await fetchLiveModel(slug);
   if (!live) notFound();
   return <LiveModelDetail slug={slug} live={live} />;

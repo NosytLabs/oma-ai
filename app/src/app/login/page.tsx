@@ -104,9 +104,12 @@ function LoginInner() {
 			}
 			setSubmitting(true);
 			try {
+				const absoluteCallback = next.startsWith("/")
+					? `${window.location.origin}${next}`
+					: next;
 				await signIn.magicLink({
 					email,
-					callbackURL: next,
+					callbackURL: absoluteCallback,
 				});
 				setMagicSent(true);
 				toast.success(`Magic link sent to ${email}`);
@@ -251,26 +254,24 @@ function LoginInner() {
 						</div>
 
 						<div className="mt-5">
-							<p className="text-sm text-text-secondary">
-								Passwordless email link or your base wallet — no
-								password to lose.
-							</p>
 							{method === "magic" && (
-								<form
-									onSubmit={handleMagic}
+								<div
 									role="tabpanel"
 									id="panel-magic"
 									aria-labelledby="tab-magic"
-									className="space-y-3"
 								>
+									<form
+										onSubmit={handleMagic}
+										className="space-y-3"
+									>
 									<label
 										htmlFor="email"
 										className="block text-xs font-medium uppercase tracking-wider text-text-secondary"
 									>
 										Email address
-									</label>
-									<input
+									</label>									<input
 										id="email"
+										name="email"
 										type="email"
 										autoComplete="email"
 										inputMode="email"
@@ -303,6 +304,7 @@ function LoginInner() {
 										</p>
 									)}
 								</form>
+								</div>
 							)}
 
 							{method === "wallet" && (
@@ -346,7 +348,7 @@ function LoginInner() {
 							Privacy Policy
 						</Link>
 						, and{" "}
-						<Link href="/aup" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
+						<Link href="/terms#acceptable-use" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
 							Acceptable Use Policy
 						</Link>
 						.
@@ -375,7 +377,7 @@ function TabButton({ id, label, selected, icon, onSelect }: TabButtonProps) {
 			aria-selected={selected}
 			aria-controls={panelId}
 			onClick={onSelect}
-			className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+			className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 min-h-11 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 				selected
 					? "bg-accent text-void shadow-sm"
 					: "text-text-muted hover:text-text"
@@ -414,8 +416,8 @@ function BrandPitch() {
 					<span className="gradient-text-accent">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
-					One OpenAI-compatible gateway. Magic link or wallet, credits in USDC
-					on Base, x402 for agents.
+					One OpenAI-compatible gateway. Magic link or wallet, credits by card
+					or USDC on Base, x402 for agents.
 				</p>
 				<ul className="mt-6 space-y-4">
 					{items.map(({ Icon, title, body }) => (

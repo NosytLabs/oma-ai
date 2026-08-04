@@ -241,6 +241,7 @@ export function ModelSelector({
 									<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
 									<input
 										type="text"
+										name="model-search"
 										value={search}
 										onChange={(e) => setSearch(e.target.value)}
 										placeholder="SEARCH MODELS..."

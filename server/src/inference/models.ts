@@ -1,11 +1,12 @@
 /**
  * Inference model catalog — curated best-in-class models.
  *
- * 24 models across 4 tiers, sourced from Venice AI (12 chat) and
- * Gonka/OpenBroker (2 direct). Prices below are *wholesale base* — OMA
- * applies a 25% markup on Venice models at billing time (see
- * billing-service.ts). Gonka prices are already user-facing (margin
- * built-in, markupPercent = 0).
+ * 20 curated chat models across 4 tiers, sourced from Venice AI (20 chat).
+ * Gonka/OpenBroker integration is wired in proxy.ts but has no live models
+ * in the catalog yet (GONKA_MODELS is empty). Prices below are
+ * *wholesale base* — OMA applies a 25% markup on Venice models at billing
+ * time (see billing-service.ts). Gonka prices would be user-facing
+ * (margin built-in, markupPercent = 0) once models are added.
  *
  * Add a new provider by extending `resolveProvider()` in proxy.ts and
  * adding matching entries here.
@@ -338,6 +339,8 @@ const VENICE_MODELS: ModelDef[] = [
 
 // ── Gonka (OpenBroker) ────────────────────────────────────────────────
 // Prices are user-facing (margin built-in). markupPercent = 0.
+// Verified live 2026-08-03 against https://api.openbroker.gonka.gg/v1/models:
+//   MiniMaxAI/MiniMax-M2.7, moonshotai/Kimi-K2.6, zai-org/GLM-5.2-FP8
 const GONKA_MODELS: ModelDef[] = [
   {
     id: "minimax-m2.7",
@@ -346,13 +349,13 @@ const GONKA_MODELS: ModelDef[] = [
     inputPricePer1M: 0.015,
     outputPricePer1M: 0.06,
     markupPercent: 0,
-    displayName: "MiniMax 2.7",
+    displayName: "MiniMax M2.7",
     category: "budget",
     maxTokens: 8192,
     contextWindow: 128_000,
     maxOutputTokens: 8192,
     supportsStreaming: true,
-    capabilities: ["chat", "tools"],
+    capabilities: ["chat", "reasoning", "tools"],
   },
   {
     id: "kimi-k2.6",
@@ -362,6 +365,21 @@ const GONKA_MODELS: ModelDef[] = [
     outputPricePer1M: 0.096,
     markupPercent: 0,
     displayName: "Kimi K2.6",
+    category: "mid",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "tools"],
+  },
+  {
+    id: "glm-5.2-fp8",
+    provider: "gonka",
+    gonkaId: "zai-org/GLM-5.2-FP8",
+    inputPricePer1M: 0.03,
+    outputPricePer1M: 0.12,
+    markupPercent: 0,
+    displayName: "GLM 5.2 FP8",
     category: "mid",
     maxTokens: 8192,
     contextWindow: 128_000,

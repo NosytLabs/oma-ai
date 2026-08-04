@@ -9,12 +9,12 @@ import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
 /** Default free OMA-AI (OpenBroker/gonka) model for unauthenticated website chat. */
-export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
+export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash";
 
 /** Known free catalog ids (provider=gonka). Keep in sync with server/models.json. */
 export const FREE_CHAT_MODEL_IDS = new Set([
-	"minimax-m2.7",
-	"kimi-k2.6",
+	"deepseek-v4-flash",
+	"mistral-small-2603",
 ]);
 
 /**
@@ -23,10 +23,7 @@ export const FREE_CHAT_MODEL_IDS = new Set([
  * This map canonicalises them on the client without touching the server
  * catalog.
  */
-const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {
-	"minimax-m2.7": "MiniMax 2.7",
-	"kimi-k2.6": "Kimi K2.6",
-};
+const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
 
 /**
  * Pick the canonical display name for a model coming from the live API.
@@ -52,7 +49,9 @@ export function isFreeChatModel(
 ): boolean {
 	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
 	const p = typeof provider === "string" ? normalizeProvider(provider) : provider;
-	return p === "OMA-AI";
+	// OMA-AI (own routing) and Gonka/OpenBroker (ultra-low-cost) models are
+	// free at the chat surface; Venice / Surplus / Tinyfish are paid.
+	return p === "OMA-AI" || p === "Gonka";
 }
 
 // ---------------------------------------------------------------------------
@@ -66,10 +65,7 @@ const FRIENDLY_NAME: Record<string, string> = Object.fromEntries(
 // Override map layered ON TOP of FRIENDLY_NAME so model-name fixes don't have
 // to wait for a server-side catalog redeploy. Anything in this map wins over
 // both the static fallback name and the upstream `display_name`.
-const NAME_OVERRIDES: Record<string, string> = {
-	"minimax-m2.7": "MiniMax 2.7",
-	"kimi-k2.6": "Kimi K2.6",
-};
+const NAME_OVERRIDES: Record<string, string> = {};
 
 // Parts that should stay uppercase (size specifiers, fine-tune tags, etc.)
 const RETAIN_UPPER = new Set([

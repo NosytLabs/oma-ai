@@ -13,43 +13,20 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
-import { JuiceButton } from "@/components/juice-button";
-import { ElectricBorder } from "@/components/electric-border";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import { ModelLogo } from "@/components/ui/model-logo";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
+import {
+	fmtPrice,
+	prettyName,
+	toPricedModel,
+	type Category,
+} from "./_lib/pricing-utils";
 import {
 	BreadcrumbListJsonLd,
 	ProductJsonLd,
 	FAQPageJsonLd,
 } from "@/components/json-ld";
-
-type Category = "all" | "frontier" | "premium" | "mid" | "budget";
-
-interface PricedModel {
-	id: string;
-	name: string;
-	category: Category;
-	provider: string;
-	inputPer1M: number;
-	outputPer1M: number;
-	ctx: string;
-}
-
-const VENDOR_DISPLAY: Record<string, string> = {
-	Venice: "Venice",
-};
-
-function toPricedModel(m: Model): PricedModel {
-	return {
-		id: m.id,
-		name: m.name,
-		category: m.tier as Category,
-		provider: VENDOR_DISPLAY[m.provider] ?? m.provider,
-		inputPer1M: m.inputPricePer1M,
-		outputPer1M: m.outputPricePer1M,
-		ctx: m.contextLength,
-	};
-}
 
 const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "all", label: "All" },
@@ -94,7 +71,7 @@ const PAYMENT_METHODS = [
 	{
 		icon: Coins,
 		title: "USDC on Base",
-		desc: "Direct USDC transfers at 1:1 USD. Settlement is immediate on confirmation. 100+ chains via LI.FI / CCTP.",
+		desc: "Direct USDC transfers at 1:1 USD. Settlement is immediate on confirmation.",
 		tag: "Crypto-native",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
@@ -143,23 +120,17 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "Do credits expire?",
-		a: "Credits have a 12-month rolling expiry from deposit date. They are non-transferable and non-redeemable.",
+		a: "No — credits do not expire. They are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's per-token cost in credits at request time.",
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "Cards via Polar (Visa, Mastercard, Apple Pay — charges appear as 'NOSYT'), USDC direct on Base at 1:1 USD, LI.FI / CCTP to convert 100+ cryptocurrencies to USDC credits, or x402 pay-per-request on Base for agents.",
+		a: "Cards via Polar (Visa, Mastercard, Apple Pay — charges appear as 'NOSYT'), USDC direct on Base at 1:1 USD, or x402 pay-per-request on Base for agents.",
 	},
 	{
 		q: "What is x402 pay-per-request?",
 		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
 	},
 ];
-
-function fmtPrice(n: number): string {
-	if (n < 0.01) return "$0.01";
-	if (n < 1) return `$${n.toFixed(4)}`;
-	return `$${n.toFixed(2)}`;
-}
 
 function AccordionItem({
 	item,
@@ -230,14 +201,6 @@ export default function PricingPage() {
 
 	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
 
-	function prettyName(id: string): string {
-		return id
-			.split("-")
-			.map((p) =>
-				/^\d/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1),
-			)
-			.join(" ");
-	}
 	const lowestInputPrice = useMemo(
 		() =>
 			formatPricePerMillion(
@@ -339,7 +302,8 @@ export default function PricingPage() {
 					</div>
 				</div>
 
-				<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+				<InViewFade>
+					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
 					<div className="surface-card p-5">
 						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
 							Starts at
@@ -379,9 +343,11 @@ export default function PricingPage() {
 					</p>
 					</div>
 				</div>
+				</InViewFade>
 
-				<div className="mb-16">
-					<div className="mb-5 flex items-end justify-between gap-4">
+				<InViewFade delay={0.1}>
+					<div className="mb-16">
+						<div className="mb-5 flex items-end justify-between gap-4">
 						<div>
 							<p className="page-kicker">Model Costs</p>
 							<h2 className="mt-3 text-2xl font-semibold text-text-bright">
@@ -424,7 +390,7 @@ export default function PricingPage() {
 							{/* Right gradient hint for scrollable content */}
 							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
 
-							<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]">
+							<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
 								<table
 									className="w-full min-w-[36rem] text-left"
 									aria-label="Model pricing by tier"
@@ -489,9 +455,11 @@ export default function PricingPage() {
 														className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
 															mm.provider === "Venice"
 																? "bg-accent/20 text-accent"
-																: mm.provider === "OMA-AI"
-																? "bg-accent/10 text-accent"
-																: "bg-secondary/20 text-secondary"
+																: mm.provider === "Gonka"
+																	? "bg-emerald-500/20 text-emerald-400"
+																	: mm.provider === "OMA-AI"
+																		? "bg-accent/10 text-accent"
+																		: "bg-secondary/20 text-secondary"
 														}`}
 													>
 														{mm.provider}
@@ -520,14 +488,16 @@ export default function PricingPage() {
 						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
 							<p className="text-xs text-text-muted">
 								Prices shown are base provider rates. OMA applies a 25% platform
-								fee at billing for Venice models. Gonka-routed models (GLM 4.7 Flash,
-								Qwen 3.5 9B) have no additional markup.
+								fee at billing for Venice models. Gonka-routed models (GLM 5.1,
+								DeepSeek V4 Flash) have no additional markup.
 							</p>
 						</div>
 					</div>
 				</div>
+				</InViewFade>
 
-				<section className="mb-16" aria-labelledby="polar-tiers-heading">
+				<InViewFade delay={0.2}>
+					<section className="mb-16" aria-labelledby="polar-tiers-heading">
 					<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
 							<p className="page-kicker">Buy credits upfront</p>
@@ -565,7 +535,7 @@ export default function PricingPage() {
 									</p>
 									<Link
 										href="/deposit?method=card"
-										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 text-sm`}
+										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 text-sm transition-transform active:scale-[0.97]`}
 									>
 										<CreditCard className="h-4 w-4" aria-hidden="true" />
 										Buy with card
@@ -578,9 +548,11 @@ export default function PricingPage() {
 						})}
 					</div>
 				</section>
+				</InViewFade>
 
 				{generationModels.length > 0 && (
-					<div className="mb-12">
+					<InViewFade delay={0.3}>
+						<div className="mb-12">
 						<div className="mb-6 flex items-center gap-2">
 							<div className="h-px flex-1 bg-border" />
 							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
@@ -597,7 +569,7 @@ export default function PricingPage() {
 							</p>
 							<div className="relative">
 								<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
-								<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]">
+								<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
 									<table className="w-full min-w-[32rem] text-left">
 										<thead>
 											<tr className="border-b border-border bg-surface-elevated">
@@ -650,10 +622,12 @@ export default function PricingPage() {
 							</div>
 						</div>
 					</div>
+				</InViewFade>
 				)}
 
-				<div className="mb-12">
-					<div className="mb-6 flex items-center gap-2">
+				<InViewFade delay={0.4}>
+					<div className="mb-12">
+						<div className="mb-6 flex items-center gap-2">
 						<div className="h-px flex-1 bg-border" />
 						<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
 							payment methods
@@ -693,6 +667,7 @@ export default function PricingPage() {
 						})}
 					</div>
 				</div>
+				</InViewFade>
 
 				<div id="x402" className="mb-12 scroll-mt-20">
 					<div className="relative p-5 rounded-xl bg-accent-dim border border-accent/30">
@@ -724,7 +699,8 @@ export default function PricingPage() {
 				</div>
 
 				{/* ── FAQ ── */}
-				<div id="faq" className="mb-12 scroll-mt-20">
+				<InViewFade delay={0.5}>
+					<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
 						<h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
@@ -743,6 +719,7 @@ export default function PricingPage() {
 						))}
 					</div>
 				</div>
+				</InViewFade>
 
 				{/* ── CTA ── */}
 				<div className="relative mb-12 overflow-hidden rounded-2xl py-10">
@@ -752,61 +729,27 @@ export default function PricingPage() {
 					>
 						<div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
 					</div>
-					<div className="flex flex-col items-center gap-4">
+					<div className="flex flex-col items-center gap-5">
 						<h2 className="h2-page text-text-bright text-center">
 							Start building today
 						</h2>
-						<JuiceButton
-							color="var(--color-accent)"
-							size={180}
-							opacity={0.15}
-							className="rounded-full"
-						>
-							<ElectricBorder
-								borderRadius="9999px"
-								borderWidth={1}
-								active={true}
+						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
+							<Link
+								href="/dashboard"
+								className="btn-primary inline-flex h-12 min-w-[10rem] items-center justify-center gap-2 px-6 text-[14px] font-semibold"
 							>
-								<Link
-									href="/dashboard"
-									className="btn-primary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
-								>
-									<Zap className="h-4 w-4 mr-2" />
-									Get API key
-									<ArrowRight className="h-4 w-4 ml-2" />
-								</Link>
-							</ElectricBorder>
-						</JuiceButton>
-						<JuiceButton
-							color="var(--color-accent)"
-							size={120}
-							opacity={0.12}
-							className="rounded-full"
-						>
+								<Zap className="h-4 w-4" aria-hidden="true" />
+								Get API key
+								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							</Link>
 							<Link
 								href="/deposit?method=card"
-								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
+								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px] font-semibold"
 							>
-								<CreditCard className="h-4 w-4 mr-2" />
-									Buy credits
-
+								<CreditCard className="h-4 w-4" aria-hidden="true" />
+								Buy credits
 							</Link>
-						</JuiceButton>
-						<JuiceButton
-							color="var(--color-accent)"
-							size={120}
-							opacity={0.12}
-							className="rounded-full"
-						>
-							<Link
-								href="/deposit"
-								className="btn-secondary text-sm px-6 py-3 w-full sm:w-auto text-center inline-flex items-center justify-center"
-							>
-								<Coins className="h-4 w-4 mr-2" />
-									Deposit USDC
-
-							</Link>
-						</JuiceButton>
+						</div>
 						<Link
 							href="/models"
 							className="font-mono text-xs text-text-muted transition-colors hover:text-accent"
@@ -824,10 +767,10 @@ export default function PricingPage() {
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
 						"Credits are 1:1 USD, non-redeemable, non-transferable",
-						"12-month rolling expiry from date of deposit",
+						"Credits never expire while your account is active",
 						"No credit float — credits appear after settlement",
 						"Billed per token, deducted in real-time",
-						"Card subscriptions via Polar appear as 'NOSYT' on your statement",
+						"Card purchases via Polar appear as 'NOSYT' on your statement",
 						].map((note) => (
 							<div key={note} className="flex items-start gap-2">
 								<div className="mt-1.5 h-1 w-1 rounded-full bg-amber" />
