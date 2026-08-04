@@ -80,10 +80,8 @@ export function balanceToDollars(b: BalanceResponse | null): number {
  *  instead of "0.00 cr" when the balance isn't known yet. */
 export function formatCreditsShort(value: number | null | undefined): string {
 	if (value == null || !Number.isFinite(value) || value < 0) return "—";
-	if (value >= 1000)
-		return `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}k cr`;
-	if (value >= 100) return `${value.toFixed(0)} cr`;
-	if (value >= 1) return `${value.toFixed(2)} cr`;
-	if (value > 0) return `${value.toFixed(4)} cr`;
-	return "0 cr";
+	const credits = Math.round(value * 100);
+	if (credits >= 1000)
+		return `${(credits / 1000).toFixed(credits >= 10_000 ? 0 : 1)}k cr`;
+	return `${credits} cr`;
 }

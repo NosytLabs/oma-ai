@@ -7,7 +7,10 @@ import {
 	Coins,
 	Columns2,
 	Download,
+	Film,
+	Image as ImageIcon,
 	Keyboard,
+	MessageSquare,
 	Settings2,
 	Share2,
 	Trash2,
@@ -53,10 +56,7 @@ export interface ChatToolbarProps {
 	paramsOpen: boolean;
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	mediaMode?: "text" | "image" | "video";
-	// 2026-07-30: the IMAGE/VIDEO modes are not exposed in the UI anymore
-	// (no underlying endpoints). The setter type is now a no-op —
-	// accept any MediaMode-shaped value but the type is "text"-only.
-	setMediaMode?: Dispatch<SetStateAction<"text">>;
+	setMediaMode?: Dispatch<SetStateAction<"text" | "image" | "video">>;
 	searching: boolean;
 	isAuthenticated: boolean;
 	balance: BalanceResponse | null;
@@ -117,6 +117,8 @@ export function ChatToolbar({
 	deferredMessages,
 	setShortcutsOpen,
 	onAuthRequired,
+	mediaMode,
+	setMediaMode,
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
@@ -126,7 +128,7 @@ export function ChatToolbar({
 			balance ? (
 				<Link
 					href="/deposit"
-					aria-label={`Credit balance: ${balanceDollars.toFixed(2)} dollars. Click to add credits.`}
+					aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Click to add credits.`}
 					data-state={isLowBalance ? "low" : "ok"}
 					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10`}
 					title="Credit balance — click to add credits"
@@ -152,13 +154,51 @@ export function ChatToolbar({
 			)
 		) : null;
 
-	// 2026-07-30: removed IMAGE and VIDEO tabs. The underlying endpoints
-	// (/v1/images, /v1/video) don't exist yet — the tabs were
-	// placeholders that just hid the composer. Until those endpoints
-	// ship, keep the tab strip minimal so users don't click into a
-	// dead state. Restore the tablist when the corresponding routes
-	// land.
-	const mediaTabs = null;
+	// 2026-08-02: IMAGE and VIDEO tabs restored — the underlying
+	// endpoints (/v1/images/generations, /v1/videos/generations) exist
+	// on the server and the generation panels are wired into MessagesList.
+	const mediaTabs =
+		isChat && setMediaMode ? (
+			<div
+				className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
+				role="tablist"
+				aria-label="Playground mode"
+			>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("text")}
+					aria-selected={mediaMode === "text"}
+					title="Text chat (free OMA-AI models available)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<MessageSquare className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Chat</span>
+				</button>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("image")}
+					aria-selected={mediaMode === "image"}
+					title="Image generation (credits)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<ImageIcon className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Image</span>
+				</button>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => setMediaMode("video")}
+					aria-selected={mediaMode === "video"}
+					title="Video generation (credits)"
+					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+				>
+					<Film className="h-3.5 w-3.5" />
+					<span className="hidden sm:inline text-[11px]">Video</span>
+				</button>
+			</div>
+		) : null;
 
 	// Web search toggle moved into the composer input row (2026-08-01) —
 	// it belongs next to the send action, not in the model/status toolbar.
@@ -166,14 +206,14 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex h-12 flex-none items-center gap-2 border-b border-border bg-void/95 px-2 sm:gap-3 sm:px-5"
+			className="flex h-12 min-w-0 flex-none items-center gap-1.5 border-b border-border bg-void/95 px-2 sm:gap-3 sm:px-5"
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
 				{/* Compact model badge — replaces the previous "OMA · MiniMax 2.7" pill
 				    that was duplicating the navbar brand. Now just shows the current
 				    model with tier color so the active selection is always visible. */}
-				<div className="min-w-0 flex-1 sm:max-w-[200px] md:max-w-[220px]">
+				<div className="min-w-0 w-[clamp(7rem,36vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">
 					<LazyModelSelector
 						model={model}
 						setModel={setModel}
@@ -210,8 +250,8 @@ export function ChatToolbar({
 				)}
 			</div>
 
-			{/* Secondary actions — scrollable on small screens, never hide media tabs */}
-			<div className="flex max-w-[55%] items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
+			{/* Secondary actions — credits always visible, rest hidden on mobile */}
+			<div className="min-w-0 max-w-[42vw] flex items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
 				<div className="hidden shrink-0 md:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>
@@ -225,7 +265,7 @@ export function ChatToolbar({
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} shrink-0 min-h-[40px] min-w-[40px] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} hidden shrink-0 sm:flex min-h-[40px] min-w-[40px] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
@@ -264,7 +304,7 @@ export function ChatToolbar({
 				</button>
 
 				{messageCount > 0 && (
-					<div className="flex shrink-0 items-center gap-1">
+					<div className="hidden shrink-0 items-center gap-1 sm:flex">
 						<button
 							type="button"
 							onClick={exportConversation}

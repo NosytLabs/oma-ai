@@ -106,7 +106,7 @@ function classifyError(error: string): ErrorClassification {
 			type: "auth",
 			label: "AUTH REQUIRED",
 			suggestion:
-				"Sign in with your wallet or account number — chat also needs an API key (created in the dashboard)",
+				"Sign in with your wallet or magic link — chat also needs an API key (created in the dashboard)",
 		};
 	}
 

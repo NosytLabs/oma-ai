@@ -40,14 +40,18 @@ import {
 	Newspaper,
 	Gavel,
 	ShieldCheck,
+	BookOpen,
+	CircleHelp,
+	BookMarked,
+	Sparkles,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaLogo } from "@/components/ui/oma-logo";
+import { isCurrentPath } from "./navbar/_lib/nav-links";
 import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/animation";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { ApiStatus } from "./api-status";
 
 type FooterLink = {
 	label: string;
@@ -64,7 +68,8 @@ const PRODUCT: FooterSection = {
 	title: "Product",
 	links: [
 		{ label: "Models", href: "/models", icon: Boxes },
-		{ label: "Playground", href: "/chat", icon: Terminal },
+		{ label: "Chat", href: "/chat", icon: Terminal },
+		{ label: "Capabilities", href: "/capabilities", icon: Sparkles },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
 		{ label: "Compare", href: "/compare" },
@@ -75,9 +80,18 @@ const PRODUCT: FooterSection = {
 const TOOLS: FooterSection = {
 	title: "Tools",
 	links: [
-		{ label: "Network", href: "/network", icon: Network },
+		{ label: "API Reference", href: "/docs#endpoints", icon: Network },
 		{ label: "Observability", href: "/observability", icon: Activity },
 		{ label: "Changelog", href: "/changelog", icon: Newspaper },
+	],
+};
+
+const LEARN: FooterSection = {
+	title: "Learn",
+	links: [
+		{ label: "Getting Started", href: "/getting-started", icon: BookOpen },
+		{ label: "FAQ", href: "/faq", icon: CircleHelp },
+		{ label: "Glossary", href: "/glossary", icon: BookMarked },
 	],
 };
 
@@ -88,7 +102,7 @@ function accountSection(isAuthenticated: boolean): FooterSection {
 			? [
 					{ label: "Dashboard", href: "/dashboard" },
 					{ label: "Settings", href: "/settings" },
-					{ label: "Credits", href: "/dashboard/credits" },
+					{ label: "Credits", href: "/deposit" },
 				]
 			: [
 					{ label: "Dashboard", href: "/dashboard" },
@@ -103,7 +117,6 @@ const LEGAL: FooterSection = {
 	links: [
 		{ label: "Terms", href: "/terms", icon: Gavel },
 		{ label: "Privacy", href: "/privacy", icon: ShieldCheck },
-		{ label: "AUP", href: "/aup", icon: ShieldCheck },
 		{ label: "Contact", href: "/contact" },
 	],
 };
@@ -117,26 +130,12 @@ function GithubIcon({ className }: { className?: string }) {
 	);
 }
 
-function TwitterIcon({ className }: { className?: string }) {
-	return (
-		<svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-			<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-		</svg>
-	);
-}
-
 const SOCIAL_LINKS = [
 	{
 		label: "GitHub",
-		href: "https://github.com/NosytLabs/oma-ai",
+		href: "https://github.com/NosytLabs",
 		icon: GithubIcon,
-		handle: "NosytLabs/oma-ai",
-	},
-	{
-		label: "X (Twitter)",
-		href: "https://x.com/oma_ai",
-		icon: TwitterIcon,
-		handle: "@oma_ai",
+		handle: "NosytLabs",
 	},
 ];
 
@@ -148,6 +147,7 @@ export function Footer() {
 	const { isAuthenticated } = useAuth();
 	const FOOTER_SECTIONS: FooterSection[] = [
 		PRODUCT,
+		LEARN,
 		TOOLS,
 		accountSection(isAuthenticated),
 		LEGAL,
@@ -229,17 +229,13 @@ export function Footer() {
 								);
 							})}
 						</div>
-
-						<div className="flex items-center gap-3 text-[11px] text-text-muted">
-							<ApiStatus showRetryButton={false} />
-						</div>
 					</m.div>
 
 					{/* NAV COLUMNS */}
 					<m.nav
 						variants={fadeUp}
 						aria-label="Footer navigation"
-						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4"
+						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-5"
 					>
 						{FOOTER_SECTIONS.map((section) => (
 							<div key={section.title} className="min-w-0">
@@ -248,10 +244,7 @@ export function Footer() {
 								</p>
 								<ul className="flex flex-col gap-1">
 									{section.links.map((link) => {
-										const isCurrent =
-											pathname === link.href ||
-											(pathname.startsWith(`${link.href}/`) &&
-												link.href.length > 1);
+										const isCurrent = isCurrentPath(pathname, link.href);
 										const Icon = link.icon;
 										return (
 											<li key={link.label}>
@@ -321,7 +314,7 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono">
 							<a
-								href="https://github.com/NosytLabs/oma-ai"
+								href="https://github.com/NosytLabs"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="inline-flex items-center gap-1 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"

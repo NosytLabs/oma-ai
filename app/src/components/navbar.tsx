@@ -176,7 +176,7 @@ export function Navbar() {
 					{/* RIGHT: actions */}
 					<div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 						<m.a
-							href="https://github.com/NosytLabs/oma-ai"
+							href="https://github.com/NosytLabs"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="GitHub repository (opens in new tab)"

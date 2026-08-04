@@ -33,8 +33,9 @@ export function Skeleton({
 	if (lines > 1) {
 		return (
 			<div
-				role="progressbar"
+				role="status"
 				aria-busy="true"
+				aria-label="Loading"
 				className={cn("flex flex-col gap-2.5 w-full", className)}
 				{...rest}
 			>
@@ -66,8 +67,9 @@ export function Skeleton({
 
 	return (
 		<div
-			role="progressbar"
+			role="status"
 			aria-busy="true"
+			aria-label="Loading"
 			className={cn(
 				"rounded-[var(--radius-sm)]",
 				animationClass,

@@ -8,6 +8,10 @@
  * instant render with no transform), and exposes a `delay` prop for
  * staging child sections.
  *
+ * Includes a safety timeout: if IntersectionObserver doesn't fire within
+ * 2s (SSR, headless, restricted containers), the content fades in anyway
+ * so it is never permanently hidden.
+ *
  * Usage from a server component:
  *   import { InViewFade } from "@/components/motion/in-view-fade";
  *   <InViewFade><h1>…</h1></InViewFade>
@@ -16,7 +20,7 @@
 
 import { m, useInView, useReducedMotion } from "@/lib/framer-motion-client";
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface InViewFadeProps {
 	children: ReactNode;
@@ -42,6 +46,16 @@ export function InViewFade({
 	const ref = useRef<HTMLDivElement>(null);
 	const inView = useInView(ref, { once, amount });
 	const reduced = useReducedMotion();
+	const [fallbackVisible, setFallbackVisible] = useState(false);
+
+	// Safety: if IntersectionObserver hasn't fired in 2s, show anyway.
+	useEffect(() => {
+		if (inView || reduced) return;
+		const timer = setTimeout(() => setFallbackVisible(true), 2000);
+		return () => clearTimeout(timer);
+	}, [inView, reduced]);
+
+	const shouldAnimate = inView || fallbackVisible;
 
 	if (reduced) {
 		return <div className={className}>{children}</div>;
@@ -52,7 +66,7 @@ export function InViewFade({
 			ref={ref}
 			className={className}
 			initial={{ opacity: 0, y }}
-			animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y }}
+			animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y }}
 			transition={{
 				duration: 0.5,
 				ease: [0.16, 1, 0.3, 1],

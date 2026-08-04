@@ -64,7 +64,7 @@ export function ExpiringCreditsWarning({
 				</div>
 			</div>
 			<Link
-				href="/dashboard/credits"
+				href="/deposit"
 				className="self-end inline-flex items-center gap-1 rounded-md border border-secondary/30 bg-secondary/10 px-3 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-secondary/20 sm:self-auto"
 			>
 				Top up →

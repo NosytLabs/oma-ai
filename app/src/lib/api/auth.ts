@@ -9,7 +9,7 @@
  * installer that powers browser-direct SSE chat.
  */
 import { request } from "./client.js";
-import type { ApiKey, ApiKeyWithSecret, User } from "./types.js";
+import type { ApiKey, ApiKeyWithSecret, Session, User } from "./types.js";
 
 export interface AuthSessionResponse {
   user: User;
@@ -29,6 +29,10 @@ async function getCurrentUser(): Promise<User | null> {
 
 export const auth = {
   getUser: () => getCurrentUser(),
+
+  listSessions(): Promise<{ sessions: Session[] }> {
+    return request<{ sessions: Session[] }>("/sessions");
+  },
 
   listKeys(): Promise<{ keys: ApiKey[] }> {
     return request<{ keys: ApiKey[] }>("/v1/keys");

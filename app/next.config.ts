@@ -30,8 +30,6 @@ const nextConfig: NextConfig = {
 			"2026-07-26",
 	},
 
-	experimental: {},
-	transpilePackages: [],
 
 	serverExternalPackages: ["porto", "@metamask/connect-evm", "ethers"],
 

@@ -1,13 +1,9 @@
 /**
- * OMA mark — "Open Gateway Aperture" (brand refresh 2026-07-26)
+ * OMA brand mark and wordmark.
  *
- * Matches app/public/favicon.svg and logos/oma-icon.svg:
- *   - rounded terminal badge
- *   - open emerald ring, gap at 3 o'clock (open access)
- *   - terminal prompt chevron pointing through the gap
- *   - signal dot sitting in the gap (live token out)
- *
- * Uses CSS brand tokens so the mark tracks ThemeToggle accents.
+ * The geometry is deliberately shared by the favicon, static SVG kit, and
+ * inline UI mark: an open emerald ring, terminal chevron, and signal dot.
+ * Inline colors use the theme tokens so alternate OMA themes remain coherent.
  */
 
 const SIZE_MAP = {
@@ -16,24 +12,35 @@ const SIZE_MAP = {
 	lg: { px: 40, ring: 2.6, bar: 3.2, led: 2.2 },
 } as const;
 
-export function OmaLogo({
-	size = "md",
-	className = "",
-}: {
-	size?: "sm" | "md" | "lg";
-	className?: string;
-}) {
-	const s = SIZE_MAP[size];
+type LogoSize = keyof typeof SIZE_MAP;
 
+function OmaMark({
+	width,
+	height,
+	ring,
+	bar,
+	led,
+	className,
+	ariaHidden = false,
+}: {
+	width: number;
+	height: number;
+	ring: number;
+	bar: number;
+	led: number;
+	className?: string;
+	ariaHidden?: boolean;
+}) {
 	return (
 		<svg
 			viewBox="0 0 40 40"
-			width={s.px}
-			height={s.px}
+			width={width}
+			height={height}
 			fill="none"
 			className={className}
-			role="img"
-			aria-label="OMA"
+			aria-hidden={ariaHidden}
+			role={ariaHidden ? undefined : "img"}
+			aria-label={ariaHidden ? undefined : "OMA"}
 		>
 			<rect width={40} height={40} rx={10} fill="var(--color-void)" />
 			<rect
@@ -52,52 +59,69 @@ export function OmaLogo({
 				cy={20}
 				r={13.25}
 				stroke="var(--color-accent)"
-				strokeWidth={s.ring}
+				strokeWidth={ring}
 				strokeLinecap="round"
 				strokeDasharray="63.8 19.4"
 				strokeDashoffset={-9.7}
 			/>
 			<rect
 				x={14}
-				y={20 - s.bar / 2}
+				y={20 - bar / 2}
 				width={11.5}
-				height={s.bar}
-				rx={s.bar / 2}
+				height={bar}
+				rx={bar / 2}
 				fill="var(--color-accent)"
 				transform="rotate(45 25.5 20)"
 			/>
 			<rect
 				x={14}
-				y={20 - s.bar / 2}
+				y={20 - bar / 2}
 				width={11.5}
-				height={s.bar}
-				rx={s.bar / 2}
+				height={bar}
+				rx={bar / 2}
 				fill="var(--color-accent)"
 				transform="rotate(-45 25.5 20)"
 			/>
-			<circle cx={24.2} cy={20} r={s.bar / 2} fill="var(--color-accent)" />
-			<circle cx={33.25} cy={20} r={s.led * 2.1} fill="var(--color-accent)" opacity={0.22} />
-			<circle cx={33.25} cy={20} r={s.led * 1.25} fill="var(--color-accent)" />
-			<circle cx={33.25} cy={20} r={s.led * 0.6} fill="var(--color-accent-bright)" />
+			<circle cx={24.2} cy={20} r={bar / 2} fill="var(--color-accent)" />
+			<circle cx={33.25} cy={20} r={led * 2.1} fill="var(--color-accent)" opacity={0.22} />
+			<circle cx={33.25} cy={20} r={led * 1.25} fill="var(--color-accent)" />
+			<circle cx={33.25} cy={20} r={led * 0.6} fill="var(--color-accent-bright)" />
 		</svg>
 	);
 }
 
-/**
- * OmaWordmark — full horizontal lockup with the mark + the lowercase
- * "oma" wordmark + "Open Model Access" tagline. Used on landing/auth
- * surfaces where brand context matters more than chrome footprint.
- */
+export function OmaLogo({
+	size = "md",
+	className = "",
+}: {
+	size?: LogoSize;
+	className?: string;
+}) {
+	const s = SIZE_MAP[size];
+	return (
+		<OmaMark
+			width={s.px}
+			height={s.px}
+			ring={s.ring}
+			bar={s.bar}
+			led={s.led}
+			className={className}
+		/>
+	);
+}
+
+/** Full OMA lockup used on auth and other brand-forward surfaces. */
 export function OmaWordmark({
 	size = "md",
 	className = "",
 }: {
-	size?: "sm" | "md" | "lg";
+	size?: LogoSize;
 	className?: string;
 }) {
 	const heights = { sm: 26, md: 38, lg: 52 } as const;
 	const h = heights[size];
 	const mark = h * 0.86;
+	const s = SIZE_MAP[size];
 
 	return (
 		<div
@@ -105,58 +129,14 @@ export function OmaWordmark({
 			role="img"
 			aria-label="OMA — Open Model Access"
 		>
-			<svg
-				viewBox="0 0 40 40"
+			<OmaMark
 				width={mark}
 				height={mark}
-				fill="none"
-				aria-hidden="true"
-			>
-				<rect width={40} height={40} rx={10} fill="var(--color-void)" />
-				<rect
-					x={1.5}
-					y={1.5}
-					width={37}
-					height={37}
-					rx={9}
-					fill="var(--color-panel)"
-					stroke="var(--color-border-hi)"
-					strokeWidth={1}
-				/>
-				<circle cx={20} cy={20} r={13.5} fill="var(--color-accent)" opacity={0.08} />
-				<circle
-					cx={20}
-					cy={20}
-					r={13.25}
-					stroke="var(--color-accent)"
-					strokeWidth={2.4}
-					strokeLinecap="round"
-					strokeDasharray="63.8 19.4"
-					strokeDashoffset={-9.7}
-				/>
-				<rect
-					x={14}
-					y={18.6}
-					width={11.5}
-					height={2.8}
-					rx={1.4}
-					fill="var(--color-accent)"
-					transform="rotate(45 25.5 20)"
-				/>
-				<rect
-					x={14}
-					y={18.6}
-					width={11.5}
-					height={2.8}
-					rx={1.4}
-					fill="var(--color-accent)"
-					transform="rotate(-45 25.5 20)"
-				/>
-				<circle cx={24.2} cy={20} r={1.4} fill="var(--color-accent)" />
-				<circle cx={33.25} cy={20} r={3.6} fill="var(--color-accent)" opacity={0.22} />
-				<circle cx={33.25} cy={20} r={2.1} fill="var(--color-accent)" />
-				<circle cx={33.25} cy={20} r={1.0} fill="var(--color-accent-bright)" />
-			</svg>
+				ring={s.ring}
+				bar={s.bar}
+				led={s.led}
+				ariaHidden
+			/>
 			<div className="flex flex-col leading-none">
 				<span
 					className="font-display font-bold tracking-tight text-text-bright"

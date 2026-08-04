@@ -70,7 +70,6 @@ function Sparkline({ values, color = "var(--color-accent)", height = 36 }: Spark
 			style={{ height: `${height}px` }}
 			aria-hidden="true"
 		>
-			<title>Sparkline</title>
 			<polygon
 				points={fillPoints}
 				fill={color}
@@ -133,8 +132,7 @@ const PROVIDERS = [
 const TOP_ROUTES = [
 	{ route: "/v1/chat/completions", requests: 14823, p95ms: 282, errRate: 0.18 },
 	{ route: "/v1/images/generations", requests: 3182, p95ms: 4120, errRate: 0.42 },
-	{ route: "/v1/embeddings", requests: 2891, p95ms: 124, errRate: 0.04 },
-	{ route: "/v1/audio/speech", requests: 982, p95ms: 1240, errRate: 0.81 },
+	{ route: "/v1/videos/generations", requests: 412, p95ms: 28400, errRate: 0.21 },
 	{ route: "/v1/models", requests: 712, p95ms: 18, errRate: 0.0 },
 ];
 
@@ -559,7 +557,7 @@ export default async function ObservabilityPage() {
 									No incidents in the last 30 days. Live status is available in
 									the{" "}
 									<Link
-										href="https://github.com/NosytLabs/oma-ai"
+										href="https://github.com/NosytLabs"
 										className="text-accent hover:text-accent-hover underline underline-offset-4"
 									>
 										GitHub status board
@@ -587,10 +585,10 @@ export default async function ObservabilityPage() {
 							</p>
 							<div className="mt-6 flex flex-wrap items-center gap-3">
 								<Link
-									href="/network"
+									href="/docs#endpoints"
 									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
 								>
-									Network primitives
+									API reference
 									<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 								</Link>
 								<Link

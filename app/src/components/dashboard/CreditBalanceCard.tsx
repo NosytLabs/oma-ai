@@ -5,7 +5,7 @@ import { memo } from "react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Sparkline } from "@/components/ui/Sparkline";
 import type { BalanceResponse, UsageRecord } from "@/lib/api";
-import { formatCents, toDollars } from "@/lib/utils";
+import { toDollars } from "@/lib/utils";
 
 interface CreditBalanceCardProps {
 	balance: BalanceResponse | null;
@@ -68,11 +68,14 @@ function CreditBalanceCardComponent({
 						/>
 					) : !balance ? (
 						// Settled with no payload (error / empty) — show zero, not a lie mid-load.
-						<span className="text-text-muted">$0.00</span>
+						<span className="text-text-muted">0 credits</span>
 					) : (
-						<AnimatedNumber
-							value={parseFloat(formatCents(balance.balanceCents))}
-						/>
+						<div className="flex items-baseline gap-1">
+							<AnimatedNumber
+								value={Math.round(parseFloat(balance.balanceCents))}
+							/>
+							<span className="text-base text-text-muted font-normal">credits</span>
+						</div>
 					)}
 				</div>
 				<div className="flex items-center gap-2 text-[11px] text-text-muted">
@@ -81,10 +84,10 @@ function CreditBalanceCardComponent({
 						aria-hidden="true"
 					/>
 					{balance
-						? `Total deposited: $${formatCents(balance.totalDepositedCents)}`
+						? `Total deposited: ${Math.round(parseFloat(balance.totalDepositedCents))} credits (${(parseFloat(balance.totalDepositedCents)/100).toLocaleString(undefined, {style: 'currency', currency: 'USD'})})`
 						: loading
 							? "Loading credits…"
-							: "Total deposited: $0.00"}
+							: "Total deposited: 0 credits"}
 				</div>
 			</div>
 
@@ -104,18 +107,18 @@ function CreditBalanceCardComponent({
 
 			<div className="flex gap-3 border-t border-border pt-4">
 				<Link
-					href="/dashboard/credits"
-					aria-label="Purchase credits"
+					href="/deposit"
+					aria-label="Top up credits"
 					className="group flex flex-1 items-center justify-center border border-border-bright bg-surface px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent focus-ring active:bg-surface-elevated"
 				>
-					Buy credits
+					Top up credits
 				</Link>
 				<Link
 					href="/deposit"
-					aria-label="Add credits"
+					aria-label="Deposit USDC"
 					className="group flex flex-1 items-center justify-center border border-border-bright bg-void px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-text-muted hover:text-text focus-ring active:bg-surface"
 				>
-					Deposit
+					Deposit USDC
 				</Link>
 			</div>
 		</div>

@@ -190,7 +190,7 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 		renderMenu();
 		fireEvent.click(screen.getByRole("button", { name: /terminate session/i }));
 		expect(
-			screen.getByText(/you'?ll need your wallet or account number/i),
+			screen.getByText(/you'?ll need your wallet or magic-link email/i),
 		).toBeInTheDocument();
 	});
 });

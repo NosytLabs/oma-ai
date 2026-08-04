@@ -29,6 +29,15 @@ import { GlossarySection } from "./sections/glossary";
 function Sidebar({ activeId }: { activeId: string }) {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const mobileNavId = useId();
+	const [isMobile, setIsMobile] = useState(false);
+	useEffect(() => {
+		const m = window.matchMedia("(max-width: 1023px)");
+		const u = () => setIsMobile(m.matches);
+		u();
+		m.addEventListener("change", u);
+		return () => m.removeEventListener("change", u);
+	}, []);
+	const drawerHidden = isMobile && !mobileOpen;
 
 	return (
 		<>
@@ -56,7 +65,9 @@ function Sidebar({ activeId }: { activeId: string }) {
 
 			<aside
 				id={mobileNavId}
-				aria-label="Mobile navigation"
+				aria-label="Documentation navigation"
+				aria-hidden={drawerHidden}
+				inert={drawerHidden}
 				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-72 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}

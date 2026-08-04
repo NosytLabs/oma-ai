@@ -34,18 +34,19 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		const bySource = Object.fromEntries(
 			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
 		);
-		// /about is a live E-E-A-T page (not redirected)
+		// /about and /faq are live E-E-A-T pages (not redirected)
 		expect(bySource["/about"]).toBeUndefined();
-		expect(bySource["/faq"]).toBe("/pricing#faq");
+		expect(bySource["/faq"]).toBeUndefined();
 		expect(bySource["/blog"]).toBe("/changelog");
-		expect(bySource["/status"]).toBe("/network");
+		expect(bySource["/status"]).toBe("/docs#endpoints");
+		expect(bySource["/network"]).toBe("/docs#endpoints");
 		expect(bySource["/support"]).toBe("/contact");
 		expect(bySource["/signup"]).toBe("/login");
 		expect(bySource["/playground"]).toBe("/chat");
 		expect(bySource["/image-generation"]).toBe("/chat?mode=image");
 		expect(bySource["/video-generation"]).toBe("/chat?mode=video");
 		expect(bySource["/swap"]).toBe("/deposit");
-		expect(bySource["/credits"]).toBe("/dashboard/credits");
+		expect(bySource["/credits"]).toBe("/deposit");
 		expect(bySource["/account"]).toBe("/settings");
 	});
 });
@@ -73,11 +74,15 @@ describe("brand assets on disk (public/)", () => {
 		"favicon.svg",
 		"favicon-16x16.png",
 		"favicon-32x32.png",
+		"favicon.ico",
 		"apple-touch-icon.png",
 		"og-image.webp",
 		"logos/oma-logo.svg",
+		"logos/oma-wordmark.svg",
+		"logos/oma-brand-card.svg",
 		"logos/oma-icon-192.png",
 		"logos/oma-icon-512.png",
+		"logos/oma-icon-1024.png",
 	];
 
 	it.each(required)("exists: %s", (rel) => {
@@ -97,10 +102,21 @@ describe("brand assets on disk (public/)", () => {
 		expect(svg).toMatch(/circle[^>]+fill="#46d39a"/);
 	});
 
-	it("lockup SVG uses the same brand hex tokens", () => {
-		const svg = readFileSync(join(publicDir, "logos/oma-logo.svg"), "utf8");
-		expect(svg).toContain("#07090a");
-		expect(svg).toContain("#46d39a");
+	it("lockup SVGs use the same brand hex tokens and canonical tagline", () => {
+		for (const rel of ["logos/oma-logo.svg", "logos/oma-wordmark.svg", "logos/oma-brand-card.svg"]) {
+			const svg = readFileSync(join(publicDir, rel), "utf8");
+			expect(svg).toContain("#07090a");
+			expect(svg).toContain("#46d39a");
+			expect(svg).toMatch(/open model access/i);
+		}
+	});
+});
+
+describe("shared page-shell layout contract", () => {
+	it("does not contain the retired desktop sidebar offset", () => {
+		const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+		expect(css).toContain(".page-shell {");
+		expect(css).not.toMatch(/\.page-shell[\s\S]{0,220}padding-left:\s*18rem/);
 	});
 });
 

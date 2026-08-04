@@ -135,7 +135,7 @@ function TerminalExample({ code }: { code: string }) {
 						)}
 					</button>
 				</div>
-				<pre className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary leading-relaxed sm:p-8">
+				<pre tabIndex={0} className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8">
 					<code className="block w-max min-w-full font-mono text-[12px] sm:text-[14px]">
 						<TokenizedCode code={code} />
 					</code>

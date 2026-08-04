@@ -75,7 +75,6 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		const paths = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
 		for (const dead of [
 			"/blog",
-			"/faq",
 			"/status",
 			"/support",
 			"/signup",

@@ -276,7 +276,7 @@ export function NavbarMobileMenu({
 												id="mobile-disconnect-body"
 												className="mt-1 text-[11px] leading-relaxed text-text-secondary"
 											>
-												You&apos;ll need your wallet or account number to sign
+												You&apos;ll need your wallet or magic-link email to sign
 												back in.
 											</p>
 											<div className="mt-2 grid grid-cols-2 gap-1">
@@ -306,7 +306,7 @@ export function NavbarMobileMenu({
 							<div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border pt-4 text-[11px] text-text-muted">
 								<ApiStatus />
 								<a
-									href="https://github.com/NosytLabs/oma-ai"
+									href="https://github.com/NosytLabs"
 									target="_blank"
 									rel="noopener noreferrer"
 									className="shrink-0 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

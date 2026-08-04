@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
@@ -17,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { api, type Session, type User } from "@/lib/api";
+import { api, type User } from "@/lib/api";
 
 const ProfileSection = nextDynamic(() =>
 	import("./_components/ProfileSection").then((m) => ({
@@ -112,34 +113,23 @@ function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	return null;
 }
 
-function currentSessionFallback(): Session {
-	const ua =
-		typeof navigator !== "undefined" ? navigator.userAgent : "This browser";
-	let device = "This browser";
-	if (/Edg\//i.test(ua)) device = "Microsoft Edge";
-	else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) device = "Chrome";
-	else if (/Firefox\//i.test(ua)) device = "Firefox";
-	else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) device = "Safari";
-	if (/Mobile|Android|iPhone/i.test(ua)) device = `${device} (mobile)`;
-
-	return {
-		id: "current",
-		device,
-		ip: "—",
-		lastActive: new Date().toISOString(),
-		current: true,
-	};
-}
-
 export default function SettingsPage() {
-	const { isAuthenticated, isReady, evmAddress, signOut } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress, signOut } = useAuth();
+	const hasRealSession = isAuthenticated && !isDemo;
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
 	const [user, setUser] = useState<User | null>(null);
-	const [sessions, setSessions] = useState<Session[]>([currentSessionFallback()]);
-	const [loading, setLoading] = useState(true);
+	const [loadingUser, setLoadingUser] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const sessionsQuery = useQuery({
+		queryKey: ["sessions"],
+		queryFn: () => api.auth.listSessions(),
+		enabled: hasRealSession,
+		staleTime: 60_000,
+	});
+	const sessions = sessionsQuery.data?.sessions ?? [];
+	const loading = loadingUser || sessionsQuery.isLoading;
 
 	const [deleting, setDeleting] = useState(false);
 	const [loggingOut, setLoggingOut] = useState(false);
@@ -161,34 +151,36 @@ export default function SettingsPage() {
 	}, [searchParams, router]);
 
 	useEffect(() => {
-		if (!isAuthenticated) return;
+		if (!hasRealSession) return;
 		let cancelled = false;
 		const fetchData = async () => {
-			setLoading(true);
+			setLoadingUser(true);
 			setError(null);
 			try {
 				const userData = await api.auth.getUser();
-				if (!cancelled) {
-					setUser(userData ?? null);
-					// Multi-session listing endpoint is not wired yet — always
-					// show at least the current browser session so the tab is
-					// useful.
-					setSessions([currentSessionFallback()]);
-				}
+				if (!cancelled) setUser(userData ?? null);
 			} catch (e: unknown) {
 				if (!cancelled) {
 					setError(e instanceof Error ? e.message : "Failed to load settings");
-					setSessions([currentSessionFallback()]);
 				}
 			} finally {
-				if (!cancelled) setLoading(false);
+				if (!cancelled) setLoadingUser(false);
 			}
 		};
 		fetchData();
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthenticated]);
+	}, [hasRealSession]);
+
+	useEffect(() => {
+		if (!sessionsQuery.error) return;
+		setError(
+			sessionsQuery.error instanceof Error
+				? sessionsQuery.error.message
+				: "Failed to load sessions",
+		);
+	}, [sessionsQuery.error]);
 
 	const handleLogout = async () => {
 		setLoggingOut(true);
@@ -220,7 +212,7 @@ export default function SettingsPage() {
 		);
 	}
 
-	if (!isAuthenticated) {
+	if (!hasRealSession) {
 		return (
 			<div className="flex items-center justify-center px-4 py-10">
 				<m.div
@@ -333,6 +325,16 @@ export default function SettingsPage() {
 			</AnimatePresence>
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8 min-w-0">
+				<div className="relative lg:block">
+					{/* Mobile scroll-edge fades so users know to swipe. */}
+					<div
+						aria-hidden
+						className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-bg to-transparent lg:hidden"
+					/>
+					<div
+						aria-hidden
+						className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-bg to-transparent lg:hidden"
+					/>
 				<div
 					role="tablist"
 					aria-label="Settings sections"
@@ -404,6 +406,7 @@ export default function SettingsPage() {
 							</button>
 						);
 					})}
+				</div>
 				</div>
 
 				<div className="min-w-0">

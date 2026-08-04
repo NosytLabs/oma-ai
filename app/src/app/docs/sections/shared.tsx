@@ -101,7 +101,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
 		body: {
 			model:
-				'string (required). Any model id from /v1/models, e.g. "llama-3.2-3b"',
+				'string (required). Any model id from /v1/models, e.g. "llama-3.3-70b"',
 			messages:
 				"array of { role, content }. role is system, user, assistant, or tool",
 			temperature: "number 0 to 2 (optional, default from upstream)",
@@ -114,7 +114,7 @@ export const ENDPOINTS: EndpointInfo[] = [
   "id": "chatcmpl-9f3k2a",
   "object": "chat.completion",
   "created": 1717194000,
-  "model": "llama-3.2-3b",
+  "model": "llama-3.3-70b",
   "choices": [
     {
       "index": 0,
@@ -126,36 +126,19 @@ export const ENDPOINTS: EndpointInfo[] = [
 }`,
 	},
 	{
-		method: "POST",
-		path: "/v1/completions",
-		anchor: "ep-completions",
-		title: "Completions (Legacy)",
-		desc: "Deprecated prompt-based completion endpoint. Use Chat Completions for new projects.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			model: "string (required). Model id from /v1/models",
-			prompt: "string (required). String only, arrays are rejected",
-			max_tokens: "integer (optional)",
-			temperature: "number 0 to 2 (optional)",
-			top_p: "number 0 to 1 (optional)",
-			n: "integer 1 to 10 (optional)",
-			stop: "string | string[] (optional)",
-			stream: "boolean (optional). SSE when true",
-			presence_penalty: "number -2 to 2 (optional)",
-			frequency_penalty: "number -2 to 2 (optional)",
-		},
+		method: "GET",
+		path: "/v1/search",
+		anchor: "ep-search",
+		title: "Web Search",
+		desc: "Web search used by the chat playground when \"Web Search\" is enabled. Returns zero results when the upstream isn't configured, so the chat can proceed without search context. Auth is optional (anonymous free-chat works).",
+		auth: "Optional — Bearer key or session cookie",
+		params: [{ name: "query", type: "string", desc: "Search query (1–500 chars, required)" }],
+		body: undefined,
 		response: `{
-  "id": "cmpl-abc123",
-  "object": "text_completion",
-  "created": 1717194000,
-  "model": "llama-3.2-3b",
-  "choices": [{
-    "text": " in a land far, far away...",
-    "index": 0,
-    "finish_reason": "length",
-    "logprobs": null
-  }],
-  "usage": { "prompt_tokens": 5, "completion_tokens": 10, "total_tokens": 15 }
+  "query": "open model access",
+  "results": [
+    { "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
+  ]
 }`,
 	},
 	{
@@ -198,44 +181,17 @@ export const ENDPOINTS: EndpointInfo[] = [
 		title: "Get Model",
 		desc: "Returns pricing, capabilities, and provider metadata for a single model. No auth required.",
 		auth: "None",
-		response: `{
-  "id": "claude-sonnet-4-5",
+		response: `{			"id": "llama-3.3-70b",
   "object": "model",
   "created": 1717194000,
-  "owned_by": "oma",
-  "permission": [],
-  "root": "claude-sonnet-4-5",
-  "parent": null,
-  "pricing": { "prompt": "0.00000300", "completion": "0.00001500" },
-  "category": "chat",
-  "context_length": 200000,
+  "owned_by": "venice",
+  "display_name": "Llama 3.3 70B",
+  "provider": "venice",
+  "category": "mid",
+  "context_length": 128000,
   "supports_streaming": true,
-  "provider": "venice"
-}`,
-	},
-	{
-		method: "POST",
-		path: "/v1/embeddings",
-		anchor: "ep-embeddings",
-		title: "Embeddings",
-		desc: "Vector embeddings via Venice passthrough. These models are NOT listed in /v1/models — use the Venice model ID directly. Use for semantic search, RAG, clustering.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			model:
-				'string (required), e.g. "text-embedding-3-small" (Venice passthrough — not in /v1/models catalog)',
-			input: "string | string[] (required), max 50,000 chars per input",
-		},
-		response: `{
-  "object": "list",
-  "data": [
-    {
-      "object": "embedding",
-      "index": 0,
-      "embedding": [0.0023, -0.0091, 0.0027, 0.0114, -0.0042]
-    }
-  ],
-  "model": "text-embedding-3-small (Venice passthrough)",
-  "usage": { "prompt_tokens": 10, "total_tokens": 10 }
+  "supports_tools": true,
+  "pricing": { "prompt": 0.7, "completion": 2.8 }
 }`,
 	},
 	{
@@ -259,44 +215,6 @@ export const ENDPOINTS: EndpointInfo[] = [
       "revised_prompt": "A cat wearing a small felt hat, soft window light, 35mm"
     }
   ]
-}`,
-	},
-	{
-		method: "POST",
-		path: "/v1/audio/speech",
-		anchor: "ep-audio-tts",
-		title: "Audio Speech (TTS)",
-		desc: "Text-to-speech via Venice passthrough (not in /v1/models catalog). Returns raw audio bytes (audio/mpeg by default).",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			model: 'string (required), e.g. "tts-1-hd" (Venice passthrough)',
-			input: "string (required), max 10,000 chars",
-			voice: "string (optional). Voice id",
-			response_format: "string (optional): mp3 | opus | aac | flac | wav | pcm",
-			speed: "number 0.25 to 4.0 (optional, default 1.0)",
-		},
-		response: `// 200 OK
-// Content-Type: audio/mpeg
-// (binary audio data)`,
-	},
-	{
-		method: "POST",
-		path: "/v1/audio/transcriptions",
-		anchor: "ep-audio-stt",
-		title: "Audio Transcriptions",
-		desc: "Speech-to-text via Venice Whisper passthrough (not in /v1/models catalog). Multipart form upload.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			file: "binary (required). Audio file to transcribe",
-			model: 'string (required), e.g. "whisper-large-v3" (Venice passthrough)',
-			language: 'string (optional). ISO-639-1 code, e.g. "en"',
-			prompt: "string (optional). Context hint to guide the model",
-			response_format:
-				"string (optional): json | text | srt | verbose_json | vtt",
-			temperature: "number (optional)",
-		},
-		response: `{
-  "text": "Hello, how can I help you today?"
 }`,
 	},
 	{
@@ -336,6 +254,137 @@ export const ENDPOINTS: EndpointInfo[] = [
 //   "status": "completed",     // "processing" | "completed"
 //   "video_url": "https://files.oma-ai.com/vid_abc123.mp4"
 // }`,
+	},
+	{
+		method: "GET",
+		path: "/api/auth/get-session",
+		anchor: "ep-session",
+		title: "Session Lookup",
+		desc: "Reads the current authenticated session. Used by middleware to gate protected routes and by client-side auth hooks.",
+		auth: "Session cookie (set by magic-link or SIWE sign-in)",
+		body: undefined,
+		response: `{
+  "user": { "id": "usr_…", "email": "…" },
+  "session": { "expiresAt": "…" }
+}`,
+	},
+	{
+		method: "GET",
+		path: "/api/auth/siwe/nonce · POST /api/auth/siwe/verify",
+		anchor: "ep-siwe",
+		title: "SIWE Nonce + Verify",
+		desc: "Wallet sign-in via EIP-4361 on Base mainnet. Issue a nonce, sign the message with your wallet, then verify — the server sets the HttpOnly session cookie.",
+		auth: "None (nonce is public); POST verifies the signed message via viem",
+		body: {
+			message: "string (required). The EIP-4361 message the wallet signed",
+			signature: "string (required). Hex signature from the wallet",
+			walletAddress: "string (required). Signer address",
+			chainId: "number (required). 8453 for Base mainnet",
+		},
+		response: `{
+  "user": { "id": "usr_…", "walletAddress": "0x…" }
+}`,
+	},
+	{
+		method: "POST",
+		path: "/api/auth/sign-in/magic-link",
+		anchor: "ep-magic-link",
+		title: "Magic Link",
+		desc: "Passwordless email sign-in. Sends a single-use link (5-minute expiry). Clicking it sets the HttpOnly session cookie.",
+		auth: "None",
+		body: { email: "string (required). Recipient email address" },
+		response: `{ "status": 200 }`,
+	},
+	{
+		method: "GET",
+		path: "/v1/balance",
+		anchor: "ep-balance",
+		title: "Credit Balance",
+		desc: "Returns available credits, total deposited, and total used in cents. 1 credit = $0.01 = 1 cent.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		response: `{
+  "balanceCents": "1234.50",
+  "totalDepositedCents": "10000.00",
+  "totalUsedCents": "8765.50"
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/deposit/usdc",
+		anchor: "ep-deposit-usdc",
+		title: "USDC Deposit Instructions",
+		desc: "Returns the treasury USDC address on Base, your unique memo (oma-<userId8>), and min/max bounds. Send USDC with the memo in the transaction input; the watcher credits within ~12s of confirmation.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		response: `{
+  "depositAddress": "0x8335…",
+  "network": "base",
+  "chainId": 8453,
+  "usdcContract": "0x833589…",
+  "memo": "oma-abc12345",
+  "minDepositCents": 100,
+  "maxDepositCents": 1000000
+}`,
+	},
+	{
+		method: "POST",
+		path: "/v1/checkout",
+		anchor: "ep-checkout",
+		title: "Polar Checkout",
+		desc: "Creates a Polar hosted-checkout session for Hobby ($10/1000cr), Builder ($50/5000cr), or Scale ($250/25000cr). Polar's webhook credits the user on order.paid.",
+		auth: "Bearer token (API key)",
+		body: {
+			plan: 'string (required). "hobby" | "builder" | "scale"',
+			successUrl: "string (optional). Redirect target after payment",
+		},
+		response: `{ "url": "https://buy.polar.sh/…" }`,
+	},
+	{
+		method: "GET",
+		path: "/v1/usage/today",
+		anchor: "ep-usage-today",
+		title: "Daily Free-Tier Usage",
+		desc: "How many free messages you have left today. 20/day for anonymous (IP-keyed Redis), 100/day for authenticated users.",
+		auth: "Bearer token (API key) — anonymous allowed",
+		body: undefined,
+		response: `{
+  "used": 12,
+  "limit": 20,
+  "remaining": 8,
+  "resetMs": 12345678
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/usage",
+		anchor: "ep-usage",
+		title: "Usage History",
+		desc: "Paginated usage records for your dashboard. Every chat/image/video request becomes a row with model, tokens, costCents, and status.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		params: [
+			{ name: "since", type: "string", desc: "ISO timestamp; records at or after" },
+			{ name: "until", type: "string", desc: "ISO timestamp; records at or before" },
+			{ name: "limit", type: "number", desc: "1–200, default 50" },
+			{ name: "cursor", type: "string", desc: "Opaque pagination cursor" },
+		],
+		response: `{
+  "object": "list",
+  "data": [{ "id": "…", "model": "…", "totalCents": "…" }],
+  "next_cursor": "2026-08-03T…|…",
+  "totals": { "requests": 42, "totalCents": "12.34" }
+}`,
+	},
+	{
+		method: "POST",
+		path: "/webhooks/polar",
+		anchor: "ep-polar-webhook",
+		title: "Polar Webhook (inbound)",
+		desc: "Polar sends signed POSTs here on order events. We verify the HMAC signature, look up the user from checkout metadata, and credit/drain accordingly. Idempotent on webhook-id.",
+		auth: "HMAC SHA-256 signature (Standard Webhooks)",
+		body: undefined,
+		response: `{ "ok": true, "duplicate": true } // 200 on success or duplicate`,
 	},
 ];
 
@@ -456,15 +505,16 @@ export function CodeBlock({
 				</div>
 			)}
 			<CopyButton text={code} id={id} />
-			<section
-				aria-label={title ?? "Code example"}
+			<div
+				aria-label={`${title ?? "Code example"} — ${id}`}
+				role="region"
 				tabIndex={0}
 				className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 			>
 				<pre id={id} tabIndex={0} className="m-0 max-w-full leading-relaxed">
 					<SyntaxHighlighter code={code} lang={lang ?? "text"} />
 				</pre>
-			</section>
+			</div>
 		</div>
 	);
 }
@@ -492,8 +542,9 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 			</div>
 			<div className="relative min-w-0 max-w-full">
 				<CopyButton text={tabs[active].code} id={id} />
-				<section
-					aria-label={tabs[active].label}
+				<div
+					role="region"
+					aria-label={`${tabs[active].label} — ${id}`}
 					tabIndex={0}
 					className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 				>
@@ -503,7 +554,7 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 							lang={tabs[active].lang}
 						/>
 					</pre>
-				</section>
+				</div>
 			</div>
 		</div>
 	);

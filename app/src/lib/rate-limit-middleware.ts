@@ -14,7 +14,7 @@
  *
  * export const POST = withRateLimit(async (req) => {
  *   // … your handler
- * }, { limiter: authLimiter, route: '/api/auth/account/login' })
+ * }, { limiter: authLimiter, route: '/api/auth/sign-in/email' })
  * ```
  */
 

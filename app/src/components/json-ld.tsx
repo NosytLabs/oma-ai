@@ -16,10 +16,7 @@ export function OrganizationJsonLd() {
 		logo: `${BASE_URL}/logos/oma-icon-512.png`,
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference paid per request in USDC on Base.",
-		sameAs: [
-			"https://twitter.com/oma_ai",
-			"https://github.com/NosytLabs/oma-ai",
-		],
+		sameAs: ["https://github.com/NosytLabs"],
 		contactPoint: {
 			"@type": "ContactPoint",
 			email: "support@nosytlabs.com",

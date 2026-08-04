@@ -19,15 +19,24 @@ export type ExportStatus = "default" | "loading" | "success" | "error";
 export type ShareStatus = "default" | "success" | "error";
 
 /**
- * Media mode is now fixed to "text" only — image/video generation
- * panels were removed as the endpoints don't exist yet.
- * Kept for URL parsing compatibility with legacy redirects.
+ * Media mode toggles between text chat, image generation, and video
+ * generation panels. Synced with `?mode=text|image|video` so deep links
+ * and redirects from /image-generation + /video-generation work.
+ *
+ * 2026-08-02: re-enabled — the /v1/images/generations and
+ * /v1/videos/generations routes exist on the server and the
+ * ImageGenerationPanel / VideoGenerationPanel components were kept
+ * as lazy imports in MessagesList.
  */
-export type MediaMode = "text";
+export type MediaMode = "text" | "image" | "video";
 
-const MEDIA_MODES: readonly MediaMode[] = ["text"] as const;
+const MEDIA_MODES: readonly MediaMode[] = ["text", "image", "video"] as const;
 
-export function parseMediaMode(_raw: string | null | undefined): MediaMode {
+export function parseMediaMode(raw: string | null | undefined): MediaMode {
+	const v = (raw ?? "").trim().toLowerCase();
+	if (v === "image" || v === "img") return "image";
+	if (v === "video" || v === "vid") return "video";
+	if (v === "text" || v === "chat" || v === "") return "text";
 	return "text";
 }
 

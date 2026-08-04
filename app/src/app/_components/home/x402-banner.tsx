@@ -83,7 +83,7 @@ export function X402Banner() {
 								<p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-text-muted">
 									request shape
 								</p>
-								<pre className="overflow-x-auto whitespace-pre w-full">
+								<pre tabIndex={0} className="overflow-x-auto whitespace-pre w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 									{`POST /v1/chat/completions
 PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
 Content-Type: application/json

@@ -30,7 +30,7 @@ describe("PricingPage", () => {
 		render(<PricingPage />);
 		expect(screen.getByText("USDC on Base")).toBeInTheDocument();
 		expect(
-			screen.getAllByText((_, el) => !!el && (el.textContent ?? "").includes("LI.FI")).length,
+			screen.getAllByText((_, el) => !!el && (el.textContent ?? "").includes("Direct USDC")).length,
 		).toBeGreaterThan(0);
 	});
 
@@ -73,8 +73,8 @@ describe("PricingPage", () => {
 	it("renders CTA buttons linking to deposit and models", async () => {
 		render(<PricingPage />);
 		await waitFor(() => {
-			const depositLinks = screen.getAllByRole("link", { name: /deposit/i });
-			expect(depositLinks.length).toBeGreaterThan(0);
+			const buyLinks = screen.getAllByRole("link", { name: /buy/i });
+			expect(buyLinks.length).toBeGreaterThan(0);
 		});
 		expect(
 			screen.getByRole("link", { name: /view all models/i }),

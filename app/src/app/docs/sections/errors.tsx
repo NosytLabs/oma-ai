@@ -44,7 +44,7 @@ for attempt in range(5):
 				<CodeBlock code={errorFormatCode} lang="json" />
 			</div>
 
-			<div id="err-common" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24">
+			<div id="err-common" tabIndex={0} aria-label="API error codes table" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 				<table className="w-full text-left text-sm" aria-label="API error codes">
 					<thead>
 						<tr className="border-b border-border bg-surface/50">

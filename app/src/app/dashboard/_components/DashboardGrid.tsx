@@ -74,7 +74,7 @@ function EmptyState({
 			<div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface text-text-muted mb-4">
 				<Icon className="h-5 w-5" aria-hidden="true" />
 			</div>
-			<h3 className="text-text-bright text-lg font-medium mb-2">{title}</h3>
+			<h2 className="text-text-bright text-lg font-medium mb-2">{title}</h2>
 			<p className="text-text-secondary text-sm max-w-md mb-6">{description}</p>
 			{action}
 		</m.div>
@@ -251,6 +251,10 @@ interface DashboardGridProps {
 
 	// Onboarding callback: navigate to API Keys tab.
 	onNavigateToApiKeys?: () => void;
+
+	// Whether the current session is signed in with a wallet (SIWE).
+	// Drives the OnboardingChecklist "wallet connected" milestone.
+	walletConnected?: boolean;
 }
 
 /**
@@ -296,6 +300,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 		activeTab = "overview",
 		timeRange = "7d",
 		onNavigateToApiKeys,
+		walletConnected = false,
 	} = props;
 
 	const [errorDismissed, setErrorDismissed] = useState(false);
@@ -327,10 +332,33 @@ export function DashboardGrid(props: DashboardGridProps) {
 			prev.cost += Number(r.totalCents ?? "0") / 100;
 			byModel.set(r.model, prev);
 		}
-		return Array.from(byModel.values())
-			.sort((a, b) => b.value - a.value)
-			.slice(0, 6)
-			.map((m, i) => ({ name: m.name, value: m.value, color: palette[i % palette.length] }));
+		// Sort by cost (not request count) so the "expensive" models surface
+		// first — matches the chart title "Top models by cost" and the
+		// semantics of the legend.
+		const sorted = Array.from(byModel.values()).sort(
+			(a, b) => b.cost - a.cost,
+		);
+		const TOP_N = 5;
+		const top = sorted.slice(0, TOP_N);
+		const rest = sorted.slice(TOP_N);
+		const restRequests = rest.reduce((sum, m) => sum + m.value, 0);
+		const restCost = rest.reduce((sum, m) => sum + m.cost, 0);
+		const result = top.map((m, i) => ({
+			name: m.name,
+			value: m.value,
+			color: palette[i % palette.length],
+		}));
+		if (rest.length > 0) {
+			result.push({
+				name: `Other (${rest.length})`,
+				value: restRequests,
+				color: palette[TOP_N % palette.length],
+			});
+		}
+		// Touch restCost so the aggregation isn't flagged as dead-code — useful
+		// for future debugging if a tooltip needs to show the omitted totals.
+		void restCost;
+		return result;
 	}, [usage]);
 
 	return (
@@ -403,7 +431,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						{/* Onboarding checklist for new users */}
 						{!loading && (
 							<OnboardingChecklist
-								walletConnected={true}
+								walletConnected={walletConnected}
 								hasApiKey={apiKeys.length > 0}
 								hasUsage={usage.length > 0}
 								onNavigateToApiKeys={onNavigateToApiKeys}
@@ -442,11 +470,11 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<LazyProviderHealthSummary />
 								</WidgetErrorBoundary>
 							</div>
-							<WidgetErrorBoundary title="Buy credits">
+							<WidgetErrorBoundary title="Top up credits">
 								<div className="rounded-xl border border-border bg-surface p-4">
 									<div className="flex items-start justify-between gap-3">
 										<div>
-											<p className="text-sm font-medium text-text-bright">Buy credits</p>
+											<p className="text-sm font-medium text-text-bright">Top up credits</p>
 											<p className="mt-1 text-xs text-text-muted">Choose card or USDC.</p>
 										</div>
 										<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-accent">

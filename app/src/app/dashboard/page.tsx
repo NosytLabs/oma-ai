@@ -175,7 +175,14 @@ export default function DashboardPage() {
 			setShowCreateForm(false);
 			// Install the raw key as the HttpOnly oma_api_key cookie so the
 			// browser-direct SSE chat can authenticate against the backend.
-			void api.auth.installKeyCookie(key.key);
+			// Don't silently swallow failures — surface a toast so users
+			// know if their browser blocked the cookie write.
+			api.auth.installKeyCookie(key.key).catch((err) => {
+				toast.error(
+					"Couldn't store your API key cookie. If chat doesn't load, check browser cookie settings.",
+				);
+				console.error("installKeyCookie failed:", err);
+			});
 			queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) => [
 				...(prev ?? []),
 				{
@@ -322,6 +329,7 @@ export default function DashboardPage() {
 						activeTab={activeTab}
 						timeRange={timeRange}
 						onNavigateToApiKeys={handleNavigateToApiKeys}
+						walletConnected={Boolean(evmAddress)}
 					/>
 				</div>
 			</div>

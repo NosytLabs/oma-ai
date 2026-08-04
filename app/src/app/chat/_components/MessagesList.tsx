@@ -23,7 +23,7 @@ import { ChevronDown, GitCompare, Keyboard, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { RefObject } from "react";
 import type { ExampleConversation, Message } from "@/components/chat";
-import { A2UIRenderer, isA2UI } from "@/components/chat/A2UIRenderer";
+import { A2UIRenderer, isA2UI, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const LazyWelcomeBanner = dynamic(
@@ -197,9 +197,13 @@ function classifyMessage(content: string): Classification {
 	const trimmed = content.trimStart();
 	let result: Classification;
 	if (trimmed.startsWith("{")) {
+		// Single object envelope, or a JSONL stream (one envelope per line).
 		const parsed = safeJsonParse(trimmed);
 		if (parsed && isA2UI(parsed)) {
 			result = { kind: "a2ui", payload: parsed };
+		} else if (isA2UI(trimmed)) {
+			// JSONL: pass the raw string; the renderer parses line by line.
+			result = { kind: "a2ui", payload: trimmed };
 		} else {
 			result = { kind: "plain" };
 		}
@@ -226,6 +230,8 @@ export interface MessagesListProps {
 	inputRef: RefObject<HTMLTextAreaElement | null>;
 	/** Regenerate the last assistant turn (ChatGPT-style Retry). */
 	onRegenerate?: () => void;
+	/** Fired when the user clicks an A2UI action button (server action event). */
+	onA2UIAction?: (event: A2UIActionEvent) => void;
 }
 
 /**
@@ -269,6 +275,7 @@ export function MessagesList({
 	handleExampleSelect,
 	inputRef,
 	onRegenerate,
+	onA2UIAction,
 }: MessagesListProps) {
 	const showFeatureHints =
 		deferredMessages.length === 0 &&
@@ -346,7 +353,7 @@ export function MessagesList({
 						)}
 					</div>
 				) : (
-					<div className="space-y-6 md:space-y-8 pb-12">
+					<div className="space-y-3 md:space-y-4 pb-12">
 						<AnimatePresence mode="popLayout">
 							{deferredMessages.map((msg, index) => {
 								const isLast = index === deferredMessages.length - 1;
@@ -371,7 +378,7 @@ export function MessagesList({
 											key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 											className="flex gap-4"
 										>
-											<A2UIRenderer payload={classification.payload} />
+											<A2UIRenderer payload={classification.payload} onAction={onA2UIAction} />
 										</div>
 									);
 								}

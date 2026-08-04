@@ -1,5 +1,6 @@
 import {
 	Activity,
+	Bot,
 	Box,
 	FileText,
 	GitCompare,
@@ -31,7 +32,7 @@ export const primaryLinks: NavItem[] = [
 	{ href: "/models", label: "Models", icon: Box, desc: "Browse the catalog" },
 	{
 		href: "/chat",
-		label: "Playground",
+		label: "Chat",
 		icon: Terminal,
 		desc: "Chat · image · video",
 	},
@@ -48,10 +49,10 @@ export const primaryLinks: NavItem[] = [
 /** Tools dropdown — secondary, off the primary path. */
 export const toolsLinks: NavItem[] = [
 	{
-		href: "/network",
-		label: "Network",
+		href: "/docs#endpoints",
+		label: "API Reference",
 		icon: Network,
-		desc: "Programmable primitives",
+		desc: "Every endpoint, live",
 	},
 	{
 		href: "/observability",
@@ -64,6 +65,12 @@ export const toolsLinks: NavItem[] = [
 		label: "Changelog",
 		icon: Newspaper,
 		desc: "Release notes",
+	},
+	{
+		href: "/agent-skill.md",
+		label: "Agent setup",
+		icon: Bot,
+		desc: "Prompt for your AI agent",
 	},
 	{
 		href: "/admin",
@@ -99,7 +106,9 @@ export const accountHrefs = [
 ] as const;
 
 export function isCurrentPath(pathname: string, href: string): boolean {
-	return pathname === href || pathname.startsWith(`${href}/`);
+	const currentPath = pathname.split(/[?#]/, 1)[0] || "/";
+	const routePath = href.split(/[?#]/, 1)[0] || "/";
+	return currentPath === routePath || currentPath.startsWith(`${routePath}/`);
 }
 
 export function sectionLabelFor(pathname: string): string {

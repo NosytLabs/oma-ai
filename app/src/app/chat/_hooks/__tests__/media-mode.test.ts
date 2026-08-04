@@ -9,22 +9,22 @@ describe("parseMediaMode", () => {
 		expect(parseMediaMode("nope")).toBe("text");
 	});
 
-	// 2026-07-30: IMAGE and VIDEO modes are no longer accepted — the
-	// playground is chat-only until image/video endpoints ship. The
-	// legacy /chat?mode=image and /chat?mode=video URLs from the
-	// /image-generation and /video-generation page redirects now
-	// silently fall through to chat. Re-enable the alias tests when
-	// the corresponding endpoints land.
+	// 2026-08-02: IMAGE and VIDEO modes re-enabled — the server routes
+	// (/v1/images/generations, /v1/videos/generations) exist and the
+	// generation panels are wired into MessagesList.
+
+	it("accepts image aliases for legacy redirects", () => {
+		expect(parseMediaMode("image")).toBe("image");
+		expect(parseMediaMode("IMG")).toBe("image");
+	});
+
+	it("accepts video aliases", () => {
+		expect(parseMediaMode("video")).toBe("video");
+		expect(parseMediaMode("vid")).toBe("video");
+	});
 
 	it("accepts chat as text alias", () => {
 		expect(parseMediaMode("chat")).toBe("text");
 		expect(parseMediaMode("text")).toBe("text");
-	});
-
-	it("ignores legacy image/video modes (endpoints not yet shipped)", () => {
-		expect(parseMediaMode("image")).toBe("text");
-		expect(parseMediaMode("IMG")).toBe("text");
-		expect(parseMediaMode("video")).toBe("text");
-		expect(parseMediaMode("vid")).toBe("text");
 	});
 });

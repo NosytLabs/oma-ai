@@ -334,12 +334,6 @@
 		padding-left: 0;
 		padding-right: 0;
 	}
-	@media (min-width: 1024px) {
-		.page-shell {
-			padding-left: 18rem;
-			padding-right: 0;
-		}
-	}
 
 	.container-page {
 		@apply mx-auto w-full min-w-0 px-4;
@@ -504,7 +498,7 @@
 		transform: none;
 	}
 	.btn-primary:active {
-		transform: scale(0.98);
+		transform: scale(0.97);
 	}
 	/* Sheen — animatedbuttons #25 pattern adapted to --color-accent.
 	   Pure CSS, GPU-composited transform, prefers-reduced-motion safe. */
@@ -583,7 +577,7 @@
 		box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.8);
 	}
 	.btn-secondary:active {
-		transform: scale(0.98);
+		transform: scale(0.97);
 	}
 	/* Sheen — animatedbuttons #25 adapted for the elevated surface.
 	   Subtler than primary (white at 18%) since the surface is already light. */

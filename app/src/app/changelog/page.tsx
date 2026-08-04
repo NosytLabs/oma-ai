@@ -26,14 +26,13 @@ import { InViewFade } from "@/components/motion/in-view-fade";
 import AUTO_RELEASES from "@/data/auto-changelog.json";
 
 export const metadata: Metadata = {
-	title: "Product Changelog — releases & fixes",
-	description:
-		"Every release and commit-worthy change to OMA AI: new models, gateway fixes, payment rails, and network primitives.",
+	title: "Product Changelog — releases & fixes",		description:
+			"Every release and commit-worthy change to OMA AI: new models, gateway fixes, payment rails, and API improvements.",
 	alternates: { canonical: "/changelog" },
 	openGraph: {
 		title: "Product Changelog — OMA",
 		description:
-			"Release notes for OMA AI: new models, gateway fixes, payment rails, and network primitives.",
+			"Release notes for OMA AI: new models, gateway fixes, payment rails, and API improvements.",
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Changelog" }],
 	},
 	robots: { index: true, follow: true },
@@ -116,17 +115,15 @@ const RELEASES: Release[] = [
 		date: "2026-07-06",
 		codename: "Network Operator",
 		summary:
-			"Four-theme palette system, three new product surfaces (Network, Changelog, Observability), and a broader model catalog across flagship and open-weight tiers.",
+			"Four-theme palette system, new product surfaces, and a broader model catalog across flagship and open-weight tiers.",
 		highlights: [
 			`${MODEL_COUNT}+ models available across the current public catalog`,
 			"Four-theme palette (Emerald, Amber, Mono, Synth) — one-click switcher in the navbar",
-			"New `/network` page — programmable network primitives inspired by GSMA OpenGateway",
 			"New `/observability` page — per-route latency, error budget, request volume",
 			"New `/changelog` page (you are here) — monthly release notes",
 		],
 		changes: [
 			{ kind: "feature", text: "Four-theme palette system with persisted localStorage" },
-			{ kind: "feature", text: "Network primitives surface at /network" },
 			{ kind: "feature", text: "Observability dashboard at /observability" },
 			{ kind: "feature", text: "MCP server (Model Context Protocol) — `npx @oma-ai/mcp`" },
 			{ kind: "feature", text: "Agent card at /.well-known/agent-card.json" },
@@ -137,7 +134,6 @@ const RELEASES: Release[] = [
 			{ kind: "fix", text: "Fix intermittent 502 on USDC deposits under heavy load" },
 			{ kind: "fix", text: "Resolve SIWE nonce expiry edge case at exactly 10 minutes" },
 			{ kind: "fix", text: "Image generation: reject malformed masks instead of charging credits" },
-			{ kind: "deprecation", text: "Deprecate `/v1/completions` legacy endpoint (sunset 2026-10-01)" },
 		],
 	},
 	{
@@ -148,15 +144,14 @@ const RELEASES: Release[] = [
 			"Major release: x402 pay-per-request becomes a first-class citizen. Wallet-only auth replaces email-based signup. Deposit watcher runs continuously on Base mainnet.",
 		highlights: [
 			"x402 payment envelope — gasless EIP-3009 USDC settlement for instant top-ups",
-			"Wallet-only authentication (SIWE) — no email, no password, no card",
-			"Continuous deposit watcher — USDC credits within ~12 seconds of confirmation",
-			"Multi-chain deposits via LI.FI / CCTP into USDC on Base",
+			"SIWE wallet sign-in + magic-link email — no credit card",
+			"Continuous deposit watcher — USDC credits within ~12 seconds of confirmation on Base",
 		],
 		changes: [
 			{ kind: "feature", text: "x402 Payment Required flow on /v1/x402/* endpoints" },
-			{ kind: "feature", text: "SIWE sign-in replaces email/password auth" },
+			{ kind: "feature", text: "SIWE sign-in + magic-link email — both methods, no credit card" },
 			{ kind: "feature", text: "Deposit watcher runs as a continuous cron (was on-demand)" },
-			{ kind: "feature", text: "Multi-chain deposit routing into USDC on Base (LI.FI / CCTP)" },
+			{ kind: "feature", text: "USDC direct deposits on Base — 1:1 USD credit settlement" },
 			{ kind: "perf", text: "3x throughput on chat completions via connection pooling" },
 			{ kind: "fix", text: "Fix race condition between deposit watcher and manual settlement" },
 		],
@@ -203,7 +198,6 @@ const RELEASES: Release[] = [
 		summary: "First stable API. OpenAI-compatible schema frozen at v1.",
 		changes: [
 			{ kind: "feature", text: "/v1/chat/completions — full OpenAI schema compatibility" },
-			{ kind: "feature", text: "/v1/embeddings — 1536-dim output" },
 			{ kind: "fix", text: "Resolve streaming backpressure on long completions" },
 		],
 	},
@@ -255,7 +249,7 @@ export default function ChangelogPage() {
 
 						<p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
 							A monthly dispatch of what changed in OMA — new models,
-							network primitives, performance fixes, and deprecations. No
+							API improvements, performance fixes, and deprecations. No
 							vendor-speak, no marketing. Just the diff.
 						</p>
 
@@ -418,7 +412,7 @@ export default function ChangelogPage() {
 								>
 									<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
 										<Link
-											href="https://github.com/NosytLabs/oma-ai/releases"
+											href="https://github.com/NosytLabs"
 											target="_blank"
 											rel="noopener noreferrer"
 											className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
@@ -430,7 +424,7 @@ export default function ChangelogPage() {
 									</ElectricBorder>
 								</JuiceButton>
 								<Link
-									href="https://github.com/NosytLabs/oma-ai"
+									href="https://github.com/NosytLabs"
 									target="_blank"
 									rel="noopener noreferrer"
 									className="btn-secondary inline-flex min-h-11 items-center gap-2 px-5"

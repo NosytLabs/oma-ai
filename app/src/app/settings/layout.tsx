@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Settings — account, wallets & sessions",
 	description:
-		"Manage your OMA account — wallets, API keys, account number, and danger-zone actions.",
+		"Manage your OMA account — wallets, API keys, theme, sessions, and danger-zone actions.",
 	alternates: { canonical: "/settings" },
 	robots: { index: false, follow: false },
 };

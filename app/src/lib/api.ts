@@ -6,8 +6,8 @@
  *
  *   - `./api/client.ts`   — `request()`, `ApiError`, `BackendUnavailableError`, cache helpers
  *   - `./api/types.ts`    — all response/request interfaces
- *   - `./api/auth.ts`     — `api.auth.*` (SIWE, account-number, sessions, keys)
- *   - `./api/deposit.ts`  — `api.deposit.*` (USDC, LI.FI / CCTP, status)
+ *   - `./api/auth.ts`     — `api.auth.*` (SIWE, magic-link, sessions, keys)
+ *   - `./api/deposit.ts`  — `api.deposit.*` (USDC on Base, status)
  *   - `./api/resources.ts`— `api.balance`, `api.usage`, `api.models`
  *   - `./api/inference.ts`— `api.health`
  *   - `./api/index.ts`    — composite `api` object + barrel re-exports

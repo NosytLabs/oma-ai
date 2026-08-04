@@ -2,6 +2,7 @@
 
 import { Coins, MessageSquare } from "lucide-react";
 import { estimateTokens } from "@/lib/text";
+import { usdToCredits } from "@/lib/credit-utils";
 import { useSharedLiveModels } from "./chat-message-shared";
 
 interface CostEstimateProps {
@@ -35,17 +36,23 @@ export function CostEstimate({
 	const outputPer1M = selectedModel?.outputPer1M ?? 1;
 
 	const inputTokens = estimateTokens(inputText);
-	// Credits are 1:1 with USD ($1 = 1 credit). Round to 4 decimals so
-	// micro-costs on cheap models still show a non-zero value.
-	const inputCost = (inputTokens / 1_000_000) * inputPer1M;
+	// Credit math: 1 credit = $0.01 (1 cent). The server deducts
+	// `balanceCents` for every request, so USD costs from the catalog
+	// (which are in dollars) need to be multiplied by 100 to express
+	// them in credits. This matches the Polar tier math: $10 buys
+	// 1,000 credits (100 credits per dollar). Display 4 decimals so
+	// sub-cent micro-costs on the cheapest models still show.
+	const inputCostUsd = (inputTokens / 1_000_000) * inputPer1M;
 	// Estimate the output leg against the user's actual max_tokens setting.
 	// Fall back to 1500 when the playground hasn't initialized yet (defensive —
 	// the page always passes maxTokens, so this is a hot-load edge case).
 	const outputBudget = maxTokens ?? 1500;
-	const estimatedOutputCost = (outputBudget / 1_000_000) * outputPer1M;
-	const totalCost = inputCost + estimatedOutputCost;
-	const totalCredits = totalCost.toFixed(4);
-	const inputCredits = inputCost.toFixed(4);
+	const estimatedOutputCostUsd = (outputBudget / 1_000_000) * outputPer1M;
+	const totalCostUsd = inputCostUsd + estimatedOutputCostUsd;
+
+	const totalCredits = usdToCredits(totalCostUsd).toFixed(4);
+	const inputCredits = usdToCredits(inputCostUsd).toFixed(4);
+	const estimatedOutputCredits = usdToCredits(estimatedOutputCostUsd).toFixed(4);
 
 	return (
 		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
@@ -56,7 +63,7 @@ export function CostEstimate({
 			<div className="flex items-center gap-1.5 text-text-muted">
 				<Coins className="w-3 h-3" />
 				<span
-					title={`In: ${inputCredits} cr · Out: ~${estimatedOutputCost.toFixed(4)} cr (${(outputBudget / 1000).toFixed(1)}k TK est)`}
+					title={`In: ${inputCredits} cr · Out: ~${estimatedOutputCredits} cr (${(outputBudget / 1000).toFixed(1)}k TK est) · 1 credit = $0.01`}
 				>
 					{totalCredits} cr EST
 				</span>

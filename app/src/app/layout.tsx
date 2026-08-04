@@ -17,18 +17,25 @@ const display = Instrument_Serif({
 	style: ["normal", "italic"],
 	variable: "--font-display",
 	display: "swap",
+	// Not used on every page's first paint — don't preload, or the browser
+	// warns about unused preloads on routes without display type.
+	preload: false,
 });
 
 const body = Geist({
 	subsets: ["latin"],
 	variable: "--font-body",
 	display: "swap",
+	preload: false,
 });
 
 const mono = Geist_Mono({
 	subsets: ["latin"],
 	variable: "--font-mono",
 	display: "swap",
+	// Code/mono text is route-specific; loading it on demand avoids
+	// unused-preload warnings on pages that never render mono.
+	preload: false,
 });
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
@@ -45,6 +52,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
 	metadataBase: new URL(BASE_URL),
+	alternates: {
+		canonical: "/",
+	},
 	title: {
 		default: "OMA · Open Model Access — AI inference paid in USDC",
 		template: "%s · OMA",

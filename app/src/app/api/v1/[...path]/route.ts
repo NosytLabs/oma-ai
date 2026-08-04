@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL as API_URL } from "@/lib/config";
+import { proxyResponse } from "@/lib/api/proxy-response";
 
 export const runtime = "nodejs";
 
@@ -13,20 +14,6 @@ export const runtime = "nodejs";
  * usage, export, videos, ...). This route forwards method, body, cookies
  * and preserves the rate-limit / daily-limit headers the UI reads.
  */
-
-const PASSTHROUGH_HEADERS = [
-	"content-type",
-	"cache-control",
-	"content-disposition",
-	"x-ratelimit-limit",
-	"x-ratelimit-remaining",
-	"x-ratelimit-reset",
-	"retry-after",
-	"x-dailylimit-limit",
-	"x-dailylimit-remaining",
-	"x-dailylimit-reset",
-	"x-request-id",
-];
 
 async function proxy(req: NextRequest) {
 	const path = req.nextUrl.pathname.replace(/^\/api/, "");
@@ -44,12 +31,7 @@ async function proxy(req: NextRequest) {
 			signal: AbortSignal.timeout(120_000),
 		} as RequestInit);
 
-		const out = new NextResponse(res.body, { status: res.status });
-		for (const header of PASSTHROUGH_HEADERS) {
-			const value = res.headers.get(header);
-			if (value) out.headers.set(header, value);
-		}
-		return out;
+		return proxyResponse(res);
 	} catch {
 		return NextResponse.json(
 			{ error: { message: "Backend unreachable" } },

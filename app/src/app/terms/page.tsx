@@ -18,14 +18,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-	title: "Terms",
+	title: "Terms of Service — OMA AI Gateway",
 	description:
-		"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.",
+		"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay by card or in USDC, no sales funnel.",
 	alternates: { canonical: "/terms" },
 	openGraph: {
 		title: "Terms · OMA",
 		description:
-			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay per request in USDC, no sales funnel.",
+			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay by card or in USDC, no sales funnel.",
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Terms" }],
 	},
 	twitter: {
@@ -58,7 +58,7 @@ const SECTIONS = [
 		idx: "05",
 		id: "credits",
 		title: "Credits",
-		meta: "non-redeemable · 12 mo",
+		meta: "non-redeemable · never expire",
 	},
 	{ idx: "06", id: "termination", title: "Termination", meta: "for cause" },
 ] as const;
@@ -181,8 +181,9 @@ export default function TermsPage() {
 										The short version
 									</p>
 									<p className="text-[14px] sm:text-[15px] text-text-bright leading-relaxed">
-										OMA gives you access to text generation, chat, embeddings,
-										images, audio, and video through an OpenAI-compatible API.
+										OMA gives you access to text generation, chat, image
+										generation, and video generation through an
+										OpenAI-compatible API.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
 										By using the service you agree to a small set of
@@ -271,7 +272,8 @@ export default function TermsPage() {
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							The OMA AI API gives you access to text generation, chat,
-							embeddings, and image generation. By using the API you agree to:
+							image generation, and video generation. By using the API you
+							agree to:
 						</p>
 
 						<div className="border border-border bg-surface p-5">
@@ -413,7 +415,7 @@ export default function TermsPage() {
 					>
 						<SectionHeading
 							title="Credits"
-							meta="Non-redeemable, 12-month expiry"
+							meta="Non-redeemable, never expire"
 						/>
 						<h3 id="credits-heading" className="sr-only">
 							Credit system
@@ -423,7 +425,7 @@ export default function TermsPage() {
 							{[
 								[
 									"Non-redeemable",
-									"Credits are not redeemable for cash and are non-transferable; they expire after 12 months.",
+									"Credits are not redeemable for cash and are non-transferable. They do not expire.",
 								],
 								[
 									"Per-token deduction",
@@ -439,7 +441,7 @@ export default function TermsPage() {
 								],
 								[
 									"Card billing",
-									"Subscriptions via Polar appear as 'NOSYT' on your card statement.",
+									"One-time card purchases via Polar appear as 'NOSYT' on your statement.",
 								],
 							].map(([title, body], i) => (
 								<li

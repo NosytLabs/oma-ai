@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { formatTime } from "@/lib/utils";
@@ -99,28 +100,42 @@ export function DashboardHeader({
 		refreshInFlightRef.current = false;
 		setAutoRefreshCountdown(120);
 
+		const refreshIfVisible = () => {
+			if (document.visibilityState !== "visible" || refreshInFlightRef.current) return;
+			refreshInFlightRef.current = true;
+			Promise.resolve(onRefresh())
+				.catch((err) => {
+					console.warn("Auto-refresh failed:", err);
+				})
+				.finally(() => {
+					nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
+					refreshInFlightRef.current = false;
+					setLastUpdated(new Date());
+					setAutoRefreshCountdown(120);
+				});
+		};
+
 		const tick = setInterval(() => {
+			if (document.visibilityState !== "visible") return;
 			const remaining = Math.max(
 				0,
 				Math.round((nextRefreshAt - Date.now()) / 1000),
 			);
 			setAutoRefreshCountdown(remaining);
-			if (remaining === 0 && !refreshInFlightRef.current) {
-				refreshInFlightRef.current = true;
-				Promise.resolve(onRefresh())
-					.catch((err) => {
-								console.warn("Auto-refresh failed:", err);
-							})
-					.finally(() => {
-						nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
-						refreshInFlightRef.current = false;
-						setLastUpdated(new Date());
-						setAutoRefreshCountdown(120);
-					});
-			}
+			if (remaining === 0) refreshIfVisible();
 		}, 1000);
+		const onVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				nextRefreshAt = Date.now();
+				refreshIfVisible();
+			}
+		};
+		document.addEventListener("visibilitychange", onVisibilityChange);
 
-		return () => clearInterval(tick);
+		return () => {
+			clearInterval(tick);
+			document.removeEventListener("visibilitychange", onVisibilityChange);
+		};
 	}, [onRefresh, hasAnyData]);
 
 	const handleRefresh = useCallback(async () => {
@@ -173,7 +188,7 @@ export function DashboardHeader({
 						</span>
 						<SystemStatus />
 						<span
-							className="hidden items-center gap-1 text-text-muted/50 md:flex"
+							className="hidden items-center gap-1 text-text-secondary/80 md:flex"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
@@ -202,28 +217,10 @@ export function DashboardHeader({
 					{notificationsEnabled && <NotificationBell />}
 					{onTimeRangeChange &&
 						(activeTab === "overview" || activeTab === "usage") && (
-							<div
-								className="flex shrink-0 border border-border bg-surface"
-								role="radiogroup"
-								aria-label="Time range"
-							>
-								{TIME_RANGES.map((range) => (
-									<button
-										type="button"
-										key={range.id}
-										role="radio"
-										aria-checked={timeRange === range.id}
-										onClick={() => onTimeRangeChange(range.id)}
-										className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all sm:px-2.5 ${
-											timeRange === range.id
-												? "bg-accent/10 text-accent"
-												: "text-text-muted hover:text-text-secondary"
-										}`}
-									>
-										{range.label}
-									</button>
-								))}
-							</div>
+							<TimeRangeRadiogroup
+								timeRange={timeRange}
+								onTimeRangeChange={onTimeRangeChange}
+							/>
 						)}
 					<Link
 						href="/settings"
@@ -346,5 +343,101 @@ function SystemStatus() {
 				{label}
 			</Link>
 		</span>
+	);
+}
+
+/**
+ * Time-range radio group with roving-tabindex keyboard navigation.
+ *
+ * Implements the WAI-ARIA radiogroup pattern: only the selected radio is
+ * tabbable (tabIndex=0), the rest are tabIndex=-1. Arrow Left/Right (or
+ * Up/Down) move both focus and selection; Home/End jump to the first/last
+ * option. Space/Enter activates the focused option. Wrapping at the ends
+ * keeps the keyboard experience continuous.
+ */
+function TimeRangeRadiogroup({
+	timeRange,
+	onTimeRangeChange,
+}: {
+	timeRange: TimeRangeId;
+	onTimeRangeChange: (range: TimeRangeId) => void;
+}) {
+	const rangeIds = TIME_RANGES.map((r) => r.id);
+	const selectedIndex = Math.max(
+		0,
+		rangeIds.indexOf(timeRange as (typeof rangeIds)[number]),
+	);
+	const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+	const focusByIndex = useCallback((index: number) => {
+		const safe = (index % rangeIds.length + rangeIds.length) % rangeIds.length;
+		buttonRefs.current[safe]?.focus();
+	}, [rangeIds.length]);
+
+	const handleKeyDown = useCallback(
+		(e: KeyboardEvent<HTMLDivElement>) => {
+			let next = selectedIndex;
+			switch (e.key) {
+				case "ArrowRight":
+				case "ArrowDown":
+					next = selectedIndex + 1;
+					break;
+				case "ArrowLeft":
+				case "ArrowUp":
+					next = selectedIndex - 1;
+					break;
+				case "Home":
+					next = 0;
+					break;
+				case "End":
+					next = rangeIds.length - 1;
+					break;
+				case " ":
+				case "Enter":
+					e.preventDefault();
+					onTimeRangeChange(timeRange);
+					return;
+				default:
+					return;
+			}
+			e.preventDefault();
+			const safe = (next % rangeIds.length + rangeIds.length) % rangeIds.length;
+			onTimeRangeChange(rangeIds[safe] as TimeRangeId);
+			focusByIndex(safe);
+		},
+		[focusByIndex, onTimeRangeChange, rangeIds, selectedIndex, timeRange],
+	);
+
+	return (
+		<div
+			className="flex shrink-0 border border-border bg-surface"
+			role="radiogroup"
+			aria-label="Time range"
+			onKeyDown={handleKeyDown}
+		>
+			{TIME_RANGES.map((range, i) => {
+				const checked = timeRange === range.id;
+				return (
+					<button
+						type="button"
+						key={range.id}
+						ref={(el) => {
+							buttonRefs.current[i] = el;
+						}}
+						role="radio"
+						aria-checked={checked}
+						tabIndex={checked ? 0 : -1}
+						onClick={() => onTimeRangeChange(range.id)}
+						className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 ${
+							checked
+								? "bg-accent/10 text-accent"
+								: "text-text-muted hover:text-text-secondary"
+						}`}
+					>
+						{range.label}
+					</button>
+				);
+			})}
+		</div>
 	);
 }

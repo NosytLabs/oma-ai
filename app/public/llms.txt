@@ -10,42 +10,73 @@
 - OpenAI-compatible: drop-in for `openai-python`, `openai-node`, Vercel AI SDK,
   LangChain, raw `fetch`, and any HTTP client.
 - Auth: Magic link email, SIWE wallet, and API keys. x402 pay-per-request supported.
+- Model catalog: 20+ curated chat models via Venice + budget tier via OMA-AI/Gonka
+  (see live list at https://oma-ai.com/models).
 - Brand: Open Model Access · accent `#46d39a` · void `#07090a`
+- Brand kit sources: `/logos/oma-wordmark.svg` (SVG + PNG), `/logos/oma-brand-card.svg` (SVG + PNG), `/favicon.svg`
 
 ## Documentation
 - [Docs home](https://oma-ai.com/docs): full API reference
+- [Capabilities](https://oma-ai.com/capabilities): modalities, payment rails, protocols, provider matrix
+- [Getting started](https://oma-ai.com/getting-started): 5-step quickstart for beginners and developers
 - [Model catalog](https://oma-ai.com/models): models, prices, capabilities
 - [Pricing](https://oma-ai.com/pricing): per-token cost breakdown (+ FAQ)
+- [FAQ](https://oma-ai.com/faq): answers for beginners, devs, and agents
+- [Glossary](https://oma-ai.com/glossary): plain-language AI + API terms
 - [Compare](https://oma-ai.com/compare): OMA vs Portkey / LiteLLM / OpenRouter
 - [Changelog](https://oma-ai.com/changelog): product updates
-- [Network](https://oma-ai.com/network): programmable network primitives
+- [API reference](https://oma-ai.com/docs#endpoints): every endpoint — auth, chat, billing, webhooks
 - [Observability](https://oma-ai.com/observability): live health + sample ops dashboard
 - [About](https://oma-ai.com/about) · [Contact](https://oma-ai.com/contact)
-- [Privacy](https://oma-ai.com/privacy) · [Terms](https://oma-ai.com/terms)
+- [Privacy](https://oma-ai.com/privacy) · [Terms](https://oma-ai.com/terms) · [AUP](https://oma-ai.com/aup)
 - [Chat playground](https://oma-ai.com/chat): try models (sign-in or demo)
+
+## Modalities
+| Modality | Endpoint | Pricing |
+|---|---|---|
+| Chat completions | `POST /v1/chat/completions` | From $0.015 / 1M input tokens |
+| Image generation | `POST /v1/images/generations` | $0.10 / image |
+| Video generation (async) | `POST /v1/videos/generations` | $0.92 / generation |
+| Video retrieve | `GET /v1/videos/retrieve` | free |
+| Web search (chat playground) | `GET /v1/search?query=…` | Included in chat credits |
+
+## Payment rails
+1. **Card credits (Polar)** — Visa, Mastercard, Apple Pay. Three plans: Hobby $10 / 1k credits, Builder $50 / 5k, Scale $250 / 25k. See `/pricing`.
+2. **USDC on Base** — direct 1:1 USD deposits. Cross-chain routing via LI.FI / CCTP is planned, not currently enabled.
+3. **x402 pay-per-request** — agent-native USDC settlement on Base. EIP-3009 gasless. No account required.
+
+## Protocols
+- OpenAI-compatible (drop-in for openai-python, openai-node, Vercel AI SDK, LangChain)
+- Anthropic-compatible (`/v1/messages` for Claude Code)
+- A2A (`.well-known/agent-card.json`)
+- A2UI v0.9.1 (interactive UI in chat)
+- MCP (Tinyfish MCP server)
 
 ## Endpoints
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/v1/chat/completions` | POST | Chat completions (streaming + tool calls) |
-| `/v1/completions` | POST | Text completions (legacy) |
-| `/v1/embeddings` | POST | Text embeddings |
-| `/v1/audio/speech` | POST | Text-to-speech |
-| `/v1/audio/transcriptions` | POST | Speech-to-text |
+| `/v1/messages` | POST | Anthropic-compatible messages (Claude Code) |
 | `/v1/images/generations` | POST | Image generation |
 | `/v1/videos/generations` | POST | Async video generation |
 | `/v1/videos/retrieve` | GET | Poll async video job |
+| `/v1/search` | GET | Web search (`?query=…`); optional auth for chat |
 | `/v1/models` | GET | List available models and capabilities |
+| `/v1/models/:id` | GET | Single model detail |
 | `/v1/balance` | GET | Credit balance (Bearer auth) |
-| `/v1/deposit/usdc` | POST | USDC deposit on Base |
-| `/v1/deposit/cctp` | POST | Cross-chain deposit via CCTP |
-| `/v1/deposit/lifi` | POST | Cross-chain deposit via LI.FI |
-| `/v1/deposit/status` | GET | Deposit status |
+| `/v1/credits/balance` | GET | Active credit batches + balance |
+| `/v1/credits/transactions` | GET | Combined deposit + usage history |
+| `/v1/usage` | GET | Paginated usage history (session or Bearer auth) |
+| `/v1/usage/today` | GET | Daily free-tier counter |
+| `/v1/deposit/usdc` | GET / POST | USDC deposit instructions / submit tx |
+| `/v1/deposit/status` | GET | Deposit history |
+| `/v1/export/usage` | GET | Usage export (CSV/JSON, session auth) |
+| `/v1/export/deposits` | GET | Deposit export (CSV/JSON, session auth) |
+| `/v1/keys` | GET / POST | List API keys / create key (`oma_sk_...`) |
+| `/v1/keys/:id` | DELETE | Revoke API key |
+| `/v1/keys/install` | POST | Install key as HttpOnly cookie |
 | `/health` | GET | Liveness probe |
 | `/x402/verify` | POST | Verify x402 payment receipt |
-| `/keys` | GET | List API keys (session auth) |
-| `/keys` | POST | Create API key (returns `oma_sk_...` once) |
-| `/keys/:id` | DELETE | Revoke API key |
 
 ## Authentication
 Three modes, all served by the same endpoints:
@@ -57,11 +88,22 @@ Three modes, all served by the same endpoints:
    pre-funded account required for single-shot agent calls.
 
 ## Pricing model
-Pay-as-you-go credits denominated in USDC. Deposit USDC on Base, or bridge
-from 20+ chains via LI.FI / CCTP. x402 supports agent-native pay-per-request
-on Base. Per-model input/output rates are listed on `/models` and
-`GET /v1/models`.
+Pay-as-you-go credits. Buy credits with card / Visa (via Polar) on the
+[deposit page](https://oma-ai.com/deposit), or deposit USDC on Base (x402,
+EIP-3009). Cross-chain routing via LI.FI / CCTP is planned but not currently
+enabled. x402 supports agent-native pay-per-request on Base. Per-model input/output rates are
+listed on `/models` and `GET /v1/models`.
+
+## Chat UI
+The [chat playground](https://oma-ai.com/chat) supports an optional **UI
+mode** that renders live A2UI (v0.9.1) surfaces — the model can build
+interactive cards, forms, and previews inline. Enable it with the toggle
+above the composer.
 
 ## Source
 - GitHub: https://github.com/NosytLabs/oma-ai
 - License: MIT
+
+## Agent setup
+- [Agent skill file](https://oma-ai.com/agent-skill.md): copy-paste instructions for AI agents to autonomously set up and use OMA (API key flow, x402 pay-per-request flow, cost guidance).
+- [Agent card (A2A)](https://oma-ai.com/.well-known/agent-card.json): machine-readable capabilities, auth schemes, payment config for agent discovery.

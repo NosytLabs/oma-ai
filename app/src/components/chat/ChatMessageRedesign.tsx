@@ -149,8 +149,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
         group relative
         ${
 					isUser
-						? "flex flex-row-reverse gap-2.5 sm:gap-4 pl-6 sm:pl-16 md:pl-24"
-						: "flex flex-row gap-2.5 sm:gap-4 pr-6 sm:pr-16 md:pr-24"
+						? "flex flex-row-reverse gap-2 sm:gap-3 md:gap-4 pl-3 sm:pl-12 md:pl-20"
+						: "flex flex-row gap-2 sm:gap-3 md:gap-4 pr-3 sm:pr-12 md:pr-20"
 				}
       `}
 		>
@@ -225,7 +225,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 
 			{/* ─── MESSAGE BODY ─── */}
 <div
-					className={`min-w-[8rem] max-w-full flex-1 sm:max-w-[78%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
+					className={`min-w-[8rem] max-w-full flex-1 max-sm:max-w-[90%] sm:max-w-[78%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
 			>
 				{/* Search Sources */}
 				{msg.searchResults && msg.searchResults.length > 0 && (
@@ -256,7 +256,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
             ${
 							isUser
 								? "bg-accent/[0.08] border border-accent/25 text-text border-r-0"
-								: "bg-surface/60 border border-border text-text-secondary border-l-0"
+								: "bg-white/[0.06] border border-white/[0.08] text-text-secondary border-l-0"
 						}
           `}
 					style={{
@@ -267,13 +267,14 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 						// Subtle depth on assistant messages
 						boxShadow: isUser
 							? "0 0 0 1px rgba(70,211,154,0.05), 0 4px 16px -8px var(--color-accent-glow)"
-							: "var(--shadow-message-inset)",
+							: "inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px -4px rgba(0,0,0,0.4)",
 					}}
 				>
 					{/* Ambient glow line along the inner edge */}
 					<div
-						className="absolute top-0 h-full w-px opacity-40"
+						className="absolute top-0 h-full w-px"
 						style={{
+							opacity: isUser ? 0.4 : 0.5,
 							[isUser ? "right" : "left"]: 0,
 							background: `linear-gradient(
                 to bottom,

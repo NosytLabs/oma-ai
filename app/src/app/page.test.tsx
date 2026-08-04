@@ -152,9 +152,9 @@ describe("HomePage", () => {
 	it("renders the capabilities section as three pillars", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText("Buy credits by card")).toBeInTheDocument();
-			expect(screen.getByText("Deposit USDC on Base")).toBeInTheDocument();
-			expect(screen.getByText("Agents pay per request")).toBeInTheDocument();
+			expect(screen.getByText("Prepaid API credit system")).toBeInTheDocument();
+			expect(screen.getByText("x402 HTTP protocol native")).toBeInTheDocument();
+			expect(screen.getByText("Multi-provider & privacy first")).toBeInTheDocument();
 			expect(screen.getByText("OpenAI-compatible")).toBeInTheDocument();
 			expect(screen.getByText("Live routing + failover")).toBeInTheDocument();
 		});
@@ -212,8 +212,8 @@ describe("Footer", () => {
 		expect(screen.getAllByText(/docs/i).length).toBeGreaterThan(0);
 		expect(screen.getAllByText(/models/i).length).toBeGreaterThan(0);
 		expect(screen.getAllByText(/pricing/i).length).toBeGreaterThan(0);
-		// Product nav labels the free chat surface "Playground" (href=/chat)
-		expect(screen.getAllByText(/playground/i).length).toBeGreaterThan(0);
+		// Product nav labels the free chat surface "Chat" (href=/chat)
+		expect(screen.getAllByText(/^chat$/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders legal links", () => {
@@ -233,7 +233,7 @@ describe("Footer", () => {
 			name: /github/i,
 		});
 		expect(githubLinks.length).toBeGreaterThan(0);
-		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/NosytLabs/oma-ai");
+		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/NosytLabs");
 	});
 
 	it("renders copyright line with year + license", () => {

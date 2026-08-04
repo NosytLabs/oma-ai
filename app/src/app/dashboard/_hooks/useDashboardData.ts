@@ -56,7 +56,7 @@ export function useDashboardData({
 	});
 	const usageQuery = useQuery({
 		queryKey: ["usage"],
-		queryFn: () => api.usage.get({ limit: 500 }),
+		queryFn: () => api.usage.get({ limit: 200 }),
 		enabled,
 		staleTime: STALE_DEFAULT,
 	});

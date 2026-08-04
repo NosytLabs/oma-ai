@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 	title: "OMA vs Portkey vs LiteLLM vs OpenRouter — comparison",
 	description:
 		"Detailed feature comparison between OMA and other LLM gateways: Portkey, LiteLLM, OpenRouter, Together. Pricing, privacy, free tier, x402 support.",
+	alternates: { canonical: "/compare" },
 	openGraph: {
 		title: "OMA vs Portkey vs LiteLLM vs OpenRouter",
 		description:
@@ -40,7 +41,7 @@ type RowKey =
 	| "webhooks"
 	| "usdc_native"
 	| "siwe"
-	| "secure_account"
+	| "magic_link"
 	| "open_source"
 	| "lowest_input_price"
 	| "agent_sdk";
@@ -58,7 +59,7 @@ const rows: { key: RowKey; label: string; note?: string }[] = [
 	{ key: "webhooks", label: "Webhook notifications" },
 	{ key: "usdc_native", label: "USDC native settlement" },
 	{ key: "siwe", label: "Sign-In With Ethereum (SIWE)" },
-	{ key: "secure_account", label: "Quiet, secure account numbers" },
+	{ key: "magic_link", label: "Passwordless magic-link login" },
 	{ key: "open_source", label: "Open source" },
 	{
 		key: "lowest_input_price",
@@ -155,7 +156,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 		openrouter: "partial",
 		together: "no",
 	},
-	secure_account: {
+	magic_link: {
 		oma: "yes",
 		portkey: "no",
 		litellm: "no",
@@ -170,7 +171,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 		together: "no",
 	},
 	lowest_input_price: {
-		oma: "$0.017",
+		oma: "$0.015",
 		portkey: "$0.10",
 		litellm: "$0.10",
 		openrouter: "$0.05",
@@ -223,7 +224,7 @@ const summaryCards = [
 	},
 	{
 		title: "Privacy-first by default",
-		body: "Secure account numbers, SIWE for wallet users. No credit-card signup. Privacy is the default, not a premium tier.",
+		body: "SIWE for wallet users, magic-link email for everyone else. No credit-card signup. Privacy is the default, not a premium tier.",
 	},
 	{
 		title: "Free tier, structurally",
@@ -274,7 +275,7 @@ export default function ComparePage() {
 
 				{/* Comparison matrix */}
 				<section>
-					<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-lg border border-border [-webkit-overflow-scrolling:touch]">
+					<div tabIndex={0} aria-label="Feature comparison table" className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-lg border border-border [-webkit-overflow-scrolling:touch] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 						<table className="w-full min-w-[40rem]">
 							<thead className="bg-surface-2 border-b border-border">
 								<tr>
@@ -362,11 +363,11 @@ export default function ComparePage() {
 							<p className="text-sm text-text-secondary mb-3">
 Portkey is enterprise-grade but requires a credit card, account
 							signup, and offers no free tier. OMA is privacy-first,
-							x402-native, and starts at $0.017/M tokens.
+							x402-native, and starts at $0.015/M tokens.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
 								<strong className="text-accent">OMA wins on:</strong> privacy,
-								crypto-native billing, free tier, account numbers.
+								crypto-native billing, free tier, no card signup.
 							</p>
 							<p className="text-sm text-text-secondary">
 								<strong className="text-zinc-400">Portkey wins on:</strong>{" "}
@@ -443,7 +444,7 @@ Portkey is enterprise-grade but requires a credit card, account
 						Ready to ship faster?
 					</h2>
 					<p className="text-text-secondary mb-6 max-w-xl mx-auto">
-						No credit card required. Low-friction signup — just an account number or a wallet. Run your
+						No credit card required. Low-friction signup — magic link or wallet. Run your
 						first request in under a minute.
 					</p>
 					<div className="flex flex-wrap gap-3 justify-center">

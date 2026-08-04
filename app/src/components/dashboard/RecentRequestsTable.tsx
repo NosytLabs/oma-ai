@@ -119,10 +119,14 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 										{(row.completionTokens ?? 0).toLocaleString()}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
-										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent. */}
-										{formatUsdPrecise(
-											toDollars(row.totalCents ?? row.costCents),
-										)}
+										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent.
+										    Guard against NaN so a malformed cost row never renders "$NaN". */}
+										{(() => {
+											const dollars = toDollars(row.totalCents ?? row.costCents);
+											return Number.isFinite(dollars)
+												? formatUsdPrecise(dollars)
+												: "—";
+										})()}
 									</td>
 									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
 										{typeof row.latencyMs === "number" &&

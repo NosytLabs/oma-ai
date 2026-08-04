@@ -41,36 +41,17 @@ interface PlanCard {
 	tagline: string;
 }
 
-const PLANS: PlanCard[] = [
-	{
-		plan: "hobby",
-		name: "Hobby",
-		credits: 1000,
-		price: "$10",
-		priceCents: 1000,
-		perCredit: "$0.01 / credit",
-		tagline: "Side projects & exploration",
-	},
-	{
-		plan: "builder",
-		name: "Builder",
-		credits: 5000,
-		price: "$50",
-		priceCents: 5000,
-		perCredit: "$0.01 / credit",
-		highlight: true,
-		tagline: "Production apps & agents",
-	},
-	{
-		plan: "scale",
-		name: "Scale",
-		credits: 25000,
-		price: "$250",
-		priceCents: 25000,
-		perCredit: "$0.01 / credit",
-		tagline: "High-volume workloads",
-	},
-];
+import { CREDIT_PLANS, perCreditPrice } from "@/lib/credit-utils";
+const PLANS: PlanCard[] = CREDIT_PLANS.map((plan, idx) => ({
+  plan: (["hobby","builder","scale"] as const)[idx],
+  name: plan.tag,
+  credits: plan.credits,
+  price: `$${plan.usd}`,
+  priceCents: plan.usd * 100,
+  perCredit: perCreditPrice(),
+  tagline: ["Side projects & exploration", "Production apps & agents", "High-volume workloads"][idx],
+  highlight: idx === 1
+}));
 
 export function FiatCheckoutPanel() {
 	const { isAuthenticated, isDemo } = useAuth();

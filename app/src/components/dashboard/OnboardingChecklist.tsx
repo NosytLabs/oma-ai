@@ -76,7 +76,7 @@ export const OnboardingChecklist = memo(function OnboardingChecklist({
 			id: "wallet",
 			// Account-number sessions also count as signed-in (walletConnected=true).
 			label: "Sign in",
-			description: "Account number or wallet — no email required.",
+			description: "Magic link or wallet — no password required.",
 			icon: Wallet,
 			done: walletConnected,
 		},

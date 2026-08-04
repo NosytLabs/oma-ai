@@ -2,7 +2,6 @@
 
 import { AlertTriangle } from "lucide-react";
 import nextDynamic from "next/dynamic";
-import { Suspense } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -31,17 +30,6 @@ const ChatPlaygroundShell = nextDynamic(
 	},
 );
 
-function ChatLoadingFallback() {
-	return (
-		<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-			<div className="flex flex-col items-center gap-5">
-				<ThinkingOrb state="searching" size={64} theme="auto" aria-label="Loading chat" />
-				<div className="animate-shimmer h-3 w-64 max-w-full rounded-full bg-surface-elevated" />
-			</div>
-		</div>
-	);
-}
-
 export default function ChatPage() {
 	return (
 		<ErrorBoundary
@@ -64,13 +52,11 @@ export default function ChatPage() {
 				</div>
 			}
 		>
-			<Suspense fallback={<ChatLoadingFallback />}>
-				<ChatPlaygroundShell
-					variant="chat"
-					storageKey="oma_chat_conversation"
-					systemPromptKey="oma_chat_system_prompt"
-				/>
-			</Suspense>
+			<ChatPlaygroundShell
+				variant="chat"
+				storageKey="oma_chat_conversation"
+				systemPromptKey="oma_chat_system_prompt"
+			/>
 		</ErrorBoundary>
 	);
 }

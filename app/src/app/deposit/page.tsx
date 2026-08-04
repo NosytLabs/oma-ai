@@ -77,17 +77,29 @@ const METHODS: {
 ];
 
 /** Payment method info displayed below the deposit form. */
-function PaymentMethodsInfo() {
+function PaymentMethodsInfo({
+	siteSettings,
+}: {
+	siteSettings: {
+		maintenanceMode: boolean;
+		cardPaymentsEnabled: boolean;
+		cryptoPaymentsEnabled: boolean;
+	} | null;
+}) {
 	const methods = [
 		{
 			name: "USDC (Base)",
 			desc: "Direct deposit to the Base treasury. Instant credit once confirmed.",
-			badge: "Available",
+			badge: siteSettings && siteSettings.cryptoPaymentsEnabled === false
+				? "Paused"
+				: "Available",
 		},
 		{
 			name: "Card · Polar",
 			desc: "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required.",
-			badge: "Available",
+			badge: siteSettings && siteSettings.cardPaymentsEnabled === false
+				? "Paused"
+				: "Available",
 		},
 		{
 			name: "x402 Pay-Per-Request",
@@ -174,15 +186,15 @@ function X402Info() {
 					</span>
 				</a>
 				<a
-					href="/playground?demo=x402"
+					href="/chat"
 					className="group flex items-center justify-between gap-2 rounded-lg border border-border bg-panel p-4 transition-colors hover:border-accent/40"
 				>
 					<div>
 						<div className="text-sm font-semibold text-text-bright">
-							Try x402 live
+							Open chat
 						</div>
 						<div className="mt-0.5 text-[11px] text-text-muted">
-							Agent demo in the playground
+							Open the chat surface
 						</div>
 					</div>
 					<span className="text-text-muted transition-transform group-hover:translate-x-0.5">
@@ -210,8 +222,7 @@ export default function DepositPage() {
 		const m = new URLSearchParams(window.location.search).get("method");
 		if (m === "card" || m === "x402" || m === "crypto") setMethod(m);
 
-		const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-		fetch(`${API_BASE}/v1/site-settings`)
+		fetch("/api/v1/site-settings", { credentials: "same-origin" })
 			.then((r) => r.json())
 			.then((data) => setSiteSettings(data))
 			.catch((err) => console.error("Failed to fetch site settings:", err));
@@ -315,7 +326,7 @@ export default function DepositPage() {
 				</AnimatePresence>
 			</div>
 
-			<PaymentMethodsInfo />
+			<PaymentMethodsInfo siteSettings={siteSettings} />
 		</m.div>
 	);
 }

@@ -35,6 +35,7 @@ import {
   type Modality,
 } from "@/lib/models-data";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import { Button } from "@/components/ui/button";
 import { ModelLogo } from "@/components/ui/model-logo";
@@ -282,9 +283,8 @@ function ModelsPageInner() {
   /**
    * Group models into sections. When sorting by tier we render:
    *   1. Tiered chat models (Budget → Mid → Premium → Frontier)
-   *   2. One section per non-chat modality (image, video, tts, …) that has
-   *      ≥ 1 model in the filtered set. This keeps the page useful even
-   *      with 280+ models and 9 modalities.
+   *   2. One section per non-chat modality (image, video, tts, …) that has	 *      ≥ 1 model in the filtered set. This keeps the page useful even
+	 *      with a large multi-modality catalog.
    * For all other sorts we flatten into one section.
    */
   const groupedModels = useMemo(() => {
@@ -755,8 +755,9 @@ function ModelsPageInner() {
           <div className="lg:col-span-9">
             {groupedModels.length > 0 ? (
               <div className="space-y-10">
-                {groupedModels.map((group) => (
-                  <section key={group.tier}>
+                {groupedModels.map((group, gi) => (
+                  <InViewFade key={group.tier} delay={Math.min(gi * 0.06, 0.3)}>
+                    <section>
                     <div className="flex items-center gap-2 mb-4">
                       {group.icon && (
                         <span
@@ -773,7 +774,7 @@ function ModelsPageInner() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                       {group.models.map((model) => {
                         if (!model?.id) return null;
                         const providerStyle =
@@ -913,6 +914,7 @@ function ModelsPageInner() {
                       })}
                     </div>
                   </section>
+                  </InViewFade>
                 ))}
               </div>
             ) : (
@@ -978,7 +980,7 @@ export default function ModelsPage() {
               <div className="h-8 w-32 bg-panel rounded animate-pulse mb-8" />
               <div className="h-10 w-64 bg-panel rounded animate-pulse mb-4" />
               <div className="h-4 w-48 bg-panel rounded animate-pulse mb-6" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="h-36 bg-panel rounded-xl animate-pulse" />
                 ))}

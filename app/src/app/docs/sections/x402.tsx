@@ -8,7 +8,7 @@ curl -i https://api.oma-ai.com/v1/chat/completions \\
   -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Response: 402 Payment Required
-# Header: PAYMENT-REQUIRED: {"x402Version":"1","scheme":"evm","networkId":"base",
+# Header: PAYMENT-REQUIRED: {"x402Version":"2","scheme":"evm","networkId":"base",
 #   "asset":"0x8335...","amount":"0.10","payee":"0x...","validBefore":...,...}
 # Flat rate per request; max_tokens is capped at 4096 on this path.
 
@@ -95,7 +95,7 @@ if (payReq.ok) {
 								href="https://x402.org"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="text-accent hover:underline"
+								className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
 							>
 								x402 protocol
 							</a>
@@ -130,6 +130,18 @@ if (payReq.ok) {
 					sign USDC payment authorizations. No first-party SDK is required.
 					An agent holding a funded Base wallet can top up its own credits and
 					keep working — no human in the loop.
+				</p>
+				<p className="text-sm text-text-muted mb-4">
+					Setting up an agent (Claude Code, Cursor, custom script)? Give it{" "}
+					<a
+						href="/agent-skill.md"
+						className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
+					>
+						agent-skill.md
+					</a>{" "}
+					— a copy-paste instruction file that teaches your agent to use OMA
+					autonomously (API key flow, x402 pay-per-request, and cost
+					guidance), including an optional self-verification step.
 				</p>
 				<CodeBlock code={agentCode} lang="javascript" />
 			</div>

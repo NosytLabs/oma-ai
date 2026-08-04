@@ -336,7 +336,7 @@ export function WelcomeBanner({
 						>
 							<span className="text-accent font-bold">TIP:</span>{" "}
 							<TypewriterText
-								text="Try GLM 4.7 Flash for reasoning + code (free via OMA-AI), or Qwen 3.5 9B for analysis + research. Both are free — no sign-in required."
+								text="Try GLM 5.1 for reasoning + code, or DeepSeek V4 Flash for fast analysis + research. Both are free — no sign-in required."
 								delay={900}
 							/>
 						</m.div>

@@ -249,8 +249,9 @@ export interface X402SettleResponse {
 
 export interface Session {
 	id: string;
-	device: string;
-	ip: string;
-	lastActive: string;
-	current: boolean;
+	createdAt: string;
+	expiresAt: string;
+	userAgent: string | null;
+	ipAddress: string | null;
+	isCurrent: boolean;
 }

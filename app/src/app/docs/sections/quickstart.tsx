@@ -19,9 +19,7 @@ const AgentSessionDemo = dynamic(
 );
 
 // Compact per-modality curl blocks. Each block's code defaults to a
-// bash snippet; the placeholder blocks for music/upscale/inpaint use
-// comments because those Venice endpoints aren't yet wired up on
-// /v1/* (they live on Venice directly — see references).
+// bash snippet, matching the real /v1/* surface: chat, image, video.
 function ModalityExample({ title, code }: { title: string; code: string }) {
 	const [copied, setCopied] = useState(false);
 	const looksLikeCurl = code.trimStart().startsWith("curl");
@@ -125,11 +123,11 @@ export function QuickStartSection() {
 			</div>
 
 			{/* Per-modality examples — copyable from the docs page so users see
-			    all 9 supported modalities at a glance. Each block uses the
+			    every supported modality at a glance. Each block uses the
 			    OpenAI-compatible surface so SDKs work out-of-the-box. */}
 			<div className="mt-10 space-y-4">
 				<p className="text-xs font-mono uppercase tracking-widest text-text-muted">
-					All 9 modalities · curl
+					Chat · image · video · curl
 				</p>
 				<div className="grid gap-3 md:grid-cols-2">
 					<ModalityExample
@@ -161,45 +159,6 @@ export function QuickStartSection() {
     "model": "kling-v3-pro-text-to-video",
     "duration": "5s"
   }'`}
-					/>
-					<ModalityExample
-						title="Text-to-speech"
-						code={`curl https://api.oma-ai.com/v1/audio/speech \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "tts-kokoro",
-    "input": "Hello from OMA Voice",
-    "voice": "af_sky"
-  }' --output speech.mp3`}
-					/>
-					<ModalityExample
-						title="Speech-to-text"
-						code={`curl https://api.oma-ai.com/v1/audio/transcriptions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -F "model=openai/whisper-large-v3" \\
-  -F "file=@recording.mp3"`}
-					/>
-					<ModalityExample
-						title="Embeddings"
-						code={`curl https://api.oma-ai.com/v1/embeddings \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "text-embedding-bge-m3",
-    "input": "Open Model Access"
-  }'`}
-					/>
-					<ModalityExample
-						title="Music generation"
-						code={`# Available via Venice — request with model id from
-# GET /v1/models?category=music. Pricing is per track.`}
-					/>
-					<ModalityExample
-						title="Image upscale / edit"
-						code={`# Image upscale and inpaint available via Venice. Browse
-# GET /v1/models?category=upscale or ?category=inpaint for the
-# current catalog and pricing per image.`}
 					/>
 				</div>
 			</div>

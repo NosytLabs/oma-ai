@@ -41,6 +41,8 @@ export function UsageChart({
 }: UsageChartProps) {
 	const hasUsageData = usageData.length > 0;
 	const hasModelData = modelData.length > 0;
+	const areaLabel = buildAreaLabel(usageData, timeRange);
+	const donutLabel = buildDonutLabel(modelData);
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
@@ -56,9 +58,15 @@ export function UsageChart({
 					</h3>
 				</div>
 				{hasUsageData ? (
-					<AreaChartComponent data={usageData} />
+					<div role="img" aria-label={areaLabel}>
+						<AreaChartComponent data={usageData} />
+					</div>
 				) : (
-					<div className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center">
+					<div
+						role="img"
+						aria-label="Usage chart placeholder. No data yet."
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center"
+					>
 						<p className="text-sm text-text-bright">No usage data yet</p>
 						<p className="mt-1 text-xs text-text-muted">
 							Start making API calls to see your activity here.
@@ -79,7 +87,7 @@ export function UsageChart({
 					</h3>
 				</div>
 				{hasModelData ? (
-					<>
+					<div role="img" aria-label={donutLabel}>
 						<DonutChart data={modelData} />
 						<div className="mt-4 flex flex-wrap gap-3">
 							{modelData.map((model) => (
@@ -93,9 +101,13 @@ export function UsageChart({
 								</div>
 							))}
 						</div>
-					</>
+					</div>
 				) : (
-					<div className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center">
+					<div
+						role="img"
+						aria-label="Model breakdown chart placeholder. No data yet."
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center"
+					>
 						<p className="text-sm text-text-bright">No model usage data yet</p>
 						<p className="mt-1 text-xs text-text-muted">
 							Top models by cost will appear here.
@@ -105,4 +117,29 @@ export function UsageChart({
 			</m.div>
 		</div>
 	);
+}
+
+/** Build a short, descriptive label for the area chart from the data. */
+function buildAreaLabel(
+	data: DataPoint[],
+	timeRange: string,
+): string {
+	const range = TIME_LABELS[timeRange] || timeRange;
+	if (data.length === 0) return `Usage chart for ${range}. No data yet.`;
+	const peak = data.reduce(
+		(best, d) => (d.requests > best.requests ? d : best),
+		data[0],
+	);
+	const totalRequests = data.reduce((sum, d) => sum + d.requests, 0);
+	return `Usage over the last ${range}, ${data.length} data points. Peak ${peak.requests.toLocaleString()} requests on ${peak.date}. Total ${totalRequests.toLocaleString()} requests.`;
+}
+
+/** Build a short, descriptive label for the donut chart from the data. */
+function buildDonutLabel(data: ModelData[]): string {
+	if (data.length === 0) return "Model breakdown chart. No data yet.";
+	const total = data.reduce((sum, d) => sum + d.value, 0);
+	const top = [...data].sort((a, b) => b.value - a.value)[0];
+	if (!top) return "Model breakdown chart.";
+	const pct = total > 0 ? Math.round((top.value / total) * 100) : 0;
+	return `Model breakdown donut chart, ${data.length} models. Top model ${top.name} at ${pct}% of ${total.toLocaleString()} requests.`;
 }

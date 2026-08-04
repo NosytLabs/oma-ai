@@ -191,9 +191,9 @@ export function UnifiedDepositInterface({
 		return (
 			<div className="rounded-lg border border-border-bright bg-panel p-6 text-center">
 				<ShieldCheck className="mx-auto h-8 w-8 text-accent" />
-				<h3 className="mt-3 text-base font-semibold text-text-bright">
+				<h2 className="mt-3 text-base font-semibold text-text-bright">
 					Sign in to deposit
-				</h3>
+				</h2>
 				<p className="mt-1 text-sm text-text-secondary">
 					You need an account to credit a deposit.
 				</p>

@@ -58,8 +58,8 @@ const STYLE_OPTIONS = [
 	{ label: "Anime", value: "anime" },
 ] as const;
 
-const CREDITS_PER_IMAGE = 5;
-const USD_PER_CREDIT = 0.0025;
+const CREDITS_PER_IMAGE = 10;
+const USD_PER_CREDIT = 0.01;
 
 export function ImageGenerationPanel() {
 	const [prompt, setPrompt] = useState("");

@@ -203,7 +203,10 @@ type PolarCheckout = { id: string; checkout_url: string; product_id: string; cus
 
 type PolarTab = "payments" | "customers" | "checkouts" | "products" | "subscriptions";
 
-const ADMIN_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// Keep admin requests same-origin so the HttpOnly Better Auth cookie is
+// included in local development and production alike. The Next catch-all
+// proxy forwards `/api/v1/*` to the Hono backend.
+const ADMIN_BASE = "/api";
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${ADMIN_BASE}${path}`, {
@@ -298,6 +301,10 @@ export function AdminDashboard() {
 	const [creditAdjustReason, setCreditAdjustReason] = useState("");
 	const [suspendModal, setSuspendModal] = useState<{ userId: string; action: "suspend" | "unsuspend"; suspended: boolean } | null>(null);
 	const [suspendReason, setSuspendReason] = useState("");
+	const [deleteUserModal, setDeleteUserModal] = useState<{ userId: string; name: string } | null>(null);
+	const [deleteUserConfirmation, setDeleteUserConfirmation] = useState("");
+	const [deleteUserReason, setDeleteUserReason] = useState("");
+	const [deletingUser, setDeletingUser] = useState(false);
 	const [auditEntries, setAuditEntries] = useState<AuditPage | null>(null);
 	const [auditCursor, setAuditCursor] = useState<string | null>(null);
 	const [auditCursorStack, setAuditCursorStack] = useState<string[]>([]);
@@ -510,6 +517,33 @@ const handleConfirmSuspend = async () => {
 	}
 };
 
+const handleDeleteUser = async () => {
+	if (!deleteUserModal || deleteUserConfirmation !== "DELETE") return;
+	const reason = deleteUserReason.trim();
+	if (!reason) {
+		toast.error("A deletion reason is required");
+		return;
+	}
+	setDeletingUser(true);
+	try {
+		await adminFetch<{ success: boolean }>(`/v1/admin/users/${deleteUserModal.userId}`, {
+			method: "DELETE",
+			body: JSON.stringify({ confirmation: "DELETE", reason }),
+		});
+		toast.success("User anonymized and access revoked.");
+		setUsers((prev) => prev.filter((u) => u.id !== deleteUserModal.userId));
+		setSelectedUserId((current) => current === deleteUserModal.userId ? null : current);
+		setSelectedUserHistory(null);
+		setDeleteUserModal(null);
+		setDeleteUserConfirmation("");
+		setDeleteUserReason("");
+	} catch (err) {
+		toast.error(`User deletion failed: ${(err as Error).message}`);
+	} finally {
+		setDeletingUser(false);
+	}
+};
+
 const handleRefundSubmit = async () => {
 	if (!refundForm.paymentId.trim() || !refundForm.amountCents.trim() || !refundForm.reason.trim()) {
 		toast.error("paymentId, amount (cents), and reason are required");
@@ -648,7 +682,7 @@ const handleAuditPrev = () => {
 		return (
 			<div className="mx-auto mt-12 max-w-xl rounded-lg border border-border bg-surface-elevated/40 p-6 text-center">
 				<ShieldCheck className="mx-auto mb-3 h-8 w-8 text-accent" />
-				<h2 className="mb-2 text-lg font-medium">Admin access required</h2>
+				<h1 className="mb-2 text-lg font-medium">Admin access required</h1>
 				<p className="mb-4 text-sm text-text-muted">
 					You are signed in as <span className="font-mono">{role ?? "user"}</span>.
 					Admins can edit model pricing, view usage analytics, and manage
@@ -1273,6 +1307,17 @@ const handleAuditPrev = () => {
 													>
 														History
 													</button>
+													{u.role !== "admin" && (
+														<button
+															type="button"
+															disabled={updatingSettings || deletingUser}
+															onClick={() => setDeleteUserModal({ userId: u.id, name: u.name || "this user" })}
+															title="Anonymize account and revoke access"
+															className="rounded border border-error/30 bg-error/5 px-2.5 py-1 text-[10px] font-medium text-error hover:bg-error/15 transition-colors"
+														>
+															Delete
+														</button>
+													)}
 												</div>
 											</td>
 										</tr>
@@ -2022,6 +2067,44 @@ const handleAuditPrev = () => {
 								} disabled:opacity-50`}
 							>
 								{creditAdjustModal.direction === "add" ? "Add credits" : "Drain credits"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Admin user deletion confirmation */}
+			{deleteUserModal && (
+				<div role="dialog" aria-modal="true" aria-labelledby="delete-user-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+					<div className="w-full max-w-md space-y-4 rounded-lg border border-error/40 bg-surface p-5 shadow-lg">
+						<div>
+							<h3 id="delete-user-title" className="text-sm font-semibold text-error">Delete {deleteUserModal.name}?</h3>
+							<p className="mt-1 text-xs leading-relaxed text-text-muted">This preserves billing and usage rows but anonymizes identity, revokes sessions and API keys, and blocks future access. It cannot be undone.</p>
+						</div>
+						<label className="block text-xs text-text-muted">
+							Type <code className="rounded bg-void px-1 font-mono text-error">DELETE</code> to confirm
+							<input
+								autoFocus
+								value={deleteUserConfirmation}
+								onChange={(event) => setDeleteUserConfirmation(event.target.value)}
+								placeholder="DELETE"
+								className="mt-1 w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm text-text outline-none focus:border-error"
+							/>
+						</label>
+						<label className="block text-xs text-text-muted">
+							Reason (required, audit-logged)
+							<input
+								value={deleteUserReason}
+								onChange={(event) => setDeleteUserReason(event.target.value)}
+								placeholder="Privacy request, abuse, duplicate account…"
+								className="mt-1 w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm text-text outline-none focus:border-error"
+							/>
+						</label>
+						<div className="flex justify-end gap-2">
+							<button type="button" disabled={deletingUser} onClick={() => { setDeleteUserModal(null); setDeleteUserConfirmation(""); setDeleteUserReason(""); }} className="rounded px-3 py-1.5 text-xs text-text-muted hover:text-text">Cancel</button>
+							<button type="button" disabled={deletingUser || deleteUserConfirmation !== "DELETE" || deleteUserReason.trim().length === 0} onClick={() => void handleDeleteUser()} className="inline-flex items-center gap-2 rounded-md border border-error/30 bg-error/15 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/25 disabled:opacity-50">
+								{deletingUser && <Loader2 className="h-3 w-3 animate-spin" />}
+								{deletingUser ? "Deleting…" : "Delete & anonymize"}
 							</button>
 						</div>
 					</div>

@@ -8,6 +8,17 @@ interface SessionsSectionProps {
 	sessions: Session[];
 }
 
+function getDeviceName(userAgent: string | null): string {
+	if (!userAgent) return "Unknown device";
+	let device = "Browser";
+	if (/Edg\//i.test(userAgent)) device = "Microsoft Edge";
+	else if (/Chrome\//i.test(userAgent) && !/Edg\//i.test(userAgent)) device = "Chrome";
+	else if (/Firefox\//i.test(userAgent)) device = "Firefox";
+	else if (/Safari\//i.test(userAgent) && !/Chrome\//i.test(userAgent)) device = "Safari";
+	if (/Mobile|Android|iPhone/i.test(userAgent)) device = `${device} (mobile)`;
+	return device;
+}
+
 export function SessionsSection({ sessions }: SessionsSectionProps) {
 	return (
 		<div>
@@ -35,7 +46,7 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 							className="flex items-center gap-3 rounded-lg border border-border bg-void px-4 py-3"
 						>
 							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/5">
-								{session.current ? (
+								{session.isCurrent ? (
 									<Monitor className="h-4 w-4 text-accent" />
 								) : (
 									<Fingerprint className="h-4 w-4 text-text-muted" />
@@ -44,21 +55,21 @@ export function SessionsSection({ sessions }: SessionsSectionProps) {
 							<div className="min-w-0 flex-1">
 								<div className="flex flex-wrap items-center gap-2">
 									<span className="text-sm font-semibold text-text">
-										{session.device}
+										{getDeviceName(session.userAgent)}
 									</span>
-									{session.current && (
+									{session.isCurrent && (
 										<span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
 											This device
 										</span>
 									)}
 								</div>
 								<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-									{session.ip && session.ip !== "—" && (
-										<span className="font-mono">{session.ip}</span>
+									{session.ipAddress && (
+										<span className="font-mono">{session.ipAddress}</span>
 									)}
 									<span className="flex items-center gap-1">
 										<Clock className="h-2.5 w-2.5" aria-hidden="true" />
-										Active {formatDateTime(session.lastActive)}
+										Signed in {formatDateTime(session.createdAt)}
 									</span>
 								</div>
 							</div>

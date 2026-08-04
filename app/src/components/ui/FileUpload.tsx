@@ -71,6 +71,10 @@ export function FileUpload({
 		onClear();
 	}, [onClear]);
 
+	const hintId = `file-upload-hint-${accept.replace(/\W+/g, "-")}`;
+	const errorId = `file-upload-error`;
+	const describedBy = [hintId, error ? errorId : ""].filter(Boolean).join(" ");
+
 	if (preview) {
 		return (
 			<div
@@ -105,20 +109,22 @@ export function FileUpload({
 				onDragLeave={() => setDragOver(false)}
 				onDrop={handleDrop}
 				onClick={() => inputRef.current?.click()}
-				className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all ${
+				aria-label={`Upload ${accept === "image/*" ? "image" : "file"}`}
+				aria-describedby={describedBy || undefined}
+				className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
 					dragOver
 						? "border-accent bg-accent-dim/50"
 						: "border-border hover:border-accent hover:bg-accent-dim/20"
 				}`}
 			>
 				<div className="w-12 h-12 rounded-2xl bg-accent-dim flex items-center justify-center">
-					<Upload className="w-6 h-6 text-accent" />
+					<Upload className="w-6 h-6 text-accent" aria-hidden="true" />
 				</div>
 				<div className="text-center">
 					<p className="text-sm font-medium text-text">
 						Drop an image here or <span className="text-accent">browse</span>
 					</p>
-					<p className="text-xs text-text-muted mt-1">
+					<p id={hintId} className="text-xs text-text-muted mt-1">
 						PNG, JPG, WebP up to {maxSizeMB}MB
 					</p>
 				</div>
@@ -128,12 +134,13 @@ export function FileUpload({
 				type="file"
 				accept={accept}
 				onChange={handleChange}
-				aria-label="File upload"
+				tabIndex={-1}
+				aria-hidden="true"
 				className="hidden"
 			/>
 			{error && (
-				<p className="mt-2 text-sm text-error flex items-center gap-1.5">
-					<ImageIcon className="w-4 h-4" />
+				<p id={errorId} role="alert" className="mt-2 text-sm text-error flex items-center gap-1.5">
+					<ImageIcon className="w-4 h-4" aria-hidden="true" />
 					{error}
 				</p>
 			)}

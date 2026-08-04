@@ -36,8 +36,10 @@ function ApiKeyManagerComponent({
 }: ApiKeyManagerProps) {
 	const [confirmKeyId, setConfirmKeyId] = useState<string | null>(null);
 	const revokeTrapRef = useRef<HTMLDivElement>(null);
+	const revokeTriggerRef = useRef<HTMLButtonElement | null>(null);
 
-	const handleRevokeClick = (keyId: string) => {
+	const handleRevokeClick = (keyId: string, trigger: HTMLButtonElement) => {
+		revokeTriggerRef.current = trigger;
 		setConfirmKeyId(keyId);
 	};
 
@@ -56,6 +58,7 @@ function ApiKeyManagerComponent({
 	useFocusTrap({
 		active: !!confirmKeyId && !!keyToRevoke,
 		containerRef: revokeTrapRef,
+		restoreFocusRef: revokeTriggerRef,
 		onClose: () => setConfirmKeyId(null),
 	});
 
@@ -168,7 +171,10 @@ function ApiKeyManagerComponent({
 									</button>
 									<button
 										type="button"
-										onClick={() => handleRevokeClick(key.id)}
+										ref={(el) => {
+											if (key.id === confirmKeyId) revokeTriggerRef.current = el;
+										}}
+										onClick={(e) => handleRevokeClick(key.id, e.currentTarget)}
 										disabled={revokingId === key.id || confirmKeyId !== null}
 										aria-label="Revoke API key"
 										className="flex items-center justify-center px-3 py-2 min-h-[36px] text-xs font-medium text-text-muted hover:text-error focus-ring focus-visible:text-error disabled:opacity-50"

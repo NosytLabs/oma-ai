@@ -3,10 +3,11 @@
 /**
  * Home · Capabilities
  *
- * Three-pillar bento: pay upfront, pay per request, pay with USDC. Each pillar
- * is anchored by a single primary action, with a 4-up supporting row that
- * surfaces the operational primitives (live models, circuit breaker, x402
- * spec, OpenAI SDK). Layout flips to a vertical stack under `md`.
+ * Bento-style three-pillar section with themed micro-visuals per payment
+ * rail. The x402 card carries an animated request/response flow visual, the
+ * USDC card carries a mini ledger strip, and the card rail carries a
+ * credit-card mockup — each drawn in pure CSS so nothing depends on image
+ * assets. A 4-up supporting row surfaces the operational primitives below.
  */
 
 import {
@@ -36,44 +37,48 @@ interface Pillar {
 	cta: string;
 	accent: "emerald" | "info" | "violet";
 	highlights: string[];
+	visual: "card" | "ledger" | "flow";
 }
 
 const PILLARS: Pillar[] = [
 	{
 		id: "card-credits",
-		eyebrow: "Card · Polar",
-		title: "Buy credits by card",
+		eyebrow: "Pay with credits",
+		title: "Prepaid API credit system",
 		description:
-			"Top up with Visa, Mastercard, or Apple Pay in seconds. Credits land the moment the payment settles and meter every request at 1:1 USD.",
+			"Load credits in seconds via card (powered by Polar) or deposit USDC on Base. Credits are automatically priced 1:1 with USD — 1 credit = $0.01 USD. No monthly commitment, no minimum fee, and credits never expire.",
 		icon: Banknote,
-		href: "/deposit?method=card",
-		cta: "Buy credits",
+		href: "/pricing",
+		cta: "View credit packs",
 		accent: "emerald",
-		highlights: ["No wallet required", "Apple Pay supported", "Instant settlement"],
+		highlights: ["1:1 with USD", "Card · Apple Pay · USDC on Base", "Credits never expire"],
+		visual: "card",
 	},
 	{
-		id: "usdc-base",
-		eyebrow: "USDC · Base",
-		title: "Deposit USDC on Base",
+		id: "x402-native",
+		eyebrow: "Agents pay per request",
+		title: "x402 HTTP protocol native",
 		description:
-			"Direct USDC deposits at 1:1 USD. Every request is metered against a transparent on-chain ledger so you see exactly where each credit goes.",
-		icon: Coins,
-		href: "/deposit",
-		cta: "Deposit USDC",
-		accent: "info",
-		highlights: ["1:1 USD", "On-chain ledger", "100+ chains via LI.FI"],
-	},
-	{
-		id: "x402",
-		eyebrow: "x402 · agents",
-		title: "Agents pay per request",
-		description:
-			"x402 lets an agent settle every inference call on Base in USDC. No account, no API key, no subscription — wallet-based and gasless.",
+			"An open standard allowing autonomous agents to pay for a single HTTP request directly. No account setup, no API key required, no subscriptions — settle every inference call gaslessly EIP-3009 on Base.",
 		icon: Bot,
 		href: "/docs#x402",
-		cta: "Read the protocol",
+		cta: "Read x402 protocol",
 		accent: "violet",
-		highlights: ["Gasless EIP-3009", "Per-request pricing", "HTTP 402 native"],
+		highlights: ["HTTP 402 native payment", "EIP-3009 gasless transfers", "Zero-friction agent access"],
+		visual: "flow",
+	},
+	{
+		id: "privacy-routing",
+		eyebrow: "Routing & privacy",
+		title: "Multi-provider & privacy first",
+		description:
+			"Direct your prompts across private, open, and commercial models. All inference requests are fully private with zero data retention on prompt content. Failover routing with circuit-breaker protection built-in.",
+		icon: Zap,
+		href: "/docs#endpoints",
+		cta: "Explore live routing",
+		accent: "info",
+		highlights: ["Zero data retention", "Multi-provider failover", "OpenAI-compatible gateway"],
+		visual: "ledger",
 	},
 ];
 
@@ -90,7 +95,7 @@ const SUPPORT = [
 		icon: Zap,
 		title: "Live routing + failover",
 		body: `Circuit-breaker failover across ${MODEL_COUNT}+ models.`,
-		href: "/network",
+		href: "/docs#endpoints",
 	},
 	{
 		id: "wallet",
@@ -110,7 +115,7 @@ const SUPPORT = [
 
 const ACCENT: Record<
 	Pillar["accent"],
-	{ wrap: string; chip: string; ring: string; glow: string; iconBg: string }
+	{ wrap: string; chip: string; ring: string; glow: string; iconBg: string; visualLine: string }
 > = {
 	emerald: {
 		wrap: "border-accent/30 bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--color-panel))]",
@@ -118,6 +123,7 @@ const ACCENT: Record<
 		ring: "hover:border-accent/60 focus-visible:ring-accent",
 		glow: "0 24px 60px -30px var(--color-accent-glow)",
 		iconBg: "bg-accent text-[var(--color-accent-fg)]",
+		visualLine: "bg-accent",
 	},
 	info: {
 		wrap: "border-info/30 bg-[color-mix(in_srgb,var(--color-info)_8%,var(--color-panel))]",
@@ -125,6 +131,7 @@ const ACCENT: Record<
 		ring: "hover:border-info/60 focus-visible:ring-info",
 		glow: "0 24px 60px -30px color-mix(in srgb, var(--color-info) 60%, transparent)",
 		iconBg: "bg-info/15 text-info",
+		visualLine: "bg-info",
 	},
 	violet: {
 		wrap: "border-violet/30 bg-[color-mix(in_srgb,var(--color-violet)_8%,var(--color-panel))]",
@@ -132,8 +139,104 @@ const ACCENT: Record<
 		ring: "hover:border-violet/60 focus-visible:ring-violet",
 		glow: "0 24px 60px -30px color-mix(in srgb, var(--color-violet) 60%, transparent)",
 		iconBg: "bg-violet/15 text-violet",
+		visualLine: "bg-violet",
 	},
 };
+
+/* ── Micro-visuals (pure CSS) ─────────────────────────────────────── */
+
+function CardMockup({ lineClass }: { lineClass: string }) {
+	return (
+		<div
+			aria-hidden="true"
+			className="pointer-events-none mt-6 w-full max-w-[260px] rounded-[14px] border border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)]"
+		>
+			<div className="flex items-center justify-between">
+				<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
+					OMA Credits
+				</span>
+				<span className="h-3.5 w-5 rounded-[3px] bg-gradient-to-br from-accent/70 to-accent/30" />
+			</div>
+			<div className="mt-4 flex items-center justify-between">
+				<span className="font-mono text-sm tracking-[0.18em] text-text-bright/80">
+					•••• 4••2
+				</span>
+				<span className={cn("h-1.5 w-1.5 rounded-full", lineClass)} />
+			</div>
+			<div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2.5">
+				<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+					+ $25 · settled
+				</span>
+				<span className="font-mono text-[10px] text-accent">1:1 USD</span>
+			</div>
+		</div>
+	);
+}
+
+function LedgerStrip({ lineClass }: { lineClass: string }) {
+	const rows = [52, 38, 64, 44, 30];
+	return (
+		<div
+			aria-hidden="true"
+			className="pointer-events-none mt-6 flex w-full max-w-[260px] items-end gap-1.5"
+		>
+			{rows.map((h, i) => (
+				<div key={i} className="flex-1">
+					<div
+						className={cn(
+							"rounded-t-[4px] opacity-70 transition-all duration-500",
+							lineClass,
+						)}
+						style={{ height: `${h}px` }}
+					/>
+				</div>
+			))}
+			<div className="ml-2 flex flex-col justify-end gap-1 pb-0.5">
+				<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+					ledger
+				</span>
+				<span className="font-mono text-[10px] text-accent">on-chain</span>
+			</div>
+		</div>
+	);
+}
+
+function FlowVisual({ lineClass }: { lineClass: string }) {
+	return (
+		<div
+			aria-hidden="true"
+			className="pointer-events-none mt-6 flex w-full max-w-[260px] items-center gap-1.5"
+		>
+			<div className="flex flex-1 flex-col gap-1">
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary">
+					POST /v1/chat
+				</span>
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted">
+					402 · payment
+				</span>
+			</div>
+			<div className="flex flex-col items-center gap-0.5">
+				<span className={cn("h-4 w-px", lineClass)} />
+				<span className="font-mono text-[9px] text-accent">x402</span>
+				<span className={cn("h-4 w-px", lineClass)} />
+			</div>
+			<div className="flex flex-1 flex-col gap-1">
+				<span className="rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent">
+					EIP-3009 transfer
+				</span>
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary">
+					200 · stream
+				</span>
+			</div>
+		</div>
+	);
+}
+
+function PillarVisual({ kind, lineClass }: { kind: Pillar["visual"]; lineClass: string }) {
+	if (kind === "card") return <CardMockup lineClass={lineClass} />;
+	if (kind === "ledger") return <LedgerStrip lineClass={lineClass} />;
+	return <FlowVisual lineClass={lineClass} />;
+}
 
 export function CapabilitiesGrid() {
 	return (
@@ -141,6 +244,10 @@ export function CapabilitiesGrid() {
 			aria-labelledby="capabilities-headline"
 			className="relative py-16 sm:py-20 lg:py-24"
 		>
+			<div
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent"
+			/>
 			<div className="container-page">
 				<Reveal>
 					<SectionHeader
@@ -148,14 +255,14 @@ export function CapabilitiesGrid() {
 						eyebrow="Capabilities"
 						headline={
 							<>
-								Three ways to pay.
+								Three stories.
 								<br />
 								<span className="text-accent italic-accent">
-									One gateway underneath.
+									One inference surface.
 								</span>
 							</>
 						}
-						subhead="Card, USDC, or x402 — pick the rail that fits. Every payment path funnels into the same private, OpenAI-compatible inference surface."
+						subhead="Pay with credits, pay per request, or route privately — OMA is built for maximum developer control and zero lock-in."
 					/>
 				</Reveal>
 
@@ -235,6 +342,8 @@ export function CapabilitiesGrid() {
 											aria-hidden="true"
 										/>
 									</span>
+
+									<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
 								</Link>
 							</m.div>
 						);
@@ -279,6 +388,21 @@ export function CapabilitiesGrid() {
 						);
 					})}
 				</RevealStagger>
+
+				<Reveal>
+					<div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-mono text-text-muted">
+						<span className="inline-flex items-center gap-1.5">
+							<span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+							Budget from $0.015 / 1M tokens
+						</span>
+						<span aria-hidden="true" className="text-border">·</span>
+						<span>USDC at 1:1 USD — no markup</span>
+						<span aria-hidden="true" className="text-border">·</span>
+						<span>Credits never expire</span>
+						<span aria-hidden="true" className="text-border">·</span>
+						<span>Circuit-breaker failover</span>
+					</div>
+				</Reveal>
 			</div>
 		</section>
 	);

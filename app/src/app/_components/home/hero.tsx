@@ -7,7 +7,7 @@
  * and a live code strip that shows the OpenAI-compatible surface.
  */
 
-import { ArrowRight, KeyRound, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, KeyRound, Sparkles, Zap } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -71,7 +71,7 @@ export function Hero() {
 									className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
 									aria-hidden="true"
 								/>
-								OpenAI-compatible · card credits · USDC · x402
+								Buy credits · card · USDC · x402
 							</span>
 						</m.div>
 
@@ -96,8 +96,35 @@ export function Hero() {
 							deposit USDC on Base, or let agents pay per request with x402.
 						</m.p>
 
+						{/* First-timer callout — novice entry point */}
+						<m.div {...reveal(3, entrance)} className="mt-5 max-w-xl">
+							<Link
+								href="/getting-started"
+								className="group/new flex items-start gap-3 rounded-xl border border-border bg-surface/40 px-4 py-3 transition-colors hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							>
+								<span
+									className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent"
+									aria-hidden="true"
+								>
+									<BookOpen className="h-3.5 w-3.5" />
+								</span>
+								<span className="min-w-0">
+									<span className="block text-[13px] font-semibold text-text-bright">
+										First time here? Use OMA in 5 minutes — no code, no crypto.
+									</span>
+									<span className="mt-0.5 block text-[12px] leading-relaxed text-text-secondary">
+										Try the free chat (no sign-up), then follow a 5-step
+										walkthrough to your first API call.{" "}
+										<span className="text-accent underline-offset-4 group-hover/new:underline">
+											Start here →
+										</span>
+									</span>
+								</span>
+							</Link>
+						</m.div>
+
 						<m.div
-							{...reveal(3, entrance)}
+							{...reveal(4, entrance)}
 							className="mt-9 flex flex-wrap items-center gap-3"
 						>
 							<JuiceButton
@@ -114,7 +141,7 @@ export function Hero() {
 								>
 									<Link
 										href="/login"
-										className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px]"
+										className="btn-primary inline-flex h-12 min-w-[9.5rem] items-center justify-center gap-2 px-6 text-[15px] transition-transform active:scale-[0.97]"
 									>
 										<KeyRound className="h-4 w-4" aria-hidden="true" />
 										<ScrambleText
@@ -129,7 +156,7 @@ export function Hero() {
 							</JuiceButton>
 							<Link
 								href="/chat"
-								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px]"
+								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px] transition-transform active:scale-[0.97]"
 							>
 								<Sparkles className="h-4 w-4" aria-hidden="true" />
 								<ScrambleText
@@ -140,16 +167,16 @@ export function Hero() {
 								/>
 							</Link>
 							<Link
-								href="/pricing"
-								className="group/pricing inline-flex h-12 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold text-text-secondary transition-colors hover:text-accent"
+								href="/models"
+								className="group/models inline-flex h-12 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold text-text-secondary transition-colors hover:text-accent"
 							>
-								Pricing
-								<ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/pricing:translate-x-0.5" aria-hidden="true" />
+								Live models
+								<span className="text-[11px] font-mono text-text-muted">· {MODEL_COUNT}+</span>
 							</Link>
 						</m.div>
 
 						<m.ul
-							{...reveal(4, entrance)}
+							{...reveal(5, entrance)}
 							className="mt-9 flex flex-wrap gap-x-4 gap-y-2 w-full text-[12px] font-mono text-text-muted sm:gap-x-5 sm:text-[12.5px]"
 						>
 							<li className="inline-flex items-center gap-1.5">
@@ -192,7 +219,7 @@ export function Hero() {
 					</div>
 
 					{/* Live request card */}
-					<m.div {...reveal(3, entrance)} className="relative w-full max-w-lg mx-auto lg:max-w-none lg:mx-0">
+					<m.div {...reveal(6, entrance)} className="relative w-full max-w-lg mx-auto lg:max-w-none lg:mx-0">
 						<div
 							aria-hidden="true"
 							className="absolute -inset-4 rounded-2xl bg-accent/[0.06] blur-2xl"

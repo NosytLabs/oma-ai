@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import {
@@ -12,6 +12,7 @@ import {
 	X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatTime, toDollars } from "@/lib/utils";
@@ -65,12 +66,22 @@ interface NotificationBellProps {
 export function NotificationBell({ className = "" }: NotificationBellProps) {
 	const [open, setOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const queryClient = useQueryClient();
+	const router = useRouter();
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["notifications"],
 		queryFn: () => api.deposit.getNotifications(),
 		staleTime: 60_000,
 		refetchInterval: 60_000,
+	});
+
+	const markRead = useMutation({
+		mutationFn: (notificationId: string) =>
+			api.deposit.markNotificationRead(notificationId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+		},
 	});
 
 	const notifications: Notification[] =
@@ -208,7 +219,17 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 										exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
 										transition={{ ...springs.magnet }}
 									>
-										{recent.map((n) => <NotificationRow key={n.id} n={n} />)}
+										{recent.map((n) => (
+											<NotificationRow
+												key={n.id}
+												n={n}
+												onActivate={(id, href) => {
+													markRead.mutate(id);
+													setOpen(false);
+													if (href) router.push(href);
+												}}
+											/>
+										))}
 									</m.div>
 								)}
 							</AnimatePresence>
@@ -216,7 +237,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 
 						<div className="mt-1 flex items-center justify-between border-t border-border px-2 py-1.5 text-[11px]">
 							<Link
-								href="/dashboard/credits"
+								href="/deposit"
 								onClick={() => setOpen(false)}
 								className="inline-flex items-center gap-1 text-text-muted transition-colors hover:text-text"
 							>
@@ -239,14 +260,38 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	);
 }
 
-function NotificationRow({ n }: { n: Notification }) {
+function NotificationRow({
+	n,
+	onActivate,
+}: {
+	n: Notification;
+	onActivate: (id: string, href?: string) => void;
+}) {
 	const statusColor = STATUS_COLOR[n.status] ?? "text-text-muted";
 	const statusLabel = STATUS_LABEL[n.status] ?? n.status;
 	const amount =
 		n.amountUsd != null ? `$${toDollars(n.amountUsd).toFixed(2)}` : null;
+	// Notifications derived from deposits route to the credits history page
+	// (same destination as the existing "View all" link). Other notification
+	// types can override `targetHref` later.
+	const targetHref = n.type === "deposit" ? "/deposit" : undefined;
+	const handleClick = () => onActivate(n.id, targetHref);
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			handleClick();
+		}
+	};
 
 	return (
-		<div className="group flex items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-surface">
+		<div
+			role="button"
+			tabIndex={0}
+			onClick={handleClick}
+			onKeyDown={handleKeyDown}
+			aria-label={`${n.type} notification, status ${statusLabel}. Activate to view.`}
+			className="group flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+		>
 			<div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-void text-text-muted">
 				<Inbox className="h-3 w-3" aria-hidden="true" />
 			</div>

@@ -20,7 +20,7 @@ function useLiveModelCount() {
 	const [count, setCount] = useState<number | null>(null);
 	useEffect(() => {
 		let alive = true;
-		fetch("/api/v1/models")
+		fetch("/api/v1/models", { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => {
 				if (!alive || !data?.data?.length) return;

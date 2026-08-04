@@ -6,14 +6,14 @@ import {
 } from "@/lib/model-utils";
 
 describe("isFreeChatModel (guest website chat)", () => {
-	it("defaults free chat to minimax-m2.7", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("minimax-m2.7");
+	it("defaults free chat to deepseek-v4-flash", () => {
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
 	it("allows known free OMA-AI model ids without provider hint", () => {
-		expect(isFreeChatModel("minimax-m2.7")).toBe(true);
-		expect(isFreeChatModel("kimi-k2.6")).toBe(true);
+		expect(isFreeChatModel("deepseek-v4-flash")).toBe(true);
+		expect(isFreeChatModel("mistral-small-2603")).toBe(true);
 	});
 
 	it("allows OMA-AI provider even for unknown ids", () => {

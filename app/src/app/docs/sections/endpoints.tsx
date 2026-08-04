@@ -15,6 +15,10 @@ export function EndpointsSection() {
 				title="Endpoints Reference"
 				subtitle="OpenAI-compatible REST API endpoints."
 			/>
+			<p className="-mt-4 mb-6 text-sm text-text-muted">
+				Every route, method, and auth surface at a glance — chat, models, auth,
+				billing, and webhooks.
+			</p>
 
 			<div className="space-y-4">
 				{ENDPOINTS.map((ep) => (

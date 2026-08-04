@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { MODELS } from "@/lib/models-data";
 
 /**
  * Public marketing / product sitemap only.
@@ -25,17 +26,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		entry("/", 1, "weekly"),
 		// Marketing / product (public)
 		entry("/models", 0.9, "daily"),
+		...MODELS.map((model) => entry(`/models/${model.id}`, 0.8, "daily")),
 		entry("/pricing", 0.9, "weekly"),
 		entry("/docs", 0.85, "weekly"),
+		entry("/capabilities", 0.8, "weekly"),
+		entry("/getting-started", 0.8, "weekly"),
+		entry("/faq", 0.7, "monthly"),
+		entry("/glossary", 0.6, "monthly"),
 		entry("/compare", 0.75, "weekly"),
 		entry("/about", 0.6, "monthly"),
-		entry("/network", 0.55, "monthly"),
 		entry("/observability", 0.5, "monthly"),
 		entry("/changelog", 0.5, "monthly"),
 		entry("/contact", 0.4, "yearly"),
 		// Legal
 		entry("/privacy", 0.25, "yearly"),
 		entry("/terms", 0.25, "yearly"),
-		entry("/aup", 0.25, "yearly"),
 	];
 }
