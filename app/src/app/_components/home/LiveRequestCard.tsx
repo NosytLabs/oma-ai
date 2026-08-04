@@ -27,7 +27,7 @@ const ROUNDS: DemoRound[] = [
 		model: "claude-opus-5",
 		modelLabel: "Claude Opus 5",
 		prompt: "Summarize OMA in one sentence.",
-		reply: "One gateway for 22+ models — buy credits by card, deposit USDC, or pay per call with x402.",
+		reply: "One gateway for 22 curated models — buy credits by card, deposit USDC, or pay per call with x402.",
 	},
 	{
 		model: "deepseek-v4-flash",

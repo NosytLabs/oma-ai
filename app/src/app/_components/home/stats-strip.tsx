@@ -39,8 +39,8 @@ function useLiveModelCount() {
 const STATS: { label: string; value: string; hint: string; live?: boolean }[] = [
 	{
 		label: "Models live",
-		value: `${MODEL_COUNT}+`,
-		hint: "via Venice + routing",
+		value: `${MODEL_COUNT}`,
+		hint: "curated · Venice + Gonka",
 		live: true,
 	},
 	{
@@ -68,7 +68,7 @@ export function StatsStrip() {
 		// after the first fetch resolves. Returning the same value
 		// for the initial paint avoids a React hydration mismatch.
 		s.live && liveCount != null
-			? { ...s, value: `${liveCount}+`, hint: "live now · Venice + routing" }
+			? { ...s, value: `${liveCount}`, hint: "live now · Venice + Gonka" }
 			: s,
 	);
 	return (

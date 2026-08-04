@@ -94,7 +94,7 @@ const SUPPORT = [
 		id: "routing",
 		icon: Zap,
 		title: "Live routing + failover",
-		body: `Circuit-breaker failover across ${MODEL_COUNT}+ models.`,
+		body: `Circuit-breaker failover across ${MODEL_COUNT} curated models.`,
 		href: "/docs#endpoints",
 	},
 	{

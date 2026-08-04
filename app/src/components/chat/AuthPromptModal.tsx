@@ -24,12 +24,12 @@ const reasons = {
 	"paid-model": {
 		title: "Sign in to access this model",
 		body: (name: string) =>
-			`${name} is a premium model. Create a free account to unlock the full catalog — ${MODEL_COUNT}+ curated models across text, image, and video.`,
+			`${name} is a premium model. Create a free account to unlock the full catalog — ${MODEL_COUNT} curated models across text, image, and video.`,
 	},
 	"message-limit": {
 		title: "Free messages used up",
 		body: () =>
-			`You've used your 20 free messages for today. Create a free account to keep chatting — plus API access to ${MODEL_COUNT}+ models.`,
+			`You've used your 20 free messages for today. Create a free account to keep chatting — plus API access to ${MODEL_COUNT} curated models.`,
 	},
 };
 

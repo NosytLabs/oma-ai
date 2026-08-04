@@ -81,7 +81,7 @@ export function Hero() {
 						>
 							<span className="block">One OpenAI-compatible API.</span>
 							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
-								{MODEL_COUNT}+ models.
+								{MODEL_COUNT} curated models.
 							</span>
 							<span className="block">Credits, USDC, or x402.</span>
 						</m.h1>
@@ -171,7 +171,7 @@ export function Hero() {
 								className="group/models inline-flex h-12 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold text-text-secondary transition-colors hover:text-accent"
 							>
 								Live models
-								<span className="text-[11px] font-mono text-text-muted">· {MODEL_COUNT}+</span>
+								<span className="text-[11px] font-mono text-text-muted">· {MODEL_COUNT}</span>
 							</Link>
 						</m.div>
 
@@ -201,7 +201,7 @@ export function Hero() {
 									href="/models"
 									className="text-text-secondary transition-colors hover:text-accent"
 								>
-									{MODEL_COUNT}+ live models
+									{MODEL_COUNT} live models
 								</Link>
 							</li>
 							<li className="inline-flex items-center gap-1.5">

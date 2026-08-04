@@ -30,7 +30,7 @@ const PILLARS = [
 	{
 		icon: Cpu,
 		title: "Open Model Access",
-		body: `One OpenAI-compatible API across ${MODEL_COUNT}+ models and multiple providers, with circuit-breaker failover when an upstream is down.`,
+		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker failover when an upstream is down.`,
 	},
 	{
 		icon: Wallet,

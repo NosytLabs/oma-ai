@@ -7,7 +7,8 @@
 
 Self-hosted AI inference gateway: OpenAI-compatible API, multi-model chat playground, card + USDC credits, and x402 pay-per-request for agents.
 
-**Slogan:** *One gateway. Every model. No lock-in.*
+**Slogan:** *One gateway. Every model. No lock-in.*  
+**Purpose:** Curated multi-provider inference gateway (not a 100+ model marketplace). OpenAI + Anthropic-compatible API, free guest chat on Gonka models, paid Venice catalog, card/USDC/x402 billing.
 
 ---
 
@@ -18,7 +19,7 @@ app/                 Next.js 15 frontend (marketing, chat, dashboard, docs UI)
 server/              Hono API (inference proxy, auth, billing, x402)
 scripts/
   dev/               start-dev, local-db, chrome debug
-  ops/               deploy, launch validate, wallets, seed
+  ops/               deploy, start-prod, launch validate, wallets, seed
   audit/             axe / visual / UX capture tools
 deploy/              Coolify / compose snippets
 docker-compose*.yml  Local / prod compose

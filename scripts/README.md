@@ -25,6 +25,8 @@ A thin shim `scripts/start-dev.sh` still works for older docs and muscle memory.
 ```bash
 ./scripts/ops/validate-launch.sh              # pre-launch env / config checks
 ./scripts/ops/deploy.sh                       # VPS deploy helper
+./scripts/ops/start-prod.sh                   # docker compose prod up (or down|logs)
+# root shim: ./start-prod.sh → scripts/ops/start-prod.sh
 node --env-file=.env scripts/ops/blockchain-bootstrap.mjs
 node scripts/ops/generate-platform-wallet.mjs # one-shot keypair (prints only)
 ./scripts/ops/neon-cost-check.sh [project_id]

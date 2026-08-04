@@ -54,12 +54,12 @@ Do not invent a second mark. Live site may lag until deploy; local `app/public` 
 ### Core Messages
 
 - **Primary (homepage / hero):** *"Open Model Access for AI builders."* Route prompts across private, open, and commercial models through one OpenAI-compatible API.
-- **Privacy angle:** *"Private AI inference powered by Venice. Zero data retention on prompt content."* Self-hosted deployment option for maximum data control; wallet-based auth (no account required).
+- **Privacy angle:** *"Private AI inference powered by Venice. Zero data retention on prompt content."* Self-hosted option for maximum control; magic-link or SIWE; free guest chat on Gonka models (daily limit).
 - **Payment angle:** *"Crypto-friendly credits. Pay with crypto, build with one API."* USDC on Base, x402 for agent-native billing. (Multi-chain via LI.FI / CCTP is on the roadmap — currently USDC on Base only.)
 
 ### What OMA IS vs. IS NOT
 
-**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with Gonka failover · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, USDC on Base) · wallet-based auth (SIWE) · OpenAI-compatible API.
+**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with Gonka free-tier + failover · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, USDC on Base) · magic-link + SIWE wallet auth · OpenAI- and Anthropic-compatible API · 22 curated models (not an unbounded marketplace).
 
 **Not designed for:** illicit use. OMA is a professional tool for developers who value privacy, control, and crypto-native payments. Position as "low-friction signup", not "no KYC"; "private inference", not "anonymous"; "privacy-focused", not "untraceable".
 
