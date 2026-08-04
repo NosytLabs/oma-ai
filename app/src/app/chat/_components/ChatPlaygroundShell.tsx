@@ -21,6 +21,15 @@ import {
 	FREE_DEFAULT_CHAT_MODEL,
 	isFreeChatModel,
 } from "@/lib/model-utils";
+import {
+	freeLeftLabel,
+	GUEST_DAILY_LIMIT_DEFAULT,
+	quotaFromServer,
+	readStoredGuestQuota,
+	writeStoredGuestQuota,
+	type GuestQuota,
+} from "@/lib/guest-daily-quota";
+import { DEFAULT_API_URL } from "@/lib/config";
 import { useChatPersistence } from "../_hooks/useChatPersistence";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
@@ -205,42 +214,89 @@ function ShellContent({
 		[],
 	);
 
-	// ─── Free message limit for guests (20/day) ───
-	const FREE_DAILY_LIMIT = 20;
-	const [guestMsgCount, setGuestMsgCount] = useState(0);
+	// ─── Free message quota for guests (server is source of truth) ───
+	const [guestQuota, setGuestQuota] = useState<GuestQuota | null>(null);
 
-	useEffect(() => {
-		if (isAuthenticated) return;
-		try {
-			const key = "oma-guest-msgs";
-			const stored = localStorage.getItem(key);
-			if (stored) {
-				const { date, count } = JSON.parse(stored);
-				const today = new Date().toISOString().slice(0, 10);
-				setGuestMsgCount(date === today ? count : 0);
+	const applyGuestQuota = useCallback(
+		(next: GuestQuota) => {
+			setGuestQuota(next);
+			writeStoredGuestQuota(next);
+			if (next.remaining <= 0 && !isAuthenticated) {
+				setAuthPromptReason("message-limit");
+				setAuthPromptModel(undefined);
+				// Don't force-open modal on every header sync — only when
+				// the user hits the wall (gatedSend / 429). Callers set open.
 			}
-		} catch {}
-	}, [isAuthenticated]);
+		},
+		[isAuthenticated],
+	);
 
-	const incrementGuestCount = useCallback(() => {
-		if (isAuthenticated) return true; // authed users have no limit
-		const today = new Date().toISOString().slice(0, 10);
-		const next = guestMsgCount + 1;
-		setGuestMsgCount(next);
-		try {
-			localStorage.setItem(
-				"oma-guest-msgs",
-				JSON.stringify({ date: today, count: next }),
+	// Hydrate from localStorage, then refresh from GET /v1/usage/today.
+	useEffect(() => {
+		if (isAuthenticated) {
+			setGuestQuota(null);
+			return;
+		}
+		const cached = readStoredGuestQuota();
+		if (cached) setGuestQuota(cached);
+
+		let cancelled = false;
+		(async () => {
+			try {
+				const res = await fetch(`${DEFAULT_API_URL}/v1/usage/today`, {
+					credentials: "include",
+					headers: { Accept: "application/json" },
+				});
+				if (!res.ok || cancelled) return;
+				const body = (await res.json()) as {
+					remaining?: number;
+					limit?: number;
+					used?: number;
+				};
+				if (cancelled) return;
+				applyGuestQuota(quotaFromServer(body));
+			} catch {
+				/* offline — keep cache */
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [isAuthenticated, applyGuestQuota]);
+
+	const onDailyQuota = useCallback(
+		(info: { remaining: number; limit: number; exhausted?: boolean }) => {
+			if (isAuthenticated) return;
+			applyGuestQuota(
+				quotaFromServer({
+					remaining: info.remaining,
+					limit: info.limit,
+					code: info.exhausted ? "daily_limit_exceeded" : undefined,
+				}),
 			);
-		} catch {}
-		if (next > FREE_DAILY_LIMIT) {
+			if (info.exhausted || info.remaining <= 0) {
+				setAuthPromptReason("message-limit");
+				setAuthPromptModel(undefined);
+				setAuthPromptOpen(true);
+			}
+		},
+		[applyGuestQuota, isAuthenticated],
+	);
+
+	/** Block send only when server (or cached) remaining is known-zero. */
+	const allowGuestSend = useCallback(() => {
+		if (isAuthenticated) return true;
+		const left = freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT);
+		if (guestQuota != null && left <= 0) {
 			setAuthPromptReason("message-limit");
 			setAuthPromptModel(undefined);
 			setAuthPromptOpen(true);
-			return false; // blocked
+			return false;
 		}
-		return true; // allowed
-	}, [guestMsgCount, isAuthenticated]);
+		// Do NOT optimistically increment — failed/429 sends must not
+		// burn the local counter ahead of the server.
+		return true;
+	}, [guestQuota, isAuthenticated]);
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -311,6 +367,7 @@ function ShellContent({
 		stream,
 		webSearchEnabled,
 		setSearching,
+		onDailyQuota,
 	});
 
 	// Keep sendMessageRef in sync for shortcuts + compare panel
@@ -321,13 +378,14 @@ function ShellContent({
 		sendMessageRef.current = sendMessage;
 	}, [sendMessage]);
 
-	// Gated send: checks free message limit for guests before sending
+	// Gated send: block only when remaining is known-zero (server/cache).
+	// Successful quota updates come from response headers / 429 body.
 	const gatedSend = useCallback(
 		async (prompt?: string) => {
-			if (!incrementGuestCount()) return; // blocked by free limit
+			if (!allowGuestSend()) return;
 			await sendMessage(prompt);
 		},
-		[incrementGuestCount, sendMessage],
+		[allowGuestSend, sendMessage],
 	);
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
@@ -351,12 +409,37 @@ function ShellContent({
 	}, [abortRef]);
 
 	const clearChat = useCallback(() => {
+		// Guard accidental wipes — export is one click away if needed.
+		const hasContent =
+			messages.length > 0 || compareMessages.length > 0;
+		if (hasContent) {
+			const ok =
+				typeof window !== "undefined" &&
+				window.confirm(
+					"Clear this conversation? Local history in this browser will be removed.",
+				);
+			if (!ok) return;
+		}
 		setMessages([]);
 		setCompareMessages([]);
 		setError(null);
-		localStorage.removeItem(storageKey);
+		try {
+			localStorage.removeItem(storageKey);
+			// WEB preference intentionally kept — users expect toggle to stick.
+		} catch {
+			/* private mode */
+		}
+		toast.success("Conversation cleared");
 		setTimeout(() => inputRef.current?.focus(), 100);
-	}, [storageKey, setError, setCompareMessages, setMessages]);
+	}, [
+		storageKey,
+		setError,
+		setCompareMessages,
+		setMessages,
+		messages.length,
+		compareMessages.length,
+		toast,
+	]);
 
 	// Guests stay on free OMA-AI models so example/preset clicks never
 	// switch them to a paid model that 401/402s without a key.
@@ -705,7 +788,8 @@ function ShellContent({
 										{!isAuthenticated && (
 											<span className="text-accent/80">
 												{" "}
-												· {Math.max(0, FREE_DAILY_LIMIT - guestMsgCount)} free left
+												· {freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
+												left
 											</span>
 										)}
 									</p>

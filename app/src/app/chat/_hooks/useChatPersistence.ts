@@ -115,7 +115,9 @@ export function useChatPersistence({
 				} catch (err) {
 					log.warn("Failed to save conversation to storage", err);
 				}
-			}, 2000);
+			// 400ms — short enough that a quick navigate still keeps history,
+			// long enough to batch streaming token flushes.
+			}, 400);
 		};
 		save.flush = () => {
 			if (timeoutRef.current) {

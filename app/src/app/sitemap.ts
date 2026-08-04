@@ -33,6 +33,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		// Marketing / product (public)
 		entry("/models", 0.9, "daily"),
 		...MODELS.map((model) => entry(`/models/${model.id}`, 0.8, "weekly")),
+		// Free playground (no auth required for Gonka models) — crawlable demo.
+		entry("/chat", 0.85, "weekly"),
 		entry("/pricing", 0.9, "weekly"),
 		entry("/docs", 0.9, "weekly"),
 		entry("/capabilities", 0.8, "weekly"),

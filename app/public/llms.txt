@@ -64,7 +64,7 @@ Use live model ids from `GET /v1/models` (e.g. `llama-3.3-70b`, `claude-sonnet-5
 - Anthropic-compatible (`/v1/messages` for Claude Code)
 - A2A (`.well-known/agent-card.json`)
 - A2UI v0.9.1 (interactive UI in chat)
-- MCP (Tinyfish MCP server)
+- OpenAI + Anthropic protocols (see /docs#integrations)
 
 ## Endpoints
 | Endpoint | Method | Purpose |

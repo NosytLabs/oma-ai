@@ -111,6 +111,15 @@ export interface UseStreamingChatOptions {
 	stream: boolean;
 	webSearchEnabled: boolean;
 	setSearching: Dispatch<SetStateAction<boolean>>;
+	/**
+	 * Guest free-tier quota from server (X-DailyLimit-* headers or 429 body).
+	 * Called on success and on daily_limit_exceeded — never invents client counts.
+	 */
+	onDailyQuota?: (quota: {
+		remaining: number;
+		limit: number;
+		exhausted?: boolean;
+	}) => void;
 }
 
 export interface UseStreamingChatResult {
@@ -318,6 +327,24 @@ export function useStreamingChat(
 				}
 			}
 
+			// Sync free-tier remaining from daily-limit headers on every response
+			// that carries them (success and rate-limit).
+			const headerRem = response.headers.get("X-DailyLimit-Remaining");
+			const headerLim = response.headers.get("X-DailyLimit-Limit");
+			if (headerRem != null && opts.onDailyQuota) {
+				const remaining = Number(headerRem);
+				const limit = headerLim != null ? Number(headerLim) : 20;
+				if (Number.isFinite(remaining)) {
+					opts.onDailyQuota({
+						remaining: Math.max(0, Math.floor(remaining)),
+						limit:
+							Number.isFinite(limit) && limit > 0
+								? Math.floor(limit)
+								: 20,
+					});
+				}
+			}
+
 			if (response.status === 401) {
 				throw new Error(
 					freeModel
@@ -327,9 +354,26 @@ export function useStreamingChat(
 			}
 			if (response.status === 429) {
 				const errBody = await response.json().catch(() => null);
+				const err = errBody?.error as
+					| {
+							message?: string;
+							code?: string;
+							remaining?: number;
+							limit?: number;
+					  }
+					| undefined;
+				// Server daily cap — pin UI free-left to 0 (do not keep local optimistic count).
+				if (err?.code === "daily_limit_exceeded" && opts.onDailyQuota) {
+					opts.onDailyQuota({
+						remaining:
+							typeof err.remaining === "number" ? Math.max(0, err.remaining) : 0,
+						limit:
+							typeof err.limit === "number" && err.limit > 0 ? err.limit : 20,
+						exhausted: true,
+					});
+				}
 				throw new Error(
-					errBody?.error?.message ||
-						"rate limit exceeded — please wait and try again",
+					err?.message || "rate limit exceeded — please wait and try again",
 				);
 			}
 			if (!response.ok) {
@@ -600,6 +644,7 @@ export function useStreamingChat(
 			opts.freqPenalty,
 			opts.presPenalty,
 			opts.stream,
+			opts.onDailyQuota,
 			ensureChatKeyOnce,
 		],
 	);

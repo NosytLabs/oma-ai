@@ -14,12 +14,24 @@ import { useState } from "react";
 // errors. Add new entries here when an upstream brand renames.
 // (Verified 2026-07-31: openai/zhipuai/zai/mistral/inceptionai 404 on the
 // CDN; everything else in LOGO_MAP resolves to a real brand icon.)
+// Prefer local tiles for these — SimpleIcons 404s or we want offline paint.
 const KNOWN_MISSING_SLUGS = new Set<string>([
   "zhipuai",
   "zai",
   "openai",
   "mistral",
   "inceptionai",
+  "inception",
+  "anthropic",
+  "google",
+  "meta",
+  "deepseek",
+  "moonshotai",
+  "alibabacloud",
+  "minimax",
+  "xiaomi",
+  "x",
+  "venice",
 ]);
 
 interface ModelLogoProps {
@@ -122,17 +134,27 @@ const LOGO_MAP: Record<string, string> = {
   "base": "coinbase",
 };
 
-/** Local tiles when SimpleIcons 404s (openai/mistral/zai/mercury). */
+/** Local tiles — preferred over CDN for reliability and no CORS/CDN flakiness. */
 const LOCAL_PROVIDER_ICONS: Record<string, string> = {
   openai: "/logos/providers/openai.svg",
+  anthropic: "/logos/providers/anthropic.svg",
+  google: "/logos/providers/google.svg",
+  meta: "/logos/providers/meta.svg",
+  deepseek: "/logos/providers/deepseek.svg",
   mistral: "/logos/providers/mistral.svg",
+  x: "/logos/providers/xai.svg",
+  xai: "/logos/providers/xai.svg",
+  moonshotai: "/logos/providers/moonshot.svg",
+  alibabacloud: "/logos/providers/alibaba.svg",
+  minimax: "/logos/providers/minimax.svg",
+  xiaomi: "/logos/providers/xiaomi.svg",
   zhipuai: "/logos/providers/zai.svg",
   zai: "/logos/providers/zai.svg",
   inception: "/logos/providers/mercury.svg",
   inceptionai: "/logos/providers/mercury.svg",
   mercury: "/logos/providers/mercury.svg",
+  venice: "/logos/providers/venice.svg",
 };
-
 // Fallback colors for known providers (used by SimpleIcons CDN tinting)
 const PROVIDER_COLORS: Record<string, string> = {
   openai: "10a37f",
@@ -168,6 +190,7 @@ function getProviderFromModelId(modelId: string): string {
   if (lower.includes("xiaomi") || lower.includes("mimo")) return "xiaomi";
   if (lower.includes("glm") || lower.includes("zhipu")) return "zhipuai";
   if (lower.includes("mercury")) return "inception";
+  if (lower.includes("venice")) return "venice";
   return "";
 }
 

@@ -707,8 +707,8 @@ function ModelsPageInner() {
                 </h2>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-text-muted">
-                    <span>${formatPriceRange(priceRange[0])}</span>
-                    <span>${formatPriceRange(priceRange[1])}</span>
+                    <span>{formatPriceRange(priceRange[0])}</span>
+                    <span>{formatPriceRange(priceRange[1])}</span>
                   </div>
                   <div className="relative h-8">
                     <input
@@ -755,8 +755,14 @@ function ModelsPageInner() {
           <div className="lg:col-span-9">
             {groupedModels.length > 0 ? (
               <div className="space-y-10">
-                {groupedModels.map((group, gi) => (
-                  <InViewFade key={group.tier} delay={Math.min(gi * 0.06, 0.3)}>
+                {groupedModels.map((group) => (
+                  <InViewFade
+                    key={group.tier}
+                    // Catalog is the primary content — never start at opacity:0
+                    // (visual audits + above-the-fold users saw a blank grid).
+                    eager
+                    delay={0}
+                  >
                     <section>
                     <div className="flex items-center gap-2 mb-4">
                       {group.icon && (
@@ -957,8 +963,9 @@ function formatContextRange(tokens: number): string {
   return `${k}K`;
 }
 
-function formatPriceRange(price: number): string {
-  if (!Number.isFinite(price) || price < 0) return "0.00";
+/** Format a $/1M price for the dual-thumb filter labels (includes `$`). */
+export function formatPriceRange(price: number): string {
+  if (!Number.isFinite(price) || price <= 0) return "$0.00";
   if (price < 0.01) return `$${price.toFixed(4)}`;
   if (price < 1) return `$${price.toFixed(3)}`;
   return `$${price.toFixed(2)}`;

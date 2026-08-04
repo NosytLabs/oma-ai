@@ -71,11 +71,40 @@ export OPENAI_MODEL="${model}"
 
 # Then run OpenCode as usual — it will hit OMA for chat completions.`}
 				/>
-				<p className="mt-3 text-xs text-text-muted">
+				<p className="mt-3 mb-3 text-xs text-text-muted">
 					If your OpenCode build uses{" "}
 					<code className="font-mono">OPENAI_API_BASE</code> instead of{" "}
 					<code className="font-mono">OPENAI_BASE_URL</code>, set that to the same{" "}
 					<code className="font-mono">{baseUrl}</code> value.
+				</p>
+				<p className="mb-2 text-sm text-text-secondary font-medium">
+					Project config (optional)
+				</p>
+				<CodeBlock
+					lang="json"
+					code={`// opencode.json / provider settings (shape varies by OpenCode version)
+{
+  "provider": {
+    "oma": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OMA",
+      "options": {
+        "baseURL": "${baseUrl}",
+        "apiKey": "{env:OMA_API_KEY}"
+      },
+      "models": {
+        "${model}": { "name": "${model}" }
+      }
+    }
+  }
+}`}
+				/>
+				<p className="mt-2 text-xs text-text-muted">
+					Create the key at{" "}
+					<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
+						/dashboard → API keys
+					</Link>
+					. Never commit <code className="font-mono">oma_sk_…</code> to git — use env vars.
 				</p>
 			</div>
 
@@ -101,7 +130,7 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 				/>
 				<CodeBlock
 					lang="bash"
-					code={`# One-shot smoke test (Messages API)
+					code={`# One-shot smoke test (Messages API — x-api-key style)
 curl https://api.oma-ai.com/v1/messages \\
   -H "x-api-key: oma_sk_your_key_here" \\
   -H "anthropic-version: 2023-06-01" \\
@@ -110,12 +139,19 @@ curl https://api.oma-ai.com/v1/messages \\
     "model": "claude-sonnet-5",
     "max_tokens": 64,
     "messages": [{"role": "user", "content": "ping"}]
-  }'`}
+  }'
+
+# Same call with Bearer (OpenAI-style auth also accepted)
+curl https://api.oma-ai.com/v1/messages \\
+  -H "Authorization: Bearer oma_sk_your_key_here" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
 				/>
 				<p className="mt-3 text-xs text-text-muted">
-					Bearer auth also works:{" "}
-					<code className="font-mono">Authorization: Bearer oma_sk_…</code>. Prefer one
-					auth style consistently in your tooling.
+					Prefer one auth style consistently. Streaming: set{" "}
+					<code className="font-mono">stream: true</code> — OMA returns Anthropic-shaped SSE.
+					List models: <code className="font-mono">GET /v1/models</code> with the same key.
 				</p>
 			</div>
 

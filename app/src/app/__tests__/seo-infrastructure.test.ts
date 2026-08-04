@@ -44,9 +44,11 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 			"/pricing",
 			"/docs",
 			"/models",
+			"/chat",
 			"/compare",
 			"/about",
 			"/contact",
+			"/getting-started",
 		]) {
 			expect(urls).toContain(required);
 		}
@@ -55,7 +57,7 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("excludes auth-gated product surfaces", () => {
 		const result = sitemap();
 		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
-		// /chat is public free playground — may appear in sitemap.
+		// /chat is public free playground and is listed.
 		// image/video legacy paths redirect and must not be listed.
 		for (const gated of [
 			"/deposit",

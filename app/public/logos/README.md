@@ -32,7 +32,7 @@ Do not redraw it, close the ring, recolor it, or place it on a busy background.
 | `oma-logo.svg` | Horizontal lockup |
 | `oma-wordmark.svg` / `.png` | Wordmark + tagline |
 | `oma-brand-card.svg` / `.png` | Social / press card |
-| `*-logo.svg` | Third-party chain logos (deposit UI) |
+| `providers/*.svg` | Model provider tiles (`ModelLogo` fallbacks) |
 
 Favicons live one level up in `app/public/` (`favicon.svg`, `favicon-*.png`, `apple-touch-icon.png`).
 
