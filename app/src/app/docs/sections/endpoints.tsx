@@ -30,11 +30,11 @@ export function EndpointsSection() {
 						<button
 							type="button"
 							onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
-							className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface/80"
+							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-surface/80"
 						>
-							<div className="flex items-center gap-3">
+							<div className="flex min-w-0 flex-1 items-center gap-3">
 								<span
-									className={`rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
+									className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
 										ep.method === "GET"
 											? "bg-info/10 text-info"
 											: "bg-accent/10 text-accent"
@@ -42,12 +42,23 @@ export function EndpointsSection() {
 								>
 									{ep.method}
 								</span>
-								<code className="font-mono text-sm text-text">{ep.path}</code>
+								<div className="min-w-0">
+									<code className="font-mono text-sm text-text">{ep.path}</code>
+									<p className="truncate text-xs text-text-muted mt-0.5">
+										{ep.title}
+										{ep.path === "/v1/search" ? " · DuckDuckGo" : ""}
+									</p>
+								</div>
 							</div>
-							<div className="flex items-center gap-2">
-								{ep.method === "POST" && (
+							<div className="flex shrink-0 items-center gap-2">
+								{ep.auth && !ep.auth.toLowerCase().includes("optional") && (
 									<span className="flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-0.5 text-xs text-text-muted border border-border">
 										<Lock className="h-3 w-3" /> Auth
+									</span>
+								)}
+								{ep.auth && ep.auth.toLowerCase().includes("optional") && (
+									<span className="hidden sm:inline rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs text-text-muted">
+										Optional auth
 									</span>
 								)}
 								<ChevronRight

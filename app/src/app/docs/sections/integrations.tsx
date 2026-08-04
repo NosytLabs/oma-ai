@@ -48,6 +48,14 @@ export function IntegrationsSection() {
 						Claude Code / Anthropic SDK: also use{" "}
 						<code className="font-mono text-xs">POST /v1/messages</code>
 					</li>
+					<li>
+						Playground{" "}
+						<Link href="/chat" className="text-accent underline-offset-2 hover:underline">
+							WEB search
+						</Link>
+						: DuckDuckGo via{" "}
+						<code className="font-mono text-xs">GET /v1/search</code> (no extra key)
+					</li>
 				</ul>
 			</div>
 

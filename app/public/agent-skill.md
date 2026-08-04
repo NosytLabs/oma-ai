@@ -80,11 +80,27 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 export OPENAI_API_KEY="oma_sk_…"
 export OPENAI_BASE_URL="https://api.oma-ai.com/v1"
 
-# Anthropic-compatible (Claude Code)
+# Anthropic-compatible (Claude Code / Anthropic SDK)
 export ANTHROPIC_API_KEY="oma_sk_…"
 export ANTHROPIC_BASE_URL="https://api.oma-ai.com"   # client appends /v1/messages
 ```
 
+```bash
+# Smoke: OpenAI-shaped chat
+curl https://api.oma-ai.com/v1/chat/completions \
+  -H "Authorization: Bearer oma_sk_…" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"ping"}],"max_tokens":8}'
+
+# Smoke: Anthropic-shaped messages (x-api-key or Bearer)
+curl https://api.oma-ai.com/v1/messages \
+  -H "x-api-key: oma_sk_…" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'
+```
+
+Playground WEB search (DuckDuckGo, optional auth): `GET /v1/search?query=…`  
 Full IDE/agent recipes: https://oma-ai.com/docs#integrations  
 OpenAPI: https://api.oma-ai.com/openapi.json
 
