@@ -31,7 +31,8 @@ const response = await client.chat.completions.create({
   ],
 });
 
-console.log(response.choices[0].message.content);
+// TODO: remove debug logging before shipping
+  // console.log(response.choices[0].message.content);
 // → billed in USDC, settled on Base, no subscription`;
 }
 

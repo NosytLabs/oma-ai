@@ -780,4 +780,4 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // defaultCatalog() (VENICE_MODELS.length + GONKA_MODELS.length).
 // The SSR fallback catalog (`MODELS`) below mirrors the full curated
 // catalog for build-time metadata.
-export const MODEL_COUNT = 23;
+export const MODEL_COUNT = 18;

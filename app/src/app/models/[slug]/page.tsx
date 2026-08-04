@@ -226,7 +226,8 @@ const response = await client.chat.completions.create({
     temperature: 0.7
 });
 
-console.log(response.choices[0].message.content);`;
+// TODO: remove debug logging before shipping
+// console.log(response.choices[0].message.content);`;
 
   return (
     <div className="min-h-screen bg-void">
@@ -496,7 +497,8 @@ const response = await client.chat.completions.create({
     temperature: 0.7
 });
 
-console.log(response.choices[0].message.content);`;
+// TODO: remove debug logging before shipping
+// console.log(response.choices[0].message.content);`;
 
   return (
     <div className="min-h-screen bg-void">
