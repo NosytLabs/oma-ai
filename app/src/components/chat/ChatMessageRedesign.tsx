@@ -30,6 +30,10 @@ import remarkGfm from "remark-gfm";
 import { copyToClipboard } from "@/lib/clipboard";
 import { estimateTokens } from "@/lib/text";
 import {
+	isWaitingForFirstToken,
+	shouldExpandReasoning,
+} from "./message-stream-ui";
+import {
 	FALLBACK_MODELS,
 	type Message,
 	type ModelOption,
@@ -129,13 +133,21 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 
 	const isAssistant = msg.role === "assistant";
 	const isStreaming = loading && isAssistant;
-	const isWaitingForFirstToken = isStreaming && msg.content.length === 0;
-	const isActivelyStreaming = isStreaming && msg.content.length > 0;
-
 	const hasReasoning =
 		!isUser && !!msg.reasoning && msg.reasoning.trim().length > 0;
-	const showReasoningExpanded =
-		reasoningExpanded || (isStreaming && !msg.content);
+	const waitingForFirstToken = isWaitingForFirstToken({
+		streaming: isStreaming,
+		content: msg.content,
+		reasoning: msg.reasoning,
+	});
+	const isActivelyStreaming = isStreaming && msg.content.length > 0;
+
+	const showReasoningExpanded = shouldExpandReasoning({
+		streaming: isStreaming,
+		content: msg.content,
+		reasoning: msg.reasoning,
+		userExpanded: reasoningExpanded,
+	});
 
 	return (
 		<m.div
@@ -329,7 +341,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 									aria-hidden="true"
 								/>
 							)}
-							{isWaitingForFirstToken && (
+							{waitingForFirstToken && (
 								<span className="inline-flex items-center gap-2 text-text-muted" role="status">
 									{prefersReducedMotion ? (
 										<span

@@ -125,4 +125,57 @@ describe("H2 — extractClientIp ignores x-forwarded-for when TRUSTED_PROXY_IPS 
     expect(ips.size).toBe(1);
     expect([...ips][0]).toBe("unknown");
   });
+
+  it("uses the TCP peer address when headers are absent (direct Node connection)", () => {
+    // Regression: without socket fallback every direct guest shared
+    // daily:ip:unknown — one exhausted free tier for the whole host.
+    const c = {
+      req: { header: () => undefined },
+      env: {
+        incoming: {
+          socket: {
+            remoteAddress: "203.0.113.50",
+            remotePort: 54321,
+            remoteFamily: "IPv4",
+          },
+        },
+      },
+    };
+    expect(extractClientIp(c as never)).toBe("203.0.113.50");
+  });
+
+  it("strips IPv6-mapped IPv4 prefixes from the socket address", () => {
+    const c = {
+      req: { header: () => undefined },
+      env: {
+        incoming: {
+          socket: {
+            remoteAddress: "::ffff:127.0.0.1",
+            remotePort: 1,
+            remoteFamily: "IPv6",
+          },
+        },
+      },
+    };
+    expect(extractClientIp(c as never)).toBe("127.0.0.1");
+  });
+
+  it("prefers x-real-ip over the socket peer when both exist", () => {
+    const c = {
+      req: {
+        header: (name: string) =>
+          name.toLowerCase() === "x-real-ip" ? "198.51.100.9" : undefined,
+      },
+      env: {
+        incoming: {
+          socket: {
+            remoteAddress: "203.0.113.50",
+            remotePort: 1,
+            remoteFamily: "IPv4",
+          },
+        },
+      },
+    };
+    expect(extractClientIp(c as never)).toBe("198.51.100.9");
+  });
 });

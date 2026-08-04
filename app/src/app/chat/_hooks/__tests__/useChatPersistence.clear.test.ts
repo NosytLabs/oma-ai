@@ -28,23 +28,35 @@ function useHarness() {
 	return { messages, setMessages };
 }
 
+function storage(): Storage {
+	// Prefer window (jsdom) then global — Node 26 bare `localStorage` can be a
+	// broken host getter unless setup.ts has rebound it.
+	const s =
+		(typeof window !== "undefined" ? window.localStorage : undefined) ??
+		globalThis.localStorage;
+	if (!s || typeof s.clear !== "function") {
+		throw new Error("localStorage is not available in this test environment");
+	}
+	return s;
+}
+
 describe("useChatPersistence clear path", () => {
 	beforeEach(() => {
-		localStorage.clear();
+		storage().clear();
 	});
 	afterEach(() => {
-		localStorage.clear();
+		storage().clear();
 	});
 
 	it("removes conversation key when messages become empty", () => {
 		// Seed storage as if a prior session wrote a thread
-		localStorage.setItem(
+		storage().setItem(
 			KEY,
 			JSON.stringify([
 				{ role: "user", content: "hello", timestamp: Date.now() },
 			]),
 		);
-		expect(localStorage.getItem(KEY)).toBeTruthy();
+		expect(storage().getItem(KEY)).toBeTruthy();
 
 		const { result } = renderHook(() => useHarness());
 
@@ -53,6 +65,6 @@ describe("useChatPersistence clear path", () => {
 			result.current.setMessages([]);
 		});
 
-		expect(localStorage.getItem(KEY)).toBeNull();
+		expect(storage().getItem(KEY)).toBeNull();
 	});
 });

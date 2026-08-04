@@ -634,8 +634,10 @@ export function useStreamingChat(
 						return updated;
 					});
 				}
-		},
-		[
+		// "opts" is intentionally excluded: the parent rebuilds a new options
+		// object each render. List primitive fields + ensureChatKeyOnce only.
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- opts object identity
+		}, [
 			opts.systemPrompt,
 			opts.temperature,
 			opts.topP,

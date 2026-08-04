@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import type { OmaEnv } from "../../types.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
@@ -32,6 +33,25 @@ function isTrustedProxy(ip: string): boolean {
   return TRUSTED_PROXIES.has(ip);
 }
 
+/**
+ * Socket remote address for direct Node connections (no reverse proxy).
+ * Prefer headers only when a trusted proxy (or x-real-ip) is present —
+ * never invent an IP from client-spoofable XFF alone.
+ */
+function socketRemoteAddress(c: Context<OmaEnv>): string | null {
+  try {
+    // getConnInfo throws if c.env.incoming is missing (app.request in tests).
+    const addr = getConnInfo(c as never)?.remote?.address;
+    if (typeof addr === "string" && addr.length > 0) {
+      // Strip IPv6-mapped IPv4 prefix so redis keys stay stable.
+      return addr.startsWith("::ffff:") ? addr.slice(7) : addr;
+    }
+  } catch {
+    /* not a Node request (app.request in tests, edge, etc.) */
+  }
+  return null;
+}
+
 export function extractClientIp(c: Context<OmaEnv>): string {
   const xRealIp = c.req.header("x-real-ip");
 
@@ -42,7 +62,10 @@ export function extractClientIp(c: Context<OmaEnv>): string {
   // different bucket). Operators who deploy behind a reverse proxy MUST set
   // TRUSTED_PROXY_IPS to the proxy's egress IPs to enable header parsing.
   if (TRUSTED_PROXIES.size === 0) {
-    return xRealIp || "unknown";
+    // Prefer proxy-set x-real-ip, then the real TCP peer, then "unknown".
+    // Collapsing all direct traffic to "unknown" made every guest share one
+    // free-tier daily bucket (local dev + any direct-to-Node deploy).
+    return xRealIp || socketRemoteAddress(c) || "unknown";
   }
 
   const xForwardedFor = c.req.header("x-forwarded-for");
@@ -57,11 +80,11 @@ export function extractClientIp(c: Context<OmaEnv>): string {
       if (isTrustedProxy(lastIp)) {
         return firstIp;
       }
-      // Last IP is not a trusted proxy — fall through to x-real-ip.
+      // Last IP is not a trusted proxy — fall through to x-real-ip / socket.
     }
   }
 
-  return xRealIp || "unknown";
+  return xRealIp || socketRemoteAddress(c) || "unknown";
 }
 
 // Helper to get client IP from proxy headers safely

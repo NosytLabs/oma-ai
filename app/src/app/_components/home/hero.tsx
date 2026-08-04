@@ -79,9 +79,11 @@ export function Hero() {
 							{...reveal(1, entrance)}
 							className="h1-hero max-w-full text-text-bright font-extrabold text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight"
 						>
-							<span className="block">One OpenAI-compatible API.</span>
+							{/* Trailing spaces keep screen-reader text from concatenating
+							    block lines into "API.22 curated" / "models.Credits". */}
+							<span className="block">One OpenAI-compatible API. </span>
 							<span className="block italic-accent text-accent text-3xl sm:text-4xl lg:text-[2.5rem] font-semibold mt-1 sm:mt-2">
-								{MODEL_COUNT} curated models.
+								{MODEL_COUNT} curated models.{" "}
 							</span>
 							<span className="block">Credits, USDC, or x402.</span>
 						</m.h1>

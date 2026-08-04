@@ -7,8 +7,8 @@ import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } 
 
 export function AvailableModelsSection() {
 	// Static fallback renders immediately (SSR-safe); the live catalog
-	// (23 curated models) replaces it once /v1/models responds. Without this the
-	// docs advertised the wrong count over a 7-row table.
+	// (MODEL_COUNT curated models) replaces it once /v1/models responds.
+	// Without this the docs advertised the wrong count over a 7-row table.
 	const [models, setModels] = useState(MODELS);
 	useEffect(() => {
 		let cancelled = false;
