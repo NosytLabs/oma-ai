@@ -134,17 +134,23 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
   if (authHeader && authHeader.startsWith("Bearer ")) {
     rawKey = authHeader.slice(7);
   } else {
-    const cookieHeader = c.req.header("Cookie") || "";
-    const match = cookieHeader.match(
-      /(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/,
-    );
-    if (match) rawKey = decodeURIComponent(match[1]);
+    // Anthropic SDK / Claude Code send `x-api-key: sk-…`
+    const xApiKey = c.req.header("x-api-key") ?? c.req.header("X-Api-Key");
+    if (xApiKey?.trim()) {
+      rawKey = xApiKey.trim();
+    } else {
+      const cookieHeader = c.req.header("Cookie") || "";
+      const match = cookieHeader.match(
+        /(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/,
+      );
+      if (match) rawKey = decodeURIComponent(match[1]);
+    }
   }
   if (!rawKey) {
     return c.json(
       {
         error: {
-          message: "Missing or invalid Authorization header",
+          message: "Missing or invalid Authorization header (Bearer or x-api-key)",
           type: "authentication_error",
         },
       },

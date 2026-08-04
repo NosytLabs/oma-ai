@@ -229,9 +229,9 @@ export const FALLBACK_MAP: Record<string, string[]> = {
   "qwen3-235b-a22b-instruct-2507": ["deepseek-v4-flash", "minimax-m2.7"],
   "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
 
-  // Gonka Free Models
-  "minimax-m2.7": ["kimi-k2.6", "deepseek-v4-flash"],
-  "kimi-k2.6": ["minimax-m2.7", "deepseek-v4-flash"],
+  // Gonka Free Models (OpenBroker) — prefer gonka peers first, then budget Venice
+  "minimax-m2.7": ["kimi-k2.6", "deepseek-v4-flash", "mistral-small-2603"],
+  "kimi-k2.6": ["minimax-m2.7", "deepseek-v4-flash", "mistral-small-2603"],
 };
 
 /**

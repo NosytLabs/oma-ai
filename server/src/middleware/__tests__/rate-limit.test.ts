@@ -48,13 +48,14 @@ describe('rate-limit middleware', () => {
 
   describe('MODEL_LIMITS', () => {
     it('should have correct structure for known models', () => {
-      expect(MODEL_LIMITS['deepseek-v3.2']).toEqual({ rpm: 60, tpm: 120000 })
+      expect(MODEL_LIMITS['deepseek-v4-flash']).toEqual({ rpm: 60, tpm: 120000 })
       expect(MODEL_LIMITS['llama-3.3-70b']).toEqual({ rpm: 60, tpm: 120000 })
+      expect(MODEL_LIMITS['minimax-m2.7']).toEqual({ rpm: 60, tpm: 120000 })
       expect(MODEL_LIMITS['llama-3.2-3b']).toEqual({ rpm: 120, tpm: 240000 })
     })
 
     it('should have reasonable limits for different model tiers', () => {
-      const standardModels = ['deepseek-v3.2', 'llama-3.3-70b']
+      const standardModels = ['deepseek-v4-flash', 'llama-3.3-70b', 'minimax-m2.7']
       const fastModels = ['llama-3.2-3b']
 
       standardModels.forEach(model => {

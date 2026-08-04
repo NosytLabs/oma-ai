@@ -20,8 +20,11 @@ if (TRUSTED_PROXIES.size === 0 && config.NODE_ENV === "production") {
 // `getModelLimits()` is called per-model; any ID not listed here falls through
 // to the default limits in the rate-limit middleware.
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
-  "deepseek-v3.2": { rpm: 60, tpm: 120000 },
+  // Curated catalog (standard tier)
   "llama-3.3-70b": { rpm: 60, tpm: 120000 },
+  "deepseek-v4-flash": { rpm: 60, tpm: 120000 },
+  "minimax-m2.7": { rpm: 60, tpm: 120000 },
+  // Legacy/fast row (not always public; keep for override tests)
   "llama-3.2-3b": { rpm: 120, tpm: 240000 },
 };
 

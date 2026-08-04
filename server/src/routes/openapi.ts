@@ -149,6 +149,51 @@ const spec = {
 				},
 			},
 		},
+		"/v1/messages": {
+			post: {
+				summary: "Anthropic-compatible Messages API (Claude Code, Anthropic SDKs)",
+				description:
+					"Accepts Anthropic Messages request shape; routes through the same OMA catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["model", "messages", "max_tokens"],
+								properties: {
+									model: { type: "string", description: "OMA catalog model id" },
+									messages: {
+										type: "array",
+										items: {
+											type: "object",
+											properties: {
+												role: { type: "string", enum: ["user", "assistant"] },
+												content: { type: ["string", "array"] },
+											},
+										},
+									},
+									system: { type: ["string", "array"] },
+									max_tokens: { type: "integer" },
+									temperature: { type: "number" },
+									top_p: { type: "number" },
+									stream: { type: "boolean" },
+									tools: { type: "array" },
+									tool_choice: { type: ["string", "object"] },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Anthropic-shaped message (or SSE when stream=true)" },
+					"401": { description: "Missing or invalid API key" },
+					"402": { description: "Insufficient credit balance" },
+					"404": { description: "Unknown model id" },
+					"502": { description: "Upstream provider error" },
+				},
+			},
+		},
 		"/v1/balance": {
 			get: {
 				summary: "Current credit balance (cents)",
@@ -215,6 +260,61 @@ const spec = {
 				responses: { "200": { description: "Counter" } },
 			},
 		},
+		"/v1/images/generations": {
+			post: {
+				summary: "Image generation (Venice-backed)",
+				description: "OpenAI-style image generation. Auth: Bearer oma_sk_… or x402.",
+				responses: {
+					"200": { description: "Image URL(s) or b64 payloads" },
+					"401": { description: "Auth required" },
+					"402": { description: "Insufficient credits" },
+				},
+			},
+		},
+		"/v1/videos/generations": {
+			post: {
+				summary: "Async video generation",
+				description: "Queues a video job; poll GET /v1/videos/retrieve.",
+				responses: {
+					"200": { description: "Job id / quote" },
+					"401": { description: "Auth required" },
+					"402": { description: "Insufficient credits" },
+				},
+			},
+		},
+		"/v1/videos/retrieve": {
+			get: {
+				summary: "Poll async video job",
+				parameters: [
+					{ in: "query", name: "id", required: true, schema: { type: "string" } },
+				],
+				responses: {
+					"200": { description: "Job status + output when ready" },
+					"404": { description: "Unknown job" },
+				},
+			},
+		},
+		"/v1/search": {
+			get: {
+				summary: "Web search (chat playground grounding)",
+				description:
+					"Optional auth. TinyFish when configured; otherwise DuckDuckGo HTML / Instant Answer. Always returns { query, results } (empty on total failure).",
+				parameters: [
+					{
+						in: "query",
+						name: "query",
+						required: true,
+						schema: { type: "string", minLength: 1, maxLength: 500 },
+					},
+				],
+				security: [],
+				responses: {
+					"200": {
+						description: "Search results (may be empty)",
+					},
+				},
+			},
+		},
 		"/health": {
 			get: {
 				summary: "Liveness probe",
@@ -227,3 +327,6 @@ const spec = {
 
 openapiRoutes.get("/openapi.json", (c) => c.json(spec));
 openapiRoutes.get("/openapi", (c) => c.json(spec));
+// Common alternate paths used by SDK generators / agent tooling
+openapiRoutes.get("/v1/openapi.json", (c) => c.json(spec));
+openapiRoutes.get("/v1/openapi", (c) => c.json(spec));
