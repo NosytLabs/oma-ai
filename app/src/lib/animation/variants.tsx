@@ -66,12 +66,6 @@ export const fadeUp: Variants = {
 	},
 };
 
-export const scaleInSpring: Variants = {
-	hidden: { opacity: 0, scale: 0.92 },
-	show: { opacity: 1, scale: 1, transition: EASE_SPRING_SOFT },
-};
-
-/** Blur-in for headlines — adds a premium focus effect. */
 export const blurIn: Variants = {
 	hidden: { opacity: 0, y: 16, filter: "blur(8px)" },
 	show: {

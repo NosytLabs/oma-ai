@@ -107,7 +107,7 @@ export function hasWallet(): boolean {
 }
 
 /** Read the connected chainId without prompting. */
-export async function readChainId(): Promise<number | null> {
+async function readChainId(): Promise<number | null> {
 	const eth = getEthereum();
 	if (!eth) return null;
 	try {

@@ -31,19 +31,3 @@ export const springs: Record<SpringName, { type: "spring"; stiffness: number; da
 	// gentle reveal — soft settle for content entrances (EASE_SPRING_SOFT)
 	soft: { type: "spring", stiffness: 220, damping: 26, mass: 1.0 },
 };
-
-/**
- * One-shot CSS cubic-bezier approximations for cases where you can't
- * use framer-motion (raw CSS, third-party components). These mirror
- * the most common kinetics presets.
- */
-export const easings = {
-	spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-	springTight: "cubic-bezier(0.34, 1.4, 0.64, 1)",
-	springSoft: "cubic-bezier(0.18, 1.25, 0.4, 1)",
-	easeOut: "cubic-bezier(0.16, 1, 0.3, 1)",
-} as const;
-
-export function spring(name: SpringName) {
-	return springs[name];
-}
