@@ -95,14 +95,31 @@ export function useAuth(): UseAuthResult {
 
 	const [hasMounted, setHasMounted] = useState(false);
 	useEffect(() => setHasMounted(true), []);
-	const isReady = hasMounted && !session.isPending;
+
+	// If Better Auth's get-session hangs (proxy 502 / dead backend), do not
+	// leave gated pages on an infinite spinner. After SESSION_READY_TIMEOUT_MS
+	// treat the session as resolved (unauthenticated) so sign-in gates render.
+	const SESSION_READY_TIMEOUT_MS = 5_000;
+	const [pendingTimedOut, setPendingTimedOut] = useState(false);
+	useEffect(() => {
+		if (!session.isPending) {
+			setPendingTimedOut(false);
+			return;
+		}
+		const id = window.setTimeout(() => {
+			setPendingTimedOut(true);
+		}, SESSION_READY_TIMEOUT_MS);
+		return () => window.clearTimeout(id);
+	}, [session.isPending]);
+
+	const isReady = hasMounted && (!session.isPending || pendingTimedOut);
 
 	return {
 		data,
 		user,
 		isAuthenticated: !!user || demoActive,
 		isDemo: demoActive && !user,
-		isPending: session.isPending,
+		isPending: session.isPending && !pendingTimedOut,
 		isReady,
 		error: session.error as Error | null,
 		evmAddress,

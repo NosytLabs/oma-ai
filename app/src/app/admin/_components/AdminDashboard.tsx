@@ -123,7 +123,14 @@ export function AdminDashboard() {
 	const refreshAll = useCallback(async () => {
 		setLoading(true);
 		try {
-			const sessionData = await authClient.getSession();
+			// Bound getSession so a hung auth proxy never leaves the page on
+			// "Loading admin panel…" forever.
+			const sessionData = await Promise.race([
+				authClient.getSession(),
+				new Promise<null>((resolve) => {
+					window.setTimeout(() => resolve(null), 5_000);
+				}),
+			]);
 			const userRole =
 				((sessionData?.data?.user as { role?: string } | undefined)?.role ??
 					null) as string | null;
@@ -487,8 +494,13 @@ const handleAuditPrev = () => {
 
 	if (isAdmin === null) {
 		return (
-			<div className="flex items-center gap-2 text-text-muted">
-				<Loader2 className="h-4 w-4 animate-spin" /> Loading admin panel…
+			<div
+				className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-10 text-text-secondary sm:px-6"
+				aria-busy="true"
+				aria-live="polite"
+			>
+				<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+				<span>Loading admin panel…</span>
 			</div>
 		);
 	}

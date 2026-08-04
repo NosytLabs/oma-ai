@@ -86,10 +86,23 @@ vi.mock("img-fx", () => ({
 		React.createElement("div", { ...props, "data-testid": "mock-img-fx" }),
 }));
 
-// Mock border-beam (uses window.matchMedia — not available in jsdom)
+// Mock border-beam (uses window.matchMedia — not available in jsdom).
+// Strip non-DOM props so React does not warn about colorVariant/active/etc.
 vi.mock("border-beam", () => ({
-	BorderBeam: (props: Record<string, unknown>) =>
-		React.createElement("div", { ...props, "data-testid": "mock-border-beam" }),
+	BorderBeam: ({
+		children,
+		className,
+		..._rest
+	}: {
+		children?: React.ReactNode;
+		className?: string;
+		[key: string]: unknown;
+	}) =>
+		React.createElement(
+			"div",
+			{ className, "data-testid": "mock-border-beam" },
+			children,
+		),
 }));
 
 // Polyfill window.matchMedia for jsdom (required by border-beam, framer-motion)

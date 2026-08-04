@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Fingerprint, Loader2, LogOut, Monitor } from "lucide-react";
+import { Clock, Fingerprint, Loader2, LogOut, Monitor, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Session } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
@@ -9,6 +9,10 @@ interface SessionsSectionProps {
 	sessions: Session[];
 	/** Ends the current browser session (parent signOut). */
 	onSignOutCurrent?: () => Promise<void> | void;
+	/** Revoke a remote session by id (parent invalidates the list). */
+	onRevokeSession?: (id: string) => Promise<void> | void;
+	/** Revoke every session except the current device. */
+	onRevokeOthers?: () => Promise<void> | void;
 }
 
 function getDeviceName(userAgent: string | null): string {
@@ -27,8 +31,14 @@ function getDeviceName(userAgent: string | null): string {
 export function SessionsSection({
 	sessions,
 	onSignOutCurrent,
+	onRevokeSession,
+	onRevokeOthers,
 }: SessionsSectionProps) {
 	const [signingOut, setSigningOut] = useState(false);
+	const [revokingId, setRevokingId] = useState<string | null>(null);
+	const [revokingOthers, setRevokingOthers] = useState(false);
+
+	const otherSessions = sessions.filter((s) => !s.isCurrent);
 
 	const handleSignOut = async () => {
 		if (!onSignOutCurrent || signingOut) return;
@@ -40,15 +50,54 @@ export function SessionsSection({
 		}
 	};
 
+	const handleRevoke = async (id: string) => {
+		if (!onRevokeSession || revokingId) return;
+		setRevokingId(id);
+		try {
+			await onRevokeSession(id);
+		} finally {
+			setRevokingId(null);
+		}
+	};
+
+	const handleRevokeOthers = async () => {
+		if (!onRevokeOthers || revokingOthers || otherSessions.length === 0) return;
+		setRevokingOthers(true);
+		try {
+			await onRevokeOthers();
+		} finally {
+			setRevokingOthers(false);
+		}
+	};
+
 	return (
 		<div>
-			<div className="mb-1">
-				<h2 className="text-lg font-semibold text-text-bright">
-					Active sessions
-				</h2>
-				<p className="mt-1 text-sm text-text-muted">
-					Devices that are currently signed in to your account.
-				</p>
+			<div className="mb-1 flex flex-wrap items-end justify-between gap-3">
+				<div>
+					<h2 className="text-lg font-semibold text-text-bright">
+						Active sessions
+					</h2>
+					<p className="mt-1 text-sm text-text-muted">
+						Devices that are currently signed in to your account.
+					</p>
+				</div>
+				{otherSessions.length > 0 && onRevokeOthers && (
+					<button
+						type="button"
+						onClick={handleRevokeOthers}
+						disabled={revokingOthers}
+						className="inline-flex items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-secondary transition-[border-color,color,opacity] duration-150 ease-out hover:border-error/40 hover:text-error active:scale-[0.97] disabled:opacity-50"
+					>
+						{revokingOthers ? (
+							<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+						) : (
+							<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+						)}
+						{revokingOthers
+							? "Revoking…"
+							: `Sign out ${otherSessions.length} other device${otherSessions.length === 1 ? "" : "s"}`}
+					</button>
+				)}
 			</div>
 
 			<div className="mt-6 space-y-2">
@@ -98,7 +147,7 @@ export function SessionsSection({
 									</div>
 								</div>
 							</div>
-							{session.isCurrent && onSignOutCurrent && (
+							{session.isCurrent && onSignOutCurrent ? (
 								<button
 									type="button"
 									onClick={handleSignOut}
@@ -112,14 +161,29 @@ export function SessionsSection({
 									)}
 									{signingOut ? "Signing out…" : "Sign out"}
 								</button>
-							)}
+							) : !session.isCurrent && onRevokeSession ? (
+								<button
+									type="button"
+									onClick={() => handleRevoke(session.id)}
+									disabled={revokingId === session.id}
+									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-[border-color,color,background-color,opacity] duration-150 ease-out hover:border-error/40 hover:text-error active:scale-[0.97] disabled:opacity-50"
+								>
+									{revokingId === session.id ? (
+										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+									) : (
+										<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+									)}
+									{revokingId === session.id ? "Revoking…" : "Revoke"}
+								</button>
+							) : null}
 						</div>
 					))
 				)}
 			</div>
 			<p className="mt-4 text-[11px] leading-relaxed text-text-muted">
-				Remote session revoke is not available yet. Use Sign out on this device
-				to end the current browser session.
+				Revoking a remote session signs that device out immediately. Use{" "}
+				<span className="font-medium text-text-secondary">Sign out</span> on this
+				device to end the current browser session.
 			</p>
 		</div>
 	);

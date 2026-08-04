@@ -34,6 +34,20 @@ export const auth = {
     return request<{ sessions: Session[] }>("/sessions");
   },
 
+  /** Revoke a remote session (not the current browser session). */
+  revokeSession(id: string): Promise<{ success: boolean; id: string }> {
+    return request<{ success: boolean; id: string }>(`/sessions/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  /** Revoke every other active session; keep the current device signed in. */
+  revokeOtherSessions(): Promise<{ success: boolean; revokedCount: number }> {
+    return request<{ success: boolean; revokedCount: number }>("/sessions", {
+      method: "DELETE",
+    });
+  },
+
   listKeys(): Promise<{ keys: ApiKey[] }> {
     return request<{ keys: ApiKey[] }>("/v1/keys");
   },

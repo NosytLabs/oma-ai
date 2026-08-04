@@ -323,6 +323,10 @@ export const config: Config = {
     : process.env.OPENBROKER_API_URL
       ? _parsed.OPENBROKER_API_URL
       : _parsed.GONKA_API_URL,
+  // Prefer explicit USDC_DEPOSIT_ADDRESS; otherwise reuse the Base treasury
+  // so local/prod setups with only TREASURY_BASE_ADDRESS still accept deposits.
+  USDC_DEPOSIT_ADDRESS:
+    _parsed.USDC_DEPOSIT_ADDRESS ?? _parsed.TREASURY_BASE_ADDRESS,
 };
 
 // Cached set of admin wallet addresses for O(1) lookup in requireAdmin()

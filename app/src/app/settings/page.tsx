@@ -204,12 +204,30 @@ function SettingsPageContent() {
 		}
 	};
 
+	const handleRevokeSession = async (id: string) => {
+		try {
+			await api.auth.revokeSession(id);
+			await sessionsQuery.refetch();
+		} catch (e: unknown) {
+			setError(e instanceof Error ? e.message : "Failed to revoke session");
+		}
+	};
+
+	const handleRevokeOtherSessions = async () => {
+		try {
+			await api.auth.revokeOtherSessions();
+			await sessionsQuery.refetch();
+		} catch (e: unknown) {
+			setError(
+				e instanceof Error ? e.message : "Failed to revoke other sessions",
+			);
+		}
+	};
+
 	if (!isReady) {
-		return (
-			<div className="flex items-center justify-center px-4 py-10">
-				<div className="h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
-			</div>
-		);
+		// Match SettingsFallback so the layout does not flash an empty shell
+		// while Better Auth resolves the session (or times out).
+		return <SettingsFallback />;
 	}
 
 	if (!hasRealSession) {
@@ -445,6 +463,8 @@ function SettingsPageContent() {
 									<SessionsSection
 										sessions={sessions}
 										onSignOutCurrent={handleLogout}
+										onRevokeSession={handleRevokeSession}
+										onRevokeOthers={handleRevokeOtherSessions}
 									/>
 								)}
 								{activeTab === "privacy" && <PrivacySection user={user} />}

@@ -244,15 +244,30 @@ export default function DepositPage() {
 	const tablistId = useId();
 
 	useEffect(() => {
-		const m = new URLSearchParams(window.location.search).get("method");
-		if (m === "card" || m === "x402" || m === "crypto") setMethod(m);
+		const requested = new URLSearchParams(window.location.search).get(
+			"method",
+		);
+		const hasExplicitMethod =
+			requested === "card" ||
+			requested === "x402" ||
+			requested === "crypto";
+		if (hasExplicitMethod) setMethod(requested);
 
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => {
-				if (data && typeof data === "object") {
-					setSiteSettings(data as SitePaymentSettings);
-				}
+				if (!data || typeof data !== "object") return;
+				const settings = data as SitePaymentSettings;
+				setSiteSettings(settings);
+				// When the URL did not pin a rail, open the first actionable one
+				// so local/dev without USDC_DEPOSIT_ADDRESS lands on card/x402
+				// instead of a dead "USDC not available" panel.
+				if (hasExplicitMethod) return;
+				const preferred = METHODS.find((m) => {
+					const rail = railByKey(settings, m.rail);
+					return rail.actionable;
+				});
+				if (preferred) setMethod(preferred.key);
 			})
 			.catch(() => {
 				/* leave null → optimistic Available until next visit */

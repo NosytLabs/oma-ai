@@ -220,7 +220,8 @@ function LoginInner() {
 										className="block text-xs font-medium uppercase tracking-wider text-text-secondary"
 									>
 										Email address
-									</label>									<input
+									</label>
+									<input
 										id="email"
 										name="email"
 										type="email"
@@ -230,7 +231,7 @@ function LoginInner() {
 										value={email}
 										onChange={(e) => setEmail(e.target.value.trim())}
 										required
-										className="w-full text-sm bg-void border border-border-bright rounded-lg px-3 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+										className="w-full rounded-lg border border-border-bright bg-void px-3 py-3 text-sm placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
 									/>
 									<button
 										type="submit"
@@ -254,23 +255,28 @@ function LoginInner() {
 											Check your inbox. The link expires in 5 minutes.
 										</p>
 									)}
-								</form>
+									</form>
 								</div>
 							)}
 
 							{method === "wallet" && (
-								<LazyWalletSignInPanel
-									next={next}
-									offline={offline}
-									submitting={submitting}
-									setSubmitting={setSubmitting}
-									onError={handleError}
-									onSuccess={(msg) => toast.success(msg)}
-									onRedirect={(url) => router.replace(url)}
-								/>
+								<div
+									role="tabpanel"
+									id="panel-wallet"
+									aria-labelledby="tab-wallet"
+								>
+									<LazyWalletSignInPanel
+										next={next}
+										offline={offline}
+										submitting={submitting}
+										setSubmitting={setSubmitting}
+										onError={handleError}
+										onSuccess={(msg) => toast.success(msg)}
+										onRedirect={(url) => router.replace(url)}
+									/>
+								</div>
 							)}
-
-					</div>
+						</div>
 					</div>
 					<p className="mt-6 text-center text-xs text-text-muted">
 						By signing in you accept the{" "}

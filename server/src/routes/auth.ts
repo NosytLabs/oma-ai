@@ -86,6 +86,87 @@ authRoutes.get("/sessions", sessionAuth, async (c) => {
 });
 
 // ============================================================
+// DELETE /sessions/:id — revoke a remote Better Auth session.
+// Current session must use sign-out (cookie wipe) instead.
+// ============================================================
+authRoutes.delete("/sessions/:id", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const currentSession = c.get("session");
+  const id = c.req.param("id");
+  if (!id) {
+    return c.json(
+      { error: { message: "Missing session id", type: "invalid_request_error" } },
+      400,
+    );
+  }
+  if (currentSession?.id && id === currentSession.id) {
+    return c.json(
+      {
+        error: {
+          message: "Cannot revoke the current session here — use Sign out.",
+          type: "invalid_request_error",
+        },
+      },
+      400,
+    );
+  }
+  const deleted = await db
+    .delete(sessionTable)
+    .where(and(eq(sessionTable.id, id), eq(sessionTable.userId, userId)))
+    .returning({ id: sessionTable.id });
+  if (deleted.length === 0) {
+    return c.json(
+      { error: { message: "Session not found", type: "not_found" } },
+      404,
+    );
+  }
+  await auditLog({
+    userId,
+    action: "USER_LOGOUT",
+    resource: "sessions",
+    resourceId: id,
+    metadata: { kind: "remote_revoke" },
+  });
+  return c.json({ success: true, id });
+});
+
+// ============================================================
+// DELETE /sessions — revoke every other active session (keep current).
+// ============================================================
+authRoutes.delete("/sessions", sessionAuth, async (c) => {
+  const userId = c.get("userId");
+  const currentSession = c.get("session");
+  const currentId = currentSession?.id;
+  const rows = await db
+    .select({ id: sessionTable.id })
+    .from(sessionTable)
+    .where(
+      and(
+        eq(sessionTable.userId, userId),
+        gt(sessionTable.expiresAt, new Date()),
+      ),
+    );
+  const targets = rows
+    .map((r) => r.id)
+    .filter((id) => !currentId || id !== currentId);
+  if (targets.length > 0) {
+    for (const id of targets) {
+      await db
+        .delete(sessionTable)
+        .where(and(eq(sessionTable.id, id), eq(sessionTable.userId, userId)));
+    }
+  }
+  await auditLog({
+    userId,
+    action: "USER_LOGOUT",
+    resource: "sessions",
+    resourceId: userId,
+    metadata: { kind: "revoke_others", revokedCount: targets.length },
+  });
+  return c.json({ success: true, revokedCount: targets.length });
+});
+
+// ============================================================
 // /account — delete the account (Better Auth).
 // ============================================================
 authRoutes.delete("/account", async (c) => {

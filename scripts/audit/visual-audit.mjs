@@ -108,6 +108,19 @@ for (const p of pages) {
 				})
 				.catch(() => null);
 			await page.waitForTimeout(400);
+		} else if (["settings", "admin", "dashboard", "deposit", "login"].includes(p.name)) {
+			// Auth-gated / client-session pages: wait for gate or real content
+			// (h1) so we do not capture the pre-session spinner shell.
+			await page
+				.waitForFunction(
+					() => {
+						const h1 = document.querySelector("h1");
+						return Boolean(h1 && h1.textContent && h1.textContent.trim().length > 0);
+					},
+					{ timeout: 12000 },
+				)
+				.catch(() => null);
+			await page.waitForTimeout(400);
 		} else {
 			await page.waitForTimeout(1000);
 		}
