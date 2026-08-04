@@ -33,14 +33,13 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">Venice</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Primary provider for 87 models. Handles chat, image,
-						video, and embedding workloads with low-latency inference.
+						Primary provider for the curated chat catalog. Handles
+						chat, image, and video workloads with low-latency inference.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">image</span>
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">video</span>
-						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">embeddings</span>
 					</div>
 				</div>
 				<div id="pr-surplus" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
@@ -61,12 +60,12 @@ export function ProviderRoutingSection() {
 				<div id="pr-gonka" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
-						<span className="font-semibold text-text text-sm">OMA-AI</span>
+						<span className="font-semibold text-text text-sm">Gonka</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Decentralized budget provider via OpenBroker. Hosts GLM 4.7 Flash
-						and Qwen 3.5 9B at the lowest per-token rates in the catalog —
-						metered and billed like every other model.
+						Decentralized budget provider via OpenBroker. Hosts MiniMax M2.7,
+						Kimi K2.6, and GLM 5.2 FP8 at the lowest per-token rates in the
+						catalog — metered and billed like every other model.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
