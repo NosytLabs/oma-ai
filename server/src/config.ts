@@ -162,7 +162,7 @@ const envSchema = z.object({
   // Operator-expected markup floor per model, used by the price-drift audit at
   // catalog load. Format: "model-a=25,model-b=10". If a catalog entry's actual
   // markupPercent is below its expected floor, OMA logs a WARN (likely selling
-  // at a loss — sync models.json with upstream pricing). Optional.
+  // at a loss — sync server/src/inference/models.ts with upstream pricing). Optional.
   OMA_MODEL_MARKUP_OVERRIDES: z.string().optional(),
 
   // Minimum deposit floor (USD). Prevents spam/dust deposits that cost more in
@@ -200,7 +200,7 @@ const envSchema = z.object({
   PROVIDER_TIMEOUT_STREAM_MS: z.coerce.number().min(1000).default(120000),
   PROVIDER_TIMEOUT_NON_STREAM_MS: z.coerce.number().min(1000).default(60000),
 
-  // Path to models.json config file (supports absolute paths, useful for Docker/K8s deployments)
+  // Optional path whose directory holds models-overrides.json (runtime catalog is code-loaded).
   MODELS_CONFIG_PATH: z.string().optional(),
 
   // Trusted proxy IPs for X-Forwarded-For validation (comma-separated)

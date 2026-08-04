@@ -12,15 +12,24 @@ const AdminDashboard = lazy(() =>
 
 function DashboardSkeleton() {
 	return (
-		<div className="flex items-center gap-2 text-text-secondary">
-			<Loader2 className="h-4 w-4 animate-spin" /> Loading operator dashboard…
+		<div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-10 text-text-secondary sm:px-6">
+			<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+			Loading operator dashboard…
 		</div>
 	);
 }
 
 export default function AdminPage() {
 	return (
-		<ErrorBoundary fallback={null}>
+		<ErrorBoundary
+			fallback={
+				<div className="mx-auto max-w-xl px-4 py-12 text-center">
+					<p className="text-sm text-error">
+						Operator dashboard failed to load. Refresh the page.
+					</p>
+				</div>
+			}
+		>
 			<Suspense fallback={<DashboardSkeleton />}>
 				<AdminDashboard />
 			</Suspense>
