@@ -209,7 +209,7 @@ const client = new OpenAI({
 const models = await client.models.list();
 for (const model of models.data) {
   // TODO: remove debug logging before shipping
-  // console.log(`${model.id} (${(model as Record<string, unknown>).category ?? "chat"})`);
+  // console.log(model.id);
 }`;
 
 	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
