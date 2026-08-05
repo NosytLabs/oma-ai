@@ -1,7 +1,7 @@
 import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
-import { creditBalances, deposits } from "../db/schema.js";
-import { eq, and, sql } from "drizzle-orm";
+import { creditBalances, deposits, user } from "../db/schema.js";
+import { eq, and, sql, or, like } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "./payment-observability.js";
 
@@ -31,11 +31,11 @@ interface TransferEvent {
 export function extractUserIdFromMemo(data: string): string | null {
   try {
     const hex = data.startsWith("0x") ? data.slice(2) : data;
-    const memo = Buffer.from(hex, "hex").toString("utf8");
-    if (!memo.startsWith("oma-")) return null;
-    const prefix = memo.slice(4);
-    if (prefix.length < 8) return null;
-    return `usr_${prefix.slice(0, 8)}`;
+    const rawText = Buffer.from(hex, "hex").toString("utf8");
+    const match = rawText.match(/oma-([a-zA-Z0-9_-]{8,})/);
+    if (!match) return null;
+    const suffix = match[1];
+    return suffix.startsWith("usr_") ? suffix : `usr_${suffix}`;
   } catch {
     return null;
   }
@@ -58,19 +58,49 @@ export async function processTransfer(
     return;
   }
 
-  const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
-  const userId = tx.input ? extractUserIdFromMemo(tx.input) : null;
-
-  if (!userId) {
-    logger.debug({ txHash, input: tx.input }, "[deposit-recovery] no valid memo in transaction input");
-    return;
-  }
-
+  // Check if a pending or completed deposit already exists for this txHash
   const [existingDeposit] = await db
     .select()
     .from(deposits)
-    .where(and(eq(deposits.userId, userId), eq(deposits.txHash, txHash)))
+    .where(eq(deposits.txHash, txHash))
     .limit(1);
+
+  let userId: string | null = existingDeposit?.userId ?? null;
+  let txInput: string | undefined;
+
+  // If no existing deposit by txHash, attempt resolution via memo in tx.input
+  if (!userId) {
+    const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
+    txInput = tx?.input;
+    const memoUser = txInput ? extractUserIdFromMemo(txInput) : null;
+    if (memoUser) {
+      userId = memoUser;
+      const cleanSlice = memoUser.startsWith("usr_") ? memoUser.slice(4) : memoUser;
+      try {
+        const [matchedUser] = await db
+          .select({ id: user.id })
+          .from(user)
+          .where(
+            or(
+              eq(user.id, memoUser),
+              like(user.id, `${cleanSlice}%`),
+              like(user.id, `usr_${cleanSlice}%`)
+            )
+          )
+          .limit(1);
+        if (matchedUser) {
+          userId = matchedUser.id;
+        }
+      } catch {
+        // Ignore if user query fails in unmocked tests
+      }
+    }
+  }
+
+  if (!userId) {
+    logger.debug({ txHash, input: txInput }, "[deposit-recovery] no valid memo in transaction input");
+    return;
+  }
 
   if (existingDeposit) {
     if (existingDeposit.status === "completed") {

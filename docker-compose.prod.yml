@@ -6,8 +6,8 @@
 services:
   app:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/Dockerfile
     # No host port publish — Cloudflare Tunnel reaches it over the docker network.
     # If you need LAN access, uncomment:
     # ports:
@@ -35,8 +35,8 @@ services:
 
   server:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
     environment:
       # Core infra — local compose services (free, fast, no external dependency)
       - DATABASE_URL=postgresql://oma:${POSTGRES_PASSWORD}@postgres:5432/oma

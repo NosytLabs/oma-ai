@@ -1,27 +1,35 @@
-FROM node:22-alpine AS deps
-WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds --prod
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-FROM node:22-alpine AS builder
+FROM base AS deps
 WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY app/package.json ./app/
+COPY server/package.json ./server/
+RUN pnpm install --frozen-lockfile --filter app... --prod
+
+FROM base AS builder
+WORKDIR /app
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY app/package.json ./app/
+COPY server/package.json ./server/
+RUN pnpm install --frozen-lockfile --filter app...
 COPY . .
-# Clear stale Next.js cache that can cause PageNotFoundError
-RUN rm -rf .next
-RUN pnpm run build
+# Clear Next.js cache
+RUN rm -rf app/.next
+RUN pnpm --filter app run build
 
-FROM node:22-alpine AS runner
+FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-# Use standalone output — Next.js produces a minimal server bundle in
-# .next/standalone that excludes devDependencies (~250MB savings).
-# The standalone server.js is the entry point; no pnpm/node_modules needed.
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+# Next.js standalone output contains the full app build inside app/.next/standalone
+COPY --from=builder /app/app/.next/standalone ./
+COPY --from=builder /app/app/.next/static ./app/.next/static
+COPY --from=builder /app/app/public ./app/public
 RUN addgroup -g 1001 -S oma && adduser -S oma -u 1001 -G oma
+RUN chown -R oma:oma /app
 USER oma
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

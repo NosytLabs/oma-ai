@@ -75,22 +75,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: app
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        working-directory: app
-        run: pnpm run typecheck
+        run: pnpm --filter app run typecheck
 
       - name: Lint
-        working-directory: app
-        run: pnpm run lint
+        run: pnpm --filter app run lint
 
       - name: Test
-        working-directory: app
-        run: pnpm test
+        run: pnpm --filter app test
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -150,22 +147,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: server
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        working-directory: server
-        run: pnpm run typecheck
+        run: pnpm --filter oma-server run typecheck
 
       - name: Lint
-        working-directory: server
-        run: pnpm run lint
+        run: pnpm --filter oma-server run lint
 
       - name: Test
-        working-directory: server
-        run: pnpm test
+        run: pnpm --filter oma-server test
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest

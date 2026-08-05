@@ -183,6 +183,32 @@ describe("deposit-recovery lib", () => {
       );
     });
 
+    it("completes pending deposit by txHash even if tx.input has no memo", async () => {
+      vi.mocked(db.select as any).mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValueOnce([{
+          id: "dep_nomemo",
+          userId: "usr_real_user_id",
+          txHash: "0xabc_nomemo",
+          amountUsd: "5.00",
+          status: "pending",
+        }]),
+      });
+
+      await depositRecovery.processTransfer(mockClient as any, {
+        transactionHash: "0xabc_nomemo",
+        args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 5_000_000n },
+      }, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
+
+      expect(db.update).toHaveBeenCalled();
+      expect(db.insert).toHaveBeenCalledTimes(1);
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({ depositId: "dep_nomemo" }),
+        "[deposit-recovery] marked pending deposit as completed and credited balance",
+      );
+    });
+
     it("skips already completed deposit", async () => {
       vi.mocked(db.select as any).mockReturnValueOnce({
         from: vi.fn().mockReturnThis(),

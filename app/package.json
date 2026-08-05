@@ -37,9 +37,6 @@
     "thinking-orbs": "^0.1.1",
     "viem": "^2.53.1"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": []
-  },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
     "@eslint/eslintrc": "^3.3.5",

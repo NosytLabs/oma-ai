@@ -1,24 +1,35 @@
-FROM node:22-alpine AS deps
-WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds --prod
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-FROM node:22-alpine AS builder
+FROM base AS deps
 WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY app/package.json ./app/
+COPY server/package.json ./server/
+RUN pnpm install --frozen-lockfile --filter oma-server... --prod
+
+FROM base AS builder
+WORKDIR /app
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY app/package.json ./app/
+COPY server/package.json ./server/
+RUN pnpm install --frozen-lockfile --filter oma-server...
 COPY . .
-RUN pnpm run build
+RUN pnpm --filter oma-server run build
 
 FROM node:22-alpine AS runner
-WORKDIR /app
+WORKDIR /app/server
 ENV NODE_ENV=production
 RUN apk add --no-cache tini
 RUN addgroup -g 1001 -S oma && adduser -S oma -u 1001 -G oma
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/models.json ./models.json
+COPY --from=deps /app/node_modules /app/node_modules
+COPY --from=deps /app/server/node_modules ./node_modules
+COPY --from=builder /app/server/dist ./dist
+COPY --from=builder /app/server/package.json ./package.json
+COPY --from=builder /app/server/models.json ./models.json
+RUN chown -R oma:oma /app/server
 USER oma
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3001) + '/live', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"

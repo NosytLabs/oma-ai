@@ -4,12 +4,12 @@
   "private": true,
   "description": "Workspace root for the OMA AI Gateway monorepo (app/ frontend + server/ backend).",
   "scripts": {
-    "validate": "cd app && npm run typecheck && npm run lint && npm test && cd ../server && npm run typecheck && npm run lint && npm test",
-    "validate:app": "cd app && npm run typecheck && npm run lint && npm test",
-    "validate:server": "cd server && npm run typecheck && npm run lint && npm test",
-    "validate:typecheck": "cd app && npm run typecheck && cd ../server && npm run typecheck",
-    "validate:lint": "cd app && npm run lint && cd ../server && npm run lint",
-    "validate:test": "cd app && npm test && cd ../server && npm test"
+    "validate": "pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test && pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test",
+    "validate:app": "pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test",
+    "validate:server": "pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test",
+    "validate:typecheck": "pnpm -r run typecheck",
+    "validate:lint": "pnpm -r run lint",
+    "validate:test": "pnpm -r test"
   },
   "license": "MIT",
   "repository": {

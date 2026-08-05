@@ -30,30 +30,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
-      - name: Install server dependencies
-        working-directory: server
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Server typecheck
-        working-directory: server
-        run: pnpm run typecheck
+      - name: Typecheck
+        run: pnpm run validate:typecheck
 
-      - name: Server lint
-        working-directory: server
-        run: pnpm run lint
-
-      - name: Install app dependencies
-        working-directory: app
-        run: pnpm install --frozen-lockfile
-
-      - name: App typecheck
-        working-directory: app
-        run: pnpm run typecheck
-
-      - name: App lint
-        working-directory: app
-        run: pnpm run lint
+      - name: Lint
+        run: pnpm run validate:lint
 
   test:
     runs-on: ubuntu-latest
@@ -68,22 +54,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
-      - name: Install server dependencies
-        working-directory: server
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Server tests
-        working-directory: server
-        run: pnpm test
-
-      - name: Install app dependencies
-        working-directory: app
-        run: pnpm install --frozen-lockfile
-
-      - name: App tests
-        working-directory: app
-        run: pnpm test
+      - name: Tests
+        run: pnpm run validate:test
 
   security-scan:
     runs-on: ubuntu-latest
@@ -99,29 +76,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
-      # Secret scanning with gitleaks — catches API keys, private keys,
-      # tokens, and other secrets before they land in the repo.
       - name: GitLeaks secret scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install server dependencies
-        working-directory: server
-        run: pnpm install --frozen-lockfile --prod=false
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install app dependencies
-        working-directory: app
-        run: pnpm install --frozen-lockfile --prod=false
-
-      - name: Audit server dependencies
-        working-directory: server
-        run: pnpm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Audit app dependencies
-        working-directory: app
+      - name: Audit workspace dependencies
         run: pnpm audit --audit-level=high
         continue-on-error: true
 
@@ -138,11 +103,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
-      - name: Install and build server
-        working-directory: server
-        run: pnpm install --frozen-lockfile && pnpm run build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install and build app
-        working-directory: app
-        run: pnpm install --frozen-lockfile && rm -rf .next && pnpm run build
+      - name: Build server and app
+        run: pnpm --filter oma-server run build && pnpm --filter app run build
