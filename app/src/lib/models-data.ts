@@ -380,12 +380,12 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 // Lazy client loader
 // ---------------------------------------------------------------------------
 
-/**
- * Interface matching the OpenAI-style models returned by GET /v1/models.
- * The live API returns the curated chat catalog (22 models — see
- * `MODEL_COUNT`) with pricing, category, and context_length but NOT
- * displayName, description, or capabilities — those are derived here.
- */
+	/**
+	 * Interface matching the OpenAI-style models returned by GET /v1/models.
+	 * The live API returns the curated chat catalog (20 models — see
+	 * `MODEL_COUNT`) with pricing, category, and context_length but NOT
+	 * displayName, description, or capabilities — those are derived here.
+	 */
 interface ApiModelEntry {
 	id: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
