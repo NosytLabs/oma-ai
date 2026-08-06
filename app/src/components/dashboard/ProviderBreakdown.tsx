@@ -127,7 +127,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 								<div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden shadow-inner relative">
 									{/* scaleX instead of width — compositor-only, no per-frame layout */}
 									<m.div
-										className="absolute inset-y-0 left-0 rounded-full origin-left transition-all duration-300"
+										className="absolute inset-y-0 left-0 rounded-full origin-left transition-[background-color,border-color,box-shadow,color,transform] duration-300"
 										style={{ backgroundColor: getProviderColor(stat.provider) }}
 										initial={{ scaleX: 0 }}
 										animate={{ scaleX: pct / 100 }}

@@ -311,7 +311,7 @@ export default function DepositPage() {
 							aria-controls={`${tablistId}-panel-${m.key}`}
 							tabIndex={isActive ? 0 : -1}
 							onClick={() => setMethod(m.key)}
-							className={`flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.98] ${
+							className={`flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97] ${
 								isActive
 									? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"
 									: "text-text-muted hover:bg-surface hover:text-text"

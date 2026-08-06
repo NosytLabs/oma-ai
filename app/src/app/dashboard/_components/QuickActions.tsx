@@ -81,13 +81,13 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 					{ACTIONS.map((action, i) => {
 						const Icon = action.icon;
 						const inner = (
-							<div className="group flex h-full flex-col gap-3 rounded-[var(--radius-md)] border border-border bg-void p-5 transition-all duration-200 hover:border-accent/40 hover:bg-surface/50 hover:shadow-[0_4px_20px_-10px_var(--color-accent-glow)] active:scale-[0.98]">
+							<div className="group flex h-full flex-col gap-3 rounded-[var(--radius-md)] border border-border bg-void p-5 transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:bg-surface/50 hover:shadow-[0_4px_20px_-10px_var(--color-accent-glow)] active:scale-[0.97]">
 								<div className="flex items-center gap-2">
 									<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] border border-accent/20 bg-accent/5 text-accent transition-colors group-hover:border-accent/50 group-hover:bg-accent/10 group-hover:shadow-[0_0_10px_-2px_var(--color-accent-glow)]">
 										<Icon className="h-5 w-5" aria-hidden="true" />
 									</div>
 									<ArrowUpRight
-										className="ml-auto h-4 w-4 text-text-muted opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent"
+										className="ml-auto h-4 w-4 text-text-muted opacity-0 transition-[background-color,border-color,box-shadow,color,transform] duration-200 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent"
 										aria-hidden="true"
 									/>
 								</div>

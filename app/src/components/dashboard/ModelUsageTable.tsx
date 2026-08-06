@@ -196,7 +196,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 									<div className="flex items-center justify-end gap-3">
 										<div className="w-16 h-1.5 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
 											<div
-												className="h-full bg-accent rounded-full transition-all duration-500"
+												className="h-full bg-accent rounded-full transition-[background-color,border-color,box-shadow,color,transform] duration-500"
 												style={{
 													width: `${totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0}%`,
 												}}

@@ -243,7 +243,7 @@ function AgentsConnector() {
 								}}
 								className="
                   w-full px-3 py-2 bg-surface border border-border text-text-secondary text-xs font-mono
-                  hover:border-accent/40 hover:text-text transition-[border-color,color,background-color,transform] duration-200 ease-out active:scale-[0.98]
+                  hover:border-accent/40 hover:text-text transition-[border-color,color,background-color,transform] duration-200 ease-out active:scale-[0.97]
                 "
 							>
 								COPY ENV SNIPPET

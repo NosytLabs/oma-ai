@@ -226,7 +226,7 @@ export function DashboardHeader({
 						)}
 					<Link
 						href="/settings"
-						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						aria-label="Settings"
 					>
 						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
@@ -236,7 +236,7 @@ export function DashboardHeader({
 						onClick={handleRefresh}
 						disabled={isRefreshing}
 						aria-label="Refresh dashboard"
-						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`}
@@ -251,7 +251,7 @@ export function DashboardHeader({
 							type="button"
 							onClick={onExport}
 							aria-label="Export usage data"
-							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
 							<span className="hidden sm:inline">EXPORT</span>
@@ -437,7 +437,7 @@ function TimeRangeRadiogroup({
 						aria-checked={checked}
 						tabIndex={checked ? 0 : -1}
 						onClick={() => onTimeRangeChange(range.id)}
-						className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 ${
+						className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-[background-color,border-color,box-shadow,color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 ${
 							checked
 								? "bg-accent/10 text-accent"
 								: "text-text-muted hover:text-text-secondary"

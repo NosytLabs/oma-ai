@@ -86,7 +86,7 @@ export function SessionsSection({
 						type="button"
 						onClick={handleRevokeOthers}
 						disabled={revokingOthers}
-						className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-all duration-200 hover:border-danger/50 hover:bg-danger/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+						className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-danger/50 hover:bg-danger/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 					>
 						{revokingOthers ? (
 							<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -152,7 +152,7 @@ export function SessionsSection({
 									type="button"
 									onClick={handleSignOut}
 									disabled={signingOut}
-									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-all duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									{signingOut ? (
 										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -166,7 +166,7 @@ export function SessionsSection({
 									type="button"
 									onClick={() => handleRevoke(session.id)}
 									disabled={revokingId === session.id}
-									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-all duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									{revokingId === session.id ? (
 										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

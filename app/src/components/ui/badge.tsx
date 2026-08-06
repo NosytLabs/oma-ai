@@ -82,7 +82,7 @@ export function Badge({
 				isInteractive && [
 					"cursor-pointer hover:-translate-y-0.5 hover:brightness-110",
 					"hover:shadow-[0_4px_12px_rgba(70,211,154,0.15)]",
-					"active:scale-95 active:translate-y-0",
+					"active:scale-[0.97] active:translate-y-0",
 					"focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-void",
 				],
 				className,

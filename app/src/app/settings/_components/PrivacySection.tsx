@@ -77,7 +77,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 						<h3 className="text-sm font-semibold text-text-bright">Download my data</h3>
 						<p className="mt-1 text-xs text-text-muted">Export your account, usage, deposits, and credit summary as JSON.</p>
 					</div>
-					<button type="button" onClick={handleDownload} disabled={downloading} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-all duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+					<button type="button" onClick={handleDownload} disabled={downloading} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 						{downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
 						{downloading ? "Preparing…" : "Download JSON"}
 					</button>
@@ -88,7 +88,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 						<h3 className="text-sm font-semibold text-text-bright">Clear usage history</h3>
 						<p className="mt-1 text-xs text-text-muted">Remove usage records and audit logs while keeping your account, keys, and credits.</p>
 					</div>
-					<button type="button" onClick={handleClearHistory} disabled={clearing} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border px-4 py-2 text-xs font-semibold text-text-secondary transition-all duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+					<button type="button" onClick={handleClearHistory} disabled={clearing} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 						{clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <History className="h-3.5 w-3.5" aria-hidden="true" />}
 						{clearing ? "Clearing…" : "Clear history"}
 					</button>
@@ -99,7 +99,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 						<h3 className="text-sm font-semibold text-text-bright">Delete account</h3>
 						<p className="mt-1 text-xs text-text-muted">Permanently remove your account and associated data.</p>
 					</div>
-					<Link href="/settings?tab=danger" className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-danger/40 px-4 py-2 text-xs font-semibold text-danger transition-all duration-200 hover:bg-danger/10 hover:border-danger/60 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger">
+					<Link href="/settings?tab=danger" className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-danger/40 px-4 py-2 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-danger/10 hover:border-danger/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger">
 						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 						Delete account
 					</Link>

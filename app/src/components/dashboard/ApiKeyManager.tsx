@@ -76,7 +76,7 @@ function ApiKeyManagerComponent({
 					<button
 						type="button"
 						onClick={() => setShowCreateForm(true)}
-						className="group flex items-center justify-center rounded-[var(--radius-sm)] border border-accent/40 bg-accent/10 px-4 py-2 min-h-[36px] text-xs font-semibold text-accent transition-all duration-200 hover:bg-accent/20 hover:border-accent/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="group flex items-center justify-center rounded-[var(--radius-sm)] border border-accent/40 bg-accent/10 px-4 py-2 min-h-[36px] text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-accent/20 hover:border-accent/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						+ New key
 					</button>
@@ -101,7 +101,7 @@ function ApiKeyManagerComponent({
 									type="button"
 									onClick={onCreateKey}
 									disabled={creating || !newKeyName.trim()}
-									className="flex items-center justify-center rounded-[var(--radius-sm)] border border-accent bg-accent px-5 py-2.5 text-xs font-semibold text-text-inverse transition-all duration-200 hover:bg-accent/90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50"
+									className="flex items-center justify-center rounded-[var(--radius-sm)] border border-accent bg-accent px-5 py-2.5 text-xs font-semibold text-text-inverse transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-accent/90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50"
 								>
 									{creating ? "Creating…" : "Create key"}
 								</button>
@@ -111,7 +111,7 @@ function ApiKeyManagerComponent({
 										setShowCreateForm(false);
 										setNewKeyName("");
 									}}
-									className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-secondary transition-all duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border disabled:pointer-events-none disabled:opacity-50"
+									className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border disabled:pointer-events-none disabled:opacity-50"
 									disabled={creating}
 								>
 									Cancel
@@ -137,7 +137,7 @@ function ApiKeyManagerComponent({
 						<button
 							type="button"
 							onClick={() => setShowCreateForm(true)}
-							className="inline-flex items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-6 py-3 min-h-[40px] text-xs font-bold uppercase tracking-wider text-text-inverse shadow-[0_0_20px_-5px_var(--color-accent-glow)] transition-all duration-200 hover:bg-accent/90 hover:shadow-[0_0_25px_-2px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="inline-flex items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-6 py-3 min-h-[40px] text-xs font-bold uppercase tracking-wider text-text-inverse shadow-[0_0_20px_-5px_var(--color-accent-glow)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-accent/90 hover:shadow-[0_0_25px_-2px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							Create your first key
 						</button>
@@ -220,14 +220,14 @@ function ApiKeyManagerComponent({
 							<button
 								type="button"
 								onClick={handleCancelRevoke}
-								className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-sm font-semibold text-text-secondary transition-all hover:bg-surface-elevated hover:text-text-bright active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-sm font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] hover:bg-surface-elevated hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							>
 								Cancel
 							</button>
 							<button
 								type="button"
 								onClick={handleConfirmRevoke}
-								className="flex items-center justify-center rounded-[var(--radius-sm)] border border-error bg-error px-5 py-2 text-sm font-bold text-text-inverse transition-all hover:bg-error/90 active:scale-[0.98] shadow-[0_0_15px_-3px_var(--color-error-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+								className="flex items-center justify-center rounded-[var(--radius-sm)] border border-error bg-error px-5 py-2 text-sm font-bold text-text-inverse transition-[background-color,border-color,box-shadow,color,transform] hover:bg-error/90 active:scale-[0.97] shadow-[0_0_15px_-3px_var(--color-error-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 							>
 								Yes, revoke key
 							</button>

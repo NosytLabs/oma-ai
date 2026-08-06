@@ -314,7 +314,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 								}}
 								onMouseEnter={() => setExpandedId(example.id)}
 								onMouseLeave={() => setExpandedId(null)}
-								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] focus-ring"
+								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-ring"
 							>
 								<div className="flex items-start gap-4">
 									<div

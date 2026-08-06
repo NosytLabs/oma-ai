@@ -157,7 +157,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							onClick={() => onPageChange(Math.max(1, page - 1))}
 							disabled={page === 1}
 							aria-label="Go to previous page"
-							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-all duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.95] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-[color,background-color,border-color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<ChevronLeft className="h-4 w-4" />
 						</button>
@@ -169,7 +169,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							onClick={() => onPageChange(Math.min(totalPages, page + 1))}
 							disabled={page >= totalPages}
 							aria-label="Go to next page"
-							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-all duration-200 hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.95] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-[color,background-color,border-color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<ChevronRight className="h-4 w-4" />
 						</button>
