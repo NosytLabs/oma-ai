@@ -52,7 +52,7 @@ const messageVariants = {
 		x: isUser ? 24 : -24,
 		y: 12,
 		scale: 0.97,
-		rotate: isUser ? 0.5 : -0.5, // Micro-rotation for organic feel
+		rotate: isUser ? 0 : 0, // Micro-rotation removed for consistency
 	}),
 	visible: {
 		opacity: 1,
@@ -178,7 +178,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 						}
 					`}
 					style={{
-						borderRadius: isUser ? "6px" : "10px",
+						borderRadius: isUser ? "6px" : "6px",
 					}}
 				>
 					{isUser ? (
@@ -274,8 +274,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					style={{
 						// Asymmetric border-radius for visual interest
 						borderRadius: isUser
-							? "14px 4px 14px 14px" // Sharp top-right (toward avatar)
-							: "4px 14px 14px 14px", // Sharp top-left (toward avatar)
+							? "8px" // Unify border radius
+							: "8px",
 						// Subtle depth on assistant messages
 						boxShadow: isUser
 							? "0 0 0 1px rgba(70,211,154,0.05), 0 4px 16px -8px var(--color-accent-glow)"

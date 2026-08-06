@@ -240,7 +240,7 @@ export default function ComparePage() {
 	return (
 		<div className="min-h-screen bg-void text-text-primary">
 			{/* Use a div — root layout already provides the single <main id="main-content"> landmark. */}
-			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
+			<div className="container-page max-w-7xl pb-24">
 				{/* Hero */}
 				<InViewFade>
 				<section className="py-16 text-center">

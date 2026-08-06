@@ -222,7 +222,7 @@ export default function ChangelogPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 				{/* ===== HERO ===== */}
-				<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+				<section className="container-page max-w-4xl pt-4 sm:pt-6 pb-10 sm:pb-14">
 						<InViewFade>
 						<Link
 							href="/"
@@ -265,7 +265,7 @@ export default function ChangelogPage() {
 
 					{/* ===== LATEST RELEASE (featured) ===== */}
 					<InViewFade>
-					<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+					<section className="container-page max-w-4xl pb-12 sm:pb-16">
 						<article className="relative border border-accent/30 rounded-xl overflow-hidden bg-gradient-to-br from-accent-dim via-surface to-surface">
 							<span
 								aria-hidden="true"
@@ -333,7 +333,7 @@ export default function ChangelogPage() {
 					</InViewFade>
 
 					{/* ===== ARCHIVE ===== */}
-					<section className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-border">
+					<section className="container-page max-w-4xl py-12 sm:py-20 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Archive
@@ -390,7 +390,7 @@ export default function ChangelogPage() {
 					</section>
 
 					{/* ===== SUBSCRIBE ===== */}
-					<section className="border-t border-border mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+					<section className="border-t border-border container-page max-w-4xl py-12 sm:py-20">
 						<div className="rounded-2xl border border-accent/30 bg-accent-dim px-6 sm:px-10 py-10 sm:py-14 relative overflow-hidden">
 							<span
 								aria-hidden="true"

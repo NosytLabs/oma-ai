@@ -173,7 +173,7 @@ export default function GlossaryPage() {
 				<FloatingIcons count={4} />
 			</div>
 
-			<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
 				<Link
 					href="/"
 					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-8"

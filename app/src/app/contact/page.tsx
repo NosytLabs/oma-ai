@@ -55,7 +55,7 @@ export default function ContactPage() {
 				]}
 			/>
 			<FloatingIcons />
-			<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
 				<InViewFade>
 				<Link
 					href="/"

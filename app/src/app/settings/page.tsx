@@ -296,7 +296,7 @@ function SettingsPageContent() {
 	}
 
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+		<div className="container-page max-w-5xl py-6 sm:py-8">
 			<div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
 				<m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
 					<h1 className="text-2xl font-bold tracking-tight text-text-bright">
@@ -485,7 +485,7 @@ function SettingsPageContent() {
 
 function SettingsFallback() {
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-10" aria-busy="true" aria-label="Loading settings">
+		<div className="container-page max-w-5xl py-10" aria-busy="true" aria-label="Loading settings">
 			<div className="space-y-3">
 				<Skeleton className="h-7 w-36" />
 				<Skeleton className="h-4 w-48" />

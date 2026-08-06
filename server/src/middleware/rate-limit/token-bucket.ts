@@ -48,7 +48,13 @@ export async function checkTokenBucket(
     };
   } catch (err) {
     logger.error({ err }, "Token bucket script error");
-    throw err;
+    // Fail open if Redis is down
+    return {
+      allowed: true,
+      remaining: config.bucketSize,
+      resetMs: 0,
+      limit: config.bucketSize
+    };
   }
 }
 

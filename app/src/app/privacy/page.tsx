@@ -153,7 +153,7 @@ export default function PrivacyPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+					<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -258,7 +258,7 @@ export default function PrivacyPage() {
 					<section
 						id="collection"
 						aria-labelledby="collection-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading
 							title="What we collect"
@@ -335,7 +335,7 @@ export default function PrivacyPage() {
 					<section
 						id="auth"
 						aria-labelledby="auth-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Authentication" meta="Wallet-based authentication" />
 						<h3 id="auth-heading" className="sr-only">
@@ -374,7 +374,7 @@ export default function PrivacyPage() {
 					<section
 						id="logs"
 						aria-labelledby="logs-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading
 							title="Logs and billing"
@@ -448,7 +448,7 @@ export default function PrivacyPage() {
 					<section
 						id="retention"
 						aria-labelledby="retention-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Retention" meta="How long we keep things" />
 						<h3 id="retention-heading" className="sr-only">
@@ -488,7 +488,7 @@ export default function PrivacyPage() {
 					<section
 						id="third-parties"
 						aria-labelledby="third-parties-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Third parties" meta="Who sees what" />
 						<h3 id="third-parties-heading" className="sr-only">
@@ -542,7 +542,7 @@ export default function PrivacyPage() {
 					<section
 						id="subprocessors"
 						aria-labelledby="subprocessors-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Sub-processors" meta="DPA list" />
 						<h3 id="subprocessors-heading" className="sr-only">
@@ -587,7 +587,7 @@ export default function PrivacyPage() {
 					<section
 						id="rights"
 						aria-labelledby="rights-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Your rights" meta="What you control" />
 						<h3 id="rights-heading" className="sr-only">
@@ -641,7 +641,7 @@ export default function PrivacyPage() {
 					{/* ===== FOOTER NAV ===== */}
 					<section
 						aria-label="Related documents"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
+						className="border-t border-border container-page py-10 sm:py-12"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">

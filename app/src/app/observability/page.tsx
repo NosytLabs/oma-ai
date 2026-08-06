@@ -168,7 +168,7 @@ export default async function ObservabilityPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 				{/* ===== HERO ===== */}
-				<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+				<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
 						<InViewFade>
 						<Link
 							href="/"
@@ -233,7 +233,7 @@ export default async function ObservabilityPage() {
 					{/* ===== LIVE COUNTERS ===== */}
 					<section
 						aria-label="Live gateway counters"
-						className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pb-8"
+						className="container-page pb-8"
 					>
 						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 							{[
@@ -284,7 +284,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== TOP STATS BENTO (sample shape) ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+					<section className="container-page pb-12 sm:pb-16">
 						<p className="mb-3 text-[10px] font-mono uppercase tracking-widest text-text-muted">
 							Sample dashboard shape · not production time-series
 						</p>
@@ -350,7 +350,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== PROVIDER HEALTH ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border">
+					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Upstream health
@@ -425,7 +425,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== TOP ROUTES ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border">
+					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Traffic
@@ -471,7 +471,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== SYSTEM ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border">
+					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Runtime
@@ -537,7 +537,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== INCIDENTS ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border">
+					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-6 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
 								Incidents · last 30d
@@ -569,7 +569,7 @@ export default async function ObservabilityPage() {
 					</section>
 
 					{/* ===== CTA ===== */}
-					<section className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+					<section className="border-t border-border container-page py-12 sm:py-20">
 						<div className="rounded-2xl border border-accent/30 bg-accent-dim px-6 sm:px-10 py-10 sm:py-14 relative overflow-hidden">
 							<span
 								aria-hidden="true"

@@ -188,6 +188,8 @@ describe("/v1/search", () => {
 	});
 
 	it("returns empty results when every DDG path fails", async () => {
+		// Silence the expected console.error logs for this test
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		state.fetchMock.mockRejectedValue(new Error("network down"));
 
 		const res = await request("/v1/search?query=throw");
@@ -198,6 +200,7 @@ describe("/v1/search", () => {
 		};
 		expect(json.results).toEqual([]);
 		expect(json.provider).toBe("duckduckgo");
+		consoleSpy.mockRestore();
 	});
 
 	it("never calls tinyfish hosts", async () => {

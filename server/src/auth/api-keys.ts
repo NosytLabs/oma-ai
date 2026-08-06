@@ -213,6 +213,9 @@ export async function createApiKey(
 }
 
 export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
+  if (typeof rawKey !== "string" || !rawKey) {
+    return null;
+  }
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
   const now = new Date();
 

@@ -114,12 +114,14 @@ describe('rate-limit middleware', () => {
       )
     })
 
-    it('should throw on Redis error', async () => {
+    it('should fail open on Redis error', async () => {
+      // Silence the expected console.error logs for this test
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockRedisClient.eval.mockRejectedValueOnce(new Error('Redis connection failed'))
 
-      await expect(
-        checkTokenBucket(mockRedisClient as any, 'test-key', { bucketSize: 60, refillRate: 20 })
-      ).rejects.toThrow('Redis connection failed')
+      const res = await checkTokenBucket(mockRedisClient as any, 'test-key', { bucketSize: 60, refillRate: 20 })
+      expect(res.allowed).toBe(true)
+      consoleSpy.mockRestore();
     })
   })
 

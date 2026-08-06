@@ -144,7 +144,7 @@ export default function TermsPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-10 sm:pb-14">
+					<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
@@ -263,7 +263,7 @@ export default function TermsPage() {
 					<section
 						id="usage"
 						aria-labelledby="usage-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Usage" meta="The API rules" />
 						<h3 id="usage-heading" className="sr-only">
@@ -302,7 +302,7 @@ export default function TermsPage() {
 					<section
 						id="acceptable-use"
 						aria-labelledby="acceptable-use-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading
 							title="Acceptable use"
@@ -369,7 +369,7 @@ export default function TermsPage() {
 					<section
 						id="liability"
 						aria-labelledby="liability-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading title="Liability" meta="No uptime warranty" />
 						<h3 id="liability-heading" className="sr-only">
@@ -411,7 +411,7 @@ export default function TermsPage() {
 					<section
 						id="credits"
 						aria-labelledby="credits-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading
 							title="Credits"
@@ -466,7 +466,7 @@ export default function TermsPage() {
 					<section
 						id="termination"
 						aria-labelledby="termination-heading"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16"
+						className="border-t border-border container-page py-12 sm:py-16"
 					>
 						<SectionHeading
 							title="Termination"
@@ -527,7 +527,7 @@ export default function TermsPage() {
 					{/* ===== CONTACT ===== */}
 					<section
 						aria-label="Contact"
-						className="border-t border-border mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
+						className="border-t border-border container-page py-10 sm:py-12"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">
