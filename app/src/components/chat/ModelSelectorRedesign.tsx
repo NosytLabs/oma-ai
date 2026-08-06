@@ -230,6 +230,7 @@ export function ModelSelector({
             "
 						style={{
 							boxShadow: "var(--shadow-dropdown)",
+							transformOrigin: "top left",
 						}}
 						role="listbox"
 						aria-label="Available AI models"

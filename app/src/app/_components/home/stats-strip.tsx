@@ -63,7 +63,7 @@ export function StatsStrip() {
 	return (
 		<section
 			aria-labelledby="stats-headline"
-			className="relative border-y border-border-subtle bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_88%,transparent),color-mix(in_srgb,var(--color-void)_92%,transparent))] py-12 sm:py-14"
+			className="relative bg-surface py-12 sm:py-14 z-10"
 		>
 			<div
 				aria-hidden="true"

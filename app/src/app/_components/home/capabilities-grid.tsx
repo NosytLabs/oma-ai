@@ -149,7 +149,7 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 w-full max-w-[280px] rounded-[16px] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
+			className="pointer-events-none mt-auto mb-2 w-full max-w-[280px] rounded-[16px] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md h-[108px] flex flex-col justify-center gap-3"
 		>
 			<div className="flex items-center justify-between">
 				<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
@@ -157,13 +157,13 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 				</span>
 				<span className="h-3.5 w-5 rounded-[3px] bg-gradient-to-br from-accent/70 to-accent/30" />
 			</div>
-			<div className="mt-4 flex items-center justify-between">
+			<div className="flex items-center justify-between">
 				<span className="font-mono text-sm tracking-[0.18em] text-text-bright/80">
 					•••• 4••2
 				</span>
 				<span className={cn("h-1.5 w-1.5 rounded-full", lineClass)} />
 			</div>
-			<div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2.5">
+			<div className="flex items-center justify-between border-t border-border/60 pt-2.5">
 				<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
 					+ $25 · settled
 				</span>
@@ -174,11 +174,11 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 }
 
 function LedgerStrip({ lineClass }: { lineClass: string }) {
-	const rows = [64, 48, 80, 56, 38];
+	const rows = [40, 28, 48, 36, 24];
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-end gap-2"
+			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-end gap-2 h-[108px]"
 		>
 			{rows.map((h, i) => (
 				<div key={i} className="flex-1">
@@ -205,26 +205,26 @@ function FlowVisual({ lineClass }: { lineClass: string }) {
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-center gap-2"
+			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-center gap-2 h-[108px]"
 		>
-			<div className="flex flex-1 flex-col gap-1">
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary">
+			<div className="flex flex-1 flex-col gap-1 justify-center">
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
 					POST /v1/chat
 				</span>
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted">
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted text-center">
 					402 · payment
 				</span>
 			</div>
-			<div className="flex flex-col items-center gap-0.5">
-				<span className={cn("h-4 w-px", lineClass)} />
-				<span className="font-mono text-[9px] text-accent">x402</span>
-				<span className={cn("h-4 w-px", lineClass)} />
+			<div className="flex flex-col items-center gap-1 justify-center">
+				<span className={cn("h-5 w-px", lineClass)} />
+				<span className="font-mono text-[9px] text-accent font-bold">x402</span>
+				<span className={cn("h-5 w-px", lineClass)} />
 			</div>
-			<div className="flex flex-1 flex-col gap-1">
-				<span className="rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent">
-					EIP-3009 transfer
+			<div className="flex flex-1 flex-col gap-1 justify-center">
+				<span className="rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent text-center">
+					EIP-3009
 				</span>
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary">
+				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
 					200 · stream
 				</span>
 			</div>

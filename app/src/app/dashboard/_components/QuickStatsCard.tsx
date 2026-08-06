@@ -45,7 +45,8 @@ export function QuickStatsCard({
 	];
 
 	return (
-		<div className="flex flex-col p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm">
+		<div className="flex flex-col p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm relative h-full">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-primary)]/40 to-transparent" />
 			<div className="mb-4">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">Today</h2>
 				<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">Last 24 hours</p>

@@ -62,7 +62,7 @@ export function X402Banner() {
 								</p>
 								<div className="mt-7 flex flex-wrap gap-3 w-full">
 									<Link
-										href="/docs#x402"
+										href="/docs"
 										className="btn-primary inline-flex h-11 items-center gap-2 px-5 text-sm"
 									>
 										x402 docs

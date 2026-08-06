@@ -40,7 +40,8 @@ const TX_LABELS: Record<string, string> = {
  */
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 	return (
-		<div className="mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm">
+		<div className="mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm relative overflow-hidden">
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/30 to-transparent" />
 			<div className="flex items-center justify-between mb-2">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Recent activity

@@ -91,7 +91,7 @@ function TerminalExample({ code }: { code: string }) {
 				aria-hidden="true"
 			/>
 
-			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)]">
+			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)]">
 				<div className="flex min-w-0 items-center gap-2 border-b border-border bg-[var(--color-surface)] px-4 py-3">
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-error" aria-hidden="true" />
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />

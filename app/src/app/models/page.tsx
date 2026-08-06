@@ -396,7 +396,7 @@ function ModelsPageInner() {
 
   return (
     <div className="min-h-screen bg-void">
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="container-page py-12">
         {/* Breadcrumb */}
         <Breadcrumb items={[ { label: "Models" } ]} />
 
@@ -988,7 +988,7 @@ export default function ModelsPage() {
       <Suspense
         fallback={
           <div className="min-h-screen bg-void">
-            <div className="mx-auto max-w-7xl px-4 py-12">
+            <div className="container-page py-12">
               <div className="h-8 w-32 bg-panel rounded animate-pulse mb-8" />
               <div className="h-10 w-64 bg-panel rounded animate-pulse mb-4" />
               <div className="h-4 w-48 bg-panel rounded animate-pulse mb-6" />

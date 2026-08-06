@@ -142,7 +142,7 @@ export const MessageInputRedesigned = forwardRef<
 		!reduceMotion && (loading || (focused && hasInput));
 
 	return (
-		<div className="relative z-10 bg-void">
+		<div className="relative z-10 bg-transparent">
 			<BorderBeam
 				size={loading ? "pulse-inner" : "line"}
 				colorVariant={loading ? "ocean" : "mono"}
@@ -150,11 +150,11 @@ export const MessageInputRedesigned = forwardRef<
 				strength={loading ? 0.55 : 0.4}
 				duration={loading ? 2.6 : 3.2}
 				active={beamActive}
-				borderRadius={12}
+				borderRadius={14}
 				className="w-full"
 			>
 			<div
-				className="glass relative flex items-end gap-0.5 rounded-xl px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out focus-within:border-accent/50 focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)] chat-scrollbar"
+				className="bg-surface relative flex items-end gap-0.5 rounded-[var(--radius-lg)] px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out focus-within:border-accent/50 focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)] chat-scrollbar border border-border shadow-sm"
 				role="group"
 				aria-label="New message"
 				aria-busy={loading}
@@ -176,7 +176,7 @@ export const MessageInputRedesigned = forwardRef<
 					maxLength={100 * 1024}
 					inputMode="text"
 					enterKeyHint="send"
-					className="min-h-[56px] flex-1 resize-none bg-transparent px-4 py-4 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void md:px-5"
+					className="min-h-[56px] flex-1 resize-none bg-transparent px-4 py-4 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:px-5"
 					disabled={loading}
 					style={{ minHeight: "56px", maxHeight: "200px" }}
 					onInput={handleInput}
@@ -194,7 +194,7 @@ export const MessageInputRedesigned = forwardRef<
 									? "Web search on — responses use live sources when available"
 									: "Web search off — turn on to ground answers in the internet"
 							}
-							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-[1px] md:h-10 ${
+							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] ${
 								webSearchEnabled
 									? "border border-success/30 bg-success/15 text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
 									: "border border-border bg-void text-text-muted hover:border-accent/40 hover:bg-surface hover:text-text"
@@ -217,7 +217,7 @@ export const MessageInputRedesigned = forwardRef<
 								onClick={onStop}
 								aria-label="Stop generation"
 								className="
-                    flex h-[42px] w-[42px] md:h-10 md:w-10 items-center justify-center
+                    flex h-[42px] w-[42px] items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
                     rounded-xl relative min-h-[42px] min-w-[42px]
                   "
@@ -242,14 +242,14 @@ export const MessageInputRedesigned = forwardRef<
 								title={disabled ? disabledReason ?? "Send disabled" : undefined}
 								aria-label="Send message"
 								aria-describedby="message-hint"
-								whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+								whileTap={reduceMotion ? undefined : { scale: 0.94 }}
 								whileHover={
 									hasInput && !reduceMotion ? { scale: 1.04 } : undefined
 								}
 								transition={EASE_SPRING}
 								className={`
-                     group/send relative flex h-[42px] w-[42px] md:h-10 md:w-10 items-center justify-center
-                     rounded-xl font-semibold transition-all duration-200 min-h-[42px] min-w-[42px]
+                     group/send relative flex h-[42px] w-[42px] items-center justify-center
+                     rounded-xl font-semibold transition-all duration-150 ease-out min-h-[42px] min-w-[42px]
                      ${
 											hasInput && !disabled
 												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"

@@ -48,7 +48,7 @@ export function HowItWorks() {
 	return (
 		<section
 			aria-labelledby="how-it-works-headline"
-			className="relative border-t border-border-subtle bg-[var(--color-surface)]/40 py-16 sm:py-20"
+			className="relative border-t border-border-subtle bg-surface py-16 sm:py-20"
 		>
 			<div className="container-page">
 				<Reveal>

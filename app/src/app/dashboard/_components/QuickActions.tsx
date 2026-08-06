@@ -64,7 +64,8 @@ interface QuickActionsProps {
  */
 export function QuickActions({ className = "" }: QuickActionsProps) {
 	return (
-		<div className={`mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm ${className}`}>
+		<div className={`mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm relative overflow-hidden ${className}`}>
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/30 to-transparent" />
 			<div className="mb-5 flex items-center justify-between">
 				<div>
 					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">

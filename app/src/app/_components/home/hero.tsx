@@ -32,7 +32,7 @@ function reveal(index: number, enabled: boolean) {
 export function Hero() {
 	const entrance = useHasBeenInView();
 	return (
-		<section className="relative overflow-hidden min-h-[100vh] flex items-center">
+		<section className="relative overflow-hidden min-h-[calc(100dvh-3.5rem)] flex items-center">
 			{/* Atmosphere — terminal void with aperture glow */}
 			<div
 				aria-hidden="true"
@@ -42,10 +42,10 @@ export function Hero() {
 				<div className="absolute top-0 right-0 -mr-[25%] w-[100%] aspect-[1/1] rounded-full bg-[radial-gradient(circle_at_center,var(--color-accent)_0%,transparent_50%)] opacity-[0.12] mix-blend-screen blur-[120px]" />
 				<div className="absolute bottom-0 left-0 -ml-[25%] w-[100%] aspect-[1/1] rounded-full bg-[radial-gradient(circle_at_center,var(--color-tertiary)_0%,transparent_50%)] opacity-[0.08] mix-blend-screen blur-[120px]" />
 				{/* Horizon rule — gateway threshold */}
-				<div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border-hi to-transparent" />
+				<div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border-hi to-transparent z-20" />
 			</div>
 
-			<div className="container-page relative z-10 min-w-0 py-20 lg:py-32">
+			<div className="container-page relative z-10 min-w-0 py-20 lg:py-32 flex-1">
 				<div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto">
 					<m.div
 						{...reveal(0, entrance)}
@@ -105,9 +105,9 @@ export function Hero() {
 
 					<m.div 
 						{...reveal(4, entrance)}
-						className="mt-20 w-full max-w-4xl mx-auto perspective-[1200px]"
+						className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px]"
 					>
-						<div className="transform-gpu transition-transform duration-700 hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01]">
+						<div className="transform-gpu transition-transform duration-700 hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[400px]">
 							<LiveRequestCard className="shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50" />
 						</div>
 					</m.div>

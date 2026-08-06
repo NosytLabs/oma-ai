@@ -48,7 +48,7 @@ export function FinalCTA() {
 									borderRadius="9999px"
 									borderWidth={1}
 									color="var(--color-accent)"
-									className="electric-border-host"
+									className="electric-border-host !rounded-full"
 									style={{ animationDuration: "3s" }}
 								>
 									<Link

@@ -619,10 +619,10 @@ function ShellContent({
 				onAuthRequired={handleAuthRequired}
 			/>
 
-			<div className="flex-1 flex overflow-hidden bg-void">
+			<div className="flex-1 flex overflow-hidden bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)]">
 				<section
 					aria-label="Chat messages"
-					className="flex-1 flex flex-col min-w-0 border-r border-border relative"
+					className="flex-1 flex flex-col min-w-0 relative"
 				>
 					{!isAuthenticated && (
 						<div
@@ -665,7 +665,7 @@ function ShellContent({
 
 					{/* System instructions only apply to text chat */}
 					{mediaMode === "text" && (
-						<div className="flex-none border-b border-border bg-void">
+						<div className="flex-none border-b border-border bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)]">
 							<button
 								type="button"
 								onClick={() => setSystemPromptOpen(!systemPromptOpen)}
@@ -727,7 +727,7 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 							<div
-							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-5 sm:pb-8 bg-void border-t border-border shadow-[0_-10px_30px_-10px_var(--color-void)] z-10"
+							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-5 sm:pb-8 bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)] border-t border-border shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.85)] z-10"
 							style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
 						>
 							<div className="max-w-3xl mx-auto">

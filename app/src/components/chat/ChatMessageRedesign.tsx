@@ -404,9 +404,9 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								onClick={handleCopy}
 								aria-label={copied ? "Copied to clipboard" : "Copy message"}
 								className="
-                flex items-center gap-1 px-2 py-1 min-h-[44px] min-w-[44px]
+                flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-success transition-all duration-200
+                hover:text-success active:scale-[0.97] transition-all duration-150 ease-out
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
@@ -424,9 +424,9 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								onClick={onRegenerate}
 								aria-label="Regenerate response"
 								className="
-                flex items-center gap-1 px-2 py-1 min-h-[44px] min-w-[44px]
+                flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-accent transition-all duration-200
+                hover:text-accent active:scale-[0.97] transition-all duration-150 ease-out
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
@@ -472,7 +472,7 @@ function ReasoningBlock({
           group/reason w-full flex items-center justify-between px-4 py-2.5
           hover:bg-surface-elevated/40 transition-colors
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-          focus-visible:ring-offset-2 focus-visible:ring-offset-void
+          focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
 			>
 				<span className="flex items-center gap-2.5 text-[11px] font-mono uppercase tracking-wider">
@@ -532,10 +532,10 @@ function ReasoningBlock({
 				{expanded && (
 					<m.div
 						id="reasoning-content"
-						initial={prefersReducedMotion ? { height: "auto" } : { height: 0 }}
-						animate={{ height: "auto" }}
-						exit={prefersReducedMotion ? { height: "auto" } : { height: 0 }}
-						transition={prefersReducedMotion ? { duration: 0 } : undefined}
+						initial={prefersReducedMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={prefersReducedMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+						transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
 						className="overflow-hidden"
 					>
 						<div className="px-4 py-3 text-xs font-mono text-text-muted italic leading-relaxed whitespace-pre-wrap break-words border-t border-border/30">
@@ -608,7 +608,7 @@ function CodeBlock({
           bg-surface-elevated text-text-muted hover:text-text
           opacity-0 group-hover:opacity-100 transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-          focus-visible:ring-offset-2 focus-visible:ring-offset-void
+          focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
 			>
 				{copied ? (
@@ -656,7 +656,7 @@ const SearchSources = memo(function SearchSources({
           w-full flex items-center justify-between px-4 py-3
           bg-surface/50 hover:bg-surface-elevated/50 transition-colors
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-          focus-visible:ring-offset-2 focus-visible:ring-offset-void
+          focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
 			>
 				<span className="flex items-center gap-2 text-xs font-mono text-text-muted uppercase tracking-wider">

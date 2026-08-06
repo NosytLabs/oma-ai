@@ -507,6 +507,13 @@
 	.btn-primary.electric-border-host:hover {
 		transform: none;
 	}
+    
+    .electric-border-host:hover {
+        transform: translateY(-0.125rem);
+    }
+    .electric-border-host {
+        transition: transform 0.2s ease;
+    }
 	.btn-primary:active {
 		transform: scale(0.97);
 	}
@@ -890,6 +897,11 @@
 	.page-hero {
 		position: relative;
 		overflow: hidden;
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
 	}
 	.page-hero::before {
 		content: "";

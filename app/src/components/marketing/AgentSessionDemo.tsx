@@ -71,7 +71,7 @@ const stream = await client.chat.completions.create({
 function LineRow({ line }: { line: Line }) {
 	if (line.kind === "status") {
 		return (
-			<div className="flex items-center gap-2 border-b border-border/80 bg-panel/80 px-3 py-2 font-mono text-[11px] text-text-muted">
+			<div className="flex items-center gap-2 border-b border-border/80 bg-[color-mix(in_srgb,var(--color-panel)_80%,transparent)] px-3 py-2 font-mono text-[11px] text-text-muted">
 				<span className="inline-flex h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent-glow)]" />
 				<span className="truncate">{line.text}</span>
 			</div>
@@ -181,7 +181,7 @@ export function AgentSessionDemo({ className }: { className?: string }) {
 			</div>
 
 			<div
-				className="max-h-[min(420px,55vh)] overflow-y-auto py-1 focus:outline-none focus:ring-1 focus:ring-accent"
+				className="h-[min(420px,55vh)] overflow-y-auto py-1 focus:outline-none focus:ring-1 focus:ring-accent bg-[color-mix(in_srgb,var(--color-panel)_80%,transparent)]"
 				role="region"
 				aria-label="Agent session demo transcript"
 				tabIndex={0}
