@@ -283,7 +283,7 @@ export function ModelSelector({
 												aria-pressed={isActive}
 												className={`
                           px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
-                          transition-all duration-150
+                          transition-all duration-150 rounded-[var(--radius-sm)]
                           ${
 														isActive
 															? `${style.bg} ${style.text} border`

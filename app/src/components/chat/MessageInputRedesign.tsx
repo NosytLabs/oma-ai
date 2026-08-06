@@ -219,14 +219,14 @@ export const MessageInputRedesigned = forwardRef<
 								className="
                     flex h-[42px] w-[42px] items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
-                    rounded-xl relative min-h-[42px] min-w-[42px]
+                    rounded-[var(--radius-md)] relative min-h-[42px] min-w-[42px]
                     transition-all duration-150 ease-out active:scale-[0.95]
                   "
 							>
 								{/* Rotating ring */}
 								{!reduceMotion && (
 									<m.span
-										className="absolute inset-0 border-[3px] border-danger/60 animate-pulse rounded-xl drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
+										className="absolute inset-0 border-[3px] border-danger/60 animate-pulse rounded-[var(--radius-md)] drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
 										animate={{ rotate: 360 }}
 										transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 									/>
@@ -250,7 +250,7 @@ export const MessageInputRedesigned = forwardRef<
 								transition={EASE_SPRING}
 								className={`
                      group/send relative flex h-[42px] w-[42px] items-center justify-center
-                     rounded-xl font-semibold transition-all duration-150 ease-out min-h-[42px] min-w-[42px]
+                     rounded-[var(--radius-md)] font-semibold transition-all duration-150 ease-out min-h-[42px] min-w-[42px]
                      ${
 											hasInput && !disabled
 												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"
@@ -269,7 +269,7 @@ export const MessageInputRedesigned = forwardRef<
 								{hasInput && !disabled && !reduceMotion && (
 									<span
 										aria-hidden="true"
-										className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-accent/30"
+										className="pointer-events-none absolute inset-0 rounded-[var(--radius-md)] ring-1 ring-accent/30"
 									/>
 								)}
 							</m.button>

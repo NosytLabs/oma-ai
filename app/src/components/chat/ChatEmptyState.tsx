@@ -69,7 +69,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				initial={{ scale: 0.9, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				transition={{ duration: 0.3 }}
-				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-2xl border border-accent/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
+				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-[var(--radius-lg)] border border-accent/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
 			>
 				<span className="text-[22px] font-mono font-bold text-accent" aria-hidden="true">
 					{">"}_
@@ -133,7 +133,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							onMouseLeave={() => setHoveredId(null)}
 							onClick={() => onPreset(preset.prompt, preset.model)}
 							className="
-                flex min-h-[56px] items-start gap-3.5 rounded-[14px] border border-border
+                flex min-h-[56px] items-start gap-3.5 rounded-[var(--radius-md)] border border-border
                 bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color,transform,box-shadow] duration-300
                 hover:border-accent/40 hover:bg-surface/80 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-10px_rgba(0,0,0,0.5)]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent

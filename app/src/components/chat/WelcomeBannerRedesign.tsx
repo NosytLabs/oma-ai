@@ -410,7 +410,7 @@ export function WelcomeBanner({
 								className="
                   inline-flex items-center justify-center gap-1.5 px-4 py-2
                   bg-accent text-text-inverse text-[11px] font-mono font-bold
-                  uppercase tracking-widest hover:bg-accent-hover
+                  uppercase tracking-widest hover:bg-accent-hover rounded-[var(--radius-sm)]
                   transition-all duration-200 hover:shadow-[0_0_20px_var(--color-accent-glow)]
                   min-h-[40px]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
@@ -426,7 +426,7 @@ export function WelcomeBanner({
 								className="
                   inline-flex items-center justify-center gap-1.5 px-4 py-2
                   border border-border text-text-secondary text-[11px] font-mono
-                  font-bold uppercase tracking-widest
+                  font-bold uppercase tracking-widest rounded-[var(--radius-sm)]
                   hover:bg-surface hover:border-success/30 hover:text-success
                   transition-all duration-200 min-h-[40px]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent

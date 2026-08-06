@@ -538,7 +538,7 @@ function ReasoningBlock({
 						transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
 						className="overflow-hidden"
 					>
-						<div className="px-4 py-3 text-xs font-mono text-text-muted italic leading-relaxed whitespace-pre-wrap break-words border-t border-border/30">
+						<div className="px-4 py-3 text-xs font-mono text-text-muted italic leading-relaxed whitespace-pre-wrap break-words border-t border-border/30 rounded-b-[var(--radius-md)]">
 							{reasoning}
 						</div>
 					</m.div>
@@ -582,16 +582,15 @@ function CodeBlock({
 		<div className="relative group my-4 w-full min-w-0 max-w-full">
 			{/* Language badge */}
 			{className?.includes("language-") && (
-				<div className="absolute top-0 left-0 z-10 px-2 py-1 bg-surface-elevated border-b border-r border-border text-[9px] font-mono text-text-muted uppercase tracking-wider">
+				<div className="absolute top-0 left-0 z-10 px-2 py-1 bg-surface-elevated border-b border-r border-border text-[9px] font-mono text-text-muted uppercase tracking-wider rounded-tl-[var(--radius-md)] rounded-br-[var(--radius-md)]">
 					{className.replace("language-", "")}
 				</div>
 			)}
-			<div className="chat-scrollbar max-w-full overflow-x-auto">
+			<div className="chat-scrollbar max-w-full overflow-x-auto rounded-[var(--radius-md)] border border-border group-hover:border-accent/20 transition-colors duration-300">
 				<pre
 					className="
             block w-max max-w-full min-w-full bg-void text-text p-4 pt-8 text-[13px] leading-relaxed
-            border border-border font-mono
-            group-hover:border-accent/20 transition-colors duration-300
+            font-mono
             chat-scrollbar
           "
 				>
@@ -604,7 +603,7 @@ function CodeBlock({
 				aria-label={copied ? "Copied" : "Copy code"}
 				className="
           absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px]
-          flex items-center justify-center
+          flex items-center justify-center rounded-[var(--radius-md)]
           bg-surface-elevated text-text-muted hover:text-text
           opacity-0 group-hover:opacity-100 transition-all duration-150 ease-out active:scale-[0.95]
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent

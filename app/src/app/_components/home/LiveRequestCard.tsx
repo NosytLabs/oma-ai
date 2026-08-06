@@ -146,8 +146,8 @@ Content-Type: application/json`;
 				"relative overflow-hidden rounded-xl border border-border-hi",
 				"bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-elevated)_94%,transparent),var(--color-panel))]",
 				"shadow-[0_30px_60px_-30px_rgba(0,0,0,0.85)] backdrop-blur-sm w-full max-w-[560px] text-left",
-				// Hardcoded height to prevent layout shift during animation
-				"h-[400px] flex flex-col",
+				// Increased height slightly to prevent any layout shifts with multi-line outputs
+				"h-[420px] flex flex-col",
 				className,
 			)}
 		>
