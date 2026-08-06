@@ -645,16 +645,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.75,
 			capabilities: ["chat", "fast", "tools"],
 		},
-		"qwen3-235b-a22b-instruct-2507": {
-			id: "qwen3-235b-a22b-instruct-2507",
-			displayName: "Qwen3 235B",
-			provider: "Venice",
-			category: "budget",
-			maxTokens: 16384,
-			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.75,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
 		"mercury-2": {
 			id: "mercury-2",
 			displayName: "Mercury 2",
@@ -674,16 +664,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			inputPricePer1M: 1.54,
 			outputPricePer1M: 4.84,
 			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"qwen3-coder-480b-a35b-instruct-turbo": {
-			id: "qwen3-coder-480b-a35b-instruct-turbo",
-			displayName: "Qwen3 Coder 480B",
-			provider: "Venice",
-			category: "mid",
-			maxTokens: 16384,
-			inputPricePer1M: 0.35,
-			outputPricePer1M: 1.5,
-			capabilities: ["chat", "coding", "tools"],
 		},
 		"qwen-3-7-plus": {
 			id: "qwen-3-7-plus",
@@ -758,6 +738,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 22 curated chat models (20 Venice + 2 Gonka).
+// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 Gonka).
 // Keep in sync with `server/src/inference/models.ts` defaultCatalog().
-export const MODEL_COUNT = 22;
+export const MODEL_COUNT = 20;
