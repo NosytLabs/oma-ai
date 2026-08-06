@@ -182,7 +182,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					}}
 				>
 					{isUser ? (
-						<User className="w-4 h-4" strokeWidth={1.75} />
+						<User className="w-4 h-4" strokeWidth={2} />
 					) : isStreaming ? (
 						prefersReducedMotion ? (
 							<span
@@ -220,7 +220,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							/>
 						)
 					) : (
-						<Bot className="w-4 h-4" strokeWidth={1.75} />
+						<Bot className="w-4 h-4" strokeWidth={2} />
 					)}
 				</div>
 				{/* Ambient glow behind assistant avatar */}
@@ -406,7 +406,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								className="
                 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-success active:scale-[0.97] transition-all duration-150 ease-out
+                hover:text-success active:scale-[0.95] transition-all duration-150 ease-out
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
@@ -470,7 +470,7 @@ function ReasoningBlock({
 				aria-controls="reasoning-content"
 				className="
           group/reason w-full flex items-center justify-between px-4 py-2.5
-          hover:bg-surface-elevated/40 transition-colors
+          hover:bg-surface-elevated/40 transition-colors active:bg-surface-elevated/60
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
@@ -606,7 +606,7 @@ function CodeBlock({
           absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px]
           flex items-center justify-center
           bg-surface-elevated text-text-muted hover:text-text
-          opacity-0 group-hover:opacity-100 transition-all duration-150
+          opacity-0 group-hover:opacity-100 transition-all duration-150 ease-out active:scale-[0.95]
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
@@ -654,7 +654,7 @@ const SearchSources = memo(function SearchSources({
 				aria-expanded={expanded}
 				className="
           w-full flex items-center justify-between px-4 py-3
-          bg-surface/50 hover:bg-surface-elevated/50 transition-colors
+          bg-surface/50 hover:bg-surface-elevated/50 transition-colors active:bg-surface-elevated/80
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "
