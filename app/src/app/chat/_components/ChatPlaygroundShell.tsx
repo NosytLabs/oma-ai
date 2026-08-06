@@ -726,18 +726,18 @@ function ShellContent({
 						// Added safe-area-inset padding so the composer never sits flush
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
-							<div
-							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-5 sm:pb-8 bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)] border-t border-border shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.85)] z-10"
+						<div
+							className="flex-none px-4 pt-4 pb-6 sm:px-6 sm:pt-6 sm:pb-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
 							style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
 						>
-							<div className="max-w-3xl mx-auto">
-								<div className="flex items-center gap-3 mb-3 flex-wrap">
+							<div className="max-w-4xl mx-auto">
+								<div className="flex items-center gap-3 mb-4 flex-wrap">
 									<button
 										type="button"
 										onClick={() => setUiMode(!uiMode)}
 										aria-pressed={uiMode}
 										aria-label="Toggle UI mode — let models render interactive interfaces (A2UI)"
-										className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all focus-ring ${
+										className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-[colors,box-shadow,transform] duration-200 ease-out focus-ring active:scale-[0.97] ${
 											uiMode
 												? "border-accent bg-accent/15 text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
 												: "border-border-hi text-text-muted hover:border-accent/50 hover:text-text"
@@ -746,7 +746,7 @@ function ShellContent({
 										<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
 										{uiMode ? "UI mode on" : "UI mode"}
 									</button>
-								<span className="hidden sm:inline text-[11px] font-mono text-text-muted tracking-wide opacity-80">
+								<span className="hidden sm:inline text-[11px] font-mono text-text-muted tracking-wide opacity-80 select-none">
 										{uiMode
 											? "Models can render buttons, forms & cards inline — clickable, like Claude's artifacts"
 											: "Ask \u201cbuild me a form\u201d with UI mode on to get interactive UI"}
@@ -778,10 +778,10 @@ function ShellContent({
 									setWebSearchEnabled={setWebSearchEnabled}
 								/>
 
-								<div className="mt-3 flex flex-col items-stretch gap-1 px-1 sm:mt-3 sm:gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="mt-4 flex flex-col items-stretch gap-2 px-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
 									<p
 										id="message-hint"
-										className="text-[11.5px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words sm:shrink-0"
+										className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words sm:shrink-0 select-none"
 									>
 										<span className="hidden sm:inline">Enter send · Shift+Enter newline</span>
 										<span className="sm:hidden">Tap send · hold for newline</span>

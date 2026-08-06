@@ -75,7 +75,7 @@ export function ChatSettingsPanel({
 						initial={{ width: 0, opacity: 0 }}
 						animate={{ width: 320, opacity: 1 }}
 						exit={{ width: 0, opacity: 0 }}
-						transition={{ type: "spring", damping: 30, stiffness: 300 }}
+						transition={{ type: "spring", damping: 25, stiffness: 350 }}
 						className="flex-none bg-void border-l border-border z-10 overflow-hidden hidden md:flex flex-col"
 					>
 						<div className="w-80 flex flex-col h-full">
@@ -138,7 +138,7 @@ export function ChatSettingsPanel({
 						initial={{ x: "100%" }}
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
-						transition={{ type: "spring", damping: 30, stiffness: 300 }}
+						transition={{ type: "spring", damping: 25, stiffness: 350 }}
 						className="md:hidden fixed inset-y-0 right-0 w-80 bg-void border-l border-border z-50 flex flex-col"
 					>
 						<div className="flex-none h-12 border-b border-border flex items-center justify-between px-4 bg-void">

@@ -84,30 +84,30 @@ export function Hero() {
 					>
 						<Link
 							href="/login"
-							className="group relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-text-bright px-10 font-medium text-void transition-transform hover:scale-[1.03] active:scale-[0.97] sm:w-auto shadow-[0_0_40px_-10px_var(--color-accent)]"
+							className="group relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-text-bright px-10 font-medium text-void transition-[transform,box-shadow] duration-200 ease-out hover:scale-[1.03] active:scale-[0.97] sm:w-auto shadow-[0_0_40px_-10px_var(--color-accent)]"
 						>
 							<div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
 								<div className="relative h-full w-8 bg-white/20" />
 							</div>
-							<KeyRound className="h-5 w-5" />
+							<KeyRound className="h-5 w-5" strokeWidth={1.5} />
 							<span className="text-base tracking-wide">Get API key</span>
-							<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+							<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
 						</Link>
 						
 						<Link
 							href="/chat"
-							className="group flex h-14 w-full items-center justify-center gap-2 rounded-full border border-border bg-surface/30 px-10 font-medium text-text-secondary backdrop-blur-md transition-colors hover:bg-surface hover:text-text-bright hover:border-border-hi sm:w-auto active:scale-[0.97]"
+							className="group flex h-14 w-full items-center justify-center gap-2 rounded-full border border-border bg-surface/30 px-10 font-medium text-text-secondary backdrop-blur-md transition-[colors,border-color,transform] duration-200 ease-out hover:bg-surface hover:text-text-bright hover:border-border-hi sm:w-auto active:scale-[0.97]"
 						>
-							<Sparkles className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors" />
+							<Sparkles className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors" strokeWidth={1.5} />
 							<span className="text-base tracking-wide">Try chat</span>
 						</Link>
 					</m.div>
 
 					<m.div 
 						{...reveal(4, entrance)}
-						className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px] min-h-[440px]"
+						className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px] min-h-[420px] md:min-h-[400px]"
 					>
-						<div className="transform-gpu transition-transform duration-700 hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[420px] md:h-[400px]">
+						<div className="transform-gpu transition-transform duration-200 ease-out hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[420px] md:h-[400px]">
 							<LiveRequestCard className="shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50 w-full max-w-[706px]" />
 						</div>
 					</m.div>

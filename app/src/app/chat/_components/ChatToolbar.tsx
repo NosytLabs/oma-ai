@@ -170,7 +170,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("text")}
 					aria-selected={mediaMode === "text"}
 					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<MessageSquare className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Chat</span>
@@ -181,7 +181,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("image")}
 					aria-selected={mediaMode === "image"}
 					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<ImageIcon className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Image</span>
@@ -192,7 +192,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("video")}
 					aria-selected={mediaMode === "video"}
 					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<Film className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Video</span>
@@ -206,7 +206,7 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex h-14 min-w-0 flex-none items-center gap-2 border-b border-border bg-void/95 px-3 sm:gap-4 sm:px-6 shadow-[0_4px_20px_-10px_var(--color-void)] z-20"
+			className="flex h-14 min-w-0 flex-none items-center gap-2 border-b border-border bg-void/95 px-3 sm:gap-4 sm:px-6 z-20"
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
@@ -227,7 +227,7 @@ export function ChatToolbar({
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-[36px] min-w-[36px] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-[36px] min-w-[36px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
 				>
 					<Settings2 className="h-3.5 w-3.5" />
@@ -266,7 +266,7 @@ export function ChatToolbar({
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} hidden shrink-0 sm:flex min-h-[40px] min-w-[40px] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} hidden shrink-0 sm:flex min-h-[40px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
@@ -279,7 +279,7 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} max-sm:hidden shrink-0 focus-ring data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success sm:inline-flex`}
+					className={`${btnBase} max-sm:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success sm:inline-flex`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
@@ -296,7 +296,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} max-sm:hidden shrink-0 focus-ring sm:inline-flex`}
+					className={`${btnBase} max-sm:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex`}
 					title="Keyboard shortcuts (?)"
 					aria-label="? — show keyboard shortcuts"
 				>
@@ -312,7 +312,7 @@ export function ChatToolbar({
 							disabled={exportStatus === "loading"}
 							data-state={exportStatus}
 							aria-label="Export conversation to JSON"
-							className={`${btnBase} focus-ring data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent`}
+							className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent`}
 							title="Export conversation (JSON)"
 						>
 							{exportStatus === "success" ? (
@@ -327,7 +327,7 @@ export function ChatToolbar({
 							type="button"
 							onClick={clearChat}
 							aria-label="Clear conversation and local history"
-							className={`${btnBase} hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring`}
+							className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring`}
 							title="Clear chat (also clears browser local history)"
 						>
 							<Trash2 className="h-3.5 w-3.5" />

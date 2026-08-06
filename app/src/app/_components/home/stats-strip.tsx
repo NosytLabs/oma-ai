@@ -83,11 +83,11 @@ export function StatsStrip() {
 						</p>
 					</div>
 				</Reveal>
-				<ul className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border/60 lg:grid-cols-4">
+				<ul className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
 					{stats.map((stat, i) => (
 						<li
 							key={stat.label}
-							className="relative bg-panel/90 px-5 py-6 sm:px-6 sm:py-7"
+							className="relative bg-panel px-5 py-6 sm:px-6 sm:py-7"
 						>
 							{/* Ledger index */}
 							<span
@@ -106,7 +106,7 @@ export function StatsStrip() {
 								>
 									{stat.value}
 								</p>
-								<p className="mt-2.5 max-w-[16ch] text-[13px] leading-snug text-text-secondary">
+								<p className="mt-2.5 text-[13px] leading-snug text-text-secondary">
 									{stat.hint}
 								</p>
 							</Reveal>

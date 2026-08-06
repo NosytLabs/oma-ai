@@ -301,7 +301,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					{isUser ? (
 						<p className="whitespace-pre-wrap break-words text-[15px]">{msg.content}</p>
 					) : (
-						<div className="markdown-content max-w-full min-w-0 break-words font-sans text-[15px] leading-relaxed [overflow-wrap:anywhere]" aria-live="polite">
+						<div className="markdown-content max-w-full min-w-0 break-words font-sans text-[15px] leading-relaxed [overflow-wrap:anywhere]" aria-live="polite" aria-atomic="false">
 							{/* While the model is still streaming, render plain text —
 							    ReactMarkdown would otherwise emit literal `**` and other
 							    punctuation for partial markdown tokens. We swap to the

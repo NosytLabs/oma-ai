@@ -10,6 +10,7 @@ import {
 	Settings,
 	Zap,
 } from "lucide-react";
+import { m } from "framer-motion";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";

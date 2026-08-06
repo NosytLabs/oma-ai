@@ -291,13 +291,13 @@ export function MessagesList({
 		<div
 			ref={scrollContainerRef}
 			onScroll={handleScroll}
-			className="flex-1 overflow-y-auto p-3 md:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative"
+			className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative"
 		>
 			<div
 				className="pointer-events-none absolute inset-0 bg-grid-animated mask-radial"
 				aria-hidden="true"
 			/>
-			<div className="max-w-4xl mx-auto relative z-0">
+			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
 				{mediaMode === "image" ? (
 					<LazyImageGenerationPanel />
 				) : mediaMode === "video" ? (
@@ -415,11 +415,11 @@ export function MessagesList({
 									transition={{ duration: 0.15 }}
 									aria-label="Jump to latest message"
 									className="
-                        sticky bottom-2 left-1/2 -translate-x-1/2 z-10
+                        sticky bottom-4 left-1/2 -translate-x-1/2 z-10
                         inline-flex items-center gap-1.5 rounded-full
                         border border-accent/40 bg-accent/10
                         px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
-                        shadow-lg backdrop-blur-md hover:bg-accent/20
+                        shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
                         min-h-[44px]
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                       "

@@ -12,6 +12,7 @@
     "lint": "eslint",
     "start": "cp -R public .next/standalone/ && mkdir -p .next/standalone/.next && cp -R .next/static .next/standalone/.next/ && node .next/standalone/server.js",
     "test": "vitest run",
+    "smoke": "node scripts/smoke.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "changelog:gen": "node scripts/generate-changelog.mjs",
     "brand:generate": "node scripts/generate-brand-assets.mjs"

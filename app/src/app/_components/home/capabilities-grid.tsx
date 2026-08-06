@@ -147,27 +147,29 @@ const ACCENT: Record<
 
 function CardMockup({ lineClass }: { lineClass: string }) {
 	return (
-		<div
-			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 w-full max-w-[280px] rounded-[16px] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md h-[108px] flex flex-col justify-center gap-3"
-		>
-			<div className="flex items-center justify-between">
-				<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
-					OMA Credits
-				</span>
-				<span className="h-3.5 w-5 rounded-[3px] bg-gradient-to-br from-accent/70 to-accent/30" />
-			</div>
-			<div className="flex items-center justify-between">
-				<span className="font-mono text-sm tracking-[0.18em] text-text-bright/80">
-					•••• 4••2
-				</span>
-				<span className={cn("h-1.5 w-1.5 rounded-full", lineClass)} />
-			</div>
-			<div className="flex items-center justify-between border-t border-border/60 pt-2.5">
-				<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
-					+ $25 · settled
-				</span>
-				<span className="font-mono text-[10px] text-accent">1:1 USD</span>
+		<div className="mt-auto mb-2 mx-auto w-full max-w-[280px]">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none w-full rounded-[16px] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md h-[108px] flex flex-col justify-center gap-3"
+			>
+				<div className="flex items-center justify-between">
+					<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
+						OMA Credits
+					</span>
+					<span className="h-3.5 w-5 rounded-[3px] bg-gradient-to-br from-accent/70 to-accent/30" />
+				</div>
+				<div className="flex items-center justify-between">
+					<span className="font-mono text-sm tracking-[0.18em] text-text-bright/80">
+						•••• 4••2
+					</span>
+					<span className={cn("h-1.5 w-1.5 rounded-full", lineClass)} />
+				</div>
+				<div className="flex items-center justify-between border-t border-border/60 pt-2.5">
+					<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+						+ $25 · settled
+					</span>
+					<span className="font-mono text-[10px] text-accent">1:1 USD</span>
+				</div>
 			</div>
 		</div>
 	);
@@ -176,26 +178,28 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 function LedgerStrip({ lineClass }: { lineClass: string }) {
 	const rows = [40, 28, 48, 36, 24];
 	return (
-		<div
-			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-end gap-2 h-[108px]"
-		>
-			{rows.map((h, i) => (
-				<div key={i} className="flex-1">
-					<div
-						className={cn(
-							"rounded-t-[4px] opacity-70 transition-all duration-500",
-							lineClass,
-						)}
-						style={{ height: `${h}px` }}
-					/>
+		<div className="mt-auto mb-2 mx-auto w-full max-w-[280px]">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none flex w-full items-end gap-2 h-[108px]"
+			>
+				{rows.map((h, i) => (
+					<div key={i} className="flex-1">
+						<div
+							className={cn(
+								"rounded-t-[4px] opacity-70 transition-all duration-500",
+								lineClass,
+							)}
+							style={{ height: `${h}px` }}
+						/>
+					</div>
+				))}
+				<div className="ml-2 flex flex-col justify-end gap-1 pb-0.5">
+					<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+						ledger
+					</span>
+					<span className="font-mono text-[10px] text-accent">on-chain</span>
 				</div>
-			))}
-			<div className="ml-2 flex flex-col justify-end gap-1 pb-0.5">
-				<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
-					ledger
-				</span>
-				<span className="font-mono text-[10px] text-accent">on-chain</span>
 			</div>
 		</div>
 	);
@@ -203,30 +207,32 @@ function LedgerStrip({ lineClass }: { lineClass: string }) {
 
 function FlowVisual({ lineClass }: { lineClass: string }) {
 	return (
-		<div
-			aria-hidden="true"
-			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-center gap-2 h-[108px]"
-		>
-			<div className="flex flex-1 flex-col gap-1 justify-center">
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
-					POST /v1/chat
-				</span>
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted text-center">
-					402 · payment
-				</span>
-			</div>
-			<div className="flex flex-col items-center gap-1 justify-center">
-				<span className={cn("h-5 w-px", lineClass)} />
-				<span className="font-mono text-[9px] text-accent font-bold">x402</span>
-				<span className={cn("h-5 w-px", lineClass)} />
-			</div>
-			<div className="flex flex-1 flex-col gap-1 justify-center">
-				<span className="rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent text-center">
-					EIP-3009
-				</span>
-				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
-					200 · stream
-				</span>
+		<div className="mt-auto mb-2 mx-auto w-full max-w-[280px]">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none flex w-full items-center gap-2 h-[108px]"
+			>
+				<div className="flex flex-1 flex-col gap-1 justify-center">
+					<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
+						POST /v1/chat
+					</span>
+					<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted text-center">
+						402 · payment
+					</span>
+				</div>
+				<div className="flex flex-col items-center gap-1 justify-center">
+					<span className={cn("h-5 w-px", lineClass)} />
+					<span className="font-mono text-[9px] text-accent font-bold">x402</span>
+					<span className={cn("h-5 w-px", lineClass)} />
+				</div>
+				<div className="flex flex-1 flex-col gap-1 justify-center">
+					<span className="rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent text-center">
+						EIP-3009
+					</span>
+					<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
+						200 · stream
+					</span>
+				</div>
 			</div>
 		</div>
 	);
@@ -257,7 +263,7 @@ export function CapabilitiesGrid() {
 							<>
 								Three stories.
 								<br />
-								<span className="text-accent italic-accent">
+								<span className="text-accent italic">
 									One inference surface.
 								</span>
 							</>
@@ -282,7 +288,7 @@ export function CapabilitiesGrid() {
 									aria-label={`${pillar.title} — ${pillar.cta}`}
 									className={cn(
 										"group relative flex h-full min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-8 transition-[transform,box-shadow] duration-200 ease-out",
-										"hover:-translate-y-1 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2",
+										"active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2",
 										a.wrap,
 										a.ring,
 									)}
@@ -366,7 +372,7 @@ export function CapabilitiesGrid() {
 							>
 								<Link
 									href={s.href}
-									className="group surface-card tilt-card relative flex h-full min-h-[170px] flex-col gap-4 rounded-[var(--radius-lg)] p-6 transition-shadow duration-300 hover:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									className="group surface-card tilt-card relative flex h-full min-h-[170px] flex-col gap-4 rounded-[var(--radius-lg)] p-6 transition-shadow duration-300 hover:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-[shadow,transform] active:scale-[0.97]"
 								>
 									<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-accent border border-accent/20">
 										<Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
