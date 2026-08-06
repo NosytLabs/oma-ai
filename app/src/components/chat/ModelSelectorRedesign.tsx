@@ -197,7 +197,7 @@ export function ModelSelector({
 				aria-label={`Select AI model — ${selectedName || "SELECT MODEL"}`}
 				className={`
           flex items-center gap-2 bg-surface/70 border border-border-hi
-          hover:border-accent/40 hover:bg-surface transition-all duration-200
+          hover:border-accent/40 hover:bg-surface transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
           min-w-0 group rounded-md
           ${compact ? "w-full justify-between px-2 py-1.5" : "px-2.5 py-1.5"}
         `}
@@ -251,7 +251,7 @@ export function ModelSelector({
                       w-full pl-9 pr-3 py-2 bg-void border border-border
                       text-sm text-text-secondary font-mono placeholder-text-muted
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void
-                      transition-all duration-200
+                      transition-[border-color,box-shadow] duration-200 ease-out
                     "
 									/>
 								</div>

@@ -46,7 +46,7 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
 		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
 	),
 	ghost: cn(
-		"bg-transparent text-text-secondary transition-all",
+		"bg-transparent text-text-secondary transition-[background-color,color,transform]",
 		"hover:text-text-primary hover:bg-[var(--color-surface)] hover:scale-[1.02]",
 		"active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed",
 	),
@@ -89,7 +89,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		const classes = cn(
 			"inline-flex items-center justify-center",
 			"font-sans whitespace-nowrap select-none tracking-[-0.01em]",
-			"transition-[background-color,border-color,box-shadow,color,transform,opacity] duration-300 ease-[var(--ease-spring)]",			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void",
+			"transition-[background-color,border-color,box-shadow,color,transform,opacity] duration-200 ease-out",			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void",
 
 			"disabled:pointer-events-none",
 			VARIANT_STYLES[variant],

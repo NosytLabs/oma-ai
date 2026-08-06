@@ -112,7 +112,7 @@ export function NavbarToolsDropdown({
 								? { opacity: 0 }
 								: { opacity: 0, y: -6, scale: 0.97 }
 						}
-						transition={EASE_SPRING_SOFT}
+						transition={{ type: "spring", duration: 0.35, bounce: 0 }}
 						style={{ transformOrigin: "top left" }}
 						className={`absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]`}
 					>

@@ -152,8 +152,8 @@ export function NavbarMobileMenu({
 						}
 						animate={prefersReduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
 						exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
-						transition={{ duration: 0.35, ease: EASE_OUT }}
-						className="fixed top-14 right-0 bottom-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
+						transition={{ type: "spring", duration: 0.45, bounce: 0.05 }}
+						className="fixed inset-y-0 right-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
 					>
 						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
 							{/* Status row */}

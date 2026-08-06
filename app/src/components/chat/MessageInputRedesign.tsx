@@ -194,7 +194,7 @@ export const MessageInputRedesigned = forwardRef<
 									? "Web search on — responses use live sources when available"
 									: "Web search off — turn on to ground answers in the internet"
 							}
-							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] ${
+							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] ${
 								webSearchEnabled
 									? "border border-success/30 bg-success/15 text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
 									: "border border-border bg-void text-text-muted hover:border-accent/40 hover:bg-surface hover:text-text"
@@ -220,7 +220,7 @@ export const MessageInputRedesigned = forwardRef<
                     flex h-[42px] w-[42px] items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
                     rounded-[var(--radius-md)] relative min-h-[42px] min-w-[42px]
-                    transition-all duration-150 ease-out active:scale-[0.95]
+                    transition-[background-color,border-color,transform,box-shadow] duration-120 ease-out active:scale-[0.97]
                   "
 							>
 								{/* Rotating ring */}
@@ -250,7 +250,7 @@ export const MessageInputRedesigned = forwardRef<
 								transition={EASE_SPRING}
 								className={`
                      group/send relative flex h-[42px] w-[42px] items-center justify-center
-                     rounded-[var(--radius-md)] font-semibold transition-all duration-150 ease-out min-h-[42px] min-w-[42px]
+                     rounded-[var(--radius-md)] font-semibold transition-[background-color,border-color,transform,box-shadow] duration-120 ease-out min-h-[42px] min-w-[42px] active:scale-[0.97]
                      ${
 											hasInput && !disabled
 												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"

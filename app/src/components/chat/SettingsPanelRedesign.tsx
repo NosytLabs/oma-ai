@@ -78,7 +78,7 @@ function Slider({
 				<div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-surface-elevated rounded-full overflow-hidden">
 					{/* Filled portion */}
 					<div
-						className="h-full rounded-full transition-all duration-100"
+						className="h-full rounded-full transition-[width] duration-100 ease-out"
 						style={{
 							width: `${pct}%`,
 							background: `linear-gradient(90deg, var(--color-success), var(--color-accent))`,
@@ -102,7 +102,7 @@ function Slider({
             [&::-webkit-slider-thumb]:bg-accent
             [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-void
             [&::-webkit-slider-thumb]:shadow-[0_0_8px_var(--color-accent-glow)]
-            [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-150
+            [&::-webkit-slider-thumb]:transition-[transform] [&::-webkit-slider-thumb]:duration-150 [&::-webkit-slider-thumb]:ease-out
             [&::-webkit-slider-thumb]:hover:scale-125
             [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5
             [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent
@@ -141,7 +141,7 @@ function GlowToggle({
 				aria-checked={checked}
 				aria-label={label}
 				className={`
-          relative w-10 h-5 rounded-full transition-all duration-300
+          relative w-10 h-5 rounded-full transition-[background-color,box-shadow] duration-200 ease-out
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-void
           ${
@@ -217,6 +217,7 @@ function AgentsConnector() {
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: "auto", opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.15, ease: "easeOut" }}
 						className="mt-3 space-y-3 overflow-hidden"
 					>
 						<div className="p-3 bg-void/80 border border-border/50 backdrop-blur-sm">
@@ -422,6 +423,7 @@ export function SettingsPanel({
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: "auto", opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.15, ease: "easeOut" }}
 						className="space-y-4 overflow-hidden"
 					>
 						<GlowToggle checked={stream} onChange={setStream} label="STREAM" />

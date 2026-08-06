@@ -167,7 +167,7 @@ function ApiKeyManagerComponent({
 										type="button"
 										onClick={() => onCopy(key.prefix, `prefix-${key.id}`)}
 										aria-label="Copy API key prefix"
-										className="flex items-center justify-center rounded-[var(--radius-sm)] px-3 py-1.5 min-h-[32px] text-xs font-semibold text-text-secondary transition-all duration-150 hover:bg-surface-elevated hover:text-text-bright hover:border hover:border-border border border-transparent active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+										className="flex items-center justify-center rounded-[var(--radius-sm)] px-3 py-1.5 min-h-[32px] text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-150 ease-out hover:bg-surface-elevated hover:text-text-bright hover:border hover:border-border border border-transparent active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 									>
 										{copied === `prefix-${key.id}` ? "Copied!" : "Copy prefix"}
 									</button>
@@ -179,7 +179,7 @@ function ApiKeyManagerComponent({
 										onClick={(e) => handleRevokeClick(key.id, e.currentTarget)}
 										disabled={revokingId === key.id || confirmKeyId !== null}
 										aria-label="Revoke API key"
-										className="flex items-center justify-center rounded-[var(--radius-sm)] px-3 py-1.5 min-h-[32px] text-xs font-semibold text-text-secondary transition-all duration-150 hover:bg-danger/10 hover:text-danger hover:border hover:border-danger/30 border border-transparent active:scale-[0.95] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+										className="flex items-center justify-center rounded-[var(--radius-sm)] px-3 py-1.5 min-h-[32px] text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-150 ease-out hover:bg-danger/10 hover:text-danger hover:border hover:border-danger/30 border border-transparent active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 									>
 										{revokingId === key.id ? "Revoking…" : "Revoke"}
 									</button>

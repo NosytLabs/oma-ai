@@ -61,7 +61,7 @@ export function ModelComparePanel({
 					initial={{ x: "100%", opacity: 0 }}
 					animate={{ x: 0, opacity: 1 }}
 					exit={{ x: "100%", opacity: 0 }}
-					transition={{ type: "spring", damping: 30, stiffness: 280 }}
+					transition={{ type: "spring", duration: 0.5, bounce: 0.1 }}
 					className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-void border-l border-border z-50 flex flex-col shadow-2xl"
 					role="complementary"
 					aria-label="Model comparison panel"

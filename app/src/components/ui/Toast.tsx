@@ -197,7 +197,7 @@ function ToastItem({
 				className={cn(
 					"rounded-md min-h-8 min-w-8 flex items-center justify-center p-1.5 shrink-0",
 					"hover:bg-text-bright/10 text-text-secondary hover:text-text-bright",
-					"transition-[transform,color,background-color] duration-150 ease-out",
+					"transition-[transform,color,background-color] duration-120 ease-out",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
 					"focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
 					"active:scale-[0.97]",

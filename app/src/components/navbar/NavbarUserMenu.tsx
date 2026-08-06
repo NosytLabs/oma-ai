@@ -6,7 +6,6 @@ import { ChevronDown, Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-rea
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { EASE_SPRING } from "@/lib/animation";
 import { useClickOutside } from "./_hooks/useClickOutside";
 
 interface NavbarUserMenuProps {
@@ -120,7 +119,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 								? { opacity: 0 }
 								: { opacity: 0, scale: 0.92, y: -6 }
 						}
-						transition={EASE_SPRING}
+						transition={{ type: "spring", duration: 0.3, bounce: 0 }}
 						style={{ transformOrigin: "top right" }}
 						className="absolute right-0 mt-2 w-56 rounded-sm border border-border bg-void py-1 font-mono shadow-xl shadow-overlay z-[60]"
 					>

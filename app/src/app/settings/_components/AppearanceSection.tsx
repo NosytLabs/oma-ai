@@ -55,7 +55,7 @@ export function AppearanceSection() {
 								role="radio"
 								aria-checked={isActive}
 								onClick={() => setTheme(t.id as Theme)}
-								className={`group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+								className={`group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3.5 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 									isActive
 										? "border-accent/50 bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent-glow)]"
 										: "border-border bg-surface/50 hover:border-accent/30 hover:bg-surface"

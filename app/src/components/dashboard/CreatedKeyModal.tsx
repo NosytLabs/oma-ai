@@ -55,7 +55,7 @@ export function CreatedKeyModal({
 					initial={{ scale: 0.9, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
 					exit={{ scale: 0.9, opacity: 0 }}
-					transition={{ type: "spring", damping: 25 }}
+					transition={{ type: "spring", duration: 0.4, bounce: 0.08 }}
 				>
 					<div className="mb-4 flex items-center gap-3">
 						<div className="flex h-12 w-12 items-center justify-center border border-accent/20 bg-accent/10 text-accent">

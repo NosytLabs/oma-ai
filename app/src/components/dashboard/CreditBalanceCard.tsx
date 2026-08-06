@@ -112,14 +112,14 @@ function CreditBalanceCardComponent({
 				<Link
 					href="/deposit?method=card"
 					aria-label="Top up credits"
-					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-void px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:text-text-bright hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
+					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-void px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-[border-color,background-color,color,box-shadow,transform] duration-200 ease-out hover:border-accent/50 hover:bg-accent/5 hover:text-text-bright hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
 				>
 					Card
 				</Link>
 				<Link
 					href="/deposit"
 					aria-label="Deposit USDC"
-					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97]"
+					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-[border-color,background-color,color,transform] duration-200 ease-out hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97]"
 				>
 					USDC
 				</Link>

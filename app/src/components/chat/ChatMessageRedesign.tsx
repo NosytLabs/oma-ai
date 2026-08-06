@@ -605,7 +605,7 @@ function CodeBlock({
           absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px]
           flex items-center justify-center rounded-[var(--radius-md)]
           bg-surface-elevated text-text-muted hover:text-text
-          opacity-0 group-hover:opacity-100 transition-all duration-150 ease-out active:scale-[0.95]
+          opacity-0 group-hover:opacity-100 transition-[opacity,transform,color] duration-150 ease-out active:scale-[0.97]
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-surface
         "

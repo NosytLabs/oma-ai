@@ -56,10 +56,10 @@ export function AuthPromptModal({
 					aria-label={r.title}
 				>
 					<m.div
-						initial={{ opacity: 0, scale: 0.95, y: 12 }}
+						initial={{ opacity: 0, scale: 0.98, y: 4 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
-						exit={{ opacity: 0, scale: 0.97, y: 8 }}
-						transition={{ type: "spring", stiffness: 400, damping: 30 }}
+						exit={{ opacity: 0, scale: 0.98, y: 4 }}
+						transition={{ duration: 0.15, ease: "easeOut" }}
 						className="relative w-full max-w-sm mx-4 border border-border bg-surface-elevated p-6 shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
