@@ -14,9 +14,9 @@ export function AppearanceSection() {
 	return (
 		<section
 			aria-labelledby="settings-appearance-heading"
-			className="rounded-2xl border border-border bg-surface/40 p-4 sm:p-6"
+			className="rounded-[var(--radius-lg)] border border-border bg-surface/30 p-5 sm:p-6 transition-colors hover:border-accent/40"
 		>
-			<header className="mb-4 flex flex-wrap items-end justify-between gap-3">
+			<header className="mb-6 flex flex-wrap items-end justify-between gap-3">
 				<div>
 					<h2
 						id="settings-appearance-heading"
@@ -24,17 +24,17 @@ export function AppearanceSection() {
 					>
 						Appearance
 					</h2>
-					<p className="mt-1 text-sm text-text-secondary">
+					<p className="mt-1 text-sm text-text-muted">
 						Switch the accent color used across the dashboard. The base
 						background stays dark for contrast.
 					</p>
 				</div>
 				<div
 					aria-hidden="true"
-					className="flex items-center gap-2 rounded-full border border-border bg-void px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-text-muted"
+					className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface/50 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-text-muted"
 				>
 					<span
-						className="h-2.5 w-2.5 rounded-full"
+						className="h-2 w-2 rounded-full"
 						style={{ background: accent, boxShadow: `0 0 12px ${accent}` }}
 					/>
 					{theme}
@@ -44,7 +44,7 @@ export function AppearanceSection() {
 			<ul
 				role="radiogroup"
 				aria-label="Accent theme"
-				className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+				className="grid grid-cols-1 gap-3 sm:grid-cols-2"
 			>
 				{THEME_LIST.map((t) => {
 					const isActive = theme === t.id;
@@ -55,15 +55,15 @@ export function AppearanceSection() {
 								role="radio"
 								aria-checked={isActive}
 								onClick={() => setTheme(t.id as Theme)}
-								className={`group flex w-full min-w-0 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+								className={`group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 									isActive
-										? "border-accent/40 bg-accent/10 text-text-bright"
-										: "border-border bg-void text-text-secondary hover:border-border/80 hover:text-text"
+										? "border-accent/50 bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent-glow)]"
+										: "border-border bg-surface/50 hover:border-accent/30 hover:bg-surface"
 								}`}
 							>
 								<span
 									aria-hidden="true"
-									className="h-9 w-9 shrink-0 rounded-full border border-border"
+									className="h-10 w-10 shrink-0 rounded-full border border-border transition-shadow duration-300"
 									style={{
 										background: `radial-gradient(circle at 40% 35%, ${THEME_SWATCH[t.id as Theme]} 0%, ${THEME_SWATCH[t.id as Theme]}66 45%, transparent 72%)`,
 										boxShadow: isActive
@@ -72,16 +72,16 @@ export function AppearanceSection() {
 									}}
 								/>
 								<span className="min-w-0 flex-1">
-									<span className="block truncate text-sm font-semibold">
+									<span className={`block truncate text-sm font-semibold transition-colors ${isActive ? 'text-text-bright' : 'text-text-secondary group-hover:text-text-bright'}`}>
 										{t.name}
 									</span>
-									<span className="block truncate text-[11px] text-text-muted">
+									<span className={`block truncate text-[11px] mt-0.5 transition-colors ${isActive ? 'text-text-secondary' : 'text-text-muted group-hover:text-text-secondary'}`}>
 										{t.hint}
 									</span>
 								</span>
 								{isActive ? (
 									<Check
-										className="h-4 w-4 shrink-0 text-accent"
+										className="h-4 w-4 shrink-0 text-accent drop-shadow-[0_0_8px_var(--color-accent)]"
 										aria-hidden="true"
 									/>
 								) : null}

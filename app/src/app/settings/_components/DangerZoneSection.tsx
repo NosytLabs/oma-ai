@@ -51,7 +51,7 @@ export function DangerZoneSection({
 
 	return (
 		<div>
-			<div className="mb-1">
+			<div className="mb-4">
 				<h2 className="text-lg font-semibold text-error">Danger zone</h2>
 				<p className="mt-1 text-sm text-text-muted">
 					Irreversible actions. Make sure you understand the consequences.
@@ -59,9 +59,11 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Wipe History */}
-			<div className="mt-6 rounded-lg border border-border bg-surface/30 p-4">
-				<div className="flex items-start gap-3">
-					<History className="mt-0.5 h-5 w-5 shrink-0 text-text" aria-hidden="true" />
+			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors hover:border-accent/30">
+				<div className="flex items-start gap-4">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface-elevated">
+						<History className="h-5 w-5 text-text-secondary" aria-hidden="true" />
+					</div>
 					<div className="min-w-0 flex-1">
 						<h3 className="text-sm font-semibold text-text-bright">
 							Clear usage history
@@ -81,7 +83,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowClearConfirm(true)}
-									className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-semibold text-text transition-[background-color,color,border-color,transform] duration-150 ease-out hover:bg-surface hover:text-text-bright active:scale-[0.97]"
+									className="mt-4 inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-all duration-200 hover:border-accent/40 hover:bg-surface-elevated hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
 									<History className="h-3.5 w-3.5" aria-hidden="true" />
 									Clear usage history
@@ -92,7 +94,7 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-md border border-border bg-surface/50 p-4"
+									className="mt-4 rounded-[var(--radius-md)] border border-border bg-surface-elevated p-4"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle className="h-4 w-4 text-accent" aria-hidden="true" />
@@ -104,21 +106,21 @@ export function DangerZoneSection({
 										This cannot be undone. Sessions, API keys, and credits stay
 										intact; statistics and usage history are permanently removed.
 									</p>
-									<div className="flex flex-wrap gap-2">
+									<div className="flex flex-wrap gap-3">
 										<button
 											type="button"
 											onClick={handleClearHistory}
 											disabled={clearing}
-											className="inline-flex items-center justify-center gap-2 rounded-md border border-accent bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-[background-color,opacity,transform] duration-150 ease-out hover:bg-accent/20 active:scale-[0.97] disabled:opacity-40"
+											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-accent bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-all duration-200 hover:bg-accent/20 active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											{clearing ? (
 												<>
-													<Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+													<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
 													Clearing…
 												</>
 											) : (
 												<>
-													<History className="h-3 w-3" aria-hidden="true" />
+													<History className="h-3.5 w-3.5" aria-hidden="true" />
 													Confirm wipe
 												</>
 											)}
@@ -127,7 +129,7 @@ export function DangerZoneSection({
 											type="button"
 											onClick={() => setShowClearConfirm(false)}
 											disabled={clearing}
-											className="rounded-md border border-border bg-void px-4 py-2 text-xs font-semibold text-text transition-[background-color,opacity,transform] duration-150 ease-out hover:bg-surface active:scale-[0.97] disabled:opacity-40"
+											className="rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text transition-all duration-200 hover:bg-surface-elevated active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											Cancel
 										</button>
@@ -140,12 +142,14 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Delete account */}
-			<div className="mt-4 rounded-lg border border-error/30 bg-error/5 p-4">
-				<div className="flex items-start gap-3">
-					<AlertTriangle
-						className="mt-0.5 h-5 w-5 shrink-0 text-error"
-						aria-hidden="true"
-					/>
+			<div className="mt-6 rounded-[var(--radius-md)] border border-danger/30 bg-danger/5 p-5 transition-colors hover:border-danger/50 hover:bg-danger/10">
+				<div className="flex items-start gap-4">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-danger/30 bg-danger/10">
+						<AlertTriangle
+							className="h-5 w-5 text-danger"
+							aria-hidden="true"
+						/>
+					</div>
 					<div className="min-w-0 flex-1">
 						<h3 className="text-sm font-semibold text-error">Delete account</h3>
 						<p className="mt-1 text-xs text-text-muted">
@@ -163,7 +167,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowConfirm(true)}
-									className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse transition-[background-color,transform] duration-150 ease-out hover:bg-error/90 active:scale-[0.97]"
+									className="mt-4 inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-danger/40 bg-danger/10 px-4 py-2 text-xs font-semibold text-danger transition-all duration-200 hover:bg-danger/20 hover:border-danger/60 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 								>
 									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									Delete account
@@ -174,7 +178,7 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-md border border-error/40 bg-error/10 p-4"
+									className="mt-4 rounded-[var(--radius-md)] border border-error/40 bg-error/10 p-5"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle className="h-4 w-4 text-error" aria-hidden="true" />
@@ -184,7 +188,7 @@ export function DangerZoneSection({
 									</div>
 									<p className="mb-3 text-xs text-text-secondary">
 										Type{" "}
-										<code className="rounded bg-void px-1.5 py-0.5 font-mono text-error">
+										<code className="rounded bg-void px-1.5 py-0.5 font-mono text-error border border-error/30">
 											DELETE
 										</code>{" "}
 										below to confirm. All data will be permanently destroyed.
@@ -196,24 +200,24 @@ export function DangerZoneSection({
 										placeholder="Type DELETE"
 										aria-label="Confirm by typing DELETE"
 										autoComplete="off"
-										className="mb-3 w-full rounded-md border border-error/30 bg-void px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-error focus:outline-none focus:ring-1 focus:ring-error"
+										className="mb-4 w-full rounded-[var(--radius-sm)] border border-error/30 bg-void px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-error focus:outline-none focus:ring-2 focus:ring-error/50 transition-shadow"
 										disabled={deleting}
 									/>
-									<div className="flex flex-wrap gap-2">
+									<div className="flex flex-wrap gap-3">
 										<button
 											type="button"
 											onClick={handleConfirmDelete}
 											disabled={deleting || confirmText !== "DELETE"}
-											className="inline-flex items-center justify-center gap-2 rounded-md border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-40"
+											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200 hover:bg-error/90 active:scale-[0.98]"
 										>
 											{deleting ? (
 												<>
-													<Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+													<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
 													Deleting…
 												</>
 											) : (
 												<>
-													<Trash2 className="h-3 w-3" aria-hidden="true" />
+													<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 													Delete my account
 												</>
 											)}
@@ -225,7 +229,7 @@ export function DangerZoneSection({
 												setConfirmText("");
 											}}
 											disabled={deleting}
-											className="rounded-md border border-border bg-void px-4 py-2 text-xs font-semibold text-text transition-[background-color,opacity,transform] duration-150 ease-out hover:bg-surface active:scale-[0.97] disabled:opacity-40"
+											className="rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text transition-all duration-200 hover:bg-surface-elevated active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
 										>
 											Cancel
 										</button>

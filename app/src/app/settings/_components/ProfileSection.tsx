@@ -45,60 +45,60 @@ export function ProfileSection({
 				</p>
 			</div>
 
-			<div className="mt-6 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
-				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
-					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
+			<div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-md)] border border-border bg-surface/50 p-5 transition-colors hover:border-accent/40 hover:bg-surface">
+					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Fingerprint className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						User ID
 					</div>
-					<div className="break-all font-mono text-sm text-text">
+					<div className="mt-1 break-all font-mono text-[13px] text-text-bright font-medium">
 						{user?.id || "—"}
 					</div>
 				</div>
-				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
-					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-md)] border border-border bg-surface/50 p-5 transition-colors hover:border-accent/40 hover:bg-surface">
+					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Account created
 					</div>
-					<div className="text-sm text-text">
+					<div className="mt-1 text-[13px] text-text-bright font-medium">
 						{user?.createdAt ? formatDateTime(user.createdAt) : "—"}
 					</div>
 				</div>
-				<div className="flex min-h-[5.5rem] flex-col gap-1 bg-void p-4">
-					<div className="flex items-center gap-2 text-[11px] font-medium text-text-muted">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-md)] border border-border bg-surface/50 p-5 transition-colors hover:border-accent/40 hover:bg-surface">
+					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Authentication
 					</div>
-					<div className="text-sm text-text">
+					<div className="mt-1 text-[13px] text-text-bright font-medium">
 						{authMethodLabel(user, linkedWallet)}
 					</div>
 				</div>
 			</div>
 
 			{linkedWallet && (
-				<div className="mt-4 rounded-lg border border-border bg-void p-4">
+				<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors hover:border-accent/40">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<div className="min-w-0">
-							<div className="flex items-center gap-2 text-sm font-medium text-text-bright">
-								<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
+							<div className="flex items-center gap-2 text-sm font-semibold text-text-bright">
+								<Wallet className="h-4 w-4" aria-hidden="true" />
 								Linked wallet
 							</div>
-							<div className="mt-0.5 text-xs text-text-muted">
+							<div className="mt-1 text-xs text-text-muted">
 								SIWE (EIP-4361) on Base mainnet. Funds stay in your wallet.
 							</div>
 						</div>
-						<div className="shrink-0 font-mono text-xs text-accent">
+						<div className="shrink-0 rounded-[var(--radius-sm)] border border-accent/20 bg-accent/10 px-3 py-1.5 font-mono text-[11px] text-accent font-medium">
 							{formatAddress(linkedWallet)}
 						</div>
 					</div>
 				</div>
 			)}
 
-			<div className="mt-6 rounded-lg border border-border bg-void p-4">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors hover:border-accent/40">
 				<div className="flex items-center justify-between gap-4">
 					<div className="min-w-0">
-						<div className="text-sm font-medium text-text-bright">Sound cues</div>
-						<div className="mt-0.5 text-xs text-text-muted">
+						<div className="text-sm font-semibold text-text-bright">Sound cues</div>
+						<div className="mt-1 text-xs text-text-muted">
 							Subtle chime when a task succeeds or fails.
 						</div>
 					</div>
@@ -110,8 +110,8 @@ export function ProfileSection({
 							onChange={(e) => handleSoundToggle(e.target.checked)}
 							aria-label="Toggle subtle success and failure sound cues"
 						/>
-						<div className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
-						<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
+						<div className="h-6 w-11 rounded-full border border-border bg-surface transition-colors peer-checked:border-accent peer-checked:bg-accent/20 peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
+						<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-text-muted transition-transform peer-checked:translate-x-5 peer-checked:bg-accent" />
 					</label>
 				</div>
 			</div>
