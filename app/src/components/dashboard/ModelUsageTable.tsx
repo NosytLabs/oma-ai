@@ -88,10 +88,10 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
-				<div className="flex items-center gap-3 mb-4">
-					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
-					<span className="text-[13px] font-semibold text-text-secondary">
+			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)]">
+				<div className="flex items-center gap-3">
+					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--color-accent)]" />
+					<span className="text-sm font-semibold text-text-muted">
 						Loading model breakdown...
 					</span>
 				</div>
@@ -101,9 +101,9 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (modelStats.length === 0) {
 		return (
-			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] transition-colors hover:border-accent/40">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
-					Model Usage Breakdown
+					Model usage breakdown
 				</h3>
 				<p className="text-[12.5px] text-text-muted leading-relaxed">
 					No model usage data yet. Start making API calls to see breakdown.
@@ -113,10 +113,10 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	}
 
 	return (
-		<div className="border border-border/60 bg-surface rounded-[12px] shadow-sm overflow-hidden">
-			<div className="p-6 border-b border-border/50">
+		<div className="border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] overflow-hidden transition-colors hover:border-accent/40">
+			<div className="p-6 sm:p-7 border-b border-border/50 bg-void/50">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
-					Model Usage Breakdown
+					Model usage breakdown
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{totalRequests.toLocaleString()} total requests · $
@@ -126,7 +126,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 			<div className="overflow-x-auto">
 				<table className="w-full text-left">
 					<thead>
-						<tr className="border-b border-border/50 bg-void/30">
+						<tr className="border-b border-border/50 bg-surface/20">
 							<th
 								scope="col"
 								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
@@ -143,13 +143,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 								scope="col"
 								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
-								Input Tokens
-							</th>
-							<th
-								scope="col"
-								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
-							>
-								Output Tokens
+								Tokens
 							</th>
 							<th
 								scope="col"
@@ -171,44 +165,44 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 							</th>
 						</tr>
 					</thead>
-					<tbody className="bg-void/10">
+					<tbody className="bg-void/30">
 						{modelStats.map((stat, i) => (
 							<m.tr
 								key={stat.model}
-								className="border-b border-border/40 hover:bg-surface/60 transition-colors last:border-0"
-								initial={{ opacity: 0, x: -10 }}
-								animate={{ opacity: 1, x: 0 }}
-								transition={{ delay: i * 0.03 }}
+								className="group border-b border-border/40 hover:bg-surface/60 transition-colors last:border-0"
+								initial={{ opacity: 0, y: 5 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: i * 0.03, ease: [0.23, 1, 0.32, 1] }}
 							>
-								<td className="px-6 py-4 text-[13px] font-bold text-success font-mono">
+								<td className="px-6 py-4 text-[13px] font-bold text-accent font-mono transition-colors group-hover:text-accent-hover">
 									{stat.model}
 								</td>
-								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
 									{stat.requests.toLocaleString()}
 								</td>
-								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
-									{stat.totalInputTokens.toLocaleString()}
-								</td>
-								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
-									{stat.totalOutputTokens.toLocaleString()}
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+									<div className="flex flex-col">
+										<span className="text-text-bright" title="Input Tokens">{(stat.totalInputTokens / 1000).toFixed(1)}k <span className="text-text-muted text-[10px] ml-1">IN</span></span>
+										<span className="text-text-secondary mt-0.5" title="Output Tokens">{(stat.totalOutputTokens / 1000).toFixed(1)}k <span className="text-text-muted/50 text-[10px] ml-1">OUT</span></span>
+									</div>
 								</td>
 								<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
 									{formatUsdPrecise(stat.totalCost)}
 								</td>
-								<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono">
+								<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
 									{formatLatency(stat.avgLatency)}
 								</td>
 								<td className="px-6 py-4 text-right">
 									<div className="flex items-center justify-end gap-3">
-										<div className="w-16 h-2 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
+										<div className="w-16 h-1.5 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
 											<div
-												className="h-full bg-accent rounded-full"
+												className="h-full bg-accent rounded-full transition-all duration-500"
 												style={{
 													width: `${totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0}%`,
 												}}
 											/>
 										</div>
-										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono">
+										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono transition-colors group-hover:text-text-bright">
 											{totalCost > 0
 												? ((stat.totalCost / totalCost) * 100).toFixed(1)
 												: "0.0"}
