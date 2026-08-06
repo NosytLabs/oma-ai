@@ -40,39 +40,39 @@ const TX_LABELS: Record<string, string> = {
  */
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 	return (
-		<div className="mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm relative overflow-hidden">
-			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/30 to-transparent" />
-			<div className="flex items-center justify-between mb-2">
+		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] p-6 sm:p-7 relative overflow-hidden transition-colors hover:border-accent/40">
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/40 via-warning/20 to-transparent" />
+			<div className="flex items-center justify-between mb-4">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Recent activity
 				</h2>
 				{transactions.length > 0 && (
 					<Link
 						href="/dashboard?tab=usage"
-						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-bright hover:underline"
+						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors active:scale-[0.97]"
 					>
-						View all →
+						View all <span aria-hidden="true">&rarr;</span>
 					</Link>
 				)}
 			</div>
 			{transactions.length === 0 ? (
-				<div className="mt-4 flex flex-col items-center gap-3 py-8 text-center bg-void rounded-md border border-border/50">
-					<div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-border bg-surface text-text-muted">
-						<ArrowLeftRight className="h-4 w-4" />
+				<div className="mt-6 flex flex-col items-center gap-3 py-10 text-center bg-void rounded-[var(--radius-md)] border border-border/50 shadow-inner">
+					<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface text-text-muted shadow-sm">
+						<ArrowLeftRight className="h-5 w-5" />
 					</div>
-					<p className="text-[13.5px] font-semibold tracking-wide text-text-secondary">No transactions yet</p>
+					<p className="text-[13.5px] font-semibold tracking-wide text-text-bright mt-2">No transactions yet</p>
 					<p className="text-[11px] text-text-muted max-w-[280px] leading-relaxed">
 						Deposits, usage, and refunds will appear here.{" "}
 						<Link
 							href="/deposit"
-							className="text-accent hover:text-accent-bright transition-colors"
+							className="text-accent hover:text-accent-hover hover:underline transition-colors block mt-2 font-medium"
 						>
-							Make your first deposit →
+							Make your first deposit &rarr;
 						</Link>
 					</p>
 				</div>
 			) : (
-				<div className="mt-4 space-y-1">
+				<div className="mt-5 border border-border/50 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
 					{transactions.slice(0, 5).map((tx) => {
 						const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
 						const iconClass =
@@ -88,33 +88,33 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 						return (
 							<div
 								key={tx.id}
-								className="flex items-center justify-between py-3 border-b border-border/60 last:border-0 hover:bg-void/40 px-2 -mx-2 rounded-md transition-colors"
+								className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 border-b border-border/40 last:border-0 hover:bg-surface/50 transition-colors"
 							>
-								<div className="flex items-center gap-3.5">
+								<div className="flex items-center gap-4 mb-2 sm:mb-0">
 									<div
-										className={`flex h-8 w-8 items-center justify-center rounded-[6px] border border-border bg-void shadow-sm ${iconClass}`}
+										className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface shadow-sm transition-colors group-hover:border-${iconClass.split('-')[1]}/30 ${iconClass}`}
 									>
-										<Icon className="h-3.5 w-3.5" />
+										<Icon className="h-4 w-4" />
 									</div>
-									<div>
-										<span className="text-[13px] font-bold text-text-bright">
+									<div className="min-w-0">
+										<span className="text-[13px] font-semibold text-text-bright block truncate">
 											{label}
 										</span>
 										{tx.model && (
-											<span className="ml-2 text-[10.5px] font-mono text-text-muted">
+											<span className="text-[10.5px] font-mono text-text-muted inline-block mt-0.5 px-1.5 py-px bg-surface/50 border border-border/50 rounded">
 												{tx.model}
 											</span>
 										)}
 									</div>
 								</div>
-								<div className="flex items-center gap-4">
-									<span className={`text-[13.5px] font-mono tracking-tight font-bold ${amountClass}`}>
-										{sign}${toDollars(Math.abs(tx.amountCents)).toFixed(2)}
-									</span>
-									<div className="flex items-center gap-1.5 text-[10px] font-mono text-text-muted/70 w-12 justify-end">
+								<div className="flex items-center justify-between sm:justify-end sm:gap-6 pl-14 sm:pl-0 w-full sm:w-auto">
+									<div className="flex items-center gap-1.5 text-[10.5px] font-mono text-text-muted/80 opacity-80 group-hover:opacity-100 transition-opacity">
 										<Clock className="h-3 w-3" />
 										{formatTime(tx.createdAt)}
 									</div>
+									<span className={`text-[14px] font-mono tracking-tight font-bold ${amountClass}`}>
+										{sign}${toDollars(Math.abs(tx.amountCents)).toFixed(2)}
+									</span>
 								</div>
 							</div>
 						);
