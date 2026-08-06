@@ -57,10 +57,10 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
-				<div className="flex items-center gap-3 mb-4">
-					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
-					<span className="text-[13px] font-semibold text-text-secondary">
+			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)]">
+				<div className="flex items-center gap-3">
+					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--color-accent)]" />
+					<span className="text-sm font-semibold text-text-muted">
 						Loading provider breakdown...
 					</span>
 				</div>
@@ -70,9 +70,9 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 
 	if (providerStats.length === 0) {
 		return (
-			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] transition-colors hover:border-accent/40">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
-					Provider Breakdown
+					Provider breakdown
 				</h3>
 				<p className="text-[12.5px] text-text-muted leading-relaxed">No provider data yet.</p>
 			</div>
@@ -80,57 +80,58 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 	}
 
 	return (
-		<div className="border border-border/60 bg-surface rounded-[12px] shadow-sm overflow-hidden h-full">
-			<div className="p-6 border-b border-border/50">
+		<div className="border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] overflow-hidden h-full transition-colors hover:border-accent/40">
+			<div className="p-6 sm:p-7 border-b border-border/50 bg-void/50">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
-					Provider Breakdown
+					Provider breakdown
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{" "}
 					· ${totalCost.toFixed(2)} total cost
 				</p>
 			</div>
-			<div className="p-6 bg-void/50 h-[calc(100%-70px)]">
-				<div className="space-y-5">
+			<div className="p-6 sm:p-7 bg-void/30 h-full max-h-[400px] overflow-y-auto chat-scrollbar">
+				<div className="space-y-6">
 					{providerStats.map((stat, i) => {
 						const pct = totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0;
 						return (
 							<m.div
 								key={stat.provider}
-								initial={{ opacity: 0, x: -10 }}
-								animate={{ opacity: 1, x: 0 }}
-								transition={{ delay: i * 0.05 }}
+								initial={{ opacity: 0, y: 5 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: i * 0.05, ease: [0.23, 1, 0.32, 1] }}
+								className="group"
 							>
-								<div className="flex items-center justify-between mb-2">
+								<div className="flex flex-wrap items-center justify-between mb-2.5 gap-2">
 									<div className="flex items-center gap-3">
 										<div
-											className="h-2.5 w-2.5 rounded-full"
+											className="h-3 w-3 rounded-[var(--radius-sm)] shadow-[0_0_8px_-2px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110"
 											style={{
 												backgroundColor: getProviderColor(stat.provider),
 											}}
 										/>
-										<span className="text-[13px] font-bold text-text-bright uppercase tracking-wide">
+										<span className="text-[13px] font-bold text-text-bright uppercase tracking-wide transition-colors group-hover:text-accent">
 											{stat.provider}
 										</span>
 									</div>
-									<div className="flex items-center gap-4 text-[12px] text-text-muted">
+									<div className="flex items-center gap-4 text-[12px] text-text-muted transition-colors group-hover:text-text-secondary">
 										<span className="font-mono">{stat.requests.toLocaleString()} REQ</span>
-										<span className="font-mono text-accent">
+										<span className="font-mono font-bold text-accent transition-colors group-hover:text-accent-hover">
 											{formatUsdPrecise(stat.totalCost)}
 										</span>
-										<span className="font-mono font-bold text-text-secondary w-12 text-right">
+										<span className="font-mono font-bold text-text-bright w-12 text-right">
 											{pct.toFixed(1)}%
 										</span>
 									</div>
 								</div>
-								<div className="w-full h-2 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
+								<div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden shadow-inner relative">
 									{/* scaleX instead of width — compositor-only, no per-frame layout */}
 									<m.div
-										className="h-full w-full rounded-full origin-left"
+										className="absolute inset-y-0 left-0 rounded-full origin-left transition-all duration-300"
 										style={{ backgroundColor: getProviderColor(stat.provider) }}
 										initial={{ scaleX: 0 }}
 										animate={{ scaleX: pct / 100 }}
-										transition={{ duration: 0.5, delay: i * 0.05 }}
+										transition={{ duration: 0.8, delay: i * 0.05, ease: [0.23, 1, 0.32, 1] }}
 									/>
 								</div>
 							</m.div>
