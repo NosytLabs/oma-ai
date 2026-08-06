@@ -283,7 +283,7 @@ export function ModelSelector({
 												aria-pressed={isActive}
 												className={`
                           px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
-                          transition-all duration-150 rounded-[var(--radius-sm)]
+                          transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] rounded-[var(--radius-sm)]
                           ${
 														isActive
 															? `${style.bg} ${style.text} border`
@@ -345,7 +345,7 @@ export function ModelSelector({
 											className={`
                         w-full flex items-center justify-between text-left
                         ${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
-                        transition-all duration-150 relative
+                        transition-[background-color,color] duration-150 ease-out relative
                         ${
 													isSelected
 														? "bg-accent/10 text-accent"

@@ -155,7 +155,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 										{preset.label}
 									</span>
 									<ChevronRight
-										className={`h-3 w-3 transition-all duration-150 ease-out ${
+										className={`h-3 w-3 transition-[transform,opacity,color] duration-150 ease-out ${
 											isHovered
 												? "translate-x-0.5 text-accent opacity-100"
 												: "-translate-x-2 text-text-muted opacity-0"

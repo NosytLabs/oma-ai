@@ -406,7 +406,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								className="
                 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-success active:scale-[0.95] transition-all duration-150 ease-out
+                hover:text-success transition-[opacity,color,transform] duration-150 ease-out active:scale-[0.97]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
@@ -426,7 +426,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								className="
                 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-accent active:scale-[0.95] transition-all duration-150 ease-out
+                hover:text-accent transition-[opacity,color,transform] duration-150 ease-out active:scale-[0.97]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "
@@ -689,7 +689,7 @@ const SearchSources = memo(function SearchSources({
 									transition={{ delay: i * 0.05 }}
 									className="
                     flex items-start gap-3 p-3 bg-surface/50 border border-border/50
-                    hover:border-success/30 hover:bg-surface transition-all duration-200 group
+                    hover:border-success/30 hover:bg-surface transition-[background-color,border-color] duration-200 ease-out group
                   "
 								>
 									<div className="flex-1 min-w-0">

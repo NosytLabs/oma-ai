@@ -418,7 +418,7 @@ function ChoicePickerField({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx 
 										: [...selected, val],
 							)
 						}
-						className={`px-2.5 py-1 text-[11px] font-mono border transition-all ${
+						className={`px-2.5 py-1 text-[11px] font-mono border transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
 							active
 								? "border-accent bg-accent/15 text-accent"
 								: "border-border text-text-secondary hover:border-accent/50 hover:text-text"

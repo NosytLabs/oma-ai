@@ -180,7 +180,7 @@ export function ImageGenerationPanel() {
 										type="button"
 										onClick={() => setStyle(style === s.value ? "" : s.value)}
 										aria-pressed={style === s.value}
-										className={`min-h-[40px] rounded-lg border px-2 py-2 text-xs font-mono transition-all ${
+										className={`min-h-[40px] rounded-lg border px-2 py-2 text-xs font-mono transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
 											style === s.value
 												? "border-accent bg-accent/10 text-accent"
 												: "border-border bg-void text-text-secondary hover:border-accent/40"
@@ -230,7 +230,7 @@ export function ImageGenerationPanel() {
 											onClick={() => setCount(n)}
 											disabled={loading}
 											aria-pressed={count === n}
-											className={`min-h-[40px] flex-1 rounded-lg text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent ${
+											className={`min-h-[40px] flex-1 rounded-lg text-sm font-semibold transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent ${
 												count === n
 													? "bg-accent text-void"
 													: "bg-void border border-border text-text hover:border-accent/40"

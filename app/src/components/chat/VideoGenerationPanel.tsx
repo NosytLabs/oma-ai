@@ -275,7 +275,7 @@ export function VideoGenerationPanel() {
 						role="tab"
 						aria-selected={mode === "text-to-video"}
 						aria-controls="prompt-panel"
-						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
+						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
 							mode === "text-to-video"
 								? "bg-surface text-text shadow-sm border border-accent"
 								: "text-text hover:text-accent hover:bg-border/50"
@@ -289,7 +289,7 @@ export function VideoGenerationPanel() {
 						role="tab"
 						aria-selected={mode === "image-to-video"}
 						aria-controls="prompt-panel"
-						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
+						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
 							mode === "image-to-video"
 								? "bg-surface text-text shadow-sm border border-accent"
 								: "text-text hover:text-accent hover:bg-border/50"
@@ -378,7 +378,7 @@ export function VideoGenerationPanel() {
 										type="button"
 										onClick={() => setAspectRatio(o.value)}
 										aria-pressed={aspectRatio === o.value}
-										className={`flex flex-col items-center gap-1 flex-1 rounded-lg border py-2.5 px-2 transition-all ${
+										className={`flex flex-col items-center gap-1 flex-1 rounded-lg border py-2.5 px-2 transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
 											aspectRatio === o.value
 												? "border-accent bg-accent/10 text-accent"
 												: "border-border bg-surface text-text-secondary hover:border-accent/40"

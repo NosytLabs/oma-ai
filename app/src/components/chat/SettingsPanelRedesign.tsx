@@ -243,7 +243,7 @@ function AgentsConnector() {
 								}}
 								className="
                   w-full px-3 py-2 bg-surface border border-border text-text-secondary text-xs font-mono
-                  hover:border-accent/40 hover:text-text transition-all duration-200
+                  hover:border-accent/40 hover:text-text transition-[border-color,color,background-color,transform] duration-200 ease-out active:scale-[0.98]
                 "
 							>
 								COPY ENV SNIPPET
@@ -366,7 +366,7 @@ export function SettingsPanel({
 					className="
             w-full px-3 py-2 bg-void border border-border text-sm font-mono text-text-secondary
             focus:border-accent focus:ring-1 focus:ring-accent/20
-            transition-all duration-200
+            transition-[border-color,box-shadow] duration-200 ease-out
           "
 				/>
 			</div>
@@ -392,7 +392,7 @@ export function SettingsPanel({
 					className="
             w-full px-3 py-2 bg-void border border-border text-sm font-mono text-text-secondary
             focus:border-accent focus:ring-1 focus:ring-accent/20
-            transition-all duration-200
+            transition-[border-color,box-shadow] duration-200 ease-out
           "
 				/>
 			</div>
