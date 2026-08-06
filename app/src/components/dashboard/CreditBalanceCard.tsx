@@ -44,9 +44,9 @@ function CreditBalanceCardComponent({
 	})();
 
 	return (
-		<div className="flex flex-col justify-between p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm h-full relative overflow-hidden">
+		<div className="flex flex-col justify-between p-6 sm:p-7 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] h-full relative overflow-hidden transition-colors hover:border-accent/40">
 			{/* Accent glow on top edge */}
-			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 to-transparent" />
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 via-success/20 to-transparent" />
 			
 			<div className="mb-6 flex items-start justify-between">
 				<div>
@@ -55,17 +55,17 @@ function CreditBalanceCardComponent({
 					</h2>
 					<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">Available credits</p>
 				</div>
-				<div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-success/20 bg-success/10 text-success shadow-sm">
-					<span className="text-[14px] font-mono font-bold">$</span>
+				<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border border-success/30 bg-success/10 text-success shadow-[0_0_15px_-5px_var(--color-success-glow)]">
+					<span className="text-[16px] font-mono font-bold">$</span>
 				</div>
 			</div>
 
-			<div className="mb-4">
-				<div className="text-[36px] font-display font-bold tracking-tight text-text-bright mb-2 leading-none">
+			<div className="mb-6">
+				<div className="text-[40px] font-display font-bold tracking-tight text-text-bright mb-2 leading-none">
 					{!balance && loading ? (
 						// Never flash a fake $0.00 while the balance query is in flight.
 						<span
-							className="inline-block h-10 w-36 animate-pulse rounded bg-surface-elevated/60"
+							className="inline-block h-12 w-36 animate-pulse rounded-[var(--radius-sm)] bg-surface-elevated/60"
 							aria-label="Loading credit balance"
 							aria-busy="true"
 						/>
@@ -73,17 +73,17 @@ function CreditBalanceCardComponent({
 						// Settled with no payload (error / empty) — show zero, not a lie mid-load.
 						<span className="text-text-muted">0 credits</span>
 					) : (
-						<div className="flex items-baseline gap-1">
+						<div className="flex items-baseline gap-2">
 							<AnimatedNumber
 								value={Math.round(parseFloat(balance.balanceCents))}
 							/>
-							<span className="text-[14px] text-text-muted font-mono uppercase tracking-wider font-semibold">CR</span>
+							<span className="text-[16px] text-text-muted font-mono uppercase tracking-wider font-bold">CR</span>
 						</div>
 					)}
 				</div>
-				<div className="flex items-center gap-2 text-[11px] font-mono text-text-muted/80">
+				<div className="flex items-center gap-2.5 text-[11.5px] font-mono text-text-muted bg-surface/50 px-3 py-1.5 rounded-[var(--radius-sm)] w-fit border border-border/40 shadow-inner">
 					<span
-						className="inline-block h-1.5 w-1.5 rounded-full bg-text-muted/50"
+						className="inline-block h-2 w-2 rounded-full bg-text-muted/60"
 						aria-hidden="true"
 					/>
 					{balance
@@ -96,32 +96,32 @@ function CreditBalanceCardComponent({
 
 			{/* 7-day spend sparkline — visual depth without competing with the
           main AreaChart in the Usage tab. Hidden if no data yet. */}
-			<div className="mb-6 -mx-3 px-3 py-1 bg-void/50 rounded-md border border-border/40">
+			<div className="mb-6 -mx-2 px-3 py-2 bg-void/80 rounded-[var(--radius-md)] border border-border/50 shadow-inner">
 				<Sparkline
 					values={sparkPoints}
 					heightClass="h-10"
 					ariaLabel="7-day spend trend"
 				/>
-				<div className="mt-1 flex items-center justify-between text-[10px] text-text-muted">
+				<div className="mt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-text-muted">
 					<span>7d ago</span>
 					<span>Today</span>
 				</div>
 			</div>
 
-			<div className="flex gap-3 border-t border-border/60 pt-5 mt-auto">
+			<div className="flex gap-3 pt-5 mt-auto">
 				<Link
-					href="/deposit"
+					href="/deposit?method=card"
 					aria-label="Top up credits"
-					className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-void px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-accent hover:text-accent hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-ring active:scale-[0.98]"
+					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-void px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:text-text-bright hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
 				>
-					Top up credits
+					Card
 				</Link>
 				<Link
 					href="/deposit"
 					aria-label="Deposit USDC"
-					className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-surface px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-text-muted hover:text-text hover:bg-surface-elevated focus-ring active:scale-[0.98]"
+					className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97]"
 				>
-					Deposit USDC
+					USDC
 				</Link>
 			</div>
 		</div>
