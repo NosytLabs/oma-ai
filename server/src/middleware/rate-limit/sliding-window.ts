@@ -28,7 +28,12 @@ export async function checkRpmLimit(
     };
   } catch (err) {
     logger.error({ err }, "RPM limit script error");
-    throw err;
+    return {
+      allowed: true,
+      remaining: limit,
+      resetMs: 0,
+      limit
+    };
   }
 }
 
