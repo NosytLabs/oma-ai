@@ -45,22 +45,22 @@ export function QuickStatsCard({
 	];
 
 	return (
-		<div className="flex flex-col p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm relative h-full">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-primary)]/40 to-transparent" />
-			<div className="mb-4">
+		<div className="flex flex-col p-6 sm:p-7 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] relative h-full transition-colors hover:border-accent/40">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
+			<div className="mb-5">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">Today</h2>
 				<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">Last 24 hours</p>
 			</div>
-			<div className="flex-1 space-y-0 border border-border/80 rounded-md overflow-hidden bg-void">
+			<div className="flex-1 space-y-0 border border-border/60 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
 				{rows.map((row) => (
 					<div
 						key={row.label}
-						className="flex items-center justify-between p-3 border-b border-border"
+						className="group flex items-center justify-between p-3.5 border-b border-border/40 hover:bg-surface/50 transition-colors"
 					>
-						<span className="text-xs text-text-secondary">{row.label}</span>
+						<span className="text-[12.5px] font-medium text-text-secondary">{row.label}</span>
 						<span
-							className={`text-sm font-medium ${
-								row.accent ? "text-accent" : "text-text"
+							className={`text-[14px] ${
+								row.accent ? "text-accent font-bold" : "text-text-bright font-semibold"
 							} ${row.mono ? "font-mono" : ""}`}
 						>
 							{row.value}
@@ -68,9 +68,9 @@ export function QuickStatsCard({
 					</div>
 				))}
 				{!loading && errorCount > 0 && (
-					<div className="flex items-center justify-between p-3 border-t border-border bg-error/5">
-						<span className="text-xs text-text-secondary">Errors</span>
-						<span className="text-sm font-medium text-error">{errorCount}</span>
+					<div className="flex items-center justify-between p-3.5 border-t border-error/20 bg-error/5 transition-colors hover:bg-error/10">
+						<span className="text-[12.5px] font-medium text-error">Errors</span>
+						<span className="text-[14px] font-bold text-error font-mono">{errorCount}</span>
 					</div>
 				)}
 			</div>
