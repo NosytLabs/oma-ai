@@ -149,7 +149,7 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-6 w-full max-w-[260px] rounded-[14px] border border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)]"
+			className="pointer-events-none mt-auto mb-2 w-full max-w-[280px] rounded-[16px] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md"
 		>
 			<div className="flex items-center justify-between">
 				<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
@@ -174,11 +174,11 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 }
 
 function LedgerStrip({ lineClass }: { lineClass: string }) {
-	const rows = [52, 38, 64, 44, 30];
+	const rows = [64, 48, 80, 56, 38];
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-6 flex w-full max-w-[260px] items-end gap-1.5"
+			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-end gap-2"
 		>
 			{rows.map((h, i) => (
 				<div key={i} className="flex-1">
@@ -205,7 +205,7 @@ function FlowVisual({ lineClass }: { lineClass: string }) {
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none mt-6 flex w-full max-w-[260px] items-center gap-1.5"
+			className="pointer-events-none mt-auto mb-2 flex w-full max-w-[280px] items-center gap-2"
 		>
 			<div className="flex flex-1 flex-col gap-1">
 				<span className="rounded-md border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary">
@@ -281,12 +281,12 @@ export function CapabilitiesGrid() {
 									href={pillar.href}
 									aria-label={`${pillar.title} — ${pillar.cta}`}
 									className={cn(
-										"group relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-6 transition-[transform,box-shadow] duration-200 ease-out",
-										"hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2",
+										"group relative flex h-full min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-8 transition-[transform,box-shadow] duration-200 ease-out",
+										"hover:-translate-y-1 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2",
 										a.wrap,
 										a.ring,
 									)}
-									style={{ boxShadow: "var(--shadow-sm)" }}
+									style={{ boxShadow: "var(--shadow-md)" }}
 								>
 									<div
 										aria-hidden="true"
@@ -323,11 +323,11 @@ export function CapabilitiesGrid() {
 										{pillar.description}
 									</p>
 
-									<ul className="mt-5 space-y-1.5 text-[12.5px] text-text-secondary">
+									<ul className="mt-6 space-y-2.5 text-[13.5px] text-text-secondary">
 										{pillar.highlights.map((h) => (
-											<li key={h} className="flex items-center gap-2">
+											<li key={h} className="flex items-center gap-3">
 												<span
-													className="h-1 w-1 shrink-0 rounded-full bg-accent"
+													className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
 													aria-hidden="true"
 												/>
 												{h}
@@ -335,10 +335,10 @@ export function CapabilitiesGrid() {
 										))}
 									</ul>
 
-									<span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-semibold text-accent">
+									<span className="mt-8 mb-6 inline-flex items-center gap-1.5 font-semibold text-accent text-[14.5px]">
 										{pillar.cta}
 										<ArrowUpRight
-											className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+											className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
 											aria-hidden="true"
 										/>
 									</span>
@@ -366,21 +366,21 @@ export function CapabilitiesGrid() {
 							>
 								<Link
 									href={s.href}
-									className="group surface-card tilt-card relative flex h-full min-h-[150px] flex-col gap-3 rounded-[var(--radius-md)] p-5 transition-shadow duration-200 hover:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									className="group surface-card tilt-card relative flex h-full min-h-[170px] flex-col gap-4 rounded-[var(--radius-lg)] p-6 transition-shadow duration-300 hover:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
-									<div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent">
+									<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-accent border border-accent/20">
 										<Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
 									</div>
 									<div>
-										<p className="text-[13.5px] font-semibold tracking-tight text-text-bright">
+										<p className="text-[14.5px] font-semibold tracking-tight text-text-bright">
 											{s.title}
 										</p>
-										<p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
+										<p className="mt-1.5 text-[13.5px] leading-relaxed text-text-secondary">
 											{s.body}
 										</p>
 									</div>
 									<ArrowUpRight
-										className="absolute right-4 top-4 h-3.5 w-3.5 text-text-muted opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+										className="absolute right-5 top-5 h-4 w-4 text-text-muted opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:opacity-100 group-hover:text-accent"
 										aria-hidden="true"
 									/>
 								</Link>

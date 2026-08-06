@@ -44,21 +44,24 @@ function CreditBalanceCardComponent({
 	})();
 
 	return (
-		<div className="flex flex-col justify-between p-6 bg-void">
+		<div className="flex flex-col justify-between p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm h-full relative overflow-hidden">
+			{/* Accent glow on top edge */}
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 to-transparent" />
+			
 			<div className="mb-6 flex items-start justify-between">
 				<div>
-					<h2 className="text-sm font-semibold text-text-bright">
+					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Credit balance
 					</h2>
-					<p className="mt-0.5 text-[11px] text-text-muted">Available credits</p>
+					<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">Available credits</p>
 				</div>
-				<div className="flex h-8 w-8 items-center justify-center border border-success/20 bg-success/10 text-success">
-					<span className="text-xs font-mono">$</span>
+				<div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-success/20 bg-success/10 text-success shadow-sm">
+					<span className="text-[14px] font-mono font-bold">$</span>
 				</div>
 			</div>
 
 			<div className="mb-4">
-				<div className="text-4xl font-light tracking-tight text-text mb-2">
+				<div className="text-[36px] font-display font-bold tracking-tight text-text-bright mb-2 leading-none">
 					{!balance && loading ? (
 						// Never flash a fake $0.00 while the balance query is in flight.
 						<span
@@ -74,13 +77,13 @@ function CreditBalanceCardComponent({
 							<AnimatedNumber
 								value={Math.round(parseFloat(balance.balanceCents))}
 							/>
-							<span className="text-base text-text-muted font-normal">credits</span>
+							<span className="text-[14px] text-text-muted font-mono uppercase tracking-wider font-semibold">CR</span>
 						</div>
 					)}
 				</div>
-				<div className="flex items-center gap-2 text-[11px] text-text-muted">
+				<div className="flex items-center gap-2 text-[11px] font-mono text-text-muted/80">
 					<span
-						className="inline-block h-1.5 w-1.5 bg-text-muted"
+						className="inline-block h-1.5 w-1.5 rounded-full bg-text-muted/50"
 						aria-hidden="true"
 					/>
 					{balance
@@ -93,7 +96,7 @@ function CreditBalanceCardComponent({
 
 			{/* 7-day spend sparkline — visual depth without competing with the
           main AreaChart in the Usage tab. Hidden if no data yet. */}
-			<div className="mb-6 -mx-2">
+			<div className="mb-6 -mx-3 px-3 py-1 bg-void/50 rounded-md border border-border/40">
 				<Sparkline
 					values={sparkPoints}
 					heightClass="h-10"
@@ -105,18 +108,18 @@ function CreditBalanceCardComponent({
 				</div>
 			</div>
 
-			<div className="flex gap-3 border-t border-border pt-4">
+			<div className="flex gap-3 border-t border-border/60 pt-5 mt-auto">
 				<Link
 					href="/deposit"
 					aria-label="Top up credits"
-					className="group flex flex-1 items-center justify-center border border-border-bright bg-surface px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent focus-ring active:bg-surface-elevated"
+					className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-void px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-accent hover:text-accent hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-ring active:scale-[0.98]"
 				>
 					Top up credits
 				</Link>
 				<Link
 					href="/deposit"
 					aria-label="Deposit USDC"
-					className="group flex flex-1 items-center justify-center border border-border-bright bg-void px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-text-muted hover:text-text focus-ring active:bg-surface"
+					className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-surface px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-text-muted hover:text-text hover:bg-surface-elevated focus-ring active:scale-[0.98]"
 				>
 					Deposit USDC
 				</Link>

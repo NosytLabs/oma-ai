@@ -145,7 +145,7 @@ Content-Type: application/json`;
 			className={cn(
 				"relative overflow-hidden rounded-xl border border-border-hi",
 				"bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-elevated)_94%,transparent),var(--color-panel))]",
-				"shadow-[0_30px_60px_-30px_rgba(0,0,0,0.85)] backdrop-blur-sm",
+				"shadow-[0_30px_60px_-30px_rgba(0,0,0,0.85)] backdrop-blur-sm min-h-[420px] min-w-[320px] sm:min-w-[520px] max-w-full",
 				className,
 			)}
 		>

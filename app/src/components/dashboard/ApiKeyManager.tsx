@@ -63,12 +63,13 @@ function ApiKeyManagerComponent({
 	});
 
 	return (
-		<>
+		<div className="bg-surface border border-border/60 rounded-[12px] shadow-sm relative overflow-hidden h-full">
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 to-transparent" />
 			<div className="flex flex-col p-6">
-				<div className="mb-6 flex items-center justify-between border-b border-border pb-4">
+				<div className="mb-6 flex items-center justify-between border-b border-border/50 pb-4">
 					<div>
-						<h2 className="text-sm font-semibold text-text-bright">API keys</h2>
-						<p className="mt-0.5 text-[11px] text-text-muted">
+						<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">API keys</h2>
+						<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 							{keys.length} key{keys.length === 1 ? "" : "s"} on this account
 						</p>
 					</div>
@@ -232,7 +233,7 @@ function ApiKeyManagerComponent({
 					</div>
 				</div>
 			)}
-		</>
+		</div>
 	);
 }
 

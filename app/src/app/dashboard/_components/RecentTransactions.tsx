@@ -40,38 +40,38 @@ const TX_LABELS: Record<string, string> = {
  */
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 	return (
-		<div className="mb-6 border border-border bg-void p-4">
-			<div className="flex items-center justify-between">
-				<h2 className="text-sm font-semibold text-text-bright">
+		<div className="mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm">
+			<div className="flex items-center justify-between mb-2">
+				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Recent activity
 				</h2>
 				{transactions.length > 0 && (
 					<Link
 						href="/dashboard?tab=usage"
-						className="text-[11px] text-accent hover:underline"
+						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-bright hover:underline"
 					>
 						View all →
 					</Link>
 				)}
 			</div>
 			{transactions.length === 0 ? (
-				<div className="mt-3 flex flex-col items-center gap-2 py-6 text-center">
-					<div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-text-muted">
+				<div className="mt-4 flex flex-col items-center gap-3 py-8 text-center bg-void rounded-md border border-border/50">
+					<div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-border bg-surface text-text-muted">
 						<ArrowLeftRight className="h-4 w-4" />
 					</div>
-					<p className="text-sm text-text-secondary">No transactions yet</p>
-					<p className="text-[11px] text-text-muted">
+					<p className="text-[13.5px] font-semibold tracking-wide text-text-secondary">No transactions yet</p>
+					<p className="text-[11px] text-text-muted max-w-[280px] leading-relaxed">
 						Deposits, usage, and refunds will appear here.{" "}
 						<Link
 							href="/deposit"
-							className="text-accent underline underline-offset-2 hover:no-underline"
+							className="text-accent hover:text-accent-bright transition-colors"
 						>
 							Make your first deposit →
 						</Link>
 					</p>
 				</div>
 			) : (
-				<div className="mt-3 space-y-1">
+				<div className="mt-4 space-y-1">
 					{transactions.slice(0, 5).map((tx) => {
 						const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
 						const iconClass =
@@ -87,31 +87,31 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 						return (
 							<div
 								key={tx.id}
-								className="flex items-center justify-between py-2 border-b border-border/30 last:border-0"
+								className="flex items-center justify-between py-3 border-b border-border/60 last:border-0 hover:bg-void/40 px-2 -mx-2 rounded-md transition-colors"
 							>
-								<div className="flex items-center gap-2.5">
+								<div className="flex items-center gap-3.5">
 									<div
-										className={`flex h-6 w-6 items-center justify-center rounded border border-border bg-surface ${iconClass}`}
+										className={`flex h-8 w-8 items-center justify-center rounded-[6px] border border-border bg-void shadow-sm ${iconClass}`}
 									>
-										<Icon className="h-3 w-3" />
+										<Icon className="h-3.5 w-3.5" />
 									</div>
 									<div>
-										<span className="text-sm font-medium text-text">
+										<span className="text-[13px] font-bold text-text-bright">
 											{label}
 										</span>
 										{tx.model && (
-											<span className="ml-1.5 text-[10px] text-text-muted">
+											<span className="ml-2 text-[10.5px] font-mono text-text-muted">
 												{tx.model}
 											</span>
 										)}
 									</div>
 								</div>
-								<div className="flex items-center gap-3">
-									<span className={`text-sm font-mono ${amountClass}`}>
+								<div className="flex items-center gap-4">
+									<span className={`text-[13.5px] font-mono tracking-tight font-bold ${amountClass}`}>
 										{sign}${toDollars(Math.abs(tx.amountCents)).toFixed(2)}
 									</span>
-									<div className="flex items-center gap-1 text-[10px] text-text-muted">
-										<Clock className="h-2.5 w-2.5" />
+									<div className="flex items-center gap-1.5 text-[10px] font-mono text-text-muted/70 w-12 justify-end">
+										<Clock className="h-3 w-3" />
 										{formatTime(tx.createdAt)}
 									</div>
 								</div>

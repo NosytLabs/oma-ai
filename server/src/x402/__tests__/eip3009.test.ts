@@ -90,6 +90,7 @@ vi.mock('viem', () => ({
   fallback: vi.fn((transports: any[]) => transports[0]),
   parseAbi: vi.fn(() => []),
   decodeFunctionData: vi.fn(),
+  encodeFunctionData: vi.fn(() => '0x'),
   formatUnits: vi.fn((v: bigint, d: number) => {
     const s = v.toString().padStart(d + 1, '0')
     return `${s.slice(0, -d)}.${s.slice(-d)}`

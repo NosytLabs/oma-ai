@@ -45,12 +45,12 @@ export function QuickStatsCard({
 	];
 
 	return (
-		<div className="flex flex-col p-6 bg-void">
+		<div className="flex flex-col p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm">
 			<div className="mb-4">
-				<h2 className="text-sm font-semibold text-text-bright">Today</h2>
-				<p className="mt-0.5 text-[11px] text-text-muted">Last 24 hours</p>
+				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">Today</h2>
+				<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">Last 24 hours</p>
 			</div>
-			<div className="flex-1 space-y-0 border border-border">
+			<div className="flex-1 space-y-0 border border-border/80 rounded-md overflow-hidden bg-void">
 				{rows.map((row) => (
 					<div
 						key={row.label}

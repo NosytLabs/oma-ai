@@ -106,7 +106,8 @@ function LoginInner() {
 	const router = useRouter();
 	const toast = useToast();
 	const { status: apiStatus } = useApiHealth();
-	const offline = apiStatus === "offline";
+	const [mounted, setMounted] = useState(false);
+	const offline = mounted && apiStatus === "offline";
 
 	const [method, setMethod] = useState<Method>("magic");
 	const [email, setEmail] = useState("");
@@ -117,6 +118,7 @@ function LoginInner() {
 	const searchParams = useSearchParams();
 
 	useEffect(() => {
+		setMounted(true);
 		setNext(defaultNext());
 		const requested = searchParams?.get("method");
 		if (requested === "wallet" || requested === "magic") {
@@ -177,35 +179,37 @@ function LoginInner() {
 							password to lose.
 						</p>
 
-						{offline && (
-							<div
-								role="alert"
-								aria-live="assertive"
-								className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
-							>
-								<AlertTriangle
-									className="mt-0.5 h-4 w-4 shrink-0 text-warning"
-									aria-hidden="true"
-								/>
-								<div className="text-xs text-text">
-									<p className="font-semibold">API is offline</p>
-									<p className="text-text-muted">
-										Sign-in is temporarily unavailable. Retrying
-										automatically.
-									</p>
+						<div>
+							{offline && (
+								<div
+									role="alert"
+									aria-live="assertive"
+									className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
+								>
+									<AlertTriangle
+										className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+										aria-hidden="true"
+									/>
+									<div className="text-xs text-text">
+										<p className="font-semibold">API is offline</p>
+										<p className="text-text-muted">
+											Sign-in is temporarily unavailable. Retrying
+											automatically.
+										</p>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
-						{error && (
-							<div
-								role="alert"
-								aria-live="assertive"
-								className="mt-4 rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error"
-							>
-								{error}
-							</div>
-						)}
+							{error && (
+								<div
+									role="alert"
+									aria-live="assertive"
+									className="mt-4 rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error"
+								>
+									{error}
+								</div>
+							)}
+						</div>
 
 						<div
 							role="tablist"

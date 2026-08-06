@@ -359,7 +359,7 @@ export function WelcomeBanner({
 									animate={{ height: "auto", opacity: 1 }}
 									exit={{ height: 0, opacity: 0 }}
 									transition={{ duration: 0.2 }}
-									className="overflow-hidden mb-3"
+									className="overflow-hidden mt-3 mb-3"
 								>
 									<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-mono text-text-muted">
 										<span className="font-bold uppercase tracking-widest text-text-secondary">
@@ -402,7 +402,7 @@ export function WelcomeBanner({
 								stiffness: 300,
 								damping: 24,
 							}}
-							className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+							className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
 						>
 							<button
 								type="button"

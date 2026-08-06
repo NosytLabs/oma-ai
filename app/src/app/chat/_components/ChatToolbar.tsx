@@ -170,10 +170,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("text")}
 					aria-selected={mediaMode === "text"}
 					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
-					<MessageSquare className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Chat</span>
+					<MessageSquare className="h-4 w-4" />
+					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Chat</span>
 				</button>
 				<button
 					type="button"
@@ -181,10 +181,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("image")}
 					aria-selected={mediaMode === "image"}
 					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
-					<ImageIcon className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Image</span>
+					<ImageIcon className="h-4 w-4" />
+					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Image</span>
 				</button>
 				<button
 					type="button"
@@ -192,10 +192,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("video")}
 					aria-selected={mediaMode === "video"}
 					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded min-h-[40px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent-dim !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
-					<Film className="h-3.5 w-3.5" />
-					<span className="hidden sm:inline text-[11px]">Video</span>
+					<Film className="h-4 w-4" />
+					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Video</span>
 				</button>
 			</div>
 		) : null;
@@ -206,7 +206,7 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex h-12 min-w-0 flex-none items-center gap-1.5 border-b border-border bg-void/95 px-2 sm:gap-3 sm:px-5"
+			className="flex h-14 min-w-0 flex-none items-center gap-2 border-b border-border bg-void/95 px-3 sm:gap-4 sm:px-6 shadow-[0_4px_20px_-10px_var(--color-void)] z-20"
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">

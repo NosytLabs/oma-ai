@@ -88,10 +88,10 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-void">
-				<div className="flex items-center gap-2 mb-4">
-					<span className="inline-block h-2 w-2 bg-text-muted animate-pulse" />
-					<span className="text-sm text-text-muted">
+			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+				<div className="flex items-center gap-3 mb-4">
+					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
+					<span className="text-[13px] font-semibold text-text-secondary">
 						Loading model breakdown...
 					</span>
 				</div>
@@ -101,11 +101,11 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (modelStats.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-void">
-				<h3 className="text-sm font-semibold text-text-bright mb-2">
+			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Model Usage Breakdown
 				</h3>
-				<p className="text-sm text-text-muted">
+				<p className="text-[12.5px] text-text-muted leading-relaxed">
 					No model usage data yet. Start making API calls to see breakdown.
 				</p>
 			</div>
@@ -113,12 +113,12 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	}
 
 	return (
-		<div className="border border-border bg-void">
-			<div className="p-6 border-b border-border">
-				<h3 className="text-sm font-semibold text-text-bright">
+		<div className="border border-border/60 bg-surface rounded-[12px] shadow-sm overflow-hidden">
+			<div className="p-6 border-b border-border/50">
+				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Model Usage Breakdown
 				</h3>
-				<p className="text-[11px] text-text-muted mt-1">
+				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{totalRequests.toLocaleString()} total requests · $
 					{totalCost.toFixed(2)} total cost
 				</p>
@@ -126,81 +126,81 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 			<div className="overflow-x-auto">
 				<table className="w-full text-left">
 					<thead>
-						<tr className="border-b border-border bg-surface/30">
+						<tr className="border-b border-border/50 bg-void/30">
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
 							>
 								Model
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Requests
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Input Tokens
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Output Tokens
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Cost
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Avg Latency
 							</th>
 							<th
 								scope="col"
-								className="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								% of Total
 							</th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody className="bg-void/10">
 						{modelStats.map((stat, i) => (
 							<m.tr
 								key={stat.model}
-								className="border-b border-border hover:bg-surface/50 transition-colors"
+								className="border-b border-border/40 hover:bg-surface/60 transition-colors last:border-0"
 								initial={{ opacity: 0, x: -10 }}
 								animate={{ opacity: 1, x: 0 }}
 								transition={{ delay: i * 0.03 }}
 							>
-								<td className="px-6 py-4 text-sm font-medium text-success">
+								<td className="px-6 py-4 text-[13px] font-bold text-success font-mono">
 									{stat.model}
 								</td>
-								<td className="px-6 py-4 text-sm text-text-secondary text-right">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
 									{stat.requests.toLocaleString()}
 								</td>
-								<td className="px-6 py-4 text-sm text-text-secondary text-right">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
 									{stat.totalInputTokens.toLocaleString()}
 								</td>
-								<td className="px-6 py-4 text-sm text-text-secondary text-right">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
 									{stat.totalOutputTokens.toLocaleString()}
 								</td>
-								<td className="px-6 py-4 text-sm text-text-secondary text-right">
+								<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
 									{formatUsdPrecise(stat.totalCost)}
 								</td>
-								<td className="px-6 py-4 text-sm text-text-secondary text-right font-mono">
+								<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono">
 									{formatLatency(stat.avgLatency)}
 								</td>
 								<td className="px-6 py-4 text-right">
-									<div className="flex items-center justify-end gap-2">
-										<div className="w-16 h-1.5 bg-surface rounded-full overflow-hidden">
+									<div className="flex items-center justify-end gap-3">
+										<div className="w-16 h-2 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
 											<div
 												className="h-full bg-accent rounded-full"
 												style={{
@@ -208,7 +208,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 												}}
 											/>
 										</div>
-										<span className="text-xs text-text-muted w-10 text-right">
+										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono">
 											{totalCost > 0
 												? ((stat.totalCost / totalCost) * 100).toFixed(1)
 												: "0.0"}

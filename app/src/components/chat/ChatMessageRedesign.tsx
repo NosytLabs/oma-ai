@@ -299,7 +299,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					/>
 
 					{isUser ? (
-						<p className="whitespace-pre-wrap break-words">{msg.content}</p>
+						<p className="whitespace-pre-wrap break-words text-[15px]">{msg.content}</p>
 					) : (
 						<div className="markdown-content max-w-full min-w-0 break-words font-sans text-[15px] leading-relaxed [overflow-wrap:anywhere]" aria-live="polite">
 							{/* While the model is still streaming, render plain text —
@@ -319,10 +319,10 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 											const isInline = !match && !text.includes("\n");
 											return isInline ? (
 												<code
-													className="px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-xs"
+													className="px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-[13px] rounded-sm"
 													{...props}
 												>
-													{children}
+													{String(children)}
 												</code>
 											) : (
 												<CodeBlock className={className}>
@@ -589,7 +589,7 @@ function CodeBlock({
 			<div className="chat-scrollbar max-w-full overflow-x-auto">
 				<pre
 					className="
-            block w-max max-w-full min-w-full bg-void text-text p-4 pt-8 text-xs leading-relaxed
+            block w-max max-w-full min-w-full bg-void text-text p-4 pt-8 text-[13px] leading-relaxed
             border border-border font-mono
             group-hover:border-accent/20 transition-colors duration-300
             chat-scrollbar

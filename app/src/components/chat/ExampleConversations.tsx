@@ -276,14 +276,14 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 
 	return (
 		<div
-			className="w-full max-w-4xl mx-auto px-4 md:px-0 py-8"
+			className="w-full max-w-4xl mx-auto px-4 md:px-0 py-10"
 			id="example-conversations"
 		>
-			<div className="mb-6">
-				<h2 className="text-xs font-mono font-bold text-text-muted uppercase tracking-widest">
+			<div className="mb-8 border-b border-border/50 pb-4">
+				<h2 className="text-[13px] font-mono font-bold text-text-secondary uppercase tracking-widest">
 					{"// PROMPT EXAMPLES"}
 				</h2>
-				<p className="text-[11px] text-text-muted font-mono mt-1">
+				<p className="text-[11px] text-text-muted font-mono mt-1 opacity-80">
 					CLICK TO PRE-FILL · SWITCH MODELS TO COMPARE OUTPUTS
 				</p>
 			</div>
@@ -314,27 +314,28 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 								}}
 								onMouseEnter={() => setExpandedId(example.id)}
 								onMouseLeave={() => setExpandedId(null)}
-								className="group w-full text-left p-4 border border-border bg-void hover:border-success/40 hover:bg-surface transition-all focus-ring"
+								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 focus-ring"
 							>
-								<div className="flex items-start gap-3">
+								<div className="flex items-start gap-4">
 									<div
-										className="shrink-0 w-8 h-8 flex items-center justify-center border border-border bg-surface group-hover:border-success/30 transition-colors"
+										className="shrink-0 w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-surface group-hover:border-success/30 transition-colors"
 										style={{
-											borderColor: isExpanded ? `color-mix(in srgb, ${catColor} 25%, transparent)` : undefined,
+											borderColor: isExpanded ? `color-mix(in srgb, ${catColor} 30%, transparent)` : undefined,
+											backgroundColor: isExpanded ? `color-mix(in srgb, ${catColor} 10%, transparent)` : undefined,
 										}}
 									>
-										<Icon className="w-4 h-4" style={{ color: catColor }} />
+										<Icon className="w-5 h-5" style={{ color: catColor }} />
 									</div>
 									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-2 mb-0.5">
-											<h3 className="text-xs font-mono font-bold text-text uppercase tracking-wide truncate">
+										<div className="flex items-center gap-2 mb-1">
+											<h3 className="text-[13px] font-mono font-bold text-text-bright uppercase tracking-wide truncate">
 												{example.title}
 											</h3>
 											<ChevronRight
-												className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+												className={`w-3.5 h-3.5 text-text-muted transition-transform duration-300 ${isExpanded ? "rotate-90 text-accent" : ""}`}
 											/>
 										</div>
-										<p className="text-[10px] font-mono text-text-muted truncate mb-2">
+										<p className="text-[11px] font-mono text-text-muted truncate mb-3">
 											{example.subtitle}
 										</p>
 
@@ -348,44 +349,44 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 													transition={{ duration: 0.15 }}
 													className="overflow-hidden"
 												>
-													<p className="text-[10px] font-mono text-text-muted/80 leading-relaxed mb-2 line-clamp-3">
+													<p className="text-[11.5px] font-mono text-text-muted leading-relaxed mb-3 line-clamp-3">
 														{example.prompt.slice(0, 200)}...
 													</p>
-													<span className="inline-flex items-center gap-1 text-[10px] font-mono text-accent group-hover:text-success transition-colors">
+													<span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-accent group-hover:text-success transition-colors">
 														USE THIS PROMPT
-														<ChevronRight className="w-2.5 h-2.5" />
+														<ChevronRight className="w-3 h-3" />
 													</span>
 												</m.div>
 											)}
 										</AnimatePresence>
 
 										{/* Badges */}
-										<div className="flex items-center gap-1.5 mt-2 flex-wrap">
+										<div className="flex items-center gap-2 mt-4 flex-wrap">
 											<span
-												className="px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider border"
+												className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border"
 												style={{
-													borderColor: `color-mix(in srgb, ${catColor} 19%, transparent)`,
+													borderColor: `color-mix(in srgb, ${catColor} 30%, transparent)`,
 													color: catColor,
-													backgroundColor: `color-mix(in srgb, ${catColor} 3%, transparent)`,
+													backgroundColor: `color-mix(in srgb, ${catColor} 10%, transparent)`,
 												}}
 											>
 												{example.category}
 											</span>
 											<span
-												className="px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider border"
+												className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border"
 												style={{
-													borderColor: `color-mix(in srgb, ${diff.color} 19%, transparent)`,
+													borderColor: `color-mix(in srgb, ${diff.color} 30%, transparent)`,
 													color: diff.color,
-													backgroundColor: `color-mix(in srgb, ${diff.color} 3%, transparent)`,
+													backgroundColor: `color-mix(in srgb, ${diff.color} 10%, transparent)`,
 												}}
 											>
 												{diff.label}
 											</span>
-											<span className="px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 text-[9px] font-mono uppercase tracking-wider">
+											<span className="px-2 py-0.5 rounded-sm bg-accent/10 text-accent border border-accent/20 text-[9.5px] font-mono font-bold uppercase tracking-wider">
 												{example.modelName}
 											</span>
 											{example.estimatedCost && (
-												<span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-success/10 text-success border border-success/20 text-[9px] font-mono uppercase tracking-wider">
+												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-success/10 text-success border border-success/20 text-[9.5px] font-mono font-bold uppercase tracking-wider">
 													<Coins className="w-2.5 h-2.5" />
 													{example.estimatedCost}
 												</span>

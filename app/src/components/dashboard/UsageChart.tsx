@@ -45,30 +45,32 @@ export function UsageChart({
 	const donutLabel = buildDonutLabel(modelData);
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
+		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<m.div
-				className="bg-void p-6"
+				className="bg-surface border border-border/60 p-6 rounded-[12px] shadow-sm relative overflow-hidden h-full"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4, delay: 0.3 }}
 			>
-				<div className="flex items-center justify-between mb-4">
-					<h3 className="text-sm font-semibold text-text-bright">
+				{/* Accent glow on top edge */}
+				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 to-transparent" />
+				<div className="flex items-center justify-between mb-6">
+					<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Usage ({TIME_LABELS[timeRange] || timeRange})
 					</h3>
 				</div>
 				{hasUsageData ? (
-					<div role="img" aria-label={areaLabel}>
+					<div role="img" aria-label={areaLabel} className="bg-void p-4 rounded-md border border-border/50">
 						<AreaChartComponent data={usageData} />
 					</div>
 				) : (
 					<div
 						role="img"
 						aria-label="Usage chart placeholder. No data yet."
-						className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center"
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-border/60 rounded-[8px] bg-void px-6 text-center"
 					>
-						<p className="text-sm text-text-bright">No usage data yet</p>
-						<p className="mt-1 text-xs text-text-muted">
+						<p className="text-[13.5px] font-semibold text-text-secondary">No usage data yet</p>
+						<p className="mt-2 text-[11px] font-mono text-text-muted">
 							Start making API calls to see your activity here.
 						</p>
 					</div>
@@ -76,20 +78,24 @@ export function UsageChart({
 			</m.div>
 
 			<m.div
-				className="bg-void p-6"
+				className="bg-surface border border-border/60 p-6 rounded-[12px] shadow-sm relative overflow-hidden h-full"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4, delay: 0.4 }}
 			>
-				<div className="flex items-center justify-between mb-4">
-					<h3 className="text-sm font-semibold text-text-bright">
+				{/* Accent glow on top edge */}
+				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-tertiary/40 to-transparent" />
+				<div className="flex items-center justify-between mb-6">
+					<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Model Breakdown
 					</h3>
 				</div>
 				{hasModelData ? (
-					<div role="img" aria-label={donutLabel}>
-						<DonutChart data={modelData} />
-						<div className="mt-4 flex flex-wrap gap-3">
+					<div role="img" aria-label={donutLabel} className="flex flex-col h-[calc(100%-2rem)]">
+						<div className="bg-void p-4 rounded-md border border-border/50 flex-1">
+							<DonutChart data={modelData} />
+						</div>
+						<div className="mt-5 flex flex-wrap gap-3 p-3 bg-surface-elevated rounded-md border border-border/50 justify-center">
 							{modelData.map((model) => (
 								<div key={model.name} className="flex items-center gap-2">
 									<div
@@ -97,7 +103,7 @@ export function UsageChart({
 										style={{ backgroundColor: model.color }}
 										aria-hidden="true"
 									/>
-									<span className="text-xs text-text-muted">{model.name}</span>
+									<span className="text-[11px] font-mono text-text-secondary">{model.name}</span>
 								</div>
 							))}
 						</div>
@@ -106,10 +112,10 @@ export function UsageChart({
 					<div
 						role="img"
 						aria-label="Model breakdown chart placeholder. No data yet."
-						className="flex flex-col items-center justify-center h-48 border border-dashed border-border rounded-lg px-6 text-center"
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-border/60 rounded-[8px] bg-void px-6 text-center"
 					>
-						<p className="text-sm text-text-bright">No model usage data yet</p>
-						<p className="mt-1 text-xs text-text-muted">
+						<p className="text-[13.5px] font-semibold text-text-secondary">No model usage data yet</p>
+						<p className="mt-2 text-[11px] font-mono text-text-muted">
 							Top models by cost will appear here.
 						</p>
 					</div>

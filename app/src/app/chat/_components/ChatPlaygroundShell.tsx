@@ -671,9 +671,9 @@ function ShellContent({
 								onClick={() => setSystemPromptOpen(!systemPromptOpen)}
 								aria-expanded={systemPromptOpen}
 								aria-label={`Toggle system prompt panel — Instructions ${systemPrompt.trim() ? "· Active" : "· Optional"}`}
-								className="w-full flex items-center justify-between px-4 md:px-6 py-2.5 text-[11px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors focus-ring"
+								className="w-full flex items-center justify-between px-4 md:px-6 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors focus-ring"
 							>
-								<span className="flex items-center gap-2">
+								<span className="flex items-center gap-2.5">
 									<span
 										className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
 									/>
@@ -681,9 +681,9 @@ function ShellContent({
 									{systemPrompt.trim() ? "· Active" : "· Optional"}
 								</span>
 								{systemPromptOpen ? (
-									<ChevronUp className="w-3.5 h-3.5" />
+									<ChevronUp className="w-4 h-4 text-text-muted" />
 								) : (
-									<ChevronDown className="w-3.5 h-3.5" />
+									<ChevronDown className="w-4 h-4 text-text-muted" />
 								)}
 							</button>
 							{systemPromptOpen && (
@@ -727,26 +727,26 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 							<div
-							className="flex-none px-2 pt-2 pb-3 sm:px-4 sm:pt-4 sm:pb-6 bg-void border-t border-border"
-							style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-5 sm:pb-8 bg-void border-t border-border shadow-[0_-10px_30px_-10px_var(--color-void)] z-10"
+							style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
 						>
 							<div className="max-w-3xl mx-auto">
-								<div className="flex items-center gap-2 mb-2 flex-wrap">
+								<div className="flex items-center gap-3 mb-3 flex-wrap">
 									<button
 										type="button"
 										onClick={() => setUiMode(!uiMode)}
 										aria-pressed={uiMode}
 										aria-label="Toggle UI mode — let models render interactive interfaces (A2UI)"
-										className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all focus-ring ${
+										className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all focus-ring ${
 											uiMode
-												? "border-accent bg-accent/15 text-accent"
-												: "border-border text-text-muted hover:border-accent/50 hover:text-text"
+												? "border-accent bg-accent/15 text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
+												: "border-border-hi text-text-muted hover:border-accent/50 hover:text-text"
 										}`}
 									>
-										<Sparkles className="w-3 h-3" aria-hidden="true" />
+										<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
 										{uiMode ? "UI mode on" : "UI mode"}
 									</button>
-								<span className="hidden sm:inline text-[10px] font-mono text-text-muted tracking-wide">
+								<span className="hidden sm:inline text-[11px] font-mono text-text-muted tracking-wide opacity-80">
 										{uiMode
 											? "Models can render buttons, forms & cards inline — clickable, like Claude's artifacts"
 											: "Ask \u201cbuild me a form\u201d with UI mode on to get interactive UI"}
@@ -778,15 +778,15 @@ function ShellContent({
 									setWebSearchEnabled={setWebSearchEnabled}
 								/>
 
-								<div className="mt-2 flex flex-col items-stretch gap-1 px-0.5 sm:mt-2.5 sm:gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+								<div className="mt-3 flex flex-col items-stretch gap-1 px-1 sm:mt-3 sm:gap-2 sm:flex-row sm:items-center sm:justify-between">
 									<p
 										id="message-hint"
-										className="text-[11px] text-text-muted tracking-wide font-mono min-w-0 break-words sm:shrink-0"
+										className="text-[11.5px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words sm:shrink-0"
 									>
 										<span className="hidden sm:inline">Enter send · Shift+Enter newline</span>
 										<span className="sm:hidden">Tap send · hold for newline</span>
 										{!isAuthenticated && (
-											<span className="text-accent/80">
+											<span className="text-accent/80 font-semibold">
 												{" "}
 												· {freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
 												left

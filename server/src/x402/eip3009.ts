@@ -3,6 +3,7 @@ import {
   http,
   formatUnits,
   encodePacked,
+  encodeFunctionData,
   keccak256,
   recoverTypedDataAddress,
   parseAbi,
@@ -161,36 +162,22 @@ async function simulateEip3009Transfer(
   signature: Hex,
 ): Promise<void> {
   const client = getPublicClient();
-  // eth_call against the USDC contract. encodeFunctionData + raw call avoids
-  // pulling in abi decoding; we only care whether the contract reverts.
-  const data = encodePacked(
-    [
-      "bytes4",
-      "address",
-      "address",
-      "uint256",
-      "uint256",
-      "uint256",
-      "bytes32",
-      "uint256",
-      "bytes",
-    ],
-    [
-      "0xe3ee160e", // transferWithAuthorization selector
+  const data = encodeFunctionData({
+    abi: USDC_EIP3009_ABI,
+    functionName: "transferWithAuthorization",
+    args: [
       auth.from as `0x${string}`,
       auth.to as `0x${string}`,
       BigInt(auth.value),
       BigInt(auth.validAfter),
       BigInt(auth.validBefore),
       auth.nonce as `0x${string}`,
-      // signature byte length + signature bytes
-      BigInt(((signature.length - 2) / 2)),
       signature,
     ],
-  );
+  });
   await client.call({
     to: USDC_BASE,
-    data: data as Hex,
+    data,
     // simulate from zero-address; contract-level checks (msg.sender) are not
     // meaningful for transferWithAuthorization (sender must NOT be `from`),
     // so a zero-address simulates "anyone calls this" which is the legitimate

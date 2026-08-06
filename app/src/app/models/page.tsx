@@ -797,80 +797,80 @@ function ModelsPageInner() {
                           <Link
                             key={model.id}
                             href={`/models/${model.id}`}
-                            className="group relative rounded-md border border-border bg-panel p-4 transition-[border-color,box-shadow] hover:border-accent/50 hover:shadow-[0_0_15px_var(--color-accent-dim)] h-full flex flex-col"
+                            className="group relative rounded-xl border border-border bg-panel p-5 transition-[border-color,box-shadow,transform] duration-300 hover:border-accent/40 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.5)] h-full flex flex-col"
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1 flex items-start gap-2.5">
-                                <ModelLogo modelId={model.id} size={28} className="mt-0.5" />
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1 flex items-start gap-3">
+                                <ModelLogo modelId={model.id} size={36} className="mt-0.5 shadow-sm rounded-lg" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-text-bright truncate">
+                                  <p className="text-[15px] font-semibold tracking-tight text-text-bright truncate">
                                     {model.name ?? "Unknown"}
                                   </p>
-                                  <p className="text-xs text-text-muted mt-0.5 font-mono truncate">
+                                  <p className="text-[11px] text-text-muted mt-1 font-mono truncate">
                                     {model.id}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end gap-1 shrink-0">
+                              <div className="flex flex-col items-end gap-1.5 shrink-0">
                                 {model.provider && (
                                   <span
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
+                                    className={`px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
                                   >
                                     {model.provider}
                                   </span>
                                 )}
                                 {model.modality && model.modality !== "chat" && (
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
+                                  <span className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
                                     {MODALITY_LABELS[model.modality]}
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            <div className="mt-3 flex flex-wrap gap-1.5">
+                            <div className="mt-4 flex flex-wrap gap-2">
                               {/* Input/Output Modality Badges — driven by the live
                                   /v1/models architecture payload. Renders I for image,
                                   A for audio, V for video, T for text, E for embeddings. */}
-                              <div className="flex flex-wrap gap-1" aria-label="Modalities">
+                              <div className="flex flex-wrap gap-1.5" aria-label="Modalities">
                                 {inModalities.includes("text") && (
-                                  <span title="Text input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">T in</span>
+                                  <span title="Text input" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border">T IN</span>
                                 )}
                                 {inModalities.includes("image") && (
-                                  <span title="Image input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">I in</span>
+                                  <span title="Image input" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border">I IN</span>
                                 )}
                                 {inModalities.includes("audio") && (
-                                  <span title="Audio input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">A in</span>
+                                  <span title="Audio input" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border">A IN</span>
                                 )}
                                 {inModalities.includes("video") && (
-                                  <span title="Video input" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50">V in</span>
+                                  <span title="Video input" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border">V IN</span>
                                 )}
                                 {outModalities.includes("image") && (
-                                  <span title="Image output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue/10 text-blue border border-blue/30">image</span>
+                                  <span title="Image output" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-blue/10 text-blue border border-blue/30">IMAGE</span>
                                 )}
                                 {outModalities.includes("audio") && (
-                                  <span title="Audio output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet/10 text-violet border border-violet/30">audio</span>
+                                  <span title="Audio output" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-violet/10 text-violet border border-violet/30">AUDIO</span>
                                 )}
                                 {outModalities.includes("video") && (
-                                  <span title="Video output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber/10 text-amber border border-amber/30">video</span>
+                                  <span title="Video output" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-amber/10 text-amber border border-amber/30">VIDEO</span>
                                 )}
                                 {outModalities.includes("embeddings") && (
-                                  <span title="Embeddings output" className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">embed</span>
+                                  <span title="Embeddings output" className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">EMBED</span>
                                 )}
                               </div>
 
                               {/* Capability Tags */}
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap gap-1.5">
                                 {model.capabilities.slice(0, 3).map((cap) => (
                                   <span
                                     key={String(cap)}
-                                    className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-text-secondary border border-border/50"
+                                    className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
                                   >
-                                    {cap.charAt(0).toUpperCase() + cap.slice(1)}
+                                    {cap}
                                   </span>
                                 ))}
                                 {model.capabilities.length > 3 && (
                                   <span
-                                    className="px-1.5 py-0.5 rounded text-[10px] text-text-muted cursor-help"
+                                    className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
                                     title={`Additional capabilities: ${model.capabilities
                                       .slice(3)
                                       .join(", ")}`}
@@ -881,11 +881,11 @@ function ModelsPageInner() {
                               </div>
                             </div>
 
-                            <div className="mt-3 flex items-center justify-between text-xs">
-                              <span className="text-text-secondary font-mono">
+                            <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-xs">
+                              <span className="text-[11px] text-text-secondary font-mono">
                                 {model.contextLength && model.contextLength !== "0" ? `${model.contextLength} ctx` : "—"}
                               </span>
-                              <div className="flex items-center gap-2 text-[10px] font-mono">
+                              <div className="flex items-center gap-2 text-[11px] font-mono">
                                 {isNonChat && typeof model.pricePerUnit === "number" && model.pricePerUnit > 0 ? (
                                   <span className="text-accent" title={`Price${model.priceUnit ?? ""}`}>
                                     ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}{model.priceUnit ?? ""}

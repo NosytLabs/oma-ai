@@ -57,10 +57,10 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-void">
-				<div className="flex items-center gap-2 mb-4">
-					<span className="inline-block h-2 w-2 bg-text-muted animate-pulse" />
-					<span className="text-sm text-text-muted">
+			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+				<div className="flex items-center gap-3 mb-4">
+					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse" />
+					<span className="text-[13px] font-semibold text-text-secondary">
 						Loading provider breakdown...
 					</span>
 				</div>
@@ -70,28 +70,28 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 
 	if (providerStats.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-void">
-				<h3 className="text-sm font-semibold text-text-bright mb-2">
+			<div className="p-6 border border-border/60 bg-surface rounded-[12px] shadow-sm">
+				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Provider Breakdown
 				</h3>
-				<p className="text-sm text-text-muted">No provider data yet.</p>
+				<p className="text-[12.5px] text-text-muted leading-relaxed">No provider data yet.</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="border border-border bg-void">
-			<div className="p-6 border-b border-border">
-				<h3 className="text-sm font-semibold text-text-bright">
+		<div className="border border-border/60 bg-surface rounded-[12px] shadow-sm overflow-hidden h-full">
+			<div className="p-6 border-b border-border/50">
+				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Provider Breakdown
 				</h3>
-				<p className="text-[11px] text-text-muted mt-1">
+				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{" "}
 					· ${totalCost.toFixed(2)} total cost
 				</p>
 			</div>
-			<div className="p-6">
-				<div className="space-y-3">
+			<div className="p-6 bg-void/50 h-[calc(100%-70px)]">
+				<div className="space-y-5">
 					{providerStats.map((stat, i) => {
 						const pct = totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0;
 						return (
@@ -101,29 +101,29 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 								animate={{ opacity: 1, x: 0 }}
 								transition={{ delay: i * 0.05 }}
 							>
-								<div className="flex items-center justify-between mb-1">
-									<div className="flex items-center gap-2">
+								<div className="flex items-center justify-between mb-2">
+									<div className="flex items-center gap-3">
 										<div
 											className="h-2.5 w-2.5 rounded-full"
 											style={{
 												backgroundColor: getProviderColor(stat.provider),
 											}}
 										/>
-										<span className="text-sm font-medium text-text">
+										<span className="text-[13px] font-bold text-text-bright uppercase tracking-wide">
 											{stat.provider}
 										</span>
 									</div>
-									<div className="flex items-center gap-3 text-xs text-text-muted">
-										<span>{stat.requests.toLocaleString()} requests</span>
-										<span className="font-mono">
+									<div className="flex items-center gap-4 text-[12px] text-text-muted">
+										<span className="font-mono">{stat.requests.toLocaleString()} REQ</span>
+										<span className="font-mono text-accent">
 											{formatUsdPrecise(stat.totalCost)}
 										</span>
-										<span className="font-mono w-12 text-right">
+										<span className="font-mono font-bold text-text-secondary w-12 text-right">
 											{pct.toFixed(1)}%
 										</span>
 									</div>
 								</div>
-								<div className="w-full h-1.5 bg-surface rounded-full overflow-hidden">
+								<div className="w-full h-2 bg-surface-elevated rounded-full overflow-hidden shadow-inner">
 									{/* scaleX instead of width — compositor-only, no per-frame layout */}
 									<m.div
 										className="h-full w-full rounded-full origin-left"

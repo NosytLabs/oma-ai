@@ -64,36 +64,36 @@ interface QuickActionsProps {
  */
 export function QuickActions({ className = "" }: QuickActionsProps) {
 	return (
-		<div className={`mb-6 border border-border bg-void p-5 ${className}`}>
-			<div className="mb-4 flex items-center justify-between">
+		<div className={`mb-8 border border-border/60 bg-surface rounded-[12px] p-6 shadow-sm ${className}`}>
+			<div className="mb-5 flex items-center justify-between">
 				<div>
-					<h2 className="text-sm font-semibold text-text-bright">
+					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Quick actions
 					</h2>
-					<p className="mt-0.5 text-[11px] text-text-muted">
+					<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">
 						Common next steps
 					</p>
 				</div>
 			</div>
-			<div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+			<div className="grid grid-cols-1 gap-px bg-border/80 rounded-md overflow-hidden sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
 				{ACTIONS.map((action, i) => {
 					const Icon = action.icon;
 					const inner = (
-						<div className="group flex h-full flex-col gap-2 bg-void p-4 transition-colors hover:bg-surface">
+						<div className="group flex h-full flex-col gap-3 bg-void p-5 transition-colors hover:bg-surface/60">
 							<div className="flex items-center gap-2">
-								<div className="flex h-7 w-7 items-center justify-center rounded-md border border-accent/20 bg-accent/10 text-accent">
-									<Icon className="h-3.5 w-3.5" aria-hidden="true" />
+								<div className="flex h-8 w-8 items-center justify-center rounded-[6px] border border-accent/25 bg-accent/10 text-accent transition-colors group-hover:border-accent/50 group-hover:bg-accent/20">
+									<Icon className="h-4 w-4" aria-hidden="true" />
 								</div>
 								<ArrowUpRight
-									className="ml-auto h-3.5 w-3.5 text-text-muted opacity-0 transition-opacity group-hover:opacity-100"
+									className="ml-auto h-4 w-4 text-text-muted opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent"
 									aria-hidden="true"
 								/>
 							</div>
-							<div className="mt-auto">
-								<div className="text-sm font-medium text-text-bright">
+							<div className="mt-2">
+								<div className="text-[13px] font-bold tracking-wide text-text-bright">
 									{action.label}
 								</div>
-								<div className="mt-0.5 text-[11px] text-text-muted">
+								<div className="mt-1 text-[11px] leading-relaxed text-text-muted">
 									{action.description}
 								</div>
 							</div>

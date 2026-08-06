@@ -25,76 +25,78 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	const totalPages = Math.ceil(usage.length / limit);
 
 	return (
-		<div className="p-6">
-			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-sm font-semibold text-text-bright">
-					Recent requests
-				</h2>
-				{!loading && usage.length > 0 && (
-					<span className="text-[11px] text-text-muted">
-						{usage.length} total
-					</span>
-				)}
+		<div className="flex flex-col h-full bg-void/50">
+			<div className="p-6 border-b border-border/50">
+				<div className="flex items-center justify-between">
+					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+						Recent requests
+					</h2>
+					{!loading && usage.length > 0 && (
+						<span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
+							{usage.length} total
+						</span>
+					)}
+				</div>
 			</div>
-			<div className="overflow-x-auto">
+			<div className="overflow-x-auto flex-1">
 				<table className="w-full min-w-[600px] text-left">
 					<thead>
-						<tr className="border-b border-border">
+						<tr className="border-b border-border/50 bg-void/30">
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
 							>
 								Model
 							</th>
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Input
 							</th>
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Output
 							</th>
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Cost
 							</th>
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
 								Latency
 							</th>
 							<th
 								scope="col"
-								className="py-3 text-[11px] font-medium text-text-muted"
+								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
 							>
 								Time
 							</th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody className="bg-void/10">
 						{loading && usage.length === 0 ? (
 							<tr>
 								<td colSpan={6} className="px-6 py-12 text-center">
-									<span className="inline-block h-4 w-4 border border-border-bright border-t-accent rounded-full animate-spin" />
+									<span className="inline-block h-5 w-5 border-2 border-border border-t-accent rounded-full animate-spin" />
 								</td>
 							</tr>
 						) : usage.length === 0 ? (
 							<tr>
 								<td
 									colSpan={6}
-									className="px-6 py-12 text-center text-sm text-text-muted"
+									className="px-6 py-16 text-center"
 								>
-									No inference calls yet.{" "}
+									<p className="text-[13px] text-text-secondary font-semibold">No inference calls yet.</p>
 									<Link
 										href="/chat"
-										className="text-accent hover:underline"
+										className="inline-block mt-2 text-[11px] font-bold uppercase tracking-widest text-accent hover:text-accent-bright transition-colors hover:underline"
 									>
 										Try the chat →
 									</Link>
@@ -104,21 +106,21 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							usage.slice((page - 1) * limit, page * limit).map((row, i) => (
 								<m.tr
 									key={row.id}
-									className="border-b border-border bg-void transition-colors hover:bg-surface"
+									className="border-b border-border/40 transition-colors hover:bg-surface/60 last:border-0"
 									initial={{ opacity: 0 }}
 									animate={{ opacity: 1 }}
 									transition={{ delay: i * 0.03 }}
 								>
-									<td className="px-6 py-4 text-sm font-medium text-accent">
+									<td className="px-6 py-4 text-[13px] font-bold text-accent font-mono">
 										{row.model}
 									</td>
-									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
+									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
 										{(row.promptTokens ?? 0).toLocaleString()}
 									</td>
-									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
+									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono">
 										{(row.completionTokens ?? 0).toLocaleString()}
 									</td>
-									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
+									<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
 										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent.
 										    Guard against NaN so a malformed cost row never renders "$NaN". */}
 										{(() => {
@@ -128,13 +130,13 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 												: "—";
 										})()}
 									</td>
-									<td className="px-6 py-4 text-sm text-text-secondary font-mono">
+									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono">
 										{typeof row.latencyMs === "number" &&
 										Number.isFinite(row.latencyMs)
 											? `${Math.round(row.latencyMs)}ms`
 											: "—"}
 									</td>
-									<td className="px-6 py-4 text-sm text-text-muted">
+									<td className="px-6 py-4 text-[11.5px] font-mono text-text-muted/80">
 										{formatTime(row.createdAt)}
 									</td>
 								</m.tr>
@@ -144,8 +146,8 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				</table>
 			</div>
 			{!loading && usage.length > limit && (
-				<div className="flex items-center justify-between px-6 py-4 border-t border-border">
-					<span className="text-[11px] text-text-muted">
+				<div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-surface/30">
+					<span className="text-[11px] font-mono text-text-muted uppercase tracking-wider">
 						Showing {(page - 1) * limit + 1}–
 						{Math.min(page * limit, usage.length)} of {usage.length}
 					</span>
@@ -155,19 +157,19 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							onClick={() => onPageChange(Math.max(1, page - 1))}
 							disabled={page === 1}
 							aria-label="Go to previous page"
-							className="flex items-center justify-center border border-border-bright bg-surface w-8 h-8 text-text-secondary transition-colors hover:border-text-muted hover:text-text disabled:opacity-50 disabled:pointer-events-none focus-ring"
+							className="flex items-center justify-center rounded-[6px] border border-border bg-surface w-8 h-8 text-text-secondary transition-colors hover:border-text-muted hover:text-text hover:bg-surface-elevated disabled:opacity-50 disabled:pointer-events-none focus-ring"
 						>
 							<ChevronLeft className="h-4 w-4" />
 						</button>
-						<span className="text-xs text-text px-2" aria-current="page">
-							Page {page} of {totalPages}
+						<span className="text-[11px] font-mono text-text-secondary px-2 uppercase tracking-wider" aria-current="page">
+							Page <span className="font-bold">{page}</span> of {totalPages}
 						</span>
 						<button
 							type="button"
 							onClick={() => onPageChange(Math.min(totalPages, page + 1))}
 							disabled={page >= totalPages}
 							aria-label="Go to next page"
-							className="flex items-center justify-center border border-border-bright bg-surface w-8 h-8 text-text-secondary transition-colors hover:border-text-muted hover:text-text disabled:opacity-50 disabled:pointer-events-none focus-ring"
+							className="flex items-center justify-center rounded-[6px] border border-border bg-surface w-8 h-8 text-text-secondary transition-colors hover:border-text-muted hover:text-text hover:bg-surface-elevated disabled:opacity-50 disabled:pointer-events-none focus-ring"
 						>
 							<ChevronRight className="h-4 w-4" />
 						</button>

@@ -1009,7 +1009,7 @@
 	   The class was referenced by ChatMessageRedesign with no rules — lists,
 	   headings and code blocks rendered as unstyled runs of text. */
 	.markdown-content > * + * {
-		margin-top: 0.6em;
+		margin-top: 1em;
 	}
 	.markdown-content ul,
 	.markdown-content ol {
@@ -1053,7 +1053,7 @@
 		background: var(--color-void-deep);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
-		padding: 0.75em 1em;
+		padding: 1em 1.25em;
 		overflow-x: auto;
 	}
 	.markdown-content hr {

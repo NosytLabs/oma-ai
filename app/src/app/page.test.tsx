@@ -118,9 +118,8 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		expect(h1.textContent).toMatch(/OpenAI-compatible API/i);
-		expect(h1.textContent).toMatch(/models/i);
-		expect(h1.textContent).toMatch(/USDC|x402|Credits/i);
+		expect(h1.textContent).toMatch(/One endpoint/i);
+		expect(h1.textContent).toMatch(/Every model/i);
 	});
 
 	it("renders the primary CTA", async () => {
@@ -132,21 +131,12 @@ describe("HomePage", () => {
 		expect(ctaLinks[0]).toHaveAttribute("href", "/login");
 	});
 
-	it("renders the x402 pay-per-request CTA in the hero", async () => {
-		renderWithQueryClient(<HomePage />);
-		const docsLinks = await screen.findAllByRole("link", {
-			name: /x402 pay-per-request/i,
-		});
-		expect(docsLinks.length).toBeGreaterThan(0);
-		expect(docsLinks[0]).toHaveAttribute("href", "/docs#x402");
-	});
-
 	it("renders the trust strip with provider wordmarks", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(screen.getByText(/routing through/i)).toBeInTheDocument();
-			expect(screen.getAllByText("OpenAI").length).toBeGreaterThan(0);
 			expect(screen.getAllByText("Venice").length).toBeGreaterThan(0);
+			expect(screen.getAllByText("OMA-AI").length).toBeGreaterThan(0);
 		});
 	});
 

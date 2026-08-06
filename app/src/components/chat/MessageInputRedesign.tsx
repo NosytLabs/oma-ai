@@ -176,14 +176,14 @@ export const MessageInputRedesigned = forwardRef<
 					maxLength={100 * 1024}
 					inputMode="text"
 					enterKeyHint="send"
-					className="min-h-[52px] flex-1 resize-none bg-transparent px-3 py-3 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void md:px-4"
+					className="min-h-[56px] flex-1 resize-none bg-transparent px-4 py-4 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void md:px-5"
 					disabled={loading}
-					style={{ minHeight: "52px", maxHeight: "200px" }}
+					style={{ minHeight: "56px", maxHeight: "200px" }}
 					onInput={handleInput}
 				/>
 
 				{setWebSearchEnabled && (
-					<div className="flex items-center self-end p-1">
+					<div className="flex items-center self-end p-2">
 						<button
 							type="button"
 							onClick={() => setWebSearchEnabled(!webSearchEnabled)}
@@ -194,14 +194,14 @@ export const MessageInputRedesigned = forwardRef<
 									? "Web search on — responses use live sources when available"
 									: "Web search off — turn on to ground answers in the internet"
 							}
-							className={`flex h-12 min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 font-mono text-[10px] font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-[1px] md:h-11 ${
+							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-[1px] md:h-10 ${
 								webSearchEnabled
-									? "border border-success/30 bg-surface text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
+									? "border border-success/30 bg-success/15 text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
 									: "border border-border bg-void text-text-muted hover:border-accent/40 hover:bg-surface hover:text-text"
 							}`}
 						>
 							<Search
-								className={`h-3.5 w-3.5 ${webSearchEnabled ? "text-success" : ""}`}
+								className={`h-4 w-4 ${webSearchEnabled ? "text-success" : ""}`}
 								aria-hidden="true"
 							/>
 							<span>WEB</span>
@@ -209,7 +209,7 @@ export const MessageInputRedesigned = forwardRef<
 					</div>
 				)}
 
-				<div className="p-1">
+				<div className="p-2">
 					{loading ? (
 						<Magnetic strength={4}>
 							<button
@@ -217,21 +217,20 @@ export const MessageInputRedesigned = forwardRef<
 								onClick={onStop}
 								aria-label="Stop generation"
 								className="
-                    flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
+                    flex h-[42px] w-[42px] md:h-10 md:w-10 items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
-                    btn-destructive
-                    relative min-h-[44px] min-w-[44px]
+                    rounded-xl relative min-h-[42px] min-w-[42px]
                   "
 							>
 								{/* Rotating ring */}
 								{!reduceMotion && (
 									<m.span
-										className="absolute inset-0 border-4 border-danger/60 animate-pulse rounded-full drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
+										className="absolute inset-0 border-[3px] border-danger/60 animate-pulse rounded-xl drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
 										animate={{ rotate: 360 }}
 										transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 									/>
 								)}
-								<Loader2 className="w-4 h-4 relative z-10" />
+								<Loader2 className="w-5 h-5 relative z-10" />
 							</button>
 						</Magnetic>
 					) : (
@@ -249,8 +248,8 @@ export const MessageInputRedesigned = forwardRef<
 								}
 								transition={EASE_SPRING}
 								className={`
-                     group/send relative flex h-12 w-12 md:h-11 md:w-11 items-center justify-center
-                     rounded-xl font-semibold transition-all duration-200 min-h-[44px] min-w-[44px]
+                     group/send relative flex h-[42px] w-[42px] md:h-10 md:w-10 items-center justify-center
+                     rounded-xl font-semibold transition-all duration-200 min-h-[42px] min-w-[42px]
                      ${
 											hasInput && !disabled
 												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"
@@ -259,7 +258,7 @@ export const MessageInputRedesigned = forwardRef<
                    `}
 							>
 								<Send
-									className={`w-5 h-5 transition-transform duration-200 ${
+									className={`w-[18px] h-[18px] transition-transform duration-200 ${
 										hasInput && !disabled
 											? "drop-shadow-[0_2px_4px_var(--color-accent-glow)] group-hover/send:translate-x-0.5 group-hover/send:-translate-y-0.5"
 											: ""

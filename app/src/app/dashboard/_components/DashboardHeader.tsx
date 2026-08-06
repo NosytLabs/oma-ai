@@ -225,7 +225,7 @@ export function DashboardHeader({
 						)}
 					<Link
 						href="/settings"
-						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
+						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
 						aria-label="Settings"
 					>
 						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
@@ -235,7 +235,7 @@ export function DashboardHeader({
 						onClick={handleRefresh}
 						disabled={isRefreshing}
 						aria-label="Refresh dashboard"
-						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
+						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
 					>
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -250,7 +250,7 @@ export function DashboardHeader({
 							type="button"
 							onClick={onExport}
 							aria-label="Export usage data"
-							className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3"
+							className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
 							<span className="hidden sm:inline">Export</span>
@@ -275,7 +275,7 @@ export function DashboardHeader({
 							aria-selected={activeTab === tab.id}
 							aria-controls={`panel-${tab.id}`}
 							onClick={() => onTabChange(tab.id)}
-							className={`shrink-0 border-b-2 -mb-px px-3 py-3 text-[11px] font-medium uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-4 ${
+							className={`shrink-0 border-b-2 -mb-px px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
 								activeTab === tab.id
 									? "border-accent bg-accent/5 text-accent"
 									: "border-transparent text-text-muted hover:border-border-bright hover:text-text-secondary"
