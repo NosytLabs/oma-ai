@@ -455,24 +455,28 @@ function ShellContent({
 		[isAuthenticated, model],
 	);
 
-	const handlePreset = useCallback(
-		(prompt: string, modelOverride?: string) => {
-			setInput(prompt);
-			const next = pickModelForGuest(modelOverride);
-			if (next) setModel(next);
-			inputRef.current?.focus();
-		},
-		[setInput, setModel, pickModelForGuest],
-	);
-
-	const handleExampleSelect = useCallback(
-		(example: ExampleConversation) => {
-			setInput(example.prompt);
-			setModel(pickModelForGuest(example.model) ?? FREE_DEFAULT_CHAT_MODEL);
-			inputRef.current?.focus();
-		},
-		[setModel, setInput, pickModelForGuest],
-	);
+		const handlePreset = useCallback(
+			(prompt: string, modelOverride?: string) => {
+				setInput(prompt);
+				const next = pickModelForGuest(modelOverride);
+				if (next) {
+					setModel(next);
+					setMediaMode("text");
+				}
+				inputRef.current?.focus();
+			},
+			[setInput, setModel, pickModelForGuest, setMediaMode],
+		);
+	
+		const handleExampleSelect = useCallback(
+			(example: ExampleConversation) => {
+				setInput(example.prompt);
+				setModel(pickModelForGuest(example.model) ?? FREE_DEFAULT_CHAT_MODEL);
+				setMediaMode("text");
+				inputRef.current?.focus();
+			},
+			[setModel, setInput, pickModelForGuest, setMediaMode],
+		);
 
 	const handleCopy = useCallback(() => {
 		if (!isChat) {
@@ -641,27 +645,26 @@ function ShellContent({
 							</Link>
 						</div>
 					)}
-					{isLowBalance && mediaMode !== "text" && (
-						<div
-							role="status"
-							className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-warning/10 border-b border-warning/30 text-xs text-warning font-mono"
-						>
-							<span className="flex items-center gap-2 tracking-wide">
-								<AlertTriangle
-									className="w-3.5 h-3.5 shrink-0"
-									aria-hidden="true"
-								/>
-								Low credits — ${balanceDollars.toFixed(2)} (image/video require
-								credits)
-							</span>
-							<Link
-								href="/deposit"
-								className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors"
+						{isLowBalance && (
+							<div
+								role="status"
+								className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-warning/10 border-b border-warning/30 text-xs text-warning font-mono"
 							>
-								Top up →
-							</Link>
-						</div>
-					)}
+								<span className="flex items-center gap-2 tracking-wide">
+									<AlertTriangle
+										className="w-3.5 h-3.5 shrink-0"
+										aria-hidden="true"
+									/>
+									Low credits — ${balanceDollars.toFixed(2)}
+								</span>
+								<Link
+									href="/deposit"
+									className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors"
+								>
+									Top up →
+								</Link>
+							</div>
+						)}
 
 					{/* System instructions only apply to text chat */}
 					{mediaMode === "text" && (
