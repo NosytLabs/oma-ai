@@ -219,14 +219,12 @@ export const FALLBACK_MAP: Record<string, string[]> = {
   "gemini-3-flash-preview": ["deepseek-v4-flash", "mistral-small-2603"],
   "llama-3.3-70b": ["deepseek-v4-pro", "qwen-3-7-plus"],
   "zai-org-glm-5-1": ["deepseek-v4-pro", "gemini-3-5-flash"],
-  "qwen3-coder-480b-a35b-instruct-turbo": ["qwen-3-7-plus", "deepseek-v4-pro"],
   "qwen-3-7-plus": ["deepseek-v4-pro", "gemini-3-5-flash", "kimi-k2.6"],
 
   // Budget
   "deepseek-v4-flash": ["mistral-small-2603", "xiaomi-mimo-v2-5", "minimax-m2.7"],
   "mistral-small-2603": ["deepseek-v4-flash", "xiaomi-mimo-v2-5", "minimax-m2.7"],
   "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "minimax-m2.7"],
-  "qwen3-235b-a22b-instruct-2507": ["deepseek-v4-flash", "minimax-m2.7"],
   "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
 
   // Gonka Free Models (OpenBroker) — prefer gonka peers first, then budget Venice

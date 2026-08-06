@@ -24,6 +24,48 @@ interface VideoModel {
 
 const VIDEO_MODELS: VideoModel[] = [
 	{
+		id: "wan-2-7-text-to-video",
+		name: "Wan 2.7",
+		provider: "Venice AI",
+		mode: "text-to-video",
+		price: 0.55,
+	},
+	{
+		id: "wan-2-7-image-to-video",
+		name: "Wan 2.7 (Image)",
+		provider: "Venice AI",
+		mode: "image-to-video",
+		price: 0.55,
+	},
+	{
+		id: "kling-2.5-turbo-pro-text-to-video",
+		name: "Kling 2.5 Turbo Pro",
+		provider: "Venice AI",
+		mode: "text-to-video",
+		price: 0.39,
+	},
+	{
+		id: "kling-2.5-turbo-pro-image-to-video",
+		name: "Kling 2.5 Turbo Pro (Image)",
+		provider: "Venice AI",
+		mode: "image-to-video",
+		price: 0.39,
+	},
+	{
+		id: "kling-2.6-pro-text-to-video",
+		name: "Kling 2.6 Pro",
+		provider: "Venice AI",
+		mode: "text-to-video",
+		price: 0.77,
+	},
+	{
+		id: "kling-2.6-pro-image-to-video",
+		name: "Kling 2.6 Pro (Image)",
+		provider: "Venice AI",
+		mode: "image-to-video",
+		price: 0.77,
+	},
+	{
 		id: "kling-v3-pro-text-to-video",
 		name: "Kling V3 Pro",
 		provider: "Venice AI",
@@ -36,6 +78,34 @@ const VIDEO_MODELS: VideoModel[] = [
 		provider: "Venice AI",
 		mode: "image-to-video",
 		price: 0.92,
+	},
+	{
+		id: "sora-2-text-to-video",
+		name: "Sora 2",
+		provider: "Venice AI",
+		mode: "text-to-video",
+		price: 0.44,
+	},
+	{
+		id: "sora-2-image-to-video",
+		name: "Sora 2 (Image)",
+		provider: "Venice AI",
+		mode: "image-to-video",
+		price: 0.44, // Derived empirically, usually mirrors text-to-video pricing
+	},
+	{
+		id: "sora-2-pro-text-to-video",
+		name: "Sora 2 Pro",
+		provider: "Venice AI",
+		mode: "text-to-video",
+		price: 1.32,
+	},
+	{
+		id: "sora-2-pro-image-to-video",
+		name: "Sora 2 Pro (Image)",
+		provider: "Venice AI",
+		mode: "image-to-video",
+		price: 1.32, // Derived empirically, usually mirrors text-to-video pricing
 	},
 ];
 
@@ -63,7 +133,7 @@ export function VideoGenerationPanel() {
 		"text-to-video",
 	);
 	const [prompt, setPrompt] = useState("");
-	const [model, setModel] = useState("kling-v3-pro-text-to-video");
+	const [model, setModel] = useState("wan-2-7-text-to-video");
 	const [aspectRatio, setAspectRatio] = useState("16:9");
 	const [duration, setDuration] = useState("5s");
 	const [resolution, setResolution] = useState("720p");
