@@ -47,8 +47,8 @@ const tierStyles: Record<
 		border: "var(--color-amber)",
 	},
 	premium: {
-		bg: "bg-violet/20",
-		text: "text-violet",
+		bg: "bg-[color-mix(in_srgb,var(--color-violet)_20%,transparent)]",
+		text: "text-[var(--color-violet)]",
 		glow: "var(--color-violet-dim)",
 		border: "var(--color-violet)",
 	},
@@ -226,7 +226,7 @@ export function ModelSelector({
 						exit="exit"
 						variants={dropdownVariants}
 						className="
-              glass-strong absolute top-full left-0 mt-1.5 w-80 overflow-hidden z-50
+              glass-strong absolute top-full left-0 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:w-80 overflow-hidden z-50
             "
 						style={{
 							boxShadow: "var(--shadow-dropdown)",

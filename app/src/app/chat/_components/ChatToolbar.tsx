@@ -252,7 +252,7 @@ export function ChatToolbar({
 			</div>
 
 			{/* Secondary actions — credits always visible, rest hidden on mobile */}
-			<div className="min-w-0 max-w-[42vw] flex items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:max-w-none sm:gap-2 [&::-webkit-scrollbar]:hidden">
+			<div className="min-w-0 max-w-[50vw] sm:max-w-none flex items-center gap-1 sm:gap-2">
 				<div className="hidden shrink-0 md:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>

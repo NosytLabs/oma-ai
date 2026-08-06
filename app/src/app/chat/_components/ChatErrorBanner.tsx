@@ -329,7 +329,7 @@ export function ChatErrorBanner({
 								className="
                 inline-flex items-center gap-1 px-3 py-1.5
                 border border-current text-[10px] font-bold uppercase tracking-wider
-                hover:bg-white/5 transition-colors min-h-[32px]
+                hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
               "
 							>
 								Create API Key
@@ -376,7 +376,7 @@ export function ChatErrorBanner({
 										className="
                   inline-flex items-center gap-1 px-3 py-1.5
                   border border-current text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-white/5 transition-colors min-h-[32px]
+                  hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
                 "
 									>
 										Buy credits
@@ -405,7 +405,7 @@ export function ChatErrorBanner({
 									className="
                   inline-flex items-center gap-1 px-3 py-1.5
                   border border-current text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-white/5 transition-colors min-h-[32px]
+                  hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
                   disabled:opacity-40 disabled:cursor-not-allowed
                 "
 								>
@@ -435,7 +435,7 @@ export function ChatErrorBanner({
 				onClick={onDismiss}
 				aria-label="Dismiss error"
 				className="
-          p-2 hover:bg-white/5 transition-colors shrink-0
+          p-2 hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out shrink-0
           min-h-[44px] min-w-[44px] flex items-center justify-center
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
           focus-visible:ring-offset-2 focus-visible:ring-offset-void

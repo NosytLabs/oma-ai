@@ -182,7 +182,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 					}}
 				>
 					{isUser ? (
-						<User className="w-4 h-4" strokeWidth={2} />
+						<User className="w-4 h-4" strokeWidth={1.5} />
 					) : isStreaming ? (
 						prefersReducedMotion ? (
 							<span
@@ -220,7 +220,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							/>
 						)
 					) : (
-						<Bot className="w-4 h-4" strokeWidth={2} />
+						<Bot className="w-4 h-4" strokeWidth={1.5} />
 					)}
 				</div>
 				{/* Ambient glow behind assistant avatar */}
@@ -237,7 +237,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 
 			{/* ─── MESSAGE BODY ─── */}
 <div
-					className={`min-w-[8rem] max-w-full flex-1 max-sm:max-w-[90%] sm:max-w-[78%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
+					className={`min-w-0 max-w-full flex-1 max-sm:max-w-full sm:max-w-[85%] md:max-w-[80%] ${isUser ? "flex flex-col items-end" : "flex flex-col items-start"}`}
 			>
 				{/* Search Sources */}
 				{msg.searchResults && msg.searchResults.length > 0 && (
@@ -264,11 +264,11 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 				{/* ─── THE BUBBLE ─── */}
 				<div
 					className={`
-            relative inline-block max-w-full px-4 py-3.5 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-5
+            relative inline-block max-w-full px-4 py-3.5 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-4 md:px-5
             ${
 							isUser
 								? "bg-accent/[0.08] border border-accent/25 text-text border-r-0"
-								: "bg-white/[0.06] border border-white/[0.08] text-text-secondary border-l-0"
+								: "bg-surface border border-border text-text-secondary border-l-0"
 						}
           `}
 					style={{

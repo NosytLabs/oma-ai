@@ -134,13 +134,13 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							onClick={() => onPreset(preset.prompt, preset.model)}
 							className="
                 flex min-h-[56px] items-start gap-3.5 rounded-[var(--radius-md)] border border-border
-                bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color,transform,box-shadow] duration-300
+                bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out active:scale-[0.97]
                 hover:border-accent/40 hover:bg-surface/80 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-10px_rgba(0,0,0,0.5)]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-void
               "
 						>
-							<div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors duration-300 ${isHovered ? "border-accent/30 bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
+							<div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors duration-150 ease-out ${isHovered ? "border-accent/30 bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
 								<Icon
 									className="h-3.5 w-3.5"
 								/>
@@ -148,14 +148,14 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1.5">
 									<span
-										className={`text-[12px] font-semibold tracking-wide transition-colors duration-200 ${
+										className={`text-[12px] font-semibold tracking-wide transition-colors duration-150 ease-out ${
 											isHovered ? "text-text-bright" : "text-text-secondary"
 										}`}
 									>
 										{preset.label}
 									</span>
 									<ChevronRight
-										className={`h-3 w-3 transition-all duration-300 ${
+										className={`h-3 w-3 transition-all duration-150 ease-out ${
 											isHovered
 												? "translate-x-0.5 text-accent opacity-100"
 												: "-translate-x-2 text-text-muted opacity-0"

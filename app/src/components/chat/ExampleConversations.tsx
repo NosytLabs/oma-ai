@@ -314,7 +314,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 								}}
 								onMouseEnter={() => setExpandedId(example.id)}
 								onMouseLeave={() => setExpandedId(null)}
-								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 focus-ring"
+								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] focus-ring"
 							>
 								<div className="flex items-start gap-4">
 									<div
@@ -332,7 +332,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 												{example.title}
 											</h3>
 											<ChevronRight
-												className={`w-3.5 h-3.5 text-text-muted transition-transform duration-300 ${isExpanded ? "rotate-90 text-accent" : ""}`}
+												className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ease-out ${isExpanded ? "rotate-90 text-accent" : ""}`}
 											/>
 										</div>
 										<p className="text-[11px] font-mono text-text-muted truncate mb-3">
