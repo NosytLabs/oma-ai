@@ -40,7 +40,10 @@ function redactPii(body: string): string {
 export async function addToDlq(provider: string, rawBody: string, errorMessage: string, listName: keyof typeof DLQ_LISTS = "webhook"): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) {
-    logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
+    // Skip logging the error in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
+    }
     return;
   }
 
