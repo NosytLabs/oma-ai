@@ -156,44 +156,44 @@ export function DashboardHeader({
 		<div className="mb-8">
 			{/* Breadcrumb */}
 			<nav
-				className="flex items-center gap-2 text-[11px] text-text-muted mb-4"
+				className="flex items-center gap-2 text-[11px] text-text-muted mb-4 font-mono tracking-wide"
 				aria-label="Breadcrumb"
 			>
 				<Link href="/" className="hover:text-text-secondary transition-colors">
-					Home
+					HOME
 				</Link>
-				<ChevronRight className="h-3 w-3" aria-hidden="true" />
+				<ChevronRight className="h-3 w-3 opacity-50" aria-hidden="true" />
 				<span className="text-text-secondary" aria-current="page">
-					Dashboard
+					DASHBOARD
 				</span>
 			</nav>
 
 			{/* Title + Status Row */}
-			<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div className="min-w-0">
 					<h1 className="h1-utility text-text-bright flex items-center gap-3">
-						<Zap className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+						<Zap className="h-5 w-5 shrink-0 text-accent drop-shadow-[0_0_8px_var(--color-accent)]" aria-hidden="true" />
 						Dashboard
 					</h1>
-					<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-text-muted">
-						<span className="flex items-center gap-1.5">
+					<div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-text-muted font-mono tracking-wide">
+						<span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded border border-border/50">
 							<span
 								aria-hidden="true"
-								className={`inline-block h-1.5 w-1.5 rounded-full ${loading ? "bg-warning animate-pulse" : "bg-success"}`}
+								className={`inline-block h-1.5 w-1.5 rounded-full ${loading ? "bg-warning animate-pulse" : "bg-success shadow-[0_0_5px_var(--color-success)]"}`}
 							/>
 							{loading
-								? "Syncing..."
+								? "SYNCING..."
 								: lastUpdated
-									? `Updated ${formatTime(lastUpdated.toISOString())}`
-									: "Awaiting data"}
+									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
+									: "AWAITING DATA"}
 						</span>
 						<SystemStatus />
 						<span
-							className="hidden items-center gap-1 text-text-secondary/80 md:flex"
+							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded border border-border/50"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
-							<span className="font-mono text-[10px]">R · 1-4</span>
+							<span>R · 1-4</span>
 						</span>
 						{modelsAvailable > 0 && (
 							<span className="flex items-center gap-1.5 text-text-muted/70">
@@ -201,13 +201,13 @@ export function DashboardHeader({
 									aria-hidden="true"
 									className="inline-block h-1 w-1 bg-text-muted/50"
 								/>
-								{modelsAvailable} model{modelsAvailable !== 1 ? "s" : ""} online
+								{modelsAvailable} MODEL{modelsAvailable !== 1 ? "S" : ""} ONLINE
 							</span>
 						)}
 						{hasAnyData && autoRefreshCountdown > 0 && (
 							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex">
 								<Clock className="h-3 w-3" aria-hidden="true" />
-								Next refresh in {autoRefreshCountdown}s
+								NEXT IN {autoRefreshCountdown}s
 							</span>
 						)}
 					</div>
@@ -225,7 +225,7 @@ export function DashboardHeader({
 						)}
 					<Link
 						href="/settings"
-						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						aria-label="Settings"
 					>
 						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
@@ -235,14 +235,14 @@ export function DashboardHeader({
 						onClick={handleRefresh}
 						disabled={isRefreshing}
 						aria-label="Refresh dashboard"
-						className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						<RefreshCw
-							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`}
 							aria-hidden="true"
 						/>
 						<span className="hidden sm:inline">
-							{isRefreshing ? "Syncing" : "Refresh"}
+							{isRefreshing ? "SYNCING" : "REFRESH"}
 						</span>
 					</button>
 					{onExport && (activeTab === "usage" || activeTab === "overview") && (
@@ -250,10 +250,10 @@ export function DashboardHeader({
 							type="button"
 							onClick={onExport}
 							aria-label="Export usage data"
-							className="flex items-center gap-2 border border-border bg-surface px-2.5 py-2 text-[11px] uppercase tracking-widest text-text-muted transition-all hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 rounded-sm"
+							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-all duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
-							<span className="hidden sm:inline">Export</span>
+							<span className="hidden sm:inline">EXPORT</span>
 						</button>
 					)}
 				</div>
@@ -263,7 +263,7 @@ export function DashboardHeader({
 			{onTabChange && (
 				<div
 					role="tablist"
-					className="-mx-1 flex gap-px overflow-x-auto border-b border-border px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="-mx-1 flex gap-2 overflow-x-auto border-b border-border/50 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					aria-label="Dashboard sections"
 				>
 					{TABS.map((tab) => (
@@ -275,18 +275,25 @@ export function DashboardHeader({
 							aria-selected={activeTab === tab.id}
 							aria-controls={`panel-${tab.id}`}
 							onClick={() => onTabChange(tab.id)}
-							className={`shrink-0 border-b-2 -mb-px px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
+							className={`relative shrink-0 px-4 py-3 text-[11.5px] font-bold uppercase tracking-widest transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
 								activeTab === tab.id
-									? "border-accent bg-accent/5 text-accent"
-									: "border-transparent text-text-muted hover:border-border-bright hover:text-text-secondary"
+									? "text-text-bright"
+									: "text-text-muted hover:text-text-secondary hover:bg-surface/30 rounded-t-[var(--radius-sm)]"
 							}`}
 						>
-							<span className="flex items-center gap-1.5">
+							<span className="flex items-center gap-2">
 								{tab.icon && (
-									<tab.icon className="h-3 w-3" aria-hidden="true" />
+									<tab.icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-accent" : "opacity-70"}`} aria-hidden="true" />
 								)}
 								{tab.label}
 							</span>
+							{activeTab === tab.id && (
+								<m.div
+									layoutId="activeDashboardTab"
+									className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_-2px_10px_rgba(var(--color-accent-rgb),0.5)]"
+									transition={{ type: "spring", stiffness: 400, damping: 30 }}
+								/>
+							)}
 						</button>
 					))}
 				</div>
