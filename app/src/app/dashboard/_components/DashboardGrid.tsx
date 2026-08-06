@@ -471,30 +471,30 @@ export function DashboardGrid(props: DashboardGridProps) {
 								</WidgetErrorBoundary>
 							</div>
 							<WidgetErrorBoundary title="Top up credits">
-								<div className="flex flex-col h-full justify-between p-6 bg-surface border border-border/60 rounded-[12px] shadow-sm relative overflow-hidden">
-									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 to-transparent" />
-									<div className="flex items-start justify-between gap-3">
+								<div className="flex flex-col h-full justify-between p-6 sm:p-7 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] relative overflow-hidden transition-colors hover:border-accent/40">
+									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
+									<div className="flex items-start justify-between gap-4">
 										<div>
 											<p className="text-[14.5px] font-bold text-text-bright tracking-tight">Top up credits</p>
 											<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">Choose card or USDC.</p>
 										</div>
-										<span className="rounded-sm border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9.5px] font-mono font-bold uppercase tracking-wider text-accent shadow-sm">
+										<span className="rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2.5 py-1 text-[9.5px] font-mono font-bold uppercase tracking-wider text-accent shadow-[0_0_10px_-2px_var(--color-accent-glow)] shrink-0">
 											Polar + USDC
 										</span>
 									</div>
-									<div className="mt-6 flex flex-col gap-3">
+									<div className="mt-8 flex flex-col gap-3">
 										<Link
 											href="/deposit?method=card"
-											className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-void px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-accent hover:text-accent hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-ring active:scale-[0.98] gap-2"
+											className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-void px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:border-accent/50 hover:bg-accent/5 hover:text-text-bright hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] gap-2.5"
 										>
-											<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+											<CreditCard className="h-4 w-4" aria-hidden="true" />
 											Card
 										</Link>
 										<Link
 											href="/deposit"
-											className="group flex flex-1 items-center justify-center rounded-[6px] border border-border bg-surface-elevated px-4 py-2.5 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all hover:border-text-muted hover:text-text hover:bg-surface focus-ring active:scale-[0.98] gap-2"
+											className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-all duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97] gap-2.5"
 										>
-											<Coins className="h-3.5 w-3.5" aria-hidden="true" />
+											<Coins className="h-4 w-4" aria-hidden="true" />
 											USDC
 										</Link>
 									</div>
