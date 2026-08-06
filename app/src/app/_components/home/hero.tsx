@@ -107,8 +107,8 @@ export function Hero() {
 						{...reveal(4, entrance)}
 						className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px]"
 					>
-						<div className="transform-gpu transition-transform duration-700 hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[400px]">
-							<LiveRequestCard className="shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50" />
+						<div className="transform-gpu transition-transform duration-700 hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[420px] md:h-[400px]">
+							<LiveRequestCard className="shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50 w-full max-w-[706px]" />
 						</div>
 					</m.div>
 				</div>

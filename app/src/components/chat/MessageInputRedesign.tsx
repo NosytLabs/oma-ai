@@ -220,6 +220,7 @@ export const MessageInputRedesigned = forwardRef<
                     flex h-[42px] w-[42px] items-center justify-center
                     bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
                     rounded-xl relative min-h-[42px] min-w-[42px]
+                    transition-all duration-150 ease-out active:scale-[0.95]
                   "
 							>
 								{/* Rotating ring */}
@@ -242,9 +243,9 @@ export const MessageInputRedesigned = forwardRef<
 								title={disabled ? disabledReason ?? "Send disabled" : undefined}
 								aria-label="Send message"
 								aria-describedby="message-hint"
-								whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+								whileTap={reduceMotion ? undefined : { scale: 0.95 }}
 								whileHover={
-									hasInput && !reduceMotion ? { scale: 1.04 } : undefined
+									hasInput && !reduceMotion ? { scale: 1.02 } : undefined
 								}
 								transition={EASE_SPRING}
 								className={`

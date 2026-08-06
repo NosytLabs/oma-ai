@@ -426,7 +426,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 								className="
                 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
                 opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                hover:text-accent active:scale-[0.97] transition-all duration-150 ease-out
+                hover:text-accent active:scale-[0.95] transition-all duration-150 ease-out
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
               "

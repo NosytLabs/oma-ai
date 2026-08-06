@@ -239,7 +239,7 @@ Content-Type: application/json`;
 					{showCursor && (
 						<span
 							aria-hidden="true"
-							className="ml-0.5 inline-block h-3.5 w-1.5 -mb-0.5 bg-accent animate-pulse"
+							className="ml-0.5 inline-block h-3.5 w-1.5 -mb-0.5 bg-accent/80 animate-pulse"
 						/>
 					)}
 				</code>
@@ -265,7 +265,7 @@ Content-Type: application/json`;
 					{isStreaming && (
 						<span
 							aria-hidden="true"
-							className="ml-0.5 inline-block h-3.5 w-1.5 -mb-0.5 bg-accent animate-pulse"
+							className="ml-0.5 inline-block h-3.5 w-1.5 -mb-0.5 bg-accent/80 animate-pulse"
 						/>
 					)}
 				</div>
