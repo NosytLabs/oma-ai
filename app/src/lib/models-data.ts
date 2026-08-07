@@ -500,7 +500,7 @@ const tier: Tier =
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
  * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
- * curated server catalog (22 models) — keep in sync with
+ * curated server catalog (20 models) — keep in sync with
  * server/src/inference/models.ts.
  */
 const FALLBACK_CATALOG: RawCatalog = {
