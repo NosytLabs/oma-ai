@@ -1,6 +1,7 @@
 "use client";
 
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import nextDynamic from "next/dynamic";
 import { AnimatePresence } from "@/lib/framer-motion-client";
 import { useEffect, useId, useState } from "react";
@@ -24,7 +25,7 @@ const UnifiedDepositInterface = nextDynamic(
 		loading: () => (
 			<div
 				role="status"
-				className="h-96 w-full animate-pulse rounded-lg bg-surface/40"
+				className="h-96 w-full animate-pulse rounded-[var(--radius-lg)] bg-surface/40"
 				aria-label="Loading deposit interface"
 			/>
 		),
@@ -41,7 +42,7 @@ const FiatCheckoutPanel = nextDynamic(
 		loading: () => (
 			<div
 				role="status"
-				className="h-72 w-full animate-pulse rounded-lg bg-surface/40"
+				className="h-72 w-full animate-pulse rounded-[var(--radius-lg)] bg-surface/40"
 				aria-label="Loading card checkout"
 			/>
 		),
@@ -105,8 +106,8 @@ function PaymentMethodsInfo({
 		<m.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.15, duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-			className="mt-8 rounded-lg border border-border bg-surface/50 p-5"
+			transition={{ delay: 0.15, ...springs.card }}
+			className="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-5"
 		>
 			<h3 className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
 				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
@@ -116,14 +117,14 @@ function PaymentMethodsInfo({
 				{methods.map((m) => (
 					<div
 						key={m.name}
-						className="rounded border border-border bg-panel p-3"
+						className="rounded-[var(--radius-sm)] border border-border bg-panel p-3"
 					>
 						<div className="mb-1 flex items-center justify-between gap-2">
 							<span className="text-sm font-semibold text-text-bright">
 								{m.name}
 							</span>
 							<span
-								className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+								className={`shrink-0 rounded-[var(--radius-sm)] border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
 									m.badge === "Available" || m.badge === "Agents"
 										? "border-accent/20 bg-accent/10 text-accent"
 										: m.badge === "Paused"
@@ -165,7 +166,7 @@ function RailUnavailable({
 	fallback: string;
 }) {
 	return (
-		<div className="space-y-3 rounded-lg border border-border bg-surface/50 p-6 text-center">
+		<div className="space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-6 text-center">
 			<Icon className="mx-auto h-8 w-8 text-text-muted" aria-hidden="true" />
 			<h3 className="text-md font-semibold text-text-bright">{title}</h3>
 			<p className="mx-auto max-w-md text-xs leading-relaxed text-text-secondary">
@@ -179,9 +180,9 @@ function RailUnavailable({
 function X402Info() {
 	return (
 		<div className="space-y-5">
-			<div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
+			<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-5">
 				<div className="flex items-start gap-3">
-					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent/10 text-accent">
 						<Zap className="h-4 w-4" aria-hidden="true" />
 					</div>
 					<div className="min-w-0">
@@ -201,7 +202,7 @@ function X402Info() {
 			<div className="grid gap-3 sm:grid-cols-2">
 				<a
 					href="/docs#x402"
-					className="group flex items-center justify-between gap-2 rounded-lg border border-border bg-panel p-4 transition-colors hover:border-accent/40"
+					className="group flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-border bg-panel p-4 transition-colors duration-200 ease-out hover:border-accent/40"
 				>
 					<div>
 						<div className="text-sm font-semibold text-text-bright">
@@ -211,13 +212,13 @@ function X402Info() {
 							Protocol walkthrough with curl examples
 						</div>
 					</div>
-					<span className="text-text-muted transition-transform group-hover:translate-x-0.5">
+					<span className="text-text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5">
 						→
 					</span>
 				</a>
 				<a
 					href="/chat"
-					className="group flex items-center justify-between gap-2 rounded-lg border border-border bg-panel p-4 transition-colors hover:border-accent/40"
+					className="group flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-border bg-panel p-4 transition-colors duration-200 ease-out hover:border-accent/40"
 				>
 					<div>
 						<div className="text-sm font-semibold text-text-bright">
@@ -227,7 +228,7 @@ function X402Info() {
 							Try the playground surface
 						</div>
 					</div>
-					<span className="text-text-muted transition-transform group-hover:translate-x-0.5">
+					<span className="text-text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5">
 						→
 					</span>
 				</a>
@@ -296,7 +297,7 @@ export default function DepositPage() {
 				role="tablist"
 				id={tablistId}
 				aria-label="Choose a payment method"
-				className="mt-6 grid grid-cols-3 gap-2 rounded-lg border border-border bg-surface/40 p-1"
+				className="mt-6 grid grid-cols-3 gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1"
 			>
 				{METHODS.map((m) => {
 					const Icon = m.icon;
@@ -311,7 +312,7 @@ export default function DepositPage() {
 							aria-controls={`${tablistId}-panel-${m.key}`}
 							tabIndex={isActive ? 0 : -1}
 							onClick={() => setMethod(m.key)}
-							className={`flex flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97] ${
+							className={`flex flex-col items-start gap-1 rounded-[var(--radius-md)] px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
 								isActive
 									? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"
 									: "text-text-muted hover:bg-surface hover:text-text"
@@ -341,7 +342,7 @@ export default function DepositPage() {
 						initial={{ opacity: 0, y: 6 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -6 }}
-						transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+						transition={springs.tab}
 					>
 						{method === "crypto" &&
 							(usdc.actionable ? (

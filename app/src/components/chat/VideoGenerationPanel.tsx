@@ -328,14 +328,14 @@ export function VideoGenerationPanel() {
 				<h1 className="h1-utility text-text-bright">Video Generation</h1>
 				<p className="mt-3 text-lg text-text-bright">
 					Generate videos from text prompts. Powered by Seedance 2.0 and Kling
-					V3 Pro. Priced per generation —{" "}
+					V3 Pro. Priced per generation —{""}
 					<span className="text-accent">from $0.90</span>.
 				</p>
 			</div>
 
 			<div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
 				<div
-					className="mb-6 flex rounded-xl bg-surface p-1"
+					className="mb-6 flex rounded-[var(--radius-xl)] bg-surface p-1"
 					role="tablist"
 					aria-label="Video generation mode"
 				>
@@ -345,7 +345,7 @@ export function VideoGenerationPanel() {
 						role="tab"
 						aria-selected={mode === "text-to-video"}
 						aria-controls="prompt-panel"
-						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
+						className={`flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-lg)] py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-200 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
 							mode === "text-to-video"
 								? "bg-surface text-text shadow-sm border border-accent"
 								: "text-text hover:text-accent hover:bg-border/50"
@@ -359,7 +359,7 @@ export function VideoGenerationPanel() {
 						role="tab"
 						aria-selected={mode === "image-to-video"}
 						aria-controls="prompt-panel"
-						className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
+						className={`flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-lg)] py-3 text-sm font-semibold transition-[background-color,color,border-color] duration-200 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset ${
 							mode === "image-to-video"
 								? "bg-surface text-text shadow-sm border border-accent"
 								: "text-text hover:text-accent hover:bg-border/50"
@@ -448,7 +448,7 @@ export function VideoGenerationPanel() {
 										type="button"
 										onClick={() => setAspectRatio(o.value)}
 										aria-pressed={aspectRatio === o.value}
-										className={`flex flex-col items-center gap-1 flex-1 rounded-lg border py-2.5 px-2 transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
+										className={`flex flex-col items-center gap-1 flex-1 rounded-[var(--radius-lg)] border py-2.5 px-2 transition-[background-color,border-color,color] duration-200 ease-out active:scale-[0.97] focus-ring ${
 											aspectRatio === o.value
 												? "border-accent bg-accent/10 text-accent"
 												: "border-border bg-surface text-text-secondary hover:border-accent/40"
@@ -528,7 +528,7 @@ export function VideoGenerationPanel() {
 						type="button"
 						onClick={generate}
 						disabled={!prompt.trim() || loading || polling}
-						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto active:scale-[0.97]"
 						aria-label={
 							loading
 								? "Submitting video generation job"
@@ -582,7 +582,7 @@ export function VideoGenerationPanel() {
 						<button
 							type="button"
 							onClick={reset}
-							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto active:scale-[0.97]"
 							aria-label="Start new video generation"
 						>
 							<Plus className="w-4 h-4" aria-hidden="true" /> New
@@ -592,7 +592,7 @@ export function VideoGenerationPanel() {
 
 				{error && (
 					<div
-						className="mt-4 rounded-xl border px-4 py-3 text-sm border-error bg-error/10 text-error"
+						className="mt-4 rounded-[var(--radius-xl)] border px-4 py-3 text-sm border-error bg-error/10 text-error"
 						role="alert"
 					>
 						{error}
@@ -678,7 +678,7 @@ export function VideoGenerationPanel() {
 						<button
 							type="button"
 							onClick={downloadVideo}
-							className="btn-secondary w-full sm:w-auto justify-center"
+							className="btn-secondary w-full sm:w-auto justify-center active:scale-[0.97]"
 							aria-label="Download generated video"
 						>
 							<Download className="w-4 h-4" aria-hidden="true" /> Download

@@ -40,7 +40,7 @@ const TX_LABELS: Record<string, string> = {
  */
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 	return (
-		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] p-6 sm:p-7 relative overflow-hidden transition-colors hover:border-accent/40">
+		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] p-6 relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/40 via-warning/20 to-transparent" />
 			<div className="flex items-center justify-between mb-4">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
@@ -49,7 +49,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 				{transactions.length > 0 && (
 					<Link
 						href="/dashboard?tab=usage"
-						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors active:scale-[0.97]"
+						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors duration-200 ease-out active:scale-[0.97]"
 					>
 						View all <span aria-hidden="true">&rarr;</span>
 					</Link>
@@ -62,10 +62,10 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 					</div>
 					<p className="text-[13.5px] font-semibold tracking-wide text-text-bright mt-2">No transactions yet</p>
 					<p className="text-[11px] text-text-muted max-w-[280px] leading-relaxed">
-						Deposits, usage, and refunds will appear here.{" "}
+						Deposits, usage, and refunds will appear here.{""}
 						<Link
 							href="/deposit"
-							className="text-accent hover:text-accent-hover hover:underline transition-colors block mt-2 font-medium"
+							className="text-accent hover:text-accent-hover hover:underline transition-colors duration-200 ease-out block mt-2 font-medium"
 						>
 							Make your first deposit &rarr;
 						</Link>
@@ -88,11 +88,11 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 						return (
 							<div
 								key={tx.id}
-								className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 border-b border-border/40 last:border-0 hover:bg-surface/50 transition-colors"
+								className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 border-b border-border/40 last:border-0 hover:bg-surface/50 transition-colors duration-200 ease-out"
 							>
 								<div className="flex items-center gap-4 mb-2 sm:mb-0">
 									<div
-										className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface shadow-sm transition-colors group-hover:border-${iconClass.split('-')[1]}/30 ${iconClass}`}
+										className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface shadow-sm transition-colors duration-200 ease-out group-hover:border-${iconClass.split('-')[1]}/30 ${iconClass}`}
 									>
 										<Icon className="h-4 w-4" />
 									</div>
@@ -101,14 +101,14 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 											{label}
 										</span>
 										{tx.model && (
-											<span className="text-[10.5px] font-mono text-text-muted inline-block mt-0.5 px-1.5 py-px bg-surface/50 border border-border/50 rounded">
+											<span className="text-[10.5px] font-mono text-text-muted inline-block mt-0.5 px-1.5 py-px bg-surface/50 border border-border/50 rounded-[var(--radius-sm)]">
 												{tx.model}
 											</span>
 										)}
 									</div>
 								</div>
 								<div className="flex items-center justify-between sm:justify-end sm:gap-6 pl-14 sm:pl-0 w-full sm:w-auto">
-									<div className="flex items-center gap-1.5 text-[10.5px] font-mono text-text-muted/80 opacity-80 group-hover:opacity-100 transition-opacity">
+									<div className="flex items-center gap-1.5 text-[10.5px] font-mono text-text-muted/80 opacity-80 group-hover:opacity-100 transition-opacity duration-200 ease-out">
 										<Clock className="h-3 w-3" />
 										{formatTime(tx.createdAt)}
 									</div>

@@ -13,6 +13,7 @@
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { ChevronDown, Lock, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { displayName, isFreeChatModel } from "@/lib/model-utils";
@@ -35,14 +36,14 @@ const tierStyles: Record<
 	{ bg: string; text: string; glow: string; border: string }
 > = {
 	all: {
-		bg: "bg-surface-elevated",
+		bg: "bg-[var(--color-surface-elevated)]",
 		text: "text-text-muted",
 		glow: "transparent",
 		border: "var(--color-border)",
 	},
 	frontier: {
-		bg: "bg-amber/20",
-		text: "text-amber",
+		bg: "bg-[color-mix(in_srgb,var(--color-amber)_20%,transparent)]",
+		text: "text-[var(--color-amber)]",
 		glow: "var(--color-amber-dim)",
 		border: "var(--color-amber)",
 	},
@@ -53,32 +54,32 @@ const tierStyles: Record<
 		border: "var(--color-violet)",
 	},
 	mid: {
-		bg: "bg-accent/10",
-		text: "text-accent",
+		bg: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]",
+		text: "text-[var(--color-accent)]",
 		glow: "var(--color-accent-glow)",
 		border: "var(--color-accent)",
 	},
 	budget: {
-		bg: "bg-accent/20",
-		text: "text-accent",
+		bg: "bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)]",
+		text: "text-[var(--color-accent)]",
 		glow: "var(--color-accent-glow)",
 		border: "var(--color-accent)",
 	},
 	reasoning: {
-		bg: "bg-warning/20",
-		text: "text-warning",
+		bg: "bg-[color-mix(in_srgb,var(--color-warning)_20%,transparent)]",
+		text: "text-[var(--color-warning)]",
 		glow: "var(--color-secondary-dim)",
 		border: "var(--color-warning)",
 	},
 	coding: {
-		bg: "bg-pink/20",
-		text: "text-pink",
+		bg: "bg-[color-mix(in_srgb,var(--color-pink)_20%,transparent)]",
+		text: "text-[var(--color-pink)]",
 		glow: "var(--color-pink-dim)",
 		border: "var(--color-pink)",
 	},
 	uncensored: {
-		bg: "bg-error/20",
-		text: "text-error",
+		bg: "bg-[color-mix(in_srgb,var(--color-error)_20%,transparent)]",
+		text: "text-[var(--color-error)]",
 		glow: "var(--color-error-dim)",
 		border: "var(--color-error)",
 	},
@@ -90,13 +91,13 @@ const dropdownVariants = {
 		opacity: 1,
 		y: 0,
 		scale: 1,
-		transition: { type: "spring" as const, stiffness: 320, damping: 28 },
+		transition: springs.soft,
 	},
 	exit: {
 		opacity: 0,
 		y: -8,
 		scale: 0.97,
-		transition: { duration: 0.12 },
+		transition: springs.soft,
 	},
 };
 
@@ -107,9 +108,7 @@ const itemVariants = {
 		x: 0,
 		transition: {
 			delay: i * 0.02,
-			type: "spring" as const,
-			stiffness: 400,
-			damping: 30,
+			...springs.soft,
 		},
 	}),
 };
@@ -196,24 +195,25 @@ export function ModelSelector({
 				aria-haspopup="listbox"
 				aria-label={`Select AI model — ${selectedName || "SELECT MODEL"}`}
 				className={`
-          flex items-center gap-2 bg-surface/70 border border-border-hi
-          hover:border-accent/40 hover:bg-surface transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
-          min-w-0 group rounded-md
-          ${compact ? "w-full justify-between px-2 py-1.5" : "px-2.5 py-1.5"}
-        `}
+ flex items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
+ hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
+ min-w-0 group rounded-[var(--radius-lg)]
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
+ ${compact ? "w-full justify-between px-3 py-2" : "px-3 py-2"}
+ `}
 			>
 				{/* Status dot — static emerald indicator for active selection */}
 				<span className="relative flex h-2 w-2 shrink-0">
-					<span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+					<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)] shadow-[0_0_8px_var(--color-accent-glow)]" />
 				</span>
-				<span className="text-[12px] text-text-bright font-mono truncate min-w-0 max-w-[12rem]">
+				<span className="text-[12px] text-text-bright font-mono font-bold uppercase tracking-wider truncate min-w-0 max-w-[12rem]">
 					{selectedName || "SELECT MODEL"}
 				</span>
 				<ChevronDown
 					className={`
-            w-3.5 h-3.5 text-text-muted shrink-0 transition-transform duration-200
-            ${open ? "rotate-180" : ""}
-          `}
+ w-3.5 h-3.5 text-text-muted shrink-0 transition-transform duration-200 ease-out
+ ${open ? "rotate-180 text-[var(--color-accent)]" : ""}
+ `}
 				/>
 			</button>
 
@@ -226,8 +226,8 @@ export function ModelSelector({
 						exit="exit"
 						variants={dropdownVariants}
 						className="
-              glass-strong absolute top-full left-0 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:w-80 overflow-hidden z-50
-            "
+ glass-strong absolute top-full left-0 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:w-80 overflow-hidden z-50
+ "
 						style={{
 							boxShadow: "var(--shadow-dropdown)",
 							transformOrigin: "top left",
@@ -248,11 +248,11 @@ export function ModelSelector({
 										placeholder="SEARCH MODELS..."
 										aria-label="Search models"
 										className="
-                      w-full pl-9 pr-3 py-2 bg-void border border-border
-                      text-sm text-text-secondary font-mono placeholder-text-muted
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void
-                      transition-[border-color,box-shadow] duration-200 ease-out
-                    "
+ w-full pl-9 pr-3 py-2 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-md)]
+ text-sm text-text-secondary font-mono placeholder-text-muted
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]
+ transition-[border-color,box-shadow] duration-200 ease-out
+ "
 									/>
 								</div>
 								{/* Tier filter pills */}
@@ -282,16 +282,16 @@ export function ModelSelector({
 												aria-label={`Filter by ${tier} tier`}
 												aria-pressed={isActive}
 												className={`
-                          px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
-                          transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] rounded-[var(--radius-sm)]
-                          ${
+ px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
+ transition-[background-color,color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] rounded-[var(--radius-sm)]
+ ${
 														isActive
 															? `${style.bg} ${style.text} border`
 															: "bg-surface/50 text-text-muted hover:text-text-secondary border border-transparent"
 													}
-                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                          focus-visible:ring-offset-1 focus-visible:ring-offset-void
-                        `}
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+ focus-visible:ring-offset-1 focus-visible:ring-offset-void
+ `}
 												style={
 													isActive ? { borderColor: style.border } : undefined
 												}
@@ -343,30 +343,30 @@ export function ModelSelector({
 											aria-selected={isSelected}
 											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : ", free"}`}
 											className={`
-                        w-full flex items-center justify-between text-left
-                        ${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
-                        transition-[background-color,color] duration-150 ease-out relative
-                        ${
+ w-full flex items-center justify-between text-left
+ ${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
+ transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.98] relative
+ ${
 													isSelected
-														? "bg-accent/10 text-accent"
-														: locked
-															? "hover:bg-surface/40 text-text-muted/60"
-															: "hover:bg-surface/80 text-text-secondary"
-												}
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                        focus-visible:ring-offset-1 focus-visible:ring-offset-void
-                      `}
-										>
-											{/* Left accent bar for selected */}
-											{isSelected && (
-												<div className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-accent" />
-											)}
+															? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
+															: locked
+																? "hover:bg-[var(--color-surface)]/40 text-text-muted/60"
+																: "hover:bg-[var(--color-surface)]/80 text-text-secondary"
+													}
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
+ focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-void)]
+ `}
+											>
+												{/* Left accent bar for selected */}
+												{isSelected && (
+													<div className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-[var(--color-accent)] rounded-r-[var(--radius-sm)] shadow-[0_0_8px_var(--color-accent-glow)]" />
+												)}
 											<div className="min-w-0">
 												<div className="text-sm font-mono truncate flex items-center gap-1.5">
 													<ModelLogo modelId={modelItem.id} size={16} />
 													{name}
 													{free && (
-														<span className="text-[9px] px-1 py-0.5 bg-accent/15 text-accent font-mono uppercase tracking-wide shrink-0">
+														<span className="text-[9px] px-1 py-0.5 bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] font-mono uppercase tracking-wide shrink-0 rounded-[var(--radius-sm)]">
 															Free
 														</span>
 													)}
@@ -382,9 +382,9 @@ export function ModelSelector({
 												<div>
 													<div
 														className={`
-                            text-[10px] px-1.5 py-0.5 font-mono uppercase
-                            ${tierStyle.bg} ${tierStyle.text}
-                          `}
+ text-[10px] px-1.5 py-0.5 font-mono uppercase rounded-[var(--radius-sm)]
+ ${tierStyle.bg} ${tierStyle.text}
+ `}
 													>
 														{modelItem.category}
 													</div>

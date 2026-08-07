@@ -8,6 +8,7 @@ import {
 	useTransform,
 } from "@/lib/framer-motion-client";
 import { useEffect, useRef, useState } from "react";
+import { springs } from "@/lib/animation";
 
 export function AnimatedNumber({
 	value,
@@ -35,10 +36,7 @@ export function AnimatedNumber({
 			return;
 		}
 		const controls = animate(count, value, {
-			type: "spring",
-			stiffness: 120,
-			damping: 24,
-			mass: 0.9,
+			...springs.counter,
 			restSpeed: 0.5,
 		});
 		prev.current = value;
@@ -61,7 +59,7 @@ export function AnimatedNumber({
 			transition={
 				prefersReducedMotion
 					? { duration: 0 }
-					: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
+					: springs.counter
 			}
 		>
 			{display}

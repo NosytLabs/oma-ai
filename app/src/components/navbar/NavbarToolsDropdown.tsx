@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { ChevronDown, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -65,7 +66,7 @@ export function NavbarToolsDropdown({
 					aria-expanded={open}
 					aria-controls="tools-menu"
 					aria-label="Tools menu"
-					className={`relative inline-flex h-9 items-center gap-2 rounded-sm px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+					className={`relative inline-flex h-9 items-center gap-2 rounded-sm px-3 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 						isToolsActive
 							? "text-accent"
 							: "text-text-secondary hover:text-text-bright"
@@ -112,7 +113,7 @@ export function NavbarToolsDropdown({
 								? { opacity: 0 }
 								: { opacity: 0, y: -6, scale: 0.97 }
 						}
-						transition={{ type: "spring", duration: 0.35, bounce: 0 }}
+						transition={springs.soft}
 						style={{ transformOrigin: "top left" }}
 						className={`absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]`}
 					>
@@ -130,7 +131,7 @@ export function NavbarToolsDropdown({
 											role="menuitem"
 											onClick={() => onOpenChange(false)}
 											aria-current={isActive ? "page" : undefined}
-											className={`group/item flex items-start gap-3 rounded-sm px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+											className={`group/item flex items-start gap-3 rounded-sm px-3 py-2 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 												isActive
 													? "bg-accent-dim text-accent"
 													: "text-text-secondary hover:bg-surface hover:text-text-bright"

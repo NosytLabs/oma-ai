@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import {
 	Activity,
 	AlertTriangle,
@@ -239,11 +240,11 @@ function SettingsPageContent() {
 					className="w-full max-w-xl"
 				>
 					<m.div
-						className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/5"
+						className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-xl)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
 						whileHover={{ scale: 1.05 }}
-						transition={{ type: "spring", stiffness: 400, damping: 10 }}
+						transition={springs.tab}
 					>
-						<UserIcon className="h-7 w-7 text-accent" />
+						<UserIcon className="h-7 w-7 text-[var(--color-accent)]" />
 					</m.div>
 					<h1 className="mb-2 text-center text-xl font-bold tracking-tight text-text-bright">
 						Sign in to manage your account
@@ -256,7 +257,7 @@ function SettingsPageContent() {
 						{TABS.slice(0, 4).map(({ icon: Icon, label, description }) => (
 							<li
 								key={label}
-								className="flex items-start gap-2 rounded-lg border border-border bg-surface/50 px-3 py-2 text-xs"
+								className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 px-3 py-2 text-xs transition-[border-color,background-color] hover:bg-[var(--color-surface)]"
 							>
 								<Icon
 									className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-muted"
@@ -273,13 +274,13 @@ function SettingsPageContent() {
 					<div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
 						<Link
 							href="/login?next=/settings"
-							className="inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+							className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 						>
 							Sign in →
 						</Link>
 						<Link
 							href="/dashboard"
-							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text"
+							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors duration-200 ease-out hover:text-text"
 						>
 							<Sparkles className="h-3 w-3" aria-hidden="true" />
 							Back to dashboard
@@ -314,7 +315,7 @@ function SettingsPageContent() {
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
-					className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,color,opacity] duration-150 ease-out hover:border-error/40 hover:text-error active:scale-[0.97] disabled:opacity-40"
+					className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-void)] px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-[var(--color-error)]/40 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
 				</button>
@@ -326,15 +327,15 @@ function SettingsPageContent() {
 						initial={{ opacity: 0, height: 0 }}
 						animate={{ opacity: 1, height: "auto" }}
 						exit={{ opacity: 0, height: 0 }}
-						className="mb-6 flex items-center gap-3 rounded-xl border border-error/30 bg-error/5 px-4 py-3"
+						className="mb-6 flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-4 py-3 shadow-[0_4px_24px_-10px_rgba(248,113,113,0.3)]"
 					>
-						<AlertTriangle className="h-4 w-4 shrink-0 text-error" />
-						<span className="text-sm text-text">{error}</span>
+						<AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
+						<span className="text-sm text-text-primary">{error}</span>
 						<button
 							type="button"
 							onClick={() => setError(null)}
 							aria-label="Dismiss error"
-							className="ml-auto rounded p-1 text-text-secondary hover:bg-error/10 hover:text-text"
+							className="ml-auto rounded-full p-1.5 text-text-secondary hover:bg-[var(--color-error)]/20 hover:text-[var(--color-error)] transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 						>
 							<X className="h-3.5 w-3.5" />
 						</button>
@@ -378,22 +379,22 @@ function SettingsPageContent() {
 											window.history.replaceState({}, "", url.toString());
 										}
 									}}
-									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
+									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-xl)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
 										isDanger
 											? isActive
-												? "border-error/40 bg-error/10 text-error"
-												: "border-transparent text-text-secondary hover:border-error/30 hover:bg-error/5 hover:text-error"
+												? "border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] text-[var(--color-error)] shadow-[0_0_15px_-5px_var(--color-error-glow)]"
+												: "border-transparent text-text-secondary hover:border-[var(--color-error)]/30 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)]"
 											: isActive
-												? "border-accent/30 bg-accent/10 text-text-bright"
-												: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
+												? "border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-text-bright shadow-[0_0_15px_-5px_var(--color-accent-glow)]"
+												: "border-transparent text-text-secondary hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]/50 hover:text-text-bright"
 									}`}
 								>
 									<Icon
 										className={`h-4 w-4 shrink-0 ${
 											isDanger
-												? "text-error"
+												? "text-[var(--color-error)]"
 												: isActive
-													? "text-accent"
+													? "text-[var(--color-accent)]"
 													: "text-text-muted"
 										}`}
 										aria-hidden="true"
@@ -448,7 +449,7 @@ function SettingsPageContent() {
 								initial={{ opacity: 0, y: 8 }}
 								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, y: -8 }}
-								transition={{ duration: 0.2 }}
+								transition={springs.tab}
 							>
 								{activeTab === "profile" && (
 									<ProfileSection

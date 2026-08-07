@@ -57,7 +57,7 @@ export function ThemeToggle() {
 				aria-label={`Theme · ${activeLabel}. Click to choose.`}
 				title={`Theme · ${activeLabel}`}
 				data-theme-toggle
-				className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-150 ease-out"
+				className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-[var(--radius-md)] text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-200 ease-out"
 			>
 				<span
 					aria-hidden="true"
@@ -82,7 +82,7 @@ export function ThemeToggle() {
 					id="theme-menu"
 					role="menu"
 					aria-label="Choose theme"
-					className="absolute right-0 top-full mt-2 w-60 rounded-lg border border-border-hi bg-void/95 backdrop-blur-md p-2 shadow-2xl z-[60] font-mono"
+					className="absolute right-0 top-full mt-2 w-60 rounded-[var(--radius-lg)] border border-border-hi bg-void/95 backdrop-blur-md p-2 shadow-2xl z-[60] font-mono"
 				>
 					<p className="px-3 pt-2 pb-1.5 text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
 						Accent theme
@@ -102,7 +102,7 @@ export function ThemeToggle() {
 											setOpen(false);
 											toggleRef.current?.focus();
 										}}
-										className={`group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+										className={`group flex w-full items-center gap-3 rounded-[var(--radius-md)] px-2.5 py-2 text-left transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 											isActive
 												? "bg-accent-dim text-accent"
 												: "text-text-secondary hover:bg-surface hover:text-text-bright"

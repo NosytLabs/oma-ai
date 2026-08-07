@@ -39,11 +39,11 @@ export function PricingSection() {
 				subtitle="Per-model pricing. Input and output priced per million tokens."
 			/>
 
-			<div id="pricing-table" className="mb-6 rounded-xl border border-border overflow-x-auto overscroll-x-contain scroll-mt-24">
+			<div id="pricing-table" className="mb-6 rounded-[var(--radius-xl)] border border-border overflow-x-auto overscroll-x-contain scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>
-						<tr className="border-b border-border bg-surface/50">
-							<th className="px-4 py-3 font-medium text-text-muted">Model</th>
+						<tr className="border-b border-border bg-panel">
+							<th className="px-4 py-3 font-medium text-text-muted">Type</th>
 							<th className="px-4 py-3 text-right font-medium text-text-muted">
 								Input / 1M
 							</th>
@@ -68,7 +68,7 @@ export function PricingSection() {
 								<td className="px-4 py-3 text-right font-mono text-text-secondary">
 									{fmt(m.output)}
 								</td>
-								<td className="px-4 py-3 text-right text-text-muted">
+								<td className="px-4 py-3 text-right text-text-muted font-mono">
 									{m.ctx}
 								</td>
 							</tr>
@@ -77,7 +77,7 @@ export function PricingSection() {
 				</table>
 			</div>
 
-			<div id="pricing-credits" className="rounded-xl border border-accent/20 bg-accent/5 p-4 scroll-mt-24">
+			<div id="pricing-credits" className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4 scroll-mt-24">
 				<h3 className="font-semibold text-accent">Credit Deduction</h3>
 				<div className="mt-2 grid gap-2 sm:grid-cols-2">
 					<div className="flex items-start gap-2">

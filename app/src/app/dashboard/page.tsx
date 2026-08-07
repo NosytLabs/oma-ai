@@ -28,7 +28,7 @@ const DashboardGrid = nextDynamic(
 				{Array.from({ length: 6 }).map((_, i) => (
 					<div
 						key={i}
-						className="h-32 animate-pulse rounded-lg bg-surface-elevated/40"
+						className="h-32 animate-pulse rounded-[var(--radius-lg)] bg-surface-elevated/40"
 					/>
 				))}
 			</div>
@@ -44,8 +44,8 @@ function AuthGateSkeleton() {
 		<div className="flex items-center justify-center px-4">
 			<div className="w-full max-w-md space-y-3">
 				<div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-surface-elevated/60" />
-				<div className="mx-auto h-4 w-48 animate-pulse rounded bg-surface-elevated/40" />
-				<div className="mx-auto h-3 w-32 animate-pulse rounded bg-surface-elevated/30" />
+				<div className="mx-auto h-4 w-48 animate-pulse rounded-[var(--radius-sm)] bg-surface-elevated/40" />
+				<div className="mx-auto h-3 w-32 animate-pulse rounded-[var(--radius-sm)] bg-surface-elevated/30" />
 			</div>
 		</div>
 	);
@@ -282,7 +282,7 @@ function DashboardPageInner() {
 						</span>
 						<Link
 							href="/settings"
-							className="shrink-0 rounded bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
+							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
 							Manage →
 						</Link>

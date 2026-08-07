@@ -159,13 +159,13 @@ export function DocsSearch() {
 					setOpen(true);
 					setTimeout(() => inputRef.current?.focus(), 50);
 				}}
-				className="flex items-center gap-2 rounded-lg border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-all hover:border-border-bright hover:text-text hover:bg-surface"
+				className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:text-text hover:bg-surface"
 				aria-label="Search docs"
 			>
 				<Search className="h-3.5 w-3.5" aria-hidden="true" />
 				<span className="hidden sm:inline">Search docs</span>
 				<kbd
-					className="ml-2 hidden rounded border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline"
+					className="ml-2 hidden rounded-[var(--radius-sm)] border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline"
 					aria-hidden="true"
 				>
 					⌘K
@@ -210,13 +210,13 @@ export function DocsSearch() {
 										setQuery("");
 										inputRef.current?.focus();
 									}}
-									className="rounded p-0.5 text-text-muted hover:text-text"
+									className="rounded-[var(--radius-sm)] p-0.5 text-text-muted hover:text-text"
 									aria-label="Clear search"
 								>
 									<X className="h-3.5 w-3.5" />
 								</button>
 							)}
-							<kbd className="hidden rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary sm:inline">
+							<kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-surface px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary sm:inline">
 								ESC
 							</kbd>
 						</div>
@@ -240,7 +240,7 @@ export function DocsSearch() {
 											<button
 												type="button"
 												onClick={() => handleSelect(result)}
-												className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
+												className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors duration-200 ease-out ${
 													i === selectedIndex
 														? "bg-accent/10 text-accent"
 														: "text-text-muted hover:bg-surface hover:text-text"

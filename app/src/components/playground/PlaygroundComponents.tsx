@@ -4,7 +4,7 @@ import type { Message } from "@/components/chat";
 import { MODELS } from "@/lib/models-data";
 
 export const btnBase =
-	"relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all border rounded-full " +
+	"relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out border rounded-full " +
 	"bg-void border-border text-text-muted " +
 	"hover:bg-surface hover:text-text hover:brightness-125 " +
 	"focus-visible:outline focus-visible:outline-2 focus-visible:outline-success/50 focus-visible:outline-offset-1 focus-visible:bg-surface " +
@@ -43,7 +43,7 @@ function getModelPricing(modelId: string): {
 function StatPill({ label, value, accent, title }: StatPillProps) {
 	return (
 		<span
-			className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10.5px] font-mono uppercase tracking-wider transition-colors ${
+			className={`inline-flex items-center gap-1 rounded-[var(--radius-md)] border px-2 py-0.5 text-[10.5px] font-mono uppercase tracking-wider transition-colors duration-200 ease-out ${
 				accent
 					? "border-success/30 bg-success/10 text-success"
 					: "border-border bg-surface/40 text-text-secondary hover:border-accent/30 hover:text-text"
@@ -113,19 +113,19 @@ export function MobileStatsBar({
 
 	return (
 		<div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted font-mono">
-			<span className="bg-surface px-1.5 py-0.5 rounded border border-border">
+			<span className="bg-surface px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-border">
 				{msgCount}
 				{msgCount === 1 ? " msg" : " msgs"}
 			</span>
 			{totalTokens > 0 && (
 				<>
-					<span className="bg-surface px-1.5 py-0.5 rounded border border-border">
+					<span className="bg-surface px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-border">
 						{totalTokens >= 1000
 							? `${(totalTokens / 1000).toFixed(1)}k`
-							: totalTokens}{" "}
+							: totalTokens}{""}
 						tok
 					</span>
-					<span className="bg-success-dim text-success px-1.5 py-0.5 rounded border border-success/30">
+					<span className="bg-success-dim text-success px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-success/30">
 						${totalCost.toFixed(4)}
 					</span>
 				</>

@@ -5,14 +5,14 @@
  *
  * Two sign-in methods:
  *
- *   1. Magic link — passwordless email sign-in via Resend.
- *   2. SIWE wallet — EIP-4361 sign-in on Base mainnet via viem.
- *      Better Auth owns the nonce, signature verification, and session.
+ * 1. Magic link — passwordless email sign-in via Resend.
+ * 2. SIWE wallet — EIP-4361 sign-in on Base mainnet via viem.
+ * Better Auth owns the nonce, signature verification, and session.
  *
  * Cross-cutting:
- *   - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
- *   - Errors bubble through Better Auth — friendly messages shaped
- *     server-side; we just toast them here.
+ * - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
+ * - Errors bubble through Better Auth — friendly messages shaped
+ * server-side; we just toast them here.
  */
 
 import {
@@ -84,8 +84,8 @@ function LoginFallback() {
 					<Skeleton className="h-16 w-full" />
 				</div>
 				<div className="mx-auto w-full max-w-md space-y-4">
-					<Skeleton className="h-28 w-full rounded-lg" />
-					<Skeleton className="h-64 w-full rounded-lg" />
+					<Skeleton className="h-28 w-full rounded-[var(--radius-lg)]" />
+					<Skeleton className="h-64 w-full rounded-[var(--radius-lg)]" />
 				</div>
 			</div>
 		</div>
@@ -170,7 +170,7 @@ function LoginInner() {
 				<BrandPitch />
 				<div className="mx-auto w-full max-w-md">
 					<X402Callout />
-					<div className="mt-6 rounded-lg border border-border-bright bg-panel p-6 shadow-[0_24px_72px_-42px_rgba(0,0,0,0.95)]">
+					<div className="mt-6 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)]">
 						<h2 className="text-lg font-bold text-text-bright">
 							Choose how to sign in
 						</h2>
@@ -184,13 +184,13 @@ function LoginInner() {
 								<div
 									role="alert"
 									aria-live="assertive"
-									className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3"
+									className="mt-4 flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--color-warning)]/30 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] px-4 py-3"
 								>
 									<AlertTriangle
-										className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+										className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-warning)]"
 										aria-hidden="true"
 									/>
-									<div className="text-xs text-text">
+									<div className="text-xs text-text-primary">
 										<p className="font-semibold">API is offline</p>
 										<p className="text-text-muted">
 											Sign-in is temporarily unavailable. Retrying
@@ -204,7 +204,7 @@ function LoginInner() {
 								<div
 									role="alert"
 									aria-live="assertive"
-									className="mt-4 rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error"
+									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-3 text-xs text-[var(--color-error)]"
 								>
 									{error}
 								</div>
@@ -214,7 +214,7 @@ function LoginInner() {
 						<div
 							role="tablist"
 							aria-label="Authentication method"
-							className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1"
+							className="mt-5 grid grid-cols-2 gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1"
 						>
 							<TabButton
 								id="tab-magic"
@@ -269,12 +269,12 @@ function LoginInner() {
 										// React 19 may disagree with the browser on an empty style attr
 										// during hydration of controlled inputs — suppress the noise.
 										suppressHydrationWarning
-										className="w-full rounded-lg border border-border-bright bg-void px-3 py-3 text-sm placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+										className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-void)] px-3 py-3 text-sm placeholder:text-text-muted focus:border-[var(--color-accent)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/20"
 									/>
 									<button
 										type="submit"
 										disabled={submitting || offline}
-										className="btn-primary min-h-12 w-full rounded-lg disabled:cursor-not-allowed disabled:opacity-50"
+										className="btn-primary min-h-12 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										{submitting ? (
 											<>
@@ -317,16 +317,16 @@ function LoginInner() {
 						</div>
 					</div>
 					<p className="mt-6 text-center text-xs text-text-muted">
-						By signing in you accept the{" "}
-						<Link href="/terms" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
+						By signing in you accept the{""}
+						<Link href="/terms" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Terms
 						</Link>
-						,{" "}
-						<Link href="/privacy" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
+						,{""}
+						<Link href="/privacy" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Privacy Policy
 						</Link>
-						, and{" "}
-						<Link href="/terms#acceptable-use" className="text-accent underline decoration-accent opacity-60 underline-offset-2 hover:decoration-accent">
+						, and{""}
+						<Link href="/terms#acceptable-use" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Acceptable Use Policy
 						</Link>
 						.
@@ -355,10 +355,10 @@ function TabButton({ id, label, selected, icon, onSelect }: TabButtonProps) {
 			aria-selected={selected}
 			aria-controls={panelId}
 			onClick={onSelect}
-			className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 min-h-11 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+			className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-3 py-3 min-h-11 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
 				selected
-					? "bg-accent text-void shadow-sm"
-					: "text-text-muted hover:text-text"
+					? "bg-[var(--color-accent)] text-[var(--color-accent-fg)] shadow-[0_0_15px_-5px_var(--color-accent-glow)]"
+					: "text-text-muted hover:text-text-primary"
 			}`}
 		>
 			{icon}
@@ -390,8 +390,8 @@ function BrandPitch() {
 			<div className="surface-card p-8">
 				<OmaWordmark size="md" />
 				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
-					Sign in once.{" "}
-					<span className="gradient-text-accent">Ship without friction.</span>
+					Sign in once.{""}
+					<span className="text-[var(--color-accent)] ml-2">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
 					One OpenAI-compatible gateway. Magic link or wallet, credits by card
@@ -400,7 +400,7 @@ function BrandPitch() {
 				<ul className="mt-6 space-y-4">
 					{items.map(({ Icon, title, body }) => (
 						<li key={title} className="flex items-start gap-3">
-							<span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-accent/20 bg-accent/10 text-accent">
+							<span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] shadow-[0_0_15px_-5px_var(--color-accent-glow)]">
 								<Icon className="h-4 w-4" aria-hidden="true" />
 							</span>
 							<div>
@@ -421,9 +421,9 @@ function BrandPitch() {
 
 function X402Callout() {
 	return (
-		<div className="rounded-lg border border-accent/25 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_10%,transparent)_0%,color-mix(in_srgb,var(--color-panel)_92%,transparent)_100%)] p-5 shadow-[0_18px_44px_-32px_var(--color-accent-glow)]">
+		<div className="rounded-[var(--radius-xl)] border border-[var(--color-accent)]/25 bg-[color-mix(in_srgb,var(--color-accent)_5%,transparent)] p-5 shadow-[0_18px_44px_-32px_var(--color-accent-glow)]">
 			<div className="flex items-start gap-3">
-				<span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
+				<span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]">
 					<Sparkles className="h-4 w-4" aria-hidden="true" />
 				</span>
 				<div className="min-w-0 flex-1">
@@ -431,21 +431,21 @@ function X402Callout() {
 						<p className="text-sm font-semibold text-text-bright">
 							Pay per request with x402
 						</p>
-						<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-accent">
+						<span className="rounded-[var(--radius-sm)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--color-accent)]">
 							Agents
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Call chat completions with no account; on 402, retry with a signed{" "}
+						Call chat completions with no account; on 402, retry with a signed{""}
 						<code className="font-mono text-text-secondary">
 							PAYMENT-SIGNATURE
-						</code>{" "}
+						</code>{""}
 						envelope (EIP-3009 USDC on Base). Flat rate per request — wallet-based,
 						no card needed, gas paid by the facilitator.
 					</p>
 					<Link
 						href="/docs#x402"
-						className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline underline-offset-2"
+						className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent)] hover:underline underline-offset-2 transition-colors duration-200 ease-out hover:text-[var(--color-accent-hover)]"
 					>
 						How x402 works
 						<ArrowRight className="h-3 w-3" aria-hidden="true" />

@@ -68,7 +68,7 @@ export function AuthNotice() {
 				type="button"
 				onClick={dismiss}
 				aria-label="Dismiss notice"
-				className="ml-1 text-text-muted hover:text-text-bright transition-colors"
+				className="ml-1 text-text-muted hover:text-text-bright transition-colors duration-200 ease-out active:scale-[0.97]"
 			>
 				<X className="h-3.5 w-3.5" />
 			</button>

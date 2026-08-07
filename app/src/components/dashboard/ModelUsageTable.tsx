@@ -1,6 +1,7 @@
 "use client";
 
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { useMemo } from "react";
 import type { UsageRecord } from "@/lib/api";
 import { formatUsdPrecise, toDollars } from "@/lib/utils";
@@ -88,7 +89,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)]">
+			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)]">
 				<div className="flex items-center gap-3">
 					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--color-accent)]" />
 					<span className="text-sm font-semibold text-text-muted">
@@ -101,7 +102,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (modelStats.length === 0) {
 		return (
-			<div className="p-6 sm:p-7 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] transition-colors hover:border-accent/40">
+			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Model usage breakdown
 				</h3>
@@ -113,8 +114,8 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	}
 
 	return (
-		<div className="border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] overflow-hidden transition-colors hover:border-accent/40">
-			<div className="p-6 sm:p-7 border-b border-border/50 bg-void/50">
+		<div className="border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
+			<div className="p-6 border-b border-border/50 bg-void/50">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Model usage breakdown
 				</h3>
@@ -169,18 +170,18 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 						{modelStats.map((stat, i) => (
 							<m.tr
 								key={stat.model}
-								className="group border-b border-border/40 hover:bg-surface/60 transition-colors last:border-0"
+								className="group border-b border-border/40 hover:bg-surface/60 transition-colors duration-200 ease-out last:border-0"
 								initial={{ opacity: 0, y: 5 }}
 								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: i * 0.03, ease: [0.23, 1, 0.32, 1] }}
+								transition={{ delay: i * 0.03, ...springs.soft }}
 							>
-								<td className="px-6 py-4 text-[13px] font-bold text-accent font-mono transition-colors group-hover:text-accent-hover">
+								<td className="px-6 py-4 text-[13px] font-bold text-accent font-mono transition-colors duration-200 ease-out group-hover:text-accent-hover">
 									{stat.model}
 								</td>
-								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 									{stat.requests.toLocaleString()}
 								</td>
-								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 									<div className="flex flex-col">
 										<span className="text-text-bright" title="Input Tokens">{(stat.totalInputTokens / 1000).toFixed(1)}k <span className="text-text-muted text-[10px] ml-1">IN</span></span>
 										<span className="text-text-secondary mt-0.5" title="Output Tokens">{(stat.totalOutputTokens / 1000).toFixed(1)}k <span className="text-text-muted/50 text-[10px] ml-1">OUT</span></span>
@@ -189,7 +190,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 								<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
 									{formatUsdPrecise(stat.totalCost)}
 								</td>
-								<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+								<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 									{formatLatency(stat.avgLatency)}
 								</td>
 								<td className="px-6 py-4 text-right">
@@ -202,7 +203,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 												}}
 											/>
 										</div>
-										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono transition-colors group-hover:text-text-bright">
+										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 											{totalCost > 0
 												? ((stat.totalCost / totalCost) * 100).toFixed(1)
 												: "0.0"}

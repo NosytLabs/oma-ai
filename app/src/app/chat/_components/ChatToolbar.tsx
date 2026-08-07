@@ -86,10 +86,10 @@ export interface ChatToolbarProps {
  * The top toolbar that sits above the messages pane.
  *
  * Four functional clusters, left → right:
- *   1. Brand mark + model selector + parameters toggle
- *   2. Media mode (text/image/video), searching badge
- *   3. Stats bar (desktop / mobile variants), credit balance pill
- *   4. Compare mode, share, shortcuts, export, clear
+ * 1. Brand mark + model selector + parameters toggle
+ * 2. Media mode (text/image/video), searching badge
+ * 3. Stats bar (desktop / mobile variants), credit balance pill
+ * 4. Compare mode, share, shortcuts, export, clear
  *
  * The Toolbar is purely presentational — every interaction is a prop
  * callback, every label/state is a prop. The page owns the state and
@@ -160,7 +160,7 @@ export function ChatToolbar({
 	const mediaTabs =
 		isChat && setMediaMode ? (
 			<div
-				className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
+				className="flex shrink-0 items-center gap-0.5 rounded-[var(--radius-md)] border border-border bg-surface p-0.5"
 				role="tablist"
 				aria-label="Playground mode"
 			>
@@ -170,7 +170,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("text")}
 					aria-selected={mediaMode === "text"}
 					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<MessageSquare className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Chat</span>
@@ -181,7 +181,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("image")}
 					aria-selected={mediaMode === "image"}
 					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<ImageIcon className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Image</span>
@@ -192,7 +192,7 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("video")}
 					aria-selected={mediaMode === "video"}
 					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded-md min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<Film className="h-4 w-4" />
 					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Video</span>
@@ -211,8 +211,8 @@ export function ChatToolbar({
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
 				{/* Compact model badge — replaces the previous "OMA · MiniMax 2.7" pill
-				    that was duplicating the navbar brand. Now just shows the current
-				    model with tier color so the active selection is always visible. */}
+				 that was duplicating the navbar brand. Now just shows the current
+				 model with tier color so the active selection is always visible. */}
 				<div className="min-w-0 w-[clamp(7rem,36vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">
 					<LazyModelSelector
 						model={model}

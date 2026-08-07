@@ -184,24 +184,24 @@ export const MessageInputRedesigned = forwardRef<
 
 				{setWebSearchEnabled && (
 					<div className="flex items-center self-end p-2">
-						<button
-							type="button"
-							onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-							aria-pressed={webSearchEnabled}
-							aria-label="Toggle web search — ground responses in live internet data"
-							title={
-								webSearchEnabled
-									? "Web search on — responses use live sources when available"
-									: "Web search off — turn on to ground answers in the internet"
-							}
-							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] ${
-								webSearchEnabled
-									? "border border-success/30 bg-success/15 text-success shadow-[0_0_16px_-6px_var(--color-success-glow)]"
-									: "border border-border bg-void text-text-muted hover:border-accent/40 hover:bg-surface hover:text-text"
-							}`}
-						>
+							<button
+								type="button"
+								onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+								aria-pressed={webSearchEnabled}
+								aria-label="Toggle web search — ground responses in live internet data"
+								title={
+									webSearchEnabled
+										? "Web search on — responses use live sources when available"
+										: "Web search off — turn on to ground answers in the internet"
+								}
+								className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
+									webSearchEnabled
+										? "border border-[var(--color-success)]/30 bg-[color-mix(in_srgb,var(--color-success)_15%,transparent)] text-[var(--color-success)] shadow-[0_0_16px_-6px_var(--color-success-glow)]"
+										: "border border-[var(--color-border)] bg-[var(--color-void)] text-text-muted hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:text-[var(--color-text-primary)]"
+								}`}
+							>
 							<Search
-								className={`h-4 w-4 ${webSearchEnabled ? "text-success" : ""}`}
+								className={`h-4 w-4 ${webSearchEnabled ? "text-[var(--color-success)]" : ""}`}
 								aria-hidden="true"
 							/>
 							<span>WEB</span>
@@ -217,16 +217,16 @@ export const MessageInputRedesigned = forwardRef<
 								onClick={onStop}
 								aria-label="Stop generation"
 								className="
-                    flex h-[42px] w-[42px] items-center justify-center
-                    bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40
-                    rounded-[var(--radius-md)] relative min-h-[42px] min-w-[42px]
-                    transition-[background-color,border-color,transform,box-shadow] duration-120 ease-out active:scale-[0.97]
-                  "
+ flex h-[42px] w-[42px] items-center justify-center
+ bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] border border-[var(--color-danger)]/40
+ rounded-[var(--radius-lg)] relative min-h-[42px] min-w-[42px]
+ transition-[background-color,border-color,transform,box-shadow] duration-200 ease-out active:scale-[0.97] focus-ring 
+ "
 							>
 								{/* Rotating ring */}
 								{!reduceMotion && (
 									<m.span
-										className="absolute inset-0 border-[3px] border-danger/60 animate-pulse rounded-[var(--radius-md)] drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-danger/10"
+										className="absolute inset-0 border-[3px] border-[var(--color-danger)]/60 animate-pulse rounded-[var(--radius-lg)] drop-shadow-[0_2px_4px_var(--color-error-glow)] bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
 										animate={{ rotate: 360 }}
 										transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 									/>
@@ -249,14 +249,14 @@ export const MessageInputRedesigned = forwardRef<
 								}
 								transition={EASE_SPRING}
 								className={`
-                     group/send relative flex h-[42px] w-[42px] items-center justify-center
-                     rounded-[var(--radius-md)] font-semibold transition-[background-color,border-color,transform,box-shadow] duration-120 ease-out min-h-[42px] min-w-[42px] active:scale-[0.97]
-                     ${
+ group/send relative flex h-[42px] w-[42px] items-center justify-center
+ rounded-[var(--radius-lg)] font-semibold transition-[background-color,border-color,transform,box-shadow] duration-200 ease-out min-h-[42px] min-w-[42px] active:scale-[0.97] focus-ring 
+ ${
 											hasInput && !disabled
-												? "bg-gradient-to-br from-accent to-accent-hover text-accent-fg shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"
-												: "bg-surface-elevated/80 text-text-tertiary border border-border cursor-not-allowed"
+												? "bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-[var(--color-accent-fg)] shadow-[0_0_24px_-4px_var(--color-accent-glow),0_8px_24px_-12px_var(--color-accent-glow)] hover:shadow-[0_0_32px_-2px_var(--color-accent-glow),0_10px_28px_-10px_var(--color-accent-glow)]"
+												: "bg-[var(--color-surface-elevated)]/80 text-[var(--color-text-tertiary)] border border-[var(--color-border)] cursor-not-allowed"
 										}
-                   `}
+ `}
 							>
 								<Send
 									className={`w-[18px] h-[18px] transition-transform duration-200 ${
@@ -269,7 +269,7 @@ export const MessageInputRedesigned = forwardRef<
 								{hasInput && !disabled && !reduceMotion && (
 									<span
 										aria-hidden="true"
-										className="pointer-events-none absolute inset-0 rounded-[var(--radius-md)] ring-1 ring-accent/30"
+										className="pointer-events-none absolute inset-0 rounded-[var(--radius-lg)] ring-1 ring-[var(--color-accent)]/30"
 									/>
 								)}
 							</m.button>
@@ -288,14 +288,14 @@ export const MessageInputRedesigned = forwardRef<
 						exit={{ opacity: 0, y: -4 }}
 						className="absolute bottom-full left-0 right-0 mb-2 px-2 hidden md:flex"
 					>
-						<div className="flex items-center gap-3 mx-auto px-3 py-1.5 bg-surface/80 border border-border/40 backdrop-blur-sm">
-							<Sparkles className="w-3 h-3 text-accent/60" />
+						<div className="flex items-center gap-3 mx-auto px-3 py-1.5 bg-[var(--color-surface)]/80 rounded-[var(--radius-lg)] border border-[var(--color-border)]/40 backdrop-blur-sm">
+							<Sparkles className="w-3 h-3 text-[var(--color-accent)]/60" />
 							{INPUT_HINTS.map((hint, i) => (
 								<span
 									key={i}
 									className="flex items-center gap-1 text-[9px] font-mono text-text-muted"
 								>
-									<kbd className="px-1.5 py-0.5 bg-void border border-border text-text-secondary text-[9px]">
+									<kbd className="px-1.5 py-0.5 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-text-secondary text-[9px]">
 										{hint.key}
 									</kbd>
 									{hint.action}

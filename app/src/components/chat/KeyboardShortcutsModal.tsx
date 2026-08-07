@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { Command, Keyboard, X } from "lucide-react";
 import { useDialog } from "@/lib/use-dialog";
 
@@ -25,7 +26,7 @@ interface KeyboardShortcutsModalProps {
 
 function KeyCap({ children }: { children: string }) {
 	return (
-		<kbd className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 border border-border bg-surface text-text-secondary text-[11px] font-mono font-bold uppercase">
+		<kbd className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 border border-[var(--color-border)] rounded-[var(--radius-sm)] bg-[var(--color-surface)] text-text-secondary text-[11px] font-mono font-bold uppercase shadow-sm">
 			{children}
 		</kbd>
 	);
@@ -33,7 +34,7 @@ function KeyCap({ children }: { children: string }) {
 
 function ShortcutRow({ shortcut }: { shortcut: Shortcut }) {
 	return (
-		<div className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-b-0">
+		<div className="flex items-center justify-between gap-3 py-2 border-b border-[var(--color-border)] last:border-b-0">
 			<span className="text-xs font-mono text-text-secondary">
 				{shortcut.description}
 			</span>
@@ -61,7 +62,7 @@ export function KeyboardShortcutsModal({
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					transition={{ duration: 0.15 }}
+					transition={springs.soft}
 					className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-overlay/80 backdrop-blur-sm"
 					onClick={onClose}
 					role="dialog"
@@ -74,14 +75,14 @@ export function KeyboardShortcutsModal({
 						initial={{ opacity: 0, scale: 0.98, y: 4 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.98, y: 4 }}
-						transition={{ duration: 0.15, ease: "easeOut" }}
+						transition={springs.soft}
 						onClick={(e) => e.stopPropagation()}
-						className="w-full max-w-md bg-void border border-border shadow-2xl focus:outline-none"
+						className="w-full max-w-md bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-2xl focus:outline-none overflow-hidden"
 					>
-						<div className="flex items-center justify-between px-4 py-3 border-b border-border">
+						<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]/30">
 							<div className="flex items-center gap-2">
-								<Keyboard className="w-4 h-4 text-success" />
-								<h2 className="text-xs font-mono font-bold text-text uppercase tracking-widest">
+								<Keyboard className="w-4 h-4 text-[var(--color-success)]" />
+								<h2 className="text-xs font-mono font-bold text-text-primary uppercase tracking-widest">
 									KEYBOARD SHORTCUTS
 								</h2>
 							</div>
@@ -89,7 +90,7 @@ export function KeyboardShortcutsModal({
 								type="button"
 								onClick={onClose}
 								aria-label="Close keyboard shortcuts"
-								className="p-1 text-text-muted hover:text-text-secondary transition-colors focus-ring"
+								className="p-1 text-text-muted hover:text-text-primary hover:bg-[var(--color-surface)] rounded-full transition-[color,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97]"
 							>
 								<X className="w-4 h-4" />
 							</button>

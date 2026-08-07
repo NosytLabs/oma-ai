@@ -176,7 +176,7 @@ export default function GlossaryPage() {
 			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-8"
+					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -187,7 +187,7 @@ export default function GlossaryPage() {
 				<p className="page-intro mt-4 max-w-2xl">
 					Every term you&apos;ll meet on OMA, explained without jargon — from
 					tokens and context windows to USDC and x402. New here? Pair this
-					with the <Link href="/faq" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">FAQ</Link> and{" "}
+					with the <Link href="/faq" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">FAQ</Link> and{""}
 					<Link href="/getting-started" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">getting started</Link> guide.
 				</p>
 
@@ -196,7 +196,7 @@ export default function GlossaryPage() {
 						<a
 							key={l}
 							href={`#${l.toLowerCase()}`}
-							className={`inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-mono transition-colors ${
+							className={`inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border text-xs font-mono transition-colors duration-200 ease-out ${
 								byLetter.has(l)
 									? "border-accent/40 text-accent hover:bg-accent/10"
 									: "border-border text-text-muted/40 pointer-events-none"

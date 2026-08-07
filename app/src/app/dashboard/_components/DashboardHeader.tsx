@@ -11,6 +11,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { m } from "framer-motion";
+import { springs } from "@/lib/animation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
@@ -26,7 +27,7 @@ interface DashboardHeaderProps {
 	/** When true, force the "Awaiting data" line even if we've previously seen data. */
 	hasAnyData: boolean;
 	/** Increments every time the user explicitly hits RETRY/CLEAR — used to
-	 *  bump the "Last updated" timestamp without depending on the data shape. */
+	 * bump the "Last updated" timestamp without depending on the data shape. */
 	refreshTick?: number;
 	/** Manual refresh callback. */
 	onRefresh?: () => void;
@@ -45,7 +46,7 @@ interface DashboardHeaderProps {
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
- *  but high enough that an idle tab doesn't hammer the API. */
+ * but high enough that an idle tab doesn't hammer the API. */
 const POLL_INTERVAL_MS = 120_000;
 
 /**
@@ -160,7 +161,7 @@ export function DashboardHeader({
 				className="flex items-center gap-2 text-[11px] text-text-muted mb-4 font-mono tracking-wide"
 				aria-label="Breadcrumb"
 			>
-				<Link href="/" className="hover:text-text-secondary transition-colors">
+				<Link href="/" className="hover:text-text-secondary transition-colors duration-200 ease-out">
 					HOME
 				</Link>
 				<ChevronRight className="h-3 w-3 opacity-50" aria-hidden="true" />
@@ -177,7 +178,7 @@ export function DashboardHeader({
 						Dashboard
 					</h1>
 					<div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-text-muted font-mono tracking-wide">
-						<span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded border border-border/50">
+						<span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50">
 							<span
 								aria-hidden="true"
 								className={`inline-block h-1.5 w-1.5 rounded-full ${loading ? "bg-warning animate-pulse" : "bg-success shadow-[0_0_5px_var(--color-success)]"}`}
@@ -190,7 +191,7 @@ export function DashboardHeader({
 						</span>
 						<SystemStatus />
 						<span
-							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded border border-border/50"
+							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
@@ -292,7 +293,7 @@ export function DashboardHeader({
 								<m.div
 									layoutId="activeDashboardTab"
 									className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_-2px_10px_rgba(var(--color-accent-rgb),0.5)]"
-									transition={{ type: "spring", stiffness: 400, damping: 30 }}
+									transition={springs.tab}
 								/>
 							)}
 						</button>

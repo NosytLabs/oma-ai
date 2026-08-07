@@ -18,15 +18,15 @@
  * throws a hydration error on every page.
  *
  * Layout (desktop, lg+):
- *   ┌────────────────────────────────────────────────────────────────┐
- *   │  Logo · tagline · socials                  (3 cols of nav)     │
- *   ├────────────────────────────────────────────────────────────────┤
- *   │  © 2026 NosytLabs. All rights reserved.                                             │
- *   └────────────────────────────────────────────────────────────────┘
+ * ┌────────────────────────────────────────────────────────────────┐
+ * │ Logo · tagline · socials (3 cols of nav) │
+ * ├────────────────────────────────────────────────────────────────┤
+ * │ © 2026 NosytLabs. All rights reserved. │
+ * └────────────────────────────────────────────────────────────────┘
  *
  * Layout (mobile):
- *   Brand stack, then a 2-column nav grid (Product | Resources),
- *   then the legal row, then the bottom bar.
+ * Brand stack, then a 2-column nav grid (Product | Resources),
+ * then the legal row, then the bottom bar.
  */
 
 import {
@@ -214,7 +214,7 @@ export function Footer() {
 										aria-label={`${s.label} · ${s.handle} (opens in new tab)`}
 										whileHover={{ y: -1 }}
 										transition={EASE_SPRING}
-										className="group inline-flex items-center gap-2 rounded-sm border border-border bg-surface/40 px-3 py-1.5 text-[11px] text-text-secondary transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+										className="group inline-flex items-center gap-2 rounded-sm border border-border bg-surface/40 px-3 py-1.5 text-[11px] text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 									>
 										<Icon
 											className="h-3.5 w-3.5 opacity-80 group-hover:opacity-100"
@@ -252,7 +252,7 @@ export function Footer() {
 													href={link.href}
 													prefetch={false}
 													aria-current={isCurrent ? "page" : undefined}
-className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 														isCurrent
 															? "text-accent bg-accent-dim font-semibold underline underline-offset-2"
 															: "text-text-secondary hover:text-accent hover:bg-surface/60 hover:underline underline-offset-2 hover:font-semibold"
@@ -260,7 +260,7 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 												>
 													{Icon && (
 														<Icon
-															className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+															className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${
 																isCurrent
 																	? "text-accent"
 																	: "text-text-tertiary group-hover/link:text-accent group-hover/link:translate-x-0.5"
@@ -283,26 +283,26 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 				<div className="border-t border-border-subtle">
 					<div className="flex flex-col gap-3 py-5 text-[11px] text-text-muted sm:flex-row sm:items-center sm:justify-between">
 						<p className="font-mono tabular-nums">
-							<span className="text-text-secondary">©</span>{" "}
-							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{" "}
-							<span className="text-text-tertiary">·</span>{" "}
+							<span className="text-text-secondary">©</span>{""}
+							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{""}
+							<span className="text-text-tertiary">·</span>{""}
 							<span>
 								<a
 									href="https://www.nosytlabs.com"
 									target="_blank"
 									rel="noopener noreferrer"
-									className="hover:text-accent transition-colors"
+									className="hover:text-accent transition-colors duration-200 ease-out"
 								>
 									by nosytlabs.com
 								</a>
-							</span>{" "}
-							<span className="text-text-tertiary">·</span>{" "}
-							<span>MIT licensed</span>{" "}
-							<span className="text-text-tertiary">·</span>{" "}
-							<span>base mainnet</span>{" "}
-							<span className="text-text-tertiary">·</span>{" "}
+							</span>{""}
+							<span className="text-text-tertiary">·</span>{""}
+							<span>MIT licensed</span>{""}
+							<span className="text-text-tertiary">·</span>{""}
+							<span>base mainnet</span>{""}
+							<span className="text-text-tertiary">·</span>{""}
 							<span>
-								build{" "}
+								build{""}
 								<span
 									suppressHydrationWarning
 									className="text-text-secondary"
@@ -317,7 +317,7 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 								href="https://github.com/NosytLabs"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
+								className="inline-flex items-center gap-1 hover:text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
 							>
 								github <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
 							</a>

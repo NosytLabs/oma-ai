@@ -69,7 +69,7 @@ describe("MessageInput", () => {
 
 		rerender(
 			<MessageInput
-				input="   "
+				input=" "
 				setInput={noop}
 				onSubmit={noop}
 				onStop={noop}

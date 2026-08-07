@@ -113,18 +113,18 @@ export const ENDPOINTS: EndpointInfo[] = [
 			response_format: 'object (optional), e.g. { type: "json_object" }',
 		},
 		response: `{
-  "id": "chatcmpl-9f3k2a",
-  "object": "chat.completion",
-  "created": 1717194000,
-  "model": "llama-3.3-70b",
-  "choices": [
-    {
-      "index": 0,
-      "message": { "role": "assistant", "content": "Hello. How can I help today?" },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": { "prompt_tokens": 18, "completion_tokens": 12, "total_tokens": 30 }
+ "id": "chatcmpl-9f3k2a",
+ "object": "chat.completion",
+ "created": 1717194000,
+ "model": "llama-3.3-70b",
+ "choices": [
+ {
+ "index": 0,
+ "message": { "role": "assistant", "content": "Hello. How can I help today?" },
+ "finish_reason": "stop"
+ }
+ ],
+ "usage": { "prompt_tokens": 18, "completion_tokens": 12, "total_tokens": 30 }
 }`,
 	},
 	{
@@ -143,13 +143,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 			temperature: "number (optional)",
 		},
 		response: `{
-  "id": "msg_…",
-  "type": "message",
-  "role": "assistant",
-  "content": [{ "type": "text", "text": "Hello." }],
-  "model": "claude-sonnet-5",
-  "stop_reason": "end_turn",
-  "usage": { "input_tokens": 12, "output_tokens": 8 }
+ "id": "msg_…",
+ "type": "message",
+ "role": "assistant",
+ "content": [{ "type": "text", "text": "Hello." }],
+ "model": "claude-sonnet-5",
+ "stop_reason": "end_turn",
+ "usage": { "input_tokens": 12, "output_tokens": 8 }
 }`,
 	},
 	{
@@ -162,11 +162,11 @@ export const ENDPOINTS: EndpointInfo[] = [
 		params: [{ name: "query", type: "string", desc: "Search query (1–500 chars, required)" }],
 		body: undefined,
 		response: `{
-  "query": "open model access",
-  "provider": "duckduckgo",
-  "results": [
-    { "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
-  ]
+ "query": "open model access",
+ "provider": "duckduckgo",
+ "results": [
+ { "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
+ ]
 }`,
 	},
 	{
@@ -177,29 +177,29 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Returns every model currently routable: text, image, video. No auth required. Cached for 1h.",
 		auth: "None",
 		response: `{
-  "object": "list",
-  "data": [
-    {
-      "id": "llama-3.3-70b",
-      "object": "model",
-      "created": 1717194000,
-      "owned_by": "oma",
-      "permission": [],
-      "root": "llama-3.3-70b",
-      "parent": null,
-      "pricing": { "prompt": "0.00000006", "completion": "0.00000012" },
-      "category": "chat",
-      "context_length": 8192
-    },
-    {
-      "id": "flux-schnell",
-      "object": "model",
-      "created": 1717194000,
-      "owned_by": "oma",
-      "pricing": { "prompt": "0.00001000" },
-      "category": "image"
-    }
-  ]
+ "object": "list",
+ "data": [
+ {
+ "id": "llama-3.3-70b",
+ "object": "model",
+ "created": 1717194000,
+ "owned_by": "oma",
+ "permission": [],
+ "root": "llama-3.3-70b",
+ "parent": null,
+ "pricing": { "prompt": "0.00000006", "completion": "0.00000012" },
+ "category": "chat",
+ "context_length": 8192
+ },
+ {
+ "id": "flux-schnell",
+ "object": "model",
+ "created": 1717194000,
+ "owned_by": "oma",
+ "pricing": { "prompt": "0.00001000" },
+ "category": "image"
+ }
+ ]
 }`,
 	},
 	{
@@ -210,16 +210,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Returns pricing, capabilities, and provider metadata for a single model. No auth required.",
 		auth: "None",
 		response: `{			"id": "llama-3.3-70b",
-  "object": "model",
-  "created": 1717194000,
-  "owned_by": "venice",
-  "display_name": "Llama 3.3 70B",
-  "provider": "venice",
-  "category": "mid",
-  "context_length": 128000,
-  "supports_streaming": true,
-  "supports_tools": true,
-  "pricing": { "prompt": 0.7, "completion": 2.8 }
+ "object": "model",
+ "created": 1717194000,
+ "owned_by": "venice",
+ "display_name": "Llama 3.3 70B",
+ "provider": "venice",
+ "category": "mid",
+ "context_length": 128000,
+ "supports_streaming": true,
+ "supports_tools": true,
+ "pricing": { "prompt": 0.7, "completion": 2.8 }
 }`,
 	},
 	{
@@ -236,13 +236,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 			size: 'string (optional), e.g. "1024x1024"',
 		},
 		response: `{
-  "created": 1717194000,
-  "data": [
-    {
-      "url": "https://files.oma-ai.com/img_4f3k2a.png",
-      "revised_prompt": "A cat wearing a small felt hat, soft window light, 35mm"
-    }
-  ]
+ "created": 1717194000,
+ "data": [
+ {
+ "url": "https://files.oma-ai.com/img_4f3k2a.png",
+ "revised_prompt": "A cat wearing a small felt hat, soft window light, 35mm"
+ }
+ ]
 }`,
 	},
 	{
@@ -261,10 +261,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 			image_url: "string URL (optional). Source image for image-to-video",
 		},
 		response: `{
-  "id": "vid_abc123",
-  "object": "video",
-  "status": "processing",
-  "queue_id": "abc123"
+ "id": "vid_abc123",
+ "object": "video",
+ "status": "processing",
+ "queue_id": "abc123"
 }`,
 	},
 	{
@@ -277,10 +277,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 		body: undefined,
 		response: `// 200 OK
 // {
-//   "id": "vid_abc123",
-//   "object": "video",
-//   "status": "completed",     // "processing" | "completed"
-//   "video_url": "https://files.oma-ai.com/vid_abc123.mp4"
+// "id": "vid_abc123",
+// "object": "video",
+// "status": "completed", // "processing" | "completed"
+// "video_url": "https://files.oma-ai.com/vid_abc123.mp4"
 // }`,
 	},
 	{
@@ -292,8 +292,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Session cookie (set by magic-link or SIWE sign-in)",
 		body: undefined,
 		response: `{
-  "user": { "id": "usr_…", "email": "…" },
-  "session": { "expiresAt": "…" }
+ "user": { "id": "usr_…", "email": "…" },
+ "session": { "expiresAt": "…" }
 }`,
 	},
 	{
@@ -310,7 +310,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 			chainId: "number (required). 8453 for Base mainnet",
 		},
 		response: `{
-  "user": { "id": "usr_…", "walletAddress": "0x…" }
+ "user": { "id": "usr_…", "walletAddress": "0x…" }
 }`,
 	},
 	{
@@ -332,9 +332,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
-  "balanceCents": "1234.50",
-  "totalDepositedCents": "10000.00",
-  "totalUsedCents": "8765.50"
+ "balanceCents": "1234.50",
+ "totalDepositedCents": "10000.00",
+ "totalUsedCents": "8765.50"
 }`,
 	},
 	{
@@ -346,13 +346,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
-  "depositAddress": "0x8335…",
-  "network": "base",
-  "chainId": 8453,
-  "usdcContract": "0x833589…",
-  "memo": "oma-abc12345",
-  "minDepositCents": 100,
-  "maxDepositCents": 1000000
+ "depositAddress": "0x8335…",
+ "network": "base",
+ "chainId": 8453,
+ "usdcContract": "0x833589…",
+ "memo": "oma-abc12345",
+ "minDepositCents": 100,
+ "maxDepositCents": 1000000
 }`,
 	},
 	{
@@ -377,10 +377,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) — anonymous allowed",
 		body: undefined,
 		response: `{
-  "used": 12,
-  "limit": 20,
-  "remaining": 8,
-  "resetMs": 12345678
+ "used": 12,
+ "limit": 20,
+ "remaining": 8,
+ "resetMs": 12345678
 }`,
 	},
 	{
@@ -398,10 +398,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 			{ name: "cursor", type: "string", desc: "Opaque pagination cursor" },
 		],
 		response: `{
-  "object": "list",
-  "data": [{ "id": "…", "model": "…", "totalCents": "…" }],
-  "next_cursor": "2026-08-03T…|…",
-  "totals": { "requests": 42, "totalCents": "12.34" }
+ "object": "list",
+ "data": [{ "id": "…", "model": "…", "totalCents": "…" }],
+ "next_cursor": "2026-08-03T…|…",
+ "totals": { "requests": 42, "totalCents": "12.34" }
 }`,
 	},
 	{
@@ -490,7 +490,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 					setTimeout(() => setCopied(false), 2000);
 				});
 			}}
-			className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-md border bg-surface/95 px-2.5 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider backdrop-blur-sm transition-all hover:border-accent/60 hover:text-accent active:scale-95 ${
+			className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border bg-surface/95 px-2.5 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider backdrop-blur-sm transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/60 hover:text-accent active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 				copied
 					? "border-success/60 text-success"
 					: "border-border text-text-secondary"
@@ -524,7 +524,7 @@ export function CodeBlock({
 }) {
 	const id = useId();
 	return (
-		<div className="group relative max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-panel">
+		<div className="group relative max-w-full min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)]">
 			{title && (
 				<div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
 					<span className="text-xs font-medium text-text-muted font-mono">
@@ -551,14 +551,14 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 	const [active, setActive] = useState(0);
 	const id = useId();
 	return (
-		<div className="max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-panel">
+		<div className="max-w-full min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)]">
 			<div className="flex max-w-full overflow-x-auto border-b border-border/50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				{tabs.map((t, i) => (
 					<button
 						type="button"
 						key={t.label}
 						onClick={() => setActive(i)}
-						className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-all border-b-2 ${
+						className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-[color,border-color,background-color,transform] duration-200 ease-out border-b-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
 							i === active
 								? "text-accent border-accent"
 								: "text-text-muted border-transparent hover:text-text-secondary"
@@ -601,7 +601,7 @@ export function SectionHeading({
 }) {
 	return (
 		<div id={id} className="mb-6 flex items-start gap-4 scroll-mt-24">
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20">
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-xl)] bg-accent/10 text-accent border border-accent/20">
 				{icon}
 			</div>
 			<div>
@@ -624,7 +624,7 @@ export function AnimatedSection({
 	return (
 		<div
 			ref={ref}
-			className={`transition-all duration-500 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+			className={`transition-[opacity,transform] duration-200 ease-out ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
 			style={{ transitionDelay: `${delay}ms` }}
 		>
 			{children}

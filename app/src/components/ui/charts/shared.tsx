@@ -2,15 +2,15 @@
  * Shared utilities for the OMA-AI chart components.
  *
  * - **Color tokens**: chart colors are referenced via `var(--color-*)` so
- *   they follow theme changes from `app/src/app/globals.css`. recharts
- *   forwards these strings straight into the rendered SVG and the browser
- *   resolves them at draw time.
+ * they follow theme changes from `app/src/app/globals.css`. recharts
+ * forwards these strings straight into the rendered SVG and the browser
+ * resolves them at draw time.
  * - **Formatters**: currency, compact number, and adaptive date formatters
- *   used by every chart axis and tooltip.
+ * used by every chart axis and tooltip.
  * - **Empty/Loading states**: small composable pieces that any chart can
- *   slot in to handle the "no data" and "loading" cases consistently.
+ * slot in to handle the "no data" and "loading" cases consistently.
  * - **Accessibility**: each chart sets `role="img"` + `aria-label` on the
- *   recharts root so screen readers get a one-line description.
+ * recharts root so screen readers get a one-line description.
  */
 
 import { Inbox } from "lucide-react";
@@ -108,12 +108,12 @@ export function ChartEmptyState({
 }: ChartEmptyStateProps) {
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center">
-			<Inbox className="h-7 w-7 text-text-muted" aria-hidden="true" />
-			<p className="font-mono text-xs uppercase tracking-widest text-text-muted">
+			<Inbox className="h-7 w-7 text-[var(--color-text-muted)]" aria-hidden="true" />
+			<p className="font-mono text-xs uppercase tracking-widest text-[var(--color-text-muted)]">
 				{title}
 			</p>
 			{description && (
-				<p className="max-w-[28ch] text-[10px] font-mono leading-relaxed text-text-tertiary">
+				<p className="max-w-[28ch] text-[10px] font-mono leading-relaxed text-[var(--color-text-tertiary)]">
 					{description}
 				</p>
 			)}

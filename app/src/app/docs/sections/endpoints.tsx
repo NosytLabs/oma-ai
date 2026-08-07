@@ -25,16 +25,16 @@ export function EndpointsSection() {
 					<div
 						key={ep.path}
 						id={ep.anchor}
-						className="rounded-xl border border-border bg-surface/50 overflow-hidden scroll-mt-24"
+						className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] overflow-hidden scroll-mt-24"
 					>
 						<button
 							type="button"
 							onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
-							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-surface/80"
+							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors duration-200 ease-out hover:bg-surface/80"
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-3">
 								<span
-									className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-xs font-bold uppercase ${
+									className={`shrink-0 rounded-[var(--radius-md)] px-2.5 py-1 font-mono text-xs font-bold uppercase ${
 										ep.method === "GET"
 											? "bg-info/10 text-info"
 											: "bg-accent/10 text-accent"
@@ -62,7 +62,7 @@ export function EndpointsSection() {
 									</span>
 								)}
 								<ChevronRight
-									className={`h-4 w-4 text-text-muted transition-transform ${expanded === ep.path ? "rotate-90" : ""}`}
+									className={`h-4 w-4 text-text-muted transition-transform duration-200 ease-out ${expanded === ep.path ? "rotate-90" : ""}`}
 								/>
 							</div>
 						</button>
@@ -76,7 +76,7 @@ export function EndpointsSection() {
 										<h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
 											Request Body
 										</h3>
-										<div className="rounded-lg border border-border/50 bg-panel p-4 space-y-2">
+										<div className="rounded-[var(--radius-lg)] border border-border/50 bg-panel p-4 space-y-2">
 											{Object.entries(ep.body).map(([key, val]) => (
 												<div key={key} className="flex gap-3 font-mono text-sm">
 													<span className="text-accent shrink-0">{key}</span>

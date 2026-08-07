@@ -21,11 +21,11 @@ export function FAQSection() {
 			<div className="mt-6 grid gap-4 sm:grid-cols-2">
 				<Link
 					href="/faq"
-					className="group flex items-start gap-3 rounded-xl border border-border bg-panel p-5 transition-colors hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					className="group flex items-start gap-3 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 transition-transform duration-200 ease-out hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
 				>
 					<MessageCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
 					<div className="min-w-0">
-						<p className="text-sm font-semibold text-text-bright group-hover:text-accent transition-colors">
+						<p className="text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
 							FAQ
 						</p>
 						<p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
@@ -40,11 +40,11 @@ export function FAQSection() {
 				</Link>
 				<Link
 					href="/glossary"
-					className="group flex items-start gap-3 rounded-xl border border-border bg-panel p-5 transition-colors hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					className="group flex items-start gap-3 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 transition-transform duration-200 ease-out hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
 				>
 					<BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
 					<div className="min-w-0">
-						<p className="text-sm font-semibold text-text-bright group-hover:text-accent transition-colors">
+						<p className="text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
 							Glossary
 						</p>
 						<p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">

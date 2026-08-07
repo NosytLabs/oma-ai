@@ -43,14 +43,14 @@ interface PlanCard {
 
 import { CREDIT_PLANS, perCreditPrice } from "@/lib/credit-utils";
 const PLANS: PlanCard[] = CREDIT_PLANS.map((plan, idx) => ({
-  plan: (["hobby","builder","scale"] as const)[idx],
-  name: plan.tag,
-  credits: plan.credits,
-  price: `$${plan.usd}`,
-  priceCents: plan.usd * 100,
-  perCredit: perCreditPrice(),
-  tagline: ["Side projects & exploration", "Production apps & agents", "High-volume workloads"][idx],
-  highlight: idx === 1
+ plan: (["hobby","builder","scale"] as const)[idx],
+ name: plan.tag,
+ credits: plan.credits,
+ price: `$${plan.usd}`,
+ priceCents: plan.usd * 100,
+ perCredit: perCreditPrice(),
+ tagline: ["Side projects & exploration", "Production apps & agents", "High-volume workloads"][idx],
+ highlight: idx === 1
 }));
 
 import Image from 'next/image';
@@ -104,9 +104,9 @@ export function FiatCheckoutPanel() {
 
 	return (
 		<div className="space-y-5">
-			<div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
+			<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-4">
 				<div className="flex items-start gap-3">
-					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent/10 text-accent">
 						<CreditCard className="h-4 w-4" aria-hidden="true" />
 					</div>
 					<div className="min-w-0">
@@ -131,7 +131,7 @@ export function FiatCheckoutPanel() {
 					return (
 						<label
 							key={p.plan}
-							className={`group relative flex cursor-pointer flex-col rounded-lg border p-4 transition-all ${
+							className={`group relative flex cursor-pointer flex-col rounded-[var(--radius-lg)] border p-4 transition-[border-color,background-color,transform,box-shadow] ${
 								isActive
 									? "border-accent bg-accent/5 shadow-[0_0_0_1px_var(--color-accent)]"
 									: "border-border bg-panel hover:border-accent/40"
@@ -186,7 +186,7 @@ export function FiatCheckoutPanel() {
 						initial={{ opacity: 0, y: -4 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -4 }}
-						className="rounded border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning"
+						className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning"
 					>
 						{error}
 					</m.div>
@@ -196,7 +196,7 @@ export function FiatCheckoutPanel() {
 			{!isAuthenticated || isDemo ? (
 				<a
 					href="/login?next=/deposit"
-					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright"
 				>
 					Sign in to buy credits
 					<ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -206,7 +206,7 @@ export function FiatCheckoutPanel() {
 					type="button"
 					onClick={handleCheckout}
 					disabled={loading}
-					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright disabled:opacity-60"
+					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright disabled:opacity-60 active:scale-[0.97]"
 				>
 					{loading ? (
 						<>

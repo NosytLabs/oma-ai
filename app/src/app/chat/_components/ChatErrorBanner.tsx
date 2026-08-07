@@ -5,11 +5,11 @@
  *
  * Classifies errors by keyword matching (cheap, no extra fetch) and
  * provides actionable recovery steps:
- *   - Auth → "Connect Wallet" CTA (preserves ?next= redirect)
- *   - Network → Retry button + diagnostic hints
- *   - Rate limit → Wait time estimation + retry
- *   - Model → Suggest switching models
- *   - Credits → Link to deposit page
+ * - Auth → "Connect Wallet" CTA (preserves ?next= redirect)
+ * - Network → Retry button + diagnostic hints
+ * - Rate limit → Wait time estimation + retry
+ * - Model → Suggest switching models
+ * - Credits → Link to deposit page
  *
  * Mobile-first: wraps gracefully, touch-friendly dismiss.
  */
@@ -275,7 +275,7 @@ export function ChatErrorBanner({
 
 	return (
 		<div
-			className={`mb-3 flex items-start justify-between gap-3 px-3 py-2.5 ${styles.bg} border ${styles.border} text-[11px] ${styles.text} uppercase tracking-wider`}
+			className={`mb-3 flex items-start justify-between gap-3 px-3 py-2.5 rounded-[var(--radius-md)] ${styles.bg} border ${styles.border} text-[11px] ${styles.text} uppercase tracking-wider`}
 			role="alert"
 		>
 			<div className="flex items-start gap-2 flex-1 min-w-0">
@@ -285,7 +285,7 @@ export function ChatErrorBanner({
 					{/* Error type badge */}
 					<div className="flex items-center gap-2 mb-1">
 						<span
-							className={`px-1.5 py-0.5 text-[9px] font-bold ${styles.badge}`}
+							className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${styles.badge}`}
 						>
 							{classification.label}
 						</span>
@@ -309,10 +309,10 @@ export function ChatErrorBanner({
 								href={loginHref}
 								prefetch={false}
 								className="
-                  inline-flex items-center gap-1 px-3 py-1.5
-                  bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-accent-hover transition-colors min-h-[32px]
-                "
+ inline-flex items-center gap-1 px-3 py-1.5
+ bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
+ hover:bg-accent-hover transition-colors duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ "
 							>
 								Sign In
 								<ArrowRight className="w-3 h-3" />
@@ -320,17 +320,17 @@ export function ChatErrorBanner({
 						)}
 
 						{/* API key CTA — a 401 also fires for signed-in users who
-						    haven't created an API key yet (chat auths with the
-						    oma_api_key cookie, not the session JWT). */}
+						 haven't created an API key yet (chat auths with the
+						 oma_api_key cookie, not the session JWT). */}
 						{classification.type === "auth" && (
 							<Link
 								href="/dashboard?tab=api-keys"
 								prefetch={false}
 								className="
-                inline-flex items-center gap-1 px-3 py-1.5
-                border border-current text-[10px] font-bold uppercase tracking-wider
-                hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
-              "
+ inline-flex items-center gap-1 px-3 py-1.5
+ border border-current text-[10px] font-bold uppercase tracking-wider
+ hover:bg-surface-elevated/50 transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ "
 							>
 								Create API Key
 								<ArrowRight className="w-3 h-3" />
@@ -344,10 +344,10 @@ export function ChatErrorBanner({
 									href={classification.action.href}
 									prefetch={false}
 									className="
-                  inline-flex items-center gap-1 px-3 py-1.5
-                  bg-warning text-void text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-warning/90 transition-colors min-h-[32px]
-                "
+ inline-flex items-center gap-1 px-3 py-1.5
+ bg-warning text-void text-[10px] font-bold uppercase tracking-wider
+ hover:bg-warning/90 transition-colors duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ "
 								>
 									Top Up Credits
 									<ArrowRight className="w-3 h-3" />
@@ -362,10 +362,10 @@ export function ChatErrorBanner({
 										href={loginHref}
 										prefetch={false}
 										className="
-                  inline-flex items-center gap-1 px-3 py-1.5
-                  bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-accent-hover transition-colors min-h-[32px]
-                "
+ inline-flex items-center gap-1 px-3 py-1.5
+ bg-accent text-text-inverse text-[10px] font-bold uppercase tracking-wider
+ hover:bg-accent-hover transition-colors duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ "
 									>
 										{classification.action.label || "Sign in"}
 										<ArrowRight className="w-3 h-3" />
@@ -374,10 +374,10 @@ export function ChatErrorBanner({
 										href="/deposit"
 										prefetch={false}
 										className="
-                  inline-flex items-center gap-1 px-3 py-1.5
-                  border border-current text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
-                "
+ inline-flex items-center gap-1 px-3 py-1.5
+ border border-current text-[10px] font-bold uppercase tracking-wider
+ hover:bg-surface-elevated/50 transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ "
 									>
 										Buy credits
 										<ArrowRight className="w-3 h-3" />
@@ -403,11 +403,11 @@ export function ChatErrorBanner({
 											countdown > 0)
 									}
 									className="
-                  inline-flex items-center gap-1 px-3 py-1.5
-                  border border-current text-[10px] font-bold uppercase tracking-wider
-                  hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out min-h-[32px]
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                "
+ inline-flex items-center gap-1 px-3 py-1.5
+ border border-current text-[10px] font-bold uppercase tracking-wider
+ hover:bg-surface-elevated/50 transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
+ disabled:opacity-40 disabled:cursor-not-allowed
+ "
 								>
 									<RefreshCw
 										className={`w-3 h-3 ${retrying ? "animate-spin" : ""}`}
@@ -435,11 +435,11 @@ export function ChatErrorBanner({
 				onClick={onDismiss}
 				aria-label="Dismiss error"
 				className="
-          p-2 hover:bg-surface-elevated/50 transition-[background-color] duration-150 ease-out shrink-0
-          min-h-[44px] min-w-[44px] flex items-center justify-center
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-          focus-visible:ring-offset-2 focus-visible:ring-offset-void
-        "
+ p-2 hover:bg-surface-elevated/50 transition-[background-color] duration-200 ease-out shrink-0
+ min-h-[44px] min-w-[44px] flex items-center justify-center
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+ focus-visible:ring-offset-2 focus-visible:ring-offset-void
+  active:scale-[0.97]"
 			>
 				<X className="w-3 h-3" />
 			</button>

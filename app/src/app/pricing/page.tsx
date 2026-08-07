@@ -39,24 +39,24 @@ const CATEGORIES: { key: Category; label: string }[] = [
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 	{
 		all: {
-			active: "bg-accent text-void",
-			inactive: "bg-surface text-text-secondary border border-border",
+			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
+			inactive: "bg-[var(--color-surface)] text-text-secondary border border-[var(--color-border)]",
 		},
 		frontier: {
-			active: "bg-accent text-text-inverse",
-			inactive: "bg-surface text-accent border border-accent/30",
+			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
+			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
 		},
 		premium: {
-			active: "bg-accent text-text-inverse",
-			inactive: "bg-surface text-accent border border-accent/30",
+			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
+			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
 		},
 		mid: {
-			active: "bg-accent text-void",
-			inactive: "bg-surface text-accent border border-accent/30",
+			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
+			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
 		},
 		budget: {
-			active: "bg-success text-text-inverse",
-			inactive: "bg-surface text-success border border-success/30",
+			active: "bg-[var(--color-success)] text-[var(--color-void-deep)] border border-[var(--color-success)]",
+			inactive: "bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] text-[var(--color-success)] border border-[var(--color-success)]/30",
 		},
 	};
 
@@ -152,13 +152,13 @@ function AccordionItem({
 				type="button"
 				id={buttonId}
 				onClick={onToggle}
-				className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-text-bright focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+				className="flex w-full items-center justify-between py-5 text-left transition-colors duration-200 ease-out hover:text-text-bright focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 active:scale-[0.97]"
 				aria-expanded={isOpen}
 				aria-controls={panelId}
 			>
 				<span className="font-medium text-text">{item.q}</span>
 				<span
-					className="shrink-0 transition-transform duration-200"
+					className="shrink-0 transition-transform duration-200 ease-spring"
 					style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
 				>
 					<ChevronDown className="h-5 w-5 text-text-muted" />
@@ -168,13 +168,13 @@ function AccordionItem({
 				id={panelId}
 				role="region"
 				aria-labelledby={buttonId}
-				className="overflow-hidden transition-all duration-300"
+				className="overflow-hidden transition-[height,opacity] duration-200 ease-spring-soft"
 				style={{
 					maxHeight: isOpen ? "500px" : "0px",
 					opacity: isOpen ? 1 : 0,
 				}}
 			>
-				<p className="pb-5 text-sm text-text-secondary">{item.a}</p>
+				<p className="pb-5 text-sm text-text-secondary leading-relaxed">{item.a}</p>
 			</div>
 		</div>
 	);
@@ -304,45 +304,45 @@ export default function PricingPage() {
 
 				<InViewFade>
 					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
-					<div className="surface-card p-5">
-						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
-							Starts at
-						</p>
-						<p className="mt-3 text-3xl font-semibold text-text-bright">
-							{lowestInputPrice}
-						</p>
-					<p className="mt-2 text-sm leading-relaxed text-text">
-						Lowest displayed price tier per 1M input tokens across the current
-						catalog.
-					</p>
+						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+								Starts at
+							</p>
+							<p className="mt-3 text-3xl font-semibold text-text-bright">
+								{lowestInputPrice}
+							</p>
+							<p className="mt-2 text-sm leading-relaxed text-text">
+								Lowest displayed price tier per 1M input tokens across the current
+								catalog.
+							</p>
+						</div>
+						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+								Pay your way
+							</p>
+							<p className="mt-3 text-3xl font-semibold text-text-bright">Card or USDC</p>
+							<p className="mt-2 text-sm leading-relaxed text-text">
+								Buy credits with Visa or Mastercard via Polar, or top up with USDC on
+								Base.
+							</p>
+							<p className="mt-3 text-xs leading-relaxed text-text-muted">
+								x402 pay-per-request also supported for agents —{""}
+								<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out">
+									see below →
+								</Link>
+							</p>
+						</div>
+						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+								No contract
+							</p>
+							<p className="mt-3 text-3xl font-semibold text-text-bright">No minimums</p>
+							<p className="mt-2 text-sm leading-relaxed text-text">
+								Ship one request or one million. Credits deduct in real time with a
+								clear ledger.
+							</p>
+						</div>
 					</div>
-				<div className="surface-card p-5">
-					<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
-						Pay your way
-					</p>
-					<p className="mt-3 text-3xl font-semibold text-text-bright">Card or USDC</p>
-					<p className="mt-2 text-sm leading-relaxed text-text">
-						Buy credits with Visa or Mastercard via Polar, or top up with USDC on
-						Base.
-					</p>
-					<p className="mt-3 text-xs leading-relaxed text-text-muted">
-						x402 pay-per-request also supported for agents —{" "}
-						<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors">
-							see below →
-						</Link>
-					</p>
-				</div>
-					<div className="surface-card p-5">
-						<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
-							No contract
-						</p>
-						<p className="mt-3 text-3xl font-semibold text-text-bright">No minimums</p>
-					<p className="mt-2 text-sm leading-relaxed text-text">
-						Ship one request or one million. Credits deduct in real time with a
-						clear ledger.
-					</p>
-					</div>
-				</div>
 				</InViewFade>
 
 				<InViewFade delay={0.1}>
@@ -350,7 +350,7 @@ export default function PricingPage() {
 						<div className="mb-5 flex items-end justify-between gap-4">
 						<div>
 							<p className="page-kicker">Model Costs</p>
-							<h2 className="mt-3 text-2xl font-semibold text-text-bright">
+							<h2 className="h2-page text-text-bright mt-3">
 								Compare prices before you deposit.
 							</h2>
 						</div>
@@ -359,8 +359,8 @@ export default function PricingPage() {
 							latency and context needs.
 						</p>
 					</div>
-					<div className="rounded-xl border border-border bg-surface overflow-hidden">
-						<div className="border-b border-border px-4 py-4 sm:px-6">
+					<div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden shadow-[var(--shadow-md)]">
+						<div className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
 							<div className="flex flex-wrap gap-2 mb-4">
 								{CATEGORIES.map((cat) => {
 									const active = category === cat.key;
@@ -369,7 +369,7 @@ export default function PricingPage() {
 											type="button"
 											key={cat.key}
 											onClick={() => setCategory(cat.key)}
-											className={`relative px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-colors duration-150 ${
+											className={`relative px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
 												active
 													? CATEGORY_STYLES[cat.key].active
 													: CATEGORY_STYLES[cat.key].inactive
@@ -388,7 +388,7 @@ export default function PricingPage() {
 						{/* Horizontal scroll wrapper with gradient hint */}
 						<div className="relative">
 							{/* Right gradient hint for scrollable content */}
-							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
+							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent pointer-events-none z-10 hidden sm:block" />
 
 							<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
 								<table
@@ -396,7 +396,7 @@ export default function PricingPage() {
 									aria-label="Model pricing by tier"
 								>
 									<thead>
-										<tr className="border-b border-border bg-surface-elevated">
+										<tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
 											<th
 												scope="col"
 												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted"
@@ -437,7 +437,7 @@ export default function PricingPage() {
 												style={{
 													animation: `fadeInUp 0.3s ease-out ${i * 0.035}s both`,
 												}}
-												className={`border-b border-border/50 transition-colors hover:bg-surface-elevated/50 ${i % 2 === 1 ? "bg-surface-elevated/30" : ""}`}
+												className={`border-b border-[var(--color-border)]/50 transition-colors duration-200 ease-out hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? "bg-[var(--color-surface-elevated)]/30" : ""}`}
 											>
 											<td className="px-4 py-3">
 												<div className="flex items-center gap-2">
@@ -452,20 +452,20 @@ export default function PricingPage() {
 												</td>
 												<td className="px-4 py-3">
 													<span
-														className={`inline-flex items-center rounded px-2 py-1 text-xs font-mono font-medium ${
+														className={`inline-flex items-center rounded-[var(--radius-sm)] px-2 py-1 text-xs font-mono font-medium ${
 															mm.provider === "Venice"
-																? "bg-accent/20 text-accent"
+																? "bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] text-[var(--color-accent)]"
 																: mm.provider === "Gonka"
-																	? "bg-emerald-500/20 text-emerald-400"
+																	? "bg-[color-mix(in_srgb,var(--color-provider-gonka)_20%,transparent)] text-[var(--color-provider-gonka)]"
 																	: mm.provider === "OMA-AI"
-																		? "bg-accent/10 text-accent"
-																		: "bg-secondary/20 text-secondary"
+																		? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
+																		: "bg-[color-mix(in_srgb,var(--color-secondary)_20%,transparent)] text-[var(--color-secondary)]"
 														}`}
 													>
 														{mm.provider}
 													</span>
 												</td>
-												<td className="px-4 py-3 text-right font-mono text-sm font-medium text-accent">
+												<td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-accent)]">
 													{fmtPrice(mm.inputPer1M)}
 												</td>
 												<td className="px-4 py-3 text-right font-mono text-sm font-medium text-text-secondary">
@@ -485,7 +485,7 @@ export default function PricingPage() {
 								<span className="font-mono">Swipe to scroll &rarr;</span>
 							</div>
 						</div>
-						<div className="px-4 py-3 border-t border-border bg-surface-elevated/50">
+						<div className="px-4 py-3 border-t border-[var(--color-border)] bg-[var(--color-surface-elevated)]/50">
 							<p className="text-xs text-text-muted">
 								Prices shown are base provider rates. OMA applies a 25% platform
 								fee at billing for Venice models. Gonka-routed models (MiniMax M2.7,
@@ -516,31 +516,31 @@ export default function PricingPage() {
 							return (
 								<article
 									key={tier.name}
-									className={`relative flex h-full flex-col rounded-xl border p-5 transition-colors duration-200 ${recommended ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-accent/40"}`}
+									className={`relative flex h-full flex-col rounded-[var(--radius-xl)] border p-6 transition-[transform,border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-1 ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
 								>
 									{tier.badge && (
-										<span className="absolute -top-2.5 right-4 rounded-full bg-accent px-2.5 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void">
+										<span className="absolute -top-3 right-6 rounded-full bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
 											{tier.badge}
 										</span>
 									)}
 									<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
 										{tier.name}
 									</p>
-									<p className="mt-4 font-mono text-4xl font-semibold tracking-tight text-text-bright">
+									<p className="mt-5 font-mono text-4xl font-semibold tracking-tight text-text-bright">
 										{tier.price}
 									</p>
-									<p className="mt-2 font-mono text-sm text-accent">{tier.credits}</p>
-									<p className="mt-4 min-h-12 text-sm leading-relaxed text-text-secondary">
+									<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
+									<p className="mt-5 min-h-12 text-sm leading-relaxed text-text-secondary">
 										{tier.description}
 									</p>
 									<Link
 										href="/deposit?method=card"
-										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 text-sm transition-transform active:scale-[0.97]`}
+										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-8 inline-flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium`}
 									>
 										<CreditCard className="h-4 w-4" aria-hidden="true" />
 										Buy with card
 									</Link>
-									<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
+									<p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
 										Powered by Polar
 									</p>
 								</article>
@@ -560,7 +560,7 @@ export default function PricingPage() {
 							</span>
 							<div className="h-px flex-1 bg-border" />
 						</div>
-						<div className="surface-card p-4 sm:p-6">
+						<div className="surface-card p-4 sm:p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
 							<p className="mb-4 text-sm text-text-secondary">
 								Generation models bill per output (image or video), not per
 								token. Pricing shown is the customer-facing rate — wholesale
@@ -591,7 +591,7 @@ export default function PricingPage() {
 											{generationModels.map((m) => (
 												<tr
 													key={m.id}
-													className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors"
+													className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors duration-200 ease-out"
 												>
 													<td className="px-4 py-3 font-medium text-text-bright">
 														{m.name}
@@ -639,24 +639,24 @@ export default function PricingPage() {
 							const Icon = method.icon;
 							return (
 								<div key={method.title} className="relative group">
-									<div className="absolute inset-0 bg-accent-dim rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-									<div className="relative p-5 rounded-xl border border-border hover:border-accent/40 transition-colors duration-150">
-										<div className="flex items-start gap-3">
-											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated">
+									<div className="absolute inset-0 bg-accent/5 rounded-[var(--radius-xl)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+									<div className="relative p-6 rounded-[var(--radius-xl)] border border-border bg-surface hover:border-accent/30 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-[transform,border-color,box-shadow] duration-200 ease-out">
+										<div className="flex items-start gap-4">
+											<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
 												<Icon className="h-5 w-5 text-accent" />
 											</div>
 											<div className="flex-1 min-w-0">
 												<h3 className="text-sm font-semibold text-text-bright truncate">
 													{method.title}
 												</h3>
-												<p className="mt-1 text-xs text-text-secondary leading-relaxed">
+												<p className="mt-2 text-xs text-text-secondary leading-relaxed">
 													{method.desc}
 												</p>
 											</div>
 										</div>
 										{method.tag && (
 											<div
-												className={`mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border ${method.tagStyle}`}
+												className={`mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}
 											>
 												{method.tag}
 											</div>
@@ -670,15 +670,17 @@ export default function PricingPage() {
 				</InViewFade>
 
 				<div id="x402" className="mb-12 scroll-mt-20">
-					<div className="relative p-5 rounded-xl bg-accent-dim border border-accent/30">
-						<div className="flex items-start gap-3">
-							<Link2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+					<div className="relative p-6 rounded-[var(--radius-xl)] bg-accent/5 border border-accent/20 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 ease-out">
+						<div className="flex items-start gap-4">
+							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+								<Link2 className="h-5 w-5 text-accent" />
+							</div>
 							<div>
-								<div className="flex items-center gap-2">
-									<h3 className="text-sm font-semibold text-accent">
+								<div className="flex items-center gap-3">
+									<h3 className="text-base font-semibold text-accent">
 										x402 Protocol
 									</h3>
-									<span className="inline-flex items-center rounded-full bg-accent text-void px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">
+									<span className="inline-flex items-center rounded-full bg-accent text-void px-2.5 py-0.5 text-[10px] font-mono font-medium uppercase tracking-widest shadow-sm">
 										recommended for agents
 									</span>
 								</div>
@@ -687,10 +689,10 @@ export default function PricingPage() {
 									call, without maintaining prepaid credits.
 									<Link
 										href="/docs#x402"
-										className="ml-1 font-medium text-accent hover:text-accent-hover transition-colors"
+										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"
 										aria-label="Learn more about the x402 payment protocol"
 									>
-										Learn more about x402 →
+										Learn more about x402 <ArrowRight className="ml-1 h-3 w-3" />
 									</Link>
 								</p>
 							</div>
@@ -707,7 +709,7 @@ export default function PricingPage() {
 							FAQ
 						</h3>
 					</div>
-					<div className="rounded-xl border border-border bg-surface p-6">
+					<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
 						{FAQ_ITEMS.map((item, i) => (
 							<AccordionItem
 								key={i}
@@ -752,7 +754,7 @@ export default function PricingPage() {
 						</div>
 						<Link
 							href="/models"
-							className="font-mono text-xs text-text-muted transition-colors hover:text-accent"
+							className="font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent"
 						>
 							View all models →
 						</Link>
@@ -760,8 +762,8 @@ export default function PricingPage() {
 				</div>
 
 				{/* ── Billing Notes ── */}
-				<div className="p-4 rounded-xl border border-amber/20 bg-amber/5">
-					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-3">
+				<div className="p-5 rounded-[var(--radius-xl)] border border-amber/20 bg-amber/5 shadow-sm">
+					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-4">
 						Billing
 					</h3>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">

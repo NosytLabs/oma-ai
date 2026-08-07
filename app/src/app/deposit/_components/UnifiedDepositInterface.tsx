@@ -3,12 +3,12 @@
 /**
  * USDC deposit interface — manual flow.
  *
- *   1. GET /v1/deposit/usdc returns the deposit address, USDC contract,
- *      network, and min/max bounds.
- *   2. User copies the address, sends USDC on Base from any wallet,
- *      and pastes the tx hash + amount below.
- *   3. POST /v1/deposit/usdc records a `pending` deposit. A background
- *      watcher credits the balance after on-chain confirmation.
+ * 1. GET /v1/deposit/usdc returns the deposit address, USDC contract,
+ * network, and min/max bounds.
+ * 2. User copies the address, sends USDC on Base from any wallet,
+ * and pastes the tx hash + amount below.
+ * 3. POST /v1/deposit/usdc records a `pending` deposit. A background
+ * watcher credits the balance after on-chain confirmation.
  *
  * No wagmi / viem / SIWE — keeps the surface tiny and works for any
  * wallet (MetaMask, Rabby, Rainbow, Coinbase, even an exchange
@@ -189,7 +189,7 @@ export function UnifiedDepositInterface({
 
 	if (!isAuthenticated || isDemo) {
 		return (
-			<div className="rounded-lg border border-border-bright bg-panel p-6 text-center">
+			<div className="rounded-[var(--radius-lg)] border border-border-bright bg-panel p-6 text-center">
 				<ShieldCheck className="mx-auto h-8 w-8 text-accent" />
 				<h2 className="mt-3 text-base font-semibold text-text-bright">
 					Sign in to deposit
@@ -199,7 +199,7 @@ export function UnifiedDepositInterface({
 				</p>
 				<a
 					href="/login?next=/deposit"
-					className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+					className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright"
 				>
 					Sign in →
 				</a>
@@ -264,7 +264,7 @@ export function UnifiedDepositInterface({
 			<AnimatePresence mode="wait">
 				<m.div
 					key={step}
-					className="rounded-lg border border-border-bright bg-panel p-6"
+					className="rounded-[var(--radius-lg)] border border-border-bright bg-panel p-6"
 					initial={{ opacity: 0, y: 8 }}
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -8 }}
@@ -278,19 +278,19 @@ export function UnifiedDepositInterface({
 									instructions…
 								</div>
 							) : !instructions ? (
-								<div className="rounded border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+								<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
 									<AlertTriangle className="mr-2 inline h-4 w-4" />
 									{error ||
 										"Deposit receiver address is not configured. Set USDC_DEPOSIT_ADDRESS in the server env."}
 								</div>
 							) : (
 								<>
-									<div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
+									<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-4">
 										<div className="mb-2 flex items-center justify-between">
 											<h3 className="text-sm font-semibold text-text-bright">
 												Send USDC to this address
 											</h3>
-											<span className="rounded bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+											<span className="rounded-[var(--radius-sm)] bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
 												{instructions.network}
 											</span>
 										</div>
@@ -302,7 +302,7 @@ export function UnifiedDepositInterface({
 													"Deposit address",
 												)
 											}
-											className="group flex w-full items-center justify-between gap-2 rounded border border-border bg-void px-3 py-2 font-mono text-sm text-text-bright transition-colors hover:border-accent/40"
+											className="group flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 font-mono text-sm text-text-bright transition-colors duration-200 ease-out hover:border-accent/40"
 											aria-label="Copy deposit address"
 										>
 											<span className="truncate">
@@ -351,7 +351,7 @@ export function UnifiedDepositInterface({
 										)}
 										<p className="mt-2 text-[11px] text-text-muted">
 											Min ${(instructions.minDepositCents / 100).toFixed(2)} ·
-											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={" "}
+											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={""}
 											{instructions.creditsPerCent * 100} credits
 										</p>
 									</div>
@@ -370,7 +370,7 @@ export function UnifiedDepositInterface({
 											placeholder="25.00"
 											value={amountUsd}
 											onChange={(e) => handleAmountChange(e.target.value)}
-											className="w-full text-xl font-semibold bg-surface border border-border-bright rounded-lg px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+											className="w-full text-xl font-semibold bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
 										/>
 									</div>
 
@@ -387,10 +387,10 @@ export function UnifiedDepositInterface({
 											placeholder="0x…"
 											value={txHash}
 											onChange={(e) => setTxHash(e.target.value.trim())}
-											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-lg px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
 										/>
 										<p className="mt-2 text-[11px] text-text-muted">
-											Find this on{" "}
+											Find this on{""}
 											<a
 												href={`https://basescan.io/address/${instructions.depositAddress}`}
 												target="_blank"
@@ -426,7 +426,7 @@ export function UnifiedDepositInterface({
 													>
 														<div className="flex items-center gap-2 text-text-secondary">
 															<span
-																className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+																className={`inline-flex rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
 																	d.status === "completed"
 																		? "bg-success/10 text-success"
 																		: d.status === "pending"
@@ -483,7 +483,7 @@ export function UnifiedDepositInterface({
 							<button
 								type="button"
 								onClick={handleReset}
-								className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors hover:bg-accent-bright"
+								className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97]"
 							>
 								Deposit again
 							</button>
@@ -500,7 +500,7 @@ export function UnifiedDepositInterface({
 							<button
 								type="button"
 								onClick={handleReset}
-								className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent"
+								className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent active:scale-[0.97]"
 							>
 								Try again
 							</button>

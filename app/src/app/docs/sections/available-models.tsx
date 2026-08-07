@@ -65,7 +65,7 @@ export function AvailableModelsSection() {
 			/>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-semibold text-text">Text Models</span>
@@ -75,7 +75,7 @@ export function AvailableModelsSection() {
 						multiple providers.
 					</p>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">
 					<div className="mb-2 flex items-center gap-2">
 						<Sparkles className="h-4 w-4 text-accent" />
 						<span className="font-semibold text-text">Multimodal</span>
@@ -88,7 +88,7 @@ export function AvailableModelsSection() {
 
 			<div className="space-y-6">
 				{tiers.map((tier) => (
-					<div key={tier.id} id={`models-${tier.id}`} className="rounded-xl border border-border bg-surface/50 overflow-hidden scroll-mt-24">
+					<div key={tier.id} id={`models-${tier.id}`} className="rounded-[var(--radius-xl)] border border-border bg-panel overflow-hidden scroll-mt-24 shadow-[var(--shadow-md)]">
 						<div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
 							<div className="flex items-center gap-3">
 								<span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tier.badge}`}>
@@ -132,7 +132,7 @@ export function AvailableModelsSection() {
 												<td className="py-2">
 													<div className="flex flex-wrap gap-1">
 														{m.capabilities.map((cap) => (
-															<span key={cap} className="rounded bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">
+															<span key={cap} className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">
 																{cap}
 															</span>
 														))}
@@ -148,7 +148,7 @@ export function AvailableModelsSection() {
 				))}
 			</div>
 
-			<div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-4">
+			<div className="mt-6 rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4">
 				<div className="flex items-start gap-3">
 					<Terminal className="h-5 w-5 text-accent mt-0.5" />
 					<div>

@@ -14,6 +14,7 @@ import {
 import { playToastCue } from "@/lib/sound";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/components/ui/utils";
+import { springs } from "@/lib/animation";
 
 type ToastType = "success" | "error" | "info";
 
@@ -138,21 +139,21 @@ function ToastItem({
 	}, [isHovered]);
 
 	const icons = {
-		success: <CheckCircle2 className="h-4.5 w-4.5 text-success shrink-0" />,
-		error: <AlertTriangle className="h-4.5 w-4.5 text-error shrink-0" />,
-		info: <Info className="h-4.5 w-4.5 text-info shrink-0" />,
+		success: <CheckCircle2 className="h-4.5 w-4.5 text-[var(--color-success)] shrink-0" />,
+		error: <AlertTriangle className="h-4.5 w-4.5 text-[var(--color-error)] shrink-0" />,
+		info: <Info className="h-4.5 w-4.5 text-[var(--color-info)] shrink-0" />,
 	};
 
 	const styles = {
-		success: "border-success/20 bg-[color-mix(in_srgb,var(--color-success)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(52,211,153,0.1)]",
-		error: "border-error/20 bg-[color-mix(in_srgb,var(--color-error)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(248,113,113,0.1)]",
-		info: "border-info/20 bg-[color-mix(in_srgb,var(--color-info)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(88,166,255,0.1)]",
+		success: "border-[color-mix(in_srgb,var(--color-success)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(52,211,153,0.1)]",
+		error: "border-[color-mix(in_srgb,var(--color-error)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-error)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(248,113,113,0.1)]",
+		info: "border-[color-mix(in_srgb,var(--color-info)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-info)_4%,var(--color-void-deep))] shadow-[0_4px_24px_rgba(88,166,255,0.1)]",
 	};
 
 	const progressColors = {
-		success: "bg-success",
-		error: "bg-error",
-		info: "bg-info",
+		success: "bg-[var(--color-success)]",
+		error: "bg-[var(--color-error)]",
+		info: "bg-[var(--color-info)]",
 	};
 
 	const labelNames = {
@@ -170,13 +171,14 @@ function ToastItem({
 				opacity: 0,
 				scale: 0.96,
 				x: 32,
-				transition: { duration: 0.16, ease: [0.23, 1, 0.32, 1] },
+				transition: springs.toast,
 			}}
-			transition={{ type: "spring", stiffness: 420, damping: 28 }}
+			transition={springs.toast}
+			style={{ transformOrigin: "right center" }}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 			className={cn(
-				"relative flex items-start gap-3 rounded-lg border px-4 py-3.5 backdrop-blur-md",
+				"relative flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3.5 backdrop-blur-md",
 				"min-w-[280px] max-w-[400px] overflow-hidden pointer-events-auto",
 				styles[toast.type],
 			)}
@@ -195,9 +197,9 @@ function ToastItem({
 				onClick={onDismiss}
 				aria-label="Dismiss notification"
 				className={cn(
-					"rounded-md min-h-8 min-w-8 flex items-center justify-center p-1.5 shrink-0",
+					"rounded-[var(--radius-md)] min-h-8 min-w-8 flex items-center justify-center p-1.5 shrink-0",
 					"hover:bg-text-bright/10 text-text-secondary hover:text-text-bright",
-					"transition-[transform,color,background-color] duration-120 ease-out",
+					"transition-[transform,color,background-color] duration-200 ease-out",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
 					"focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
 					"active:scale-[0.97]",
@@ -209,7 +211,7 @@ function ToastItem({
 			{/* Auto-dismiss Animated Progress Bar */}
 			<div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5">
 				<div
-					className={cn("h-full transition-all duration-[16ms] ease-linear origin-left", progressColors[toast.type])}
+					className={cn("h-full transition-[width] duration-[16ms] ease-linear origin-left", progressColors[toast.type])}
 					style={{ width: `${progress}%` }}
 				/>
 			</div>

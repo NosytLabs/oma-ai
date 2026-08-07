@@ -7,6 +7,7 @@
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { Lock, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -48,7 +49,7 @@ export function AuthPromptModal({
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					transition={{ duration: 0.15 }}
+					transition={springs.soft}
 					className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay/60 backdrop-blur-sm"
 					onClick={onClose}
 					role="dialog"
@@ -59,8 +60,8 @@ export function AuthPromptModal({
 						initial={{ opacity: 0, scale: 0.98, y: 4 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.98, y: 4 }}
-						transition={{ duration: 0.15, ease: "easeOut" }}
-						className="relative w-full max-w-sm mx-4 border border-border bg-surface-elevated p-6 shadow-2xl"
+						transition={springs.soft}
+						className="relative w-full max-w-sm mx-4 border border-[var(--color-border)] rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-6 shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Close button */}
@@ -68,17 +69,17 @@ export function AuthPromptModal({
 							type="button"
 							onClick={onClose}
 							aria-label="Close"
-							className="absolute top-3 right-3 p-1 text-text-muted hover:text-text-secondary transition-colors"
+							className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary rounded-full hover:bg-[var(--color-surface)] transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring"
 						>
 							<X className="w-4 h-4" />
 						</button>
 
 						{/* Icon */}
-						<div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 border border-accent/30 bg-accent/10">
+						<div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-[var(--radius-lg)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] shadow-[0_0_15px_-5px_var(--color-accent-glow)]">
 							{reason === "paid-model" ? (
-								<Lock className="w-5 h-5 text-accent" />
+								<Lock className="w-5 h-5 text-[var(--color-accent)]" />
 							) : (
-								<Zap className="w-5 h-5 text-accent" />
+								<Zap className="w-5 h-5 text-[var(--color-accent)]" />
 							)}
 						</div>
 
@@ -94,14 +95,14 @@ export function AuthPromptModal({
 						<div className="flex flex-col gap-2">
 							<Link
 								href="/login"
-								className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-accent text-void text-sm font-semibold hover:bg-accent/90 transition-colors"
+								className="flex items-center justify-center gap-2 w-full rounded-[var(--radius-lg)] px-4 py-2.5 bg-[var(--color-accent)] text-[var(--color-accent-fg)] text-sm font-semibold hover:bg-[var(--color-accent-hover)] transition-[background-color,transform] active:scale-[0.97]"
 							>
 								Create Free Account
 							</Link>
 							<button
 								type="button"
 								onClick={onClose}
-								className="w-full px-4 py-2 text-sm text-text-muted hover:text-text-secondary transition-colors"
+								className="w-full rounded-[var(--radius-lg)] px-4 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-[var(--color-surface)] transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring"
 							>
 								Maybe later
 							</button>

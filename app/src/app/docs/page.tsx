@@ -45,7 +45,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<button
 				type="button"
 				onClick={() => setMobileOpen(!mobileOpen)}
-				className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden"
+				className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label={
 					mobileOpen ? "Close navigation menu" : "Open navigation menu"
 				}
@@ -58,7 +58,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			{mobileOpen && (
 				<button
 					type="button"
-					className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default"
+					className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default active:scale-[0.97]"
 					onClick={() => setMobileOpen(false)}
 					aria-label="Close navigation menu"
 				/>
@@ -69,12 +69,12 @@ function Sidebar({ activeId }: { activeId: string }) {
 				aria-label="Documentation navigation"
 				aria-hidden={drawerHidden}
 				inert={drawerHidden}
-				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-72 overflow-y-auto border-r border-border bg-void transition-transform lg:translate-x-0 ${
+				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-72 overflow-y-auto border-r border-border bg-void transition-transform duration-200 ease-out lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
 				<div className="p-4">
-					<div className="mb-4 rounded-xl bg-accent/10 p-3 border border-accent/20">
+					<div className="mb-4 rounded-[var(--radius-xl)] bg-accent/10 p-3 border border-accent/20">
 						<div className="flex items-center gap-2">
 							<Terminal className="h-4 w-4 text-accent" />
 							<span className="text-sm font-semibold text-accent">OMA API</span>
@@ -91,7 +91,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 									key={item.id}
 									href={`#${item.id}`}
 									onClick={() => setMobileOpen(false)}
-									className={`relative flex items-center gap-3 rounded-lg px-3 py-3 min-h-[48px] text-sm transition-all ${
+									className={`relative flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-3 min-h-[48px] text-sm transition-[background-color,color] ${
 										isActive
 											? "bg-accent/15 text-accent border border-accent/40 font-medium"
 											: "text-text-muted hover:bg-surface hover:text-text border border-transparent"
@@ -155,12 +155,12 @@ function DocsContent() {
 
 			<div className="min-w-0 lg:pl-72">
 				<div className="mx-auto max-w-5xl min-w-0 px-4 py-3 sm:px-6 lg:px-10">
-					<div className="page-hero mb-10 rounded-[calc(var(--radius-lg)+4px)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.92)] sm:p-8">
+					<div className="page-hero mb-10 rounded-[var(--radius-xl)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[var(--shadow-xl)] sm:p-8">
 						<nav
 							aria-label="Breadcrumb"
 							className="flex items-center gap-1.5 text-xs text-text-muted mb-3 font-mono"
 						>
-							<Link href="/" className="hover:text-text transition-colors">
+							<Link href="/" className="hover:text-text transition-colors duration-200 ease-out">
 								home
 							</Link>
 							<span className="opacity-50">/</span>
@@ -176,7 +176,7 @@ function DocsContent() {
 								</h1>
 								<p className="page-intro mt-4 max-w-2xl">
 									OpenAI-compatible AI inference with wallet auth, x402
-									pay-per-request flows, and a catalog of{" "}
+									pay-per-request flows, and a catalog of{""}
 									{MODEL_COUNT}+ models behind one endpoint. Buy credits
 									with card via Polar, or pay per call with USDC on Base.
 								</p>
@@ -206,7 +206,7 @@ function DocsContent() {
 							</Link>
 							<Link
 								href="/pricing"
-								className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface hover:text-text-bright"
+								className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright"
 							>
 								View Pricing
 							</Link>

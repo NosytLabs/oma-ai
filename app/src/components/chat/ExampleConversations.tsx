@@ -9,14 +9,15 @@
  * not a toy demo.
  *
  * Categories:
- *   - Code: Real debugging, architecture, optimization
- *   - Analysis: Data reasoning, comparison, extraction
- *   - Creative: Writing, ideation, storytelling
- *   - Research: Multi-source synthesis, fact-checking
- *   - Quick: One-shot tasks that show speed
+ * - Code: Real debugging, architecture, optimization
+ * - Analysis: Data reasoning, comparison, extraction
+ * - Creative: Writing, ideation, storytelling
+ * - Research: Multi-source synthesis, fact-checking
+ * - Quick: One-shot tasks that show speed
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import {
 	BarChart3,
 	ChevronRight,
@@ -53,21 +54,21 @@ export const EXAMPLES: ExampleConversation[] = [
 
 \`\`\`typescript
 async function processPayment(orderId: string) {
-  const order = await db.orders.findById(orderId);
-  if (order.status !== 'pending') return { error: 'Already processed' };
-  
-  const charge = await stripe.charges.create({
-    amount: order.amount,
-    currency: 'usd',
-    customer: order.stripeCustomerId,
-  });
+ const order = await db.orders.findById(orderId);
+ if (order.status !== 'pending') return { error: 'Already processed' };
+ 
+ const charge = await stripe.charges.create({
+ amount: order.amount,
+ currency: 'usd',
+ customer: order.stripeCustomerId,
+ });
 
-  await db.orders.update(orderId, {
-    status: 'paid',
-    chargeId: charge.id,
-  });
+ await db.orders.update(orderId, {
+ status: 'paid',
+ chargeId: charge.id,
+ });
 
-  return { success: true, chargeId: charge.id };
+ return { success: true, chargeId: charge.id };
 }
 \`\`\`
 
@@ -105,15 +106,15 @@ Give me the TypeScript implementation with proper types, tests, and middleware i
 
 \`\`\`sql
 SELECT 
-  u.name,
-  COUNT(DISTINCT o.id) as order_count,
-  SUM(oi.quantity * oi.price) as total_spent,
-  MAX(o.created_at) as last_order_date
+ u.name,
+ COUNT(DISTINCT o.id) as order_count,
+ SUM(oi.quantity * oi.price) as total_spent,
+ MAX(o.created_at) as last_order_date
 FROM users u
 LEFT JOIN orders o ON o.user_id = u.id
 LEFT JOIN order_items oi ON oi.order_id = o.id
 WHERE o.created_at >= NOW() - INTERVAL '90 days'
-  AND u.country = 'US'
+ AND u.country = 'US'
 GROUP BY u.id, u.name
 HAVING total_spent > 100
 ORDER BY total_spent DESC
@@ -197,18 +198,18 @@ For each name, explain the reasoning in one sentence.`,
 
 \`\`\`typescript
 app.use('/api/admin/*', async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token' });
-  
-  const decoded = jwt.verify(token, SECRET_KEY);
-  const user = await db.users.findById(decoded.userId);
-  
-  if (user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  
-  req.user = user;
-  next();
+ const token = req.headers.authorization?.split(' ')[1];
+ if (!token) return res.status(401).json({ error: 'No token' });
+ 
+ const decoded = jwt.verify(token, SECRET_KEY);
+ const user = await db.users.findById(decoded.userId);
+ 
+ if (user.role !== 'admin') {
+ return res.status(403).json({ error: 'Forbidden' });
+ }
+ 
+ req.user = user;
+ next();
 });
 \`\`\`
 
@@ -314,11 +315,11 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 								}}
 								onMouseEnter={() => setExpandedId(example.id)}
 								onMouseLeave={() => setExpandedId(null)}
-								className="group w-full text-left p-5 rounded-[12px] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-ring"
+								className="group w-full text-left p-5 rounded-[var(--radius-lg)] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-lg transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-ring"
 							>
 								<div className="flex items-start gap-4">
 									<div
-										className="shrink-0 w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-surface group-hover:border-success/30 transition-colors"
+										className="shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--radius-lg)] border border-border bg-surface group-hover:border-success/30 transition-colors duration-200 ease-out"
 										style={{
 											borderColor: isExpanded ? `color-mix(in srgb, ${catColor} 30%, transparent)` : undefined,
 											backgroundColor: isExpanded ? `color-mix(in srgb, ${catColor} 10%, transparent)` : undefined,
@@ -346,13 +347,13 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 													initial={{ height: 0, opacity: 0 }}
 													animate={{ height: "auto", opacity: 1 }}
 													exit={{ height: 0, opacity: 0 }}
-													transition={{ duration: 0.15 }}
+													transition={springs.soft}
 													className="overflow-hidden"
 												>
 													<p className="text-[11.5px] font-mono text-text-muted leading-relaxed mb-3 line-clamp-3">
 														{example.prompt.slice(0, 200)}...
 													</p>
-													<span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-accent group-hover:text-success transition-colors">
+													<span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-accent group-hover:text-success transition-colors duration-200 ease-out">
 														USE THIS PROMPT
 														<ChevronRight className="w-3 h-3" />
 													</span>

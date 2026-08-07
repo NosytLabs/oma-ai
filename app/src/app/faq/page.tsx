@@ -194,7 +194,7 @@ function AnswerText({ text }: { text: string }) {
 				return (
 					<code
 						key={i}
-						className="rounded bg-surface px-1 py-0.5 font-mono text-[0.85em] text-text-secondary"
+						className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 font-mono text-[0.85em] text-text-secondary"
 					>
 						{part}
 					</code>
@@ -220,7 +220,7 @@ export default function FAQPage() {
 			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-8"
+					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -231,7 +231,7 @@ export default function FAQPage() {
 				<p className="page-intro mt-4 max-w-2xl">
 					Plain-language answers for people who have never used an AI API —
 					and links for developers who want the deep detail. New to all of
-					this? Start at <Link href="/getting-started" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">getting started</Link> or the{" "}
+					this? Start at <Link href="/getting-started" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">getting started</Link> or the{""}
 					<Link href="/glossary" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">glossary</Link>.
 				</p>
 
@@ -249,10 +249,10 @@ export default function FAQPage() {
 								{group.items.map((item) => (
 									<details
 										key={item.q}
-										className="group border border-border bg-surface/60 hover:border-accent/30 transition-colors rounded-lg overflow-hidden"
+										className="group border border-border bg-surface/60 hover:border-accent/30 transition-colors duration-200 ease-out rounded-[var(--radius-lg)] overflow-hidden"
 										open={false}
 									>
-										<summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-medium text-text-bright hover:text-accent transition-colors [&::-webkit-details-marker]:hidden">
+										<summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-medium text-text-bright hover:text-accent transition-colors duration-200 ease-out [&::-webkit-details-marker]:hidden">
 											{item.q}
 											<span className="shrink-0 text-text-muted transition-transform duration-200 group-open:rotate-45 text-lg leading-none" aria-hidden="true">
 												+
@@ -269,12 +269,12 @@ export default function FAQPage() {
 					))}
 				</div>
 
-				<div className="mt-12 rounded-lg border border-accent/25 bg-accent/5 p-5 text-sm text-text-secondary">
+				<div className="mt-12 rounded-[var(--radius-lg)] border border-accent/25 bg-accent/5 p-5 text-sm text-text-secondary">
 					<p className="font-semibold text-text-bright mb-1">Still stuck?</p>
 					<p>
 						Reach us at <Link href="/contact" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">/contact</Link> — real
-						humans, no bots. The{" "}
-						<Link href="/docs" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">API docs</Link> and{" "}
+						humans, no bots. The{""}
+						<Link href="/docs" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">API docs</Link> and{""}
 						<Link href="/pricing" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">pricing</Link> pages have the
 						technical detail.
 					</p>

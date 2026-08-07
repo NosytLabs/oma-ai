@@ -46,7 +46,7 @@ export default function DashboardLayout({
 					</span>
 					<Link
 						href="/settings"
-						className="text-text-muted transition-colors hover:text-text"
+						className="text-text-muted transition-colors duration-200 ease-out hover:text-text"
 						aria-label="Open account settings"
 					>
 						Settings

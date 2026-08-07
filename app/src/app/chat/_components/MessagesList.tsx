@@ -4,21 +4,22 @@
  * MESSAGES LIST — Scrollable message area
  *
  * Renders one of three things based on `mediaMode`:
- *   - 'text'  → either the welcome/example banner (empty) or the
- *               AnimatePresence-wrapped message list (populated),
- *               with a "Jump to bottom" pill when the user has
- *               scrolled away from a streaming response
- *   - 'image' → ImageGenerationPanel
- *   - 'video' → VideoGenerationPanel
+ * - 'text' → either the welcome/example banner (empty) or the
+ * AnimatePresence-wrapped message list (populated),
+ * with a "Jump to bottom" pill when the user has
+ * scrolled away from a streaming response
+ * - 'image' → ImageGenerationPanel
+ * - 'video' → VideoGenerationPanel
  *
  * Mobile improvements:
- *   - Reduced padding on small screens (p-3 instead of p-4/p-8)
- *   - Larger touch targets for jump-to-bottom pill
- *   - Better scroll snapping behavior
- *   - Feature discovery hints in empty state
+ * - Reduced padding on small screens (p-3 instead of p-4/p-8)
+ * - Larger touch targets for jump-to-bottom pill
+ * - Better scroll snapping behavior
+ * - Feature discovery hints in empty state
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { ChevronDown, GitCompare, Keyboard, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { RefObject } from "react";
@@ -51,7 +52,7 @@ const LazyChatMessage = dynamic(
 		ssr: false,
 		loading: () => (
 			<div className="flex gap-4">
-				<Skeleton className="w-10 h-10 shrink-0 rounded" />
+				<Skeleton className="w-10 h-10 shrink-0 rounded-[var(--radius-sm)]" />
 				<div className="flex flex-col max-w-[80%] gap-2">
 					<Skeleton className="h-20 w-full" />
 					<Skeleton className="h-4 w-20" />
@@ -323,7 +324,7 @@ export function MessagesList({
 							<m.div
 								initial={{ opacity: 0, y: 12 }}
 								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: 0.6, duration: 0.3 }}
+								transition={{ delay: 0.6, ...springs.soft }}
 								className="mt-8 px-4 md:px-0"
 							>
 								<div className="max-w-4xl mx-auto">
@@ -402,8 +403,8 @@ export function MessagesList({
 						</AnimatePresence>
 						<div ref={messagesEndRef} />
 						{/* Floating "Jump to bottom" pill — only visible while the
-                    user is scrolled up AND a response is loading. Standard
-                    chat-UI affordance (Discord, ChatGPT, Slack). */}
+ user is scrolled up AND a response is loading. Standard
+ chat-UI affordance (Discord, ChatGPT, Slack). */}
 						<AnimatePresence>
 							{isScrolledAway && loading && (
 								<m.button
@@ -412,17 +413,17 @@ export function MessagesList({
 									initial={{ opacity: 0, y: 8 }}
 									animate={{ opacity: 1, y: 0 }}
 									exit={{ opacity: 0, y: 8 }}
-									transition={{ duration: 0.15 }}
+									transition={springs.soft}
 									aria-label="Jump to latest message"
 									className="
-                        sticky bottom-4 left-1/2 -translate-x-1/2 z-10
-                        inline-flex items-center gap-1.5 rounded-full
-                        border border-accent/40 bg-accent/10
-                        px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
-                        shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
-                        min-h-[44px]
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                      "
+ sticky bottom-4 left-1/2 -translate-x-1/2 z-10
+ inline-flex items-center gap-1.5 rounded-full
+ border border-accent/40 bg-accent/10
+ px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
+ shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
+ min-h-[44px]
+ focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+ "
 								>
 									<ChevronDown className="w-3 h-3" aria-hidden="true" />
 									New messages

@@ -48,15 +48,15 @@ const MODALITIES: Array<{
 			"OpenAI-compatible chat. Streaming, tool/function calling, system prompts, JSON mode, vision, multi-modal. Works with the official openai-python, openai-node, Vercel AI SDK, LangChain, and any other client.",
 		example: {
 			request: `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer $OMA_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{ "model": "llama-3.3-70b",
-       "messages": [{"role":"user","content":"hi"}] }'`,
+ -H "Authorization: Bearer $OMA_KEY" \\
+ -H "Content-Type: application/json" \\
+ -d '{ "model": "llama-3.3-70b",
+ "messages": [{"role":"user","content":"hi"}] }'`,
 			response: `{
-  "choices": [
-    { "message": { "role": "assistant",
-                   "content": "Hey — welcome to OMA." } }
-  ]
+ "choices": [
+ { "message": { "role": "assistant",
+ "content": "Hey — welcome to OMA." } }
+ ]
 }`,
 		},
 	},
@@ -71,12 +71,12 @@ const MODALITIES: Array<{
 			"Text-to-image via Venice. OpenAI-compatible response shape. Returns hosted URLs you can embed directly.",
 		example: {
 			request: `curl .../v1/images/generations \\
-  -d '{ "model": "flux-2-pro",
-       "prompt": "a red cube on a white table" }'`,
+ -d '{ "model": "flux-2-pro",
+ "prompt": "a red cube on a white table" }'`,
 			response: `{
-  "data": [
-    { "url": "https://cdn.venice.ai/img/abc.png" }
-  ]
+ "data": [
+ { "url": "https://cdn.venice.ai/img/abc.png" }
+ ]
 }`,
 		},
 	},
@@ -91,12 +91,12 @@ const MODALITIES: Array<{
 			"Async text-to-video and image-to-video. Returns a queue id; poll /v1/videos/retrieve for the final URL. Generous 720p/1080p support across 5s–8s durations.",
 		example: {
 			request: `curl .../v1/videos/generations \\
-  -d '{ "model": "kling-v3-pro-text-to-video",
-       "prompt": "a wave crashing on a beach" }'`,
+ -d '{ "model": "kling-v3-pro-text-to-video",
+ "prompt": "a wave crashing on a beach" }'`,
 			response: `{
-  "id": "vid_q_123",
-  "status": "queued",
-  "queue_id": "q_123"
+ "id": "vid_q_123",
+ "status": "queued",
+ "queue_id": "q_123"
 }`,
 		},
 	},
@@ -190,7 +190,7 @@ export default function CapabilitiesPage() {
 				<InViewFade>
 					<p className="page-kicker">Capabilities</p>
 					<h1 className="h1-page mt-4 text-text-bright">
-						Every model. Every rail.{" "}
+						Every model. Every rail.{""}
 						<span className="text-accent italic-accent">One endpoint.</span>
 					</h1>
 					<p className="page-intro mt-5 max-w-3xl">
@@ -219,7 +219,7 @@ export default function CapabilitiesPage() {
 						</Link>
 						<Link
 							href="/docs"
-							className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-text-secondary transition-colors hover:text-accent"
+							className="btn-ghost inline-flex h-11 items-center gap-2 px-3 text-sm"
 						>
 							API reference
 							<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -235,10 +235,10 @@ export default function CapabilitiesPage() {
 							Three modalities, one auth header.
 						</h2>
 						<p className="mt-3 max-w-2xl text-text-secondary">
-							Each one speaks the OpenAI wire format, so the same{" "}
-							<code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[12px] text-accent">
+							Each one speaks the OpenAI wire format, so the same{""}
+							<code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[12px] text-accent">
 								Authorization: Bearer $OMA_KEY
-							</code>{" "}
+							</code>{""}
 							works everywhere.
 						</p>
 					</InViewFade>
@@ -248,7 +248,7 @@ export default function CapabilitiesPage() {
 							const Icon = m.icon;
 							return (
 								<InViewFade key={m.id} delay={0.04 + i * 0.05}>
-									<article className="group flex h-full flex-col gap-3 rounded-xl border border-border bg-surface/60 p-5 transition-colors hover:border-accent/40">
+									<article className="group flex h-full flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:border-accent/40 active:scale-[0.98]">
 										<div className="flex items-center justify-between">
 											<span className="flex h-9 w-9 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent">
 												<Icon className="h-4 w-4" aria-hidden="true" />
@@ -270,7 +270,7 @@ export default function CapabilitiesPage() {
 											<summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-text-muted [&::-webkit-details-marker]:hidden">
 												<span>Example</span>
 												<span
-													className="text-text-muted transition-transform group-open/d:rotate-45"
+													className="text-text-muted transition-transform duration-200 ease-out group-open/d:rotate-45"
 													aria-hidden="true"
 												>
 													+
@@ -311,7 +311,7 @@ export default function CapabilitiesPage() {
 							const Icon = r.icon;
 							return (
 								<InViewFade key={r.id} delay={0.04 + i * 0.05}>
-									<article className="flex h-full flex-col gap-3 rounded-xl border border-border bg-surface/60 p-5 transition-colors hover:border-accent/40">
+									<article className="flex h-full flex-col gap-3 rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:border-accent/40 active:scale-[0.98]">
 										<div className="flex items-center justify-between">
 											<span className="flex h-9 w-9 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent">
 												<Icon className="h-4 w-4" aria-hidden="true" />
@@ -360,13 +360,13 @@ export default function CapabilitiesPage() {
 							<InViewFade key={p.name} delay={0.04 + i * 0.05}>
 								<Link
 									href={p.href}
-									className="group flex h-full flex-col gap-2 rounded-lg border border-border bg-surface/40 p-4 transition-colors hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									className="group flex h-full flex-col gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-4 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-semibold text-text-bright group-hover:text-accent">
 											{p.name}
 										</span>
-										<ArrowRight className="h-3.5 w-3.5 text-text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true" />
+										<ArrowRight className="h-3.5 w-3.5 text-text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true" />
 									</div>
 									<p className="text-[12.5px] leading-relaxed text-text-secondary">
 										{p.desc}
@@ -391,7 +391,7 @@ export default function CapabilitiesPage() {
 						</p>
 					</InViewFade>
 
-					<div tabIndex={0} aria-label="Provider routing matrix" className="mt-8 overflow-x-auto rounded-xl border border-border bg-surface/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+					<div tabIndex={0} aria-label="Provider routing matrix" className="mt-8 overflow-x-auto rounded-[var(--radius-lg)] border border-border bg-surface/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 						<table className="w-full min-w-[40rem] text-left text-[13px]">
 							<thead className="border-b border-border bg-void/50 font-mono text-[10.5px] uppercase tracking-wider text-text-muted">
 								<tr>
@@ -428,7 +428,7 @@ export default function CapabilitiesPage() {
 								].map((row) => (
 									<tr
 										key={row.name}
-										className="border-b border-border/40 last:border-b-0 transition-colors hover:bg-void/30"
+										className="border-b border-border/40 last:border-b-0 transition-colors duration-200 ease-out hover:bg-void/30"
 									>
 										<td className="px-4 py-3 font-semibold text-text-bright">{row.name}</td>
 										<td className="px-4 py-3 text-text-secondary">{row.privacy}</td>

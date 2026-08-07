@@ -14,7 +14,7 @@ export function UnifiedDepositHeader() {
 			viewport={undefined}
 		>
 			<div className="flex items-center gap-4 mb-3">
-				<div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border-bright bg-surface">
+				<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-lg)] border border-border-bright bg-surface">
 					<Coins className="h-6 w-6 text-accent" />
 				</div>
 				<div className="flex-1">
@@ -24,7 +24,7 @@ export function UnifiedDepositHeader() {
 					</p>
 				</div>
 				<m.span
-					className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-semibold text-accent border border-accent/30 bg-accent/10"
+					className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-mono font-semibold text-accent border border-accent/30 bg-accent/10"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 0.15 }}

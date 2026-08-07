@@ -5,12 +5,12 @@
  *
  * Renders A2UI envelope messages (createSurface / updateComponents /
  * updateDataModel / deleteSurface) into OMA design tokens. Supports:
- *   - Adjacency-list component trees (children + single `child` refs)
- *   - Data binding via `{ "path": "/a/b" }` against the surface data model
- *   - Local function calls in props/checks: formatDate, formatString,
- *     required, email, regex
- *   - Server actions: Button `action.event` → onAction({name, context})
- *   - JSONL streams (one envelope per line) and single-object payloads
+ * - Adjacency-list component trees (children + single `child` refs)
+ * - Data binding via `{ "path": "/a/b" }` against the surface data model
+ * - Local function calls in props/checks: formatDate, formatString,
+ * required, email, regex
+ * - Server actions: Button `action.event` → onAction({name, context})
+ * - JSONL streams (one envelope per line) and single-object payloads
  *
  * Anything unrecognized falls back to a labeled placeholder so the chat
  * message is never empty. Non-A2UI payloads return null so callers can
@@ -20,6 +20,7 @@
  */
 
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -35,6 +36,7 @@ import {
 	Settings,
 	Sparkles,
 	Terminal,
+	TriangleAlert,
 	User,
 	X,
 	Zap,
@@ -356,8 +358,9 @@ function TextFieldInput({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) 
 				placeholder={String(node.placeholder ?? "")}
 			/>
 			{errors.map((err, i) => (
-				<p key={i} className="mt-1 text-[10px] font-mono text-error">
-					⚠ {err}
+				<p key={i} className="mt-1 flex items-start gap-1 text-[10px] font-mono text-error">
+					<TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+					{err}
 				</p>
 			))}
 		</div>
@@ -380,7 +383,7 @@ function CheckboxField({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) {
 				onChange={(e) => setChecked(e.target.checked)}
 				className="accent-accent w-4 h-4"
 			/>
-			<span className="text-xs font-mono text-text-secondary group-hover:text-text transition-colors">
+			<span className="text-xs font-mono text-text-secondary group-hover:text-text transition-colors duration-200 ease-out">
 				{label}
 			</span>
 		</label>
@@ -418,7 +421,7 @@ function ChoicePickerField({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx 
 										: [...selected, val],
 							)
 						}
-						className={`px-2.5 py-1 text-[11px] font-mono border transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
+						className={`px-2.5 py-1 text-[11px] font-mono border transition-[background-color,border-color,color] duration-200 ease-out active:scale-[0.97] focus-ring ${
 							active
 								? "border-accent bg-accent/15 text-accent"
 								: "border-border text-text-secondary hover:border-accent/50 hover:text-text"
@@ -565,7 +568,7 @@ function renderComponent(
 					key={node.id}
 					initial={{ opacity: 0, y: 4 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.15 }}
+					transition={{ delay: 0.08, ...springs.soft }}
 					className="border border-border bg-void p-3 mb-2"
 				>
 					{title && (

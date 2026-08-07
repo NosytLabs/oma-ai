@@ -5,14 +5,14 @@
  * out — only the desktop `NavbarUserMenu` exposed a terminate-session
  * button. These tests pin the new mobile disconnect flow:
  *
- *   1. The "terminate session" button appears in the mobile account card
- *      when the user is connected.
- *   2. Clicking it shows an inline confirmation prompt (role=alertdialog)
- *      with a Cancel + Sign out pair.
- *   3. Confirming invokes the provided `onDisconnect` callback.
- *   4. Cancel returns to the menu without invoking the callback.
- *   5. The trigger is hidden entirely when `isConnected` is false, so
- *      guests never see a logout option.
+ * 1. The "terminate session" button appears in the mobile account card
+ * when the user is connected.
+ * 2. Clicking it shows an inline confirmation prompt (role=alertdialog)
+ * with a Cancel + Sign out pair.
+ * 3. Confirming invokes the provided `onDisconnect` callback.
+ * 4. Cancel returns to the menu without invoking the callback.
+ * 5. The trigger is hidden entirely when `isConnected` is false, so
+ * guests never see a logout option.
  *
  * The navbar's normal focus-trap behavior is covered by
  * `navbar.focus-trap.isolated.test.tsx`; this file focuses on the

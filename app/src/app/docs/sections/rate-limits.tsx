@@ -16,10 +16,10 @@ export function RateLimitsSection() {
 				subtitle="One set of limits for every key — no plan tiers. Enforced per API key (or per IP for unauthenticated requests)."
 			/>
 
-			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24">
+			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
 				<table className="w-full text-left text-sm" aria-label="Default rate limits">
 					<thead>
-						<tr className="border-b border-border bg-surface/50">
+						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Limit</th>
 							<th className="px-4 py-3 font-medium text-text-muted text-right">
 								Value
@@ -31,7 +31,7 @@ export function RateLimitsSection() {
 						{RATE_LIMIT_ROWS.map((row, i) => (
 							<tr
 								key={row.name}
-								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : ""}`}
+								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : "bg-panel"}`}
 							>
 								<td className="px-4 py-3 font-medium text-text">{row.name}</td>
 								<td className="px-4 py-3 text-right font-mono text-text-secondary">
@@ -44,8 +44,8 @@ export function RateLimitsSection() {
 				</table>
 			</div>
 
-			<div id="rl-models" className="mb-6 overflow-x-auto overscroll-x-contain rounded-xl border border-border scroll-mt-24">
-				<div className="border-b border-border bg-surface/50 px-4 py-3">
+			<div id="rl-models" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
+				<div className="border-b border-border bg-panel px-4 py-3">
 					<h3 className="font-semibold text-text text-sm">
 						Per-Model Overrides
 					</h3>
@@ -59,7 +59,7 @@ export function RateLimitsSection() {
 					aria-label="Per-model rate limit overrides"
 				>
 					<thead>
-						<tr className="border-b border-border bg-surface/50">
+						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Model</th>
 							<th className="px-4 py-3 font-medium text-text-muted text-right">
 								RPM
@@ -73,7 +73,7 @@ export function RateLimitsSection() {
 						{MODEL_RATE_OVERRIDES.map((m, i) => (
 							<tr
 								key={`${m.model}-${m.rpm}-${m.tpm}`}
-								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : ""}`}
+								className={`border-b border-border/50 ${i % 2 === 1 ? "bg-surface/30" : "bg-panel"}`}
 							>
 								<td className="px-4 py-3">
 									<code className="font-mono text-xs text-accent">{m.model}</code>
@@ -91,7 +91,7 @@ export function RateLimitsSection() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<h3 className="mb-2 font-semibold text-text">Burst Handling</h3>
 					<p className="text-sm text-text-muted">
 						Token bucket algorithm allows short bursts above the sustained rate.
@@ -99,7 +99,7 @@ export function RateLimitsSection() {
 						spikes succeed while sustained traffic settles at the RPM ceiling.
 					</p>
 				</div>
-				<div id="rl-headers" className="rounded-xl border border-border bg-surface/50 p-4 scroll-mt-24">
+				<div id="rl-headers" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 scroll-mt-24">
 					<h3 className="mb-2 font-semibold text-text">Rate Limit Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>

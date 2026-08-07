@@ -90,7 +90,7 @@ export function FileUpload({
 					type="button"
 					onClick={handleClear}
 					aria-label="Remove image"
-					className="absolute top-3 right-3 p-2 bg-surface/90 backdrop-blur-sm rounded-xl text-text-muted hover:text-error hover:bg-surface shadow-lg transition-all"
+					className="absolute top-3 right-3 p-2 bg-[var(--color-surface)]/90 backdrop-blur-sm rounded-full text-text-muted hover:text-[var(--color-error)] hover:bg-[var(--color-surface-elevated)] shadow-lg transition-[background-color,border-color,color,transform,box-shadow,opacity] active:scale-[0.97]"
 				>
 					<X className="w-4 h-4" />
 				</button>
@@ -111,18 +111,18 @@ export function FileUpload({
 				onClick={() => inputRef.current?.click()}
 				aria-label={`Upload ${accept === "image/*" ? "image" : "file"}`}
 				aria-describedby={describedBy || undefined}
-				className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
+				className={`w-full flex flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border-2 border-dashed p-8 cursor-pointer transition-[background-color,border-color,color,transform,box-shadow,opacity] duration-200 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
 					dragOver
-						? "border-accent bg-accent-dim/50"
-						: "border-border hover:border-accent hover:bg-accent-dim/20"
+						? "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]"
+						: "border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]"
 				}`}
 			>
-				<div className="w-12 h-12 rounded-2xl bg-accent-dim flex items-center justify-center">
-					<Upload className="w-6 h-6 text-accent" aria-hidden="true" />
+				<div className="w-12 h-12 rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] flex items-center justify-center">
+					<Upload className="w-6 h-6 text-[var(--color-accent)]" aria-hidden="true" />
 				</div>
 				<div className="text-center">
-					<p className="text-sm font-medium text-text">
-						Drop an image here or <span className="text-accent">browse</span>
+					<p className="text-sm font-medium text-text-primary">
+						Drop an image here or <span className="text-[var(--color-accent)]">browse</span>
 					</p>
 					<p id={hintId} className="text-xs text-text-muted mt-1">
 						PNG, JPG, WebP up to {maxSizeMB}MB
@@ -139,7 +139,7 @@ export function FileUpload({
 				className="hidden"
 			/>
 			{error && (
-				<p id={errorId} role="alert" className="mt-2 text-sm text-error flex items-center gap-1.5">
+				<p id={errorId} role="alert" className="mt-2 text-sm text-[var(--color-error)] flex items-center gap-1.5">
 					<ImageIcon className="w-4 h-4" aria-hidden="true" />
 					{error}
 				</p>

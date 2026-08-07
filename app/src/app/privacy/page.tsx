@@ -156,7 +156,7 @@ export default function PrivacyPage() {
 					<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
 						<Link
 							href="/"
-							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
+							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
 							Back to home
@@ -185,7 +185,7 @@ export default function PrivacyPage() {
 								</h1>
 
 								{/* Plain English summary */}
-								<div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-5 sm:p-6">
+								<div className="mt-6 rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5 sm:p-6">
 									<p className="text-[11px] font-semibold uppercase tracking-wide text-accent mb-2">
 										The short version
 									</p>
@@ -207,7 +207,7 @@ export default function PrivacyPage() {
 
 							<aside
 								aria-label="At a glance"
-								className="border border-border bg-surface min-w-0 relative overflow-hidden rounded-xl"
+								className="border border-border bg-surface min-w-0 relative overflow-hidden rounded-[var(--radius-xl)]"
 							>
 								<span
 									aria-hidden="true"
@@ -242,7 +242,7 @@ export default function PrivacyPage() {
 									))}
 								</dl>
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
-									Questions?{" "}
+									Questions?{""}
 									<a
 										href="mailto:support@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
@@ -269,7 +269,7 @@ export default function PrivacyPage() {
 						</h3>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-							<div className="border border-border bg-surface p-5 rounded-xl">
+							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
 								<div className="mb-3 flex items-center gap-2">
 									<Database
 										className="h-4 w-4 text-accent"
@@ -298,7 +298,7 @@ export default function PrivacyPage() {
 									/>
 								</ul>
 							</div>
-							<div className="border border-border bg-surface p-5 rounded-xl">
+							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
 								<div className="mb-3 flex items-center gap-2">
 									<CircleX className="h-4 w-4 text-error" aria-hidden="true" />
 									<h3 className="text-[13px] font-semibold text-text-bright">
@@ -385,7 +385,7 @@ export default function PrivacyPage() {
 						</h3>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-							<div className="border border-border bg-surface p-5 rounded-xl">
+							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
 								<div className="mb-3 flex items-center gap-2">
 									<CreditCard
 										className="h-4 w-4 text-accent"
@@ -411,7 +411,7 @@ export default function PrivacyPage() {
 									/>
 								</ul>
 							</div>
-							<div className="border border-border bg-surface p-5 rounded-xl">
+							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
 								<div className="mb-3 flex items-center gap-2">
 									<Lock className="h-4 w-4 text-error" aria-hidden="true" />
 									<h3 className="text-[13px] font-semibold text-text-bright">
@@ -532,7 +532,7 @@ export default function PrivacyPage() {
 						<p className="mt-4 text-[11px] text-text-muted">
 							<span className="text-accent" aria-hidden="true">
 								~
-							</span>{" "}
+							</span>{""}
 							We do not sell, rent, or share any personal data with advertisers
 							or analytics services.
 						</p>
@@ -550,13 +550,13 @@ export default function PrivacyPage() {
 						</h3>
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							Vendors that process limited operational data on our behalf. None
-							receive prompt or completion content. Contact{" "}
+							receive prompt or completion content. Contact{""}
 							<a
 								href="mailto:support@nosytlabs.com"
 								className="text-accent underline underline-offset-2"
 							>
 								support@nosytlabs.com
-							</a>{" "}
+							</a>{""}
 							for a signed DPA.
 						</p>
 						<ul className="border border-border bg-surface divide-y divide-border">
@@ -619,7 +619,7 @@ export default function PrivacyPage() {
 							].map((card) => (
 								<div
 									key={card.title}
-									className="group border border-border bg-surface p-5 hover:border-accent/40 transition-colors"
+									className="group border border-border bg-surface p-5 hover:border-accent/40 transition-colors duration-200 ease-out"
 								>
 									<div className="mb-3 flex items-center gap-3">
 										<card.icon
@@ -645,7 +645,7 @@ export default function PrivacyPage() {
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">
-								Questions?{" "}
+								Questions?{""}
 								<a
 									href="mailto:support@nosytlabs.com"
 									className="text-accent hover:underline underline-offset-2"
@@ -663,7 +663,7 @@ export default function PrivacyPage() {
 									<li key={l.href}>
 										<Link
 											href={l.href}
-											className="text-text-muted hover:text-accent transition-colors"
+											className="text-text-muted hover:text-accent transition-colors duration-200 ease-out"
 										>
 											{l.label}
 										</Link>

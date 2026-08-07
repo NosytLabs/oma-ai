@@ -3,10 +3,10 @@
 /**
  * ThemeProvider — 4 accent themes on a locked dark void.
  *
- *   emerald  — default OMA brand (terminal emerald)
- *   amber    — warm CRT / mainframe
- *   mono     — grayscale austere
- *   synth    — violet network-op
+ * emerald — default OMA brand (terminal emerald)
+ * amber — warm CRT / mainframe
+ * mono — grayscale austere
+ * synth — violet network-op
  *
  * Persistence: localStorage `oma-theme`
  * DOM: `data-theme` on <html> (emerald removes attribute so :root wins)

@@ -11,11 +11,11 @@
  * properties. The `count` prop controls density. Respects reduced-motion.
  *
  * API:
- *   - count:       number of floating symbols (default 8)
- *   - opacity:     base opacity 0-1 (default 0.07)
- *   - symbols:     string[] of chars to scatter (default crypto-themed)
- *   - speed:       base drift seconds (default 18)
- *   - className:   pass-through
+ * - count: number of floating symbols (default 8)
+ * - opacity: base opacity 0-1 (default 0.07)
+ * - symbols: string[] of chars to scatter (default crypto-themed)
+ * - speed: base drift seconds (default 18)
+ * - className: pass-through
  */
 
 import { useReducedMotion } from "@/lib/framer-motion-client";

@@ -118,12 +118,12 @@ export function ImageGenerationPanel() {
 				</div>
 				<p className="text-xs text-text-muted font-mono">
 					<span className="text-accent">{costCredits} cr</span>
-					{" · "}
+					{" ·"}
 					${(costCredits * USD_PER_CREDIT).toFixed(3)}
 				</p>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface/80 p-3 sm:p-4">
+			<div className="rounded-[var(--radius-xl)] border border-border bg-surface/80 p-3 sm:p-4">
 				<div className="grid gap-4 lg:grid-cols-5">
 					{/* Prompt */}
 					<div className="lg:col-span-3 space-y-2">
@@ -141,7 +141,7 @@ export function ImageGenerationPanel() {
 							rows={4}
 							disabled={loading}
 							aria-required="true"
-							className="w-full min-h-[96px] resize-y rounded-lg border border-border bg-void px-3 py-2.5 text-[15px] text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50"
+							className="w-full min-h-[96px] resize-y rounded-[var(--radius-lg)] border border-border bg-void px-3 py-2.5 text-[15px] text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50"
 						/>
 					</div>
 
@@ -159,7 +159,7 @@ export function ImageGenerationPanel() {
 								value={model}
 								onChange={(e) => setModel(e.target.value)}
 								disabled={loading}
-								className="w-full rounded-lg border border-border bg-void px-3 py-2.5 text-sm text-text-bright disabled:opacity-50"
+								className="w-full rounded-[var(--radius-lg)] border border-border bg-void px-3 py-2.5 text-sm text-text-bright disabled:opacity-50"
 							>
 								{IMAGE_MODELS.map((m) => (
 									<option key={m.id} value={m.id}>
@@ -180,7 +180,7 @@ export function ImageGenerationPanel() {
 										type="button"
 										onClick={() => setStyle(style === s.value ? "" : s.value)}
 										aria-pressed={style === s.value}
-										className={`min-h-[40px] rounded-lg border px-2 py-2 text-xs font-mono transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${
+										className={`min-h-[40px] rounded-[var(--radius-lg)] border px-2 py-2 text-xs font-mono transition-[background-color,border-color,color] duration-200 ease-out active:scale-[0.97] focus-ring ${
 											style === s.value
 												? "border-accent bg-accent/10 text-accent"
 												: "border-border bg-void text-text-secondary hover:border-accent/40"
@@ -205,7 +205,7 @@ export function ImageGenerationPanel() {
 									value={size}
 									onChange={(e) => setSize(e.target.value)}
 									disabled={loading}
-									className="w-full rounded-lg border border-border bg-void px-2 py-2.5 text-sm text-text-bright disabled:opacity-50"
+									className="w-full rounded-[var(--radius-lg)] border border-border bg-void px-2 py-2.5 text-sm text-text-bright disabled:opacity-50"
 								>
 									{SIZE_OPTIONS.map((o) => (
 										<option key={o.value} value={o.value}>
@@ -230,7 +230,7 @@ export function ImageGenerationPanel() {
 											onClick={() => setCount(n)}
 											disabled={loading}
 											aria-pressed={count === n}
-											className={`min-h-[40px] flex-1 rounded-lg text-sm font-semibold transition-[background-color,border-color,color] duration-150 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent ${
+											className={`min-h-[40px] flex-1 rounded-[var(--radius-lg)] text-sm font-semibold transition-[background-color,border-color,color] duration-200 ease-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-accent ${
 												count === n
 													? "bg-accent text-void"
 													: "bg-void border border-border text-text hover:border-accent/40"
@@ -251,7 +251,7 @@ export function ImageGenerationPanel() {
 						type="button"
 						onClick={onGenerate}
 						disabled={!prompt.trim() || loading}
-						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+						className="btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto active:scale-[0.97]"
 						aria-label={
 							loading ? "Generating images, please wait" : "Generate images"
 						}
@@ -278,7 +278,7 @@ export function ImageGenerationPanel() {
 							type="button"
 							onClick={onRetry}
 							disabled={!prompt.trim()}
-							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto"
+							className="btn-secondary inline-flex min-h-[44px] w-full items-center justify-center gap-2 sm:w-auto active:scale-[0.97]"
 							aria-label="Retry image generation"
 						>
 							<RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -301,7 +301,7 @@ export function ImageGenerationPanel() {
 
 				{error && (
 					<div
-						className="mt-3 rounded-lg border border-error/40 bg-error/10 px-3 py-2.5 text-sm text-error"
+						className="mt-3 rounded-[var(--radius-lg)] border border-error/40 bg-error/10 px-3 py-2.5 text-sm text-error"
 						role="alert"
 					>
 						{error}
@@ -331,7 +331,7 @@ export function ImageGenerationPanel() {
 						{Array.from({ length: count }).map((_, i) => (
 							<div
 								key={i}
-								className="aspect-square animate-shimmer rounded-xl bg-surface-elevated"
+								className="aspect-square animate-shimmer rounded-[var(--radius-xl)] bg-surface-elevated"
 							/>
 						))}
 					</div>
@@ -348,7 +348,7 @@ export function ImageGenerationPanel() {
 						{images.map((url, i) => (
 							<div
 								key={i}
-								className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-surface"
+								className="group relative aspect-square overflow-hidden rounded-[var(--radius-xl)] border border-border bg-surface"
 							>
 								<Image
 									src={url}
@@ -360,7 +360,7 @@ export function ImageGenerationPanel() {
 								<button
 									type="button"
 									onClick={() => downloadImage(url, i)}
-									className="absolute bottom-2 right-2 flex min-h-[40px] items-center gap-1.5 rounded-full bg-surface/95 px-3 py-2 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent sm:opacity-90"
+									className="absolute bottom-2 right-2 flex min-h-[40px] items-center gap-1.5 rounded-full bg-surface/95 px-3 py-2 text-xs font-medium text-text shadow-md backdrop-blur-sm hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent active:scale-[0.97] transition-[background-color,transform] duration-200 ease-out sm:opacity-90"
 									aria-label={`Download generated image ${i + 1}`}
 								>
 									<Download className="h-3.5 w-3.5" aria-hidden="true" />

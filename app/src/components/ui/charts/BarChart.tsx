@@ -35,9 +35,9 @@ const CustomTooltip = ({
 }) => {
 	if (active && payload?.length) {
 		return (
-			<div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">
+			<div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
 				<p className="text-xs text-text-muted">{label}</p>
-				<p className="text-sm font-semibold text-amber">
+				<p className="text-sm font-semibold text-[var(--color-amber)]">
 					{showCost
 						? `$${payload[0].value.toFixed(2)}`
 						: payload[0].value.toLocaleString()}

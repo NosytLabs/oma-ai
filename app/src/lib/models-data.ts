@@ -121,9 +121,9 @@ export const PROVIDER_COLORS: Record<
 		border: "border-violet/50",
 	},
 	Gonka: {
-		bg: "bg-emerald-500/10",
-		text: "text-emerald-400",
-		border: "border-emerald-500/30",
+		bg: "bg-success/10",
+		text: "text-success",
+		border: "border-success/30",
 	},
 	"OMA-AI": {
 		bg: "bg-accent/10",

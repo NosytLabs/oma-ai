@@ -30,7 +30,7 @@ const fadeUpVariant: Variants = {
 	show: {
 		opacity: 1,
 		y: 0,
-		transition: { ...springs.toast, mass: 1.1 }, // overshoot 1.08 — settle after a beat
+		transition: springs.toast, // overshoot 1.08 — settle after a beat
 	},
 };
 

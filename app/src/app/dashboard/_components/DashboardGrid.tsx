@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import {
 	Activity,
 	CreditCard,
@@ -68,10 +69,10 @@ function EmptyState({
 		<m.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.3 }}
+			transition={{ delay: 0.05, ...springs.soft }}
 			className="flex flex-col items-center justify-center py-16 px-6 text-center"
 		>
-			<div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface text-text-muted mb-4">
+			<div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-xl)] border border-border bg-surface text-text-muted mb-4">
 				<Icon className="h-5 w-5" aria-hidden="true" />
 			</div>
 			<h2 className="text-text-bright text-lg font-medium mb-2">{title}</h2>
@@ -171,7 +172,7 @@ const LazyCreatedKeyModal = dynamic(
 );
 
 /** Wraps a lazy component in a mini error boundary so one failing widget
- *  doesn't crater the whole dashboard. */
+ * doesn't crater the whole dashboard. */
 function WidgetErrorBoundary({
 	children,
 	title,
@@ -182,7 +183,7 @@ function WidgetErrorBoundary({
 	return (
 		<ErrorBoundary
 			fallback={
-				<div className="rounded-lg border border-error/20 bg-error/5 p-4 text-center">
+				<div className="rounded-[var(--radius-lg)] border border-error/20 bg-error/5 p-4 text-center">
 					<p className="text-xs text-error font-medium">
 						{title ?? "Widget"} failed to load
 					</p>
@@ -367,7 +368,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 				<div
 					role="alert"
 					aria-live="polite"
-					className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-error/30 bg-error/5 p-4"
+					className="mb-6 flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-error/30 bg-error/5 p-4"
 				>
 					<div className="flex items-center gap-3 text-sm text-text">
 						{backendUnavailable ? (
@@ -388,7 +389,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								<span>
 									<span className="font-medium text-error">
 										Something went wrong.
-									</span>{" "}
+									</span>{""}
 									<span className="text-text-muted">{error}</span>
 								</span>
 							</>
@@ -399,7 +400,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 							<button
 								type="button"
 								onClick={onRefresh}
-								className="inline-flex items-center gap-1.5 rounded-lg border border-error/40 bg-error/10 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+								className="inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] border border-error/40 bg-error/10 px-3 py-1.5 text-xs font-medium text-error transition-colors duration-200 ease-out hover:bg-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error active:scale-[0.97]"
 							>
 								<RefreshCw className="h-3 w-3" />
 								Retry
@@ -408,7 +409,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						<button
 							type="button"
 							onClick={() => setErrorDismissed(true)}
-							className="rounded-lg border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="rounded-[var(--radius-lg)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-colors duration-200 ease-out hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							Dismiss
 						</button>
@@ -471,7 +472,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								</WidgetErrorBoundary>
 							</div>
 							<WidgetErrorBoundary title="Top up credits">
-								<div className="flex flex-col h-full justify-between p-6 sm:p-7 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] relative overflow-hidden transition-colors hover:border-accent/40">
+								<div className="flex flex-col h-full justify-between p-6 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
 									<div className="flex items-start justify-between gap-4">
 										<div>
@@ -539,7 +540,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								action={
 									<Link
 										href="/chat"
-										className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent/80"
+										className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors duration-200 ease-out hover:text-accent/80"
 									>
 										Open chat playground →
 									</Link>
@@ -566,7 +567,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									</WidgetErrorBoundary>
 								</div>
 
-								<div className="bg-surface border border-border/60 rounded-[12px] shadow-sm relative overflow-hidden h-full">
+								<div className="bg-surface border border-border/60 rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] relative overflow-hidden h-full">
 									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 to-transparent" />
 									<WidgetErrorBoundary title="Recent requests">
 										<LazyRecentRequestsTable
@@ -608,7 +609,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<button
 										type="button"
 										onClick={() => setShowCreateForm(true)}
-										className="inline-flex items-center gap-2 bg-accent text-void px-4 py-2 text-sm font-medium rounded hover:bg-accent/90 transition-colors"
+										className="inline-flex items-center gap-2 bg-accent text-void px-4 py-2 text-sm font-medium rounded-[var(--radius-sm)] hover:bg-accent/90 transition-colors duration-200 ease-out"
 									>
 										<KeyRound className="h-4 w-4" />
 										Create API Key

@@ -3,6 +3,7 @@
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { X } from "lucide-react";
 import dynamic from "next/dynamic";
+import { springs } from "@/lib/animation";
 import type { Dispatch, SetStateAction } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -38,8 +39,8 @@ export interface ChatSettingsPanelProps {
 
 /**
  * Right-side parameters panel, rendered in two flavors:
- *   - desktop (≥md): inline aside that slides in from the right
- *   - mobile  (<md): fixed-position aside + scrim overlay
+ * - desktop (≥md): inline aside that slides in from the right
+ * - mobile (<md): fixed-position aside + scrim overlay
  *
  * Both surfaces share the same `<SettingsPanel>` body. The mobile
  * overlay also gets a click-to-dismiss scrim so the user can close
@@ -75,7 +76,7 @@ export function ChatSettingsPanel({
 						initial={{ width: 0, opacity: 0 }}
 						animate={{ width: 320, opacity: 1 }}
 						exit={{ width: 0, opacity: 0 }}
-						transition={{ type: "spring", damping: 25, stiffness: 350 }}
+						transition={springs.card}
 						className="flex-none bg-void border-l border-border z-10 overflow-hidden hidden md:flex flex-col"
 					>
 						<div className="w-80 flex flex-col h-full">
@@ -87,7 +88,7 @@ export function ChatSettingsPanel({
 									type="button"
 									onClick={() => setParamsOpen(false)}
 									aria-label="Close parameters panel"
-									className="text-text-muted hover:text-text-secondary focus-ring"
+									className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
 								>
 									<X className="w-4 h-4" />
 								</button>
@@ -138,7 +139,7 @@ export function ChatSettingsPanel({
 						initial={{ x: "100%" }}
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
-						transition={{ type: "spring", damping: 25, stiffness: 350 }}
+						transition={springs.card}
 						className="md:hidden fixed inset-y-0 right-0 w-80 bg-void border-l border-border z-50 flex flex-col"
 					>
 						<div className="flex-none h-12 border-b border-border flex items-center justify-between px-4 bg-void">
@@ -149,7 +150,7 @@ export function ChatSettingsPanel({
 								type="button"
 								onClick={() => setParamsOpen(false)}
 								aria-label="Close parameters panel"
-								className="text-text-muted hover:text-text-secondary focus-ring"
+								className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
 							>
 								<X className="w-4 h-4" />
 							</button>

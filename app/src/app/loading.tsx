@@ -21,8 +21,8 @@ export default function Loading() {
 						<div className="animate-shimmer bg-surface-elevated h-14 sm:h-20 w-full max-w-xl rounded-[var(--radius-sm)]" />
 						<div className="animate-shimmer bg-surface-elevated h-14 sm:h-16 w-3/4 max-w-lg rounded-[var(--radius-sm)]" />
 						<div className="mt-2 flex flex-col gap-3 w-full max-w-md">
-							<div className="animate-shimmer bg-surface-elevated h-4 w-full rounded" />
-							<div className="animate-shimmer bg-surface-elevated h-4 w-5/6 rounded" />
+							<div className="animate-shimmer bg-surface-elevated h-4 w-full rounded-[var(--radius-sm)]" />
+							<div className="animate-shimmer bg-surface-elevated h-4 w-5/6 rounded-[var(--radius-sm)]" />
 						</div>
 						<div className="mt-6 flex gap-3">
 							<div className="animate-shimmer bg-surface-elevated h-12 w-36 rounded-[var(--radius-md)]" />
@@ -30,19 +30,19 @@ export default function Loading() {
 						</div>
 					</div>
 
-					<div className="rounded-xl border border-border bg-surface-elevated/60 overflow-hidden">
+					<div className="rounded-[var(--radius-xl)] border border-border bg-surface-elevated/60 overflow-hidden">
 						<div className="flex items-center gap-2 px-4 py-3 border-b border-border">
 							<div className="animate-shimmer bg-surface-elevated h-2.5 w-2.5 rounded-full" />
 							<div className="animate-shimmer bg-surface-elevated h-2.5 w-2.5 rounded-full" />
 							<div className="animate-shimmer bg-surface-elevated h-2.5 w-2.5 rounded-full" />
-							<div className="animate-shimmer bg-surface-elevated ml-3 h-3 w-40 rounded" />
+							<div className="animate-shimmer bg-surface-elevated ml-3 h-3 w-40 rounded-[var(--radius-sm)]" />
 						</div>
 						<div className="p-5 flex flex-col gap-2.5">
 							{Array.from({ length: 6 }).map((_, i) => (
 								<div
 									key={i}
 									className={cn(
-										"animate-shimmer h-3 rounded",
+										"animate-shimmer h-3 rounded-[var(--radius-sm)]",
 										i === 0 ? "w-3/4" : i === 1 ? "w-5/6" : "w-2/3",
 									)}
 								/>

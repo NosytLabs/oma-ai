@@ -1,6 +1,7 @@
 "use client";
 
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import {
 	Bug,
 	ChevronRight,
@@ -19,6 +20,8 @@ interface Preset {
 	icon: typeof Code2;
 	prompt: string;
 	model?: string;
+	/** Static Tailwind hue classes applied on hover (bg + border tint). */
+	tint: string;
 }
 
 const PRESETS: Preset[] = [
@@ -27,14 +30,16 @@ const PRESETS: Preset[] = [
 		label: "Explain code",
 		description: "Line-by-line walkthrough",
 		icon: Lightbulb,
+		tint: "bg-violet/10 border-violet/30",
 		prompt:
-			"Explain this code line by line, as if teaching a junior developer:\n\n```python\ndef merge_sort(arr):\n    if len(arr) <= 1:\n        return arr\n    mid = len(arr) // 2\n    left = merge_sort(arr[:mid])\n    right = merge_sort(arr[mid:])\n    return merge(left, right)\n```",
+			"Explain this code line by line, as if teaching a junior developer:\n\n```python\ndef merge_sort(arr):\n if len(arr) <= 1:\n return arr\n mid = len(arr) // 2\n left = merge_sort(arr[:mid])\n right = merge_sort(arr[mid:])\n return merge(left, right)\n```",
 	},
 	{
 		id: "fix-bug",
 		label: "Fix a bug",
 		description: "Find and explain the issue",
 		icon: Bug,
+		tint: "bg-warning/10 border-warning/30",
 		prompt:
 			"What's wrong with this code and how do I fix it?\n\n```javascript\nconst nums = [1, 2, 3, 4, 5];\nconst result = nums.filter(n => n % 2 = 0);\nconsole.log(result);\n```",
 	},
@@ -43,6 +48,7 @@ const PRESETS: Preset[] = [
 		label: "Summarize text",
 		description: "Bullet-point summary",
 		icon: FileText,
+		tint: "bg-secondary/10 border-secondary/30",
 		prompt:
 			"Summarize this in 3 concise bullet points, focusing on actionable takeaways:\n\nThe rise of edge computing is transforming how we architect distributed systems. By processing data closer to the source, organizations can reduce latency by 50-70%, lower bandwidth costs, and enable real-time decision-making. However, edge deployments introduce complexity in data consistency, security patching, and observability. Companies like Cloudflare and Fastly are leading the charge with serverless edge platforms that abstract away infrastructure management while providing sub-millisecond cold start times.",
 	},
@@ -51,6 +57,7 @@ const PRESETS: Preset[] = [
 		label: "Write SQL",
 		description: "Natural language to query",
 		icon: Code2,
+		tint: "bg-accent/10 border-accent/30",
 		prompt:
 			"Write a SQL query to find the top 5 customers by total spending in the last 30 days, including their name, email, and order count. Assume tables: customers (id, name, email), orders (id, customer_id, total, created_at).",
 	},
@@ -68,10 +75,10 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.div
 				initial={{ scale: 0.9, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
-				transition={{ duration: 0.3 }}
-				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-[var(--radius-lg)] border border-accent/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-panel))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
+				transition={springs.soft}
+				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-[var(--radius-xl)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-surface))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
 			>
-				<span className="text-[22px] font-mono font-bold text-accent" aria-hidden="true">
+				<span className="text-[22px] font-mono font-bold text-[var(--color-accent)]" aria-hidden="true">
 					{">"}_
 				</span>
 			</m.div>
@@ -79,7 +86,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.h2
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.1 }}
+				transition={{ delay: 0.1, ...springs.soft }}
 				className="mb-2.5 text-2xl font-semibold tracking-tight text-text-bright"
 			>
 				Chat with any model
@@ -87,7 +94,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.p
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.15 }}
+				transition={{ delay: 0.15, ...springs.soft }}
 				className="mb-1 max-w-md font-mono text-[11px] uppercase tracking-widest text-text-muted"
 			>
 				OpenAI-compatible · metered in USDC
@@ -95,7 +102,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.p
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.2 }}
+				transition={{ delay: 0.2, ...springs.soft }}
 				className="mb-8 max-w-md text-[14.5px] leading-relaxed text-text-secondary"
 			>
 				Pick a starter prompt, or type below. Responses stream live.
@@ -105,7 +112,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.div
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
-				transition={{ delay: 0.22, duration: 0.4 }}
+				transition={{ delay: 0.22, ...springs.soft }}
 				className="mb-4 flex items-center gap-2.5 text-[11px] font-mono uppercase tracking-widest text-text-muted/80"
 				aria-hidden="true"
 			>
@@ -116,7 +123,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.div
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.25 }}
+				transition={{ delay: 0.25, ...springs.soft }}
 				className="grid w-full max-w-xl grid-cols-2 gap-3"
 			>
 				{PRESETS.map((preset, i) => {
@@ -128,19 +135,18 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							type="button"
 							initial={{ opacity: 0, y: 8 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.3 + i * 0.04 }}
+							transition={{ delay: 0.3 + i * 0.04, ...springs.soft }}
 							onMouseEnter={() => setHoveredId(preset.id)}
 							onMouseLeave={() => setHoveredId(null)}
-							onClick={() => onPreset(preset.prompt, preset.model)}
-							className="
-                flex min-h-[56px] items-start gap-3.5 rounded-[var(--radius-md)] border border-border
-                bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out active:scale-[0.97]
-                hover:border-accent/40 hover:bg-surface/80 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-10px_rgba(0,0,0,0.5)]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                focus-visible:ring-offset-2 focus-visible:ring-offset-void
-              "
+							onClick={() => onPreset(preset.prompt)}
+							className={`
+								group relative flex flex-col items-start gap-3 p-4 text-left
+								rounded-[var(--radius-lg)] border transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out active:scale-[0.97]
+								${isHovered ? `${preset.tint} shadow-sm` : "bg-surface border-border hover:border-border-hi"}
+								focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-void
+							`}
 						>
-							<div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors duration-150 ease-out ${isHovered ? "border-accent/30 bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
+							<div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-md)] border transition-colors duration-200 ease-out ${isHovered ? "border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]" : "border-[var(--color-border)] bg-[var(--color-surface)] text-text-muted"}`}>
 								<Icon
 									className="h-3.5 w-3.5"
 								/>
@@ -148,16 +154,16 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1.5">
 									<span
-										className={`text-[12px] font-semibold tracking-wide transition-colors duration-150 ease-out ${
+										className={`text-[12px] font-semibold tracking-wide transition-colors duration-200 ease-out ${
 											isHovered ? "text-text-bright" : "text-text-secondary"
 										}`}
 									>
 										{preset.label}
 									</span>
 									<ChevronRight
-										className={`h-3 w-3 transition-[transform,opacity,color] duration-150 ease-out ${
+										className={`h-3 w-3 transition-[transform,opacity,color] duration-200 ease-out ${
 											isHovered
-												? "translate-x-0.5 text-accent opacity-100"
+												? "translate-x-0.5 text-[var(--color-accent)] opacity-100"
 												: "-translate-x-2 text-text-muted opacity-0"
 										}`}
 									/>
@@ -174,10 +180,10 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 			<m.div
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
-				transition={{ delay: 0.5 }}
+				transition={{ delay: 0.5, ...springs.soft }}
 				className="mt-6 flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider"
 			>
-				<Coins className="h-3.5 w-3.5 text-accent opacity-80" aria-hidden="true" />
+				<Coins className="h-3.5 w-3.5 text-[var(--color-accent)] opacity-80" aria-hidden="true" />
 				Starters route to budget models — cost stays tiny
 			</m.div>
 		</div>

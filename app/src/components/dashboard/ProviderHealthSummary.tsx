@@ -64,8 +64,8 @@ export function ProviderHealthSummary() {
 					: "Outage detected";
 
 	return (
-		<div className="flex flex-col h-full justify-between p-6 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] relative overflow-hidden transition-colors hover:border-accent/40">
-			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 via-success/20 to-transparent" />
+		<div className="flex flex-col h-full justify-between p-6 bg-[var(--color-surface)]/30 border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]/50">
+			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-success)]/40 via-[var(--color-success)]/20 to-transparent" />
 			<div className="mb-6 flex items-start justify-between">
 				<div>
 					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">System health</h2>
@@ -74,13 +74,13 @@ export function ProviderHealthSummary() {
 					</p>
 				</div>
 				<div
-					className={`flex h-10 w-10 rounded-[var(--radius-md)] shadow-[0_0_15px_-5px_var(--color-success-glow)] items-center justify-center border ${overallTone === "green" ? "border-success/30 bg-success/10" : overallTone === "red" ? "border-pink/30 bg-pink/10" : "border-warning/30 bg-warning/10"} ${TONE_TEXT[overallTone]}`}
+					className={`flex h-10 w-10 rounded-[var(--radius-lg)] shadow-[0_0_15px_-5px_var(--color-success-glow)] items-center justify-center border ${overallTone === "green" ? "border-[var(--color-success)]/30 bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)]" : overallTone === "red" ? "border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)]" : "border-[var(--color-warning)]/30 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)]"} ${TONE_TEXT[overallTone]}`}
 				>
 					<Activity className="h-4 w-4" aria-hidden="true" />
 				</div>
 			</div>
 
-			<div className="mb-4 flex items-center gap-3 bg-surface/50 p-3.5 rounded-[var(--radius-md)] border border-border/50 shadow-inner">
+			<div className="mb-4 flex items-center gap-3 bg-[var(--color-surface)]/50 p-3.5 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 shadow-inner">
 				<span
 					aria-hidden="true"
 					className={`inline-block h-2.5 w-2.5 rounded-full ${overallTone === "green" ? "animate-pulse shadow-[0_0_8px_var(--color-success)]" : ""} ${TONE_DOT[overallTone]}`}
@@ -90,7 +90,7 @@ export function ProviderHealthSummary() {
 				</span>
 			</div>
 
-			<div className="flex-1 space-y-px border border-border/60 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
+			<div className="flex-1 space-y-px border border-[var(--color-border)]/60 rounded-[var(--radius-md)] overflow-hidden bg-[var(--color-void)] shadow-sm">
 				{[
 					{ tone: "green" as const, label: "Operational", count: counts.green },
 					{ tone: "yellow" as const, label: "Degraded", count: counts.yellow },
@@ -105,7 +105,7 @@ export function ProviderHealthSummary() {
 				].map((row) => (
 					<div
 						key={row.tone}
-						className="flex items-center justify-between p-3.5 border-b border-border/40 last:border-0 hover:bg-surface/50 transition-colors"
+						className="flex items-center justify-between p-3.5 border-b border-[var(--color-border)]/40 last:border-0 hover:bg-[var(--color-surface)]/50 transition-colors duration-200 ease-out"
 					>
 						<div className="flex items-center gap-3">
 							<span
@@ -121,13 +121,13 @@ export function ProviderHealthSummary() {
 				))}
 			</div>
 
-			<div className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between text-[10.5px] font-mono text-text-muted/80">
+			<div className="mt-5 pt-4 border-t border-[var(--color-border)]/50 flex items-center justify-between text-[10.5px] font-mono text-text-muted/80">
 				<span>
 					LAST CHECKED {formatTime(new Date(dataUpdatedAt).toISOString()).toUpperCase()}
 				</span>
 				<Link
 					href="/dashboard?tab=health"
-					className="inline-flex items-center gap-1.5 font-bold text-accent hover:text-accent-hover uppercase tracking-widest transition-colors active:scale-[0.97]"
+					className="inline-flex items-center gap-1.5 font-bold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] uppercase tracking-widest transition-colors duration-200 ease-out active:scale-[0.97]"
 				>
 					View all <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
 				</Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { Columns2, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Message } from "./chat-message-shared";
@@ -61,7 +62,7 @@ export function ModelComparePanel({
 					initial={{ x: "100%", opacity: 0 }}
 					animate={{ x: 0, opacity: 1 }}
 					exit={{ x: "100%", opacity: 0 }}
-					transition={{ type: "spring", duration: 0.5, bounce: 0.1 }}
+					transition={springs.card}
 					className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-void border-l border-border z-50 flex flex-col shadow-2xl"
 					role="complementary"
 					aria-label="Model comparison panel"
@@ -77,7 +78,7 @@ export function ModelComparePanel({
 							type="button"
 							onClick={onClose}
 							aria-label="Close comparison panel"
-							className="text-text-muted hover:text-text-secondary focus-ring"
+							className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
 						>
 							<X className="w-4 h-4" />
 						</button>
@@ -108,28 +109,28 @@ export function ModelComparePanel({
 								{compareMessages.map((msg) => (
 									<div
 										key={msg.id || `${msg.role}-${msg.timestamp}`}
-										className={`p-2 border ${
+										className={`p-3 rounded-[var(--radius-md)] border ${
 											msg.role === "user"
-												? "border-success/30 bg-success/5"
-												: "border-border bg-surface"
+												? "border-[var(--color-success)]/30 bg-[color-mix(in_srgb,var(--color-success)_5%,transparent)]"
+												: "border-[var(--color-border)] bg-[var(--color-surface)]"
 										}`}
 									>
-										<div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-1">
+										<div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-1.5">
 											{msg.role === "user"
 												? `YOU · ${compareName}`
 												: compareName}
 										</div>
-										<p className="text-xs font-mono text-text-secondary whitespace-pre-wrap break-words">
+										<p className="text-xs font-mono text-text-secondary whitespace-pre-wrap break-words leading-relaxed">
 											{msg.content || (loading ? "..." : "")}
 											{loading &&
 												msg.role === "assistant" &&
 												msg.content === "" && (
-													<Loader2 className="w-3 h-3 inline ml-1 animate-spin text-success" />
+													<Loader2 className="w-3 h-3 inline ml-1 animate-spin text-[var(--color-success)]" />
 												)}
 										</p>
 										{msg.tokens !== undefined && msg.tokens > 0 && (
-											<div className="text-[10px] font-mono text-text-muted mt-1">
-												TK:{msg.tokens}{" "}
+											<div className="text-[10px] font-mono text-text-muted mt-2">
+												TK:{msg.tokens}{""}
 												{msg.latency ? `· ${msg.latency}ms` : ""}
 											</div>
 										)}
@@ -149,13 +150,13 @@ export function ModelComparePanel({
 							placeholder="Type to compare..."
 							rows={2}
 							disabled={loading}
-							className="w-full resize-none bg-void border border-border px-2 py-1.5 text-xs font-mono text-text-secondary placeholder-text-muted focus:border-accent/50 focus:outline-none disabled:opacity-50"
+							className="w-full resize-none bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-3 py-2 text-xs font-mono text-text-secondary placeholder-text-muted focus:border-[var(--color-accent)]/50 focus:outline-none disabled:opacity-50"
 						/>
 						<button
 							type="button"
 							onClick={handleSubmit}
 							disabled={(!localPrompt.trim() && !prompt.trim()) || loading}
-							className="w-full mt-2 px-3 py-2 bg-accent text-text-inverse text-[11px] font-mono font-bold uppercase tracking-widest hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-full mt-2 px-3 py-2 bg-[var(--color-accent)] rounded-[var(--radius-md)] text-text-inverse text-[11px] font-mono font-bold uppercase tracking-widest hover:bg-[var(--color-accent-hover)] hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] transition-[background-color,box-shadow,transform] duration-200 ease-out disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] focus-ring"
 						>
 							{loading ? (
 								<span className="inline-flex items-center gap-2">

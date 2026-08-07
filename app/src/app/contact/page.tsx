@@ -59,7 +59,7 @@ export default function ContactPage() {
 				<InViewFade>
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-10"
+					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -68,13 +68,13 @@ export default function ContactPage() {
 				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
 					contact
 				</p>
-				<h1 className="text-3xl sm:text-4xl font-semibold text-text-bright mb-4">
+				<h1 className="display-headline text-text-bright mb-4">
 					How to reach OMA
 				</h1>
 				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed">
 					We are a lean team. Email is the fastest channel. We typically reply
 					within five business days for privacy requests and sooner for outages.
-					OMA AI / Open Model Access is operated by{" "}
+					OMA AI / Open Model Access is operated by{""}
 					<a
 						href="https://www.nosytlabs.com"
 						target="_blank"
@@ -91,7 +91,7 @@ export default function ContactPage() {
 					{CHANNELS.map((c) => (
 						<li
 							key={c.title}
-							className="rounded-xl border border-border bg-surface p-5 hover:border-accent/40 transition-colors"
+							className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 hover:border-accent/40 transition-colors duration-200 ease-out"
 						>
 							<div className="flex items-start gap-3">
 								<c.icon
@@ -118,18 +118,18 @@ export default function ContactPage() {
 				</ul>
 
 				<p className="mt-12 text-sm text-text-muted">
-					Prefer self-serve? Read the{" "}
+					Prefer self-serve? Read the{""}
 					<Link href="/docs" className="text-accent underline underline-offset-2">
 						API docs
 					</Link>
-					,{" "}
+					,{""}
 					<Link
 						href="/privacy"
 						className="text-accent underline underline-offset-2"
 					>
 						privacy policy
 					</Link>
-					, or{" "}
+					, or{""}
 					<Link href="/terms" className="text-accent underline underline-offset-2">
 						terms
 					</Link>

@@ -26,8 +26,8 @@ export function Skeleton({
 }: SkeletonProps) {
 	const animationClass = {
 		shimmer: "skeleton-sweep",
-		pulse: "animate-pulse bg-surface-elevated",
-		static: "bg-surface-elevated",
+		pulse: "animate-pulse bg-[var(--color-surface-elevated)]",
+		static: "bg-[var(--color-surface-elevated)]",
 	}[variant];
 
 	if (lines > 1) {

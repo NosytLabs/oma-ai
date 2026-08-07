@@ -13,7 +13,7 @@ const AgentSessionDemo = dynamic(
 	{
 		ssr: false,
 		loading: () => (
-			<Skeleton className="h-[320px] w-full rounded-xl border border-border" />
+			<Skeleton className="h-[320px] w-full rounded-[var(--radius-xl)] border border-border" />
 		),
 	},
 );
@@ -26,14 +26,14 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 	const isInteractive = looksLikeCurl || !code.trimStart().startsWith("#");
 
 	return (
-		<div className="rounded-lg border border-border bg-surface/50 p-4 relative group">
+		<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 relative group">
 			<div className="mb-2 flex items-center justify-between">
 				<span className="text-xs font-semibold text-text-secondary font-mono uppercase tracking-wider">
 					{title}
 				</span>
 				<div className="flex items-center gap-1.5">
 					{looksLikeCurl && (
-						<span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
+						<span className="rounded-[var(--radius-md)] bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
 							cURL
 						</span>
 					)}
@@ -47,7 +47,7 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 									setTimeout(() => setCopied(false), 2000);
 								});
 							}}
-							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 text-text-muted hover:text-accent"
+							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 ease-out p-1 text-text-muted hover:text-accent"
 							aria-label={copied ? "Copied" : "Copy code"}
 						>
 							{copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
@@ -55,7 +55,7 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 					)}
 				</div>
 			</div>
-			<pre className="overflow-x-auto rounded-md bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
+			<pre className="overflow-x-auto rounded-[var(--radius-md)] bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
 {code}
 			</pre>
 		</div>
@@ -64,12 +64,12 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 
 export function QuickStartSection() {
 	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'`;
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "llama-3.3-70b",
+ "messages": [{"role": "user", "content": "Hello!"}]
+ }'`;
 
 	return (
 		<AnimatedSection>
@@ -85,9 +85,9 @@ export function QuickStartSection() {
 					<div
 						key={step.n}
 						id={step.id}
-						className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24"
+						className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 scroll-mt-24"
 					>
-						<div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent text-sm font-bold font-mono">
+						<div className="mb-3 flex h-8 w-8 items-center justify-center rounded-[var(--radius-lg)] bg-accent/10 text-accent text-sm font-bold font-mono">
 							{step.n}
 						</div>
 						<h3 className="mb-1 font-semibold text-text">{step.title}</h3>
@@ -96,7 +96,7 @@ export function QuickStartSection() {
 				))}
 			</div>
 
-			<div className="relative rounded-xl border border-border bg-panel p-6">
+			<div className="relative rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-6">
 				<div className="mb-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
@@ -104,7 +104,7 @@ export function QuickStartSection() {
 							Your First Request
 						</span>
 					</div>
-					<span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">
+					<span className="rounded-[var(--radius-md)] bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">
 						cURL
 					</span>
 				</div>
@@ -112,19 +112,19 @@ export function QuickStartSection() {
 			</div>
 
 			<div className="mt-4 grid gap-3 sm:grid-cols-2">
-				<div className="rounded-lg border border-border bg-surface/50 p-3">
+				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
 					<div className="text-xs text-text-muted mb-1">Base URL</div>
 					<code className="text-sm text-accent">https://api.oma-ai.com/v1</code>
 				</div>
-				<div className="rounded-lg border border-border bg-surface/50 p-3">
+				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
 					<div className="text-xs text-text-muted mb-1">SDK Install</div>
 					<code className="text-sm text-accent">npm install openai</code>
 				</div>
 			</div>
 
 			{/* Per-modality examples — copyable from the docs page so users see
-			    every supported modality at a glance. Each block uses the
-			    OpenAI-compatible surface so SDKs work out-of-the-box. */}
+			 every supported modality at a glance. Each block uses the
+			 OpenAI-compatible surface so SDKs work out-of-the-box. */}
 			<div className="mt-10 space-y-4">
 				<p className="text-xs font-mono uppercase tracking-widest text-text-muted">
 					Chat · image · video · curl
@@ -133,32 +133,32 @@ export function QuickStartSection() {
 					<ModalityExample
 						title="Chat"
 						code={`curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'`}
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "llama-3.3-70b",
+ "messages": [{"role": "user", "content": "Hello!"}]
+ }'`}
 					/>
 					<ModalityExample
 						title="Image generation"
 						code={`curl https://api.oma-ai.com/v1/images/generations \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "venice-sd35",
-    "prompt": "a serene mountain lake at dawn"
-  }'`}
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "venice-sd35",
+ "prompt": "a serene mountain lake at dawn"
+ }'`}
 					/>
 					<ModalityExample
 						title="Video generation"
 						code={`curl https://api.oma-ai.com/v1/videos/quote \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "kling-v3-pro-text-to-video",
-    "duration": "5s"
-  }'`}
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "kling-v3-pro-text-to-video",
+ "duration": "5s"
+ }'`}
 					/>
 				</div>
 			</div>

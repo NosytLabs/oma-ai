@@ -129,7 +129,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 				aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} new)` : ""}`}
 				aria-expanded={open}
 				aria-haspopup="menu"
-				className="relative flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-text-muted transition-colors hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface text-text-muted transition-colors duration-200 ease-out hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 			>
 				<Bell className="h-4 w-4" aria-hidden="true" />
 				<AnimatePresence>
@@ -163,7 +163,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 						style={{ transformOrigin: "top right" }}
 						role="menu"
 						aria-label="Notifications"
-						className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-panel p-2 shadow-2xl"
+						className="absolute right-0 top-full z-50 mt-2 w-80 rounded-[var(--radius-lg)] border border-border bg-panel p-2 shadow-2xl"
 					>
 						<div className="mb-1 flex items-center justify-between px-2 py-1.5">
 							<span className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">
@@ -173,7 +173,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 								type="button"
 								onClick={() => setOpen(false)}
 								aria-label="Close notifications"
-								className="rounded p-1 text-text-muted hover:bg-surface hover:text-text"
+								className="rounded-[var(--radius-sm)] p-1 text-text-muted hover:bg-surface hover:text-text"
 							>
 								<X className="h-3 w-3" />
 							</button>
@@ -239,7 +239,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 							<Link
 								href="/deposit"
 								onClick={() => setOpen(false)}
-								className="inline-flex items-center gap-1 text-text-muted transition-colors hover:text-text"
+								className="inline-flex items-center gap-1 text-text-muted transition-colors duration-200 ease-out hover:text-text"
 							>
 								<CheckCheck className="h-3 w-3" aria-hidden="true" />
 								View all
@@ -247,7 +247,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 							<Link
 								href="/deposit"
 								onClick={() => setOpen(false)}
-								className="inline-flex items-center gap-1 text-accent transition-colors hover:text-accent/80"
+								className="inline-flex items-center gap-1 text-accent transition-colors duration-200 ease-out hover:text-accent/80"
 							>
 								New deposit
 								<ArrowUpRight className="h-3 w-3" aria-hidden="true" />
@@ -290,7 +290,7 @@ function NotificationRow({
 			onClick={handleClick}
 			onKeyDown={handleKeyDown}
 			aria-label={`${n.type} notification, status ${statusLabel}. Activate to view.`}
-			className="group flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+			className="group flex cursor-pointer items-start gap-2 rounded-[var(--radius-md)] px-2 py-2 transition-colors duration-200 ease-out hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 		>
 			<div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-void text-text-muted">
 				<Inbox className="h-3 w-3" aria-hidden="true" />

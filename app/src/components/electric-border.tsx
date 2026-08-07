@@ -11,13 +11,13 @@
  * featured card, etc.). Respects reduced-motion.
  *
  * API:
- *   - active:          animate when true, static when false (default true)
- *   - borderRadius:    CSS border-radius (default "0.75rem")
- *   - borderWidth:     px (default 1)
- *   - color:           accent color (default var(--color-accent))
- *   - children
- *   - className:       pass-through
- *   - style:           pass-through
+ * - active: animate when true, static when false (default true)
+ * - borderRadius: CSS border-radius (default "0.75rem")
+ * - borderWidth: px (default 1)
+ * - color: accent color (default var(--color-accent))
+ * - children
+ * - className: pass-through
+ * - style: pass-through
  */
 
 import { useReducedMotion } from "@/lib/framer-motion-client";
@@ -35,7 +35,7 @@ interface ElectricBorderProps {
 
 export function ElectricBorder({
 	active = true,
-	borderRadius = "0.75rem",
+	borderRadius = "var(--radius-lg)",
 	borderWidth = 1,
 	color = "var(--color-accent)",
 	children,

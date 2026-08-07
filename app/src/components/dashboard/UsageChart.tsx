@@ -1,6 +1,7 @@
 "use client";
 
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import dynamic from "next/dynamic";
 import type { DataPoint } from "@/components/ui/charts/AreaChart";
 import type { ModelData } from "@/components/ui/charts/DonutChart";
@@ -47,27 +48,27 @@ export function UsageChart({
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<m.div
-				className="bg-surface border border-border/60 p-6 rounded-[12px] shadow-sm relative overflow-hidden h-full"
+				className="bg-[var(--color-surface)]/30 border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden h-full transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]/50"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.4, delay: 0.3 }}
+				transition={{ ...springs.card, delay: 0.3 }}
 			>
 				{/* Accent glow on top edge */}
-				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 to-transparent" />
+				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-accent)]/40 to-transparent" />
 				<div className="flex items-center justify-between mb-6">
 					<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Usage ({TIME_LABELS[timeRange] || timeRange})
 					</h3>
 				</div>
 				{hasUsageData ? (
-					<div role="img" aria-label={areaLabel} className="bg-void p-4 rounded-md border border-border/50">
+					<div role="img" aria-label={areaLabel} className="bg-[var(--color-void)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]/50">
 						<AreaChartComponent data={usageData} />
 					</div>
 				) : (
 					<div
 						role="img"
 						aria-label="Usage chart placeholder. No data yet."
-						className="flex flex-col items-center justify-center h-48 border border-dashed border-border/60 rounded-[8px] bg-void px-6 text-center"
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-[var(--color-border)]/60 rounded-[var(--radius-md)] bg-[var(--color-void)] px-6 text-center"
 					>
 						<p className="text-[13.5px] font-semibold text-text-secondary">No usage data yet</p>
 						<p className="mt-2 text-[11px] font-mono text-text-muted">
@@ -78,13 +79,13 @@ export function UsageChart({
 			</m.div>
 
 			<m.div
-				className="bg-surface border border-border/60 p-6 rounded-[12px] shadow-sm relative overflow-hidden h-full"
+				className="bg-[var(--color-surface)]/30 border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden h-full transition-[border-color,background-color] hover:border-[var(--color-tertiary)]/40 hover:bg-[var(--color-surface)]/50"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.4, delay: 0.4 }}
+				transition={{ ...springs.card, delay: 0.4 }}
 			>
 				{/* Accent glow on top edge */}
-				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-tertiary/40 to-transparent" />
+				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-tertiary)]/40 to-transparent" />
 				<div className="flex items-center justify-between mb-6">
 					<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Model Breakdown
@@ -92,10 +93,10 @@ export function UsageChart({
 				</div>
 				{hasModelData ? (
 					<div role="img" aria-label={donutLabel} className="flex flex-col h-[calc(100%-2rem)]">
-						<div className="bg-void p-4 rounded-md border border-border/50 flex-1">
+						<div className="bg-[var(--color-void)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 flex-1">
 							<DonutChart data={modelData} />
 						</div>
-						<div className="mt-5 flex flex-wrap gap-3 p-3 bg-surface-elevated rounded-md border border-border/50 justify-center">
+						<div className="mt-5 flex flex-wrap gap-3 p-3 bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50 justify-center">
 							{modelData.map((model) => (
 								<div key={model.name} className="flex items-center gap-2">
 									<div
@@ -112,7 +113,7 @@ export function UsageChart({
 					<div
 						role="img"
 						aria-label="Model breakdown chart placeholder. No data yet."
-						className="flex flex-col items-center justify-center h-48 border border-dashed border-border/60 rounded-[8px] bg-void px-6 text-center"
+						className="flex flex-col items-center justify-center h-48 border border-dashed border-[var(--color-border)]/60 rounded-[var(--radius-md)] bg-[var(--color-void)] px-6 text-center"
 					>
 						<p className="text-[13.5px] font-semibold text-text-secondary">No model usage data yet</p>
 						<p className="mt-2 text-[11px] font-mono text-text-muted">

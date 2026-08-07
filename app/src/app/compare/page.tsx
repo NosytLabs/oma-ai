@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, X, Sparkles } from "lucide-react";
+import { Check, X, Sparkles, ArrowLeft } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 
 // Imports client visuals elsewhere; opt out of static prerender so Next 15
@@ -189,7 +189,7 @@ const matrix: Record<RowKey, Record<(typeof competitors)[number]["key"], Cell>> 
 function CellView({ value, ours }: { value: Cell; ours: boolean }) {
 	if (value === "yes") {
 		return (
-			<div className={`flex justify-center ${ours ? "text-accent" : "text-zinc-400"}`}>
+			<div className={`flex justify-center ${ours ? "text-accent" : "text-text-muted"}`}>
 				<Check className="w-5 h-5" />
 			</div>
 		);
@@ -204,7 +204,7 @@ function CellView({ value, ours }: { value: Cell; ours: boolean }) {
 	if (value === "partial") {
 		return (
 			<div className="flex justify-center">
-				<span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+				<span className="text-xs font-mono px-2 py-0.5 rounded-[var(--radius-sm)] bg-secondary/10 text-secondary border border-secondary/20">
 					partial
 				</span>
 			</div>
@@ -241,6 +241,14 @@ export default function ComparePage() {
 		<div className="min-h-screen bg-void text-text-primary">
 			{/* Use a div — root layout already provides the single <main id="main-content"> landmark. */}
 			<div className="container-page max-w-7xl pb-24">
+				{/* Back link — matches /faq, /glossary, /contact, /about breadcrumb pattern */}
+				<Link
+					href="/"
+					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+				>
+					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
+					Home
+				</Link>
 				{/* Hero */}
 				<InViewFade>
 				<section className="py-16 text-center">
@@ -248,12 +256,12 @@ export default function ComparePage() {
 						<Sparkles className="w-3 h-3" />
 						<span>feature comparison</span>
 					</div>
-					<h1 className="text-4xl sm:text-5xl font-bold mb-4">
+					<h1 className="display-headline text-text-bright mb-4">
 						OMA vs every other gateway
 					</h1>
 					<p className="text-text-secondary text-lg max-w-2xl mx-auto">
 						Detailed feature comparison across the LLM gateway landscape. Data
-						current as of 2026-07.
+						current as of 2026-08.
 					</p>
 				</section>
 				</InViewFade>
@@ -263,7 +271,7 @@ export default function ComparePage() {
 					{summaryCards.map((card) => (
 						<div
 							key={card.title}
-							className="rounded-lg border border-border bg-surface p-5"
+							className="rounded-[var(--radius-lg)] border border-border bg-surface p-5"
 						>
 							<h2 className="font-semibold mb-2 text-accent text-base">{card.title}</h2>
 							<p className="text-sm text-text-secondary leading-relaxed">
@@ -275,7 +283,7 @@ export default function ComparePage() {
 
 				{/* Comparison matrix */}
 				<section>
-					<div tabIndex={0} aria-label="Feature comparison table" className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-lg border border-border [-webkit-overflow-scrolling:touch] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+					<div tabIndex={0} aria-label="Feature comparison table" className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-[var(--radius-lg)] border border-border [-webkit-overflow-scrolling:touch] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 						<table className="w-full min-w-[40rem]">
 							<thead className="bg-surface-2 border-b border-border">
 								<tr>
@@ -341,22 +349,22 @@ export default function ComparePage() {
 				{/* Footnotes */}
 				<section className="mt-8 text-sm text-text-muted space-y-2">
 					<p>
-						<span className="font-semibold text-text-primary">Pricing source:</span>{" "}
-						budget tier input cost per 1M tokens, July 2026. Subject to provider
+						<span className="font-semibold text-text-primary">Pricing source:</span>{""}
+						budget tier input cost per 1M tokens, August 2026. Subject to provider
 						changes.
 					</p>
 					<p>
-						<span className="font-semibold text-text-primary">Feature audit:</span>{" "}
-						based on each product&apos;s public docs as of 2026-07. If you find
+						<span className="font-semibold text-text-primary">Feature audit:</span>{""}
+						based on each product&apos;s public docs as of 2026-08. If you find
 						an error, please open a PR.
 					</p>
 				</section>
 
 				{/* Per-competitor deep dives */}
 				<section className="mt-20">
-					<h2 className="text-2xl font-bold mb-6">Detailed breakdowns</h2>
+					<h2 className="h2-section text-text-bright mb-6">Detailed breakdowns</h2>
 					<div className="grid md:grid-cols-2 gap-6">
-						<div className="rounded-lg border border-border bg-surface p-6">
+						<div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
 								OMA vs Portkey
 							</h3>
@@ -370,13 +378,13 @@ Portkey is enterprise-grade but requires a credit card, account
 								crypto-native billing, free tier, no card signup.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-zinc-400">Portkey wins on:</strong>{" "}
+								<strong className="text-text-muted">Portkey wins on:</strong>{""}
 								enterprise features (SSO, audit logs, RBAC), observability
 								depth, on-prem deployment.
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-border bg-surface p-6">
+						<div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
 								OMA vs LiteLLM
 							</h3>
@@ -390,13 +398,13 @@ Portkey is enterprise-grade but requires a credit card, account
 								infrastructure, payment rails, free tier, account privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-zinc-400">LiteLLM wins on:</strong>{" "}
+								<strong className="text-text-muted">LiteLLM wins on:</strong>{""}
 								data sovereignty (your hardware), 100+ provider support,
 								deep customization.
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-border bg-surface p-6">
+						<div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
 								OMA vs OpenRouter
 							</h3>
@@ -411,12 +419,12 @@ Portkey is enterprise-grade but requires a credit card, account
 								x402, price, account model.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-zinc-400">OpenRouter wins on:</strong>{" "}
+								<strong className="text-text-muted">OpenRouter wins on:</strong>{""}
 								provider breadth, ecosystem integrations, market share.
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-border bg-surface p-6">
+						<div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
 							<h3 className="text-lg font-semibold mb-2">
 								OMA vs Together AI
 							</h3>
@@ -427,11 +435,11 @@ Portkey is enterprise-grade but requires a credit card, account
 								and OMA-AI cost-effective Together can&apos;t match.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">OMA wins on:</strong>{" "}
+								<strong className="text-accent">OMA wins on:</strong>{""}
 								multi-provider, failover, free tier, privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-zinc-400">Together wins on:</strong>{" "}
+								<strong className="text-text-muted">Together wins on:</strong>{""}
 								direct GPU access, fine-tuning, dedicated capacity, raw speed.
 							</p>
 						</div>

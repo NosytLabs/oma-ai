@@ -62,7 +62,7 @@ export default function AboutPage() {
 			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors mb-10"
+					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -72,7 +72,7 @@ export default function AboutPage() {
 				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
 					about
 				</p>
-				<h1 className="text-3xl sm:text-4xl font-semibold text-text-bright mb-4">
+				<h1 className="display-headline text-text-bright mb-4">
 					Open Model Access
 				</h1>
 				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed text-lg">
@@ -86,7 +86,7 @@ export default function AboutPage() {
 					{PILLARS.map((p, i) => (
 						<li key={p.title}>
 							<InViewFade delay={i * 0.08} y={12}>
-								<div className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/30">
+								<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-colors duration-200 ease-out hover:border-accent/30">
 									<div className="flex items-start gap-3">
 										<p.icon
 											className="h-5 w-5 text-accent shrink-0 mt-0.5"
@@ -108,27 +108,21 @@ export default function AboutPage() {
 				</ul>
 
 				<div className="flex flex-wrap gap-3">
-					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-lg">
-						<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
+					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-[var(--radius-lg)]">
+						<ElectricBorder borderRadius="var(--radius-lg)" borderWidth={1} active={true}>
 							<Link
 								href="/login"
-								className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-void hover:bg-accent-bright transition-colors"
+								className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm"
 							>
 								Get an API key
 								<ArrowRight className="h-4 w-4" aria-hidden="true" />
 							</Link>
 						</ElectricBorder>
 					</JuiceButton>
-					<Link
-						href="/docs"
-						className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text-bright hover:border-accent/40 transition-colors"
-					>
+					<Link href="/docs" className="btn-secondary inline-flex items-center gap-2 px-6 py-3 text-sm">
 						Read the docs
 					</Link>
-					<Link
-						href="/contact"
-						className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text-bright hover:border-accent/40 transition-colors"
-					>
+					<Link href="/contact" className="btn-secondary inline-flex items-center gap-2 px-6 py-3 text-sm">
 						Contact
 					</Link>
 				</div>

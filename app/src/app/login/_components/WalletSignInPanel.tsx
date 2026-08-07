@@ -99,7 +99,7 @@ export default function WalletSignInPanel({
 				type="button"
 				onClick={() => void handleSiwe()}
 				disabled={submitting || offline}
-				className="btn-primary min-h-12 w-full rounded-lg disabled:cursor-not-allowed disabled:opacity-50"
+				className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{submitting ? (
 					<>

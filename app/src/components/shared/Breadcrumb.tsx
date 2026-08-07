@@ -29,7 +29,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 		>
 			<Link
 				href="/"
-				className="hover:text-accent transition-colors"
+				className="hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
 				aria-label="Home"
 			>
 				<Home className="h-3.5 w-3.5" />
@@ -40,7 +40,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 					{i < items.length - 1 && item.href ? (
 						<Link
 							href={item.href}
-							className="hover:text-accent transition-colors"
+							className="hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
 						>
 							{item.label}
 						</Link>

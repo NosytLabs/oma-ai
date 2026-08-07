@@ -57,11 +57,11 @@ export function CostEstimate({
 	return (
 		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
 			<div className="flex items-center gap-1.5">
-				<MessageSquare className="w-3 h-3" />
+				<MessageSquare className="w-3 h-3 text-[var(--color-accent)]" />
 				<span>{inputTokens} TK</span>
 			</div>
 			<div className="flex items-center gap-1.5 text-text-muted">
-				<Coins className="w-3 h-3" />
+				<Coins className="w-3 h-3 text-[var(--color-success)]" />
 				<span
 					title={`In: ${inputCredits} cr · Out: ~${estimatedOutputCredits} cr (${(outputBudget / 1000).toFixed(1)}k TK est) · 1 credit = $0.01`}
 				>

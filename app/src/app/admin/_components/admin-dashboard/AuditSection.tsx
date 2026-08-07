@@ -24,7 +24,7 @@ export function AuditSection() {
 	} = useAdminDashboard();
 
 	return (
-			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-3">
+			<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4 space-y-3">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
@@ -38,7 +38,7 @@ export function AuditSection() {
 						type="button"
 						onClick={() => void loadAudit(null, false)}
 						disabled={auditLoading}
-						className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
+						className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
 					>
 						{auditLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Filter className="h-3 w-3" />}
 						Load
@@ -54,7 +54,7 @@ export function AuditSection() {
 							onChange={(e) =>
 								setAuditFilters((prev) => ({ ...prev, action: e.target.value }))
 							}
-							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+							className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
 						>
 							<option value="">All actions</option>
 							{AUDIT_ACTIONS.map((a) => (
@@ -75,7 +75,7 @@ export function AuditSection() {
 								setAuditFilters((prev) => ({ ...prev, userId: e.target.value }))
 							}
 							placeholder="usr_xxx"
-							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+							className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
 						/>
 					</div>
 					<div>
@@ -88,7 +88,7 @@ export function AuditSection() {
 							onChange={(e) =>
 								setAuditFilters((prev) => ({ ...prev, from: e.target.value }))
 							}
-							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+							className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
 						/>
 					</div>
 					<div>
@@ -101,13 +101,13 @@ export function AuditSection() {
 							onChange={(e) =>
 								setAuditFilters((prev) => ({ ...prev, to: e.target.value }))
 							}
-							className="w-full rounded border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
+							className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs outline-none focus:border-accent"
 						/>
 					</div>
 				</div>
 
 				{auditEntries ? (
-					<div className="overflow-x-auto max-h-[420px] overflow-y-auto rounded border border-border">
+					<div className="overflow-x-auto max-h-[420px] overflow-y-auto rounded-[var(--radius-sm)] border border-border">
 						<table className="w-full text-[11px] text-left">
 							<thead className="border-b border-border bg-surface-elevated/40 text-[9px] uppercase text-text-muted sticky top-0">
 								<tr>
@@ -133,7 +133,7 @@ export function AuditSection() {
 										>
 											<td className="p-2 text-text-muted">{timeAgo(entry.createdAt)}</td>
 											<td className="p-2">
-												<span className="rounded bg-surface-elevated px-1.5 py-0.5 font-mono text-[10px]">
+												<span className="rounded-[var(--radius-sm)] bg-surface-elevated px-1.5 py-0.5 font-mono text-[10px]">
 													{entry.action}
 												</span>
 											</td>
@@ -151,7 +151,7 @@ export function AuditSection() {
 											<td className="p-2 font-mono text-[10px] text-text-muted truncate max-w-[280px]">
 												{entry.metadata
 													? JSON.stringify(entry.metadata).slice(0, 80) +
-													  (JSON.stringify(entry.metadata).length > 80 ? "…" : "")
+													 (JSON.stringify(entry.metadata).length > 80 ? "…" : "")
 													: "—"}
 											</td>
 										</tr>
@@ -178,7 +178,7 @@ export function AuditSection() {
 								type="button"
 								onClick={() => void handleAuditPrev()}
 								disabled={auditCursorStack.length === 0 || auditLoading}
-								className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
+								className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
 							>
 								<ChevronLeft className="h-3 w-3" /> Prev
 							</button>
@@ -186,7 +186,7 @@ export function AuditSection() {
 								type="button"
 								onClick={() => void loadAudit(auditCursor, true)}
 								disabled={!auditCursor || auditLoading}
-								className="inline-flex items-center gap-1 rounded border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
+								className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-2 py-1 text-xs hover:bg-surface disabled:opacity-30"
 							>
 								Next <ChevronRight className="h-3 w-3" />
 							</button>

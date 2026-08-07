@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { CornerDownLeft, Key, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -135,7 +136,7 @@ export function NavbarMobileMenu({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						transition={{ duration: 0.2 }}
+						transition={springs.soft}
 						className="fixed inset-0 top-14 z-[60] bg-void/70 backdrop-blur-sm md:hidden"
 						aria-hidden="true"
 						onClick={() => onOpenChange(false)}
@@ -152,7 +153,7 @@ export function NavbarMobileMenu({
 						}
 						animate={prefersReduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
 						exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
-						transition={{ type: "spring", duration: 0.45, bounce: 0.05 }}
+						transition={springs.card}
 						className="fixed inset-y-0 right-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
 					>
 						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
@@ -177,7 +178,7 @@ export function NavbarMobileMenu({
 											initial="hidden"
 											animate="show"
 											variants={staggerContainer(0.04, gi * 0.05)}
-											className={`rounded-sm border bg-surface/40 p-2 transition-colors ${
+											className={`rounded-sm border bg-surface/40 p-2 transition-colors duration-200 ease-out ${
 												isCardActive ? "border-accent/40" : "border-border"
 											}`}
 										>
@@ -205,7 +206,7 @@ export function NavbarMobileMenu({
 																href={link.href}
 																onClick={() => onOpenChange(false)}
 																aria-current={isActive ? "page" : undefined}
-																className={`group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+																className={`group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 																	isActive
 																		? "bg-accent-dim text-accent"
 																		: "text-text-secondary hover:bg-panel hover:text-text-bright"
@@ -234,7 +235,7 @@ export function NavbarMobileMenu({
 									initial="hidden"
 									animate="show"
 									variants={staggerContainer(0.04, visibleGroups.length * 0.05)}
-									className={`rounded-sm border bg-surface/40 p-2 transition-colors ${
+									className={`rounded-sm border bg-surface/40 p-2 transition-colors duration-200 ease-out ${
 										isAccountCardActive ? "border-accent/40" : "border-border"
 									}`}
 								>
@@ -260,7 +261,7 @@ export function NavbarMobileMenu({
 													<Link
 														href={link.href}
 														onClick={() => onOpenChange(false)}
-														className="group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-panel hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+														className="group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm text-text-secondary transition-colors duration-200 ease-out hover:bg-panel hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 													>
 														<Icon
 															className="h-4 w-4 shrink-0 text-text-muted group-hover/m:text-accent"
@@ -276,7 +277,7 @@ export function NavbarMobileMenu({
 										<button
 											type="button"
 											onClick={() => setConfirmDisconnect(true)}
-											className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-red/30 px-3 py-2 text-sm font-medium text-red/80 transition-colors hover:border-red/50 hover:bg-red/10 hover:text-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+											className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-red/30 px-3 py-2 text-sm font-medium text-red/80 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:border-red/50 hover:bg-red/10 hover:text-red active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
 										>
 											<LogOut className="h-4 w-4" aria-hidden="true" />
 											<span>Sign out</span>
@@ -307,7 +308,7 @@ export function NavbarMobileMenu({
 													type="button"
 													onClick={() => setConfirmDisconnect(false)}
 													disabled={disconnecting}
-													className="min-h-[40px] rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-text transition-colors hover:bg-panel disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+													className="min-h-[40px] rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-text transition-[color,background-color,transform] duration-200 ease-out hover:bg-panel active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 												>
 													Cancel
 												</button>
@@ -315,7 +316,7 @@ export function NavbarMobileMenu({
 													type="button"
 													onClick={handleConfirmDisconnect}
 													disabled={disconnecting}
-													className="min-h-[40px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+													className="min-h-[40px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors duration-200 ease-out hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red active:scale-[0.97]"
 												>
 													{disconnecting ? "Signing out…" : "Sign out"}
 												</button>

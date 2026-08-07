@@ -2,6 +2,7 @@
 
 import { formatAddress } from "@/lib/utils";
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { ChevronDown, Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -81,7 +82,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 				type="button"
 				onClick={() => setOpen(!open)}
 				title={triggerTitle}
-				className={`inline-flex h-9 items-center gap-2 rounded-sm border bg-surface px-3 text-xs text-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+				className={`inline-flex h-9 items-center gap-2 rounded-sm border bg-surface px-3 text-xs text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 					open
 						? "border-accent/60 bg-panel"
 						: "border-border hover:border-accent/60 hover:bg-panel"
@@ -119,7 +120,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 								? { opacity: 0 }
 								: { opacity: 0, scale: 0.92, y: -6 }
 						}
-						transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+						transition={springs.soft}
 						style={{ transformOrigin: "top right" }}
 						className="absolute right-0 mt-2 w-56 rounded-sm border border-border bg-void py-1 font-mono shadow-xl shadow-overlay z-[60]"
 					>
@@ -134,7 +135,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 						<Link
 							href="/dashboard?tab=api-keys"
 							role="menuitem"
-							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
+							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
 							onClick={() => setOpen(false)}
 						>
 							<Key className="h-3 w-3" aria-hidden="true" />
@@ -143,7 +144,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 						<Link
 							href="/deposit"
 							role="menuitem"
-							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
+							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
 							onClick={() => setOpen(false)}
 						>
 							<Zap className="h-3 w-3" aria-hidden="true" />
@@ -152,7 +153,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 						<Link
 							href="/settings"
 							role="menuitem"
-							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
+							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
 							onClick={() => setOpen(false)}
 						>
 							<Settings className="h-3 w-3" aria-hidden="true" />
@@ -162,7 +163,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 							<Link
 								href="/admin"
 								role="menuitem"
-								className="flex items-center gap-3 px-4 py-3 text-xs text-accent transition-colors hover:bg-accent-dim focus-visible:outline-none focus-visible:bg-accent-dim"
+								className="flex items-center gap-3 px-4 py-3 text-xs text-accent transition-colors duration-200 ease-out hover:bg-accent-dim focus-visible:outline-none focus-visible:bg-accent-dim"
 								onClick={() => setOpen(false)}
 							>
 								<ShieldCheck className="h-3 w-3" aria-hidden="true" />
@@ -175,7 +176,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 								type="button"
 								role="menuitem"
 								onClick={() => setConfirming(true)}
-								className="flex w-full items-center gap-3 px-4 py-3 text-left text-xs text-error/80 transition-colors hover:bg-error-dim hover:text-error focus-visible:outline-none focus-visible:bg-error-dim focus-visible:text-error"
+								className="flex w-full items-center gap-3 px-4 py-3 text-left text-xs text-error/80 transition-colors duration-200 ease-out hover:bg-error-dim hover:text-error focus-visible:outline-none focus-visible:bg-error-dim focus-visible:text-error"
 							>
 								<LogOut className="h-3 w-3" aria-hidden="true" />
 								sign out
@@ -205,7 +206,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 										type="button"
 										onClick={() => setConfirming(false)}
 										disabled={disconnecting}
-										className="rounded-sm border border-border bg-surface px-2 py-1.5 text-[11px] font-medium text-text transition-colors hover:bg-panel disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+										className="rounded-sm border border-border bg-surface px-2 py-1.5 text-[11px] font-medium text-text transition-colors duration-200 ease-out hover:bg-panel disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 									>
 										Cancel
 									</button>
@@ -213,7 +214,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 										type="button"
 										onClick={handleConfirmDisconnect}
 										disabled={disconnecting}
-										className="rounded-sm border border-error/40 bg-error/10 px-2 py-1.5 text-[11px] font-semibold text-error transition-colors hover:bg-error/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+										className="rounded-sm border border-error/40 bg-error/10 px-2 py-1.5 text-[11px] font-semibold text-error transition-colors duration-200 ease-out hover:bg-error/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error active:scale-[0.97]"
 									>
 										{disconnecting ? "Signing out…" : "Sign out"}
 									</button>

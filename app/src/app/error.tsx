@@ -89,7 +89,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 							<Bug className="h-3 w-3" aria-hidden="true" />
 							Stack trace
 						</summary>
-						<pre className="mt-3 p-4 bg-surface border border-border rounded text-xs text-text-muted overflow-x-auto whitespace-pre-wrap">
+						<pre className="mt-3 p-4 bg-surface border border-border rounded-[var(--radius-sm)] text-xs text-text-muted overflow-x-auto whitespace-pre-wrap">
 							{error.stack}
 						</pre>
 					</details>

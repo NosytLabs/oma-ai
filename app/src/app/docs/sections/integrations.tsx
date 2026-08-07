@@ -22,44 +22,44 @@ export function IntegrationsSection() {
 				subtitle="Use any OpenAI-compatible client: set base URL to api.oma-ai.com/v1 and Authorization: Bearer oma_sk_…"
 			/>
 
-			<div className="mb-6 rounded-xl border border-accent/25 bg-accent/5 p-4 text-sm text-text-secondary leading-relaxed">
+			<div className="mb-6 rounded-[var(--radius-xl)] border border-accent/25 bg-accent/5 p-4 text-sm text-text-secondary leading-relaxed">
 				<p className="font-medium text-text-bright mb-1">One key, one base URL</p>
 				<ul className="list-disc pl-5 space-y-1">
 					<li>
-						Base URL:{" "}
+						Base URL:{""}
 						<code className="font-mono text-accent text-xs">{baseUrl}</code>
 					</li>
 					<li>
-						API key: create at{" "}
+						API key: create at{""}
 						<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
 							/dashboard → API keys
-						</Link>{" "}
+						</Link>{""}
 						(<code className="font-mono text-xs">oma_sk_…</code>)
 					</li>
 					<li>
-						Default sample model:{" "}
-						<code className="font-mono text-xs">{model}</code> (see{" "}
+						Default sample model:{""}
+						<code className="font-mono text-xs">{model}</code> (see{""}
 						<Link href="/models" className="text-accent underline-offset-2 hover:underline">
 							/models
 						</Link>
 						)
 					</li>
 					<li>
-						Claude Code / Anthropic SDK: also use{" "}
+						Claude Code / Anthropic SDK: also use{""}
 						<code className="font-mono text-xs">POST /v1/messages</code>
 					</li>
 					<li>
-						Playground{" "}
+						Playground{""}
 						<Link href="/chat" className="text-accent underline-offset-2 hover:underline">
 							WEB search
 						</Link>
-						: DuckDuckGo via{" "}
+						: DuckDuckGo via{""}
 						<code className="font-mono text-xs">GET /v1/search</code> (no extra key)
 					</li>
 				</ul>
 			</div>
 
-			<div id="int-opencode" className="mb-6 scroll-mt-24 rounded-xl border border-border bg-surface/50 p-5">
+			<div id="int-opencode" className="mb-6 scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5">
 				<h3 className="mb-2 flex items-center gap-2 font-semibold text-text">
 					<Terminal className="h-4 w-4 text-accent" />
 					OpenCode
@@ -80,9 +80,9 @@ export OPENAI_MODEL="${model}"
 # Then run OpenCode as usual — it will hit OMA for chat completions.`}
 				/>
 				<p className="mt-3 mb-3 text-xs text-text-muted">
-					If your OpenCode build uses{" "}
-					<code className="font-mono">OPENAI_API_BASE</code> instead of{" "}
-					<code className="font-mono">OPENAI_BASE_URL</code>, set that to the same{" "}
+					If your OpenCode build uses{""}
+					<code className="font-mono">OPENAI_API_BASE</code> instead of{""}
+					<code className="font-mono">OPENAI_BASE_URL</code>, set that to the same{""}
 					<code className="font-mono">{baseUrl}</code> value.
 				</p>
 				<p className="mb-2 text-sm text-text-secondary font-medium">
@@ -92,23 +92,23 @@ export OPENAI_MODEL="${model}"
 					lang="json"
 					code={`// opencode.json / provider settings (shape varies by OpenCode version)
 {
-  "provider": {
-    "oma": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OMA",
-      "options": {
-        "baseURL": "${baseUrl}",
-        "apiKey": "{env:OMA_API_KEY}"
-      },
-      "models": {
-        "${model}": { "name": "${model}" }
-      }
-    }
-  }
+ "provider": {
+ "oma": {
+ "npm": "@ai-sdk/openai-compatible",
+ "name": "OMA",
+ "options": {
+ "baseURL": "${baseUrl}",
+ "apiKey": "{env:OMA_API_KEY}"
+ },
+ "models": {
+ "${model}": { "name": "${model}" }
+ }
+ }
+ }
 }`}
 				/>
 				<p className="mt-2 text-xs text-text-muted">
-					Create the key at{" "}
+					Create the key at{""}
 					<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
 						/dashboard → API keys
 					</Link>
@@ -116,13 +116,13 @@ export OPENAI_MODEL="${model}"
 				</p>
 			</div>
 
-			<div id="int-claude-code" className="mb-6 scroll-mt-24 rounded-xl border border-border bg-surface/50 p-5">
+			<div id="int-claude-code" className="mb-6 scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5">
 				<h3 className="mb-2 flex items-center gap-2 font-semibold text-text">
 					<Code2 className="h-4 w-4 text-accent" />
 					Claude Code
 				</h3>
 				<p className="mb-3 text-sm text-text-muted">
-					Claude Code talks the Anthropic Messages API. OMA exposes a compatible{" "}
+					Claude Code talks the Anthropic Messages API. OMA exposes a compatible{""}
 					<code className="font-mono text-xs">POST /v1/messages</code> that rewrites to the
 					same catalog. Configure a custom Anthropic base URL + key:
 				</p>
@@ -134,36 +134,36 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 
 # Note: base URL is the origin (no /v1). The client appends /v1/messages.
 # Model ids are OMA catalog ids (not anthropic/claude-3-5-sonnet):
-#   claude-sonnet-5 · claude-opus-5 · llama-3.3-70b · …`}
+# claude-sonnet-5 · claude-opus-5 · llama-3.3-70b · …`}
 				/>
 				<CodeBlock
 					lang="bash"
 					code={`# One-shot smoke test (Messages API — x-api-key style)
 curl https://api.oma-ai.com/v1/messages \\
-  -H "x-api-key: oma_sk_your_key_here" \\
-  -H "anthropic-version: 2023-06-01" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "claude-sonnet-5",
-    "max_tokens": 64,
-    "messages": [{"role": "user", "content": "ping"}]
-  }'
+ -H "x-api-key: oma_sk_your_key_here" \\
+ -H "anthropic-version: 2023-06-01" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "claude-sonnet-5",
+ "max_tokens": 64,
+ "messages": [{"role": "user", "content": "ping"}]
+ }'
 
 # Same call with Bearer (OpenAI-style auth also accepted)
 curl https://api.oma-ai.com/v1/messages \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "anthropic-version: 2023-06-01" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "anthropic-version: 2023-06-01" \\
+ -H "Content-Type: application/json" \\
+ -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
 				/>
 				<p className="mt-3 text-xs text-text-muted">
-					Prefer one auth style consistently. Streaming: set{" "}
+					Prefer one auth style consistently. Streaming: set{""}
 					<code className="font-mono">stream: true</code> — OMA returns Anthropic-shaped SSE.
 					List models: <code className="font-mono">GET /v1/models</code> with the same key.
 				</p>
 			</div>
 
-			<div id="int-cursor" className="mb-6 scroll-mt-24 rounded-xl border border-border bg-surface/50 p-5">
+			<div id="int-cursor" className="mb-6 scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5">
 				<h3 className="mb-2 font-semibold text-text">Cursor / Continue / Cline</h3>
 				<p className="mb-3 text-sm text-text-muted">
 					Any IDE that accepts an OpenAI-compatible endpoint:
@@ -182,20 +182,20 @@ curl https://api.oma-ai.com/v1/messages \\
 					lang="json"
 					code={`// Example Continue config snippet (~/.continue/config.json)
 {
-  "models": [
-    {
-      "title": "OMA ${model}",
-      "provider": "openai",
-      "model": "${model}",
-      "apiBase": "${baseUrl}",
-      "apiKey": "oma_sk_your_key_here"
-    }
-  ]
+ "models": [
+ {
+ "title": "OMA ${model}",
+ "provider": "openai",
+ "model": "${model}",
+ "apiBase": "${baseUrl}",
+ "apiKey": "oma_sk_your_key_here"
+ }
+ ]
 }`}
 				/>
 			</div>
 
-			<div id="int-openai-sdk" className="scroll-mt-24 rounded-xl border border-border bg-surface/50 p-5">
+			<div id="int-openai-sdk" className="scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5">
 				<h3 className="mb-2 font-semibold text-text">openai-python / openai-node</h3>
 				<p className="mb-3 text-sm text-text-muted">
 					Drop-in replacement — only change base URL and key:
@@ -205,14 +205,14 @@ curl https://api.oma-ai.com/v1/messages \\
 					code={`from openai import OpenAI
 
 client = OpenAI(
-    api_key="oma_sk_your_key_here",
-    base_url="${baseUrl}",
+ api_key="oma_sk_your_key_here",
+ base_url="${baseUrl}",
 )
 
 r = client.chat.completions.create(
-    model="${model}",
-    messages=[{"role": "user", "content": "Hello from OMA"}],
-    max_tokens=64,
+ model="${model}",
+ messages=[{"role": "user", "content": "Hello from OMA"}],
+ max_tokens=64,
 )
 print(r.choices[0].message.content)`}
 				/>

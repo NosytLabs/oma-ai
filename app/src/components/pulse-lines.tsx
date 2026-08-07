@@ -9,13 +9,13 @@
  * one transform per frame regardless of grid density.
  *
  * API mirrors the public Originkit component (subset):
- *   - color:        base line + sweep color (default --color-accent)
- *   - gap:          px between lines (default 36)
- *   - speed:        seconds per sweep (default 7)
- *   - lineOpacity:  base line opacity 0-1 (default 0.08)
- *   - sweepOpacity: pulse peak opacity 0-1 (default 0.45)
- *   - vertical:     when false, lines run horizontally (default true)
- *   - className:    pass-through
+ * - color: base line + sweep color (default --color-accent)
+ * - gap: px between lines (default 36)
+ * - speed: seconds per sweep (default 7)
+ * - lineOpacity: base line opacity 0-1 (default 0.08)
+ * - sweepOpacity: pulse peak opacity 0-1 (default 0.45)
+ * - vertical: when false, lines run horizontally (default true)
+ * - className: pass-through
  *
  * When `prefers-reduced-motion: reduce` is set, the sweep animation is
  * suppressed and only the static grid is shown (lower opacity for calm).

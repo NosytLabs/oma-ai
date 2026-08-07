@@ -226,7 +226,7 @@ export default function ChangelogPage() {
 						<InViewFade>
 						<Link
 							href="/"
-							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
+							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
 							Back to home
@@ -243,7 +243,7 @@ export default function ChangelogPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Every release,{" "}</span>
+							<span className="block">Every release,{""}</span>
 							<span className="block text-accent">every shipped change.</span>
 						</h1>
 
@@ -266,7 +266,7 @@ export default function ChangelogPage() {
 					{/* ===== LATEST RELEASE (featured) ===== */}
 					<InViewFade>
 					<section className="container-page max-w-4xl pb-12 sm:pb-16">
-						<article className="relative border border-accent/30 rounded-xl overflow-hidden bg-gradient-to-br from-accent-dim via-surface to-surface">
+						<article className="relative border border-accent/30 rounded-[var(--radius-xl)] overflow-hidden bg-gradient-to-br from-accent-dim via-surface to-surface">
 							<span
 								aria-hidden="true"
 								className="absolute left-0 top-0 bottom-0 w-1 bg-accent"
@@ -316,7 +316,7 @@ export default function ChangelogPage() {
 													className="flex items-start gap-2.5 text-[13px] text-text-secondary"
 												>
 													<span
-														className={`shrink-0 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${style.color}`}
+														className={`shrink-0 inline-flex items-center gap-1 rounded-[var(--radius-sm)] border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${style.color}`}
 													>
 														<Icon className="h-2.5 w-2.5" aria-hidden="true" />
 														{style.label}
@@ -374,7 +374,7 @@ export default function ChangelogPage() {
 														className="flex items-start gap-2 text-[12.5px] text-text-secondary"
 													>
 														<span
-															className={`shrink-0 mt-0.5 inline-flex items-center rounded border px-1.5 py-px text-[9px] font-mono uppercase tracking-wider ${style.color}`}
+															className={`shrink-0 mt-0.5 inline-flex items-center rounded-[var(--radius-sm)] border px-1.5 py-px text-[9px] font-mono uppercase tracking-wider ${style.color}`}
 														>
 															{style.label}
 														</span>
@@ -408,9 +408,9 @@ export default function ChangelogPage() {
 									color="var(--color-accent)"
 									size={140}
 									opacity={0.15}
-									className="rounded-lg"
+									className="rounded-[var(--radius-lg)]"
 								>
-									<ElectricBorder borderRadius="8px" borderWidth={1} active={true}>
+									<ElectricBorder borderRadius="var(--radius-lg)" borderWidth={1} active={true}>
 										<Link
 											href="https://github.com/NosytLabs"
 											target="_blank"

@@ -639,7 +639,7 @@ function ShellContent({
 							</span>
 							<Link
 								href="/login?next=/chat"
-								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent-bright transition-colors"
+								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent-bright transition-colors duration-200 ease-out"
 							>
 								Sign in →
 							</Link>
@@ -659,7 +659,7 @@ function ShellContent({
 								</span>
 								<Link
 									href="/deposit"
-									className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors"
+									className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors duration-200 ease-out"
 								>
 									Top up →
 								</Link>
@@ -674,13 +674,13 @@ function ShellContent({
 								onClick={() => setSystemPromptOpen(!systemPromptOpen)}
 								aria-expanded={systemPromptOpen}
 								aria-label={`Toggle system prompt panel — Instructions ${systemPrompt.trim() ? "· Active" : "· Optional"}`}
-								className="w-full flex items-center justify-between px-4 md:px-6 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors focus-ring"
+								className="w-full flex items-center justify-between px-4 md:px-6 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors duration-200 ease-out focus-ring"
 							>
 								<span className="flex items-center gap-2.5">
 									<span
 										className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
 									/>
-									Instructions{" "}
+									Instructions{""}
 									{systemPrompt.trim() ? "· Active" : "· Optional"}
 								</span>
 								{systemPromptOpen ? (
@@ -697,7 +697,7 @@ function ShellContent({
 										placeholder="Set behavior, persona, or instructions for the model. Sent as the first message of every request."
 										aria-label="System prompt"
 										rows={3}
-										className="w-full resize-y bg-surface border border-border px-3 py-2 text-sm text-text-secondary font-sans leading-relaxed placeholder-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+										className="w-full resize-y bg-surface border border-border px-3 py-2 rounded-[var(--radius-lg)] text-sm text-text-secondary font-sans leading-relaxed placeholder-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
 										style={{ minHeight: "64px", maxHeight: "160px" }}
 									/>
 								</div>
@@ -790,7 +790,7 @@ function ShellContent({
 										<span className="sm:hidden">Tap send · hold for newline</span>
 										{!isAuthenticated && (
 											<span className="text-accent/80 font-semibold">
-												{" "}
+												{""}
 												· {freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
 												left
 											</span>
@@ -875,7 +875,7 @@ function ShellLoadingFallback() {
 		<div className="flex flex-col gap-6 p-4 max-w-4xl mx-auto">
 			<Skeleton className="h-8 w-48" />
 			<div className="flex gap-4">
-				<Skeleton className="w-10 h-10 shrink-0 rounded" />
+				<Skeleton className="w-10 h-10 shrink-0 rounded-[var(--radius-sm)]" />
 				<div className="flex flex-col max-w-[80%] gap-2 flex-1">
 					<Skeleton className="h-20 w-full" />
 					<Skeleton className="h-4 w-20" />

@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
 					<button
 						type="button"
 						onClick={this.handleReset}
-						className="btn-primary flex items-center gap-2"
+						className="btn-primary flex items-center gap-2 active:scale-[0.97]"
 					>
 						<span aria-hidden="true" className="text-base leading-none">
 							↻

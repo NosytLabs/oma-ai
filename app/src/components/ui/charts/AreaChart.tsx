@@ -51,15 +51,15 @@ const CustomTooltip = ({
 			? payload.find((p) => p.dataKey === "cost")
 			: undefined;
 		return (
-			<div className="rounded-lg border border-border bg-surface/95 px-3 py-2 shadow-xl">
+			<div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-2 shadow-xl">
 				<p className="text-xs text-text-muted">{label}</p>
 				{requestEntry && (
-					<p className="text-sm font-semibold text-accent">
+					<p className="text-sm font-semibold text-[var(--color-accent)]">
 						{requestEntry.value.toLocaleString()} requests
 					</p>
 				)}
 				{costEntry && (
-					<p className="text-sm font-semibold text-secondary">
+					<p className="text-sm font-semibold text-[var(--color-secondary)]">
 						${costEntry.value.toFixed(2)}
 					</p>
 				)}

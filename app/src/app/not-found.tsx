@@ -72,7 +72,7 @@ export default function NotFound() {
 					<div className="mt-6 pt-6 border-t border-border-subtle w-full">
 						<Link
 							href="/"
-							className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-accent transition-colors"
+							className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-accent transition-colors duration-200 ease-out"
 						>
 							<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 							<span>Back to homepage</span>

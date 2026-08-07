@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { AlertTriangle, Check, Copy, Eye, EyeOff, Key } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiKeyWithSecret } from "@/lib/api";
@@ -55,7 +56,7 @@ export function CreatedKeyModal({
 					initial={{ scale: 0.9, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
 					exit={{ scale: 0.9, opacity: 0 }}
-					transition={{ type: "spring", duration: 0.4, bounce: 0.08 }}
+					transition={springs.card}
 				>
 					<div className="mb-4 flex items-center gap-3">
 						<div className="flex h-12 w-12 items-center justify-center border border-accent/20 bg-accent/10 text-accent">
@@ -89,7 +90,7 @@ export function CreatedKeyModal({
 							<button
 								type="button"
 								onClick={handleReveal}
-								className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent"
+								className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors duration-200 ease-out hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent active:scale-[0.97]"
 								aria-label="Reveal API key"
 							>
 								<Eye className="h-5 w-5" />
@@ -113,7 +114,7 @@ export function CreatedKeyModal({
 										onCopy(createdKey.key, `full-${createdKey.id}`)
 									}
 									aria-label="Copy full API key"
-									className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent"
+									className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-[border-color,color,transform] duration-200 ease-out hover:border-accent hover:text-accent focus-ring focus-visible:border-accent focus-visible:text-accent active:scale-[0.97]"
 								>
 									{copied === `full-${createdKey.id}` ? (
 										<Check className="h-5 w-5 text-accent" />
@@ -124,7 +125,7 @@ export function CreatedKeyModal({
 								<button
 									type="button"
 									onClick={handleReveal}
-									className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors hover:border-error hover:text-error focus-ring focus-visible:border-error focus-visible:text-error"
+									className="shrink-0 flex items-center justify-center w-11 h-11 border border-border text-text-muted transition-colors duration-200 ease-out hover:border-error hover:text-error focus-ring focus-visible:border-error focus-visible:text-error active:scale-[0.97]"
 									aria-label="Hide API key"
 								>
 									<EyeOff className="h-5 w-5" />
@@ -137,7 +138,7 @@ export function CreatedKeyModal({
 						type="button"
 						onClick={onDismiss}
 						aria-describedby="key-warning"
-						className="w-full border border-accent bg-accent/10 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 focus-ring active:translate-y-[1px]"
+						className="w-full border border-accent bg-accent/10 py-3 text-sm font-semibold text-accent transition-colors duration-200 ease-out hover:bg-accent/20 focus-ring active:translate-y-[1px] active:scale-[0.97]"
 					>
 						I have copied this key
 					</button>

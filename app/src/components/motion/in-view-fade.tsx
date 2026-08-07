@@ -16,13 +16,14 @@
  * grids) that must never start at opacity:0.
  *
  * Usage from a server component:
- *   import { InViewFade } from "@/components/motion/in-view-fade";
- *   <InViewFade><h1>…</h1></InViewFade>
- *   <InViewFade delay={0.1}><p>…</p></InViewFade>
- *   <InViewFade eager><ModelGrid /></InViewFade>
+ * import { InViewFade } from "@/components/motion/in-view-fade";
+ * <InViewFade><h1>…</h1></InViewFade>
+ * <InViewFade delay={0.1}><p>…</p></InViewFade>
+ * <InViewFade eager><ModelGrid /></InViewFade>
  */
 
 import { m, useInView, useReducedMotion } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -45,6 +46,11 @@ interface InViewFadeProps {
 	 * Use for primary catalogs / above-the-fold grids.
 	 */
 	eager?: boolean;
+	/**
+	 * Use the Kinetics spring (card) curve for the entrance instead of the
+	 * fixed 0.5s ease-out — bouncier reveals for grids of cards.
+	 */
+	spring?: boolean;
 }
 
 /** Headless / slow-IO fallback before permanent blank (ms). */
@@ -58,6 +64,7 @@ export function InViewFade({
 	amount = 0,
 	y = 16,
 	eager = false,
+	spring = false,
 }: InViewFadeProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const inView = useInView(ref, {
@@ -88,11 +95,11 @@ export function InViewFade({
 			className={className}
 			initial={{ opacity: 0, y }}
 			animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y }}
-			transition={{
-				duration: 0.5,
-				ease: [0.16, 1, 0.3, 1],
-				delay,
-			}}
+transition={
+			spring
+				? { ...springs.card, delay }
+				: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay }
+		}
 		>
 			{children}
 		</m.div>

@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
@@ -25,8 +26,8 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	const totalPages = Math.ceil(usage.length / limit);
 
 	return (
-		<div className="flex flex-col h-full bg-void/50 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[0_4px_24px_-10px_rgba(0,0,0,0.3)] transition-colors hover:border-accent/40">
-			<div className="p-6 sm:p-7 border-b border-border/50">
+		<div className="flex flex-col h-full border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
+			<div className="p-6 border-b border-border/50">
 				<div className="flex items-center justify-between">
 					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 						Recent requests
@@ -91,12 +92,12 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							<tr>
 								<td
 									colSpan={6}
-									className="px-6 py-16 text-center transition-colors hover:bg-surface/30"
+									className="px-6 py-16 text-center transition-colors duration-200 ease-out hover:bg-surface/30"
 								>
 									<p className="text-[13px] text-text-secondary font-semibold">No inference calls yet.</p>
 									<Link
 										href="/chat"
-										className="inline-block mt-3 text-[11px] font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors active:scale-[0.97]"
+										className="inline-block mt-3 text-[11px] font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors duration-200 ease-out active:scale-[0.97]"
 									>
 										Try the chat <span aria-hidden="true">&rarr;</span>
 									</Link>
@@ -106,23 +107,23 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							usage.slice((page - 1) * limit, page * limit).map((row, i) => (
 								<m.tr
 									key={row.id}
-									className="group border-b border-border/40 transition-colors hover:bg-surface/60 last:border-0"
+									className="group border-b border-border/40 transition-colors duration-200 ease-out hover:bg-surface/60 last:border-0"
 									initial={{ opacity: 0, y: 5 }}
 									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: i * 0.03, ease: [0.23, 1, 0.32, 1] }}
+									transition={{ delay: i * 0.03, ...springs.soft }}
 								>
-									<td className="px-6 sm:px-7 py-4 text-[13px] font-bold text-accent font-mono transition-colors group-hover:text-accent-hover">
+									<td className="px-6 sm:px-7 py-4 text-[13px] font-bold text-accent font-mono transition-colors duration-200 ease-out group-hover:text-accent-hover">
 										{row.model}
 									</td>
-									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{(row.promptTokens ?? 0).toLocaleString()}
 									</td>
-									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{(row.completionTokens ?? 0).toLocaleString()}
 									</td>
 									<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
 										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent.
-										    Guard against NaN so a malformed cost row never renders "$NaN". */}
+										 Guard against NaN so a malformed cost row never renders "$NaN". */}
 										{(() => {
 											const dollars = toDollars(row.totalCents ?? row.costCents);
 											return Number.isFinite(dollars)
@@ -130,13 +131,13 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 												: "—";
 										})()}
 									</td>
-									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors group-hover:text-text-bright">
+									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{typeof row.latencyMs === "number" &&
 										Number.isFinite(row.latencyMs)
 											? `${Math.round(row.latencyMs)}ms`
 											: "—"}
 									</td>
-									<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors group-hover:text-text-secondary">
+									<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
 										{formatTime(row.createdAt)}
 									</td>
 								</m.tr>

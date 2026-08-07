@@ -8,6 +8,7 @@ import {
 } from "@/lib/framer-motion-client";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
+import { springs } from "./springs";
 
 /**
  * Magnetic — element follows the cursor with a spring, snapping back on
@@ -46,8 +47,8 @@ export function Magnetic({
 	// We use plain DOM refs + framer-motion hooks here, which work in LazyMotion.
 	const x = useMotionValue(0);
 	const y = useMotionValue(0);
-	const sx = useSpring(x, { stiffness: 220, damping: 18, mass: 0.4 });
-	const sy = useSpring(y, { stiffness: 220, damping: 18, mass: 0.4 });
+	const sx = useSpring(x, springs.magnet);
+	const sy = useSpring(y, springs.magnet);
 
 	useEffect(() => {
 		if (prefersReduced) return;

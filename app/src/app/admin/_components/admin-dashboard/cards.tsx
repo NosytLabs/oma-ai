@@ -19,7 +19,7 @@ export function StatCard({
 	trend?: string;
 }) {
 	return (
-		<div className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+		<div className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 			<div className="mb-1 flex items-center justify-between text-xs text-text-muted">
 				<span className="flex items-center gap-1.5 uppercase tracking-wide">
 					{icon}
@@ -46,7 +46,7 @@ export function IntegrationCard({
 	notes: string[];
 }) {
 	return (
-		<div className="rounded-md border border-border bg-surface-elevated/30 p-3">
+		<div className="rounded-[var(--radius-md)] border border-border bg-surface-elevated/30 p-3">
 			<div className="mb-1.5 flex items-center justify-between">
 				<span className="flex items-center gap-1.5 text-sm font-medium">
 					{icon}

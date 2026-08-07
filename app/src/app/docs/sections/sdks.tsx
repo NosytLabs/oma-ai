@@ -6,18 +6,18 @@ export function SDKsSection() {
 	const pythonChatCode = `from openai import OpenAI
 
 client = OpenAI(
-    api_key="oma_sk_your_key_here",
-    base_url="https://api.oma-ai.com/v1"
+ api_key="oma_sk_your_key_here",
+ base_url="https://api.oma-ai.com/v1"
 )
 
 response = client.chat.completions.create(
-    model="llama-3.3-70b",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Explain quantum computing in one sentence."}
-    ],
-    temperature=0.7,
-    max_tokens=256
+ model="llama-3.3-70b",
+ messages=[
+ {"role": "system", "content": "You are a helpful assistant."},
+ {"role": "user", "content": "Explain quantum computing in one sentence."}
+ ],
+ temperature=0.7,
+ max_tokens=256
 )
 
 print(response.choices[0].message.content)`;
@@ -25,34 +25,34 @@ print(response.choices[0].message.content)`;
 	const tsChatCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: "oma_sk_your_key_here",
-  baseURL: "https://api.oma-ai.com/v1",
+ apiKey: "oma_sk_your_key_here",
+ baseURL: "https://api.oma-ai.com/v1",
 });
 
 const response = await client.chat.completions.create({
-  model: "llama-3.3-70b",
-  messages: [
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "Explain quantum computing in one sentence." },
-  ],
-  temperature: 0.7,
-  max_tokens: 256,
+ model: "llama-3.3-70b",
+ messages: [
+ { role: "system", content: "You are a helpful assistant." },
+ { role: "user", content: "Explain quantum computing in one sentence." },
+ ],
+ temperature: 0.7,
+ max_tokens: 256,
 });
 
-  // console.log(response.choices[0].message.content);`;
+ // console.log(response.choices[0].message.content);`;
 
 	const curlChatCode = `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": "Explain quantum computing in one sentence."}
-    ],
-    "temperature": 0.7,
-    "max_tokens": 256
-  }'`;
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "llama-3.3-70b",
+ "messages": [
+ {"role": "system", "content": "You are a helpful assistant."},
+ {"role": "user", "content": "Explain quantum computing in one sentence."}
+ ],
+ "temperature": 0.7,
+ "max_tokens": 256
+ }'`;
 
 	const goChatCode = `package main
 
@@ -72,7 +72,7 @@ func main() {
 			{"role": "user", "content": "Explain quantum computing in one sentence."},
 		},
 		"temperature": 0.7,
-		"max_tokens":  256,
+		"max_tokens": 256,
 	})
 
 	req, _ := http.NewRequest("POST",
@@ -95,46 +95,46 @@ func main() {
 	const pythonStreamCode = `from openai import OpenAI
 
 client = OpenAI(
-    api_key="oma_sk_your_key_here",
-    base_url="https://api.oma-ai.com/v1"
+ api_key="oma_sk_your_key_here",
+ base_url="https://api.oma-ai.com/v1"
 )
 
 stream = client.chat.completions.create(
-    model="llama-3.3-70b",
-    messages=[{"role": "user", "content": "Write a haiku about coding"}],
-    stream=True
+ model="llama-3.3-70b",
+ messages=[{"role": "user", "content": "Write a haiku about coding"}],
+ stream=True
 )
 
 for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")`;
+ if chunk.choices[0].delta.content:
+ print(chunk.choices[0].delta.content, end="")`;
 
 	const tsStreamCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: "oma_sk_your_key_here",
-  baseURL: "https://api.oma-ai.com/v1",
+ apiKey: "oma_sk_your_key_here",
+ baseURL: "https://api.oma-ai.com/v1",
 });
 
 const stream = await client.chat.completions.create({
-  model: "llama-3.3-70b",
-  messages: [{ role: "user", content: "Write a haiku about coding" }],
-  stream: true,
+ model: "llama-3.3-70b",
+ messages: [{ role: "user", content: "Write a haiku about coding" }],
+ stream: true,
 });
 
 for await (const chunk of stream) {
-  const content = chunk.choices[0]?.delta?.content;
-  if (content) process.stdout.write(content);
+ const content = chunk.choices[0]?.delta?.content;
+ if (content) process.stdout.write(content);
 }`;
 
 	const curlStreamCode = `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [{"role": "user", "content": "Write a haiku about coding"}],
-    "stream": true
-  }'`;
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{
+ "model": "llama-3.3-70b",
+ "messages": [{"role": "user", "content": "Write a haiku about coding"}],
+ "stream": true
+ }'`;
 
 	const goStreamCode = `package main
 
@@ -190,28 +190,28 @@ func main() {
 	const pythonModelsCode = `from openai import OpenAI
 
 client = OpenAI(
-    api_key="oma_sk_your_key_here",
-    base_url="https://api.oma-ai.com/v1"
+ api_key="oma_sk_your_key_here",
+ base_url="https://api.oma-ai.com/v1"
 )
 
 models = client.models.list()
 for model in models.data:
-    print(f"{model.id} ({model.get('category', 'chat')})")`;
+ print(f"{model.id} ({model.get('category', 'chat')})")`;
 
 	const tsModelsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: "oma_sk_your_key_here",
-  baseURL: "https://api.oma-ai.com/v1",
+ apiKey: "oma_sk_your_key_here",
+ baseURL: "https://api.oma-ai.com/v1",
 });
 
 const models = await client.models.list();
 for (const model of models.data) {
-  // console.log(model.id);
+ // console.log(model.id);
 }`;
 
 	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
-  -H "Authorization: Bearer oma_sk_your_key_here" | jq '.data[].id'`;
+ -H "Authorization: Bearer oma_sk_your_key_here" | jq '.data[].id'`;
 
 	const goModelsCode = `package main
 
@@ -256,28 +256,28 @@ func main() {
 
 			{/* Install commands */}
 			<div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-mono text-sm font-medium text-text">Python</span>
 					</div>
 					<code className="text-xs text-accent">pip install openai</code>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-mono text-sm font-medium text-text">Node.js</span>
 					</div>
 					<code className="text-xs text-accent">npm install openai</code>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-mono text-sm font-medium text-text">Go</span>
 					</div>
 					<code className="text-xs text-accent">go get github.com/sashabaranov/go-openai</code>
 				</div>
-				<div className="rounded-xl border border-border bg-surface/50 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-mono text-sm font-medium text-text">cURL</span>
@@ -312,7 +312,7 @@ func main() {
 					Streaming
 				</h3>
 				<p className="mb-4 text-sm text-text-muted">
-					Real-time token-by-token responses via Server-Sent Events. Add{" "}
+					Real-time token-by-token responses via Server-Sent Events. Add{""}
 					<code className="font-mono text-accent">&quot;stream&quot;: true</code> to your request.
 				</p>
 				<TabbedCode
@@ -345,7 +345,7 @@ func main() {
 			</div>
 
 			{/* Base URL callout */}
-			<div className="mb-8 rounded-xl border border-accent/20 bg-accent/5 p-5">
+			<div className="mb-8 rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5">
 				<div className="flex items-start gap-3">
 					<Key className="h-5 w-5 text-accent mt-0.5" />
 					<div>
@@ -353,7 +353,7 @@ func main() {
 						<p className="mt-1 text-sm text-text-muted">
 							All examples use the same base URL. Just swap your API key and you&apos;re ready:
 						</p>
-						<code className="mt-2 inline-block rounded-lg bg-surface/80 border border-border/50 px-3 py-1.5 font-mono text-sm text-accent">
+						<code className="mt-2 inline-block rounded-[var(--radius-lg)] bg-surface/80 border border-border/50 px-3 py-1.5 font-mono text-sm text-accent">
 							https://api.oma-ai.com/v1
 						</code>
 					</div>
@@ -361,7 +361,7 @@ func main() {
 			</div>
 
 			{/* Vercel AI SDK */}
-			<div id="sdk-vercel" className="rounded-xl border border-border bg-surface/50 p-5 scroll-mt-24">
+			<div id="sdk-vercel" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text flex items-center gap-2">
 					<Package className="h-4 w-4 text-accent" />
 					Vercel AI SDK
@@ -374,16 +374,16 @@ func main() {
 import { createOpenAI } from '@ai-sdk/openai';
 
 const oma = createOpenAI({
-  baseURL: 'https://api.oma-ai.com/v1',
-  apiKey: 'oma_sk_your_key_here',
+ baseURL: 'https://api.oma-ai.com/v1',
+ apiKey: 'oma_sk_your_key_here',
 });
 
 const { text } = await generateText({
-  model: oma('llama-3.3-70b'),
-  prompt: 'Explain quantum computing in one sentence.',
+ model: oma('llama-3.3-70b'),
+ prompt: 'Explain quantum computing in one sentence.',
 });
 
-  // console.log(text);`}
+ // console.log(text);`}
 					lang="javascript"
 				/>
 			</div>

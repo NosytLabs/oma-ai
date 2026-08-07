@@ -45,7 +45,7 @@ export function PolarSection() {
 	} = useAdminDashboard();
 
 	return (
-			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+			<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
 						Polar Payments
@@ -67,7 +67,7 @@ export function PolarSection() {
 									setPolarTab(tab);
 									setPolarError(null);
 								}}
-								className={`rounded px-2 py-1 transition ${
+								className={`rounded-[var(--radius-sm)] px-2 py-1 transition ${
 									polarTab === tab
 										? "bg-accent/20 text-accent"
 										: "text-text-muted hover:text-text"
@@ -79,7 +79,7 @@ export function PolarSection() {
 					</div>
 				</div>
 				{polarError && (
-					<div className="mb-3 rounded-md bg-error/10 p-2 text-xs text-error">
+					<div className="mb-3 rounded-[var(--radius-md)] bg-error/10 p-2 text-xs text-error">
 						{polarError}
 					</div>
 				)}
@@ -113,12 +113,12 @@ export function PolarSection() {
 												{p.id.slice(0, 12)}…
 											</td>
 											<td className="py-1.5 text-right font-mono">
-												{(p.amount / 100).toFixed(2)}{" "}
+												{(p.amount / 100).toFixed(2)}{""}
 												{p.currency.toUpperCase()}
 											</td>
 											<td className="py-1.5">
 												<span
-													className={`rounded px-1.5 py-0.5 text-[10px] ${
+													className={`rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[10px] ${
 														p.status === "paid" || p.status === "completed"
 															? "bg-accent/15 text-accent"
 															: "bg-warning/15 text-warning"
@@ -197,7 +197,7 @@ export function PolarSection() {
 											</td>
 											<td className="py-1.5">{p.name}</td>
 											<td className="py-1.5">
-												<span className="rounded bg-surface-elevated px-1.5 py-0.5 text-[10px] uppercase">
+												<span className="rounded-[var(--radius-sm)] bg-surface-elevated px-1.5 py-0.5 text-[10px] uppercase">
 													{p.type}
 												</span>
 											</td>
@@ -245,7 +245,7 @@ export function PolarSection() {
 											</td>
 											<td className="py-1.5">
 												<span
-													className={`rounded px-1.5 py-0.5 text-[10px] ${
+													className={`rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[10px] ${
 														s.status === "active"
 															? "bg-accent/15 text-accent"
 															: "bg-text-muted/15 text-text-muted"
@@ -272,7 +272,7 @@ export function PolarSection() {
 									value={checkoutProduct}
 									onChange={(e) => setCheckoutProduct(e.target.value)}
 									placeholder="prod_xxx"
-									className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+									className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
 								/>
 							</div>
 							<div>
@@ -284,7 +284,7 @@ export function PolarSection() {
 									value={checkoutEmail}
 									onChange={(e) => setCheckoutEmail(e.target.value)}
 									placeholder="user@example.com"
-									className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+									className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
 								/>
 							</div>
 							<div>
@@ -296,7 +296,7 @@ export function PolarSection() {
 									value={checkoutName}
 									onChange={(e) => setCheckoutName(e.target.value)}
 									placeholder="John Doe"
-									className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+									className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
 								/>
 							</div>
 							<div>
@@ -308,7 +308,7 @@ export function PolarSection() {
 									value={checkoutSuccess}
 									onChange={(e) => setCheckoutSuccess(e.target.value)}
 									placeholder="https://example.com/success"
-									className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+									className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
 								/>
 							</div>
 						</div>
@@ -321,7 +321,7 @@ export function PolarSection() {
 								value={checkoutCancel}
 								onChange={(e) => setCheckoutCancel(e.target.value)}
 								placeholder="https://example.com/cancel"
-								className="w-full rounded border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
+								className="w-full rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-3 py-2 text-sm outline-none focus:border-accent"
 							/>
 						</div>
 						<button
@@ -341,7 +341,7 @@ export function PolarSection() {
 								}
 							}}
 							disabled={polarLoading || !checkoutProduct}
-							className="rounded-md bg-accent/20 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/30 disabled:opacity-50"
+							className="rounded-[var(--radius-md)] bg-accent/20 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/30 disabled:opacity-50"
 						>
 							{polarLoading ? (
 								<Loader2 className="h-4 w-4 animate-spin" />
@@ -350,7 +350,7 @@ export function PolarSection() {
 							)}
 						</button>
 						{checkoutResult && (
-							<div className="rounded-md border border-border bg-surface-elevated/50 p-3">
+							<div className="rounded-[var(--radius-md)] border border-border bg-surface-elevated/50 p-3">
 								<p className="text-xs text-text-muted mb-2">
 									Checkout created — share this link:
 								</p>
@@ -394,7 +394,7 @@ export function PolarSection() {
 								}
 							}}
 							disabled={polarLoading}
-							className="rounded-md border border-border bg-surface-elevated/40 px-3 py-1.5 text-xs hover:bg-surface-elevated disabled:opacity-50"
+							className="rounded-[var(--radius-md)] border border-border bg-surface-elevated/40 px-3 py-1.5 text-xs hover:bg-surface-elevated disabled:opacity-50"
 						>
 							{polarLoading ? (
 								<Loader2 className="h-3 w-3 animate-spin" />

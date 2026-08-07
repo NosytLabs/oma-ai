@@ -94,7 +94,7 @@ function Bar({ value, max = 100, color = "var(--color-accent)" }: { value: numbe
 	return (
 		<div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
 			<div
-				className="h-full rounded-full transition-all duration-300"
+				className="h-full rounded-full transition-[width,background-color] duration-200 ease-out"
 				style={{ width: `${pct}%`, background: color }}
 			/>
 		</div>
@@ -172,7 +172,7 @@ export default async function ObservabilityPage() {
 						<InViewFade>
 						<Link
 							href="/"
-							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors"
+							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
 							Back to home
@@ -189,17 +189,17 @@ export default async function ObservabilityPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">System{" "}</span>
+							<span className="block">System{""}</span>
 							<span className="block text-accent">observability.</span>
 						</h1>
 
 						<p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
-							Live gateway health from{" "}
-							<code className="rounded bg-surface px-1 py-0.5 text-accent">
+							Live gateway health from{""}
+							<code className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 text-accent">
 								/health
-							</code>{" "}
-							+{" "}
-							<code className="rounded bg-surface px-1 py-0.5 text-accent">
+							</code>{""}
+							+{""}
+							<code className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 text-accent">
 								/metrics
 							</code>
 							. Charts below show the operator-dashboard shape (sample data).
@@ -265,7 +265,7 @@ export default async function ObservabilityPage() {
 							].map((c) => (
 								<article
 									key={c.label}
-									className="rounded-lg border border-border bg-surface/40 px-3 py-3"
+									className="rounded-[var(--radius-lg)] border border-border bg-surface/40 px-3 py-3"
 								>
 									<p className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
 										{c.label}
@@ -289,7 +289,7 @@ export default async function ObservabilityPage() {
 							Sample dashboard shape · not production time-series
 						</p>
 						<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-							<article className="col-span-2 border border-border rounded-lg bg-surface/40 p-5">
+							<article className="col-span-2 border border-border rounded-[var(--radius-lg)] bg-surface/40 p-5">
 								<header className="flex items-center justify-between mb-2">
 									<div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted">
 										<TrendingUp className="h-3 w-3" aria-hidden="true" />
@@ -314,7 +314,7 @@ export default async function ObservabilityPage() {
 								</div>
 							</article>
 
-							<article className="border border-border rounded-lg bg-surface/40 p-5">
+							<article className="border border-border rounded-[var(--radius-lg)] bg-surface/40 p-5">
 								<header className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted mb-2">
 									<Clock className="h-3 w-3" aria-hidden="true" />
 									p95 latency
@@ -330,7 +330,7 @@ export default async function ObservabilityPage() {
 								</p>
 							</article>
 
-							<article className="border border-border rounded-lg bg-surface/40 p-5">
+							<article className="border border-border rounded-[var(--radius-lg)] bg-surface/40 p-5">
 								<header className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted mb-2">
 									<CheckCircle2 className="h-3 w-3" aria-hidden="true" />
 									Error budget
@@ -364,7 +364,7 @@ export default async function ObservabilityPage() {
 							</p>
 						</header>
 
-						<div className="border border-border rounded-lg bg-surface/40 overflow-hidden">
+						<div className="border border-border rounded-[var(--radius-lg)] bg-surface/40 overflow-hidden">
 							<div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-4 px-4 py-2.5 border-b border-border bg-surface text-[10px] font-mono uppercase tracking-widest text-text-muted">
 								<span>Provider</span>
 								<span>Status</span>
@@ -378,7 +378,7 @@ export default async function ObservabilityPage() {
 									return (
 										<li
 											key={p.name}
-											className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors"
+											className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
 										>
 											<div className="min-w-0">
 												<div className="flex items-center gap-2">
@@ -396,7 +396,7 @@ export default async function ObservabilityPage() {
 											</div>
 											<div>
 												<span
-													className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${style.bg} ${style.text} ${style.border}`}
+													className={`inline-flex items-center rounded-[var(--radius-sm)] border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${style.bg} ${style.text} ${style.border}`}
 												>
 													{p.status}
 												</span>
@@ -435,7 +435,7 @@ export default async function ObservabilityPage() {
 							</h2>
 						</header>
 
-						<div className="border border-border rounded-lg bg-surface/40 overflow-hidden">
+						<div className="border border-border rounded-[var(--radius-lg)] bg-surface/40 overflow-hidden">
 							<div className="hidden sm:grid grid-cols-[3fr_1.5fr_1fr_1fr] gap-4 px-4 py-2.5 border-b border-border bg-surface text-[10px] font-mono uppercase tracking-widest text-text-muted">
 								<span>Route</span>
 								<span className="text-right">Requests</span>
@@ -446,7 +446,7 @@ export default async function ObservabilityPage() {
 								{TOP_ROUTES.map((r) => (
 									<li
 										key={r.route}
-										className="grid grid-cols-2 sm:grid-cols-[3fr_1.5fr_1fr_1fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors"
+										className="grid grid-cols-2 sm:grid-cols-[3fr_1.5fr_1fr_1fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
 									>
 										<code className="text-[12.5px] font-mono text-text truncate">
 											{r.route}
@@ -516,7 +516,7 @@ export default async function ObservabilityPage() {
 								return (
 									<div
 										key={s.label}
-										className="border border-border rounded-lg bg-surface/40 p-4"
+										className="border border-border rounded-[var(--radius-lg)] bg-surface/40 p-4"
 									>
 										<div className="flex items-center gap-2 mb-2">
 											<Icon className={`h-3.5 w-3.5 ${s.color}`} aria-hidden="true" />
@@ -547,7 +547,7 @@ export default async function ObservabilityPage() {
 							</h2>
 						</header>
 
-						<div className="border border-border rounded-lg bg-surface/40 p-5 flex items-start gap-3">
+						<div className="border border-border rounded-[var(--radius-lg)] bg-surface/40 p-5 flex items-start gap-3">
 							<AlertTriangle
 								className="h-4 w-4 mt-0.5 text-text-muted shrink-0"
 								aria-hidden="true"
@@ -555,13 +555,13 @@ export default async function ObservabilityPage() {
 							<div>
 								<p className="text-[13px] text-text-secondary leading-relaxed">
 									No incidents in the last 30 days. Live status is available in
-									the{" "}
+									the{""}
 									<Link
 										href="https://github.com/NosytLabs"
 										className="text-accent hover:text-accent-hover underline underline-offset-4"
 									>
 										GitHub status board
-									</Link>{" "}
+									</Link>{""}
 									once the public launch ships.
 								</p>
 							</div>

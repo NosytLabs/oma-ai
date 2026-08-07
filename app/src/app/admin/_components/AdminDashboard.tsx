@@ -508,7 +508,7 @@ const handleAuditPrev = () => {
 	if (!isAdmin) {
 		const signedIn = role !== null;
 		return (
-			<div className="mx-auto mt-12 max-w-xl rounded-lg border border-border bg-surface-elevated/40 p-6 text-center">
+			<div className="mx-auto mt-12 max-w-xl rounded-[var(--radius-lg)] border border-border bg-surface-elevated/40 p-6 text-center">
 				<ShieldCheck className="mx-auto mb-3 h-8 w-8 text-accent" aria-hidden="true" />
 				<h1 className="mb-2 text-lg font-medium text-text-bright">
 					Admin access required
@@ -516,7 +516,7 @@ const handleAuditPrev = () => {
 				<p className="mb-4 text-sm text-text-muted">
 					{signedIn ? (
 						<>
-							You are signed in as{" "}
+							You are signed in as{""}
 							<span className="font-mono text-text">{role || "user"}</span>.
 							Admins can edit model pricing, view usage analytics, and manage
 							integrations.
@@ -532,7 +532,7 @@ const handleAuditPrev = () => {
 					{!signedIn && (
 						<a
 							href="/login?next=/admin"
-							className="inline-flex items-center gap-2 rounded-md border border-accent bg-accent px-4 py-2 text-sm font-semibold text-void transition hover:bg-accent-bright"
+							className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-accent bg-accent px-4 py-2 text-sm font-semibold text-void transition hover:bg-accent-bright"
 						>
 							Sign in
 						</a>
@@ -544,7 +544,7 @@ const handleAuditPrev = () => {
 							onClick={handlePromote}
 							disabled={promoting}
 							title="Development only — promotes the current session to admin"
-							className="inline-flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
+							className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
 						>
 							{promoting ? (
 								<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -676,13 +676,13 @@ const handleAuditPrev = () => {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<div className="flex rounded-md border border-border bg-surface-elevated/40 p-1 text-xs">
+					<div className="flex rounded-[var(--radius-md)] border border-border bg-surface-elevated/40 p-1 text-xs">
 						{(["24h", "7d", "30d"] as TimeWindow[]).map((w) => (
 							<button
 								key={w}
 								type="button"
 								onClick={() => setWindowSel(w)}
-								className={`rounded px-3 py-1 transition ${
+								className={`rounded-[var(--radius-sm)] px-3 py-1 transition ${
 									w === windowSel
 										? "bg-accent/20 text-accent"
 										: "text-text-muted hover:text-text"
@@ -696,7 +696,7 @@ const handleAuditPrev = () => {
 						type="button"
 						onClick={() => void refreshAll()}
 						disabled={loading}
-						className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-elevated/40 px-3 py-1.5 text-xs hover:bg-surface-elevated disabled:opacity-50"
+						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface-elevated/40 px-3 py-1.5 text-xs hover:bg-surface-elevated disabled:opacity-50"
 					>
 						<Loader2 className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
 						Refresh
@@ -731,7 +731,7 @@ const handleAuditPrev = () => {
 				/>
 			</section>
 
-			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+			<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
 						Model catalog & pricing
@@ -764,7 +764,7 @@ const handleAuditPrev = () => {
 											</div>
 										</td>
 										<td className="py-2">
-											<span className="rounded bg-surface-elevated px-2 py-0.5 text-xs uppercase">
+											<span className="rounded-[var(--radius-sm)] bg-surface-elevated px-2 py-0.5 text-xs uppercase">
 												{m.provider}
 											</span>
 										</td>
@@ -776,7 +776,7 @@ const handleAuditPrev = () => {
 													min="0"
 													value={editInput}
 													onChange={(e) => setEditInput(e.target.value)}
-													className="w-20 rounded border border-border bg-surface-elevated px-1.5 py-1 text-right text-xs"
+													className="w-20 rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-1.5 py-1 text-right text-xs"
 												/>
 											) : (
 												`$${m.inputPricePer1M.toFixed(4)}`
@@ -795,7 +795,7 @@ const handleAuditPrev = () => {
 													min="0"
 													value={editOutput}
 													onChange={(e) => setEditOutput(e.target.value)}
-													className="w-20 rounded border border-border bg-surface-elevated px-1.5 py-1 text-right text-xs"
+													className="w-20 rounded-[var(--radius-sm)] border border-border bg-surface-elevated px-1.5 py-1 text-right text-xs"
 												/>
 											) : (
 												`$${m.outputPricePer1M.toFixed(4)}`
@@ -810,14 +810,14 @@ const handleAuditPrev = () => {
 													<button
 														type="button"
 														onClick={() => void handleEdit(m.id)}
-														className="rounded bg-accent/20 px-2 py-1 text-xs text-accent hover:bg-accent/30"
+														className="rounded-[var(--radius-sm)] bg-accent/20 px-2 py-1 text-xs text-accent hover:bg-accent/30"
 													>
 														Save
 													</button>
 													<button
 														type="button"
 														onClick={() => setEditingId(null)}
-														className="rounded px-2 py-1 text-xs text-text-muted hover:text-text"
+														className="rounded-[var(--radius-sm)] px-2 py-1 text-xs text-text-muted hover:text-text"
 													>
 														Cancel
 													</button>
@@ -841,7 +841,7 @@ const handleAuditPrev = () => {
 			</section>
 
 			{settings && (
-				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4 space-y-4">
+				<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4 space-y-4">
 					<div>
 						<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
 							Platform Controls
@@ -853,7 +853,7 @@ const handleAuditPrev = () => {
 
 					<div className="grid gap-4 sm:grid-cols-3">
 						{/* Maintenance Mode */}
-						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-lg border border-border bg-surface-elevated/40 p-4">
+						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-surface-elevated/40 p-4">
 							<div className="space-y-1">
 								<div className="flex items-center gap-2">
 									<AlertTriangle
@@ -868,7 +868,7 @@ const handleAuditPrev = () => {
 							</div>
 							<div className="mt-4 flex items-center justify-between gap-2">
 								<span
-									className={`rounded px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
+									className={`rounded-[var(--radius-sm)] px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
 										settings.maintenanceMode
 											? "bg-error/10 text-error"
 											: "bg-text-muted/10 text-text-muted"
@@ -886,7 +886,7 @@ const handleAuditPrev = () => {
 											: "Enable maintenance mode"
 									}
 									onClick={() => handleToggleSetting("maintenanceMode")}
-									className={`rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+									className={`rounded-[var(--radius-md)] border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
 										settings.maintenanceMode
 											? "border-error/40 bg-error/10 text-error hover:bg-error/20"
 											: "border-border bg-surface hover:bg-surface-elevated"
@@ -902,7 +902,7 @@ const handleAuditPrev = () => {
 						</div>
 
 						{/* Card Payments */}
-						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-lg border border-border bg-surface-elevated/40 p-4">
+						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-surface-elevated/40 p-4">
 							<div className="space-y-1">
 								<div className="flex items-center gap-2">
 									<CreditCard
@@ -917,7 +917,7 @@ const handleAuditPrev = () => {
 							</div>
 							<div className="mt-4 flex items-center justify-between gap-2">
 								<span
-									className={`rounded px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
+									className={`rounded-[var(--radius-sm)] px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
 										settings.cardPaymentsEnabled
 											? "bg-success/10 text-success"
 											: "bg-error/10 text-error"
@@ -935,7 +935,7 @@ const handleAuditPrev = () => {
 											: "Enable card payments"
 									}
 									onClick={() => handleToggleSetting("cardPaymentsEnabled")}
-									className={`rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+									className={`rounded-[var(--radius-md)] border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
 										!settings.cardPaymentsEnabled
 											? "border-error/40 bg-error/10 text-error hover:bg-error/20"
 											: "border-border bg-surface hover:bg-surface-elevated"
@@ -951,7 +951,7 @@ const handleAuditPrev = () => {
 						</div>
 
 						{/* USDC deposits (Base) — not x402 */}
-						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-lg border border-border bg-surface-elevated/40 p-4">
+						<div className="flex min-h-[10.5rem] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-surface-elevated/40 p-4">
 							<div className="space-y-1">
 								<div className="flex items-center gap-2">
 									<Coins
@@ -967,7 +967,7 @@ const handleAuditPrev = () => {
 							</div>
 							<div className="mt-4 flex items-center justify-between gap-2">
 								<span
-									className={`rounded px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
+									className={`rounded-[var(--radius-sm)] px-2 py-0.5 font-mono text-[10px] sm:text-xs ${
 										settings.cryptoPaymentsEnabled
 											? "bg-success/10 text-success"
 											: "bg-error/10 text-error"
@@ -985,7 +985,7 @@ const handleAuditPrev = () => {
 											: "Enable USDC deposits on Base"
 									}
 									onClick={() => handleToggleSetting("cryptoPaymentsEnabled")}
-									className={`rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+									className={`rounded-[var(--radius-md)] border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
 										!settings.cryptoPaymentsEnabled
 											? "border-error/40 bg-error/10 text-error hover:bg-error/20"
 											: "border-border bg-surface hover:bg-surface-elevated"
@@ -1004,7 +1004,7 @@ const handleAuditPrev = () => {
 			)}
 
 			{integrations && (
-				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+				<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 					<h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-text-muted">
 						Integrations
 					</h2>
@@ -1051,7 +1051,7 @@ const handleAuditPrev = () => {
 					</div>
 					<div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-text-muted">
 						<span>
-							Free chat: anon {integrations.dailyLimits.anonymous}/day · signed-in{" "}
+							Free chat: anon {integrations.dailyLimits.anonymous}/day · signed-in{""}
 							{integrations.dailyLimits.registered}/day
 						</span>
 						<span>·</span>
@@ -1060,7 +1060,7 @@ const handleAuditPrev = () => {
 							<>
 								<span>·</span>
 								<span>
-									uptime {Math.floor(health.uptime_s / 60)}m · RAM{" "}
+									uptime {Math.floor(health.uptime_s / 60)}m · RAM{""}
 									{health.memory.heap_used_mb} MB · db {health.db}
 								</span>
 							</>
@@ -1070,7 +1070,7 @@ const handleAuditPrev = () => {
 			)}
 
 			{usage?.perModel && usage.perModel.length > 0 && (
-				<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+				<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 					<h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-text-muted">
 						Top models ({windowSel})
 					</h2>
@@ -1082,7 +1082,7 @@ const handleAuditPrev = () => {
 								<div key={`${m.model}-${m.provider}`} className="text-sm">
 									<div className="mb-1 flex items-center justify-between text-xs">
 										<span className="font-mono">
-											{m.model}{" "}
+											{m.model}{""}
 											<span className="text-text-muted">· {m.provider}</span>
 										</span>
 										<span>
@@ -1103,7 +1103,7 @@ const handleAuditPrev = () => {
 				</section>
 			)}
 
-			<section className="rounded-lg border border-border bg-surface-elevated/30 p-4">
+			<section className="rounded-[var(--radius-lg)] border border-border bg-surface-elevated/30 p-4">
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
 						Recent requests
@@ -1146,7 +1146,7 @@ const handleAuditPrev = () => {
 										</td>
 										<td className="py-1.5">
 											<span
-												className={`rounded px-1.5 py-0.5 text-[10px] ${
+												className={`rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[10px] ${
 													r.status === "completed" || r.status === "free_tier"
 														? "bg-accent/15 text-accent"
 														: "bg-error/15 text-error"

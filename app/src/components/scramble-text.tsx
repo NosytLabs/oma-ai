@@ -8,20 +8,20 @@
  * Honors `prefers-reduced-motion` — when set, renders the final text immediately.
  *
  * API mirrors the public Originkit component (subset):
- *   - text:        string to reveal
- *   - duration:    ms for the full resolve (default 900)
- *   - trigger:     "mount" | "viewport" | "hover"
- *   - as:          element tag (default "span")
- *   - glyphs:      override the glitch character set
- *   - className:   pass-through
+ * - text: string to reveal
+ * - duration: ms for the full resolve (default 900)
+ * - trigger: "mount" | "viewport" | "hover"
+ * - as: element tag (default "span")
+ * - glyphs: override the glitch character set
+ * - className: pass-through
  *
  * Implementation notes:
- *   - requestAnimationFrame-driven; cancels on unmount.
- *   - Resolved characters lock in place so the final frame matches `text` byte-for-byte.
- *   - Spaces and unmaskable chars (`text[i] === " "`) skip the swap.
- *   - Per-frame output is written straight to `textContent` via a ref —
- *     NOT React state. The previous setState-per-frame version re-rendered
- *     ~54× per instance on the hero/LCP headline.
+ * - requestAnimationFrame-driven; cancels on unmount.
+ * - Resolved characters lock in place so the final frame matches `text` byte-for-byte.
+ * - Spaces and unmaskable chars (`text[i] === " "`) skip the swap.
+ * - Per-frame output is written straight to `textContent` via a ref —
+ * NOT React state. The previous setState-per-frame version re-rendered
+ * ~54× per instance on the hero/LCP headline.
  */
 
 import {

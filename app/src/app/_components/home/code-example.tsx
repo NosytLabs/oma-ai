@@ -19,19 +19,19 @@ function buildExampleCode(modelCount: number) {
 	return `import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: process.env.OMA_KEY,        // one key for every model
-  baseURL: "https://api.oma-ai.com/v1",
+ apiKey: process.env.OMA_KEY, // one key for every model
+ baseURL: "https://api.oma-ai.com/v1",
 });
 
 const response = await client.chat.completions.create({
-  model: "llama-3.3-70b",            // or any of ${modelCount}+ models
-  messages: [
-    { role: "system", content: "You are concise." },
-    { role: "user",   content: "Ship a minimal RAG agent in 3 lines." }
-  ],
+ model: "llama-3.3-70b", // or any of ${modelCount}+ models
+ messages: [
+ { role: "system", content: "You are concise." },
+ { role: "user", content: "Ship a minimal RAG agent in 3 lines." }
+ ],
 });
 
-  // console.log(response.choices[0].message.content);
+ // console.log(response.choices[0].message.content);
 // → billed in USDC, settled on Base, no subscription`;
 }
 
@@ -105,11 +105,10 @@ function TerminalExample({ code }: { code: string }) {
 						onClick={handleCopy}
 						className={cn(
 							"ml-auto inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1",
-							"rounded text-[11px] font-mono",
-							"border border-border-bright text-text-secondary",
-							"hover:border-accent hover:text-accent",
-							"transition-colors duration-200",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+							"rounded-[var(--radius-sm)] text-[11px] font-mono",
+"border border-border-bright text-text-secondary transition-[color,border-color,background-color,transform] duration-200 ease-out active:scale-[0.97]",
+						"hover:border-accent hover:text-accent",
+						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
 						)}
 						aria-label={copied ? "Copied" : "Copy snippet"}
 					>

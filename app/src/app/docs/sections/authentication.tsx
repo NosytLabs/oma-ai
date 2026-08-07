@@ -4,31 +4,31 @@ import { AnimatedSection, SectionHeading, TabbedCode } from "./shared";
 export function AuthenticationSection() {
 	const pythonCode = `from openai import OpenAI
 client = OpenAI(
-    api_key="oma_sk_your_key_here",
-    base_url="https://api.oma-ai.com/v1"
+ api_key="oma_sk_your_key_here",
+ base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
-    model="llama-3.3-70b",
-    messages=[{"role": "user", "content": "Hello!"}]
+ model="llama-3.3-70b",
+ messages=[{"role": "user", "content": "Hello!"}]
 )`;
 
 	const jsCode = `import OpenAI from "openai";
 const client = new OpenAI({
-  apiKey: "oma_sk_your_key_here",
-  baseURL: "https://api.oma-ai.com/v1"
+ apiKey: "oma_sk_your_key_here",
+ baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
-  model: "llama-3.3-70b",
-  messages: [{ role: "user", content: "Hello!" }]
+ model: "llama-3.3-70b",
+ messages: [{ role: "user", content: "Hello!" }]
 });`;
 
 	const goCode = `package main
 import (
-    openai "github.com/sashabaranov/go-openai"
+ openai "github.com/sashabaranov/go-openai"
 )
 func main() {
-    client := openai.New("oma_sk_your_key_here")
-    client.BaseURL = "https://api.oma-ai.com/v1"
+ client := openai.New("oma_sk_your_key_here")
+ client.BaseURL = "https://api.oma-ai.com/v1"
 }`;
 
 	return (
@@ -42,32 +42,32 @@ func main() {
 
 			<div
 				id="auth-free-chat"
-				className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-6 scroll-mt-24"
+				className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4 mb-6 scroll-mt-24"
 			>
 				<h3 className="font-semibold text-accent text-sm mb-2">
 					Free OMA-AI models (website chat)
 				</h3>
 				<p className="text-sm text-text-muted mb-2">
-					Models routed via OMA-AI (OpenBroker /{" "}
+					Models routed via OMA-AI (OpenBroker /{""}
 					<code className="text-accent font-mono text-xs">provider: gonka</code>
-					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{" "}
+					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{""}
 					<code className="text-accent font-mono text-xs">kimi-k2.6</code> — can be
-					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
+					used on <code className="text-accent font-mono text-xs">/chat</code>{""}
 					without sign-in, API key, or wallet. Rate limits still apply. Venice and
 					other paid models require an account (API key or wallet) and credits.
 				</p>
 				<p className="text-sm text-text-muted">
 					Programmatic API access to free models still works with a key if you
-					prefer; unauthenticated requests to{" "}
-					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
+					prefer; unauthenticated requests to{""}
+					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{""}
 					are accepted only for free OMA-AI model ids.
 				</p>
 			</div>
 
-			<div id="auth-key" className="rounded-xl border border-border bg-panel p-5 mb-6 scroll-mt-24">
+			<div id="auth-key" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 mb-6 scroll-mt-24">
 				<div className="mb-3 text-sm text-text-muted">Authorization Header (paid API)</div>
-				<div className="rounded-lg bg-surface/80 border border-border/50 p-3 font-mono text-sm">
-					<span className="text-warning">Authorization:</span>{" "}
+				<div className="rounded-[var(--radius-lg)] bg-surface/80 border border-border/50 p-3 font-mono text-sm">
+					<span className="text-warning">Authorization:</span>{""}
 					<span className="text-accent">Bearer oma_sk_...</span>
 				</div>
 			</div>
@@ -78,9 +78,9 @@ func main() {
 						label: "cURL",
 						lang: "bash",
 						code: `curl https://api.oma-ai.com/v1/chat/completions \\
-  -H "Authorization: Bearer oma_sk_your_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
+ -H "Authorization: Bearer oma_sk_your_key_here" \\
+ -H "Content-Type: application/json" \\
+ -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
 					},
 					{ label: "Python", lang: "python", code: pythonCode },
 					{ label: "JavaScript", lang: "javascript", code: jsCode },
@@ -88,13 +88,13 @@ func main() {
 				]}
 			/>
 
-			<div className="mt-6 rounded-xl border border-warning/20 bg-warning/5 p-4">
+			<div className="mt-6 rounded-[var(--radius-xl)] border border-warning/20 bg-warning/5 p-4">
 				<div className="flex items-start gap-3">
 					<Shield className="h-5 w-5 text-warning mt-0.5" />
 					<div>
 						<h3 className="font-semibold text-warning">API Key Security</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Keys use the{" "}
+							Keys use the{""}
 							<code className="text-warning font-mono">oma_sk_</code> prefix.
 							Only the SHA-256 hash is stored. Keep your key secret and never
 							commit it to version control.
@@ -113,7 +113,7 @@ func main() {
 					Sign in with a passwordless magic link sent to your inbox. No password to leak,
 					no password reset loops. 
 				</p>
-				<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4">
 					<h3 className="font-semibold text-accent text-sm mb-2">How it works</h3>
 					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
 						<li>Enter your email address on the login page</li>
@@ -134,7 +134,7 @@ func main() {
 					Connect any EVM wallet using Sign-In with Ethereum (SIWE). No email, no
 					password. Your wallet address is your identity.
 				</p>
-				<div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+				<div className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4">
 					<h3 className="font-semibold text-accent text-sm mb-2">How it works</h3>
 					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
 						<li>Click &quot;Connect Wallet&quot; on the login page</li>
