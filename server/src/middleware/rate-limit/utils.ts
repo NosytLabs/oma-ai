@@ -24,7 +24,7 @@ export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
   // Curated catalog (standard tier)
   "llama-3.3-70b": { rpm: 60, tpm: 120000 },
   "deepseek-v4-flash": { rpm: 60, tpm: 120000 },
-  "minimax-m2.7": { rpm: 60, tpm: 120000 },
+  "gemini-3-flash-preview": { rpm: 60, tpm: 120000 },
   // Legacy/fast row (not always public; keep for override tests)
   "llama-3.2-3b": { rpm: 120, tpm: 240000 },
 };

@@ -388,7 +388,7 @@ user: {
           input: {
             type: "object",
             properties: {
-              modelId: { type: "string", description: "The model id, e.g. 'minimax-m2.7'." },
+              modelId: { type: "string", description: "The model id, e.g. 'gemini-3-flash-preview'." },
             },
             required: ["modelId"],
           },

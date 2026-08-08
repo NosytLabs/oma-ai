@@ -21,12 +21,10 @@ describe("free-tier copy accuracy", () => {
 			"gemini-3-flash-preview",
 			"gemini-3-pro-preview",
 			"gemini-3.1-pro-preview",
-			"glm-4.5-air",
 			"gpt-4.1",
 			"gpt-4o",
-			"kimi-k2.6",
-			"minimax-m2.7",
-		]);
+			"kimi-k3",
+		].sort());
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 

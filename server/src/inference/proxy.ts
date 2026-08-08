@@ -214,22 +214,21 @@ export const FALLBACK_MAP: Record<string, string[]> = {
   "zai-org-glm-5-2": ["grok-4-5", "claude-sonnet-5"],
 
   // Mid
-  "deepseek-v4-pro": ["qwen-3-7-plus", "gemini-3-5-flash", "kimi-k2.6"],
-  "gemini-3-5-flash": ["deepseek-v4-pro", "qwen-3-7-plus", "kimi-k2.6"],
-  "gemini-3-flash-preview": ["deepseek-v4-flash", "mistral-small-2603"],
+  "deepseek-v4-pro": ["qwen-3-7-plus", "gemini-3-5-flash", "kimi-k3"],
+  "gemini-3-5-flash": ["deepseek-v4-pro", "qwen-3-7-plus", "kimi-k3"],
   "llama-3.3-70b": ["deepseek-v4-pro", "qwen-3-7-plus"],
   "zai-org-glm-5-1": ["deepseek-v4-pro", "gemini-3-5-flash"],
-  "qwen-3-7-plus": ["deepseek-v4-pro", "gemini-3-5-flash", "kimi-k2.6"],
+  "qwen-3-7-plus": ["deepseek-v4-pro", "gemini-3-5-flash", "kimi-k3"],
 
   // Budget
-  "deepseek-v4-flash": ["mistral-small-2603", "xiaomi-mimo-v2-5", "minimax-m2.7"],
-  "mistral-small-2603": ["deepseek-v4-flash", "xiaomi-mimo-v2-5", "minimax-m2.7"],
-  "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "minimax-m2.7"],
+  "deepseek-v4-flash": ["mistral-small-2603", "xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
+  "mistral-small-2603": ["deepseek-v4-flash", "xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
+  "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "gemini-3-flash-preview"],
   "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
 
   // OMA-AI Free Models (OpenBroker) — prefer oma-ai peers first, then budget Venice
-  "minimax-m2.7": ["kimi-k2.6", "deepseek-v4-flash", "mistral-small-2603"],
-  "kimi-k2.6": ["minimax-m2.7", "deepseek-v4-flash", "mistral-small-2603"],
+  "gemini-3-flash-preview": ["gemini-3-pro-preview", "deepseek-v4-flash", "mistral-small-2603"],
+  "gemini-3-pro-preview": ["gemini-3.1-pro-preview", "deepseek-v4-flash", "mistral-small-2603"],
 };
 
 /**

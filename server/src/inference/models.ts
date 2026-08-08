@@ -7,7 +7,7 @@
  * (margin built-in, markupPercent = 0).
  *
  * OpenBroker (api.openbroker.oma-ai.gg) live catalog (verified 2026-08-04):
- *   MiniMaxAI/MiniMax-M2.7, moonshotai/Kimi-K2.6 only.
+ //   gemini-3.1-pro-preview, gemini-3-pro-preview, gemini-3-flash-preview, gpt-4.1, gpt-4o
  *   GET /v1/models is a status stub, not a model list — probe via chat.
  *
  * Add a new provider by extending `resolveProvider()` in proxy.ts and
@@ -312,41 +312,82 @@ const VENICE_MODELS: ModelDef[] = [
   },
 ];
 
-// ── OMA-AI (OpenBroker) ────────────────────────────────────────────────
-// Prices are user-facing (margin built-in). markupPercent = 0.
-// Live OpenBroker catalog (verified 2026-08-04): only
-//   MiniMaxAI/MiniMax-M2.7, moonshotai/Kimi-K2.6
-// (zai-org/GLM-5.2-FP8 removed upstream — do not re-add without re-probing.)
+// ── OMA-AI (Gonka/Zyloo) Resale - Branded as OMA-AI ────────────────
 const ZYLOO_MODELS: ModelDef[] = [
   {
-    id: "minimax-m2.7",
+    id: "gemini-3.1-pro-preview",
     provider: "oma-ai",
-    omaAiId: "MiniMaxAI/MiniMax-M2.7",
-    inputPricePer1M: 0.015,
-    outputPricePer1M: 0.06,
+    omaAiId: "gemini-3.1-pro-preview",
+    inputPricePer1M: 1.0,
+    outputPricePer1M: 5.0,
     markupPercent: 0,
-    displayName: "MiniMax M2.7",
-    category: "budget",
-    maxTokens: 8192,
+    displayName: "Gemini 3.1 Pro",
+    category: "frontier",
+    maxTokens: 16384,
     contextWindow: 128_000,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+  {
+    id: "gemini-3-pro-preview",
+    provider: "oma-ai",
+    omaAiId: "gemini-3-pro-preview",
+    inputPricePer1M: 1.7,
+    outputPricePer1M: 9.0,
+    markupPercent: 0,
+    displayName: "Gemini 3 Pro",
+    category: "premium",
+    maxTokens: 16384,
+    contextWindow: 128_000,
+    maxOutputTokens: 16384,
     supportsStreaming: true,
     capabilities: ["chat", "reasoning", "tools"],
   },
   {
-    id: "kimi-k2.6",
+    id: "gemini-3-flash-preview",
     provider: "oma-ai",
-    omaAiId: "moonshotai/Kimi-K2.6",
-    inputPricePer1M: 0.024,
-    outputPricePer1M: 0.096,
+    omaAiId: "gemini-3-flash-preview",
+    inputPricePer1M: 0.2,
+    outputPricePer1M: 1.5,
     markupPercent: 0,
-    displayName: "Kimi K2.6",
+    displayName: "Gemini 3 Flash",
     category: "mid",
     maxTokens: 8192,
     contextWindow: 128_000,
     maxOutputTokens: 8192,
     supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "tools"],
+    capabilities: ["chat", "fast", "tools"],
+  },
+  {
+    id: "gpt-4.1",
+    provider: "oma-ai",
+    omaAiId: "gpt-4.1",
+    inputPricePer1M: 1.5,
+    outputPricePer1M: 7.5,
+    markupPercent: 0,
+    displayName: "GPT-4.1",
+    category: "frontier",
+    maxTokens: 16384,
+    contextWindow: 128_000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    capabilities: ["chat", "reasoning", "coding", "tools"],
+  },
+  {
+    id: "gpt-4o",
+    provider: "oma-ai",
+    omaAiId: "gpt-4o",
+    inputPricePer1M: 0.8,
+    outputPricePer1M: 4.0,
+    markupPercent: 0,
+    displayName: "GPT-4o",
+    category: "premium",
+    maxTokens: 8192,
+    contextWindow: 128_000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    capabilities: ["chat", "fast", "tools"],
   },
 ];
 

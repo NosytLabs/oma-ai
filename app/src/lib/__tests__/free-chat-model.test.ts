@@ -8,13 +8,13 @@ import {
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to a gonka catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("minimax-m2.7");
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("gemini-3-flash-preview");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
 	it("allows known free OMA-AI (gonka) model ids without provider hint", () => {
-		expect(isFreeChatModel("minimax-m2.7")).toBe(true);
-		expect(isFreeChatModel("kimi-k2.6")).toBe(true);
+		expect(isFreeChatModel("gemini-3-flash-preview")).toBe(true);
+		expect(isFreeChatModel("kimi-k3")).toBe(true);
 		expect(isFreeChatModel("glm-5.2-fp8")).toBe(false); // removed from OpenBroker
 	});
 

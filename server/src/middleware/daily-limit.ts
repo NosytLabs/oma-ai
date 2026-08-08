@@ -91,7 +91,7 @@ export function dailyUsageLimit() {
     const model = body?.model as string | undefined;
 
     // Provider-based check (was hardcoded to two non-existent model ids
-    // `minimax-m2.7` and `kimi-k2.6`, which made the daily-limit gate
+    // `gemini-3-flash-preview` and `kimi-k3`, which made the daily-limit gate
     // a no-op against the live catalog). oma-ai-routed models are the
     // free tier on /chat.
     const def = model ? getModelById(model) : null;

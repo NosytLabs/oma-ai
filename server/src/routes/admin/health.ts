@@ -48,7 +48,7 @@ app.get("/v1/admin/integrations", async (c) => {
         status: statusOk ? "healthy" : "degraded",
         latencyMs: Date.now() - start,
         // Live OpenBroker catalog (verified via chat error + probes 2026-08-04)
-        supportedModels: ["MiniMaxAI/MiniMax-M2.7", "moonshotai/Kimi-K2.6"],
+        supportedModels: ["gemini-3-flash-preview", "kimi-k3"],
         note: statusOk
           ? "OpenBroker reachable; model list is not exposed via /v1/models (status stub only)"
           : `upstream returned ${r.status}`,

@@ -12,22 +12,20 @@ import type { ModelOption } from "@/lib/types/model";
  * Default free website-chat model. Must be provider=oma-ai on the server
  * (`isFreeWebsiteModel` in server/src/routes/chat) — Venice ids require auth.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
+export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 
 /**
  * Known free catalog ids (provider=oma-ai). Keep in sync with live
  * GET /v1/models where provider === "oma-ai".
  */
 export const FREE_CHAT_MODEL_IDS = new Set([
-	"minimax-m2.7",
-	"kimi-k2.6",
-	"gemini-3.1-pro-preview",
-	"gemini-3-pro-preview",
 	"gemini-3-flash-preview",
-	"gemini-2.5-flash",
 	"gpt-4.1",
 	"gpt-4o",
-	"glm-4.5-air"
+	"gemini-3-pro-preview",
+	"gemini-3.1-pro-preview",
+	"gemini-2.5-flash",
+	"kimi-k3",
 ]);
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */

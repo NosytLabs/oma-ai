@@ -57,7 +57,7 @@ SECURITY.md          Security policy
 - **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation.
 - **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers.
 - **Curated Model Registry:** Access to 22 hand-picked chat models (20 Venice models + 2 OMA-AI free-tier budget models).
-- **Free Guest Chat:** Budget-friendly access to `minimax-m2.7` and `kimi-k2.6` models via OMA-AI.
+- **Free Guest Chat:** Budget-friendly access to `gemini-3-flash-preview` and `kimi-k3` models via OMA-AI.
 - **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms.
 - **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins.
 
