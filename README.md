@@ -56,8 +56,8 @@ SECURITY.md          Security policy
 ### Developer API & Proxy
 - **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation.
 - **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers.
-- **Curated Model Registry:** Access to 22 hand-picked chat models (20 Venice models + 2 OMA-AI free-tier budget models).
-- **Free Guest Chat:** Budget-friendly access to `gemini-3-flash-preview` and `kimi-k3` models via OMA-AI.
+- **Curated Model Registry:** 12 vetted chat models across Venice and OMA-AI (free-tier budget) providers.
+- **Free Guest Chat:** Budget-friendly, sign-in-free chat via OMA-AI models (e.g. `gemini-3-flash-preview`, `zai-org-glm-5-1`, `qwen-3-7-plus`) with a daily limit for anonymous visitors.
 - **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms.
 - **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins.
 

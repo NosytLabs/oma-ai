@@ -10,10 +10,15 @@ import { logger } from "../../lib/logger.js";
 
 export function registerHealthRoutes(app: Hono<OmaEnv>): void {
 app.get("/v1/admin/integrations", async (c) => {
-  const polarConfigured = !!config.POLAR_ACCESS_TOKEN && config.POLAR_ACCESS_TOKEN !== "polar_oat_..." && !config.POLAR_ACCESS_TOKEN.startsWith("polar_oat_...");
+  const polarConfigured =
+    !!config.POLAR_ACCESS_TOKEN &&
+    !config.POLAR_ACCESS_TOKEN.includes("...");
   const omaAiConfigured = !!config.ZYLOO_API_KEY;
   const veniceConfigured = !!config.VENICE_API_KEY;
-  const resendConfigured = !!config.RESEND_API_KEY && !config.RESEND_API_KEY.startsWith("re_VErSwvfj_Kr8YCVhJTB2bGK7wcg35vJ3K");
+  const PLACEHOLDER_SUBSTRINGS = ["...", "placeholder", "change-me", "YOUR_", "PASTE"];
+  const resendConfigured =
+    !!config.RESEND_API_KEY &&
+    !PLACEHOLDER_SUBSTRINGS.some((p) => config.RESEND_API_KEY!.includes(p));
 
   // Probe OpenBroker/OMA-AI live.
   // NOTE: GET /v1/models on openbroker returns a status envelope

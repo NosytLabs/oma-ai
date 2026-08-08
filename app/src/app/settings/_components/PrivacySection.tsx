@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, History, Loader2, Trash2 } from "lucide-react";
+import { Download, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
@@ -14,7 +14,6 @@ interface PrivacySectionProps {
 export function PrivacySection({ user }: PrivacySectionProps) {
 	const toast = useToast();
 	const [downloading, setDownloading] = useState(false);
-	const [clearing, setClearing] = useState(false);
 
 	const handleDownload = async () => {
 		setDownloading(true);
@@ -38,32 +37,6 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 			toast.error(error instanceof Error ? error.message : "Download failed");
 		} finally {
 			setDownloading(false);
-		}
-	};
-
-	const handleClearHistory = async () => {
-		if (
-			!window.confirm(
-				"Clear all usage history and audit logs? This cannot be undone.",
-			)
-		)
-			return;
-		setClearing(true);
-		try {
-			const result = await api.auth.clearHistory();
-			toast.success(
-				result.success
-					? `Cleared ${result.deleted.usageRecords} usage records and ${result.deleted.auditLogs} logs.`
-					: "Failed to clear usage history",
-			);
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to clear usage history",
-			);
-		} finally {
-			setClearing(false);
 		}
 	};
 
@@ -115,41 +88,13 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 					</button>
 				</div>
 
-				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-[var(--color-surface)]/50">
-					<div>
-						<h3 className="text-sm font-semibold text-text-bright">
-							Clear usage history
-						</h3>
-						<p className="mt-1 text-xs text-text-muted">
-							Remove usage records and audit logs while keeping your account,
-							keys, and credits.
-						</p>
-					</div>
-					<button
-						type="button"
-						onClick={handleClearHistory}
-						disabled={clearing}
-						className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-accent)]/40 hover:text-text-bright hover:bg-[var(--color-surface)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-					>
-						{clearing ? (
-							<Loader2
-								className="h-3.5 w-3.5 animate-spin"
-								aria-hidden="true"
-							/>
-						) : (
-							<History className="h-3.5 w-3.5" aria-hidden="true" />
-						)}
-						{clearing ? "Clearing…" : "Clear history"}
-					</button>
-				</div>
-
 				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-[var(--color-danger)]/5">
 					<div>
 						<h3 className="text-sm font-semibold text-text-bright">
-							Delete account
+							Danger zone
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
-							Permanently remove your account and associated data.
+							Permanently remove your account or clear usage history.
 						</p>
 					</div>
 					<Link
@@ -157,7 +102,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 						className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-danger)]/40 px-4 py-2 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] hover:border-[var(--color-danger)]/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
 					>
 						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-						Delete account
+						Danger zone
 					</Link>
 				</div>
 			</div>

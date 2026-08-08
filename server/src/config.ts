@@ -66,10 +66,6 @@ const envSchema = z.object({
   // SECURITY (A14): No placeholder default. Must be explicitly set in
   // production. The production startup guard below rejects known placeholders.
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  // Flat USD price for one x402-paid /v1/chat/completions request (no
-  // account, no credits — settled per request via PAYMENT-SIGNATURE).
-  // "0" disables the 402 challenge path; requires TREASURY_BASE_ADDRESS.
-  X402_CHAT_PRICE_USD: z.string().regex(/^\d+(\.\d+)?$/).default("0.10"),
   PORT: z.coerce.number().default(3001),
   // Better Auth owns session signing and CSRF protection; we just need to provide a
   // 32+ char secret. Generate one per environment with `openssl rand -hex 32`.
@@ -97,17 +93,8 @@ const envSchema = z.object({
   // trustedOrigins and as the baseURL fallback for session cookie domain.
   // Falls back to localhost in dev.
   PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
-  ONRAMP_WEBHOOK_SECRET: z.string().min(1).optional(),
-  // Shared secret for the /internal/jobs/:name trigger endpoints (GitHub
-  // Actions cron). Endpoints return 503 when unset — fail closed.
-  JOBS_TOKEN: z.string().min(32).optional(),
-  // LI.FI deposit webhook HMAC secret. Required for production LI.FI webhook verification.
-  LIFI_WEBHOOK_SECRET: z.string().min(1).optional(),
-  // CCTP deposit webhook HMAC secret. Required for production CCTP webhook verification.
-  CCTP_WEBHOOK_SECRET: z.string().min(1).optional(),
   RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
-  DEBUG_STREAM: envBoolean.default(false),
   // Log level for the server logger (trace, debug, info, warn, error, fatal)
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
 
@@ -116,10 +103,6 @@ const envSchema = z.object({
 
   // Admin wallet addresses (comma-separated, checks on every admin route)
   ADMIN_WALLET_ADDRESSES: z.string().optional().default(""),
-
-  CCTP_CIRCLE_API_URL: z.string().min(1).default("https://iris-api.circle.com"),
-  CCTP_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche"),
-  CCTP_BASE_DOMAIN: z.coerce.number().default(6),
 
   // Base mainnet chain ID
   BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
@@ -130,28 +113,9 @@ const envSchema = z.object({
   // hit "insufficient_balance" on their first real call.
   FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(100),
 
-  // Minimum deposit floor (USD). Prevents spam/dust deposits that cost more in
-  // on-chain verification + DB writes than they're worth. Research (Flexprice,
-  // OpenRouter) shows a $10 floor is the sweet spot — blocks abuse without
-  // friction for real users. Applied to all deposit routes (usdc/cctp/lifi).
-  MIN_DEPOSIT_USD: z.coerce.number().min(0).max(100000).default(10),
-
-  // Onramp configuration (moved from hardcoded literals in routes/onramp.ts)
-  ONRAMP_PROCESSING_FEE_PERCENT: z.coerce.number().min(0).max(50).default(2.9), // 2.9% — value is in PERCENT
-  ONRAMP_QUOTE_CACHE_TTL_MS: z.coerce.number().int().positive().default(10 * 60 * 1000), // 10 min
-
-  LIFI_API_URL: z.string().min(1).default("https://li.quest/v1"),
-  LIFI_INTEGRATOR: z.string().min(1).default("oma-ai"),
-
-  LIFI_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche,base,bsc,gnosis,fantom"),
-
   // OpenTelemetry configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
-
-  // Provider request timeouts (ms)
-  PROVIDER_TIMEOUT_STREAM_MS: z.coerce.number().min(1000).default(120000),
-  PROVIDER_TIMEOUT_NON_STREAM_MS: z.coerce.number().min(1000).default(60000),
 
   // Optional path whose directory holds models-overrides.json (runtime catalog is code-loaded).
   MODELS_CONFIG_PATH: z.string().optional(),
@@ -160,27 +124,9 @@ const envSchema = z.object({
   // Only trust X-Forwarded-For headers from these known proxy IPs
   TRUSTED_PROXY_IPS: z.string().optional().default(""),
 
-  // Additional SIWE allowed domains (comma-separated)
-  ALLOWED_SIWE_DOMAINS: z.string().optional(),
-
   // Build metadata (injected at build time)
   BUILD_SHA: z.string().optional().default("dev"),
   BUILD_TIME: z.string().optional().default(() => new Date().toISOString()),
-
-  // CCTP: per-chain RPC URL map (comma-separated `chain:url` pairs).
-  // Example: "ethereum:https://eth.example.com,base:https://base.example.com".
-  // When unset, cctp-client.ts falls back to viem's default RPC transport.
-  CHAIN_RPC_URL_PER_CHAIN: z.string().optional(),
-
-  // Session / auth: cookie lifetime in milliseconds. Default 1h.
-  SESSION_COOKIE_TTL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
-
-  // Onramp: USD → credits conversion rate and per-quote USD bounds.
-  // CREDITS_PER_USD is multiplied against net USD to produce credits (cents).
-  // ONRAMP_MIN_USD / ONRAMP_MAX_USD bound a single quote's amountUsd.
-  CREDITS_PER_USD: z.coerce.number().int().positive().default(100),
-  ONRAMP_MIN_USD: z.coerce.number().positive().default(10),
-  ONRAMP_MAX_USD: z.coerce.number().positive().default(1000),
 
   // Connection pool size for Neon Postgres (used with PgBouncer)
   CONNECTION_POOL_SIZE: z.coerce.number().int().positive().default(10),
@@ -342,16 +288,4 @@ if (config.NODE_ENV !== "test" && !isProductionEnv && config.RECEIPT_HMAC_SECRET
 
 if (isProductionEnv && (config.DATABASE_URL.includes("localhost") || !config.DATABASE_URL.includes("@"))) {
   throw new Error("[FATAL] DATABASE_URL must have proper credentials in production. Set a user:password@host in the connection string.");
-}
-
-if (isProductionEnv && !config.ONRAMP_WEBHOOK_SECRET) {
-  console.warn("[ONRAMP] WARNING: ONRAMP_WEBHOOK_SECRET is not set. Webhook verification will fail unless ONRAMP_WEBHOOK_SECRET is explicitly configured.");
-}
-
-if (isProductionEnv && !config.LIFI_WEBHOOK_SECRET) {
-  console.warn("[LI.FI] WARNING: LIFI_WEBHOOK_SECRET is not set. LI.FI webhook verification will fail unless LIFI_WEBHOOK_SECRET is explicitly configured.");
-}
-
-if (isProductionEnv && !config.CCTP_WEBHOOK_SECRET) {
-  console.warn("[CCTP] WARNING: CCTP_WEBHOOK_SECRET is not set. CCTP webhook verification will fail unless CCTP_WEBHOOK_SECRET is explicitly configured.");
 }
