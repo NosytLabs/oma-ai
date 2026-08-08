@@ -11,7 +11,7 @@ const AgentSessionDemo = dynamic(
 			(m) => m.AgentSessionDemo,
 		),
 	{
-		ssr: false,
+		ssr: true,
 		loading: () => (
 			<Skeleton className="h-[320px] w-full rounded-[var(--radius-xl)] border border-border" />
 		),

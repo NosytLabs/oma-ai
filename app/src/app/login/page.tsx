@@ -46,7 +46,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 const LazyWalletSignInPanel = dynamic(
 	() => import("./_components/WalletSignInPanel"),
 	{
-		ssr: false,
+		ssr: true,
 		loading: () => <Skeleton className="h-40 w-full" />,
 	},
 );

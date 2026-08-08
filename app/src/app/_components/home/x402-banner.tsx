@@ -17,7 +17,7 @@ import { Reveal } from "@/app/_components/home/reveal";
 // hydration error).
 const BorderBeam = dynamic(
  () => import("border-beam").then((mod) => mod.BorderBeam),
- { ssr: false },
+ { ssr: true },
 );
 
 export function X402Banner() {

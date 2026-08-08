@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
 	// Disable dev compression; production uses a reverse proxy for gzip.
 	compress: false,
 
-	output: "standalone",
+	// output: "standalone",
 	outputFileTracingRoot: __dirname,
 
 	env: {

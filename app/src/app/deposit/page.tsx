@@ -23,7 +23,7 @@ const UnifiedDepositInterface = nextDynamic(
 			default: m.UnifiedDepositInterface,
 		})),
 	{
-		ssr: false,
+		ssr: true,
 		loading: () => (
 			<div
 				role="status"
@@ -40,7 +40,7 @@ const FiatCheckoutPanel = nextDynamic(
 			default: m.FiatCheckoutPanel,
 		})),
 	{
-		ssr: false,
+		ssr: true,
 		loading: () => (
 			<div
 				role="status"

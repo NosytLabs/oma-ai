@@ -1,14 +1,6 @@
-/**
- * Runtime smoke test — boots the real app and verifies key pages render
- * with no console errors, no failed requests. Catches the class of bug
- * where SSR routes reference stale/unhashed chunk paths.
- *
- * Run from app/:  npm run build && node scripts/smoke.mjs
- */
-
 import { chromium } from "playwright";
 
-const BASE = process.env.BASE_URL || "http://localhost:3211";
+const BASE = process.env.BASE_URL || "http://localhost:3000";
 
 const PAGES = [
 	"",
@@ -41,8 +33,6 @@ for (const path of PAGES) {
 
 	const failedRequests = [];
 	page.on("requestfailed", (req) => {
-		// Router-triggered prefetch aborts (`?_rsc=...`) are cancelled
-		// intentionally when the page closes or the client navigates.
 		if (req.url().includes("_rsc=")) return;
 		failedRequests.push(`${req.url()} -> ${req.failure()?.errorText}`);
 	});
@@ -67,9 +57,8 @@ for (const path of PAGES) {
 	await page.close();
 }
 
-// API endpoint sanity
 try {
-	const res = await fetch(`${BASE}/api/v1/models`);
+	const res = await fetch(`http://localhost:3001/v1/models`);
 	const json = await res.json();
 	const count = json?.data?.length ?? "?";
 	console.log(`[/api/v1/models] ${res.status} — ${count} models`);

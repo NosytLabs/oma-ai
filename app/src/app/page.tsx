@@ -4,9 +4,6 @@ import { AuthNotice } from "@/components/AuthNotice";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { HomeView } from "./_components/home";
 
-// AuthNotice (useSearchParams) is wrapped in Suspense below, so the page
-// prerenders cleanly; metadata then lands in the real <head>.
-
 export const metadata: Metadata = {
 	title: {
 		absolute: "OMA · Open Model Access — AI inference, paid by card or USDC",

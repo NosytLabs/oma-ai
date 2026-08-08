@@ -1,3 +1,4 @@
+"use client";
 /**
  * Homepage section — brainless-inspired agent session demo (OMA-themed).
  */
