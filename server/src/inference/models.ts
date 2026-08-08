@@ -1,12 +1,12 @@
 /**
  * Inference model catalog — curated best-in-class models.
  *
- * 22 curated chat models: 20 Venice + 2 Gonka/OpenBroker free models.
+ * 22 curated chat models: 20 Venice + 2 OMA-AI/OpenBroker free models.
  * Prices below are *wholesale base* for Venice (25% markup applied at
- * billing — see billing-service.ts). Gonka prices are user-facing
+ * billing — see billing-service.ts). OMA-AI prices are user-facing
  * (margin built-in, markupPercent = 0).
  *
- * OpenBroker (api.openbroker.gonka.gg) live catalog (verified 2026-08-04):
+ * OpenBroker (api.openbroker.oma-ai.gg) live catalog (verified 2026-08-04):
  *   MiniMaxAI/MiniMax-M2.7, moonshotai/Kimi-K2.6 only.
  *   GET /v1/models is a status stub, not a model list — probe via chat.
  *
@@ -29,7 +29,7 @@ export interface ModelDef {
   supportsStreaming: boolean;
   capabilities: string[];
   veniceId?: string;
-  gonkaId?: string;
+  omaAiId?: string;
   surplusId?: string;
 }
 
@@ -39,15 +39,15 @@ let _catalog: ModelDef[] | null = null;
 // Curated catalog — best models per tier.
 //
 // Venice pricing source: live GET api.venice.ai/api/v1/models (2026-08-04)
-// Gonka/OpenBroker: free-tier user prices; context 128k product cap
+// OMA-AI/OpenBroker: free-tier user prices; context 128k product cap
 // (upstream does not publish per-model limits on the broker API).
 //
-// Prices stored here are *upstream base* (what OMA pays Venice/Gonka).
+// Prices stored here are *upstream base* (what OMA pays Venice/OMA-AI).
 // billing-service.ts applies markupPercent at checkout:
 //   user_cost = base * (1 + markupPercent/100)
 //
 // For Venice models markupPercent = 25 (OMA's platform margin).
-// For Gonka models markupPercent = 0 (margin already in the low price).
+// For OMA-AI models markupPercent = 0 (margin already in the low price).
 // ---------------------------------------------------------------------------
 
 const VENICE_MODELS: ModelDef[] = [
@@ -312,16 +312,16 @@ const VENICE_MODELS: ModelDef[] = [
   },
 ];
 
-// ── Gonka (OpenBroker) ────────────────────────────────────────────────
+// ── OMA-AI (OpenBroker) ────────────────────────────────────────────────
 // Prices are user-facing (margin built-in). markupPercent = 0.
 // Live OpenBroker catalog (verified 2026-08-04): only
 //   MiniMaxAI/MiniMax-M2.7, moonshotai/Kimi-K2.6
 // (zai-org/GLM-5.2-FP8 removed upstream — do not re-add without re-probing.)
-const GONKA_MODELS: ModelDef[] = [
+const ZYLOO_MODELS: ModelDef[] = [
   {
     id: "minimax-m2.7",
-    provider: "gonka",
-    gonkaId: "MiniMaxAI/MiniMax-M2.7",
+    provider: "oma-ai",
+    omaAiId: "MiniMaxAI/MiniMax-M2.7",
     inputPricePer1M: 0.015,
     outputPricePer1M: 0.06,
     markupPercent: 0,
@@ -335,8 +335,8 @@ const GONKA_MODELS: ModelDef[] = [
   },
   {
     id: "kimi-k2.6",
-    provider: "gonka",
-    gonkaId: "moonshotai/Kimi-K2.6",
+    provider: "oma-ai",
+    omaAiId: "moonshotai/Kimi-K2.6",
     inputPricePer1M: 0.024,
     outputPricePer1M: 0.096,
     markupPercent: 0,
@@ -351,7 +351,7 @@ const GONKA_MODELS: ModelDef[] = [
 ];
 
 function defaultCatalog(): ModelDef[] {
-  return [...VENICE_MODELS, ...GONKA_MODELS];
+  return [...VENICE_MODELS, ...ZYLOO_MODELS];
 }
 
 export async function ensureCatalogLoaded(): Promise<void> {

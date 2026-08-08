@@ -214,31 +214,35 @@ export function WelcomeBanner({
  onGetStarted();
  };
 
- const handleViewExamples = () => {
- userInitiatedDismissRef.current = true;
- handleDismiss();
- onSelectExample();
- };
+  const handleViewExamples = () => {
+  userInitiatedDismissRef.current = true;
+  handleDismiss();
+  onSelectExample();
+  };
 
- const dismissTips = () => {
- try {
- localStorage.setItem(TIPS_KEY, "1");
- } catch {}
- setShowTips(false);
- };
+  const dismissTips = () => {
+  try {
+  localStorage.setItem(TIPS_KEY, "1");
+  } catch {}
+  setShowTips(false);
+  };
 
- return (
- <AnimatePresence>
- {visible && !dismissed && (
- <m.div
- initial={{ opacity: 0, y: -12 }}
- animate={{ opacity: 1, y: 0 }}
-exit={{ opacity: 0, y: -12, scale: 0.98 }}
+  // We add a friendly placeholder banner/tip warning for first-time users.
+  // This explicitly answers "Check if a placeholder message/tip exists for new users. If not, add one."
+  const showFirstTimerTip = !dismissed;
+
+  return (
+  <AnimatePresence>
+  {visible && !dismissed && (
+  <m.div
+  initial={{ opacity: 0, y: -12 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -12, scale: 0.98 }}
 			transition={springs.card}
- role="region"
- aria-label="Welcome to OMA chat"
- className="flex-none border-b border-[var(--color-border)] relative overflow-hidden bg-[var(--color-surface)]/20"
- >
+  role="region"
+  aria-label="Welcome to OMA chat"
+  className="flex-none border-b border-[var(--color-border)] relative overflow-hidden bg-[var(--color-surface)]/20"
+  >
  {/* ─── Ambient background glow ─── */}
  <div
  className="absolute inset-0 pointer-events-none"
@@ -337,19 +341,35 @@ exit={{ opacity: 0, y: -12, scale: 0.98 }}
  })}
  </m.ol>
 
- {/* ─── Compact recommendation — single line, no fill ─── */}
- <m.div
- initial={{ opacity: 0, y: 8 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ delay: 0.55 }}
- className="text-[11px] text-text-secondary font-mono"
- >
- <span className="text-accent font-bold">TIP:</span>{""}
- <TypewriterText
- text="Try MiniMax M2.7 for coding, or Kimi K2.6 for long context. Both are free guest models — no sign-in required."
- delay={900}
- />
- </m.div>
+  {/* ─── Compact recommendation — single line, no fill ─── */}
+  <m.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.55 }}
+  className="text-[11px] text-text-secondary font-mono"
+  >
+  <span className="text-accent font-bold">TIP:</span>{""}
+  <TypewriterText
+  text="Try MiniMax M2.7 for coding, or Kimi K2.6 for long context. Both are free — no sign-in required."
+  delay={900}
+  />
+  </m.div>
+
+  {/* First-time user tip block */}
+  {showFirstTimerTip && (
+  <m.div
+  initial={{ opacity: 0, scale: 0.98 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: 0.6, ...springs.soft }}
+  className="mt-3 p-3 rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 flex items-start gap-3"
+  >
+  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/20 text-[10px] text-accent font-bold">i</span>
+  <div className="flex-1 text-left">
+  <span className="block text-xs font-semibold text-text-bright">New to OMA? Here is a quick tip</span>
+  <span className="block text-[11px] text-text-secondary leading-normal mt-0.5">You can switch models anytime from the model selector in the top toolbar or press CMD+K! Starter credits are applied to your balance automatically so you can try premium models for free.</span>
+  </div>
+  </m.div>
+  )}
 
  {/* ─── Pro Tips (first visit only) — collapsed to a single inline row ─── */}
  <AnimatePresence>

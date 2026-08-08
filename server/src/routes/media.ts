@@ -56,29 +56,25 @@ function errStatus(err: unknown): ContentfulStatusCode {
 
 export const mediaRouter = new Hono<OmaEnv>();
 
-mediaRouter.use("/v1/images/generations", bearerAuth);
-mediaRouter.use("/v1/images/generations", requestTimeout());
+// Apply bearerAuth and requestTimeout automatically to all media endpoints.
+mediaRouter.use("/v1/images/*", bearerAuth, requestTimeout());
+mediaRouter.use("/v1/videos/*", bearerAuth, requestTimeout());
+
 mediaRouter.use(
   "/v1/images/generations",
   tokenBucket({ refillRate: 5, bucketSize: 10, rpmLimit: 10 }),
 );
 
-mediaRouter.use("/v1/videos/quote", bearerAuth);
-mediaRouter.use("/v1/videos/quote", requestTimeout());
 mediaRouter.use(
   "/v1/videos/quote",
   tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),
 );
 
-mediaRouter.use("/v1/videos/generations", bearerAuth);
-mediaRouter.use("/v1/videos/generations", requestTimeout());
 mediaRouter.use(
   "/v1/videos/generations",
   tokenBucket({ refillRate: 2, bucketSize: 5, rpmLimit: 5 }),
 );
 
-mediaRouter.use("/v1/videos/retrieve", bearerAuth);
-mediaRouter.use("/v1/videos/retrieve", requestTimeout());
 mediaRouter.use(
   "/v1/videos/retrieve",
   tokenBucket({ refillRate: 10, bucketSize: 30, rpmLimit: 30 }),

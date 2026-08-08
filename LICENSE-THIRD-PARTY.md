@@ -1,201 +1,209 @@
 # Third-Party Licenses
 
-This project bundles or depends on third-party open-source software.
-Attribution is provided as required by MIT, Apache 2.0, BSD, and other open-source licenses.
+This project bundles or depends on third-party open-source software. Attribution and licensing details are provided below as required by their respective open-source licenses (MIT, Apache 2.0, BSD, ISC, etc.).
 
-## Core Runtime (App)
+---
 
-### Next.js (MIT)
-- **Source:** https://github.com/vercel/next.js
-- **License:** MIT — Copyright (c) 2024 Vercel, Inc.
-- **Used in:** Full-stack React framework with server actions
+## Core Frontend Runtime (App)
 
-### React & React-DOM (MIT)
-- **Source:** https://github.com/facebook/react
-- **License:** MIT — Copyright (c) Meta Platforms, Inc.
-- **Used in:** UI rendering
+### Next.js
+- **Source:** [github.com/vercel/next.js](https://github.com/vercel/next.js)
+- **License:** MIT &copy; 2024 Vercel, Inc.
+- **Used for:** Full-stack React framework with server-side rendering and Server Actions.
 
-### Framer Motion (MIT)
-- **Source:** https://github.com/framer/motion
-- **License:** MIT — Copyright (c) 2018 Framer B.V.
-- **Used in:** Declarative animations
+### React & React-DOM
+- **Source:** [github.com/facebook/react](https://github.com/facebook/react)
+- **License:** MIT &copy; Meta Platforms, Inc.
+- **Used for:** Component-driven UI rendering.
 
-### TanStack React Query (MIT)
-- **Source:** https://github.com/TanStack/query
-- **License:** MIT — Copyright (c) Tanner Linsley
-- **Used in:** Server-state management and caching
+### Framer Motion
+- **Source:** [github.com/framer/motion](https://github.com/framer/motion)
+- **License:** MIT &copy; 2018 Framer B.V.
+- **Used for:** Declarative animation engine.
 
-### Viem (MIT)
-- **Source:** https://github.com/wevm/viem
-- **License:** MIT — Copyright (c) wevm
-- **Used in:** Ethereum interaction library
+### TanStack React Query
+- **Source:** [github.com/TanStack/query](https://github.com/TanStack/query)
+- **License:** MIT &copy; Tanner Linsley
+- **Used for:** Server-state synchronization, request deduplication, and caching.
 
-### Wagmi (MIT)
-- **Source:** https://github.com/wevm/wagmi
-- **License:** MIT — Copyright (c) wevm
-- **Used in:** React Hooks for Ethereum
+### Viem
+- **Source:** [github.com/wevm/viem](https://github.com/wevm/viem)
+- **License:** MIT &copy; wevm
+- **Used for:** Modular TypeScript primitives for Ethereum interactions.
 
-### SIWE — Sign-In with Ethereum (MIT)
-- **Source:** https://github.com/spruceid/siwe
-- **License:** MIT — Copyright (c) 2021 Spruce Systems, Inc.
-- **Used in:** Web3 authentication
+### Wagmi
+- **Source:** [github.com/wevm/wagmi](https://github.com/wevm/wagmi)
+- **License:** MIT &copy; wevm
+- **Used for:** React Hooks for Ethereum wallet lifecycles.
 
-### Recharts (MIT)
-- **Source:** https://github.com/recharts/recharts
-- **License:** MIT — Copyright (c) 2015-present recharts
-- **Used in:** Data visualizations and charts
+### SIWE (Sign-In with Ethereum)
+- **Source:** [github.com/spruceid/siwe](https://github.com/spruceid/siwe)
+- **License:** MIT &copy; 2021 Spruce Systems, Inc.
+- **Used for:** EIP-4361 cryptographic message validation and authentication.
 
-### Tailwind CSS (MIT)
-- **Source:** https://github.com/tailwindlabs/tailwindcss
-- **License:** MIT — Copyright (c) Tailwind Labs, Inc.
-- **Used in:** Utility-first CSS framework
+### Recharts
+- **Source:** [github.com/recharts/recharts](https://github.com/recharts/recharts)
+- **License:** MIT &copy; 2015-present recharts
+- **Used for:** SVG charts and telemetry visualizations.
 
-### Zod (MIT)
-- **Source:** https://github.com/colinhacks/zod
-- **License:** MIT — Copyright (c) Colin McDonnell
-- **Used in:** Schema validation (app + server)
+### Tailwind CSS
+- **Source:** [github.com/tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss)
+- **License:** MIT &copy; Tailwind Labs, Inc.
+- **Used for:** Utility-first UI styling.
 
-### Lucide React (ISC)
-- **Source:** https://github.com/lucide-icons/lucide
-- **License:** ISC — Copyright (c) Lucide Contributors
-- **Used in:** Icon library
+### Zod
+- **Source:** [github.com/colinhacks/zod](https://github.com/colinhacks/zod)
+- **License:** MIT &copy; Colin McDonnell
+- **Used for:** Strict runtime schema declaration and type safety verification.
 
-### date-fns (MIT)
-- **Source:** https://github.com/date-fns/date-fns
-- **License:** MIT — Copyright (c) 2021 Sasha Koss and Lesha Koss
-- **Used in:** Date utility library
+### Lucide React
+- **Source:** [github.com/lucide-icons/lucide](https://github.com/lucide-icons/lucide)
+- **License:** ISC &copy; Lucide Contributors
+- **Used for:** Vector iconography.
 
-### clsx (MIT)
-- **Source:** https://github.com/lukeed/clsx
-- **License:** MIT — Copyright (c) Luke Edwards
-- **Used in:** Conditional className construction
+### date-fns
+- **Source:** [github.com/date-fns/date-fns](https://github.com/date-fns/date-fns)
+- **License:** MIT &copy; 2021 Sasha Koss and Lesha Koss
+- **Used for:** Immutable date and time utilities.
 
-### jose (MIT)
-- **Source:** https://github.com/panva/jose
-- **License:** MIT — Copyright (c) 2020 Filip Skokan
-- **Used in:** JWT signing and verification
+### clsx
+- **Source:** [github.com/lukeed/clsx](https://github.com/lukeed/clsx)
+- **License:** MIT &copy; Luke Edwards
+- **Used for:** Dynamic and conditional CSS class orchestration.
 
-### react-markdown (MIT)
-- **Source:** https://github.com/remarkjs/react-markdown
-- **License:** MIT — Copyright (c) 2017–2023 Espen Hovlandsdal
-- **Used in:** Markdown rendering
+### jose
+- **Source:** [github.com/panva/jose](https://github.com/panva/jose)
+- **License:** MIT &copy; 2020 Filip Skokan
+- **Used for:** JSON Web Token (JWT) and JSON Web Signature (JWS) routines.
 
-### remark-gfm (MIT)
-- **Source:** https://github.com/remarkjs/remark-gfm
-- **License:** MIT — Copyright (c) 2020 Titus Wormer
-- **Used in:** GitHub Flavored Markdown support
+### react-markdown
+- **Source:** [github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown)
+- **License:** MIT &copy; 2017–2023 Espen Hovlandsdal
+- **Used for:** Safe, component-mapped Markdown rendering in chat.
 
-### border-beam (MIT)
-- **Source:** https://github.com/Jakubantalik/border-beam
-- **License:** MIT — Copyright (c) 2026 Jakub Antalik
-- **Used in:** Animated border beam effect for React
+### remark-gfm
+- **Source:** [github.com/remarkjs/remark-gfm](https://github.com/remarkjs/remark-gfm)
+- **License:** MIT &copy; 2020 Titus Wormer
+- **Used for:** GitHub Flavored Markdown (GFM) capabilities.
 
-### cuelume (MIT)
-- **Source:** https://github.com/Danilaa1/cuelume
-- **License:** MIT — Copyright (c) 2026 Daniel Belyi
-- **Used in:** Curated interaction sounds for the web
+### border-beam
+- **Source:** [github.com/Jakubantalik/border-beam](https://github.com/Jakubantalik/border-beam)
+- **License:** MIT &copy; 2026 Jakub Antalik
+- **Used for:** High-performance animated border gradient effects.
 
-### img-fx (MIT)
-- **Source:** https://github.com/Jakubantalik/img-fx
-- **License:** MIT — Copyright (c) 2026 Jakub Antalik
-- **Used in:** Animated WebGL image loader effect for React cards
+### cuelume
+- **Source:** [github.com/Danilaa1/cuelume](https://github.com/Danilaa1/cuelume)
+- **License:** MIT &copy; 2026 Daniel Belyi
+- **Used for:** Micro-interaction sound effects for the Web.
 
-### metal-fx (MIT)
-- **Source:** https://github.com/Jakubantalik/metal-fx
-- **License:** MIT — Copyright (c) 2026 Jakub Antalik
-- **Used in:** Animated WebGL metal shader effect for buttons and UI
+### img-fx
+- **Source:** [github.com/Jakubantalik/img-fx](https://github.com/Jakubantalik/img-fx)
+- **License:** MIT &copy; 2026 Jakub Antalik
+- **Used for:** WebGL-powered image load transition shaders.
 
-### thinking-orbs (MIT)
-- **Source:** https://github.com/Jakubantalik/thinking-orbs
-- **License:** MIT — Copyright (c) 2026 Jakub Antalik
-- **Used in:** Dotted thought-orb loading indicators for AI UIs
+### metal-fx
+- **Source:** [github.com/Jakubantalik/metal-fx](https://github.com/Jakubantalik/metal-fx)
+- **License:** MIT &copy; 2026 Jakub Antalik
+- **Used for:** WebGL metal shader canvas buttons and backdrops.
 
-## Core Runtime (Server)
+### thinking-orbs
+- **Source:** [github.com/Jakubantalik/thinking-orbs](https://github.com/Jakubantalik/thinking-orbs)
+- **License:** MIT &copy; 2026 Jakub Antalik
+- **Used for:** Physics-based interactive loading bubbles for AI states.
 
-### Hono (MIT)
-- **Source:** https://github.com/honojs/hono
-- **License:** MIT — Copyright (c) 2022 Hono contributors
-- **Used in:** HTTP API framework
+---
 
-### @hono/node-server (MIT)
-- **Source:** https://github.com/honojs/node-server
-- **License:** MIT — Copyright (c) 2022 Hono contributors
-- **Used in:** Node.js adapter for Hono
+## Core Backend Runtime (Server)
 
-### Drizzle ORM (Apache 2.0)
-- **Source:** https://github.com/drizzle-team/drizzle-orm
-- **License:** Apache 2.0 — Copyright (c) Drizzle Team
-- **Used in:** TypeScript ORM and query builder
+### Hono
+- **Source:** [github.com/honojs/hono](https://github.com/honojs/hono)
+- **License:** MIT &copy; 2022 Hono contributors
+- **Used for:** Ultra-fast, edge-optimized routing framework.
 
-### pg (MIT)
-- **Source:** https://github.com/brianc/node-postgres
-- **License:** MIT — Copyright (c) 2010 Brian Carlson
-- **Used in:** PostgreSQL client
+### @hono/node-server
+- **Source:** [github.com/honojs/node-server](https://github.com/honojs/node-server)
+- **License:** MIT &copy; 2022 Hono contributors
+- **Used for:** Direct execution of Hono APIs on Node.js.
 
-### @neondatabase/serverless (MIT)
-- **Source:** https://github.com/neondatabase/serverless
-- **License:** MIT — Copyright (c) Neon, Inc.
-- **Used in:** Serverless PostgreSQL driver
+### Drizzle ORM
+- **Source:** [github.com/drizzle-team/drizzle-orm](https://github.com/drizzle-team/drizzle-orm)
+- **License:** Apache 2.0 &copy; Drizzle Team
+- **Used for:** Type-safe SQL database modeling, schema migrations, and queries.
 
-### Redis (MIT)
-- **Source:** https://github.com/redis/node-redis
-- **License:** MIT — Copyright (c) Redis
-- **Used in:** Redis client for caching and pub/sub
+### pg
+- **Source:** [github.com/brianc/node-postgres](https://github.com/brianc/node-postgres)
+- **License:** MIT &copy; 2010 Brian Carlson
+- **Used for:** Non-blocking PostgreSQL client connections.
 
-### Pino (MIT)
-- **Source:** https://github.com/pinojs/pino
-- **License:** MIT — Copyright (c) 2016 Matteo Collina and David Mark Clements
-- **Used in:** Structured logging
+### @neondatabase/serverless
+- **Source:** [github.com/neondatabase/serverless](https://github.com/neondatabase/serverless)
+- **License:** MIT &copy; Neon, Inc.
+- **Used for:** Serverless-compatible WebSocket PostgreSQL proxy.
 
-### nanoid (MIT)
-- **Source:** https://github.com/ai/nanoid
-- **License:** MIT — Copyright (c) 2017 Andrey Sitnik
-- **Used in:** Unique ID generation
+### Redis
+- **Source:** [github.com/redis/node-redis](https://github.com/redis/node-redis)
+- **License:** MIT &copy; Redis
+- **Used for:** In-memory caching, pub/sub communication, and rate-limiting storage.
 
-### undici (MIT)
-- **Source:** https://github.com/nodejs/undici
-- **License:** MIT — Copyright (c) Node.js Contributors
-- **Used in:** HTTP/1.1 client library
+### Pino
+- **Source:** [github.com/pinojs/pino](https://github.com/pinojs/pino)
+- **License:** MIT &copy; 2016 Matteo Collina and David Mark Clements
+- **Used for:** Structured, high-throughput JSON logging.
 
-### qrcode (MIT)
-- **Source:** https://github.com/soldair/node-qrcode
-- **License:** MIT — Copyright (c) 2012 Ryan Day
-- **Used in:** QR code generation
+### nanoid
+- **Source:** [github.com/ai/nanoid](https://github.com/ai/nanoid)
+- **License:** MIT &copy; 2017 Andrey Sitnik
+- **Used for:** Cryptographically secure, compact ID generation.
 
-### @otplib/preset-default (MIT)
-- **Source:** https://github.com/yeojz/otplib
-- **License:** MIT — Copyright (c) 2016 Gerald Yeo
-- **Used in:** TOTP / one-time password generation
+### undici
+- **Source:** [github.com/nodejs/undici](https://github.com/nodejs/undici)
+- **License:** MIT &copy; Node.js Contributors
+- **Used for:** Modern HTTP/1.1 client performance optimizations.
+
+### qrcode
+- **Source:** [github.com/soldair/node-qrcode](https://github.com/soldair/node-qrcode)
+- **License:** MIT &copy; 2012 Ryan Day
+- **Used for:** QR code raster generation for wallet funding.
+
+### @otplib/preset-default
+- **Source:** [github.com/yeojz/otplib](https://github.com/yeojz/otplib)
+- **License:** MIT &copy; 2016 Gerald Yeo
+- **Used for:** RFC 6238-compliant Time-Based One-Time Password (TOTP) structures.
+
+---
 
 ## Observability
 
-### OpenTelemetry JS (Apache 2.0)
-- **Source:** https://github.com/open-telemetry/opentelemetry-js
-- **License:** Apache 2.0 — Copyright (c) OpenTelemetry Authors
-- **Used in:** Distributed tracing and metrics
+### OpenTelemetry JS
+- **Source:** [github.com/open-telemetry/opentelemetry-js](https://github.com/open-telemetry/opentelemetry-js)
+- **License:** Apache 2.0 &copy; OpenTelemetry Authors
+- **Used for:** Core framework instrumentation, tracing, and metric collection.
 
-## Dev & Build Tooling
+---
 
-| Dependency | License | Copyright |
-|---|---|---|
-| TypeScript | Apache 2.0 | Microsoft Corporation |
-| ESLint | MIT | JS Foundation |
-| Vitest | MIT | Vitest Contributors |
-| tsx | MIT | Hiroki Osame (privatenumber) |
-| Drizzle Kit | Apache 2.0 | Drizzle Team |
-| pino-pretty | MIT | Pino Contributors |
-| @playwright/test | Apache 2.0 | Microsoft Corporation |
-| axe-core | MPL 2.0 | Deque Systems, Inc. |
-| @axe-core/playwright | MPL 2.0 | Deque Systems, Inc. |
-| @electric-sql/pglite | Apache 2.0 | Electric DB Limited |
-| @testing-library/* | MIT | Kent C. Dodds |
-| jsdom | MIT | jsdom contributors |
-| @types/* (DefinitelyTyped) | MIT | Microsoft Corporation |
-| typescript-eslint | MIT | James Henry / TypeScript ESLint Team |
+## Developer Tooling & Build Dependencies
 
-## Attribution Notes
+| Dependency | License | Copyright Holder |
+| :--- | :--- | :--- |
+| **TypeScript** | Apache 2.0 | Microsoft Corporation |
+| **ESLint** | MIT | JS Foundation |
+| **Vitest** | MIT | Vitest Contributors |
+| **tsx** | MIT | Hiroki Osame (privatenumber) |
+| **Drizzle Kit** | Apache 2.0 | Drizzle Team |
+| **pino-pretty** | MIT | Pino Contributors |
+| **@playwright/test** | Apache 2.0 | Microsoft Corporation |
+| **axe-core** | MPL 2.0 | Deque Systems, Inc. |
+| **@axe-core/playwright** | MPL 2.0 | Deque Systems, Inc. |
+| **@electric-sql/pglite** | Apache 2.0 | Electric DB Limited |
+| **@testing-library/\*** | MIT | Kent C. Dodds |
+| **jsdom** | MIT | jsdom contributors |
+| **@types/\* (DefinitelyTyped)** | MIT | Microsoft Corporation |
+| **typescript-eslint** | MIT | James Henry / TypeScript ESLint Team |
 
-- This software includes type definitions from DefinitelyTyped (https://github.com/DefinitelyTyped/DefinitelyTyped), MIT Licensed.
-- `axe-core` and `@axe-core/playwright` are licensed under the Mozilla Public License 2.0, which requires that the source of the MPL-covered files remain available and that this attribution be preserved. They are used unmodified as development/test dependencies and are not distributed with the product.
-- Packages without a declared license grant no rights and are excluded from distribution, or used only per the terms stated in their repositories.
-- Full license texts of each dependency are available in their respective repositories.
+---
+
+## Attribution & Legal Notices
+
+- **Type Definitions:** This project integrates static TypeScript type declarations retrieved from the DefinitelyTyped community ([github.com/DefinitelyTyped/DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped)), licensed under the permissive MIT License.
+- **Accessibility Engine:** `axe-core` and `@axe-core/playwright` are licensed under the **Mozilla Public License 2.0 (MPL 2.0)**. In accordance with MPL 2.0 terms, we acknowledge their usage without modifications in our non-distributed development environment and end-to-end testing pipelines.
+- **Dependency Scope:** All third-party packages not explicitly bundled are used dynamically within standard runtime boundary structures. Full licensing conditions, copyright declarations, and terms are accessible inside each respective repository.

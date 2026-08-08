@@ -11,28 +11,28 @@ import { logger } from "../../lib/logger.js";
 export function registerHealthRoutes(app: Hono<OmaEnv>): void {
 app.get("/v1/admin/integrations", async (c) => {
   const polarConfigured = !!config.POLAR_ACCESS_TOKEN && config.POLAR_ACCESS_TOKEN !== "polar_oat_..." && !config.POLAR_ACCESS_TOKEN.startsWith("polar_oat_...");
-  const gonkaConfigured = !!config.GONKA_API_KEY;
+  const omaAiConfigured = !!config.ZYLOO_API_KEY;
   const veniceConfigured = !!config.VENICE_API_KEY;
   const resendConfigured = !!config.RESEND_API_KEY && !config.RESEND_API_KEY.startsWith("re_VErSwvfj_Kr8YCVhJTB2bGK7wcg35vJ3K");
 
-  // Probe OpenBroker/Gonka live.
+  // Probe OpenBroker/OMA-AI live.
   // NOTE: GET /v1/models on openbroker returns a status envelope
   // ({status:"ok"}), NOT an OpenAI-style model list. Prefer /health for
   // liveness; treat non-ok as degraded.
-  let gonkaHealth: {
+  let omaAiHealth: {
     status: "healthy" | "degraded" | "down";
     latencyMs?: number;
     note?: string;
     supportedModels?: string[];
   } = { status: "down" };
-  if (gonkaConfigured) {
+  if (omaAiConfigured) {
     const start = Date.now();
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 5000);
       // /health is the real liveness endpoint; /v1/models is a status stub.
-      const r = await fetch(`${config.GONKA_API_URL}/health`, {
-        headers: { Authorization: `Bearer ${config.GONKA_API_KEY}` },
+      const r = await fetch(`${config.ZYLOO_API_URL}/health`, {
+        headers: { Authorization: `Bearer ${config.ZYLOO_API_KEY}` },
         signal: ctrl.signal,
       });
       clearTimeout(t);
@@ -44,7 +44,7 @@ app.get("/v1/admin/integrations", async (c) => {
       } catch {
         /* non-JSON is fine if HTTP ok */
       }
-      gonkaHealth = {
+      omaAiHealth = {
         status: statusOk ? "healthy" : "degraded",
         latencyMs: Date.now() - start,
         // Live OpenBroker catalog (verified via chat error + probes 2026-08-04)
@@ -54,10 +54,10 @@ app.get("/v1/admin/integrations", async (c) => {
           : `upstream returned ${r.status}`,
       };
     } catch (err) {
-      gonkaHealth = { status: "down", note: String((err as Error).message ?? err) };
+      omaAiHealth = { status: "down", note: String((err as Error).message ?? err) };
     }
   } else {
-    gonkaHealth = { status: "down", note: "GONKA_API_KEY not set" };
+    omaAiHealth = { status: "down", note: "ZYLOO_API_KEY not set" };
   }
 
   return c.json({
@@ -67,10 +67,10 @@ app.get("/v1/admin/integrations", async (c) => {
       organizationId: config.POLAR_ORGANIZATION_ID?.startsWith("org_...") ? null : config.POLAR_ORGANIZATION_ID,
       note: polarConfigured ? "Polar events will be sent" : "Set POLAR_ACCESS_TOKEN in server/.env to enable usage metering",
     },
-    gonka: {
-      configured: gonkaConfigured,
-      url: config.GONKA_API_URL,
-      health: gonkaHealth,
+    omaAi: {
+      configured: omaAiConfigured,
+      url: config.ZYLOO_API_URL,
+      health: omaAiHealth,
     },
     venice: {
       configured: veniceConfigured,

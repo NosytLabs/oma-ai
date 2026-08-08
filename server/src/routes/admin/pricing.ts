@@ -109,7 +109,7 @@ export function registerPricingRoutes(app: Hono<OmaEnv>): void {
 				id: m.id,
 				displayName: m.displayName,
 				provider: m.provider,
-				gonkaId: m.gonkaId ?? null,
+				omaAiId: m.omaAiId ?? null,
 				category: m.category,
 				inputPricePer1M: override?.inputPricePer1M ?? m.inputPricePer1M,
 				outputPricePer1M: override?.outputPricePer1M ?? m.outputPricePer1M,

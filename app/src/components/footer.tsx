@@ -73,7 +73,6 @@ const PRODUCT: FooterSection = {
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
 		{ label: "Compare", href: "/compare" },
-		{ label: "About", href: "/about" },
 	],
 };
 
@@ -113,10 +112,11 @@ function accountSection(isAuthenticated: boolean): FooterSection {
 }
 
 const LEGAL: FooterSection = {
-	title: "Legal",
+	title: "Legal & Trust",
 	links: [
-		{ label: "Terms", href: "/terms", icon: Gavel },
+		{ label: "About", href: "/about" },
 		{ label: "Privacy", href: "/privacy", icon: ShieldCheck },
+		{ label: "Terms", href: "/terms", icon: Gavel },
 		{ label: "Contact", href: "/contact" },
 	],
 };

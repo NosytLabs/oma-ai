@@ -92,9 +92,15 @@ export function isEip3009Authorization(value: unknown): value is Eip3009Authoriz
 }
 
 /**
- * Recover the EIP-712 signer from a 65-byte signature over TransferWithAuthorization.
- * Returns the lowercase address. Throws on a malformed signature (which the
- * caller maps to a 422 "Invalid EIP-712 signature" response).
+ * Signature recovery logic for EIP-3009 compliant authorize payloads.
+ * 
+ * Why: Resolves the canonical public key address that authorized the specified transfer,
+ * allowing the facilitator to verify that the signer is indeed the owner of the funds
+ * before spending gas on-chain or generating synthetic receipts.
+ * 
+ * @param auth - The detailed EIP-3009 transfer authorization payload structure.
+ * @param signature - The 65-byte ECDSA signature over the typed domain.
+ * @returns The verified, lowercase Ethereum address.
  */
 async function recoverEip3009Signer(
   auth: Eip3009Authorization,
@@ -118,10 +124,16 @@ async function recoverEip3009Signer(
 }
 
 /**
- * Deterministic placeholder txHash for the no-private-key path. Lets the
- * /x402/settle cache key (`networkId:txHash`) work even though no on-chain tx
- * was submitted. The placeholder is keccak256(auth-tuple + sig) so it's unique
- * per (authorization, signature) and two distinct authorizations never collide.
+ * Generates a deterministic, collison-free synthetic transaction hash.
+ * 
+ * Why: When running in a testing environment or without a configured facilitator private key,
+ * we must still supply a valid receipt structure back to API callers. This helper produces
+ * a unique synthetic hash derived from the specific authorization details and signature,
+ * preventing replay mapping collisions while maintaining API contract integrity.
+ * 
+ * @param auth - The EIP-3009 transfer authorization payload structure.
+ * @param signature - The signature that authorized the transfer.
+ * @returns A unique Hash acting as a placeholder receipt transaction identifier.
  */
 function syntheticEip3009TxHash(auth: Eip3009Authorization, signature: Hex): Hash {
   const sigHex = signature.startsWith("0x") ? signature.slice(2) : signature;
@@ -153,9 +165,16 @@ function syntheticEip3009TxHash(auth: Eip3009Authorization, signature: Hex): Has
 }
 
 /**
- * Simulate the transferWithAuthorization call via eth_call. Confirms the
- * contract would accept the call (state: nonce not used, allowance etc.) —
- * without paying gas. Throws on simulation failure (caller maps to a 422).
+ * Simulates the execution of the authorization transfer on-chain via eth_call.
+ * 
+ * Why: We must ensure that the USDC contract will accept the transfer before we submit it to
+ * the block-mining queue or record a synthetic deposit receipt. This simulation checks for common
+ * failure modes (e.g., used nonces, expired validity periods, or insufficient user balances)
+ * under real-time network states without incurring gas fees.
+ * 
+ * @param auth - The EIP-3009 transfer authorization payload structure.
+ * @param signature - The signature that authorized the transfer.
+ * @throws If the simulated contract call reverts.
  */
 async function simulateEip3009Transfer(
   auth: Eip3009Authorization,
@@ -188,11 +207,15 @@ async function simulateEip3009Transfer(
 }
 
 /**
- * Submit the on-chain transferWithAuthorization using FACILITATOR_PRIVATE_KEY.
- * Returns the real on-chain tx hash. Throws on failure (caller maps to 422).
- * only called when FACILITATOR_PRIVATE_KEY is configured. In dev
- * (mock mode) and in production-without-key deployments we never reach this
- * code path — the verify path uses simulateEip3009Transfer instead.
+ * Dispatches the authorized transaction on-chain via the local facilitator wallet.
+ * 
+ * Why: When a dedicated private key is configured, the server operates as a gasless relayer
+ * for the user, paying the transaction fee to complete the transfer directly on the Base network.
+ * 
+ * @param auth - The EIP-3009 transfer authorization payload structure.
+ * @param signature - The signature that authorized the transfer.
+ * @returns The genuine on-chain transaction hash.
+ * @throws If the facilitator key is missing or the contract transaction reverts during execution.
  */
 async function submitEip3009Transfer(
   auth: Eip3009Authorization,
@@ -238,6 +261,20 @@ async function submitEip3009Transfer(
  *     already used, balance insufficient).
  *  8. Submit on-chain if FACILITATOR_PRIVATE_KEY is set; otherwise return a
  *     deterministic synthetic txHash so the settle cache + receipt still work.
+ */
+/**
+ * Verifies, simulates, and executes an incoming gasless EIP-3009 payment.
+ * 
+ * Why: Orchestrates the entire pay-per-request payment verification and settlement pipeline
+ * required by x402 headers. Performs multi-layered checks (double-spend/replay protection,
+ * signature recovery, time bounds, and recipient treasury validation) to guarantee that
+ * each request is fully authorized and backed by sufficient USDC balances prior to processing
+ * upstream inference operations.
+ * 
+ * @param signature - The EIP-712 signature proving transfer authorization.
+ * @param authorization - JSON-encoded EIP-3009 transfer details.
+ * @param payload - The payment requirement context including expected amounts, payees, and nonces.
+ * @returns A structured verification and settlement response containing validation status and txHash.
  */
 export async function verifyEip3009Payment(
   signature: string,

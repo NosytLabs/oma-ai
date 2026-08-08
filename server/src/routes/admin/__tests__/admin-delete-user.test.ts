@@ -177,6 +177,7 @@ describe("DELETE /v1/admin/users/:id", () => {
 
 		expect(response.status).toBe(400);
 		expect(body.error.message).toContain("Type DELETE");
+		expect(body.error.type).toBe("invalid_request");
 		expect(state.db.transaction).not.toHaveBeenCalled();
 	});
 
@@ -191,6 +192,7 @@ describe("DELETE /v1/admin/users/:id", () => {
 
 		expect(response.status).toBe(400);
 		expect(body.error.message).toContain("own account");
+		expect(body.error.type).toBe("invalid_request");
 		expect(state.db.transaction).not.toHaveBeenCalled();
 	});
 
@@ -204,6 +206,7 @@ describe("DELETE /v1/admin/users/:id", () => {
 
 		expect(response.status).toBe(409);
 		expect(body.error.message).toContain("admin wallet allowlist");
+		expect(body.error.type).toBe("invalid_request");
 		expect(state.db.transaction).not.toHaveBeenCalled();
 	});
 
@@ -217,6 +220,7 @@ describe("DELETE /v1/admin/users/:id", () => {
 
 		expect(response.status).toBe(409);
 		expect(body.error.message).toContain("last administrator");
+		expect(body.error.type).toBe("invalid_request");
 		expect(state.db.transaction).not.toHaveBeenCalled();
 	});
 

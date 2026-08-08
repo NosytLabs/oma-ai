@@ -1,5 +1,6 @@
-// production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
 "use client";
+// production URL (https://api.oma-ai.com/v1) — references resolve once the gateway is deployed (audit C-1).
+
 
 import { ArrowRight, Menu, Terminal, X } from "lucide-react";
 import Link from "next/link";

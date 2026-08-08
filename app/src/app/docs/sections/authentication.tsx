@@ -49,7 +49,7 @@ func main() {
 				</h3>
 				<p className="text-sm text-text-muted mb-2">
 					Models routed via OMA-AI (OpenBroker /{""}
-					<code className="text-accent font-mono text-xs">provider: gonka</code>
+					<code className="text-accent font-mono text-xs">provider: oma-ai</code>
 					) — e.g. <code className="text-accent font-mono text-xs">minimax-m2.7</code>,{""}
 					<code className="text-accent font-mono text-xs">kimi-k2.6</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{""}

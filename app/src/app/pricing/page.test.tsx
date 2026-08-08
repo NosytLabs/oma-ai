@@ -46,7 +46,7 @@ describe("PricingPage", () => {
 	it("category filter buttons work", async () => {
 		render(<PricingPage />);
 		await waitFor(() => {
-			const frontierButton = screen.getByRole("button", { name: /^frontier$/i });
+			const frontierButton = screen.getByRole("button", { name: /frontier/i });
 			fireEvent.click(frontierButton);
 			// After clicking, the Frontier filter button should remain
 			// visible and clickable, and the table should re-render with

@@ -4,7 +4,7 @@ import { getModelById } from "../models.js";
 
 /**
  * Inference router FALLBACK_MAP must only reference models that exist
- * in the curated catalog, and every gonka free model must have a chain.
+ * in the curated catalog, and every OMA-AI free model must have a chain.
  */
 describe("FALLBACK_MAP (inference router)", () => {
 	it("every target and fallback id resolves in the catalog", () => {
@@ -16,17 +16,17 @@ describe("FALLBACK_MAP (inference router)", () => {
 		}
 	});
 
-	it("covers OpenBroker gonka free models with gonka-first peers", () => {
+	it("covers OpenBroker OMA-AI free models with oma-ai-first peers", () => {
 		for (const id of ["minimax-m2.7", "kimi-k2.6"] as const) {
 			const chain = FALLBACK_MAP[id];
 			expect(chain, `no FALLBACK_MAP entry for ${id}`).toBeTruthy();
 			expect(chain!.length).toBeGreaterThan(0);
-			// Prefer another gonka id before Venice budget when possible
+			// Prefer another OMA-AI id before Venice budget when possible
 			const peers = chain!.filter((f) => {
 				const m = getModelById(f);
-				return m?.provider === "gonka";
+				return m?.provider === "oma-ai";
 			});
-			expect(peers.length, `${id} should prefer gonka peers`).toBeGreaterThan(0);
+			expect(peers.length, `${id} should prefer OMA-AI peers`).toBeGreaterThan(0);
 		}
 	});
 

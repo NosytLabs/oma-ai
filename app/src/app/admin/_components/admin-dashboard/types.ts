@@ -33,7 +33,7 @@ export type ModelRow = {
 	id: string;
 	displayName: string;
 	provider: string;
-	gonkaId: string | null;
+	oma_aiId: string | null;
 	category: string;
 	inputPricePer1M: number;
 	outputPricePer1M: number;
@@ -146,7 +146,7 @@ export type Integration = {
 		organizationId: string | null;
 		note: string;
 	};
-	gonka: {
+	oma_ai: {
 		configured: boolean;
 		url: string;
 		health: {

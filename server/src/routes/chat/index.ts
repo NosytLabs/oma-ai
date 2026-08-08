@@ -18,7 +18,7 @@
  *
  *   venice — Venice AI (privacy-first, OpenAI-compatible).
  *             https://api.venice.ai/api/v1/chat/completions
- *   gonka  — Gonka decentralized inference broker (OpenBroker by
+ *   oma-ai  — OMA-AI decentralized inference broker (OpenBroker by
  *             default). OpenAI-compatible. Used as the cost-effective tier for
  *             large-context / tool-use requests.
  */
@@ -47,16 +47,16 @@ import { logger } from "../../lib/logger.js";
 /**
  * Check if a model is eligible for the anonymous free website chat path.
  *
- * Criteria: the model's provider is `gonka` (the cost-effective tier
- * routed via OpenBroker). This matches every gonka-routed model
- * (`zai-org-glm-5-1`, `qwen-3-7-plus`, and any future gonka entry)
+ * Criteria: the model's provider is `oma-ai` (the cost-effective tier
+ * routed via OpenBroker). This matches every oma-ai-routed model
+ * (`zai-org-glm-5-1`, `qwen-3-7-plus`, and any future oma-ai entry)
  * without hardcoding ids that drift out of sync with the live catalog.
  *
  * Venice-routed models always require auth + credits.
  */
 function isFreeWebsiteModel(modelId: string): boolean {
 	const def = getModelById(modelId);
-	return !!def && def.provider === "gonka";
+	return !!def && def.provider === "oma-ai";
 }
 
 const chatSchema = z.object({
@@ -116,7 +116,7 @@ chatRoutes.post(
     const isWebsiteRequest = source === "website";
     const isFreeModel = isFreeWebsiteModel(model);
 
-    // Website chat with free Gonka models: allow anonymous, skip billing
+    // Website chat with free OMA-AI models: allow anonymous, skip billing
     // API requests or non-free models: require auth and bill credits
     const isFreeWebsiteChat = isWebsiteRequest && isFreeModel;
     
@@ -225,7 +225,7 @@ chatRoutes.post(
         const proxyStream = createStreamingProxy(upstreamResp, {
           userId: userId ?? "anonymous",
           model: actualModelId,
-          provider: actualModelDef.provider as "venice" | "gonka",
+          provider: actualModelDef.provider as "venice" | "oma-ai",
           promptTokens,
           pricing: actualPricing,
           requestId,
@@ -237,7 +237,7 @@ chatRoutes.post(
       const { data } = await parseNonStreamingResponse(upstreamResp, {
         userId: userId ?? "anonymous",
         model: actualModelId,
-        provider: actualModelDef.provider as "venice" | "gonka",
+        provider: actualModelDef.provider as "venice" | "oma-ai",
         promptTokens,
         pricing: actualPricing,
         requestId,

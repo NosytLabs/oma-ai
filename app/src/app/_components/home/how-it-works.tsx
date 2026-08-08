@@ -15,6 +15,7 @@ import {
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
 import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
 import type { LucideIcon } from "lucide-react";
 
 interface Step {
@@ -86,36 +87,40 @@ export function HowItWorks() {
 }
 
 function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
- const Icon = step.icon;
- return (
- <div className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[transform,border-color,box-shadow] duration-200 ease-out hover:shadow-[var(--shadow-md)] hover:border-border-hi hover:scale-[1.01]">
- <div className="flex items-center justify-between">
- <span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
- {step.n}
- </span>
- <div
- className={cn(
- "flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]",
- "bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent",
- )}
- >
- <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
- </div>
- </div>
- <div>
- <h3 className="font-heading text-xl font-semibold text-text-bright tracking-tight">
- {step.title}
- </h3>
- <p className="mt-2 text-sm text-text-secondary leading-relaxed">
- {step.description}
- </p>
- </div>
- {!isLast && (
- <div
- className="hidden md:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
- aria-hidden="true"
- />
- )}
- </div>
- );
+  const Icon = step.icon;
+  return (
+  <m.div
+    whileHover={{ y: -4 }}
+    transition={springs.card}
+    className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[var(--shadow-md)] hover:border-border-hi"
+  >
+  <div className="flex items-center justify-between">
+  <span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
+  {step.n}
+  </span>
+  <div
+  className={cn(
+  "flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]",
+  "bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent",
+  )}
+  >
+  <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+  </div>
+  </div>
+  <div>
+	<h3 className="font-sans text-lg sm:text-xl font-semibold text-text-bright tracking-tight">
+  {step.title}
+  </h3>
+  <p className="mt-2 text-sm text-text-secondary leading-relaxed">
+  {step.description}
+  </p>
+  </div>
+  {!isLast && (
+  <div
+  className="hidden md:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
+  aria-hidden="true"
+  />
+  )}
+  </m.div>
+  );
 }

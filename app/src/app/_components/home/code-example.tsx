@@ -82,7 +82,7 @@ function TerminalExample({ code }: { code: string }) {
 	return (
 		<div className="relative max-w-full min-w-0">
 			<div
-				className="pointer-events-none absolute -inset-px rounded-[var(--radius-md)] opacity-50"
+				className="pointer-events-none absolute -inset-px rounded-[12px] opacity-50"
 				style={{
 					background:
 						"linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 40%, transparent), transparent 50%, color-mix(in srgb, var(--color-accent) 30%, transparent))",
@@ -91,7 +91,7 @@ function TerminalExample({ code }: { code: string }) {
 				aria-hidden="true"
 			/>
 
-			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)]">
+			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] rounded-[12px]">
 				<div className="flex min-w-0 items-center gap-2 border-b border-border bg-[var(--color-surface)] px-4 py-3">
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-error" aria-hidden="true" />
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
@@ -134,7 +134,11 @@ function TerminalExample({ code }: { code: string }) {
 						)}
 					</button>
 				</div>
-				<pre tabIndex={0} className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8">
+				<pre
+					tabIndex={0}
+					aria-label="OpenAI-compatible OMA SDK client setup code example"
+					className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary bg-[#040608]/90 border-t border-border/80 leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8"
+				>
 					<code className="block w-max min-w-full font-mono text-[12px] sm:text-[14px]">
 						<TokenizedCode code={code} />
 					</code>

@@ -9,18 +9,25 @@ import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
 /**
- * Default free website-chat model. Must be provider=gonka on the server
+ * Default free website-chat model. Must be provider=oma-ai on the server
  * (`isFreeWebsiteModel` in server/src/routes/chat) — Venice ids require auth.
  */
 export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2.7";
 
 /**
- * Known free catalog ids (provider=gonka). Keep in sync with live
- * GET /v1/models where provider === "gonka".
+ * Known free catalog ids (provider=oma-ai). Keep in sync with live
+ * GET /v1/models where provider === "oma-ai".
  */
 export const FREE_CHAT_MODEL_IDS = new Set([
 	"minimax-m2.7",
 	"kimi-k2.6",
+	"gemini-3.1-pro-preview",
+	"gemini-3-pro-preview",
+	"gemini-3-flash-preview",
+	"gemini-2.5-flash",
+	"gpt-4.1",
+	"gpt-4o",
+	"glm-4.5-air"
 ]);
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */
@@ -58,9 +65,9 @@ export function isFreeChatModel(
 ): boolean {
 	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
 	const p = typeof provider === "string" ? normalizeProvider(provider) : provider;
-	// OMA-AI (own routing) and Gonka/OpenBroker (ultra-low-cost) models are
+	// OMA-AI (own routing) and OMA-AI/OpenBroker (ultra-low-cost) models are
 	// free at the chat surface; Venice / Surplus are paid.
-	return p === "OMA-AI" || p === "Gonka";
+	return p === "OMA-AI";
 }
 
 // ---------------------------------------------------------------------------

@@ -1,20 +1,20 @@
 # OMA AI Gateway
 
-**Website:** https://oma-ai.com  
-**Version:** 2.1.0  
-**Status:** Local dev (pre-launch)  
-**Brand:** Open Model Access · void `#07090a` · accent `#46d39a` · see `BRAND.md`
+[![Website](https://img.shields.io/badge/website-oma--ai.com-07090a?style=flat&labelColor=0d1110&color=46d39a)](https://oma-ai.com)
+[![Version](https://img.shields.io/badge/version-2.1.0-07090a?style=flat&labelColor=0d1110&color=46d39a)](#)
+[![Status](https://img.shields.io/badge/status-local_dev_(pre--launch)-07090a?style=flat&labelColor=0d1110&color=46d39a)](#)
 
-Self-hosted AI inference gateway: OpenAI-compatible API, multi-model chat playground, card + USDC credits, and x402 pay-per-request for agents.
+Self-hosted AI inference gateway featuring an OpenAI-compatible API, multi-model chat playground, credit system supporting cards and USDC, and `x402` pay-per-request billing for autonomous agents.
 
-**Slogan:** *One gateway. Every model. No lock-in.*  
-**Purpose:** Curated multi-provider inference gateway (not a 100+ model marketplace). OpenAI + Anthropic-compatible API, free guest chat on Gonka models, paid Venice catalog, card/USDC/x402 billing.
+> **One gateway. Every model. No lock-in.**
+>
+> OMA AI acts as a curated, privacy-first multi-provider inference gateway (not an unbounded 100+ model marketplace). It offers OpenAI and Anthropic-compatible APIs, a free guest chat experience powered by OMA-AI models, paid access to the Venice catalog, and integrated card/USDC/x402 payment systems.
 
 ---
 
-## Repository layout
+## Repository Layout
 
-```
+```text
 app/                 Next.js 15 frontend (marketing, chat, dashboard, docs UI)
 server/              Hono API (inference proxy, auth, billing, x402)
 scripts/
@@ -27,74 +27,93 @@ BRAND.md             Design tokens, voice, logo rules
 SECURITY.md          Security policy
 ```
 
-Public product surfaces (app routes):
+### Public Product Surfaces (App Routes)
 
 | Path | Purpose |
-|------|---------|
-| `/` | Landing — product value prop, CTAs |
-| `/models` | Curated model catalog + pricing |
-| `/chat` | Playground (chat / image / video) |
-| `/pricing` · `/deposit` | Pricing and credit funding |
-| `/docs` · `/getting-started` | API docs and quickstart |
-| `/docs#integrations` | OpenCode · Claude Code · Cursor / Continue |
-| `/dashboard` · `/settings` | Account, keys, usage |
-| `/capabilities` · `/compare` · `/faq` · `/glossary` | Product education |
-| `/about` · `/contact` · `/privacy` · `/terms` | Trust + legal |
+| :--- | :--- |
+| `/` | Landing page — product value proposition, primary CTAs |
+| `/models` | Curated model catalog and pricing details |
+| `/chat` | Interactive playground (chat, image, and video generation) |
+| `/pricing` · `/deposit` | Pricing model and credit funding interface |
+| `/docs` · `/getting-started` | API documentation and developer quickstart |
+| `/docs#integrations` | Integration guides for OpenCode, Claude Code, Cursor, and Continue |
+| `/dashboard` · `/settings` | User account overview, API key management, and usage analytics |
+| `/capabilities` · `/compare` · `/faq` · `/glossary` | Educational product guides |
+| `/about` · `/contact` · `/privacy` · `/terms` | Trust, contact, and legal documentation |
 
-Agent-facing public files: `app/public/llms.txt`, `app/public/agent-skill.md`.  
-Machine-readable API: `GET https://api.oma-ai.com/openapi.json` (also `/v1/openapi.json`).
+- **Agent-facing public files:** `app/public/llms.txt`, `app/public/agent-skill.md`
+- **Machine-readable API:** `GET https://api.oma-ai.com/openapi.json` (also available at `/v1/openapi.json`)
 
 ---
 
 ## Features
 
-### Payments
-- **Card credits (Polar)** — Visa / Mastercard / Apple Pay tiers
-- **USDC on Base** — direct 1:1 USD deposits
-- **x402** — agent-native USDC pay-per-request (EIP-3009)
+### Payments & Billing
+- **Card Credits (Polar):** Purchase credit tiers via Visa, Mastercard, or Apple Pay.
+- **USDC on Base:** Fund accounts with direct 1:1 USD deposits.
+- **x402 Micropayments:** Agent-native pay-per-request billing using EIP-3009.
 
-### Developer
-- OpenAI-compatible API (`/v1/chat/completions`, images, video)
-- Anthropic-compatible messages (`/v1/messages`, Bearer or `x-api-key`)
-- **22 curated chat models** (20 Venice + 2 Gonka free-tier budget) — not an unbounded marketplace
-- Free guest chat: `minimax-m2.7` · `kimi-k2.6` (Gonka)
-- API keys, rate limits, circuit-breaker failover
-- SIWE wallet auth + magic-link email
+### Developer API & Proxy
+- **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation.
+- **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers.
+- **Curated Model Registry:** Access to 22 hand-picked chat models (20 Venice models + 2 OMA-AI free-tier budget models).
+- **Free Guest Chat:** Budget-friendly access to `minimax-m2.7` and `kimi-k2.6` models via OMA-AI.
+- **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms.
+- **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins.
 
 ---
 
-## Quick start
+## Quick Start
 
-1. Copy env: `cp .env.example .env` (and `server/.env.example` → `server/.env` as needed)
-2. Start local DB (optional): `./scripts/dev/local-db-up.sh`
-3. Start stack: `./scripts/dev/start-dev.sh`
-4. Validate: `npm run validate` (typecheck + lint + Vitest for app and server)
+1. **Configure Environment:** Copy the template environment files:
+   ```bash
+   cp .env.example .env
+   # Set up the server environment if needed
+   cp server/.env.example server/.env
+   ```
+2. **Start Local Database:** Initialize and run the local Postgres/Redis database:
+   ```bash
+   ./scripts/dev/local-db-up.sh
+   ```
+3. **Launch the Development Stack:** Run the full application and server stack:
+   ```bash
+   ./scripts/dev/start-dev.sh
+   ```
+4. **Run Validation:** Run the validation suite to verify code health:
+   ```bash
+   npm run validate
+   ```
+   *(This executes TypeScript checks, ESLint linting, and Vitest test suites across `app/` and `server/`)*
 
 ---
 
 ## Testing & QA
 
-- **Unit / integration:** Vitest in `app/` and `server/`
-- **CI gate:** `npm run validate`
-- **Manual audits:** see `scripts/README.md` (`axe-audit`, `visual-audit`, `validate-launch`)
-- Add a matching test when you ship a new endpoint or critical UI flow
+- **Unit & Integration Testing:** Managed via Vitest inside `app/` and `server/`.
+- **Continuous Integration Gate:** Checked automatically via `npm run validate`.
+- **Manual Audits:** Leverage dedicated scripts documented in [scripts/README.md](scripts/README.md) (e.g., `axe-audit`, `visual-audit`, `validate-launch`).
+- **Shipping Policy:** Always write a corresponding test when adding a new endpoint or shipping a critical UI flow.
 
 ---
 
-## Brand & docs
+## Brand & Documentation
 
-- **BRAND.md** — tokens, logo paths, voice (use / avoid)
-- **app/public/logos/** — live site assets; **brand-kit/** press sources; **providers/** model tiles
-- **SECURITY.md** · **LICENSE** · **LICENSE-THIRD-PARTY.md**
-- Agent setup: `app/public/agent-skill.md` · integrations UI at `/docs#integrations`
-
-API surface for agents/LLMs: `app/public/llms.txt` and OpenAPI (`server/src/routes/openapi.ts`).
+- **[BRAND.md](BRAND.md):** Defines design tokens, logo assets, visual identity, and brand voice guidelines.
+- **Asset Directories:**
+  - `app/public/logos/` contains live application logos.
+  - `brand-kit/` houses high-quality press assets.
+  - `providers/` provides model provider tile graphics.
+- **Legal & Compliance:** [SECURITY.md](SECURITY.md), `LICENSE`, and [LICENSE-THIRD-PARTY.md](LICENSE-THIRD-PARTY.md).
+- **Agent Integration:** `app/public/agent-skill.md` and integration guides at `/docs#integrations`.
+- **Machine API Contract:** `app/public/llms.txt` and OpenAPI schema defined in `server/src/routes/openapi.ts`.
 
 ---
 
 ## Contributing
 
-- Animation primitives: `app/src/lib/animation`
-- Model catalog (app SSR): `app/src/lib/models-data.ts`
-- Model catalog (server runtime): `server/src/inference/models.ts` (keep counts in sync; regenerate `server/models.json` snapshot when the catalog changes)
-- Run `npm run validate` before opening a PR
+- **Animations:** Custom visual primitives reside in `app/src/lib/animation`.
+- **Catalog Synchronization:**
+  - Frontend static catalog data is defined in `app/src/lib/models-data.ts`.
+  - Backend runtime catalog is defined in `server/src/inference/models.ts`.
+  - Ensure catalog configurations are kept in sync, and regenerate the `server/models.json` snapshot whenever the catalog changes.
+- **Pull Request Checklist:** Always run `npm run validate` locally and fix any errors before submitting a pull request.

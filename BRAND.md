@@ -1,140 +1,179 @@
-# Brand & Voice
+# Brand & Voice Guidelines
 
-**Brand:** OMA AI = **Open Model Access**. Domain: `oma-ai.com`.
+Welcome to the brand guidelines for **OMA AI** (**Open Model Access**). This document outlines our visual identity, brand voice, design tokens, and user experience standards.
 
-**Slogan:** *"One gateway. Every model. No lock-in."*
-**Dev tagline:** *"OpenAI-compatible inference for builders."*
-
-### Visual Identity
-
-| Token | Value | Usage |
-|-------|-------|--------|
-| **Void** | `#07090a` | Page background, logo plate |
-| **Panel** | `#0d1110` | Cards, elevated surfaces |
-| **Accent (Emerald)** | `#46d39a` | Brand primary, CTAs, logo mark |
-| **Accent bright** | `#6ee7b7` | Hover / glow |
-| **Text bright** | `#f5f7f3` | Headlines |
-| **Text** | `#d8dcd6` | Body |
-| **Text muted** | `#9aa394` | Meta / captions (≥4.5:1 on void) |
-
-**Mark (refined 2026-07-26):** Open gateway aperture — broken emerald ring opened at 3 o'clock (gap = open access), terminal prompt chevron `>` pointing through the opening, live signal dot in the gap (token out). Favicon is transparent-bg with a hairline void keyline for light tabs; badge versions sit on the void terminal plate.
-
-| Asset | Path |
-|-------|------|
-| UI component | `app/src/components/ui/oma-logo.tsx` |
-| Vector favicon (transparent bg, light/dark-tab safe) | `app/public/favicon.svg` |
-| Master mark on void badge (source for app-icon rasters) | `app/public/logos/oma-icon.svg` |
-| Raster favicons | `app/public/favicon-16x16.png`, `favicon-32x32.png` (regenerate from `favicon.svg`) |
-| App icon 192 / 512 | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` (from `logos/oma-icon.svg`) |
-| Lockup SVG | `app/public/logos/oma-logo.svg` |
-| Apple touch (solid void bg) | `app/public/apple-touch-icon.png` |
-| Open Graph 1280×720 | `app/public/og-image.webp` |
-| Brand kit (SVG + rasters) | `app/public/logos/brand-kit/` — SVG geometry + Imagine-polished rasters |
-
-**Rasters:** use Imagine `image_edit` from the existing icon PNG (do not freeform-regen SVGs). Deploy sized PNGs to favicon/PWA paths. SVG remains the vector source for UI components.
-
-### Brand kit (ship checklist)
-
-| File | Use |
-|------|-----|
-| `favicon.svg` | Browser tab (preferred) |
-| `favicon-16x16.png` / `favicon-32x32.png` | Fallback tabs (SVG preferred) |
-| `apple-touch-icon.png` | iOS home screen |
-| `logos/oma-icon-192.png` / `oma-icon-512.png` | PWA / manifest (flat SVG-derived) |
-| `logos/oma-logo.svg` | Marketing lockup (vector) |
-| `og-image.webp` | Open Graph 1280×720 (slogan, no hex codes) |
-| `oma-logo.tsx` | In-app React mark (CSS tokens / theme accents) |
-
-Do not invent a second mark. Live site may lag until deploy; local `app/public` is source of truth.
-
-**Wordmark:** lowercase `oma` (sans, tracking tight). Tagline mono: `OPEN MODEL ACCESS`.
-
-**Themes:** Dark void is fixed. Users may switch **accent only** via ThemeToggle: emerald (default) · amber · mono · synth. Never ship orange (`#f97316`) as brand — that was a legacy drift.
-
-### Core Messages
-
-- **Primary (homepage / hero):** *"Open Model Access for AI builders."* Route prompts across private, open, and commercial models through one OpenAI-compatible API.
-- **Privacy angle:** *"Private AI inference powered by Venice. Zero data retention on prompt content."* Self-hosted option for maximum control; magic-link or SIWE; free guest chat on Gonka models (daily limit).
-- **Payment angle:** *"Crypto-friendly credits. Pay with crypto, build with one API."* USDC on Base, x402 for agent-native billing. (Multi-chain via LI.FI / CCTP is on the roadmap — currently USDC on Base only.)
-
-### What OMA IS vs. IS NOT
-
-**Is:** AI inference gateway · private access layer (zero data retention, self-hosted option) · Venice-powered backend with Gonka free-tier + failover · credit-based billing · multi-provider routing with circuit-breaker failover · crypto-native payments (x402, USDC on Base) · magic-link + SIWE wallet auth · OpenAI- and Anthropic-compatible API · 22 curated models (not an unbounded marketplace).
-
-**Not designed for:** illicit use. OMA is a professional tool for developers who value privacy, control, and crypto-native payments. Position as "low-friction signup", not "no KYC"; "private inference", not "anonymous"; "privacy-focused", not "untraceable".
-
-### Words to USE
-
-| Category | Preferred terms |
-|----------|-----------------|
-| Auth & signup | Low-friction signup · instant API access · wallet-based auth · SIWE sign-in |
-| Privacy | Privacy-first · private inference · zero data retention · self-hosted control |
-| Developer experience | Developer-first · OpenAI-compatible · comprehensive API · extensive model support |
-| Payments | Crypto-friendly · pay-as-you-go · credit-based billing · USDC on Base deposits |
-| Technical | Self-hosted · multi-provider routing · circuit breaker · failover ready |
-| Value | Cost-effective · competitive pricing · no lock-in · full control |
-
-### Words to AVOID
-
-| Avoid | Why | Use instead |
-|-------|-----|-------------|
-| No KYC | Regulatory red flag | "Low-friction signup" / "Wallet-based auth" |
-| Anonymous | Implies untraceable | "Private" / "Privacy-first" |
-| Untraceable | Absolute claim / legal exposure | "No data retention" / "Self-hosted option" |
-| Dark / Underground | Illicit association | "Self-hosted" / "Crypto-native" |
-| Cheap | Devalues offering | "Cost-effective" / "Competitive pricing" |
-| Bypass | Implies circumventing | "Skip" / "Avoid friction" |
+- **Primary Domain:** `oma-ai.com`
+- **Slogan:** *"One gateway. Every model. No lock-in."*
+- **Developer Tagline:** *"OpenAI-compatible inference for builders."*
 
 ---
 
-## Design System
+## Visual Identity
 
-**Aesthetic:** Crypto terminal × editorial — near-black void, single emerald accent, generous space.
+### Color Tokens
 
-### Typography
+| Token | Hex Value | Primary Application |
+| :--- | :--- | :--- |
+| **Void** | `#07090a` | Global page background, logo plate base |
+| **Panel** | `#0d1110` | Interactive cards, modals, and elevated surface panels |
+| **Accent (Emerald)** | `#46d39a` | Brand primary color, critical CTAs, logo mark |
+| **Accent Bright** | `#6ee7b7` | Active hover states, focus rings, subtle glows |
+| **Text Bright** | `#f5f7f3` | High-priority headlines and page titles |
+| **Text** | `#d8dcd6` | Standard body copy and secondary labels |
+| **Text Muted** | `#9aa394` | Meta-labels, disabled states, captions (verified $\ge$ 4.5:1 contrast on void) |
 
-| Role | Family |
-|------|--------|
-| Display | Instrument Serif |
-| Body | Geist |
-| Mono | Geist Mono |
+### The Logo Mark
 
-### Buttons (use `Button` or CSS primitives)
+The OMA AI Logo represents an **open gateway aperture**:
+- A broken emerald ring opened at the 3 o'clock position (signifying *open access*).
+- A terminal-style prompt chevron (`>`) pointing outward through the opening.
+- A live signal dot floating inside the gap (symbolizing *token emission*).
 
-| Class / variant | Role |
-|-----------------|------|
-| `btn-primary` / `primary` | Primary CTA — emerald fill, void text |
-| `btn-secondary` / `secondary` | Secondary — bordered surface |
-| `btn-ghost` / `ghost` | Tertiary text actions |
-| `outline` | Quiet bordered |
-| `destructive` | Danger |
+Our browser favicon features a transparent background with a hairline void keyline to ensure visibility on both light and dark browser tabs. Badges sit on a solid void terminal plate.
 
-Rules:
+### Logo & Asset Registry
 
-- Prefer design-system `Button` in app surfaces (dashboard, settings, auth).
-- Marketing pages may use `.btn-primary` / `.btn-secondary` for Links.
-- Min touch height **44–48px** on primary CTAs.
-- Never use orange (`#f97316`) as brand.
+| Asset | Project Path | Description |
+| :--- | :--- | :--- |
+| **UI Component** | `app/src/components/ui/oma-logo.tsx` | Pure vector React component for inline rendering |
+| **Vector Favicon** | `app/public/favicon.svg` | Transparent, multi-tab safe browser favicon |
+| **Master Icon Badge** | `app/public/logos/oma-icon.svg` | Master void badge SVG (the source for raster conversions) |
+| **Raster Favicons** | `app/public/favicon-16x16.png`, `favicon-32x32.png` | Standard browser tab fallback graphics |
+| **App Icons** | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` | Manifest assets generated directly from `oma-icon.svg` |
+| **Lockup Logo** | `app/public/logos/oma-logo.svg` | Formal horizontal logo lockup with wordmark |
+| **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
+| **Open Graph Card** | `app/public/og-image.webp` | 1280×720 branding image (includes slogan, no raw hex codes) |
+| **Brand Kit Directory**| `app/public/logos/brand-kit/` | Package of clean vector SVGs and polished rasters |
 
-### Layout
+> **Raster Editing Note:** Use Imagine `image_edit` derived from the existing icon PNG files. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
 
-- Max content width: `max-w-6xl` / `.container-page` (72rem).
-- Horizontal padding: `px-4` → `sm:px-6` → `lg:px-8`.
-- Section vertical rhythm: `py-12`–`py-20` on marketing; denser on dashboard.
+### Brand Kit Checklist
 
-### Navigation
+Before a production deployment, ensure the following core assets are correctly verified:
+- [ ] `favicon.svg` is used for modern browser tabs (primary target).
+- [ ] `favicon-16x16.png` and `favicon-32x32.png` are correctly compiled as legacy fallbacks.
+- [ ] `apple-touch-icon.png` is optimized for high-density mobile displays.
+- [ ] `logos/oma-icon-192.png` and `logos/oma-icon-512.png` are declared in the PWA manifest.
+- [ ] `logos/oma-logo.svg` is used for official marketing collaterals.
+- [ ] `og-image.webp` contains our accurate slogan (no technical color codes).
+- [ ] `oma-logo.tsx` correctly handles current CSS theme tokens.
 
-- Sticky header `h-14`, glass when scrolled.
-- Primary: Models · Chat · Pricing · Docs · Compare (Title Case).
-- Tools dropdown: Network · Observability · Changelog.
-- Account: Dashboard · Settings · Sign in (footer + mobile).
-- Retired: `/swap` → `/deposit` (permanent redirect).
-- Agent session demos: OMA-themed terminal block inspired by [brainless](https://github.com/theswerd/brainless) (`AgentSessionDemo`) — marketing/docs only; live chat stays product-owned.
+---
 
-### Auth UX
+## Typography & Nomenclature
 
-1. **Wallet (SIWE)** — default on `/login`
-2. _(reserved for future 16-digit account-number auth)_
-3. **x402** — agent pay-per-request (docs)
+- **Wordmark Style:** Lowercase `oma` using sans-serif typography with tight letter-tracking.
+- **Tagline Text:** Monospace typography rendering `OPEN MODEL ACCESS`.
+- **Accent Themes:** The dark "void" background is fixed globally. Users can switch their primary **Accent Color** via the `ThemeToggle`:
+  - `emerald` (Default brand color)
+  - `amber`
+  - `mono`
+  - `synth`
+  - *Warning:* Never introduce orange (`#f97316`) as an active brand accent (legacy design drift).
 
-After login: session is HttpOnly `oma_session` + client meta; all browser API calls go through `/api/*` so the cookie becomes `Authorization: Bearer`.
+---
+
+## Core Messaging
+
+### 1. Value Proposition (Homepage / Hero)
+> *"Open Model Access for AI builders."*
+>
+> Route prompts across private, open-source, and commercial models seamlessly using a single, unified, OpenAI-compatible API interface.
+
+### 2. Privacy & Sovereign Execution
+> *"Private AI inference powered by Venice. Zero data retention on prompt content."*
+>
+> Deploy as a self-hosted instance for ultimate control. Leverage secure magic-link or cryptographic SIWE authentications, alongside free daily guest chats on OMA-AI models.
+
+### 3. Decentralized Payments
+> *"Crypto-friendly credits. Pay with crypto, build with one API."*
+>
+> Instantly fund developer credits using USDC on Base or utilize low-overhead `x402` micropayments for autonomous agents. *(Note: Multi-chain rails via LI.FI and CCTP are planned; current production support is limited to USDC on Base).*
+
+---
+
+## Brand Voice & Terminology
+
+Our positioning is centered around **sovereignty, privacy, and low-friction utility**. We emphasize clean developer tooling without falling into shady or legally ambiguous wording.
+
+### What OMA IS vs. IS NOT
+
+| OMA is... | OMA is NOT... |
+| :--- | :--- |
+| A high-performance, private AI inference gateway | An anonymous or untraceable tool for illicit activities |
+| A secure gateway with zero prompt data retention | A tool designed to bypass regulatory protocols |
+| An active integration hub supporting 22 curated models | An unbounded, noisy, unvetted AI model marketplace |
+| A crypto-native builder utility supporting USDC and `x402` | An underground dark-web platform |
+
+### Preferred Terms (USE)
+
+| Category | Recommended Wording | Reason |
+| :--- | :--- | :--- |
+| **Authentication** | Low-friction signup · Cryptographic SIWE sign-in · Wallet-based auth | Professional, secure, and developer-aligned. |
+| **Privacy** | Privacy-first · Private inference · Zero data retention · Self-hosted control | Focuses on professional-grade data ownership and security. |
+| **Developer UX** | Developer-first · OpenAI-compatible API · Extensively documented API | Highlights seamless developer integration and compatibility. |
+| **Payments** | Crypto-friendly credits · USDC on Base deposits · Pay-as-you-go billing | Clear, accurate description of blockchain-based credits. |
+| **Infrastructure**| Self-hosted deployment · Multi-provider routing · Circuit-breaker failover | Emphasizes system resilience and architectural control. |
+
+### Words to Avoid
+
+| Avoid | Why | Use instead |
+| :--- | :--- | :--- |
+| **No KYC** | Heavy regulatory compliance flag | *"Low-friction signup"* or *"Wallet-based auth"* |
+| **Anonymous** | Implies absolute untraceability and evasion | *"Private"* or *"Privacy-first"* |
+| **Untraceable** | Factually inaccurate and introduces legal liability | *"No data retention"* or *"Self-hosted option"* |
+| **Dark / Underground** | Associates the product with illicit black markets | *"Self-hosted"* or *"Crypto-native"* |
+| **Cheap** | Cheapens and devalues the technology stack | *"Cost-effective"* or *"Competitive pricing"* |
+| **Bypass** | Implies security circumvention or unauthorized access | *"Skip"* or *"Avoid unnecessary friction"* |
+
+---
+
+## Design System & Components
+
+### Typography Hierarchy
+
+| Role | Typography Font Family | Character / Tone |
+| :--- | :--- | :--- |
+| **Display & Headers**| *Instrument Serif* | Editorial, striking, highly polished |
+| **Body Text** | *Geist Sans* | Clean, highly legible, modern |
+| **Monospace / Code** | *Geist Mono* | Structured, technical, precise |
+
+### Interactive Buttons
+
+Always leverage standard design-system `<Button>` components in dashboard interfaces. Static marketing elements may use pure CSS primitive helper classes:
+
+| Class / Variant | Application Role | Visual Style |
+| :--- | :--- | :--- |
+| `btn-primary` / `primary` | Primary action CTAs | Emerald background, void text |
+| `btn-secondary` / `secondary` | Secondary page actions | Bordered surface container |
+| `btn-ghost` / `ghost` | Tertiary text links | Text-only action, subtle hover background |
+| `outline` | Quiet interactive borders | Bordered outline with no container fill |
+| `destructive` | Irreversible actions | Warning red colors |
+
+- **Layout Constraint:** Standard touch surfaces on primary CTAs must maintain a height of **44–48px**.
+- **The Color Rule:** Never use orange (`#f97316`) for active system branding.
+
+### Layout Dimensions
+
+- **Max Grid Width:** Constrained to `max-w-6xl` or `.container-page` (72rem / 1152px).
+- **Horizontal Paddings:** Structured responsive scaling: `px-4` $\rightarrow$ `sm:px-6` $\rightarrow$ `lg:px-8`.
+- **Vertical Spacing:** Generous marketing row height (`py-12` to `py-20`); denser workspace sizing for administrative interfaces.
+
+### Navigation Hierarchy
+
+- **Global Navigation:** Stick header fixed at `h-14` featuring standard backdrop-blur glass filters upon scroll.
+- **Primary Pages:** Models · Chat · Pricing · Docs · Compare (Title Case).
+- **System Diagnostics Dropdown:** Network · Observability · Changelog.
+- **Account Panel:** Dashboard · Settings · Sign In.
+- **Legacy Redirects:** All `/swap` actions permanently route to `/deposit`.
+- **Agent Session Demos:** Interactive terminal structures inspired by the `AgentSessionDemo` layout should only be used inside marketing or documentation surfaces. Live chat flows must remain native.
+
+---
+
+## Client Authentication Lifecycle
+
+1. **Primary Interface:** Web3-ready Sign-In with Ethereum (SIWE) is rendered as the primary login trigger on `/login`.
+2. **Alternative Methods:** Users can fall back to standard email magic-links. *(Future iterations reserve a 16-digit account-number protocol)*.
+3. **Agent Integration:** Programmable agents authenticate directly via cryptographic HTTP `x402` pay-per-request headers.
+
+**Session Storage:** Upon successful validation, the system establishes a highly secure `HttpOnly` cookie labeled `oma_session` containing the required client metadata. All subsequent frontend API requests are proxied via standard `/api/*` structures, passing the validated session to the Hono backend under standard `Authorization: Bearer <token>` schemas.

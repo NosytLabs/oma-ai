@@ -10,7 +10,7 @@
 - OpenAI-compatible: drop-in for `openai-python`, `openai-node`, Vercel AI SDK,
   LangChain, raw `fetch`, and any HTTP client.
 - Auth: Magic link email, SIWE wallet, and API keys. x402 pay-per-request supported.
-- Model catalog: 22 curated chat models (20 Venice + 2 Gonka budget tier)
+- Model catalog: 22 curated chat models (20 Venice + 2 OMA-AI budget tier)
   (see live list at https://oma-ai.com/models).
 - Brand: Open Model Access · accent `#46d39a` · void `#07090a`
 - Brand kit sources: `/logos/oma-wordmark.svg` (SVG + PNG), `/logos/oma-brand-card.svg` (SVG + PNG), `/favicon.svg`

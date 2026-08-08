@@ -1,5 +1,6 @@
 "use client";
 
+
 import {
 	ArrowRight,
 	ChevronDown,
@@ -14,10 +15,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { ModelLogo } from "@/components/ui/model-logo";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import {
-	fmtPrice,
 	prettyName,
 	toPricedModel,
 	type Category,
@@ -27,6 +26,9 @@ import {
 	ProductJsonLd,
 	FAQPageJsonLd,
 } from "@/components/json-ld";
+import { m } from "@/lib/framer-motion-client";
+import { springs } from "@/lib/animation";
+import { PricingTable } from "./_components/PricingTable";
 
 const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "all", label: "All" },
@@ -152,7 +154,7 @@ function AccordionItem({
 				type="button"
 				id={buttonId}
 				onClick={onToggle}
-				className="flex w-full items-center justify-between py-5 text-left transition-colors duration-200 ease-out hover:text-text-bright focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 active:scale-[0.97]"
+				className="flex w-full items-center justify-between py-5 text-left transition-[color,transform] duration-200 ease-out hover:text-text-bright focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 active:scale-[0.97]"
 				aria-expanded={isOpen}
 				aria-controls={panelId}
 			>
@@ -209,14 +211,6 @@ export default function PricingPage() {
 		[pricedModels],
 	);
 	const modelCount = models.length;
-
-	const filtered = useMemo(
-		() =>
-			pricedModels.filter(
-				(m) => category === "all" || m.category === category,
-			),
-		[category, pricedModels],
-	);
 
 	// Pull image + video models from the same /v1/models response. The
 	// loadModels() helper above drops them; we re-fetch once for the
@@ -293,7 +287,7 @@ export default function PricingPage() {
 						See model costs first, then choose how to pay. OMA bills per token
 						or per request, with no subscriptions, no lock-in. Base provider
 						rates are shown below — a 25% platform fee is applied at billing
-						for Venice-routed models. Gonka models have no additional fee.
+						for Venice-routed models. OMA-AI models have no additional fee.
 					</p>
 					<div className="meta-strip">
 							<span>{modelCount + generationModels.length} live models</span>
@@ -304,7 +298,11 @@ export default function PricingPage() {
 
 				<InViewFade>
 					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
-						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+						<m.div
+							whileHover={{ y: -4 }}
+							transition={springs.card}
+							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
 								Starts at
 							</p>
@@ -315,8 +313,12 @@ export default function PricingPage() {
 								Lowest displayed price tier per 1M input tokens across the current
 								catalog.
 							</p>
-						</div>
-						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+						</m.div>
+						<m.div
+							whileHover={{ y: -4 }}
+							transition={springs.card}
+							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
 								Pay your way
 							</p>
@@ -327,12 +329,16 @@ export default function PricingPage() {
 							</p>
 							<p className="mt-3 text-xs leading-relaxed text-text-muted">
 								x402 pay-per-request also supported for agents —{""}
-								<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out">
+								<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center">
 									see below →
 								</Link>
 							</p>
-						</div>
-						<div className="surface-card p-5 rounded-[var(--radius-xl)] transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/30">
+						</m.div>
+						<m.div
+							whileHover={{ y: -4 }}
+							transition={springs.card}
+							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
 								No contract
 							</p>
@@ -341,336 +347,219 @@ export default function PricingPage() {
 								Ship one request or one million. Credits deduct in real time with a
 								clear ledger.
 							</p>
-						</div>
+						</m.div>
 					</div>
 				</InViewFade>
 
 				<InViewFade delay={0.1}>
-					<div className="mb-16">
+					<section className="relative border-t border-border-subtle py-16 sm:py-20">
 						<div className="mb-5 flex items-end justify-between gap-4">
-						<div>
-							<p className="page-kicker">Model Costs</p>
-							<h2 className="h2-page text-text-bright mt-3">
-								Compare prices before you deposit.
-							</h2>
-						</div>
-						<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text md:block">
-							Filter by tier to find the most cost-effective model that still fits your
-							latency and context needs.
-						</p>
-					</div>
-					<div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden shadow-[var(--shadow-md)]">
-						<div className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
-							<div className="flex flex-wrap gap-2 mb-4">
-								{CATEGORIES.map((cat) => {
-									const active = category === cat.key;
-									return (
-										<button
-											type="button"
-											key={cat.key}
-											onClick={() => setCategory(cat.key)}
-											className={`relative px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-mono font-medium rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
-												active
-													? CATEGORY_STYLES[cat.key].active
-													: CATEGORY_STYLES[cat.key].inactive
-											}`}
-										>
-											{cat.label}
-										</button>
-									);
-								})}
+							<div>
+								<p className="page-kicker">Model Costs</p>
+								<h2 className="h2-page text-text-bright mt-3">
+									Compare prices before you deposit.
+								</h2>
 							</div>
-							<p className="text-xs text-text-muted font-mono">
-								{filtered.length} models
+							<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text md:block">
+								Filter by tier to find the most cost-effective model that still fits your
+								latency and context needs.
 							</p>
 						</div>
-
-						{/* Horizontal scroll wrapper with gradient hint */}
-						<div className="relative">
-							{/* Right gradient hint for scrollable content */}
-							<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent pointer-events-none z-10 hidden sm:block" />
-
-							<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
-								<table
-									className="w-full min-w-[36rem] text-left"
-									aria-label="Model pricing by tier"
-								>
-									<thead>
-										<tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-											<th
-												scope="col"
-												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted"
-											>
-												Model
-											</th>
-											<th
-												scope="col"
-												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted"
-											>
-												Provider
-											</th>
-											<th
-												scope="col"
-												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right"
-											>
-												Input / 1M
-											</th>
-											<th
-												scope="col"
-												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right"
-											>
-												Output / 1M
-											</th>
-											<th
-												scope="col"
-												className="px-4 py-4 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right"
-											>
-												Ctx
-											</th>
-										</tr>
-									</thead>
-									{/* key=category re-triggers stagger on filter change */}
-									<tbody key={category}>
-										{filtered.map((mm, i) => (
-											<tr
-												key={mm.id}
-												style={{
-													animation: `fadeInUp 0.3s ease-out ${i * 0.035}s both`,
-												}}
-												className={`border-b border-[var(--color-border)]/50 transition-colors duration-200 ease-out hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? "bg-[var(--color-surface-elevated)]/30" : ""}`}
-											>
-											<td className="px-4 py-3">
-												<div className="flex items-center gap-2">
-													<ModelLogo modelId={mm.id} size={18} />
-													<span className="text-sm font-medium text-text-bright">
-														{mm.name}
-													</span>
-												</div>
-												<span className="ml-7 text-xs text-text-secondary font-mono hidden sm:inline">
-													{mm.id}
-												</span>
-												</td>
-												<td className="px-4 py-3">
-													<span
-														className={`inline-flex items-center rounded-[var(--radius-sm)] px-2 py-1 text-xs font-mono font-medium ${
-															mm.provider === "Venice"
-																? "bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] text-[var(--color-accent)]"
-																: mm.provider === "Gonka"
-																	? "bg-[color-mix(in_srgb,var(--color-provider-gonka)_20%,transparent)] text-[var(--color-provider-gonka)]"
-																	: mm.provider === "OMA-AI"
-																		? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
-																		: "bg-[color-mix(in_srgb,var(--color-secondary)_20%,transparent)] text-[var(--color-secondary)]"
-														}`}
-													>
-														{mm.provider}
-													</span>
-												</td>
-												<td className="px-4 py-3 text-right font-mono text-sm font-medium text-[var(--color-accent)]">
-													{fmtPrice(mm.inputPer1M)}
-												</td>
-												<td className="px-4 py-3 text-right font-mono text-sm font-medium text-text-secondary">
-													{fmtPrice(mm.outputPer1M)}
-												</td>
-												<td className="px-4 py-3 text-right text-xs text-text-secondary font-mono">
-													{mm.ctx}
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-
-							{/* Mobile scroll indicator - swipe hint */}
-							<div className="sm:hidden flex items-center justify-center py-2 text-[10px] sm:text-xs text-text-muted">
-								<span className="font-mono">Swipe to scroll &rarr;</span>
-							</div>
-						</div>
-						<div className="px-4 py-3 border-t border-[var(--color-border)] bg-[var(--color-surface-elevated)]/50">
-							<p className="text-xs text-text-muted">
-								Prices shown are base provider rates. OMA applies a 25% platform
-								fee at billing for Venice models. Gonka-routed models (MiniMax M2.7,
-								Kimi K2.6) have no additional markup.
-							</p>
-						</div>
-					</div>
-				</div>
+						<PricingTable
+							models={pricedModels}
+							category={category}
+							setCategory={setCategory}
+							categories={CATEGORIES}
+							categoryStyles={CATEGORY_STYLES}
+						/>
+					</section>
 				</InViewFade>
 
 				<InViewFade delay={0.2}>
-					<section className="mb-16" aria-labelledby="polar-tiers-heading">
-					<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-						<div>
-							<p className="page-kicker">Buy credits upfront</p>
-							<h2 id="polar-tiers-heading" className="mt-3 text-2xl font-semibold text-text-bright">
-								Pay your way.
-							</h2>
+					<section className="relative border-t border-border-subtle py-16 sm:py-20" aria-labelledby="polar-tiers-heading">
+						<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+							<div>
+								<p className="page-kicker">Buy credits upfront</p>
+								<h2 id="polar-tiers-heading" className="mt-3 text-2xl font-semibold text-text-bright">
+									Pay your way.
+								</h2>
+							</div>
+							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
+								Choose a credit pack instead of managing a monthly subscription or
+								per-token invoice. Every pack is 1:1 USD.
+							</p>
 						</div>
-						<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
-							Choose a credit pack instead of managing a monthly subscription or
-							per-token invoice. Every pack is 1:1 USD.
-						</p>
-					</div>
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-						{POLAR_TIERS.map((tier) => {
-							const recommended = tier.name === "Builder";
-							return (
-								<article
-									key={tier.name}
-									className={`relative flex h-full flex-col rounded-[var(--radius-xl)] border p-6 transition-[transform,border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-1 ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
-								>
-									{tier.badge && (
-										<span className="absolute -top-3 right-6 rounded-full bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
-											{tier.badge}
-										</span>
-									)}
-									<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
-										{tier.name}
-									</p>
-									<p className="mt-5 font-mono text-4xl font-semibold tracking-tight text-text-bright">
-										{tier.price}
-									</p>
-									<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
-									<p className="mt-5 min-h-12 text-sm leading-relaxed text-text-secondary">
-										{tier.description}
-									</p>
-									<Link
-										href="/deposit?method=card"
-										className={`${recommended ? "btn-primary" : "btn-secondary"} mt-8 inline-flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium`}
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+							{POLAR_TIERS.map((tier) => {
+								const recommended = tier.name === "Builder";
+								return (
+									<m.article
+										key={tier.name}
+										whileHover={{ y: -4 }}
+										transition={springs.card}
+										className={`relative flex h-full flex-col rounded-[var(--radius-xl)] border p-6 transition-[border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
 									>
-										<CreditCard className="h-4 w-4" aria-hidden="true" />
-										Buy with card
-									</Link>
-									<p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
-										Powered by Polar
-									</p>
-								</article>
-							);
-						})}
-					</div>
-				</section>
+										{tier.badge && (
+											<span className="absolute -top-3 right-6 rounded-full bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
+												{tier.badge}
+											</span>
+										)}
+										<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
+											{tier.name}
+										</p>
+										<p className="mt-5 font-mono text-4xl font-semibold tracking-tight text-text-bright">
+											{tier.price}
+										</p>
+										<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
+										<p className="mt-5 min-h-12 text-sm leading-relaxed text-text-secondary">
+											{tier.description}
+										</p>
+										<Link
+											href="/deposit?method=card"
+											className={`${recommended ? "btn-primary" : "btn-secondary"} mt-8 inline-flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium`}
+										>
+											<CreditCard className="h-4 w-4" aria-hidden="true" />
+											Buy with card
+										</Link>
+										<p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
+											Powered by Polar
+										</p>
+									</m.article>
+								);
+							})}
+						</div>
+					</section>
 				</InViewFade>
 
 				{generationModels.length > 0 && (
 					<InViewFade delay={0.3}>
-						<div className="mb-12">
-						<div className="mb-6 flex items-center gap-2">
-							<div className="h-px flex-1 bg-border" />
-							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
-								image & video generation
-							</span>
-							<div className="h-px flex-1 bg-border" />
-						</div>
-						<div className="surface-card p-4 sm:p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
-							<p className="mb-4 text-sm text-text-secondary">
-								Generation models bill per output (image or video), not per
-								token. Pricing shown is the customer-facing rate — wholesale
-								cost plus a {`25%`} markup. Image + video models also count
-								toward the live catalog total.
-							</p>
-							<div className="relative">
-								<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
-								<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
-									<table className="w-full min-w-[32rem] text-left">
-										<thead>
-											<tr className="border-b border-border bg-surface-elevated">
-												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
-													Model
-												</th>
-												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
-													Type
-												</th>
-												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
-													Price
-												</th>
-												<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
-													Notes
-												</th>
-											</tr>
-										</thead>
-										<tbody>
-											{generationModels.map((m) => (
-												<tr
-													key={m.id}
-													className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors duration-200 ease-out"
-												>
-													<td className="px-4 py-3 font-medium text-text-bright">
-														{m.name}
-													</td>
-													<td className="px-4 py-3">
-														<span
-															className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.category === "image" ? "bg-violet/15 text-violet" : "bg-accent/15 text-accent"}`}
-														>
-															{m.category}
-														</span>
-													</td>
-													<td className="px-4 py-3 font-mono text-text-bright text-right whitespace-nowrap">
-														${m.priceUsd.toFixed(4)}
-														<span className="ml-1 text-xs text-text-muted">
-															{m.category === "image"
-																? "/image"
-																: "/generation"}
-														</span>
-													</td>
-													<td className="px-4 py-3 text-text-muted text-right text-xs font-mono">
-														{m.duration ?? (m.category === "video" ? "—" : "")}
-													</td>
+						<section className="relative border-t border-border-subtle py-16 sm:py-20">
+							<div className="mb-6 flex items-center gap-2">
+								<div className="h-px flex-1 bg-border" />
+								<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+									image & video generation
+								</span>
+								<div className="h-px flex-1 bg-border" />
+							</div>
+							<div className="surface-card p-4 sm:p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
+								<p className="mb-4 text-sm text-text-secondary">
+									Generation models bill per output (image or video), not per
+									token. Pricing shown is the customer-facing rate — wholesale
+									cost plus a {`25%`} markup. Image + video models also count
+									toward the live catalog total.
+								</p>
+								<div className="relative">
+									<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
+									<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
+										<table className="w-full min-w-[32rem] text-left">
+											<thead>
+												<tr className="border-b border-border bg-surface-elevated">
+													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
+														Model
+													</th>
+													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
+														Type
+													</th>
+													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
+														Price
+													</th>
+													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
+														Notes
+													</th>
 												</tr>
-											))}
-										</tbody>
-									</table>
+											</thead>
+											<tbody>
+												{generationModels.map((m) => (
+													<tr
+														key={m.id}
+														className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors duration-200 ease-out"
+													>
+														<td className="px-4 py-3 font-medium text-text-bright">
+															{m.name}
+														</td>
+														<td className="px-4 py-3">
+															<span
+																className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.category === "image" ? "bg-violet/15 text-violet" : "bg-accent/15 text-accent"}`}
+															>
+																{m.category}
+															</span>
+														</td>
+														<td className="px-4 py-3 font-mono text-text-bright text-right whitespace-nowrap">
+															${m.priceUsd.toFixed(4)}
+															<span className="ml-1 text-xs text-text-muted">
+																{m.category === "image"
+																	? "/image"
+																	: "/generation"}
+															</span>
+														</td>
+														<td className="px-4 py-3 text-text-muted text-right text-xs font-mono">
+															{m.duration ?? (m.category === "video" ? "—" : "")}
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
 								</div>
 							</div>
-						</div>
-					</div>
-				</InViewFade>
+						</section>
+					</InViewFade>
 				)}
 
 				<InViewFade delay={0.4}>
-					<div className="mb-12">
+					<section className="relative border-t border-border-subtle py-16 sm:py-20">
 						<div className="mb-6 flex items-center gap-2">
-						<div className="h-px flex-1 bg-border" />
-						<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
-							payment methods
-						</span>
-						<div className="h-px flex-1 bg-border" />
-					</div>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-						{PAYMENT_METHODS.map((method) => {
-							const Icon = method.icon;
-							return (
-								<div key={method.title} className="relative group">
-									<div className="absolute inset-0 bg-accent/5 rounded-[var(--radius-xl)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-									<div className="relative p-6 rounded-[var(--radius-xl)] border border-border bg-surface hover:border-accent/30 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-[transform,border-color,box-shadow] duration-200 ease-out">
-										<div className="flex items-start gap-4">
-											<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
-												<Icon className="h-5 w-5 text-accent" />
+							<div className="h-px flex-1 bg-border" />
+							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+								payment methods
+							</span>
+							<div className="h-px flex-1 bg-border" />
+						</div>
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+							{PAYMENT_METHODS.map((method) => {
+								const Icon = method.icon;
+								return (
+									<div key={method.title} className="relative group">
+										<div className="absolute inset-0 bg-accent/5 rounded-[var(--radius-xl)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+										<m.div
+											whileHover={{ y: -4 }}
+											transition={springs.card}
+											className="relative p-6 rounded-[var(--radius-xl)] border border-border bg-surface hover:border-accent/30 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-[border-color,box-shadow] duration-200 ease-out"
+										>
+											<div className="flex items-start gap-4">
+												<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
+													<Icon className="h-5 w-5 text-accent" />
+												</div>
+												<div className="flex-1 min-w-0">
+													<h3 className="text-sm font-semibold text-text-bright truncate">
+														{method.title}
+													</h3>
+													<p className="mt-2 text-xs text-text-secondary leading-relaxed">
+														{method.desc}
+													</p>
+												</div>
 											</div>
-											<div className="flex-1 min-w-0">
-												<h3 className="text-sm font-semibold text-text-bright truncate">
-													{method.title}
-												</h3>
-												<p className="mt-2 text-xs text-text-secondary leading-relaxed">
-													{method.desc}
-												</p>
-											</div>
-										</div>
-										{method.tag && (
-											<div
-												className={`mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}
-											>
-												{method.tag}
-											</div>
-										)}
+											{method.tag && (
+												<div
+													className={`mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}
+												>
+													{method.tag}
+												</div>
+											)}
+										</m.div>
 									</div>
-								</div>
-							);
-						})}
-					</div>
-				</div>
+								);
+							})}
+						</div>
+					</section>
 				</InViewFade>
 
-				<div id="x402" className="mb-12 scroll-mt-20">
-					<div className="relative p-6 rounded-[var(--radius-xl)] bg-accent/5 border border-accent/20 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 ease-out">
+				<div id="x402" className="relative border-t border-border-subtle py-16 sm:py-20 scroll-mt-20">
+					<m.div
+						whileHover={{ y: -4 }}
+						transition={springs.card}
+						className="relative p-6 rounded-[var(--radius-xl)] bg-accent/5 border border-accent/20 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-[box-shadow] duration-200 ease-out"
+					>
 						<div className="flex items-start gap-4">
 							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
 								<Link2 className="h-5 w-5 text-accent" />
@@ -697,7 +586,7 @@ export default function PricingPage() {
 								</p>
 							</div>
 						</div>
-					</div>
+					</m.div>
 				</div>
 
 				{/* ── FAQ ── */}

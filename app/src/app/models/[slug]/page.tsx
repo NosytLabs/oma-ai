@@ -403,7 +403,7 @@ const response = await client.chat.completions.create({
 </Link>
 <Link
 	href="/docs"
-	className="inline-flex items-center px-5 py-2.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-accent transition-colors duration-200 ease-out active:scale-[0.97]"
+	className="inline-flex items-center px-5 py-2.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-accent transition-[color,transform] duration-200 ease-out active:scale-[0.97]"
 >
 	API reference
 </Link>
@@ -700,7 +700,7 @@ const response = await client.chat.completions.create({
 </Link>
 <Link
 	href="/docs"
-	className="inline-flex items-center px-5 py-2.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-accent transition-colors duration-200 ease-out active:scale-[0.97]"
+	className="inline-flex items-center px-5 py-2.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-accent transition-[color,transform] duration-200 ease-out active:scale-[0.97]"
 >
 	API reference
 </Link>
@@ -711,23 +711,23 @@ const response = await client.chat.completions.create({
 }
 
 function Stat({
- label,
- value,
- unit,
+	label,
+	value,
+	unit,
 }: {
- label: string;
- value: string;
- unit: string;
+	label: string;
+	value: string;
+	unit: string;
 }) {
- return (
- <div className="rounded-2xl border border-border/50 bg-surface p-5">
- <div className="font-mono text-[10px] uppercase tracking-widest text-text-muted mb-2">
- {label}
- </div>
- <div className="text-2xl font-bold text-text-bright">{value}</div>
- <div className="text-xs text-text-muted mt-1">{unit}</div>
- </div>
- );
+	return (
+		<div className="rounded-2xl border border-border/50 bg-surface p-5">
+			<div className="font-mono text-[10px] uppercase tracking-widest text-text-muted mb-2">
+				{label}
+			</div>
+			<div className="text-2xl font-bold font-mono tabular-nums text-text-bright">{value}</div>
+			<div className="text-xs text-text-muted mt-1">{unit}</div>
+		</div>
+	);
 }
 
 function RelatedModels({ current }: { current: Model }) {
@@ -736,35 +736,35 @@ function RelatedModels({ current }: { current: Model }) {
  (m) => m.tier === current.tier && m.id !== current.id,
  ).slice(0, 4);
  if (related.length === 0) return null;
- return (
- <section
- aria-labelledby="related-heading"
- className="mt-12 pt-10 border-t border-border"
- >
- <h2
- id="related-heading"
- className="font-mono text-xs uppercase tracking-widest text-text-muted mb-4"
- >
- Other {TIER_LABELS[current.tier]} models
- </h2>
- <ul className="grid gap-3 sm:grid-cols-2">
- {related.map((m) => (
- <li key={m.id}>
- <Link
- href={`/models/${m.id}`}
- className="block p-4 rounded-[var(--radius-lg)] border border-border/50 bg-surface hover:border-accent/40 transition-colors duration-200 ease-out"
- >
- <div className="text-sm font-semibold text-text-bright">
- {m.name}
- </div>
- <div className="text-xs text-text-muted mt-1">
- {m.provider} · {formatPrice(m.inputPricePer1M)}/M in ·{""}
- {formatPrice(m.outputPricePer1M)}/M out
- </div>
- </Link>
- </li>
- ))}
- </ul>
- </section>
- );
+	return (
+		<section
+			aria-labelledby="related-heading"
+			className="mt-12 pt-10 border-t border-border"
+		>
+			<h2
+				id="related-heading"
+				className="font-mono text-xs uppercase tracking-widest text-text-muted mb-4"
+			>
+				Other {TIER_LABELS[current.tier]} models
+			</h2>
+			<ul className="grid gap-3 sm:grid-cols-2">
+				{related.map((m) => (
+					<li key={m.id}>
+						<Link
+							href={`/models/${m.id}`}
+							className="block p-4 rounded-[var(--radius-lg)] border border-border/50 bg-surface hover:border-accent/40 transition-colors duration-200 ease-out"
+						>
+							<div className="text-sm font-semibold text-text-bright">
+								{m.name}
+							</div>
+							<div className="text-xs text-text-muted mt-1 font-mono tabular-nums">
+								{m.provider} · {formatPrice(m.inputPricePer1M)}/M in ·{""}
+								{formatPrice(m.outputPricePer1M)}/M out
+							</div>
+						</Link>
+					</li>
+				))}
+			</ul>
+		</section>
+	);
 }

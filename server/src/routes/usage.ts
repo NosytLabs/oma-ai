@@ -5,7 +5,7 @@
  *
  * Query params:
  *   - model     (optional) filter by model id
- *   - provider  (optional) filter by provider ("venice" | "gonka")
+ *   - provider  (optional) filter by provider ("venice" | "oma-ai")
  *   - since     (optional) ISO timestamp; records created at or after
  *   - until     (optional) ISO timestamp; records created at or before
  *   - limit     (optional) 1..200, default 50
@@ -26,7 +26,7 @@ export const usageRoutes = new Hono<OmaEnv>();
 
 const querySchema = z.object({
 	model: z.string().optional(),
-	provider: z.enum(["venice", "gonka"]).optional(),
+	provider: z.enum(["venice", "oma-ai"]).optional(),
 	since: z.string().datetime().optional(),
 	until: z.string().datetime().optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),

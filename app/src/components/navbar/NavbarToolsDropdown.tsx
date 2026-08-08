@@ -129,6 +129,7 @@ export function NavbarToolsDropdown({
 										<Link
 											href={link.href}
 											role="menuitem"
+											aria-label={`${link.label} — ${link.desc}`}
 											onClick={() => onOpenChange(false)}
 											aria-current={isActive ? "page" : undefined}
 											className={`group/item flex items-start gap-3 rounded-sm px-3 py-2 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${

@@ -10,6 +10,7 @@ export interface PricedModel {
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
+	contextTokens: number;
 }
 
 const VENDOR_DISPLAY: Record<string, string> = {
@@ -25,6 +26,7 @@ export function toPricedModel(model: Model): PricedModel {
 		inputPer1M: model.inputPricePer1M,
 		outputPer1M: model.outputPricePer1M,
 		ctx: model.contextLength,
+		contextTokens: model.contextTokens || 0,
 	};
 }
 

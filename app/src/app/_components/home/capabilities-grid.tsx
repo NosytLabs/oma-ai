@@ -81,7 +81,7 @@ const PILLARS: Pillar[] = [
  eyebrow: "Routing & privacy",
  title: "Multi-provider routing",
  description:
- "One gateway across Venice and OMA-AI (gonka) models. Private Venice mode by default, with circuit-breaker failover.",
+ "One gateway across Venice and OMA-AI (oma-ai) models. Private Venice mode by default, with circuit-breaker failover.",
  icon: Zap,
  href: "/docs#endpoints",
  cta: "API endpoints",
@@ -309,15 +309,14 @@ export function CapabilitiesGrid() {
  >
 							<Link
 								href={pillar.href}
-								aria-label={`${pillar.title} — ${pillar.cta}`}
 								className={cn(
 									"group relative flex h-full min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-8 transition-[transform,box-shadow,border-color] duration-200 ease-out",
 									"active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2",
- a.wrap,
- a.ring,
- )}
- style={{ boxShadow: "var(--shadow-md)" }}
- >
+									a.wrap,
+									a.ring,
+								)}
+								style={{ boxShadow: "var(--shadow-md)" }}
+							>
  <div
  aria-hidden="true"
  className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-75"
@@ -350,7 +349,7 @@ export function CapabilitiesGrid() {
  </div>
  </div>
 
- <h3 className="mt-6 font-heading text-2xl font-bold tracking-tight text-text-bright">
+	<h3 className="mt-6 font-sans text-xl sm:text-2xl font-semibold tracking-tight text-text-bright">
  {pillar.title}
  </h3>
  <p className="mt-3 text-[14px] leading-relaxed text-text">

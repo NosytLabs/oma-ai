@@ -64,8 +64,8 @@ services:
       - POLAR_SCALE_PRODUCT_ID=${POLAR_SCALE_PRODUCT_ID}
       # AI provider API keys (active providers only — see server/src/config.ts)
       - VENICE_API_KEY=${VENICE_API_KEY}
-      - GONKA_API_KEY=${GONKA_API_KEY}
-      - GONKA_API_URL=${GONKA_API_URL}
+      - ZYLOO_API_KEY=${ZYLOO_API_KEY}
+      - ZYLOO_API_URL=${ZYLOO_API_URL}
       - OMMA_ALLOW_NON_PRIVATE_VENICE=${OMMA_ALLOW_NON_PRIVATE_VENICE}
       # Payment / treasury (LIVE for real USDC deposits)
       - FACILITATOR_MODE=${FACILITATOR_MODE:-live}

@@ -18,7 +18,7 @@ const spec = {
 		title: "OMA-AI Inference Gateway",
 		version: "2.1.0",
 		description:
-			"OpenAI-compatible inference gateway. Routes to Venice (premium) and Gonka/OpenBroker (decentralized). x402 pay-per-request for agents; USDC on Base for credit top-ups.",
+			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI/OpenBroker (decentralized). x402 pay-per-request for agents; USDC on Base for credit top-ups.",
 	},
 	servers: [
 		{ url: config.PUBLIC_API_URL, description: "Production" },
@@ -214,7 +214,7 @@ const spec = {
 				summary: "Paginated per-request usage history (model, provider, token counts, cents)",
 				parameters: [
 					{ in: "query", name: "model", schema: { type: "string" } },
-					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "gonka"] } },
+					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai"] } },
 					{ in: "query", name: "since", schema: { type: "string", format: "date-time" } },
 					{ in: "query", name: "until", schema: { type: "string", format: "date-time" } },
 					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } },

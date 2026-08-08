@@ -308,7 +308,7 @@ export function NavbarMobileMenu({
 													type="button"
 													onClick={() => setConfirmDisconnect(false)}
 													disabled={disconnecting}
-													className="min-h-[40px] rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-text transition-[color,background-color,transform] duration-200 ease-out hover:bg-panel active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+													className="min-h-[44px] rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-text transition-[color,background-color,transform] duration-200 ease-out hover:bg-panel active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 												>
 													Cancel
 												</button>
@@ -316,7 +316,7 @@ export function NavbarMobileMenu({
 													type="button"
 													onClick={handleConfirmDisconnect}
 													disabled={disconnecting}
-													className="min-h-[40px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors duration-200 ease-out hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red active:scale-[0.97]"
+													className="min-h-[44px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors duration-200 ease-out hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red active:scale-[0.97]"
 												>
 													{disconnecting ? "Signing out…" : "Sign out"}
 												</button>

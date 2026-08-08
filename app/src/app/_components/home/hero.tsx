@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useHasBeenInView } from "./reveal";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { springs } from "@/lib/animation";
+import InteractiveLines from "@/components/originkit/ui/reactive-lines";
 
 // Entrance animation props. Until the page has been live a moment
 // (`enabled`), render plain HTML so the hero copy paints immediately —
@@ -33,6 +34,19 @@ export function Hero() {
   const entrance = useHasBeenInView();
   return (
     <section className="relative overflow-hidden min-h-[calc(100dvh-3.5rem)] flex items-center">
+      {/* Interactive physics reactive-lines behind everything */}
+      <div className="absolute inset-0 -z-20 opacity-[0.32] pointer-events-none">
+        <InteractiveLines
+          backgroundColor="transparent"
+          lineColor="rgba(70, 211, 154, 0.16)"
+          lineWidth={1}
+          minLines={12}
+          maxLines={36}
+          fade={true}
+          fadeIntensity={35}
+        />
+      </div>
+
       {/* Atmosphere — terminal void with aperture glow */}
       <div
         aria-hidden="true"
@@ -91,11 +105,12 @@ export function Hero() {
               <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
                 <div className="relative h-full w-8 bg-white/20" />
               </div>
-              <KeyRound className="h-5 w-5" strokeWidth={1.5} />
+              <KeyRound className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
               <span className="text-base tracking-wide">Get API key</span>
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-200 ease-out group-hover:translate-x-1"
                 strokeWidth={1.5}
+                aria-hidden="true"
               />
             </Link>
 
@@ -106,6 +121,7 @@ export function Hero() {
               <Sparkles
                 className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors duration-200 ease-out"
                 strokeWidth={1.5}
+                aria-hidden="true"
               />
               <span className="text-base tracking-wide">Try chat</span>
             </Link>

@@ -2,7 +2,7 @@
  * Anthropic-compatible Messages API — /v1/messages
  *
  * Translates Anthropic Messages API format to OpenAI format internally,
- * reuses the shared provider proxy (Venice/Gonka), and translates
+ * reuses the shared provider proxy (Venice/OMA-AI), and translates
  * responses back to Anthropic format (both streaming and non-streaming).
  */
 import { Hono } from "hono";
@@ -351,7 +351,7 @@ anthropicRoutes.post(
       const { data } = await parseNonStreamingResponse(upstreamResp, {
         userId,
         model: actualModelId,
-        provider: actualModelDef.provider as "venice" | "gonka",
+        provider: actualModelDef.provider as "venice" | "oma-ai",
         promptTokens,
         pricing: actualPricing,
         requestId,

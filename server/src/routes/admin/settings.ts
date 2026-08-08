@@ -74,6 +74,7 @@ app.patch("/v1/admin/settings", async (c) => {
       {
         error: {
           message: "Invalid settings payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },

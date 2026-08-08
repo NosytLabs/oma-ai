@@ -57,7 +57,7 @@ export const providerEnum = pgEnum("provider", [
   "venice",
   "tinyfish",
   "surplus",
-  "gonka",
+  "oma-ai",
 ]);
 
 export const refundStatusEnum = pgEnum("refund_status", [

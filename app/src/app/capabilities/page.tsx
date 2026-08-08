@@ -412,7 +412,7 @@ export default function CapabilitiesPage() {
 										status: "active",
 									},
 									{
-										name: "OMA-AI (Gonka)",
+										name: "OMA-AI (OMA-AI)",
 										privacy: "Aggregator",
 										routes: "Budget chat (MiniMax M2.7, Kimi K2.6)",
 										fallback: "Auto-reroute to Venice",

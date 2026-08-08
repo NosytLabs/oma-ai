@@ -42,30 +42,30 @@ export function FinalCTA() {
  </p>
  </div>
 
- <div className="flex flex-col gap-4 lg:items-end">
- <div className="flex flex-wrap items-center gap-3 self-start lg:self-end">
- <ElectricBorder
- borderRadius="9999px"
- borderWidth={1}
- color="var(--color-accent)"
- className="electric-border-host !rounded-full transition-[transform] duration-200 ease-out hover:scale-[1.01] active:scale-[0.97] "
- style={{ animationDuration: "3s" }}
- >
+  <div className="flex flex-col gap-4 lg:items-end">
+  <div className="flex flex-wrap items-center gap-3 self-start lg:self-end">
+  <ElectricBorder
+  borderRadius="9999px"
+  borderWidth={1}
+  color="var(--color-accent)"
+  className="electric-border-host !rounded-full transition-[transform] duration-200 ease-out hover:scale-[1.01] active:scale-[0.97] "
+  style={{ animationDuration: "3s" }}
+  >
 						<Link
 							href="/login"
 							className="inline-flex h-11 items-center justify-center rounded-md bg-accent px-8 font-mono text-sm font-bold text-void transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] hover:bg-accent-bright focus-ring"
 						>
- Get API key
- <ArrowRight className="h-4 w-4" aria-hidden="true" />
- </Link>
- </ElectricBorder>
+  Get API key
+  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+  </Link>
+  </ElectricBorder>
 						<Link
 							href="/pricing"
 							className="inline-flex h-11 items-center justify-center rounded-md border border-border-hi bg-surface px-8 font-mono text-sm font-medium text-text-primary transition-[border-color,transform] duration-200 ease-out active:scale-[0.97] hover:border-accent/50 focus-ring"
 						>
- View pricing
- </Link>
- </div>
+  View pricing
+  </Link>
+  </div>
  <nav
  aria-label="Quick links"
  className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-text-muted lg:justify-end"

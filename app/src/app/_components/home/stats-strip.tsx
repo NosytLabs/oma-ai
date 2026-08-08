@@ -34,7 +34,7 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
  {
  label: "Models live",
  value: `${MODEL_COUNT}`,
- hint: "curated · Venice + Gonka",
+ hint: "curated · Venice + OMA-AI",
  live: true,
  },
  {
@@ -58,7 +58,7 @@ export function StatsStrip() {
  const liveCount = useLiveModelCount();
  const stats = STATS.map((s) =>
  s.live && liveCount != null
- ? { ...s, value: `${liveCount}`, hint: "live now · Venice + Gonka" }
+ ? { ...s, value: `${liveCount}`, hint: "live now · Venice + OMA-AI" }
  : s,
  );
  return (

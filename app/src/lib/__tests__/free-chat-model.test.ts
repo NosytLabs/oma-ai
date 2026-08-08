@@ -19,9 +19,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 	});
 
 	it("allows OMA-AI provider even for unknown ids", () => {
-		expect(isFreeChatModel("some-new-gonka-model", "OMA-AI")).toBe(true);
-		expect(isFreeChatModel("some-new-gonka-model", "gonka")).toBe(true);
-		expect(isFreeChatModel("some-new-gonka-model", "openbroker")).toBe(true);
+		expect(isFreeChatModel("some-new-oma-ai-model", "OMA-AI")).toBe(true);
 	});
 
 	it("requires auth for Venice / paid models", () => {

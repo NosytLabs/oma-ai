@@ -112,7 +112,7 @@ export function SessionsSection({
 					sessions.map((session) => (
 						<div
 							key={session.id}
-							className="group flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface)]/50"
+							className="group flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface)]/50 hover:scale-[1.01] duration-200 ease-out"
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-4">
 								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_5%,transparent)] transition-[border-color,background-color] group-hover:border-[var(--color-accent)]/40 group-hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]">
@@ -138,9 +138,9 @@ export function SessionsSection({
 									</div>
 									<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
 										{session.ipAddress && (
-											<span className="font-mono">{session.ipAddress}</span>
+											<span className="font-mono tabular-nums">{session.ipAddress}</span>
 										)}
-										<span className="flex items-center gap-1">
+										<span className="flex items-center gap-1 tabular-nums">
 											<Clock className="h-3 w-3" aria-hidden="true" />
 											Signed in {formatDateTime(session.createdAt)}
 										</span>

@@ -1,4 +1,4 @@
-"use client";
+
 
 import { ExportDataButton } from "../_components/ExportDataButton";
 

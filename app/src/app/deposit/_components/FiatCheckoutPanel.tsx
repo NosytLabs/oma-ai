@@ -107,7 +107,7 @@ export function FiatCheckoutPanel() {
 			<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-4">
 				<div className="flex items-start gap-3">
 					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent/10 text-accent">
-						<CreditCard className="h-4 w-4" aria-hidden="true" />
+						<CreditCard className="h-4 w-4" aria-hidden="true" aria-label="Credit card icon" />
 					</div>
 					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-text-bright">
@@ -131,7 +131,7 @@ export function FiatCheckoutPanel() {
 					return (
 						<label
 							key={p.plan}
-							className={`group relative flex cursor-pointer flex-col rounded-[var(--radius-lg)] border p-4 transition-[border-color,background-color,transform,box-shadow] ${
+							className={`group relative flex cursor-pointer flex-col rounded-[var(--radius-lg)] border p-4 transition-[border-color,background-color,transform,box-shadow] hover:scale-[1.01] active:scale-[0.97] duration-200 ease-out focus-within:ring-2 focus-within:ring-accent ${
 								isActive
 									? "border-accent bg-accent/5 shadow-[0_0_0_1px_var(--color-accent)]"
 									: "border-border bg-panel hover:border-accent/40"
@@ -147,14 +147,14 @@ export function FiatCheckoutPanel() {
 							/>
 							{p.highlight && (
 								<span className="absolute -top-2 right-3 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-void">
-									<Sparkles className="h-3 w-3" aria-hidden="true" />
+									<Sparkles className="h-3 w-3" aria-hidden="true" aria-label="Sparkles icon" />
 									Popular
 								</span>
 							)}
 							<span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
 								{p.name}
 							</span>
-							<span className="mt-1 text-2xl font-bold text-text-bright">
+							<span className="mt-1 text-2xl font-bold text-text-bright tabular-nums">
 								{p.credits.toLocaleString()}
 								<span className="ml-1 text-[12px] font-normal text-text-muted">
 									credits
@@ -164,10 +164,10 @@ export function FiatCheckoutPanel() {
 								{p.tagline}
 							</span>
 							<div className="mt-3 flex items-center justify-between">
-								<span className="text-base font-semibold text-accent">
+								<span className="text-base font-semibold text-accent tabular-nums">
 									{p.price}
 								</span>
-								<span className="text-[10px] font-mono text-text-muted">
+								<span className="text-[10px] font-mono text-text-muted tabular-nums">
 									{p.perCredit}
 								</span>
 							</div>
@@ -196,35 +196,35 @@ export function FiatCheckoutPanel() {
 			{!isAuthenticated || isDemo ? (
 				<a
 					href="/login?next=/deposit"
-					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright"
+					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright hover:scale-[1.01] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Sign in to buy credits
-					<ArrowRight className="h-4 w-4" aria-hidden="true" />
+					<ArrowRight className="h-4 w-4" aria-hidden="true" aria-label="Arrow right icon" />
 				</a>
 			) : (
 				<button
 					type="button"
 					onClick={handleCheckout}
 					disabled={loading}
-					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright disabled:opacity-60 active:scale-[0.97]"
+					className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-accent px-4 text-sm font-semibold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright hover:scale-[1.01] active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					{loading ? (
 						<>
-							<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+							<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" aria-label="Loader icon" />
 							Opening checkout…
 						</>
 					) : (
 						<>
-							<CreditCard className="h-4 w-4" aria-hidden="true" />
+							<CreditCard className="h-4 w-4" aria-hidden="true" aria-label="Credit card icon" />
 							Pay {selected.price} with card
-							<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							<ArrowRight className="h-4 w-4" aria-hidden="true" aria-label="Arrow right icon" />
 						</>
 					)}
 				</button>
 			)}
 
 			<div className="flex items-center justify-center gap-2 text-[11px] text-text-muted">
-				<ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+				<ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" aria-label="Shield check icon" />
 				Secure checkout by Polar · No wallet needed
 			</div>
 		</div>

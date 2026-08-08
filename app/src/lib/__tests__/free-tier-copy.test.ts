@@ -1,5 +1,5 @@
 /**
- * Free-tier marketing/chat copy must only name real Gonka free models.
+ * Free-tier marketing/chat copy must only name real OMA-AI free models.
  * Drives FREE_CHAT_MODEL_IDS from model-utils and scans shipped source for
  * "(free)" example labels + known-bad Venice free claims.
  */
@@ -15,8 +15,15 @@ function readApp(rel: string): string {
 }
 
 describe("free-tier copy accuracy", () => {
-	it("FREE_CHAT_MODEL_IDS is only minimax-m2.7 and kimi-k2.6", () => {
+	it("FREE_CHAT_MODEL_IDS contains all free models", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual([
+			"gemini-2.5-flash",
+			"gemini-3-flash-preview",
+			"gemini-3-pro-preview",
+			"gemini-3.1-pro-preview",
+			"glm-4.5-air",
+			"gpt-4.1",
+			"gpt-4o",
 			"kimi-k2.6",
 			"minimax-m2.7",
 		]);
@@ -44,22 +51,17 @@ describe("free-tier copy accuracy", () => {
 		}
 	});
 
-	it("WelcomeBanner tip names free Gonka models, not Venice", () => {
+	it("WelcomeBanner tip names free OMA-AI models, not Venice", () => {
 		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
 		expect(src).toMatch(/MiniMax M2\.7/);
 		expect(src).toMatch(/Kimi K2\.6/);
 		expect(src).not.toMatch(/DeepSeek V4 Flash.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
-		expect(src).not.toMatch(/Both are free — no sign-in required\./);
 	});
 
-	it("pricing footer names real Gonka models", () => {
+	it("pricing footer names real OMA-AI models", () => {
 		const src = readApp("app/pricing/page.tsx");
-		expect(src).toMatch(/Gonka-routed models \(MiniMax M2\.7/);
-		expect(src).toMatch(/Kimi K2\.6\)/);
-		expect(src).not.toMatch(
-			/Gonka-routed models \(GLM 5\.1[\s\S]*DeepSeek V4 Flash\)/,
-		);
+		expect(src).toMatch(/OMA-AI models have no additional fee\./);
 	});
 
 	it("Mercury/Inception local logo is not the Zhipu tile", () => {

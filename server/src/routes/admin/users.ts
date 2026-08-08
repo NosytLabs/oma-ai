@@ -81,7 +81,7 @@ app.get("/v1/admin/users", async (c) => {
     });
   } catch (err) {
     logger.error({ err }, "[admin/users] failed");
-    return c.json({ error: { message: "user query failed" } }, 500);
+    return c.json({ error: { message: "user query failed", type: "server_error" } }, 500);
   }
 });
 
@@ -107,6 +107,7 @@ app.delete("/v1/admin/users/:id", async (c) => {
 			{
 				error: {
 					message: "Type DELETE and provide a reason to confirm account deletion",
+					type: "invalid_request",
 					issues: parsed.error.flatten(),
 				},
 			},
@@ -115,9 +116,9 @@ app.delete("/v1/admin/users/:id", async (c) => {
 	}
 
 	const adminId = c.get("userId");
-	if (!adminId) return c.json({ error: { message: "auth required" } }, 401);
+	if (!adminId) return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
 	if (targetId === adminId) {
-		return c.json({ error: { message: "Admins cannot delete their own account from this panel" } }, 400);
+		return c.json({ error: { message: "Admins cannot delete their own account from this panel", type: "invalid_request" } }, 400);
 	}
 
 	try {
@@ -126,10 +127,10 @@ app.delete("/v1/admin/users/:id", async (c) => {
 			.from(user)
 			.where(eq(user.id, targetId))
 			.limit(1);
-		if (!existing) return c.json({ error: { message: "User not found" } }, 404);
+		if (!existing) return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
 
 		if (existing.evmAddress && ADMIN_WALLET_ADDRESSES_SET.has(existing.evmAddress.toLowerCase())) {
-			return c.json({ error: { message: "Cannot delete an account protected by the admin wallet allowlist" } }, 409);
+			return c.json({ error: { message: "Cannot delete an account protected by the admin wallet allowlist", type: "invalid_request" } }, 409);
 		}
 		if (existing.role === "admin") {
 			const [{ total }] = await db
@@ -137,7 +138,7 @@ app.delete("/v1/admin/users/:id", async (c) => {
 				.from(user)
 				.where(eq(user.role, "admin"));
 			if (Number(total) <= 1) {
-				return c.json({ error: { message: "Cannot delete the last administrator" } }, 409);
+				return c.json({ error: { message: "Cannot delete the last administrator", type: "invalid_request" } }, 409);
 			}
 		}
 
@@ -185,7 +186,7 @@ app.delete("/v1/admin/users/:id", async (c) => {
 		return c.json({ success: true, userId: targetId, anonymized: true });
 	} catch (err) {
 		logger.error({ err, targetId, adminId }, "[admin/users/delete] anonymization failed");
-		return c.json({ error: { message: "Failed to delete user" } }, 500);
+		return c.json({ error: { message: "Failed to delete user", type: "server_error" } }, 500);
 	}
 });
 
@@ -206,6 +207,7 @@ app.patch("/v1/admin/users/:id", async (c) => {
       {
         error: {
           message: "Invalid request payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },
@@ -221,7 +223,7 @@ app.patch("/v1/admin/users/:id", async (c) => {
       .where(eq(user.id, targetId))
       .limit(1);
     if (!existing) {
-      return c.json({ error: { message: "User not found" } }, 404);
+      return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
     }
 
     const [existingBal] = await db
@@ -324,7 +326,7 @@ app.patch("/v1/admin/users/:id", async (c) => {
     });
   } catch (err) {
     logger.error({ err, targetId }, "[admin/users/patch] update failed");
-    return c.json({ error: { message: "Failed to update user" } }, 500);
+    return c.json({ error: { message: "Failed to update user", type: "server_error" } }, 500);
   }
 });
 
@@ -355,6 +357,7 @@ app.post("/v1/admin/users/:id/credits", async (c) => {
       {
         error: {
           message: "Invalid request payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },
@@ -364,7 +367,7 @@ app.post("/v1/admin/users/:id/credits", async (c) => {
 
   const adminId = c.get("userId");
   if (!adminId) {
-    return c.json({ error: { message: "auth required" } }, 401);
+    return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
   }
 
   try {
@@ -375,7 +378,7 @@ app.post("/v1/admin/users/:id/credits", async (c) => {
       .where(eq(user.id, targetId))
       .limit(1);
     if (!existing) {
-      return c.json({ error: { message: "User not found" } }, 404);
+      return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
     }
 
     // 2. Atomic balance update via the shared helper so the math is
@@ -412,7 +415,7 @@ app.post("/v1/admin/users/:id/credits", async (c) => {
     });
   } catch (err) {
     logger.error({ err, targetId }, "[admin/users/credits] adjustment failed");
-    return c.json({ error: { message: "Failed to adjust credits" } }, 500);
+    return c.json({ error: { message: "Failed to adjust credits", type: "server_error" } }, 500);
   }
 });
 
@@ -436,6 +439,7 @@ app.post("/v1/admin/users/:id/suspend", async (c) => {
       {
         error: {
           message: "Invalid request payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },
@@ -445,7 +449,7 @@ app.post("/v1/admin/users/:id/suspend", async (c) => {
 
   const adminId = c.get("userId");
   if (!adminId) {
-    return c.json({ error: { message: "auth required" } }, 401);
+    return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
   }
 
   try {
@@ -455,7 +459,7 @@ app.post("/v1/admin/users/:id/suspend", async (c) => {
       .where(eq(user.id, targetId))
       .limit(1);
     if (!existing) {
-      return c.json({ error: { message: "User not found" } }, 404);
+      return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
     }
 
     if (existing.suspended) {
@@ -503,7 +507,7 @@ app.post("/v1/admin/users/:id/suspend", async (c) => {
     });
   } catch (err) {
     logger.error({ err, targetId }, "[admin/users/suspend] failed");
-    return c.json({ error: { message: "Failed to suspend user" } }, 500);
+    return c.json({ error: { message: "Failed to suspend user", type: "server_error" } }, 500);
   }
 });
 
@@ -523,6 +527,7 @@ app.post("/v1/admin/users/:id/unsuspend", async (c) => {
       {
         error: {
           message: "Invalid request payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },
@@ -532,7 +537,7 @@ app.post("/v1/admin/users/:id/unsuspend", async (c) => {
 
   const adminId = c.get("userId");
   if (!adminId) {
-    return c.json({ error: { message: "auth required" } }, 401);
+    return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
   }
 
   try {
@@ -542,7 +547,7 @@ app.post("/v1/admin/users/:id/unsuspend", async (c) => {
       .where(eq(user.id, targetId))
       .limit(1);
     if (!existing) {
-      return c.json({ error: { message: "User not found" } }, 404);
+      return c.json({ error: { message: "User not found", type: "not_found" } }, 404);
     }
 
     if (!existing.suspended) {
@@ -577,7 +582,7 @@ app.post("/v1/admin/users/:id/unsuspend", async (c) => {
     });
   } catch (err) {
     logger.error({ err, targetId }, "[admin/users/unsuspend] failed");
-    return c.json({ error: { message: "Failed to unsuspend user" } }, 500);
+    return c.json({ error: { message: "Failed to unsuspend user", type: "server_error" } }, 500);
   }
 });
 

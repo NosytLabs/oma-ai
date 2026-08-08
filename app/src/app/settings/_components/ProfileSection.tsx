@@ -46,25 +46,25 @@ export function ProfileSection({
 			</div>
 
 			<div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:scale-[1.01] duration-200 ease-out">
 					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Fingerprint className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						User ID
 					</div>
-					<div className="mt-1 break-all font-mono text-[13px] text-text-bright font-medium">
+					<div className="mt-1 break-all font-mono text-[13px] text-text-bright font-medium tabular-nums">
 						{user?.id || "—"}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:scale-[1.01] duration-200 ease-out">
 					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Account created
 					</div>
-					<div className="mt-1 text-[13px] text-text-bright font-medium">
+					<div className="mt-1 text-[13px] text-text-bright font-medium tabular-nums">
 						{user?.createdAt ? formatDateTime(user.createdAt) : "—"}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]">
+				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:scale-[1.01] duration-200 ease-out">
 					<div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						Authentication
@@ -76,7 +76,7 @@ export function ProfileSection({
 			</div>
 
 			{linkedWallet && (
-				<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40">
+				<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-[border-color,background-color,transform] duration-200 ease-out hover:border-[var(--color-accent)]/40 hover:scale-[1.01]">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 text-sm font-semibold text-text-bright">
@@ -87,14 +87,14 @@ export function ProfileSection({
 								SIWE (EIP-4361) on Base mainnet. Funds stay in your wallet.
 							</div>
 						</div>
-						<div className="shrink-0 rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-3 py-1.5 font-mono text-[11px] text-[var(--color-accent)] font-medium">
+						<div className="shrink-0 rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-3 py-1.5 font-mono text-[11px] text-[var(--color-accent)] font-medium tabular-nums">
 							{formatAddress(linkedWallet)}
 						</div>
 					</div>
 				</div>
 			)}
 
-			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40">
+			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40 hover:scale-[1.01]">
 				<div className="flex items-center justify-between gap-4">
 					<div className="min-w-0">
 						<div className="text-sm font-semibold text-text-bright">Sound cues</div>
@@ -110,7 +110,7 @@ export function ProfileSection({
 							onChange={(e) => handleSoundToggle(e.target.checked)}
 							aria-label="Toggle subtle success and failure sound cues"
 						/>
-						<div className="h-6 w-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] transition-[border-color,background-color] peer-checked:border-[var(--color-accent)] peer-checked:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)]" />
+						<div className="h-6 w-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] transition-[border-color,background-color] peer-checked:border-[var(--color-accent)] peer-checked:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)] focus-within:ring-2 focus-within:ring-accent" />
 						<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-text-muted transition-transform duration-200 ease-out peer-checked:translate-x-5 peer-checked:bg-[var(--color-accent)]" />
 					</label>
 				</div>

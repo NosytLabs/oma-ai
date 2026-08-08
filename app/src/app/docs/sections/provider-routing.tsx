@@ -57,10 +57,10 @@ export function ProviderRoutingSection() {
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">reasoning</span>
 					</div>
 				</div>
-				<div id="pr-gonka" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 scroll-mt-24">
+				<div id="pr-OMA-AI" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="inline-flex items-center rounded-full bg-success/20 text-success px-2.5 py-0.5 text-xs font-medium">Budget</span>
-						<span className="font-semibold text-text text-sm">Gonka</span>
+						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
 						Decentralized budget provider via OpenBroker. Hosts MiniMax M2.7,
@@ -92,7 +92,7 @@ export function ProviderRoutingSection() {
 					</p>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
-							<span className="text-accent">x-provider</span>: venice | gonka
+							<span className="text-accent">x-provider</span>: venice | OMA-AI
 						</div>
 					</div>
 				</div>

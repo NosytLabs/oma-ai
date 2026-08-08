@@ -1,8 +1,8 @@
 /**
  * Daily usage limits for website chat (free tier).
  * 
- * - Anonymous users (by IP): 20 requests/day on Gonka models
- * - Registered users: 100 requests/day on Gonka models
+ * - Anonymous users (by IP): 20 requests/day on OMA-AI models
+ * - Registered users: 100 requests/day on OMA-AI models
  * - API calls (without X-OMA-Source: website header): always require credits
  * 
  * This is ONLY for the website chat page. API usage always costs credits.
@@ -81,7 +81,7 @@ export function dailyUsageLimit() {
       return next();
     }
 
-    // Check if this is a free Gonka model.
+    // Check if this is a free OMA-AI model.
     // Clone the raw request first: `c.req.json()` consumes the body stream,
     // which would leave the route handler reading an empty body.
     const body = await c.req.raw
@@ -92,11 +92,11 @@ export function dailyUsageLimit() {
 
     // Provider-based check (was hardcoded to two non-existent model ids
     // `minimax-m2.7` and `kimi-k2.6`, which made the daily-limit gate
-    // a no-op against the live catalog). gonka-routed models are the
+    // a no-op against the live catalog). oma-ai-routed models are the
     // free tier on /chat.
     const def = model ? getModelById(model) : null;
-    const isGonkaModel = !!def && def.provider === "gonka";
-    if (!isGonkaModel) {
+    const isOmaAiModel = !!def && def.provider === "oma-ai";
+    if (!isOmaAiModel) {
       return next();
     }
 

@@ -64,8 +64,8 @@ export const MODALITY_ORDER: Modality[] = [
 ];
 export type Provider =
 	| "Venice"
-	| "Gonka"
 	| "OMA-AI"
+	| "Both"
 	| "Surplus";
 
 export interface Model {
@@ -120,21 +120,21 @@ export const PROVIDER_COLORS: Record<
 		text: "text-text-bright",
 		border: "border-violet/50",
 	},
-	Gonka: {
+	"OMA-AI": {
 		bg: "bg-success/10",
 		text: "text-success",
 		border: "border-success/30",
-	},
-	"OMA-AI": {
-		bg: "bg-accent/10",
-		text: "text-accent",
-		border: "border-accent/30",
 	},
 	Surplus: {
 		bg: "bg-warning/10",
 		text: "text-warning",
 		border: "border-warning/30",
 	},
+	Both: {
+		bg: "bg-surface",
+		text: "text-text-bright",
+		border: "border-border",
+	}
 };
 
 /** Map any provider string returned by the live `/v1/models` endpoint
@@ -142,9 +142,9 @@ export const PROVIDER_COLORS: Record<
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "Venice";
-	// Catalog + UI labels: "Gonka"/"OpenBroker" upstream names
-	if (s.includes("gonka") || s.includes("openbroker") || s.includes("obk")) {
-		return "Gonka";
+	// Catalog + UI labels: "OMA-AI"/"OpenBroker" upstream names now branded as OMA-AI
+	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk")) {
+		return "OMA-AI";
 	}
 	if (s === "oma-ai" || s === "oma" || s.includes("oma-ai")) {
 		return "OMA-AI";
@@ -159,7 +159,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["Venice", "Gonka", "OMA-AI", "Surplus"] as Provider[]).filter((p) =>
+	return (["Venice", "OMA-AI", "Surplus"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }
@@ -401,7 +401,7 @@ interface ApiModelEntry {
 	};
 	category: string;
 	context_length: number | null;
-	/** Upstream routing target surfaced by /v1/models ("venice" | "gonka" | "surplus").
+	/** Upstream routing target surfaced by /v1/models ("venice" | "oma-ai" | "surplus").
 	 * Backends differ: OMA + Pollinations return `provider`, OpenRouter returns
 	 * `owned_by`, etc. The loader picks whichever is present. */
 	provider?: string;
@@ -605,8 +605,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 9.45,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"gemini-3-flash-preview": {
-			id: "gemini-3-flash-preview",
+		"venice-gemini-3-flash-preview": {
+			id: "venice-gemini-3-flash-preview",
 			displayName: "Gemini 3 Flash",
 			provider: "Venice",
 			category: "mid",
@@ -685,11 +685,11 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.28,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
-		// ── Gonka (OpenBroker) ───────────────────────────────────────────
+		// ── OMA-AI (OpenBroker) Resale - Branded as OMA-AI ────────────────
 		"minimax-m2.7": {
 			id: "minimax-m2.7",
 			displayName: "MiniMax M2.7",
-			provider: "Gonka",
+			provider: "OMA-AI",
 			category: "budget",
 			maxTokens: 8192,
 			inputPricePer1M: 0.015,
@@ -699,12 +699,83 @@ const FALLBACK_CATALOG: RawCatalog = {
 		"kimi-k2.6": {
 			id: "kimi-k2.6",
 			displayName: "Kimi K2.6",
-			provider: "Gonka",
+			provider: "OMA-AI",
 			category: "mid",
 			maxTokens: 8192,
 			inputPricePer1M: 0.024,
 			outputPricePer1M: 0.096,
 			capabilities: ["chat", "reasoning", "tools"],
+		},
+		// ── Zyloo Subscription Integration - Branded as OMA-AI ───────────
+		"gemini-3.1-pro-preview": {
+			id: "gemini-3.1-pro-preview",
+			displayName: "Gemini 3.1 Pro",
+			provider: "OMA-AI",
+			category: "frontier",
+			maxTokens: 16384,
+			inputPricePer1M: 1.0,
+			outputPricePer1M: 5.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"gemini-3-pro-preview": {
+			id: "gemini-3-pro-preview",
+			displayName: "Gemini 3 Pro",
+			provider: "OMA-AI",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 1.7,
+			outputPricePer1M: 9.0,
+			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"gemini-3-flash-preview": {
+			id: "gemini-3-flash-preview",
+			displayName: "Gemini 3 Flash",
+			provider: "OMA-AI",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 0.2,
+			outputPricePer1M: 1.5,
+			capabilities: ["chat", "fast", "tools"],
+		},
+		"gemini-2.5-flash": {
+			id: "gemini-2.5-flash",
+			displayName: "Gemini 2.5 Flash",
+			provider: "OMA-AI",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 0.2,
+			outputPricePer1M: 1.5,
+			capabilities: ["chat", "fast"],
+		},
+		"gpt-4.1": {
+			id: "gpt-4.1",
+			displayName: "GPT-4.1",
+			provider: "OMA-AI",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 2.0,
+			outputPricePer1M: 8.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"gpt-4o": {
+			id: "gpt-4o",
+			displayName: "GPT-4o",
+			provider: "OMA-AI",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 2.5,
+			outputPricePer1M: 10.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"glm-4.5-air": {
+			id: "glm-4.5-air",
+			displayName: "GLM 4.5 Air",
+			provider: "OMA-AI",
+			category: "budget",
+			maxTokens: 8192,
+			inputPricePer1M: 0.1,
+			outputPricePer1M: 0.2,
+			capabilities: ["chat", "fast", "tools"],
 		},
 	},
 };
@@ -738,6 +809,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 Gonka).
+// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 OMA-AI).
 // Keep in sync with `server/src/inference/models.ts` defaultCatalog().
-export const MODEL_COUNT = 20;
+export const MODEL_COUNT = 27;

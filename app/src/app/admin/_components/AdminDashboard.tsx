@@ -760,7 +760,7 @@ const handleAuditPrev = () => {
 										<td className="py-2 font-medium">
 											{m.displayName}
 											<div className="font-mono text-[10px] text-text-muted">
-												{m.id} {m.gonkaId ? `→ ${m.gonkaId}` : ""}
+												{m.id} {m.oma_aiId ? `→ ${m.oma_aiId}` : ""}
 											</div>
 										</td>
 										<td className="py-2">
@@ -1022,19 +1022,19 @@ const handleAuditPrev = () => {
 						 ].filter(Boolean) as string[]}
 						/>
 						<IntegrationCard
-							name="Gonka / OpenBroker"
+							name="OMA-AI / OpenBroker"
 							icon={<ChevronRight className="h-4 w-4" />}
-							configured={integrations.gonka.configured}
-							health={integrations.gonka.health.status}
+							configured={integrations.oma_ai.configured}
+							health={integrations.oma_ai.health.status}
 							notes={[
-								integrations.gonka.health.latencyMs
-									? `latency: ${integrations.gonka.health.latencyMs}ms`
+								integrations.oma_ai.health.latencyMs
+									? `latency: ${integrations.oma_ai.health.latencyMs}ms`
 									: null,
-								integrations.gonka.health.note,
-								integrations.gonka.health.supportedModels?.length
-									? `models: ${integrations.gonka.health.supportedModels.join(", ")}`
+								integrations.oma_ai.health.note,
+								integrations.oma_ai.health.supportedModels?.length
+									? `models: ${integrations.oma_ai.health.supportedModels.join(", ")}`
 									: null,
-								integrations.gonka.url.replace("https://", ""),
+								integrations.oma_ai.url.replace("https://", ""),
 							].filter(Boolean) as string[]}
 						/>
 						<IntegrationCard

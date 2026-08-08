@@ -29,10 +29,10 @@ export const adminRoutes = new Hono<OmaEnv>();
 // `/v1/admin/promote-self` is the bootstrap for the very first admin in dev.
 adminRoutes.post("/v1/admin/promote-self", sessionAuth, async (c) => {
 	if (config.NODE_ENV === "production") {
-		return c.json({ error: { message: "promote-self is dev-only" } }, 403);
+		return c.json({ error: { message: "promote-self is dev-only", type: "forbidden" } }, 403);
 	}
 	const userId = c.get("userId");
-	if (!userId) return c.json({ error: { message: "auth required" } }, 401);
+	if (!userId) return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
 	const [u] = await db
 		.select({ role: user.role })
 		.from(user)

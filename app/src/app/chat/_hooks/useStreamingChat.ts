@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { log } from "@/lib/logger";
 import { isFreeChatModel } from "@/lib/model-utils";
+import { parseSSEBlock } from "@/lib/sse-parser";
 import { estimateTokens } from "@/lib/text";
 
 // Chat completions and web search both hit the backend directly — the Next
@@ -57,33 +58,6 @@ function newMessageId(prefix: string): string {
 			: Date.now() * 1000;
 	const rand = Math.random().toString(36).slice(2, 10);
 	return `${prefix}-${n.toString(36)}-${rand}`;
-}
-
-/**
- * SSE events end with \n\n. A single event can have multiple
- * `data:` lines that must be concatenated. Per the SSE spec, ignore lines
- * starting with `:` (comment). A bare `data:` line is treated as the string
- * "data: ". The event ends at the first blank line.
- */
-function parseSSEBlock(
-	block: string,
-): { event?: string; data: string[]; id?: string } | null {
-	if (!block || block.trim() === "") return null;
-	const lines = block.split("\n");
-	const data: string[] = [];
-	let event: string | undefined;
-	let id: string | undefined;
-	for (const line of lines) {
-		if (!line || line.startsWith(":")) continue;
-		const colon = line.indexOf(":");
-		const field = colon === -1 ? line : line.slice(0, colon);
-		const value = colon === -1 ? "" : line.slice(colon + 1).replace(/^ /, "");
-		if (field === "data") data.push(value);
-		else if (field === "event") event = value;
-		else if (field === "id") id = value;
-	}
-	if (data.length === 0 && !event && !id) return null;
-	return { event, data, id };
 }
 
 export interface UseStreamingChatOptions {
@@ -653,7 +627,6 @@ export function useStreamingChat(
 
 	const sendMessage = useCallback(
 		async (overridePrompt?: string) => {
-			"use no memo";
 			const promptText = (overridePrompt ?? opts.input).trim();
 			if (!promptText || opts.loading) return;
 

@@ -411,7 +411,7 @@ Portkey is enterprise-grade but requires a credit card, account
 							<p className="text-sm text-text-secondary mb-3">
 								OpenRouter is the closest competitor. Same multi-provider model.
 								OpenRouter wins on brand recognition and provider breadth. OMA
-								wins on price (60× lower-cost budget tier via Gonka), privacy
+								wins on price (60× lower-cost budget tier via OMA-AI), privacy
 								(Venice routing), and payment (x402 + USDC).
 							</p>
 							<p className="text-sm text-text-secondary mb-3">

@@ -193,7 +193,7 @@ export function usePlaygroundState(
 	const [shareStatus, setShareStatus] = useState<ShareStatus>("default");
 
 	// --- Compare mode ---
-	// chat playground is a free OMA-AI / Gonka surface. Default
+	// chat playground is a free OMA-AI / OMA-AI surface. Default
 	// the compare slot to the second free model so guests never see a paid
 	// Venice model they can't call without signing in.
 	const [compareMode, setCompareMode] = useState<boolean>(false);

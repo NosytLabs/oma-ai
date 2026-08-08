@@ -54,17 +54,17 @@ export function X402Banner() {
  >
  HTTP 402 payments for agents.
  </h2>
- <p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
- No pre-funded account required. On 402, read{""}
- <code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
- PAYMENT-REQUIRED
- </code>
- , sign USDC on Base (EIP-3009), retry with{""}
- <code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
- PAYMENT-SIGNATURE
- </code>
- . The gateway verifies, settles, and returns the completion.
- </p>
+  <p className="mt-4 max-w-lg text-base leading-relaxed text-text-secondary">
+  No pre-funded account required. On 402, read{" "}
+  <code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
+  PAYMENT-REQUIRED
+  </code>
+  , sign USDC on Base (EIP-3009), retry with{" "}
+  <code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[13px] text-accent">
+  PAYMENT-SIGNATURE
+  </code>
+  . The gateway verifies, settles, and returns the completion.
+  </p>
  <div className="mt-7 flex flex-wrap gap-3 w-full">
 							<Link
 								href="/docs"
@@ -83,22 +83,23 @@ export function X402Banner() {
  </div>
  </div>
 
- <div className="rounded-[var(--radius-xl)] border border-border bg-void/60 p-5 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px]">
- <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-text-muted">
- request shape
- </p>
- <pre
- tabIndex={0}
- className="overflow-x-auto whitespace-pre w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
- >
- {`POST /v1/chat/completions
-PAYMENT-SIGNATURE: {"signature":"0x…","payload":{…}}
-Content-Type: application/json
+	<div className="rounded-[var(--radius-xl)] border border-border bg-[#040608]/90 p-6 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px] shadow-[0_12px_24px_rgba(0,0,0,0.5)]">
+		<p className="mb-4 text-[11px] uppercase tracking-[0.14em] text-text-muted border-b border-border/60 pb-2">
+			request shape
+		</p>
+		<pre
+			tabIndex={0}
+			aria-label="Example x402 HTTP request headers and body"
+			className="overflow-x-auto whitespace-pre w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+		>
+			<span className="text-accent">POST</span> <span className="text-text-bright">/v1/chat/completions</span>
+<span className="text-text-muted">PAYMENT-SIGNATURE:</span> <span className="text-secondary">{"{"}&quot;signature&quot;:&quot;0x…&quot;,&quot;payload&quot;:{"{"}…{"}"}{"}"}</span>
+<span className="text-text-muted">Content-Type:</span> <span className="text-info">application/json</span>
 
-{ "model": "llama-3.3-70b",
- "messages": [{ "role": "user", "content": "…" }] }`}
- </pre>
- </div>
+{"{"} <span className="text-text-muted">&quot;model&quot;:</span> <span className="text-secondary">&quot;llama-3.3-70b&quot;</span>,
+  <span className="text-text-muted">&quot;messages&quot;:</span> [{"{"} <span className="text-text-muted">&quot;role&quot;:</span> <span className="text-secondary">&quot;user&quot;</span>, <span className="text-text-muted">&quot;content&quot;:</span> <span className="text-secondary">&quot;…&quot;</span> {"}"}] {"}"}
+		</pre>
+	</div>
  </div>
  </div>
  </Reveal>

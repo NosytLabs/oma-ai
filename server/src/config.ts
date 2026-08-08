@@ -26,16 +26,16 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
-  // Gonka decentralized provable-inference broker (optional).
-  // PRIMARY PATH (2026-07-16): api.openbroker.gonka.gg — your dedicated broker
+  // OMA-AI decentralized provable-inference broker (optional).
+  // PRIMARY PATH (2026-07-16): api.openbroker.oma-ai.gg — your dedicated broker
   // account, devshard-backed, GNK-settled, ~$0.0000008 per 500-token request.
-  // Falls back to proxy.gonka.gg (open community proxy) if API key missing.
-  // Override via GONKA_API_URL env var to point at a different community broker.
-  // OPENBROKER_* aliases are optional — if both set, GONKA_* wins.
-  GONKA_API_KEY: z.string().min(1).optional(),
-  GONKA_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
+  // Falls back to proxy.oma-ai.gg (open community proxy) if API key missing.
+  // Override via ZYLOO_API_URL env var to point at a different community broker.
+  // OPENBROKER_* aliases are optional — if both set, ZYLOO_* wins.
+  ZYLOO_API_KEY: z.string().min(1).optional(),
+  ZYLOO_API_URL: z.string().url().optional().default("https://api.openbroker.oma-ai.gg"),
   OPENBROKER_API_KEY: z.string().min(1).optional(),
-  OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
+  OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.oma-ai.gg"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.
@@ -311,18 +311,18 @@ export type Config = z.infer<typeof envSchema>;
 
 // Parse, then fold QuickNode RPC aliases into CHAIN_RPC_URL so every consumer
 // only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK. Similarly, fold
-// the OPENBROKER_API_URL alias into GONKA_API_URL (explicit GONKA_* wins).
+// the OPENBROKER_API_URL alias into ZYLOO_API_URL (explicit ZYLOO_* wins).
 const _parsed = envSchema.parse(process.env);
 export const config: Config = {
   ..._parsed,
   CHAIN_RPC_URL: _parsed.QUICKNODE_RPC_URL ?? _parsed.CHAIN_RPC_URL,
   CHAIN_RPC_URL_FALLBACK:
     _parsed.QUICKNODE_RPC_URL_FALLBACK ?? _parsed.CHAIN_RPC_URL_FALLBACK,
-  GONKA_API_URL: process.env.GONKA_API_URL
-    ? _parsed.GONKA_API_URL
+  ZYLOO_API_URL: process.env.ZYLOO_API_URL
+    ? _parsed.ZYLOO_API_URL
     : process.env.OPENBROKER_API_URL
       ? _parsed.OPENBROKER_API_URL
-      : _parsed.GONKA_API_URL,
+      : _parsed.ZYLOO_API_URL,
   // Prefer explicit USDC_DEPOSIT_ADDRESS; otherwise reuse the Base treasury
   // so local/prod setups with only TREASURY_BASE_ADDRESS still accept deposits.
   USDC_DEPOSIT_ADDRESS:

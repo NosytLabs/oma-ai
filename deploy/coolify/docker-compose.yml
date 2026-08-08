@@ -49,8 +49,8 @@ services:
       - CHAIN_RPC_URL=${CHAIN_RPC_URL:-https://mainnet.base.org}
       # AI Provider keys (active providers only — see server/src/config.ts)
       - VENICE_API_KEY=${VENICE_API_KEY:-}
-      - GONKA_API_KEY=${GONKA_API_KEY:-}
-      - GONKA_API_URL=${GONKA_API_URL:-}
+      - ZYLOO_API_KEY=${ZYLOO_API_KEY:-}
+      - ZYLOO_API_URL=${ZYLOO_API_URL:-}
       # Payment & wallet
       - FACILITATOR_PRIVATE_KEY=${FACILITATOR_PRIVATE_KEY:-}
       - SURPLUS_WALLET_PRIVATE_KEY=${SURPLUS_WALLET_PRIVATE_KEY:-}

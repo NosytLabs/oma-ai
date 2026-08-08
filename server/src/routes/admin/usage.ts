@@ -65,7 +65,7 @@ app.get("/v1/admin/usage", async (c) => {
     });
   } catch (err) {
     logger.error({ err }, "[admin/usage] query failed");
-    return c.json({ error: { message: "usage query failed" } }, 500);
+    return c.json({ error: { message: "usage query failed", type: "server_error" } }, 500);
   }
 });
 
@@ -90,16 +90,14 @@ app.get("/v1/admin/usage/recent", async (c) => {
       .from(usageRecords);
 
     if (filterUserId) {
-      // @ts-ignore
-      query = query.where(eq(usageRecords.userId, filterUserId));
+      query = query.where(eq(usageRecords.userId, filterUserId)) as any;
     }
 
-    // @ts-ignore
-    const rows = await query.orderBy(desc(usageRecords.createdAt)).limit(limit);
+    const rows = await (query.orderBy(desc(usageRecords.createdAt)).limit(limit) as any);
     return c.json({ data: rows, count: rows.length });
   } catch (err) {
     logger.error({ err }, "[admin/usage/recent] failed");
-    return c.json({ error: { message: "usage query failed" } }, 500);
+    return c.json({ error: { message: "usage query failed", type: "server_error" } }, 500);
   }
 });
 

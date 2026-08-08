@@ -25,7 +25,7 @@
 
 OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 - **Base URL:** `https://api.oma-ai.com/v1`
-- **One API for 22 curated chat models** (20 Venice + 2 Gonka budget tier)
+- **One API for 22 curated chat models** (20 Venice + 2 OMA-AI budget tier)
   across chat completions, image generation, and video generation
 - **Pay your way:**
   1. **API key + credits** — sign in, create a key (`oma_sk_...`), buy credits

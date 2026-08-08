@@ -83,19 +83,19 @@ const messageVariants: Variants = {
 };
 
 export const TypingBubble = () => (
-  <div className="flex h-10 items-center justify-center gap-1 rounded-2xl bg-surface px-4 shadow-sm w-fit">
+  <div className="flex h-6 items-center justify-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-3 shadow-sm w-fit">
     <m.div
-      className="h-2 w-2 rounded-full bg-text-muted"
+      className="h-1.5 w-1.5 rounded-full bg-accent"
       animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.4, 1, 0.4] }}
       transition={{ duration: 1, repeat: Infinity, delay: 0 }}
     />
     <m.div
-      className="h-2 w-2 rounded-full bg-text-muted"
+      className="h-1.5 w-1.5 rounded-full bg-accent"
       animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.4, 1, 0.4] }}
       transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
     />
     <m.div
-      className="h-2 w-2 rounded-full bg-text-muted"
+      className="h-1.5 w-1.5 rounded-full bg-accent"
       animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.4, 1, 0.4] }}
       transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
     />
@@ -291,11 +291,11 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
         {/* ─── THE BUBBLE ─── */}
         <div
           className={`
- relative inline-block max-w-full px-4 py-3.5 leading-relaxed font-mono text-sm break-words [overflow-wrap:anywhere] sm:px-4 md:px-5
+ relative inline-block max-w-full px-4 py-3.5 leading-relaxed font-sans text-[15px] break-words [overflow-wrap:anywhere] sm:px-4 md:px-5
  ${
    isUser
-     ? "bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] border border-[var(--color-accent)]/25 text-text-primary"
-     : "bg-[var(--color-surface)] border border-[var(--color-border)] text-text-secondary"
+     ? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] border border-[var(--color-accent)]/30 text-text-bright shadow-[0_4px_20px_-6px_var(--color-accent-glow)]"
+     : "bg-surface-elevated/70 border border-border-hi text-text-primary shadow-[0_4px_16px_-8px_rgba(0,0,0,0.6)]"
  }
  `}
           style={{
@@ -341,9 +341,25 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 							 markdown renderer the moment streaming ends so the final
 							 answer gets full formatting (bold, code, lists, links). */}
               {waitingForFirstToken ? (
-                <TypingBubble />
+                <div className="flex items-center gap-3 py-1 text-accent">
+                  <TypingBubble />
+                  <span className="text-xs font-mono uppercase tracking-wider animate-pulse">
+                    Streaming...
+                  </span>
+                </div>
               ) : isStreaming ? (
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                <div className="flex flex-col gap-2">
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  <div className="flex items-center gap-2 mt-2 py-0.5 text-accent border-t border-accent/10 pt-2 w-fit">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-accent animate-pulse">
+                      Generating Response...
+                    </span>
+                  </div>
+                </div>
               ) : (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -606,11 +622,11 @@ function CodeBlock({
     <div className="relative group my-4 w-full min-w-0 max-w-full">
       {/* Language badge */}
       {className?.includes("language-") && (
-        <div className="absolute top-0 left-0 z-10 px-2 py-1 bg-[var(--color-surface-elevated)] border-b border-r border-[var(--color-border)] text-[9px] font-mono text-text-muted uppercase tracking-wider rounded-tl-[var(--radius-md)] rounded-br-[var(--radius-md)]">
+        <div className="absolute top-0 left-0 z-10 px-2 py-1 bg-[var(--color-surface-elevated)] border-b border-r border-[var(--color-border)] text-[9px] font-mono text-text-muted uppercase tracking-wider rounded-tl-[10px] rounded-br-[var(--radius-sm)]">
           {className.replace("language-", "")}
         </div>
       )}
-      <div className="chat-scrollbar max-w-full overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)]/20 transition-colors duration-200 ease-out">
+      <div className="chat-scrollbar max-w-full overflow-x-auto rounded-[12px] border border-[var(--color-border)] group-hover:border-[var(--color-accent)]/20 transition-colors duration-200 ease-out">
         <pre
           className="
  block w-max max-w-full min-w-full bg-[var(--color-void)] text-text-primary p-4 pt-8 text-[13px] leading-relaxed
@@ -627,7 +643,7 @@ function CodeBlock({
         aria-label={copied ? "Copied" : "Copy code"}
         className="
  absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px]
- flex items-center justify-center rounded-[var(--radius-md)]
+ flex items-center justify-center rounded-[var(--radius-sm)]
  bg-[var(--color-surface-elevated)] text-text-muted hover:text-text-primary
  opacity-0 group-hover:opacity-100 transition-[opacity,transform,color] duration-200 ease-out active:scale-[0.97]
  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]

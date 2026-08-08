@@ -147,14 +147,18 @@ export const MessageInputRedesigned = forwardRef<
 				size={loading ? "pulse-inner" : "line"}
 				colorVariant={loading ? "ocean" : "mono"}
 				theme="auto"
-				strength={loading ? 0.55 : 0.4}
-				duration={loading ? 2.6 : 3.2}
-				active={beamActive}
+				strength={loading ? 0.75 : 0.6}
+				duration={loading ? 2.0 : 2.8}
+				active={beamActive || focused}
 				borderRadius={14}
 				className="w-full"
 			>
 			<div
-				className="bg-surface relative flex items-end gap-0.5 rounded-[var(--radius-lg)] px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out focus-within:border-accent/50 focus-within:shadow-[0_0_24px_-8px_var(--color-accent-glow)] chat-scrollbar border border-border shadow-sm"
+				className={`bg-surface relative flex items-end gap-0.5 rounded-[var(--radius-lg)] px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out chat-scrollbar border shadow-sm ${
+					focused
+						? "border-accent/60 shadow-[0_0_32px_-4px_var(--color-accent-glow)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white_10%)] scale-[1.01]"
+						: "border-border shadow-sm hover:border-border-hi"
+				}`}
 				role="group"
 				aria-label="New message"
 				aria-busy={loading}
@@ -183,7 +187,7 @@ export const MessageInputRedesigned = forwardRef<
 				/>
 
 				{setWebSearchEnabled && (
-					<div className="flex items-center self-end p-2">
+					<div className="flex items-center self-end p-2 shrink-0">
 							<button
 								type="button"
 								onClick={() => setWebSearchEnabled(!webSearchEnabled)}

@@ -150,7 +150,7 @@ export const NAV_ITEMS: NavItem[] = [
 			"routing",
 			"venice",
 			"surplus",
-			"gonka",
+			"OMA-AI",
 			"failover",
 			"circuit breaker",
 			"upstream",
@@ -158,7 +158,7 @@ export const NAV_ITEMS: NavItem[] = [
 		headings: [
 			{ id: "pr-venice", label: "Venice (Primary)" },
 			{ id: "pr-surplus", label: "Surplus (Fallback)" },
-			{ id: "pr-gonka", label: "Gonka (Budget)" },
+			{ id: "pr-OMA-AI", label: "OMA-AI (Budget)" },
 			{ id: "pr-how", label: "How routing works" },
 		],
 	},

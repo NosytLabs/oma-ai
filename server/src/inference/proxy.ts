@@ -21,11 +21,11 @@ interface ProviderRoute {
   baseUrl: string;
   apiKey: string;
   /** Translate OMA model id → upstream model id (Venice, OpenBroker). */
-  upstreamModel: (omaModelId: string, gonkaId?: string) => string;
+  upstreamModel: (omaModelId: string, omaAiId?: string) => string;
   /** Strip provider-only fields the upstream doesn't accept. */
   extraBody: (body: Record<string, unknown>) => Record<string, unknown>;
   /** Surface the upstream provider name in audit + usage rows. */
-  providerLabel: "venice" | "gonka";
+  providerLabel: "venice" | "oma-ai";
 }
 
 class ProviderError extends Error {
@@ -38,20 +38,20 @@ class ProviderError extends Error {
   }
 }
 
-function resolveProvider(provider: string, _gonkaId?: string): ProviderRoute {
-  if (provider === "gonka") {
-    if (!config.GONKA_API_KEY) {
+function resolveProvider(provider: string, _omaAiId?: string): ProviderRoute {
+  if (provider === "oma-ai") {
+    if (!config.ZYLOO_API_KEY) {
       throw new ProviderError(
-        "Gonka/OpenBroker API key not configured (set GONKA_API_KEY in the server env).",
+        "OMA-AI/OpenBroker API key not configured (set ZYLOO_API_KEY in the server env).",
         503,
       );
     }
     return {
-      baseUrl: `${config.GONKA_API_URL}/v1`,
-      apiKey: config.GONKA_API_KEY,
+      baseUrl: `${config.ZYLOO_API_URL}/v1`,
+      apiKey: config.ZYLOO_API_KEY,
       upstreamModel: (id, gid) => gid ?? id,
       extraBody: (body) => body, // OpenAI-compatible — pass through
-      providerLabel: "gonka",
+      providerLabel: "oma-ai",
     };
   }
   // default: venice
@@ -110,7 +110,7 @@ export interface CallProviderOptions {
   userId: string;
   requestId: string;
   /** Optional override: force a specific provider for testing. */
-  providerOverride?: "venice" | "gonka";
+  providerOverride?: "venice" | "oma-ai";
   /** Skip credit deduction for free website chat */
   skipBilling?: boolean;
 }
@@ -129,11 +129,11 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
 
   const _pricing = getModelPricing(modelId);
 
-  // Resolve upstream provider (Venice vs Gonka/OpenBroker).
+  // Resolve upstream provider (Venice vs OMA-AI/OpenBroker).
   let route: ProviderRoute;
   try {
     const provider = providerOverride ?? modelDef.provider;
-    route = resolveProvider(provider, modelDef.gonkaId);
+    route = resolveProvider(provider, modelDef.omaAiId);
   } catch (err) {
     if (err instanceof ProviderError) {
       throw err;
@@ -144,7 +144,7 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
   const upstreamUrl = `${route.baseUrl}/chat/completions`;
   const upstreamModel = route.upstreamModel(
     modelDef.veniceId ?? modelDef.id,
-    modelDef.gonkaId,
+    modelDef.omaAiId,
   );
 
   const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
@@ -227,7 +227,7 @@ export const FALLBACK_MAP: Record<string, string[]> = {
   "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "minimax-m2.7"],
   "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
 
-  // Gonka Free Models (OpenBroker) — prefer gonka peers first, then budget Venice
+  // OMA-AI Free Models (OpenBroker) — prefer oma-ai peers first, then budget Venice
   "minimax-m2.7": ["kimi-k2.6", "deepseek-v4-flash", "mistral-small-2603"],
   "kimi-k2.6": ["minimax-m2.7", "deepseek-v4-flash", "mistral-small-2603"],
 };
@@ -327,7 +327,7 @@ export async function routeRequestWithFallback(
 export interface RecordUsageArgs {
   userId: string;
   model: string;
-  provider: "venice" | "gonka";
+  provider: "venice" | "oma-ai";
   promptTokens: number;
   outputTokens: number;
   pricing: ReturnType<typeof getModelPricing>;
@@ -491,7 +491,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 export interface StreamingProxyArgs {
   userId: string;
   model: string;
-  provider: "venice" | "gonka";
+  provider: "venice" | "oma-ai";
   promptTokens: number;
   pricing: ReturnType<typeof getModelPricing>;
   requestId: string;
@@ -525,7 +525,7 @@ export function createStreamingProxy(
         const { done, value } = await reader.read();
         if (done) {
           controller.close();
-          // Use upstream-reported usage when available (Gonka sends a final
+          // Use upstream-reported usage when available (OMA-AI sends a final
           // usage chunk at the end of the stream), falling back to estimates.
           const finalTokens = finalOutputTokens ?? recordArgs.outputTokens ?? outputTokens;
           const promptTokens = finalPromptTokens ?? recordArgs.promptTokens;
@@ -541,7 +541,7 @@ export function createStreamingProxy(
             const obj = JSON.parse(payload);
             const choice = obj.choices?.[0];
             // Handle both "content" and "reasoning"/"reasoning_content" deltas.
-            // Gonka/OpenBroker uses "reasoning" for MiniMax chain-of-thought;
+            // OMA-AI/OpenBroker uses "reasoning" for MiniMax chain-of-thought;
             // Venice uses "reasoning_content". Both count as output tokens.
             const delta = choice?.delta?.content ?? choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
             if (typeof delta === "string" && delta.length > 0) {

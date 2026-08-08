@@ -7,7 +7,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function openapiSourcePaths(): string[] {
-	const src = readFileSync(resolve(process.cwd(), "src/routes/openapi.ts"), "utf8");
+	const basePath = process.cwd().endsWith("/server") ? "" : "server/";
+	const src = readFileSync(resolve(process.cwd(), basePath + "src/routes/openapi.ts"), "utf8");
 	return [...src.matchAll(/"(\/v1\/[^"]+|\/health)":\s*\{/g)].map((m) => m[1]);
 }
 
@@ -33,7 +34,8 @@ describe("OpenAPI path inventory", () => {
 	});
 
 	it("registers OpenAPI at /openapi.json and /v1/openapi.json", () => {
-		const src = readFileSync(resolve(process.cwd(), "src/routes/openapi.ts"), "utf8");
+		const basePath = process.cwd().endsWith("/server") ? "" : "server/";
+		const src = readFileSync(resolve(process.cwd(), basePath + "src/routes/openapi.ts"), "utf8");
 		expect(src).toMatch(/openapiRoutes\.get\("\/openapi\.json"/);
 		expect(src).toMatch(/openapiRoutes\.get\("\/v1\/openapi\.json"/);
 	});

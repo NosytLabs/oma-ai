@@ -54,7 +54,7 @@ export function ThemeToggle() {
 				aria-haspopup="menu"
 				aria-expanded={open}
 				aria-controls="theme-menu"
-				aria-label={`Theme · ${activeLabel}. Click to choose.`}
+				aria-label={`Theme: ${activeLabel}`}
 				title={`Theme · ${activeLabel}`}
 				data-theme-toggle
 				className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-[var(--radius-md)] text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-200 ease-out"
@@ -97,6 +97,7 @@ export function ThemeToggle() {
 										type="button"
 										role="menuitemradio"
 										aria-checked={isActive}
+										aria-label={t.name}
 										onClick={() => {
 											setTheme(t.id);
 											setOpen(false);

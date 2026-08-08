@@ -1,6 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { DEFAULT_API_URL as API_URL } from "@/lib/config";
-import { proxyResponse } from "@/lib/api/proxy-response";
+import { proxy } from "@/lib/api/proxy-handler";
 
 export const runtime = "nodejs";
 
@@ -14,31 +12,6 @@ export const runtime = "nodejs";
  * usage, export, videos, ...). This route forwards method, body, cookies
  * and preserves the rate-limit / daily-limit headers the UI reads.
  */
-
-async function proxy(req: NextRequest) {
-	const path = req.nextUrl.pathname.replace(/^\/api/, "");
-	const url = new URL(`${API_URL}${path}${req.nextUrl.search}`);
-
-	const headers = new Headers(req.headers);
-	headers.delete("host");
-
-	try {
-		const res = await fetch(url, {
-			method: req.method,
-			headers,
-			body: ["GET", "HEAD"].includes(req.method) ? undefined : req.body,
-			duplex: "half",
-			signal: AbortSignal.timeout(120_000),
-		} as RequestInit);
-
-		return proxyResponse(res);
-	} catch {
-		return NextResponse.json(
-			{ error: { message: "Backend unreachable" } },
-			{ status: 502 },
-		);
-	}
-}
 
 export const GET = proxy;
 export const POST = proxy;

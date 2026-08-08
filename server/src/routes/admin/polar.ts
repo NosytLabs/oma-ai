@@ -31,7 +31,7 @@ const refundSchema = z.object({
 
 app.post("/v1/admin/polar/refund", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const body = await c.req.json().catch(() => null);
   const parsed = refundSchema.safeParse(body);
@@ -40,6 +40,7 @@ app.post("/v1/admin/polar/refund", async (c) => {
       {
         error: {
           message: "Invalid refund payload",
+          type: "invalid_request",
           issues: parsed.error.flatten(),
         },
       },
@@ -49,7 +50,7 @@ app.post("/v1/admin/polar/refund", async (c) => {
 
   const adminId = c.get("userId");
   if (!adminId) {
-    return c.json({ error: { message: "auth required" } }, 401);
+    return c.json({ error: { message: "auth required", type: "authentication_error" } }, 401);
   }
 
   const { paymentId, amountCents, reason, userId: pinnedUserId } = parsed.data;
@@ -96,6 +97,7 @@ app.post("/v1/admin/polar/refund", async (c) => {
           {
             error: {
               message: `Polar refund failed: ${r.status} ${detail}`,
+              type: "service_unavailable",
             },
           },
           r.status as ContentfulStatusCode,
@@ -109,7 +111,7 @@ app.post("/v1/admin/polar/refund", async (c) => {
         "[admin/polar/refund] REST fallback also failed",
       );
       return c.json(
-        { error: { message: "Polar refund request failed" } },
+        { error: { message: "Polar refund request failed", type: "service_unavailable" } },
         502,
       );
     }
@@ -185,7 +187,7 @@ app.post("/v1/admin/polar/refund", async (c) => {
 // GET /v1/admin/polar/payments — list recent payments
 app.get("/v1/admin/polar/payments", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const searchParams = new URLSearchParams();
   const limit = parseInt(c.req.query("limit") ?? "20", 10);
@@ -198,18 +200,18 @@ app.get("/v1/admin/polar/payments", async (c) => {
     const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/payments?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
-    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
+    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}`, type: "service_unavailable" } }, r.status as ContentfulStatusCode);
     const data = await r.json();
     return c.json(data);
   } catch (err) {
-    return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
+    return c.json({ error: { message: String((err as Error).message ?? err), type: "server_error" } }, 500);
   }
 });
 
 // GET /v1/admin/polar/customers — list customers
 app.get("/v1/admin/polar/customers", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const searchParams = new URLSearchParams();
   const limit = parseInt(c.req.query("limit") ?? "20", 10);
@@ -220,18 +222,18 @@ app.get("/v1/admin/polar/customers", async (c) => {
     const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/customers?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
-    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
+    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}`, type: "service_unavailable" } }, r.status as ContentfulStatusCode);
     const data = await r.json();
     return c.json(data);
   } catch (err) {
-    return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
+    return c.json({ error: { message: String((err as Error).message ?? err), type: "server_error" } }, 500);
   }
 });
 
 // POST /v1/admin/polar/checkouts — create a checkout link
 app.post("/v1/admin/polar/checkouts", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const body = await c.req.json();
   const { productId, customerEmail, customerName, successUrl, cancelUrl } = body as {
@@ -242,7 +244,7 @@ app.post("/v1/admin/polar/checkouts", async (c) => {
     cancelUrl?: string;
   };
   if (!productId) {
-    return c.json({ error: { message: "productId is required" } }, 400);
+    return c.json({ error: { message: "productId is required", type: "invalid_request" } }, 400);
   }
   const payload: Record<string, unknown> = { productId };
   if (customerEmail) payload.customerEmail = customerEmail;
@@ -255,18 +257,18 @@ app.post("/v1/admin/polar/checkouts", async (c) => {
       headers: polarHeaders(),
       body: JSON.stringify(payload),
     });
-    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
+    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}`, type: "service_unavailable" } }, r.status as ContentfulStatusCode);
     const data = await r.json();
     return c.json(data);
   } catch (err) {
-    return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
+    return c.json({ error: { message: String((err as Error).message ?? err), type: "server_error" } }, 500);
   }
 });
 
 // GET /v1/admin/polar/products — list products
 app.get("/v1/admin/polar/products", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const searchParams = new URLSearchParams();
   const limit = parseInt(c.req.query("limit") ?? "20", 10);
@@ -277,18 +279,18 @@ app.get("/v1/admin/polar/products", async (c) => {
     const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/products?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
-    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
+    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}`, type: "service_unavailable" } }, r.status as ContentfulStatusCode);
     const data = await r.json();
     return c.json(data);
   } catch (err) {
-    return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
+    return c.json({ error: { message: String((err as Error).message ?? err), type: "server_error" } }, 500);
   }
 });
 
 // GET /v1/admin/polar/subscriptions — list subscriptions
 app.get("/v1/admin/polar/subscriptions", async (c) => {
   if (!config.POLAR_ACCESS_TOKEN) {
-    return c.json({ error: { message: "Polar not configured" } }, 400);
+    return c.json({ error: { message: "Polar not configured", type: "not_configured" } }, 400);
   }
   const searchParams = new URLSearchParams();
   const limit = parseInt(c.req.query("limit") ?? "20", 10);
@@ -299,11 +301,11 @@ app.get("/v1/admin/polar/subscriptions", async (c) => {
     const r = await fetch(`${polarApiBaseUrl(config.POLAR_SERVER)}/v1/subscriptions?${searchParams.toString()}`, {
       headers: polarHeaders(),
     });
-    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}` } }, r.status as ContentfulStatusCode);
+    if (!r.ok) return c.json({ error: { message: `Polar API error: ${r.status}`, type: "service_unavailable" } }, r.status as ContentfulStatusCode);
     const data = await r.json();
     return c.json(data);
   } catch (err) {
-    return c.json({ error: { message: String((err as Error).message ?? err) } }, 500);
+    return c.json({ error: { message: String((err as Error).message ?? err), type: "server_error" } }, 500);
   }
 });
 

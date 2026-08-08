@@ -5,7 +5,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 
 export const metadata: Metadata = {
 	title: "AI Models Catalog — pricing & capabilities",
-	description: `Browse ${MODEL_COUNT} curated AI models — GLM 5.2, Qwen 3.7 Plus, DeepSeek V4 Flash, and more — with transparent per-token pricing via Venice and Gonka. OpenAI-compatible.`,
+	description: `Browse ${MODEL_COUNT} curated AI models — GLM 5.2, Qwen 3.7 Plus, DeepSeek V4 Flash, and more — with transparent per-token pricing via Venice and OMA-AI. OpenAI-compatible.`,
 	keywords: [
 		"AI models",
 		"OpenAI compatible API",

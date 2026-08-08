@@ -51,7 +51,7 @@ app.get("/v1/admin/audit", async (c) => {
     const fromDate = new Date(fromStr);
     if (Number.isNaN(fromDate.getTime())) {
       return c.json(
-        { error: { message: "Invalid 'from' timestamp" } },
+        { error: { message: "Invalid 'from' timestamp", type: "invalid_request" } },
         400,
       );
     }
@@ -61,7 +61,7 @@ app.get("/v1/admin/audit", async (c) => {
     const toDate = new Date(toStr);
     if (Number.isNaN(toDate.getTime())) {
       return c.json(
-        { error: { message: "Invalid 'to' timestamp" } },
+        { error: { message: "Invalid 'to' timestamp", type: "invalid_request" } },
         400,
       );
     }
@@ -71,14 +71,14 @@ app.get("/v1/admin/audit", async (c) => {
     const cursor = decodeAuditCursor(cursorStr);
     if (!cursor) {
       return c.json(
-        { error: { message: "Invalid cursor" } },
+        { error: { message: "Invalid cursor", type: "invalid_request" } },
         400,
       );
     }
     const cursorDate = new Date(cursor.ts);
     if (Number.isNaN(cursorDate.getTime())) {
       return c.json(
-        { error: { message: "Invalid cursor timestamp" } },
+        { error: { message: "Invalid cursor timestamp", type: "invalid_request" } },
         400,
       );
     }
@@ -129,7 +129,7 @@ app.get("/v1/admin/audit", async (c) => {
     });
   } catch (err) {
     logger.error({ err }, "[admin/audit] failed");
-    return c.json({ error: { message: "audit query failed" } }, 500);
+    return c.json({ error: { message: "audit query failed", type: "server_error" } }, 500);
   }
 });
 

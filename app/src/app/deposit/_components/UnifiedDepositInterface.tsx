@@ -305,12 +305,13 @@ export function UnifiedDepositInterface({
 											className="group flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 font-mono text-sm text-text-bright transition-colors duration-200 ease-out hover:border-accent/40"
 											aria-label="Copy deposit address"
 										>
-											<span className="truncate">
+											<span className="truncate tabular-nums">
 												{shortAddr(instructions.depositAddress)}
 											</span>
 											<Clipboard
 												className="h-4 w-4 shrink-0 text-text-muted group-hover:text-accent"
 												aria-hidden="true"
+												aria-label="Copy icon"
 											/>
 										</button>
 										<div className="mt-3 grid grid-cols-1 gap-1 text-[11px] text-text-muted sm:grid-cols-2">
@@ -325,7 +326,7 @@ export function UnifiedDepositInterface({
 														)
 													}
 													aria-label="Copy USDC contract address"
-													className="font-mono text-text-secondary hover:text-accent"
+													className="font-mono text-text-secondary hover:text-accent tabular-nums"
 												>
 													{shortAddr(instructions.usdcContract)}
 												</button>
@@ -338,7 +339,7 @@ export function UnifiedDepositInterface({
 														void handleCopy(instructions.memo, "Memo")
 													}
 													aria-label="Copy deposit identification memo"
-													className="font-mono text-text-secondary hover:text-accent"
+													className="font-mono text-text-secondary hover:text-accent tabular-nums"
 												>
 													{instructions.memo}
 												</button>
@@ -349,7 +350,7 @@ export function UnifiedDepositInterface({
 												{instructions.memoNote}
 											</p>
 										)}
-										<p className="mt-2 text-[11px] text-text-muted">
+										<p className="mt-2 text-[11px] text-text-muted tabular-nums">
 											Min ${(instructions.minDepositCents / 100).toFixed(2)} ·
 											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={""}
 											{instructions.creditsPerCent * 100} credits
@@ -370,7 +371,7 @@ export function UnifiedDepositInterface({
 											placeholder="25.00"
 											value={amountUsd}
 											onChange={(e) => handleAmountChange(e.target.value)}
-											className="w-full text-xl font-semibold bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+											className="w-full text-xl font-semibold bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 										/>
 									</div>
 
@@ -387,7 +388,7 @@ export function UnifiedDepositInterface({
 											placeholder="0x…"
 											value={txHash}
 											onChange={(e) => setTxHash(e.target.value.trim())}
-											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 										/>
 										<p className="mt-2 text-[11px] text-text-muted">
 											Find this on{""}
@@ -395,7 +396,7 @@ export function UnifiedDepositInterface({
 												href={`https://basescan.io/address/${instructions.depositAddress}`}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="inline-flex items-center gap-1 text-accent hover:underline"
+												className="inline-flex items-center gap-1 text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 											>
 												Basescan
 												<ExternalLink className="h-3 w-3" />
@@ -436,19 +437,19 @@ export function UnifiedDepositInterface({
 															>
 																{d.status}
 															</span>
-															<span>${d.amountUsd} USDC</span>
+															<span className="tabular-nums">${d.amountUsd} USDC</span>
 															{d.txHash && (
 																<a
 																	href={`https://basescan.io/tx/${d.txHash}`}
 																	target="_blank"
 																	rel="noopener noreferrer"
-																	className="font-mono text-accent hover:underline"
+																	className="font-mono text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 																>
 																	{shortTx(d.txHash)}
 																</a>
 															)}
 														</div>
-														<span className="text-text-muted">
+														<span className="text-text-muted tabular-nums">
 															{new Date(d.createdAt).toLocaleDateString()}
 														</span>
 													</li>

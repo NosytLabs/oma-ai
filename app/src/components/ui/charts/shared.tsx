@@ -28,7 +28,7 @@ const CHART_COLORS = {
 	accentHover: "var(--color-accent-hover)",
 	secondary: "var(--color-secondary)",
 	tertiary: "var(--color-tertiary)",
-	emerald: "var(--color-provider-gonka)",
+	emerald: "var(--color-provider-oma-ai)",
 	blue: "var(--color-tertiary)",
 	pink: "var(--color-pink)",
 	success: "var(--color-success)",
@@ -37,7 +37,7 @@ const CHART_COLORS = {
 
 	// Provider colors (used by SpendByProvider / ProviderHealth)
 	providerVenice: "var(--color-provider-venice)",
-	providerGonka: "var(--color-provider-gonka)",
+	providerOmaAi: "var(--color-provider-oma-ai)",
 
 	// Axis / grid neutrals
 	axis: "var(--color-text-tertiary)",
@@ -79,7 +79,7 @@ export function makeGradientId(base: string, instanceId?: string): string {
 export function providerColor(provider: string): string {
 	const p = provider.toLowerCase();
 	if (p.includes("venice")) return CHART_COLORS.providerVenice;
-	if (p.includes("gonka")) return CHART_COLORS.providerGonka;
+	if (p.includes("oma-ai")) return CHART_COLORS.providerOmaAi;
 	return CHART_COLORS.accent;
 }
 

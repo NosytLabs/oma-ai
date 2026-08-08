@@ -220,36 +220,44 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
  className="hidden md:inline-block mx-1 h-4 w-px bg-border/60"
  />
 
- {isAuthenticated && !isDemo ? (
- <NavbarUserMenu
- evmAddress={evmAddress}
- onSignOut={signOut}
- isAdmin={isAdmin}
- />
- ) : (
- <Magnetic strength={6}>
- <Link
- href="/login"
- className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent/[0.08] px-3.5 text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:border-accent/70 hover:bg-accent/15 hover:shadow-[0_0_18px_-6px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
- >
- Sign in
- <svg
- className="h-3 w-3 opacity-70"
- viewBox="0 0 24 24"
- fill="none"
- stroke="currentColor"
- strokeWidth="2.5"
- aria-hidden="true"
- >
- <path
- d="M5 12h14M13 6l6 6-6 6"
- strokeLinecap="round"
- strokeLinejoin="round"
- />
- </svg>
- </Link>
- </Magnetic>
- )}
+	{isAuthenticated && !isDemo ? (
+		<NavbarUserMenu
+			evmAddress={evmAddress}
+			onSignOut={signOut}
+			isAdmin={isAdmin}
+		/>
+	) : (
+		<div className="flex items-center gap-1.5 sm:gap-2">
+			<Link
+				href="/login"
+				className="hidden sm:inline-flex h-9 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+			>
+				Sign in
+			</Link>
+			<Magnetic strength={6}>
+				<Link
+					href="/login"
+					className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-4 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				>
+					Get started
+					<svg
+						className="h-3 w-3"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.5"
+						aria-hidden="true"
+					>
+						<path
+							d="M5 12h14M13 6l6 6-6 6"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+					</svg>
+				</Link>
+			</Magnetic>
+		</div>
+	)}
 
  {/* Mobile toggle */}
  <button

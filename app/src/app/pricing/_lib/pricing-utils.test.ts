@@ -34,6 +34,7 @@ describe("pricing-utils", () => {
 			inputPer1M: 1.25,
 			outputPer1M: 5,
 			ctx: "128K",
+			contextTokens: 128000,
 		});
 	});
 
