@@ -14,7 +14,8 @@
   "pnpm": {
     "overrides": {
       "sharp": "^0.35.3",
-      "postcss": ">=8.5.25"
+      "postcss": ">=8.5.25",
+      "esbuild": ">=0.25.0"
     }
   },
   "license": "MIT",
