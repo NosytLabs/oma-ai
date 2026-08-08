@@ -57,10 +57,9 @@ describe("ModelsPage", () => {
 	it("renders model cards when models are present", async () => {
 		render(<ModelsPage />);
 		await waitFor(() => {
-			// Real Venice catalog labels Claude Opus with sub-versions
-			// (4.5 / 4.6 / 4.7 / 4.8), not "Claude Opus 4" as a plain string.
+			// Real Zyloo catalog labels Gemini 3 Flash correctly now.
 			// Use a regex so the assertion stays valid across catalog refreshes.
-			expect(screen.getAllByText(/Claude Opus/i).length).toBeGreaterThan(0);
+			expect(screen.getAllByText(/Gemini 3 Flash/i).length).toBeGreaterThan(0);
 		});
 	});
 
@@ -79,8 +78,8 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		await waitFor(() => {
 			const searchInput = screen.getByPlaceholderText(/search models/i);
-			fireEvent.change(searchInput, { target: { value: "claude" } });
-			expect(screen.getAllByText(/claude/i).length).toBeGreaterThan(0);
+			fireEvent.change(searchInput, { target: { value: "gemini" } });
+			expect(screen.getAllByText(/gemini/i).length).toBeGreaterThan(0);
 		});
 	});
 
