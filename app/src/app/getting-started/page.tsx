@@ -27,8 +27,8 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get a handful of free messages on a budget model every day — just to feel how it works.
-				Try the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">image</Link> and video tabs too. No
+				message. Guests get a handful of free messages every day using our fast, intelligent budget models — just to see how it works.
+				You can chat, write code, or even generate <Link href="/chat?mode=image" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">images</Link> and video. No
 				sign-up, no credit card, nothing to install.
 			</>
 		),
@@ -38,10 +38,9 @@ const STEPS = [
 		title: "Sign in with email or wallet",
 		body: (
 			<>
-				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">/login</Link>. Choose{""}
-				<strong className="text-text-bright">email magic link</strong> (simplest — we email you a sign-in
-				link, no password) or <strong className="text-text-bright">wallet (SIWE)</strong> if you&apos;re
-				crypto-native. Signing in unlocks paid models, saved conversations, and higher limits.
+				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{""}
+				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
+				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT}+ frontier models like GPT-4o and Gemini, saved conversations, and higher rate limits.
 			</>
 		),
 	},
@@ -50,10 +49,9 @@ const STEPS = [
 		title: "Create an API key",
 		body: (
 			<>
-				In your <Link href="/dashboard" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">dashboard</Link> (API Keys
-				tab), create a key. It looks like <code className="font-mono text-accent">oma_sk_...</code> — copy it
-				somewhere safe and treat it like a password. You can create several (one per app) and revoke any of
-				them anytime.
+				In your <Link href="/dashboard" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">dashboard</Link>,
+				click &quot;Create Key&quot;. It will look like <code className="font-mono text-accent">oma_sk_...</code>. Copy it
+				and treat it like a password. You use this one single key to talk to any of the models OMA supports. You can easily revoke it later if you need to.
 			</>
 		),
 	},
@@ -62,12 +60,9 @@ const STEPS = [
 		title: "Add a little credit",
 		body: (
 			<>
-				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">/deposit</Link>. Pay with a
-				regular card (Visa / Mastercard / Apple Pay) or deposit USDC on Base. Credits never expire, and a
-				$5 top-up (500 credits) covers tens of thousands of budget chat requests. If you&apos;re an agent and never want an account at all,
-				skip this step — the{""}
-				<Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 pay-per-request flow</Link>{""}
-				settles each call in USDC automatically.
+				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Pay with any standard credit card (Visa, Mastercard, Apple Pay) or send USDC on Base. Credits never expire, and a simple $5 deposit gives you enough tokens to handle thousands of requests.
+				<br /><br />
+				<strong>Autonomous Agent option:</strong> If you are writing software agents and prefer not to pre-fund an account, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 pay-per-request flow</Link> to let your software pay for each request directly in USDC on-chain.
 			</>
 		),
 	},
@@ -76,10 +71,7 @@ const STEPS = [
 		title: "Make your first API call",
 		body: (
 			<>
-				That&apos;s it. You can now call any model from any code, or plug OMA into your favourite AI app by
-				changing the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>.
-				Try the one-line examples below, or jump to the{""}
-				<Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
+				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">gemini-3.1-pro-preview</code> or <code className="font-mono text-text-bright">gpt-4o</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
 			</>
 		),
 	},
@@ -89,9 +81,9 @@ const SAMPLE_CODE = `curl https://api.oma-ai.com/v1/chat/completions \\
  -H "Authorization: Bearer $OMA_KEY" \\
  -H "Content-Type: application/json" \\
  -d '{
- "model": "llama-3.3-70b",
- "messages": [{"role": "user", "content": "Say hello in one short sentence"}],
- "max_tokens": 64
+  "model": "gemini-3-flash-preview",
+  "messages": [{"role": "user", "content": "Say hello in one short sentence"}],
+  "max_tokens": 64
  }'`;
 
 const SAMPLE_PY = `from openai import OpenAI

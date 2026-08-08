@@ -188,20 +188,20 @@ Content-Type: application/json`;
  api.oma-ai.com/v1/chat/completions
  </span>
  <span
- className={cn(
- "ml-auto shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-wider",
- isSettled
- ? "bg-accent/15 text-accent"
- : isStreaming
- ? "bg-info/15 text-info"
- : "bg-warning/15 text-warning",
- )}
+   className={cn(
+     "ml-auto shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-wider pr-3",
+     isSettled
+       ? "bg-accent/15 text-accent"
+       : isStreaming
+         ? "bg-info/15 text-info"
+         : "bg-warning/15 text-warning animate-pulse",
+   )}
  >
- {isSettled
- ? `200 OK · ${ms || 142}ms`
- : isStreaming
- ? "streaming…"
- : "sending…"}
+   {isSettled
+     ? `200 OK · ${ms || 142}ms`
+     : isStreaming
+       ? "streaming…"
+       : "sending…"}
  </span>
  </div>
 

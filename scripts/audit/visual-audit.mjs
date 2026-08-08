@@ -122,7 +122,11 @@ for (const p of pages) {
 				.catch(() => null);
 			await page.waitForTimeout(400);
 		} else {
-			await page.waitForTimeout(1000);
+			// Scroll down and back up to trigger lazy-loaded sections
+			await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+			await page.waitForTimeout(800);
+			await page.evaluate(() => window.scrollTo(0, 0));
+			await page.waitForTimeout(800);
 		}
 		const status = res?.status();
 		const metrics = await pageMetrics(page);

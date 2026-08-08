@@ -116,14 +116,14 @@ export function Hero() {
 
             <Link
               href="/chat"
-              className="group inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border-hi bg-surface/50 backdrop-blur-sm px-8 font-mono text-sm font-medium text-text-primary transition-[border-color,transform,background-color] duration-200 ease-out active:scale-[0.97] hover:border-accent/50 hover:bg-surface focus-ring"
+              className="rounded-full bg-surface-elevation border border-border/50 px-6 py-3.5 hover:bg-surface-elevation/80 hover:border-border transition-all flex items-center gap-2 relative group"
             >
               <Sparkles
                 className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors duration-200 ease-out"
                 strokeWidth={1.5}
                 aria-hidden="true"
               />
-              <span className="text-base tracking-wide">Try chat</span>
+              <span className="text-base tracking-wide text-text-muted group-hover:text-text-primary transition-colors">Try chat</span>
             </Link>
           </m.div>
 
@@ -131,7 +131,7 @@ export function Hero() {
             {...reveal(4, entrance)}
             className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px] min-h-[420px] md:min-h-[400px]"
           >
-            <div className="transform-gpu transition-transform duration-200 ease-out duration-200 ease-out hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[420px] md:h-[400px]">
+            <div className="transform-gpu transition-transform duration-200 ease-out hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center h-[420px] md:h-[400px]">
               <LiveRequestCard className="shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50 w-full max-w-[706px]" />
             </div>
           </m.div>
