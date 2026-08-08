@@ -7,6 +7,7 @@ export default function ModelDetailLoading() {
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
 					{[...Array(6)].map((_, i) => (
 						<div
+							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton grid
 							key={i}
 							className="h-24 border border-border bg-panel rounded-[var(--radius-sm)]"
 						/>

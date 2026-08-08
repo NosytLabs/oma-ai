@@ -5,6 +5,7 @@ export default function Loading() {
 				<div className="h-8 w-32 bg-surface" />
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 					{[...Array(8)].map((_, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: skeleton grid
 						<div key={i} className="h-32 border border-border bg-panel" />
 					))}
 				</div>

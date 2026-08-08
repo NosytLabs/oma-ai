@@ -1,11 +1,10 @@
 "use client";
 
-
-
 import {
 	Brain,
 	Check,
 	ChevronDown,
+	Image as ImageIcon,
 	Link2,
 	Mic,
 	Music2,
@@ -18,23 +17,18 @@ import {
 	Volume2,
 	Wand2,
 	Zap,
-	Image as ImageIcon,
 } from "lucide-react";
-import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { Suspense, useMemo } from "react";
-import {
-	TIER_COLORS,
-	type Modality,
-} from "@/lib/models-data";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Button } from "@/components/ui/button";
-
-import { useModelFilters, SORT_OPTIONS } from "./_hooks/useModelFilters";
+import { springs } from "@/lib/animation";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { type Modality, TIER_COLORS } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
+import { SORT_OPTIONS, useModelFilters } from "./_hooks/useModelFilters";
 
 const TIER_ICONS: Record<string, React.ReactNode> = {
 	budget: <Zap className="h-4 w-4" />,
@@ -132,12 +126,14 @@ function ModelsPageInner() {
 						<p className="text-text-secondary mt-1 font-mono text-sm">
 							{totalModels} models available
 							{isLoadingModels && (
-								<span className="text-text-muted ml-2">(loading full catalog…)</span>
+								<span className="text-text-muted ml-2">
+									(loading full catalog…)
+								</span>
 							)}
 							{visibleModels < totalModels && (
 								<span className="text-text-muted">
-									{" "}·{" "}
-									<span className="text-accent">{visibleModels}</span> shown
+									{" "}
+									· <span className="text-accent">{visibleModels}</span> shown
 								</span>
 							)}
 						</p>
@@ -218,7 +214,9 @@ function ModelsPageInner() {
 											aria-selected={sortBy === opt.value}
 										>
 											{opt.label}
-											{sortBy === opt.value && <Check className="h-3.5 w-3.5" />}
+											{sortBy === opt.value && (
+												<Check className="h-3.5 w-3.5" />
+											)}
 										</button>
 									))}
 								</m.div>
@@ -267,8 +265,9 @@ function ModelsPageInner() {
 													{groupIcon && (
 														<span
 															className={`p-1.5 rounded-[var(--radius-md)] ${
-																TIER_COLORS[group.tier as keyof typeof TIER_COLORS]?.bg ||
-																"bg-panel"
+																TIER_COLORS[
+																	group.tier as keyof typeof TIER_COLORS
+																]?.bg || "bg-panel"
 															}`}
 														>
 															{groupIcon}
@@ -284,11 +283,7 @@ function ModelsPageInner() {
 
 												<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
 													{group.models.map((model, i) => (
-														<ModelCard
-															key={model.id}
-															model={model}
-															index={i}
-														/>
+														<ModelCard key={model.id} model={model} index={i} />
 													))}
 												</div>
 											</section>
@@ -299,7 +294,9 @@ function ModelsPageInner() {
 						) : (
 							<div className="text-center py-20">
 								<Brain className="h-12 w-12 text-text-muted mx-auto mb-4" />
-								<p className="text-text-secondary">No models match your search.</p>
+								<p className="text-text-secondary">
+									No models match your search.
+								</p>
 								<button
 									type="button"
 									onClick={resetFilters}
@@ -337,6 +334,7 @@ export default function ModelsPage() {
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
 								{Array.from({ length: 8 }).map((_, i) => (
 									<div
+										// biome-ignore lint/suspicious/noArrayIndexKey: Skeleton grid uses index
 										key={i}
 										className="h-36 bg-panel rounded-[var(--radius-xl)] animate-pulse"
 									/>

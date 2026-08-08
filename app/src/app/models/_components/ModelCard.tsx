@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
+import type React from "react";
+import { InViewFade } from "@/components/motion/in-view-fade";
 import { ModelLogo } from "@/components/ui/model-logo";
 import {
-	PROVIDER_COLORS,
 	MODALITY_LABELS,
 	type Model,
+	PROVIDER_COLORS,
 } from "@/lib/models-data";
-import { InViewFade } from "@/components/motion/in-view-fade";
 
 interface ModelCardProps {
 	model: Model;
@@ -63,7 +63,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				</div>
 
 				<div className="mt-4 flex flex-wrap gap-2">
-					<div className="flex flex-wrap gap-1.5" aria-label="Modalities">
+					<div className="flex flex-wrap gap-1.5">
 						{inModalities.includes("text") && (
 							<span
 								title="Text input"
@@ -162,11 +162,11 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						{isNonChat &&
 						typeof model.pricePerUnit === "number" &&
 						model.pricePerUnit > 0 ? (
-							<span className="text-accent" title={`Price${model.priceUnit ?? ""}`}>
-								$
-								{model.pricePerUnit.toFixed(
-									model.pricePerUnit < 0.1 ? 4 : 3,
-								)}
+							<span
+								className="text-accent"
+								title={`Price${model.priceUnit ?? ""}`}
+							>
+								${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}
 								{model.priceUnit ?? ""}
 							</span>
 						) : (

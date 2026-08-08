@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme, THEME_LIST, type Theme } from "@/components/ThemeProvider";
 import { Check } from "lucide-react";
+import { THEME_LIST, type Theme, useTheme } from "@/components/ThemeProvider";
 
 /**
  * Appearance settings — theme switcher surfaced inside /settings.
@@ -41,7 +41,7 @@ export function AppearanceSection() {
 				</div>
 			</header>
 
-			<ul
+			<div
 				role="radiogroup"
 				aria-label="Accent theme"
 				className="grid grid-cols-1 gap-3 sm:grid-cols-2"
@@ -49,7 +49,8 @@ export function AppearanceSection() {
 				{THEME_LIST.map((t) => {
 					const isActive = theme === t.id;
 					return (
-						<li key={t.id}>
+						<div key={t.id} className="relative">
+							{/* biome-ignore lint/a11y/useSemanticElements: custom styled radio */}
 							<button
 								type="button"
 								role="radio"
@@ -72,10 +73,14 @@ export function AppearanceSection() {
 									}}
 								/>
 								<span className="min-w-0 flex-1">
-									<span className={`block truncate text-sm font-semibold transition-colors duration-200 ease-out ${isActive ? 'text-text-bright' : 'text-text-secondary group-hover:text-text-bright'}`}>
+									<span
+										className={`block truncate text-sm font-semibold transition-colors duration-200 ease-out ${isActive ? "text-text-bright" : "text-text-secondary group-hover:text-text-bright"}`}
+									>
 										{t.name}
 									</span>
-									<span className={`block truncate text-[11px] mt-0.5 transition-colors duration-200 ease-out ${isActive ? 'text-text-secondary' : 'text-text-muted group-hover:text-text-secondary'}`}>
+									<span
+										className={`block truncate text-[11px] mt-0.5 transition-colors duration-200 ease-out ${isActive ? "text-text-secondary" : "text-text-muted group-hover:text-text-secondary"}`}
+									>
 										{t.hint}
 									</span>
 								</span>
@@ -86,10 +91,10 @@ export function AppearanceSection() {
 									/>
 								) : null}
 							</button>
-						</li>
+						</div>
 					);
 				})}
-			</ul>
+			</div>
 		</section>
 	);
 }

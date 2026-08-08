@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import {
+	distinctProviders,
 	getModelsByTier,
 	loadModels,
-	MODELS,
-	distinctProviders,
 	MODALITY_LABELS,
 	MODALITY_ORDER,
+	MODELS,
 	type Model,
 } from "@/lib/models-data";
 import { TIER_LABELS } from "../_lib/labels";
@@ -61,7 +61,6 @@ function sortModels(models: Model[], sort: SortKey): Model[] {
 			return sorted.sort(
 				(a, b) => (TIER_SORT[a.tier] ?? 0) - (TIER_SORT[b.tier] ?? 0),
 			);
-		case "name":
 		default:
 			return sorted.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 	}
@@ -106,9 +105,7 @@ export function useModelFilters() {
 	const [selectedProvider, setSelectedProvider] = useState<string | null>(
 		urlProvider,
 	);
-	const [sortBy, setSortBy] = useState<SortKey>(
-		(urlSort as SortKey) || "name",
-	);
+	const [sortBy, setSortBy] = useState<SortKey>((urlSort as SortKey) || "name");
 	const [copied, setCopied] = useState(false);
 	const [sortOpen, setSortOpen] = useState(false);
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
@@ -151,9 +148,9 @@ export function useModelFilters() {
 	const allInputModalities = useMemo(() => {
 		const modalities = new Set<string>();
 		safeModels.forEach((model) => {
-			(model.inputModalities ?? ["text"]).forEach((modality) =>
-				modalities.add(modality),
-			);
+			(model.inputModalities ?? ["text"]).forEach((modality) => {
+				modalities.add(modality);
+			});
 		});
 		return Array.from(modalities).sort();
 	}, [safeModels]);
@@ -161,9 +158,9 @@ export function useModelFilters() {
 	const allOutputModalities = useMemo(() => {
 		const modalities = new Set<string>();
 		safeModels.forEach((model) => {
-			(model.outputModalities ?? ["text"]).forEach((modality) =>
-				modalities.add(modality),
-			);
+			(model.outputModalities ?? ["text"]).forEach((modality) => {
+				modalities.add(modality);
+			});
 		});
 		return Array.from(modalities).sort();
 	}, [safeModels]);
@@ -171,7 +168,9 @@ export function useModelFilters() {
 	const allCapabilities = useMemo(() => {
 		const caps = new Set<string>();
 		safeModels.forEach((model) => {
-			model.capabilities.forEach((cap) => caps.add(cap));
+			model.capabilities.forEach((cap) => {
+				caps.add(cap);
+			});
 		});
 		return Array.from(caps).sort();
 	}, [safeModels]);
@@ -266,8 +265,12 @@ export function useModelFilters() {
 		if (sortBy === "tier") {
 			const sections: ModelGroup[] = [];
 
-			const TIER_ORDER_CANONICAL: ("budget" | "mid" | "premium" | "frontier")[] =
-				["budget", "mid", "premium", "frontier"];
+			const TIER_ORDER_CANONICAL: (
+				| "budget"
+				| "mid"
+				| "premium"
+				| "frontier"
+			)[] = ["budget", "mid", "premium", "frontier"];
 			for (const tier of TIER_ORDER_CANONICAL) {
 				const ms = modelsByTier[tier] || [];
 				if (ms.length > 0) {

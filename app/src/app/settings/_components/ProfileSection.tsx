@@ -2,18 +2,19 @@
 
 import { Calendar, Fingerprint, Shield, Wallet } from "lucide-react";
 import { useState } from "react";
-import type { User } from "@/lib/api";
-import { formatDateTime, formatAddress } from "@/lib/utils";
+import type { BetterAuthUser } from "@/lib/hooks/useAuth";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
+import { formatAddress, formatDateTime } from "@/lib/utils";
 
 interface ProfileSectionProps {
-	user: User | null;
+	user: BetterAuthUser | null;
 	evmAddress?: string | null;
-	onUserChange?: (user: User) => void;
-	onError?: (error: string) => void;
 }
 
-function authMethodLabel(user: User | null, evmAddress: string | null): string {
+function authMethodLabel(
+	user: BetterAuthUser | null,
+	evmAddress: string | null,
+): string {
 	if (evmAddress) return "Wallet (SIWE / EIP-4361)";
 	if (user?.isAnonymous) return "Guest session";
 	if (user?.emailVerified) return "Magic-link email";
@@ -21,10 +22,7 @@ function authMethodLabel(user: User | null, evmAddress: string | null): string {
 	return "Not set";
 }
 
-export function ProfileSection({
-	user,
-	evmAddress,
-}: ProfileSectionProps) {
+export function ProfileSection({ user, evmAddress }: ProfileSectionProps) {
 	const linkedWallet = evmAddress ?? user?.evmAddress ?? null;
 	const [soundOn, setSoundOn] = useState(() => {
 		if (typeof window === "undefined") return true;
@@ -61,7 +59,7 @@ export function ProfileSection({
 						Account created
 					</div>
 					<div className="mt-1 text-[13px] text-text-bright font-medium tabular-nums">
-						{user?.createdAt ? formatDateTime(user.createdAt) : "—"}
+						{user?.createdAt ? formatDateTime(new Date(user.createdAt).toISOString()) : "—"}
 					</div>
 				</div>
 				<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-5 transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:scale-[1.01] duration-200 ease-out">
@@ -97,7 +95,9 @@ export function ProfileSection({
 			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40 hover:scale-[1.01]">
 				<div className="flex items-center justify-between gap-4">
 					<div className="min-w-0">
-						<div className="text-sm font-semibold text-text-bright">Sound cues</div>
+						<div className="text-sm font-semibold text-text-bright">
+							Sound cues
+						</div>
 						<div className="mt-1 text-xs text-text-muted">
 							Subtle chime when a task succeeds or fails.
 						</div>

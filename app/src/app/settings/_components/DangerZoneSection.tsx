@@ -1,10 +1,10 @@
 "use client";
 
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { AlertTriangle, Loader2, Trash2, History } from "lucide-react";
+import { AlertTriangle, History, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 
 interface DangerZoneSectionProps {
 	onDeleteAccount: () => Promise<void>;
@@ -52,7 +52,9 @@ export function DangerZoneSection({
 	return (
 		<div>
 			<div className="mb-4">
-				<h2 className="text-lg font-semibold text-[var(--color-error)]">Danger zone</h2>
+				<h2 className="text-lg font-semibold text-[var(--color-error)]">
+					Danger zone
+				</h2>
 				<p className="mt-1 text-sm text-text-muted">
 					Irreversible actions. Make sure you understand the consequences.
 				</p>
@@ -62,15 +64,18 @@ export function DangerZoneSection({
 			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/30">
 				<div className="flex items-start gap-4">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-						<History className="h-5 w-5 text-text-secondary" aria-hidden="true" />
+						<History
+							className="h-5 w-5 text-text-secondary"
+							aria-hidden="true"
+						/>
 					</div>
 					<div className="min-w-0 flex-1">
 						<h3 className="text-sm font-semibold text-text-bright">
 							Clear usage history
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
-							Wipe usage records, audit logs, and prompt telemetry. Your identity,
-							API keys, sessions, and credit balances are preserved.
+							Wipe usage records, audit logs, and prompt telemetry. Your
+							identity, API keys, sessions, and credit balances are preserved.
 						</p>
 
 						<AnimatePresence mode="wait">
@@ -97,14 +102,18 @@ export function DangerZoneSection({
 									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4"
 								>
 									<div className="mb-3 flex items-center gap-2">
-										<AlertTriangle className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+										<AlertTriangle
+											className="h-4 w-4 text-[var(--color-accent)]"
+											aria-hidden="true"
+										/>
 										<span className="text-sm font-semibold text-text-bright">
 											Clear telemetry &amp; logs?
 										</span>
 									</div>
 									<p className="mb-4 text-xs text-text-muted">
 										This cannot be undone. Sessions, API keys, and credits stay
-										intact; statistics and usage history are permanently removed.
+										intact; statistics and usage history are permanently
+										removed.
 									</p>
 									<div className="flex flex-wrap gap-3">
 										<button
@@ -115,7 +124,10 @@ export function DangerZoneSection({
 										>
 											{clearing ? (
 												<>
-													<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+													<Loader2
+														className="h-3.5 w-3.5 animate-spin"
+														aria-hidden="true"
+													/>
 													Clearing…
 												</>
 											) : (
@@ -151,10 +163,13 @@ export function DangerZoneSection({
 						/>
 					</div>
 					<div className="min-w-0 flex-1">
-						<h3 className="text-sm font-semibold text-[var(--color-error)]">Delete account</h3>
+						<h3 className="text-sm font-semibold text-[var(--color-error)]">
+							Delete account
+						</h3>
 						<p className="mt-1 text-xs text-text-muted">
 							Permanently delete your OMA account, API keys, and credits. This
-							cannot be undone. Credits are non-redeemable and will be forfeited.
+							cannot be undone. Credits are non-redeemable and will be
+							forfeited.
 						</p>
 
 						<AnimatePresence mode="wait">
@@ -181,7 +196,10 @@ export function DangerZoneSection({
 									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-5"
 								>
 									<div className="mb-3 flex items-center gap-2">
-										<AlertTriangle className="h-4 w-4 text-[var(--color-error)]" aria-hidden="true" />
+										<AlertTriangle
+											className="h-4 w-4 text-[var(--color-error)]"
+											aria-hidden="true"
+										/>
 										<span className="text-sm font-semibold text-[var(--color-error)]">
 											Final confirmation
 										</span>
@@ -190,7 +208,8 @@ export function DangerZoneSection({
 										Type{""}
 										<code className="rounded-[var(--radius-sm)] bg-[var(--color-void)] px-1.5 py-0.5 font-mono text-[var(--color-error)] border border-[var(--color-error)]/30">
 											DELETE
-										</code>{""}
+										</code>
+										{""}
 										below to confirm. All data will be permanently destroyed.
 									</p>
 									<input
@@ -212,7 +231,10 @@ export function DangerZoneSection({
 										>
 											{deleting ? (
 												<>
-													<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+													<Loader2
+														className="h-3.5 w-3.5 animate-spin"
+														aria-hidden="true"
+													/>
 													Deleting…
 												</>
 											) : (

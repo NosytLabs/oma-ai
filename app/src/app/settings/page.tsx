@@ -1,11 +1,6 @@
 "use client";
 
-
-
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
 import {
 	Activity,
 	AlertTriangle,
@@ -16,38 +11,19 @@ import {
 	User as UserIcon,
 	X,
 } from "lucide-react";
-import nextDynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { springs } from "@/lib/animation";
+import { api } from "@/lib/api";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { api, type User } from "@/lib/api";
-
-const ProfileSection = nextDynamic(() =>
-	import("./_components/ProfileSection").then((m) => ({
-		default: m.ProfileSection,
-	})),
-);
-const AppearanceSection = nextDynamic(() =>
-	import("./_components/AppearanceSection").then((m) => ({
-		default: m.AppearanceSection,
-	})),
-);
-const SessionsSection = nextDynamic(() =>
-	import("./_components/SessionsSection").then((m) => ({
-		default: m.SessionsSection,
-	})),
-);
-const DangerZoneSection = nextDynamic(() =>
-	import("./_components/DangerZoneSection").then((m) => ({
-		default: m.DangerZoneSection,
-	})),
-);
-const PrivacySection = nextDynamic(() =>
-	import("./_components/PrivacySection").then((m) => ({
-		default: m.PrivacySection,
-	})),
-);
+import { AppearanceSection } from "./_components/AppearanceSection";
+import { DangerZoneSection } from "./_components/DangerZoneSection";
+import { PrivacySection } from "./_components/PrivacySection";
+import { ProfileSection } from "./_components/ProfileSection";
+import { SessionsSection } from "./_components/SessionsSection";
 
 type SettingsTab = "profile" | "appearance" | "sessions" | "privacy" | "danger";
 
@@ -117,13 +93,12 @@ function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 }
 
 function SettingsPageContent() {
-	const { isAuthenticated, isDemo, isReady, evmAddress, signOut } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress, signOut, user } =
+		useAuth();
 	const hasRealSession = isAuthenticated && !isDemo;
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-	const [user, setUser] = useState<User | null>(null);
-	const [loadingUser, setLoadingUser] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const sessionsQuery = useQuery({
 		queryKey: ["sessions"],
@@ -132,7 +107,7 @@ function SettingsPageContent() {
 		staleTime: 60_000,
 	});
 	const sessions = sessionsQuery.data?.sessions ?? [];
-	const loading = loadingUser || sessionsQuery.isLoading;
+	const loading = !isReady || sessionsQuery.isLoading;
 
 	const [deleting, setDeleting] = useState(false);
 	const [loggingOut, setLoggingOut] = useState(false);
@@ -152,29 +127,6 @@ function SettingsPageContent() {
 		const parsed = parseSettingsTab(raw);
 		if (parsed) setActiveTab(parsed);
 	}, [searchParams, router]);
-
-	useEffect(() => {
-		if (!hasRealSession) return;
-		let cancelled = false;
-		const fetchData = async () => {
-			setLoadingUser(true);
-			setError(null);
-			try {
-				const userData = await api.auth.getUser();
-				if (!cancelled) setUser(userData ?? null);
-			} catch (e: unknown) {
-				if (!cancelled) {
-					setError(e instanceof Error ? e.message : "Failed to load settings");
-				}
-			} finally {
-				if (!cancelled) setLoadingUser(false);
-			}
-		};
-		fetchData();
-		return () => {
-			cancelled = true;
-		};
-	}, [hasRealSession]);
 
 	useEffect(() => {
 		if (!sessionsQuery.error) return;
@@ -432,7 +384,7 @@ function SettingsPageContent() {
 
 				<div className="min-w-0">
 					{loading && !user ? (
-						<div className="space-y-3" aria-busy="true" aria-label="Loading settings">
+						<div className="space-y-3" aria-busy="true">
 							<Skeleton className="h-6 w-32" />
 							<Skeleton className="h-4 w-64" />
 							<div className="mt-4 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
@@ -454,12 +406,7 @@ function SettingsPageContent() {
 								transition={springs.tab}
 							>
 								{activeTab === "profile" && (
-									<ProfileSection
-										user={user}
-										evmAddress={evmAddress}
-										onUserChange={setUser}
-										onError={setError}
-									/>
+									<ProfileSection user={user} evmAddress={evmAddress} />
 								)}
 								{activeTab === "appearance" && <AppearanceSection />}
 								{activeTab === "sessions" && (
@@ -488,7 +435,7 @@ function SettingsPageContent() {
 
 function SettingsFallback() {
 	return (
-		<div className="container-page max-w-5xl py-10" aria-busy="true" aria-label="Loading settings">
+		<div className="container-page max-w-5xl py-10" aria-busy="true">
 			<div className="space-y-3">
 				<Skeleton className="h-7 w-36" />
 				<Skeleton className="h-4 w-48" />

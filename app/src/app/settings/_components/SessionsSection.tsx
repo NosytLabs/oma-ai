@@ -1,6 +1,13 @@
 "use client";
 
-import { Clock, Fingerprint, Loader2, LogOut, Monitor, Trash2 } from "lucide-react";
+import {
+	Clock,
+	Fingerprint,
+	Loader2,
+	LogOut,
+	Monitor,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import type { Session } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
@@ -89,7 +96,10 @@ export function SessionsSection({
 						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
 					>
 						{revokingOthers ? (
-							<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+							<Loader2
+								className="h-3.5 w-3.5 animate-spin"
+								aria-hidden="true"
+							/>
 						) : (
 							<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 						)}
@@ -103,7 +113,9 @@ export function SessionsSection({
 			<div className="mt-6 space-y-2">
 				{sessions.length === 0 ? (
 					<div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] px-4 py-8 text-center bg-[var(--color-surface)]/30">
-						<p className="text-sm font-semibold text-text-muted">No active sessions.</p>
+						<p className="text-sm font-semibold text-text-muted">
+							No active sessions.
+						</p>
 						<p className="mt-1 text-xs text-text-muted">
 							You&apos;re signed in — refresh if this looks wrong.
 						</p>
@@ -117,7 +129,10 @@ export function SessionsSection({
 							<div className="flex min-w-0 flex-1 items-center gap-4">
 								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_5%,transparent)] transition-[border-color,background-color] group-hover:border-[var(--color-accent)]/40 group-hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]">
 									{session.isCurrent ? (
-										<Monitor className="h-5 w-5 text-[var(--color-accent)] drop-shadow-[0_0_8px_var(--color-accent)]" aria-hidden="true" />
+										<Monitor
+											className="h-5 w-5 text-[var(--color-accent)] drop-shadow-[0_0_8px_var(--color-accent)]"
+											aria-hidden="true"
+										/>
 									) : (
 										<Fingerprint
 											className="h-5 w-5 text-text-muted transition-colors duration-200 ease-out group-hover:text-text-secondary"
@@ -138,7 +153,9 @@ export function SessionsSection({
 									</div>
 									<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
 										{session.ipAddress && (
-											<span className="font-mono tabular-nums">{session.ipAddress}</span>
+											<span className="font-mono tabular-nums">
+												{session.ipAddress}
+											</span>
 										)}
 										<span className="flex items-center gap-1 tabular-nums">
 											<Clock className="h-3 w-3" aria-hidden="true" />
@@ -155,7 +172,10 @@ export function SessionsSection({
 									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-error)]/40 hover:text-[var(--color-error)] hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
 								>
 									{signingOut ? (
-										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+										<Loader2
+											className="h-3.5 w-3.5 animate-spin"
+											aria-hidden="true"
+										/>
 									) : (
 										<LogOut className="h-3.5 w-3.5" aria-hidden="true" />
 									)}
@@ -169,7 +189,10 @@ export function SessionsSection({
 									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-error)]/40 hover:text-[var(--color-error)] hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
 								>
 									{revokingId === session.id ? (
-										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+										<Loader2
+											className="h-3.5 w-3.5 animate-spin"
+											aria-hidden="true"
+										/>
 									) : (
 										<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									)}
@@ -182,8 +205,8 @@ export function SessionsSection({
 			</div>
 			<p className="mt-5 text-[11px] leading-relaxed text-text-muted border-t border-border/50 pt-4">
 				Revoking a remote session signs that device out immediately. Use{""}
-				<span className="font-semibold text-text-secondary">Sign out</span> on this
-				device to end the current browser session.
+				<span className="font-semibold text-text-secondary">Sign out</span> on
+				this device to end the current browser session.
 			</p>
 		</div>
 	);

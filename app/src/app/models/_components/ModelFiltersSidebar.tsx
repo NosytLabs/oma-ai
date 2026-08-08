@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import { PROVIDER_COLORS } from "@/lib/models-data";
-import { TIER_LABELS } from "../_lib/labels";
 import {
 	formatContextRange,
 	formatPriceRange,
 } from "../_hooks/useModelFilters";
+import { TIER_LABELS } from "../_lib/labels";
 
 interface ModelFiltersSidebarProps {
 	TIER_ORDER: ("budget" | "mid" | "premium" | "frontier")[];
@@ -87,7 +87,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 
 			{/* Provider Filter Chips */}
 			{availableProviders.length > 1 && (
-				<div className="flex flex-wrap gap-2" aria-label="Filter by provider">
+				<div className="flex flex-wrap gap-2">
 					<button
 						type="button"
 						onClick={() => handleProvider(null)}
@@ -100,12 +100,16 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 						All Providers
 					</button>
 					{availableProviders.map((p) => {
-						const pStyle = PROVIDER_COLORS[p as keyof typeof PROVIDER_COLORS] || PROVIDER_COLORS.Venice;
+						const pStyle =
+							PROVIDER_COLORS[p as keyof typeof PROVIDER_COLORS] ||
+							PROVIDER_COLORS.Venice;
 						return (
 							<button
 								type="button"
 								key={p}
-								onClick={() => handleProvider(selectedProvider === p ? null : p)}
+								onClick={() =>
+									handleProvider(selectedProvider === p ? null : p)
+								}
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-[color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 									selectedProvider === p
 										? `${pStyle.bg} ${pStyle.text} ${pStyle.border} border`
@@ -222,7 +226,10 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 							value={contextRange[0]}
 							onChange={(e) => {
 								const v = Number(e.target.value);
-								setContextRange([Math.min(v, contextRange[1]), contextRange[1]]);
+								setContextRange([
+									Math.min(v, contextRange[1]),
+									contextRange[1],
+								]);
 							}}
 							aria-label="Minimum context window"
 							suppressHydrationWarning
@@ -236,7 +243,10 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 							value={contextRange[1]}
 							onChange={(e) => {
 								const v = Number(e.target.value);
-								setContextRange([contextRange[0], Math.max(v, contextRange[0])]);
+								setContextRange([
+									contextRange[0],
+									Math.max(v, contextRange[0]),
+								]);
 							}}
 							aria-label="Maximum context window"
 							suppressHydrationWarning
