@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { ensureCatalogLoaded, listAllModels } from "../inference/models.js";
-import { getModelPricingOverride } from "./admin/index.js";
+import { readModelPricingOverrides } from "../lib/model-overrides.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
 
@@ -9,13 +9,14 @@ export const modelRoutes = new Hono<OmaEnv>();
 modelRoutes.get("/v1/models", async (c) => {
   await ensureCatalogLoaded();
   const models = listAllModels();
+  const allOverrides = readModelPricingOverrides();
   return c.json({
     object: "list",
     data: models.map((m) => {
       // Admin-set pricing override wins over the catalog default so that
       // dashboards, chat cost pills, and billing all see the same number
       // as the admin's pricing editor.
-      const override = getModelPricingOverride(m.id);
+      const override = allOverrides[m.id];
       return {
         id: m.id,
         object: "model",
@@ -47,7 +48,8 @@ modelRoutes.get("/v1/models/:id", async (c) => {
       404,
     );
   }
-  const override = getModelPricingOverride(m.id);
+  const allOverrides = readModelPricingOverrides();
+  const override = allOverrides[m.id];
   return c.json({
     id: m.id,
     object: "model",

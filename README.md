@@ -115,5 +115,5 @@ SECURITY.md          Security policy
 - **Catalog Synchronization:**
   - Frontend static catalog data is defined in `app/src/lib/models-data.ts`.
   - Backend runtime catalog is defined in `server/src/inference/models.ts`.
-  - Ensure catalog configurations are kept in sync, and regenerate the `server/models.json` snapshot whenever the catalog changes.
+  - Ensure catalog configurations are kept in sync manually.
 - **Pull Request Checklist:** Always run `npm run validate` locally and fix any errors before submitting a pull request.

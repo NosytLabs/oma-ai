@@ -6,7 +6,7 @@
  */
 import type { ApiKey } from "./db/schema.js";
 
-export type AuthMethod = "session" | "apiKey";
+type AuthMethod = "session" | "apiKey";
 
 export type OmaEnv = {
   Variables: {

@@ -37,7 +37,7 @@ import {
  recordHealthCheckResult,
 } from "@/lib/health-backoff";
 
-export type HealthStatus = "checking" | "online" | "offline";
+type HealthStatus = "checking" | "online" | "offline";
 
 const STALE_TIME_MS = 25_000;
 const HEALTH_QUERY_KEY = ["health", "ready-v2"] as const;

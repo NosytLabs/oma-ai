@@ -28,4 +28,4 @@ export const BRAND_COLORS = {
 	textMuted: "#9aa394",
 } as const;
 
-export type BrandColor = (typeof BRAND_COLORS)[keyof typeof BRAND_COLORS];
+type BrandColor = (typeof BRAND_COLORS)[keyof typeof BRAND_COLORS];

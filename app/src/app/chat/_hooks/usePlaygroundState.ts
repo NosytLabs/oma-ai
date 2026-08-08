@@ -10,13 +10,13 @@ import type { Message } from "@/components/chat";
  * → success/error → default so the toolbar can render the right icon
  * without spawning extra toast spam.
  */
-export type ExportStatus = "default" | "loading" | "success" | "error";
+type ExportStatus = "default" | "loading" | "success" | "error";
 
 /**
  * Status enum for the share-conversation button. No 'loading' state —
  * the share copy is gated on the clipboard write resolving.
  */
-export type ShareStatus = "default" | "success" | "error";
+type ShareStatus = "default" | "success" | "error";
 
 /**
  * Media mode toggles between text chat, image generation, and video

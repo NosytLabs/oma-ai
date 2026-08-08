@@ -42,7 +42,7 @@ export function atomicToDecimal(atomic: bigint): string {
   return frac ? `${whole}.${frac}` : whole.toString();
 }
 
-export interface XPaymentV2 {
+interface XPaymentV2 {
   x402Version: number;
   scheme: string;
   network: string;

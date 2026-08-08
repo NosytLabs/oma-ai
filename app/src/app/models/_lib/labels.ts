@@ -8,4 +8,4 @@ export const TIER_LABELS = {
 	frontier: "Frontier",
 } as const;
 
-export type TierLabel = keyof typeof TIER_LABELS;
+type TierLabel = keyof typeof TIER_LABELS;

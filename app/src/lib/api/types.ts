@@ -5,7 +5,7 @@
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
-export interface NonceResponse {
+interface NonceResponse {
 	nonce: string;
 }
 
@@ -30,7 +30,7 @@ export interface User {
 }
 
 /** Response from POST /auth/verify (SIWE login). */
-export interface VerifyResponse {
+interface VerifyResponse {
 	token: string;
 	/** The signer's address (0x… for EVM). */
 	address: string;
@@ -50,7 +50,7 @@ export interface VerifyResponse {
 }
 
 /** Response from POST /auth/wallet (link wallet & get API key). */
-export interface WalletResponse {
+interface WalletResponse {
 	apiKey: string | null;
 	prefix: string;
 	id: string;
@@ -114,7 +114,7 @@ export interface CreditBatch {
 }
 
 /** Response from POST /v1/credits/purchase — creates a *pending* deposit only. */
-export interface PurchaseCreditsResponse {
+interface PurchaseCreditsResponse {
 	success: boolean;
 	depositId: string;
 	status: string;
@@ -152,7 +152,7 @@ export interface ModelsResponse {
 
 // ─── Deposit ──────────────────────────────────────────────────────────────────
 
-export interface DepositStatus {
+interface DepositStatus {
 	id: string;
 	type?: string;
 	status:
@@ -173,7 +173,7 @@ export interface DepositStatus {
 	pollError?: string;
 }
 
-export interface Token {
+interface Token {
 	id: string;
 	symbol: string;
 	name: string;
@@ -184,7 +184,7 @@ export interface Token {
 	logoUrl?: string;
 }
 
-export interface Quote {
+interface Quote {
 	quoteId: string;
 	fromToken: string;
 	toToken: string;
@@ -214,7 +214,7 @@ export interface HealthResponse {
 	>;
 }
 
-export interface ChatCompletionsResponse {
+interface ChatCompletionsResponse {
 	id: string;
 	object: string;
 	created: number;
@@ -233,13 +233,13 @@ export interface ChatCompletionsResponse {
 
 // ─── x402 payment protocol ────────────────────────────────────────────────────
 
-export interface X402VerifyResponse {
+interface X402VerifyResponse {
 	valid: boolean;
 	address?: string;
 	error?: string;
 }
 
-export interface X402SettleResponse {
+interface X402SettleResponse {
 	settled: boolean;
 	receipt?: string;
 	error?: string;

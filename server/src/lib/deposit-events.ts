@@ -17,7 +17,7 @@ export interface DepositEvent {
   completedAt: Date | null;
 }
 
-export const depositEvents = new EventEmitter();
+const depositEvents = new EventEmitter();
 // Allow many concurrent WS subscribers.
 depositEvents.setMaxListeners(200);
 

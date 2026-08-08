@@ -5,7 +5,8 @@
  * install. Keep it as the canary for the fixture.
  */
 import { describe, it, expect, afterEach } from "vitest";
-import { createPgFixture, withPgFixture, fixtureWithCleanup, type PgFixtureOptions } from "./pglite";
+import { createPgFixture, withPgFixture, fixtureWithCleanup } from "./pglite";
+import type { PgFixtureOptions } from "./pglite";
 import type { PGlite } from "@electric-sql/pglite";
 
 describe("pglite fixture", () => {

@@ -420,5 +420,5 @@ user: {
   ],
 });
 
-export type Auth = typeof auth;
+type Auth = typeof auth;
 export type AuthSession = Auth["$Infer"]["Session"];

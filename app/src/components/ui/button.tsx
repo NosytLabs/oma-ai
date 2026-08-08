@@ -11,9 +11,9 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
  * Button text NEVER wraps on desktop (`whitespace-nowrap` enforced).
  */
 
-export type ButtonVariant =
+type ButtonVariant =
  "primary" | "secondary" | "ghost" | "outline" | "destructive";
-export type ButtonSize = "sm" | "md" | "lg" | "icon";
+type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  variant?: ButtonVariant;

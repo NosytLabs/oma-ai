@@ -8,7 +8,7 @@ export interface DlqEntry {
   timestamp: string;
 }
 
-export interface SettlementDlqEntry {
+interface SettlementDlqEntry {
   orderId: string;
   amount: string;
   chain: string;

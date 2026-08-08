@@ -56,14 +56,14 @@ export interface A2UIComponent {
 	[key: string]: unknown;
 }
 
-export interface A2UICreateSurface {
+interface A2UICreateSurface {
 	surfaceId: string;
 	catalogId?: string;
 	theme?: Record<string, unknown>;
 	sendDataModel?: boolean;
 }
 
-export interface A2UIEnvelope {
+interface A2UIEnvelope {
 	version?: string;
 	createSurface?: A2UICreateSurface;
 	updateComponents?: { surfaceId: string; components: A2UIComponent[] };

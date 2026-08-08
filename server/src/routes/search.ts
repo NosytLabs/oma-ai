@@ -106,7 +106,7 @@ export function dedupeResults(results: SearchResult[]): SearchResult[] {
  * DuckDuckGo HTML results. No API key.
  * Parses classic result__a / result__snippet blocks.
  */
-export async function searchDuckDuckGoHtml(
+async function searchDuckDuckGoHtml(
 	query: string,
 ): Promise<SearchResult[]> {
 	const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
@@ -163,7 +163,7 @@ export async function searchDuckDuckGoHtml(
 }
 
 /** DuckDuckGo Instant Answer API (no key) — abstract + RelatedTopics. */
-export async function searchDuckDuckGoInstant(
+async function searchDuckDuckGoInstant(
 	query: string,
 ): Promise<SearchResult[]> {
 	const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
@@ -227,7 +227,7 @@ export async function searchDuckDuckGoInstant(
  * DuckDuckGo-only search. HTML first, Instant Answer if empty.
  * Exported for unit tests with mocked fetch.
  */
-export async function runWebSearch(query: string): Promise<{
+async function runWebSearch(query: string): Promise<{
 	results: SearchResult[];
 	provider: "duckduckgo";
 }> {

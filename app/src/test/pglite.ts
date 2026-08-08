@@ -14,7 +14,7 @@ import { PGlite } from "@electric-sql/pglite";
  * for the smoke run that proved the setup.
  */
 
-export type PgFixture = {
+type PgFixture = {
 	db: PGlite;
 	close: () => Promise<void>;
 };

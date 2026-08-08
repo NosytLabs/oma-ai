@@ -11,7 +11,7 @@
 import { request } from "./client.js";
 import type { ApiKey, ApiKeyWithSecret, Session, User } from "./types.js";
 
-export interface AuthSessionResponse {
+interface AuthSessionResponse {
   user: User;
 }
 

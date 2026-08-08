@@ -28,7 +28,7 @@ interface DailyUsageResult {
  * Check daily usage limit for website chat.
  * Key format: daily:{ip|userId}:{date}
  */
-export async function checkDailyUsageLimit(
+async function checkDailyUsageLimit(
   identifier: string,
   limit: number
 ): Promise<DailyUsageResult> {

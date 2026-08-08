@@ -1,7 +1,7 @@
 import { logger } from "./logger.js";
 
-export type PaymentKind = "x402" | "polar" | "usdc_deposit";
-export type PaymentOutcome = "verified" | "settled" | "rejected" | "double_spend_blocked";
+type PaymentKind = "x402" | "polar" | "usdc_deposit";
+type PaymentOutcome = "verified" | "settled" | "rejected" | "double_spend_blocked";
 
 interface PaymentEvent {
   kind: PaymentKind;

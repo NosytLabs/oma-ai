@@ -8,7 +8,7 @@ import type { HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
  * workhorse; reserve `solid` for active states.
  */
 
-export type BadgeVariant =
+type BadgeVariant =
  "subtle" | "accent" | "success" | "warning" | "outline" | "solid";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {

@@ -119,7 +119,7 @@ export interface CallProviderOptions {
  * Core provider call — handles upstream request, streaming, billing, and usage recording.
  * Returns the raw upstream Response object for the caller to translate/stream as needed.
  */
-export async function callProvider(opts: CallProviderOptions): Promise<Response> {
+async function callProvider(opts: CallProviderOptions): Promise<Response> {
   const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice, providerOverride } = opts;
 
   const modelDef = getModelById(modelId);
@@ -334,7 +334,7 @@ export interface RecordUsageArgs {
  * Values are cents and intentionally use the requested max token budget as
  * the worst-case output bound.
  */
-export function estimateUserCostCents(
+function estimateUserCostCents(
   pricing: ReturnType<typeof getModelPricing>,
   promptTokens: number,
   maxOutputTokens?: number,
@@ -376,7 +376,7 @@ export async function assertSufficientBalance(
 }
 
 /** Record usage, deduct credits, emit audit log, and send Polar meter event. */
-export async function recordUsage(args: RecordUsageArgs): Promise<void> {
+async function recordUsage(args: RecordUsageArgs): Promise<void> {
   const {
     userId,
     model,

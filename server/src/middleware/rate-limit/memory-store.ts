@@ -15,7 +15,7 @@ const fallbackCounters = new Map<string, FallbackEntry>();
 const FALLBACK_COUNTER_CLEANUP_INTERVAL_MS = 300000; // 5 minutes
 let lastFallbackCleanup = Date.now();
 
-export function cleanupFallbackCounters() {
+function cleanupFallbackCounters() {
   const now = Date.now();
   if (now - lastFallbackCleanup < FALLBACK_COUNTER_CLEANUP_INTERVAL_MS) return;
   lastFallbackCleanup = now;

@@ -84,7 +84,7 @@ export function formatPriceRange(price: number): string {
 	return `$${price.toFixed(2)}`;
 }
 
-export interface ModelGroup {
+interface ModelGroup {
 	tier: string;
 	label: string;
 	models: Model[];

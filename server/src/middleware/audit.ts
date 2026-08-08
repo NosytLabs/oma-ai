@@ -3,7 +3,7 @@ import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
 
-export type AuditAction = typeof auditLogs.$inferInsert.action;
+type AuditAction = typeof auditLogs.$inferInsert.action;
 
 export interface AuditLogParams {
   userId?: string;

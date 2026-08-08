@@ -21,7 +21,7 @@ export interface ModelOption {
 	ctx: string;
 }
 
-export type TierFilter =
+type TierFilter =
 	| "all"
 	| "frontier"
 	| "premium"

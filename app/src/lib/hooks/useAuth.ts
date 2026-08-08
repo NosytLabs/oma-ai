@@ -28,7 +28,7 @@ export interface BetterAuthUser {
 	role?: string | null;
 }
 
-export interface BetterAuthSession {
+interface BetterAuthSession {
 	user: BetterAuthUser;
 	session: {
 		id: string;

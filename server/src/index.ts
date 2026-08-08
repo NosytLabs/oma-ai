@@ -27,7 +27,7 @@ import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { polarRoutes } from "./routes/polar.js";
-import { adminRoutes } from "./routes/admin/index.js";
+// import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { rateLimit } from "./middleware/rate-limit.js";
@@ -280,7 +280,7 @@ polarRoutes.post("/api/webhook/polar", async (c) => {
 });
 
 // Admin / operator dashboard endpoints.
-app.route("/", adminRoutes);
+// app.route("/", adminRoutes);
 
 app.notFound((c) =>
   c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),
