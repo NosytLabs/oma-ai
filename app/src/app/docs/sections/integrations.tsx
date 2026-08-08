@@ -134,7 +134,7 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 
 # Note: base URL is the origin (no /v1). The client appends /v1/messages.
 # Model ids are OMA catalog ids (not anthropic/claude-3-5-sonnet):
-# claude-sonnet-5 · claude-opus-5 · llama-3.3-70b · …`}
+# claude-sonnet-5 · openai-gpt-54 · llama-3.3-70b · …`}
 				/>
 				<CodeBlock
 					lang="bash"

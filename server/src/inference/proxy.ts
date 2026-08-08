@@ -202,8 +202,7 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
 
 export const FALLBACK_MAP: Record<string, string[]> = {
   // Frontier
-  "claude-opus-5": ["openai-gpt-56-sol", "claude-sonnet-5"],
-  "openai-gpt-56-sol": ["claude-opus-5", "claude-sonnet-5"],
+  "openai-gpt-56-sol": ["claude-sonnet-5", "gemini-3.1-pro-preview"],
   
   // Premium
   "claude-sonnet-5": ["openai-gpt-54", "kimi-k3", "openai-gpt-52"],

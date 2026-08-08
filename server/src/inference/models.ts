@@ -52,20 +52,7 @@ let _catalog: ModelDef[] | null = null;
 
 const VENICE_MODELS: ModelDef[] = [
   // ── Frontier ──────────────────────────────────────────────────────────
-  {
-    id: "claude-opus-5",
-    provider: "venice",
-    inputPricePer1M: 6.0,
-    outputPricePer1M: 30.0,
-    markupPercent: 25,
-    displayName: "Claude Opus 5",
-    category: "frontier",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "coding", "tools"],
-  },
+
   {
     id: "openai-gpt-56-sol",
     provider: "venice",
@@ -82,34 +69,8 @@ const VENICE_MODELS: ModelDef[] = [
   },
 
   // ── Premium ───────────────────────────────────────────────────────────
-  {
-    id: "claude-sonnet-5",
-    provider: "venice",
-    inputPricePer1M: 3.0,
-    outputPricePer1M: 15.0,
-    markupPercent: 25,
-    displayName: "Claude Sonnet 5",
-    category: "premium",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "coding", "tools"],
-  },
-  {
-    id: "openai-gpt-54",
-    provider: "venice",
-    inputPricePer1M: 3.13,
-    outputPricePer1M: 18.8,
-    markupPercent: 25,
-    displayName: "GPT-5.4",
-    category: "premium",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "tools"],
-  },
+
+
   {
     id: "kimi-k3",
     provider: "venice",
@@ -124,34 +85,8 @@ const VENICE_MODELS: ModelDef[] = [
     supportsStreaming: true,
     capabilities: ["chat", "reasoning", "tools"],
   },
-  {
-    id: "openai-gpt-52",
-    provider: "venice",
-    inputPricePer1M: 2.19,
-    outputPricePer1M: 17.5,
-    markupPercent: 25,
-    displayName: "GPT-5.2",
-    category: "premium",
-    maxTokens: 16384,
-    contextWindow: 256_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "tools"],
-  },
-  {
-    id: "grok-4-5",
-    provider: "venice",
-    inputPricePer1M: 2.27,
-    outputPricePer1M: 6.8,
-    markupPercent: 25,
-    displayName: "Grok 4.5",
-    category: "premium",
-    maxTokens: 16384,
-    contextWindow: 500_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "tools"],
-  },
+
+
   {
     id: "zai-org-glm-5-2",
     provider: "venice",
@@ -168,34 +103,8 @@ const VENICE_MODELS: ModelDef[] = [
   },
 
   // ── Mid ───────────────────────────────────────────────────────────────
-  {
-    id: "deepseek-v4-pro",
-    provider: "venice",
-    inputPricePer1M: 1.65,
-    outputPricePer1M: 3.3,
-    markupPercent: 25,
-    displayName: "DeepSeek V4 Pro",
-    category: "mid",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "coding", "tools"],
-  },
-  {
-    id: "gemini-3-5-flash",
-    provider: "venice",
-    inputPricePer1M: 1.55,
-    outputPricePer1M: 9.45,
-    markupPercent: 25,
-    displayName: "Gemini 3.5 Flash",
-    category: "mid",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "reasoning", "tools"],
-  },
+
+
   {
     id: "gemini-3-flash-preview",
     provider: "venice",
@@ -254,34 +163,8 @@ const VENICE_MODELS: ModelDef[] = [
   },
 
   // ── Budget ────────────────────────────────────────────────────────────
-  {
-    id: "deepseek-v4-flash",
-    provider: "venice",
-    inputPricePer1M: 0.138,
-    outputPricePer1M: 0.275,
-    markupPercent: 25,
-    displayName: "DeepSeek V4 Flash",
-    category: "budget",
-    maxTokens: 16384,
-    contextWindow: 1_000_000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    capabilities: ["chat", "fast", "tools"],
-  },
-  {
-    id: "mistral-small-2603",
-    provider: "venice",
-    inputPricePer1M: 0.1875,
-    outputPricePer1M: 0.75,
-    markupPercent: 25,
-    displayName: "Mistral Small 4",
-    category: "budget",
-    maxTokens: 8192,
-    contextWindow: 256_000,
-    maxOutputTokens: 8192,
-    supportsStreaming: true,
-    capabilities: ["chat", "fast", "tools"],
-  },
+
+
   {
     id: "xiaomi-mimo-v2-5",
     provider: "venice",
@@ -296,20 +179,7 @@ const VENICE_MODELS: ModelDef[] = [
     supportsStreaming: true,
     capabilities: ["chat", "reasoning", "fast"],
   },
-  {
-    id: "mercury-2",
-    provider: "venice",
-    inputPricePer1M: 0.3125,
-    outputPricePer1M: 0.9375,
-    markupPercent: 25,
-    displayName: "Mercury 2",
-    category: "budget",
-    maxTokens: 8192,
-    contextWindow: 128_000,
-    maxOutputTokens: 8192,
-    supportsStreaming: true,
-    capabilities: ["chat", "fast"],
-  },
+
 ];
 
 // ── OMA-AI (Gonka/Zyloo) Resale - Branded as OMA-AI ────────────────

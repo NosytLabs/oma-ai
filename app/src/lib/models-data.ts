@@ -507,16 +507,7 @@ const tier: Tier =
  */
 const FALLBACK_CATALOG: RawCatalog = {
 	MODEL_CATALOG: {
-		"claude-opus-5": {
-			id: "claude-opus-5",
-			displayName: "Claude Opus 5",
-			provider: "Venice",
-			category: "frontier",
-			maxTokens: 16384,
-			inputPricePer1M: 6.0,
-			outputPricePer1M: 30.0,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
+
 		"openai-gpt-56-sol": {
 			id: "openai-gpt-56-sol",
 			displayName: "GPT-5.6 Sol",
@@ -527,26 +518,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 37.5,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
-		"claude-sonnet-5": {
-			id: "claude-sonnet-5",
-			displayName: "Claude Sonnet 5",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 16384,
-			inputPricePer1M: 3.0,
-			outputPricePer1M: 15.0,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"openai-gpt-54": {
-			id: "openai-gpt-54",
-			displayName: "GPT-5.4",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 16384,
-			inputPricePer1M: 3.13,
-			outputPricePer1M: 18.8,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
+
+
 		"kimi-k3": {
 			id: "kimi-k3",
 			displayName: "Kimi K3",
@@ -557,16 +530,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 18.75,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"openai-gpt-52": {
-			id: "openai-gpt-52",
-			displayName: "GPT-5.2",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 16384,
-			inputPricePer1M: 2.19,
-			outputPricePer1M: 17.5,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
+
 		"zai-org-glm-5-2": {
 			id: "zai-org-glm-5-2",
 			displayName: "GLM 5.2",

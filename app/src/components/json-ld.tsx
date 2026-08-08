@@ -6,7 +6,7 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
-function safeJsonStringify(data: any) {
+function safeJsonStringify(data: unknown) {
 	return JSON.stringify(data).replace(/</g, '\\u003c');
 }
 

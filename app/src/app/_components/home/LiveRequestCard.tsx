@@ -24,7 +24,7 @@ interface DemoRound {
 
 const ROUNDS: DemoRound[] = [
  {
- model: "claude-opus-5",
+ model: "claude-sonnet-5",
  modelLabel: "Claude Opus 5",
  prompt: "Summarize OMA in one sentence.",
  reply:
