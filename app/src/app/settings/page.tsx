@@ -14,7 +14,6 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { springs } from "@/lib/animation";
 import { api } from "@/lib/api";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
@@ -385,12 +384,12 @@ function SettingsPageContent() {
 				<div className="min-w-0">
 					{loading && !user ? (
 						<div className="space-y-3" aria-busy="true">
-							<Skeleton className="h-6 w-32" />
-							<Skeleton className="h-4 w-64" />
+							<div className="h-6 w-32 bg-surface animate-pulse" />
+							<div className="h-4 w-64 bg-surface animate-pulse" />
 							<div className="mt-4 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
-								<Skeleton className="h-24 w-full rounded-none" />
-								<Skeleton className="h-24 w-full rounded-none" />
-								<Skeleton className="h-24 w-full rounded-none" />
+								<div className="h-24 w-full rounded-none bg-surface animate-pulse" />
+								<div className="h-24 w-full rounded-none bg-surface animate-pulse" />
+								<div className="h-24 w-full rounded-none bg-surface animate-pulse" />
 							</div>
 						</div>
 					) : (
@@ -437,17 +436,17 @@ function SettingsFallback() {
 	return (
 		<div className="container-page max-w-5xl py-10" aria-busy="true">
 			<div className="space-y-3">
-				<Skeleton className="h-7 w-36" />
-				<Skeleton className="h-4 w-48" />
+				<div className="h-7 w-36 bg-surface animate-pulse" />
+				<div className="h-4 w-48 bg-surface animate-pulse" />
 				<div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
 					<div className="flex gap-2 lg:flex-col">
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
 					</div>
 					<div className="space-y-3">
-						<Skeleton className="h-6 w-32" />
-						<Skeleton className="h-24 w-full" />
+						<div className="h-6 w-32 bg-surface animate-pulse" />
+						<div className="h-24 w-full bg-surface animate-pulse" />
 					</div>
 				</div>
 			</div>

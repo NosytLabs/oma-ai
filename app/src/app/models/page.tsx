@@ -334,7 +334,6 @@ export default function ModelsPage() {
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
 								{Array.from({ length: 8 }).map((_, i) => (
 									<div
-										// biome-ignore lint/suspicious/noArrayIndexKey: Skeleton grid uses index
 										key={i}
 										className="h-36 bg-panel rounded-[var(--radius-xl)] animate-pulse"
 									/>
