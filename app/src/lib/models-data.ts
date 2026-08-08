@@ -567,16 +567,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 17.5,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"grok-4-5": {
-			id: "grok-4-5",
-			displayName: "Grok 4.5",
-			provider: "Venice",
-			category: "premium",
-			maxTokens: 16384,
-			inputPricePer1M: 2.27,
-			outputPricePer1M: 6.8,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
 		"zai-org-glm-5-2": {
 			id: "zai-org-glm-5-2",
 			displayName: "GLM 5.2",
@@ -587,27 +577,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 4.4,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"deepseek-v4-pro": {
-			id: "deepseek-v4-pro",
-			displayName: "DeepSeek V4 Pro",
-			provider: "Venice",
-			category: "mid",
-			maxTokens: 16384,
-			inputPricePer1M: 1.65,
-			outputPricePer1M: 3.3,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"gemini-3-5-flash": {
-			id: "gemini-3-5-flash",
-			displayName: "Gemini 3.5 Flash",
-			provider: "Venice",
-			category: "mid",
-			maxTokens: 16384,
-			inputPricePer1M: 1.55,
-			outputPricePer1M: 9.45,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
@@ -617,36 +586,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			inputPricePer1M: 0.7,
 			outputPricePer1M: 2.8,
 			capabilities: ["chat", "tools"],
-		},
-		"deepseek-v4-flash": {
-			id: "deepseek-v4-flash",
-			displayName: "DeepSeek V4 Flash",
-			provider: "Venice",
-			category: "budget",
-			maxTokens: 16384,
-			inputPricePer1M: 0.138,
-			outputPricePer1M: 0.275,
-			capabilities: ["chat", "fast", "tools"],
-		},
-		"mistral-small-2603": {
-			id: "mistral-small-2603",
-			displayName: "Mistral Small 4",
-			provider: "Venice",
-			category: "budget",
-			maxTokens: 8192,
-			inputPricePer1M: 0.1875,
-			outputPricePer1M: 0.75,
-			capabilities: ["chat", "fast", "tools"],
-		},
-		"mercury-2": {
-			id: "mercury-2",
-			displayName: "Mercury 2",
-			provider: "Venice",
-			category: "budget",
-			maxTokens: 8192,
-			inputPricePer1M: 0.3125,
-			outputPricePer1M: 0.9375,
-			capabilities: ["chat", "fast"],
 		},
 		"zai-org-glm-5-1": {
 			id: "zai-org-glm-5-1",
@@ -783,6 +722,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 OMA-AI).
+// `GET /v1/models` count — 23 curated chat models (18 Venice + 5 OMA-AI).
 // Keep in sync with `server/src/inference/models.ts` defaultCatalog().
-export const MODEL_COUNT = 27;
+export const MODEL_COUNT = 23;

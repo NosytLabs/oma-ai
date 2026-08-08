@@ -4,8 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/generate-changelog.mjs",
-    "predev": "node scripts/generate-changelog.mjs",
+
+
     "build": "next build",
     "analyze": "ANALYZE=true next build",
     "dev": "next dev",
