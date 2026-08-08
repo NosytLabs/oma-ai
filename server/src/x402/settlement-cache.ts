@@ -32,7 +32,13 @@ function evictLRU(): void {
 
 export function atomicCacheSet(cacheKey: string, record: SettlementRecord): void {
   if (cacheLock) {
-    setTimeout(() => atomicCacheSet(cacheKey, record), 0);
+    setTimeout(() => {
+      try {
+        atomicCacheSet(cacheKey, record);
+      } catch (err) {
+        console.error("atomicCacheSet timeout failed", err);
+      }
+    }, 0);
     return;
   }
   cacheLock = true;

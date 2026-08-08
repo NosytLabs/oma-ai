@@ -16,27 +16,27 @@ const out =
 fs.mkdirSync(out, { recursive: true });
 
 const pages = [
-	{ name: "home", url: "http://127.0.0.1:3001/" },
-	{ name: "models", url: "http://127.0.0.1:3001/models" },
-	{ name: "pricing", url: "http://127.0.0.1:3001/pricing" },
-	{ name: "docs", url: "http://127.0.0.1:3001/docs" },
-	{ name: "chat", url: "http://127.0.0.1:3001/chat" },
-	{ name: "compare", url: "http://127.0.0.1:3001/compare" },
-	{ name: "login", url: "http://127.0.0.1:3001/login" },
-	{ name: "dashboard", url: "http://127.0.0.1:3001/dashboard" },
-	{ name: "deposit", url: "http://127.0.0.1:3001/deposit" },
-	{ name: "settings", url: "http://127.0.0.1:3001/settings" },
-	{ name: "capabilities", url: "http://127.0.0.1:3001/capabilities" },
-	{ name: "faq", url: "http://127.0.0.1:3001/faq" },
-	{ name: "getting-started", url: "http://127.0.0.1:3001/getting-started" },
-	{ name: "about", url: "http://127.0.0.1:3001/about" },
-	{ name: "observability", url: "http://127.0.0.1:3001/observability" },
-	{ name: "changelog", url: "http://127.0.0.1:3001/changelog" },
-	{ name: "contact", url: "http://127.0.0.1:3001/contact" },
-	{ name: "admin", url: "http://127.0.0.1:3001/admin" },
-	{ name: "glossary", url: "http://127.0.0.1:3001/glossary" },
-	{ name: "privacy", url: "http://127.0.0.1:3001/privacy" },
-	{ name: "terms", url: "http://127.0.0.1:3001/terms" },
+	{ name: "home", url: "http://127.0.0.1:3000/" },
+	{ name: "models", url: "http://127.0.0.1:3000/models" },
+	{ name: "pricing", url: "http://127.0.0.1:3000/pricing" },
+	{ name: "docs", url: "http://127.0.0.1:3000/docs" },
+	{ name: "chat", url: "http://127.0.0.1:3000/chat" },
+	{ name: "compare", url: "http://127.0.0.1:3000/compare" },
+	{ name: "login", url: "http://127.0.0.1:3000/login" },
+	{ name: "dashboard", url: "http://127.0.0.1:3000/dashboard" },
+	{ name: "deposit", url: "http://127.0.0.1:3000/deposit" },
+	{ name: "settings", url: "http://127.0.0.1:3000/settings" },
+	{ name: "capabilities", url: "http://127.0.0.1:3000/capabilities" },
+	{ name: "faq", url: "http://127.0.0.1:3000/faq" },
+	{ name: "getting-started", url: "http://127.0.0.1:3000/getting-started" },
+	{ name: "about", url: "http://127.0.0.1:3000/about" },
+	{ name: "observability", url: "http://127.0.0.1:3000/observability" },
+	{ name: "changelog", url: "http://127.0.0.1:3000/changelog" },
+	{ name: "contact", url: "http://127.0.0.1:3000/contact" },
+	{ name: "admin", url: "http://127.0.0.1:3000/admin" },
+	{ name: "glossary", url: "http://127.0.0.1:3000/glossary" },
+	{ name: "privacy", url: "http://127.0.0.1:3000/privacy" },
+	{ name: "terms", url: "http://127.0.0.1:3000/terms" },
 ];
 
 const findings = [];
@@ -159,13 +159,13 @@ const mobile = await browser.newContext({
 });
 const mpage = await mobile.newPage();
 for (const p of [
-	{ name: "home", url: "http://127.0.0.1:3001/" },
-	{ name: "models", url: "http://127.0.0.1:3001/models" },
-	{ name: "chat", url: "http://127.0.0.1:3001/chat" },
-	{ name: "pricing", url: "http://127.0.0.1:3001/pricing" },
-	{ name: "docs", url: "http://127.0.0.1:3001/docs" },
-	{ name: "login", url: "http://127.0.0.1:3001/login" },
-	{ name: "compare", url: "http://127.0.0.1:3001/compare" },
+	{ name: "home", url: "http://127.0.0.1:3000/" },
+	{ name: "models", url: "http://127.0.0.1:3000/models" },
+	{ name: "chat", url: "http://127.0.0.1:3000/chat" },
+	{ name: "pricing", url: "http://127.0.0.1:3000/pricing" },
+	{ name: "docs", url: "http://127.0.0.1:3000/docs" },
+	{ name: "login", url: "http://127.0.0.1:3000/login" },
+	{ name: "compare", url: "http://127.0.0.1:3000/compare" },
 ]) {
 	try {
 		await mpage.goto(p.url, { waitUntil: "domcontentloaded", timeout: 45000 });

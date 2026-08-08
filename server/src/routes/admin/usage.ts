@@ -90,9 +90,11 @@ app.get("/v1/admin/usage/recent", async (c) => {
       .from(usageRecords);
 
     if (filterUserId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       query = query.where(eq(usageRecords.userId, filterUserId)) as any;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = await (query.orderBy(desc(usageRecords.createdAt)).limit(limit) as any);
     return c.json({ data: rows, count: rows.length });
   } catch (err) {
