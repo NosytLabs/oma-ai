@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PLACEHOLDER_ADDRESSES, CREDIT_EXPIRY_DAYS } from "./constants.js";
+import { PLACEHOLDER_ADDRESSES } from "./constants.js";
 
 const INSECURE_DEFAULTS = [
   "dev-secret-change-me-in-prod-32ch",
@@ -42,12 +42,10 @@ const envSchema = z.object({
   // Production should leave this unset (defaults to false).
   OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
   // Non-private providers (OpenRouter, Together, DeepInfra, Claude,
-  // Gemini, Morpheus, AntSeed, LiteLLM) removed. OMA routes exclusively through
-  // Venice-based providers (Venice direct, Surplus, CheapTokens) to guarantee
+  // Gemini, Morpheus, AntSeed, LiteLLM, CheapTokens, Surplus) removed. OMA
+  // routes exclusively through Venice + OMA-AI providers to guarantee
   // zero-data-retention privacy. If you need a non-private provider, add it to
   // provider-selector.ts, call-provider.ts, and models.ts in the same commit.
-  SURPLUS_WALLET_PRIVATE_KEY: z.string().min(1).optional(),
-  CHEAPTOKENS_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   // Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
   // production endpoint). Set to https://base-rpc.publicnode.com or another
   // provider for dev/test environments.
@@ -112,28 +110,12 @@ const envSchema = z.object({
   DEBUG_STREAM: envBoolean.default(false),
   // Log level for the server logger (trace, debug, info, warn, error, fatal)
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
-  AUTO_RELOAD_THRESHOLD: z.coerce.number().positive().default(50000),
-  AUTO_RELOAD_AMOUNT: z.coerce.number().positive().default(1000000),
-  AUTO_RELOAD_SPEND_LIMIT: z.coerce.number().positive().default(1000000),
-  OMA_PRICE_OVERRIDE: z.coerce.number().positive().optional(),
-  SPEND_LIMIT_DAILY_CENTS: z.coerce.number().positive().default(10000),
-
-  // Credit ledger expiry (days). Used by credits/preflight for batch windows.
-  CREDIT_EXPIRY_DAYS: z.coerce.number().positive().default(CREDIT_EXPIRY_DAYS),
 
   // API key expiration (0 = never expires)
   DEFAULT_KEY_EXPIRY_DAYS: z.coerce.number().min(0).default(90),
 
   // Admin wallet addresses (comma-separated, checks on every admin route)
   ADMIN_WALLET_ADDRESSES: z.string().optional().default(""),
-  PLATFORM_TEAM_ID: z.string().optional().default(""),
-
-  // When true, admin money-movement routes (refund grant/deny, ledger sweep)
-  // FAIL CLOSED if the acting admin has not enrolled 2FA — the TOTP step-up
-  // becomes a hard requirement instead of an opt-in. Default false so existing
-  // admins without 2FA are not locked out; enable in prod once all admins have
-  // 2FA enrolled. See auth/require-fresh-totp.ts.
-  REQUIRE_ADMIN_2FA: envBoolean.default(false),
 
   CCTP_CIRCLE_API_URL: z.string().min(1).default("https://iris-api.circle.com"),
   CCTP_SOURCE_CHAINS: z.string().min(1).default("ethereum,arbitrum,optimism,polygon,avalanche"),
@@ -142,35 +124,17 @@ const envSchema = z.object({
   // Base mainnet chain ID
   BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
 
-  // Markup percentage applied to inference billing (e.g. 25 = 25% markup on cost)
-  // Applied per-model via ModelPricing.markup in billing-service.ts.
-  OMA_MARKUP_PCT: z.coerce.number().min(0).max(100).default(25),
-
   // Free signup credit — credits minted to a brand-new user on first
   // sign-in. 100 = $1.00 at 1 credit = 1 cent. Set to 0 to disable the
   // free trial. Without this, /v1/balance reads 0 forever and users
   // hit "insufficient_balance" on their first real call.
   FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(100),
 
-  // Tiered markup strategy (best practice: higher margin on cheap models,
-  // lower on frontier — price-sensitive buyers absorb cost on budget tiers,
-  // frontier buyers are inelastic and won't tolerate steep markup).
-  // Format: "budget=40,mid=30,premium=22,frontier=15". Falls back to
-  // OMA_MARKUP_PCT for any missing tier. Keyed off ModelDef.category.
-  OMA_TIERED_MARKUP: z.string().optional(),
-
-  // Operator-expected markup floor per model, used by the price-drift audit at
-  // catalog load. Format: "model-a=25,model-b=10". If a catalog entry's actual
-  // markupPercent is below its expected floor, OMA logs a WARN (likely selling
-  // at a loss — sync server/src/inference/models.ts with upstream pricing). Optional.
-  OMA_MODEL_MARKUP_OVERRIDES: z.string().optional(),
-
   // Minimum deposit floor (USD). Prevents spam/dust deposits that cost more in
   // on-chain verification + DB writes than they're worth. Research (Flexprice,
   // OpenRouter) shows a $10 floor is the sweet spot — blocks abuse without
   // friction for real users. Applied to all deposit routes (usdc/cctp/lifi).
   MIN_DEPOSIT_USD: z.coerce.number().min(0).max(100000).default(10),
-  AFFINITY_TTL_MS: z.coerce.number().int().positive().default(300_000),
 
   // Onramp configuration (moved from hardcoded literals in routes/onramp.ts)
   ONRAMP_PROCESSING_FEE_PERCENT: z.coerce.number().min(0).max(50).default(2.9), // 2.9% — value is in PERCENT
@@ -184,15 +148,6 @@ const envSchema = z.object({
   // OpenTelemetry configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
-
-  // Weighted load balancing for provider failover (format: "venice:70,surplus:30")
-  // Weights are relative proportions - higher weight = more traffic. 0 = disabled.
-  // If not set, defaults to sequential fallback (primary provider first, then others in order).
-  PROVIDER_WEIGHTS: z.string().optional(),
-
-  // Per-model weighted load balancing (format: "deepseek-v3.2=venice:70,surplus:30")
-  // Takes precedence over PROVIDER_WEIGHTS for matching models. Format: modelId=provider:weight,...
-  MODEL_WEIGHTS: z.string().optional(),
 
   // Provider request timeouts (ms)
   PROVIDER_TIMEOUT_STREAM_MS: z.coerce.number().min(1000).default(120000),
@@ -212,38 +167,10 @@ const envSchema = z.object({
   BUILD_SHA: z.string().optional().default("dev"),
   BUILD_TIME: z.string().optional().default(() => new Date().toISOString()),
 
-  // CheapTokens: force disable provider
-  CHEAPTOKENS_FORCE_DISABLE: envBoolean.default(false),
-
-  // ===========================================================================
-  // M5: Hardcoded business constants moved from inline literals into the
-  // schema. Defaults preserve the previous hardcoded behavior so deployments
-  // without these env vars continue to work.
-  // ===========================================================================
-
   // CCTP: per-chain RPC URL map (comma-separated `chain:url` pairs).
   // Example: "ethereum:https://eth.example.com,base:https://base.example.com".
   // When unset, cctp-client.ts falls back to viem's default RPC transport.
   CHAIN_RPC_URL_PER_CHAIN: z.string().optional(),
-
-  // CheapTokens: per-day USDC spend cap in cents. 0 (default) = no cap.
-  // The runtime check is `if (capCents > 0)` so an unset env var maps to
-  // the same "no cap" behavior as the prior hardcoded `undefined` literal.
-  CT_DAILY_USDC_CENTS_MAX: z.coerce.number().int().nonnegative().default(0),
-
-  // Surplus provider: minimum acceptable discount percentage (0-100). The
-  // surplus chat-completion path will reject quotes with discount < this floor.
-  SURPLUS_MIN_DISCOUNT_PCT: z.coerce.number().min(0).max(100).default(0),
-
-  // Surplus provider: contract addresses. The verifier is the legacy EIP-712
-  // verifyingContract; the settlement contract is the new x402 settlement
-  // proxy on Base (0x0770…c137). permit2 + usdc are required for `upto` scheme.
-  SURPLUS_VERIFIER_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  SURPLUS_SETTLEMENT_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  SURPLUS_PERMIT2_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  SURPLUS_USDC_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  SURPLUS_CHAIN_ID: z.coerce.number().int().positive().default(8453), // Base mainnet
-  SURPLUS_DEFAULT_SCHEME: z.enum(["upto", "exact"]).default("upto"),
 
   // Session / auth: cookie lifetime in milliseconds. Default 1h.
   SESSION_COOKIE_TTL_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
@@ -399,11 +326,6 @@ if (isProductionEnv && config.ENCRYPTION_KEY.length < 40) {
   process.exit(1);
 }
 
-if (isProductionEnv && config.FACILITATOR_MODE === "live" && !config.SURPLUS_WALLET_PRIVATE_KEY) {
-  console.error("[FATAL] FACILITATOR_MODE=live requires SURPLUS_WALLET_PRIVATE_KEY to be set in production. Set a Surplus settlement key or disable the surplus fallback path.");
-  process.exit(1);
-}
-
 if (isProductionEnv && !config.RECEIPT_HMAC_SECRET) {
   console.error("[FATAL] RECEIPT_HMAC_SECRET must be set in production environments.");
   process.exit(1);
@@ -432,56 +354,4 @@ if (isProductionEnv && !config.LIFI_WEBHOOK_SECRET) {
 
 if (isProductionEnv && !config.CCTP_WEBHOOK_SECRET) {
   console.warn("[CCTP] WARNING: CCTP_WEBHOOK_SECRET is not set. CCTP webhook verification will fail unless CCTP_WEBHOOK_SECRET is explicitly configured.");
-}
-
-function validateModelWeightsSync(modelWeightsStr: string | undefined): boolean {
-  if (!modelWeightsStr) return true;
-  const modelEntries = modelWeightsStr.split(";");
-  for (let i = 0; i < modelEntries.length; i++) {
-    const entry = modelEntries[i].trim();
-    if (!entry) continue;
-    const parts = entry.split("=");
-    if (parts.length !== 2) {
-      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: expected "model=provider:weight,...", got "${entry}"`);
-      return false;
-    }
-    const [modelId, weightsStr] = parts.map(s => s.trim());
-    if (!modelId) {
-      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: model name cannot be empty`);
-      return false;
-    }
-    if (!weightsStr) {
-      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weights cannot be empty for model "${modelId}"`);
-      return false;
-    }
-    const weightEntries = weightsStr.split(",");
-    const ALL_PROVIDERS_LIST = ["venice", "surplus"];
-    let totalWeight = 0;
-    for (const we of weightEntries) {
-      const [provider, weight] = we.split(":").map(s => s.trim());
-      if (!provider || !weight) {
-        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: invalid weight format "${we}" for model "${modelId}"`);
-        return false;
-      }
-      if (!ALL_PROVIDERS_LIST.includes(provider)) {
-        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: unknown provider "${provider}" for model "${modelId}". Valid: ${ALL_PROVIDERS_LIST.join(", ")}`);
-        return false;
-      }
-      const w = parseInt(weight, 10);
-      if (isNaN(w) || w < 0 || w > 100) {
-        console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weight "${weight}" must be 0-100 for provider "${provider}" in model "${modelId}"`);
-        return false;
-      }
-      totalWeight += w;
-    }
-    if (totalWeight > 0 && totalWeight !== 100) {
-      console.error(`[FATAL] MODEL_WEIGHTS entry ${i + 1}: weights sum to ${totalWeight}% (should be 100 or omit 0% providers) for model "${modelId}"`);
-      return false;
-    }
-  }
-  return true;
-}
-
-if (config.MODEL_WEIGHTS && !validateModelWeightsSync(config.MODEL_WEIGHTS)) {
-  process.exit(1);
 }
