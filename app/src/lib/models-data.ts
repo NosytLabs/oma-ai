@@ -605,16 +605,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 9.45,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-		"venice-gemini-3-flash-preview": {
-			id: "venice-gemini-3-flash-preview",
-			displayName: "Gemini 3 Flash",
-			provider: "Venice",
-			category: "mid",
-			maxTokens: 8192,
-			inputPricePer1M: 0.7,
-			outputPricePer1M: 3.75,
-			capabilities: ["chat", "fast", "tools"],
-		},
+
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
@@ -686,26 +677,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		// ── OMA-AI (OpenBroker) Resale - Branded as OMA-AI ────────────────
-		"minimax-m2.7": {
-			id: "minimax-m2.7",
-			displayName: "MiniMax M2.7",
-			provider: "OMA-AI",
-			category: "budget",
-			maxTokens: 8192,
-			inputPricePer1M: 0.015,
-			outputPricePer1M: 0.06,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"kimi-k2.6": {
-			id: "kimi-k2.6",
-			displayName: "Kimi K2.6",
-			provider: "OMA-AI",
-			category: "mid",
-			maxTokens: 8192,
-			inputPricePer1M: 0.024,
-			outputPricePer1M: 0.096,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
+
 		// ── Zyloo Subscription Integration - Branded as OMA-AI ───────────
 		"gemini-3.1-pro-preview": {
 			id: "gemini-3.1-pro-preview",

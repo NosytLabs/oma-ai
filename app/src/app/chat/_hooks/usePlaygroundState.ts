@@ -45,7 +45,7 @@ export interface UsePlaygroundStateOptions {
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
 	 * to `?model=<value>` from the current URL, falling back to
-	 * `minimax-m2.7` (free OMA-AI).
+	 * `gemini-3-flash-preview` (free OMA-AI).
 	 */
 	defaultModel?: string;
 }
@@ -140,7 +140,7 @@ export function usePlaygroundState(
 	// Lazy string keeps this hook free of a models-data import cycle; value must
 	// match FREE_DEFAULT_CHAT_MODEL in @/lib/model-utils.
 	const defaultModel =
-		options.defaultModel ?? searchParams?.get("model") ?? "minimax-m2.7";
+		options.defaultModel ?? searchParams?.get("model") ?? "gemini-3-flash-preview";
 	const initialMode = parseMediaMode(searchParams?.get("mode"));
 
 	// --- Core chat ---
@@ -197,7 +197,7 @@ export function usePlaygroundState(
 	// the compare slot to the second free model so guests never see a paid
 	// Venice model they can't call without signing in.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("kimi-k2.6");
+	const [compareModel, setCompareModel] = useState<string>("kimi-k3");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
