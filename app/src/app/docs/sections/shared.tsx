@@ -79,8 +79,8 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 // server/src/middleware/rate-limit/utils.ts exactly.
 export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
 	{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
-	{ model: "deepseek-v4-flash", rpm: 60, tpm: 120000 },
 	{ model: "gemini-3-flash-preview", rpm: 60, tpm: 120000 },
+	{ model: "kimi-k3", rpm: 60, tpm: 120000 },
 	// Still defined on the server; not always in the curated public catalog.
 	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
 ];
@@ -135,7 +135,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Anthropic-compatible Messages API for Claude Code and the Anthropic SDK. Same catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
 		auth: "Bearer token (API key) or x-api-key",
 		body: {
-			model: 'string (required). OMA catalog id, e.g. "claude-sonnet-5"',
+			model: 'string (required). OMA catalog id, e.g. "kimi-k3"',
 			messages: "array of { role: user|assistant, content }",
 			max_tokens: "integer (required by Anthropic clients)",
 			system: "string or content blocks (optional)",
@@ -147,7 +147,7 @@ export const ENDPOINTS: EndpointInfo[] = [
  "type": "message",
  "role": "assistant",
  "content": [{ "type": "text", "text": "Hello." }],
- "model": "claude-sonnet-5",
+ "model": "kimi-k3",
  "stop_reason": "end_turn",
  "usage": { "input_tokens": 12, "output_tokens": 8 }
 }`,

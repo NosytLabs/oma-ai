@@ -16,16 +16,17 @@ export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 
 /**
  * Known free catalog ids (provider=oma-ai). Keep in sync with live
- * GET /v1/models where provider === "oma-ai".
+ * GET /v1/models where provider === "oma-ai". Mirrors server-side
+ * `isFreeWebsiteModel` (server/src/routes/chat) — ids listed here must
+ * resolve to provider=oma-ai on the server, otherwise anonymous website
+ * chat gets 401'd for a "free" model.
  */
 export const FREE_CHAT_MODEL_IDS = new Set([
+	"gemini-3.1-pro-preview",
+	"gemini-3-pro-preview",
 	"gemini-3-flash-preview",
 	"gpt-4.1",
 	"gpt-4o",
-	"gemini-3-pro-preview",
-	"gemini-3.1-pro-preview",
-	"gemini-2.5-flash",
-	"kimi-k3",
 ]);
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */

@@ -134,7 +134,7 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 
 # Note: base URL is the origin (no /v1). The client appends /v1/messages.
 # Model ids are OMA catalog ids (not anthropic/claude-3-5-sonnet):
-# claude-sonnet-5 · openai-gpt-54 · llama-3.3-70b · …`}
+# kimi-k3 · gpt-4o · llama-3.3-70b · …`}
 				/>
 				<CodeBlock
 					lang="bash"
@@ -144,7 +144,7 @@ curl https://api.oma-ai.com/v1/messages \\
  -H "anthropic-version: 2023-06-01" \\
  -H "Content-Type: application/json" \\
  -d '{
- "model": "claude-sonnet-5",
+ "model": "kimi-k3",
  "max_tokens": 64,
  "messages": [{"role": "user", "content": "ping"}]
  }'
@@ -154,7 +154,7 @@ curl https://api.oma-ai.com/v1/messages \\
  -H "Authorization: Bearer oma_sk_your_key_here" \\
  -H "anthropic-version: 2023-06-01" \\
  -H "Content-Type: application/json" \\
- -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
+ -d '{"model":"kimi-k3","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
 				/>
 				<p className="mt-3 text-xs text-text-muted">
 					Prefer one auth style consistently. Streaming: set{""}

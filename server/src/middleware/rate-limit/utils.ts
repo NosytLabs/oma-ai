@@ -16,15 +16,16 @@ if (TRUSTED_PROXIES.size === 0 && config.NODE_ENV === "production") {
   logger.warn("[SECURITY] TRUSTED_PROXY_IPS is empty in production. Rate limiting by IP may be bypassed via x-forwarded-for spoofing. Set TRUSTED_PROXY_IPS to your reverse proxy IPs.");
 }
 
-// Model-specific limits (requests per minute). Keys must match a real Venice
-// model ID — only entries that survive the live Venice catalog audit are kept.
-// `getModelLimits()` is called per-model; any ID not listed here falls through
-// to the default limits in the rate-limit middleware.
+// Model-specific limits (requests per minute). Keys must match a real
+// catalog id (server/src/inference/models.ts) — only entries that survive
+// the catalog audit are kept. `getModelLimits()` is called per-model; any
+// ID not listed here falls through to the default limits in the
+// rate-limit middleware.
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
   // Curated catalog (standard tier)
   "llama-3.3-70b": { rpm: 60, tpm: 120000 },
-  "deepseek-v4-flash": { rpm: 60, tpm: 120000 },
   "gemini-3-flash-preview": { rpm: 60, tpm: 120000 },
+  "kimi-k3": { rpm: 60, tpm: 120000 },
   // Legacy/fast row (not always public; keep for override tests)
   "llama-3.2-3b": { rpm: 120, tpm: 240000 },
 };

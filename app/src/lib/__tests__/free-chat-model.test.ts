@@ -12,9 +12,10 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
-	it("allows known free OMA-AI (gonka) model ids without provider hint", () => {
+	it("allows known free OMA-AI model ids without provider hint", () => {
 		expect(isFreeChatModel("gemini-3-flash-preview")).toBe(true);
-		expect(isFreeChatModel("kimi-k3")).toBe(true);
+		expect(isFreeChatModel("gpt-4o")).toBe(true);
+		expect(isFreeChatModel("kimi-k3")).toBe(false); // Venice-routed on the server — requires auth
 		expect(isFreeChatModel("glm-5.2-fp8")).toBe(false); // removed from OpenBroker
 	});
 

@@ -1,13 +1,18 @@
 /**
  * Inference model catalog — curated best-in-class models.
  *
- * 22 curated chat models: 20 Venice + 2 OMA-AI/OpenBroker free models.
+ * 10 curated chat models: 5 Venice + 5 OMA-AI/OpenBroker.
  * Prices below are *wholesale base* for Venice (25% markup applied at
  * billing — see billing-service.ts). OMA-AI prices are user-facing
  * (margin built-in, markupPercent = 0).
  *
+ * NOTE: `gemini-3-flash-preview` is owned by the OMA-AI provider — it is
+ * the app's default free website-chat model (see app/src/lib/model-utils.ts).
+ * Never add a Venice entry under the same id or it will shadow the free
+ * route and break anonymous website chat (401 on free model).
+ *
  * OpenBroker (api.openbroker.oma-ai.gg) live catalog (verified 2026-08-04):
- //   gemini-3.1-pro-preview, gemini-3-pro-preview, gemini-3-flash-preview, gpt-4.1, gpt-4o
+ *   gemini-3.1-pro-preview, gemini-3-pro-preview, gemini-3-flash-preview, gpt-4.1, gpt-4o
  *   GET /v1/models is a status stub, not a model list — probe via chat.
  *
  * Add a new provider by extending `resolveProvider()` in proxy.ts and
@@ -104,21 +109,6 @@ const VENICE_MODELS: ModelDef[] = [
 
   // ── Mid ───────────────────────────────────────────────────────────────
 
-
-  {
-    id: "gemini-3-flash-preview",
-    provider: "venice",
-    inputPricePer1M: 0.7,
-    outputPricePer1M: 3.75,
-    markupPercent: 25,
-    displayName: "Gemini 3 Flash",
-    category: "mid",
-    maxTokens: 8192,
-    contextWindow: 256_000,
-    maxOutputTokens: 8192,
-    supportsStreaming: true,
-    capabilities: ["chat", "fast", "tools"],
-  },
   {
     id: "llama-3.3-70b",
     provider: "venice",
@@ -182,7 +172,7 @@ const VENICE_MODELS: ModelDef[] = [
 
 ];
 
-// ── OMA-AI (Gonka/Zyloo) Resale - Branded as OMA-AI ────────────────
+// ── OMA-AI (OpenBroker) Resale - Branded as OMA-AI ────────────────
 const ZYLOO_MODELS: ModelDef[] = [
   {
     id: "gemini-3.1-pro-preview",

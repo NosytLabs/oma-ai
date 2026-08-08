@@ -202,32 +202,26 @@ export async function callProvider(opts: CallProviderOptions): Promise<Response>
 
 export const FALLBACK_MAP: Record<string, string[]> = {
   // Frontier
-  "openai-gpt-56-sol": ["claude-sonnet-5", "gemini-3.1-pro-preview"],
-  
+  "openai-gpt-56-sol": ["kimi-k3", "gemini-3.1-pro-preview"],
+  "gemini-3.1-pro-preview": ["gemini-3-pro-preview", "openai-gpt-56-sol"],
+
   // Premium
-  "claude-sonnet-5": ["openai-gpt-54", "kimi-k3", "openai-gpt-52"],
-  "openai-gpt-54": ["claude-sonnet-5", "kimi-k3", "openai-gpt-52"],
-  "kimi-k3": ["claude-sonnet-5", "openai-gpt-54", "grok-4-5"],
-  "openai-gpt-52": ["openai-gpt-54", "grok-4-5"],
-  "grok-4-5": ["openai-gpt-54", "claude-sonnet-5"],
-  "zai-org-glm-5-2": ["grok-4-5", "claude-sonnet-5"],
+  "kimi-k3": ["zai-org-glm-5-2", "gemini-3-pro-preview"],
+  "zai-org-glm-5-2": ["kimi-k3", "gemini-3-pro-preview"],
+  "gemini-3-pro-preview": ["gemini-3.1-pro-preview", "gpt-4.1"],
+  "gpt-4.1": ["gpt-4o", "gemini-3-pro-preview"],
+  "gpt-4o": ["gpt-4.1", "gemini-3-flash-preview"],
 
   // Mid
-  "deepseek-v4-pro": ["qwen-3-7-plus", "gemini-3-5-flash", "kimi-k3"],
-  "gemini-3-5-flash": ["deepseek-v4-pro", "qwen-3-7-plus", "kimi-k3"],
-  "llama-3.3-70b": ["deepseek-v4-pro", "qwen-3-7-plus"],
-  "zai-org-glm-5-1": ["deepseek-v4-pro", "gemini-3-5-flash"],
-  "qwen-3-7-plus": ["deepseek-v4-pro", "gemini-3-5-flash", "kimi-k3"],
+  "llama-3.3-70b": ["qwen-3-7-plus", "zai-org-glm-5-1"],
+  "zai-org-glm-5-1": ["qwen-3-7-plus", "llama-3.3-70b"],
+  "qwen-3-7-plus": ["zai-org-glm-5-1", "llama-3.3-70b"],
 
   // Budget
-  "deepseek-v4-flash": ["mistral-small-2603", "xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
-  "mistral-small-2603": ["deepseek-v4-flash", "xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
-  "xiaomi-mimo-v2-5": ["deepseek-v4-flash", "mistral-small-2603", "gemini-3-flash-preview"],
-  "mercury-2": ["deepseek-v4-flash", "mistral-small-2603"],
+  "xiaomi-mimo-v2-5": ["gemini-3-flash-preview", "llama-3.3-70b"],
 
   // OMA-AI Free Models (OpenBroker) — prefer oma-ai peers first, then budget Venice
-  "gemini-3-flash-preview": ["gemini-3-pro-preview", "deepseek-v4-flash", "mistral-small-2603"],
-  "gemini-3-pro-preview": ["gemini-3.1-pro-preview", "deepseek-v4-flash", "mistral-small-2603"],
+  "gemini-3-flash-preview": ["gemini-3-pro-preview", "gpt-4o", "xiaomi-mimo-v2-5"],
 };
 
 /**

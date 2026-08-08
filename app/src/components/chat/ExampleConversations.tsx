@@ -122,8 +122,8 @@ LIMIT 50;
 \`\`\`
 
 		The users table has 500K rows, orders has 2M, order_items has 8M. Current indexes: users(id), orders(user_id), order_items(order_id).`,
-		model: "kimi-k3",
-		modelName: "Kimi K3 (free)",
+		model: "gemini-3-flash-preview",
+		modelName: "Gemini 3 Flash (free)",
 		difficulty: "moderate",
 	},
 	{
@@ -138,8 +138,8 @@ LIMIT 50;
 - User presence indicators — who's online
 
 Compare WebSocket, Server-Sent Events, and polling for this use case. Consider: connection overhead, browser support, scaling behind a load balancer, and what happens when a connection drops. Give me a concrete recommendation with implementation notes.`,
-		model: "kimi-k3",
-		modelName: "Kimi K3 (free)",
+		model: "gemini-3-flash-preview",
+		modelName: "Gemini 3 Flash (free)",
 		difficulty: "moderate",
 	},
 
@@ -214,8 +214,8 @@ app.use('/api/admin/*', async (req, res, next) => {
 \`\`\`
 
 Be specific about each vulnerability and provide the corrected code.`,
-		model: "kimi-k3",
-		modelName: "Kimi K3 (free)",
+		model: "gemini-3-flash-preview",
+		modelName: "Gemini 3 Flash (free)",
 		difficulty: "advanced",
 	},
 

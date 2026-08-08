@@ -67,7 +67,6 @@ const LOGO_MAP: Record<string, string> = {
  "gemini": "google",
  "gemini-3-5-flash": "google",
  "gemini-3-flash-preview": "google",
- "gemini-2.5-flash": "google",
 
  // Meta / Llama
  "meta": "meta",

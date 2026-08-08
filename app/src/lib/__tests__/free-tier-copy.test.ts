@@ -17,13 +17,11 @@ function readApp(rel: string): string {
 describe("free-tier copy accuracy", () => {
 	it("FREE_CHAT_MODEL_IDS contains all free models", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual([
-			"gemini-2.5-flash",
+			"gemini-3.1-pro-preview",
 			"gemini-3-flash-preview",
 			"gemini-3-pro-preview",
-			"gemini-3.1-pro-preview",
 			"gpt-4.1",
 			"gpt-4o",
-			"kimi-k3",
 		].sort());
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
@@ -52,7 +50,7 @@ describe("free-tier copy accuracy", () => {
 	it("WelcomeBanner tip names free OMA-AI models, not Venice", () => {
 		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
 		expect(src).toMatch(/Gemini 3 Flash/);
-		expect(src).toMatch(/Kimi K3/);
+		expect(src).toMatch(/GPT-4o/);
 		expect(src).not.toMatch(/DeepSeek V4 Flash.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});

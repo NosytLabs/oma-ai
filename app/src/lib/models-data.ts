@@ -582,8 +582,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		// ── OMA-AI (OpenBroker) Resale - Branded as OMA-AI ────────────────
-
-		// ── Zyloo Subscription Integration - Branded as OMA-AI ───────────
 		"gemini-3.1-pro-preview": {
 			id: "gemini-3.1-pro-preview",
 			displayName: "Gemini 3.1 Pro",
@@ -614,24 +612,14 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 1.5,
 			capabilities: ["chat", "fast", "tools"],
 		},
-		"gemini-2.5-flash": {
-			id: "gemini-2.5-flash",
-			displayName: "Gemini 2.5 Flash",
-			provider: "OMA-AI",
-			category: "mid",
-			maxTokens: 8192,
-			inputPricePer1M: 0.2,
-			outputPricePer1M: 1.5,
-			capabilities: ["chat", "fast"],
-		},
 		"gpt-4.1": {
 			id: "gpt-4.1",
 			displayName: "GPT-4.1",
 			provider: "OMA-AI",
 			category: "premium",
 			maxTokens: 16384,
-			inputPricePer1M: 2.0,
-			outputPricePer1M: 8.0,
+			inputPricePer1M: 1.5,
+			outputPricePer1M: 7.5,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gpt-4o": {
@@ -640,19 +628,9 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "OMA-AI",
 			category: "premium",
 			maxTokens: 16384,
-			inputPricePer1M: 2.5,
-			outputPricePer1M: 10.0,
+			inputPricePer1M: 0.8,
+			outputPricePer1M: 4.0,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"glm-4.5-air": {
-			id: "glm-4.5-air",
-			displayName: "GLM 4.5 Air",
-			provider: "OMA-AI",
-			category: "budget",
-			maxTokens: 8192,
-			inputPricePer1M: 0.1,
-			outputPricePer1M: 0.2,
-			capabilities: ["chat", "fast", "tools"],
 		},
 	},
 };
@@ -661,7 +639,9 @@ const FALLBACK_CATALOG: RawCatalog = {
  * Synchronous `MODELS` array for SSR metadata and the few places that
  * genuinely can't go async (Next.js `generateStaticParams`, page
  * metadata). This is the *fallback* catalog — the full curated catalog
- * (22 chat models) is loaded lazily via `loadModels()`.
+ * is loaded lazily via `loadModels()` from GET /v1/models. Keep prices
+ * and ids in sync with server/src/inference/models.ts (single source
+ * of truth); entries here that the server can't route will 404.
  */
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 

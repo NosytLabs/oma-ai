@@ -63,9 +63,10 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Decentralized budget provider via Zyloo/Gonka. Hosts Gemini 3 Flash,
-						Kimi K3, and GPT-4.1 at the lowest per-token rates in the
-						catalog — metered and billed like every other model.
+						Decentralized budget provider via OpenBroker. Hosts Gemini 3.1 Pro,
+						Gemini 3 Pro, Gemini 3 Flash, GPT-4.1, and GPT-4o at the lowest
+						per-token rates in the catalog — metered and billed like every
+						other model.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>

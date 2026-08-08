@@ -24,14 +24,14 @@ interface DemoRound {
 
 const ROUNDS: DemoRound[] = [
  {
- model: "claude-sonnet-5",
+ model: "kimi-k3",
  modelLabel: "Claude Opus 5",
  prompt: "Summarize OMA in one sentence.",
  reply:
  "One gateway for every OMA model — buy credits by card, deposit USDC, or pay per call with x402.",
  },
  {
- model: "deepseek-v4-flash",
+ model: "gemini-3-flash-preview",
  modelLabel: "DeepSeek V4 Flash",
  prompt: "How do I pay without a card?",
  reply: "Deposit USDC on Base, or use x402 for agent-native billing.",
