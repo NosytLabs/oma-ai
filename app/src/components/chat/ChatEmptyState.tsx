@@ -41,7 +41,7 @@ const PRESETS: Preset[] = [
 		icon: Bug,
 		tint: "bg-warning/10 border-warning/30",
 		prompt:
-			"What's wrong with this code and how do I fix it?\n\n```javascript\nconst nums = [1, 2, 3, 4, 5];\nconst result = nums.filter(n => n % 2 = 0);\nconsole.log(result);\n```",
+			"What's wrong with this code and how do I fix it?\n\n```javascript\nconst nums = [1, 2, 3, 4, 5];\nconst result = nums.filter(n => n % 2 = 0);\n```",
 	},
 	{
 		id: "summarize",

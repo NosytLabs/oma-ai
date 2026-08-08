@@ -2,7 +2,7 @@
  * Better Auth — single source of truth for OMA-AI user authentication.
  *
  * Plugins:
- *   - magicLink:  passwordless email sign-in via Resend (dev: console.log fallback)
+ *   - magicLink:  passwordless email sign-in via Resend
  *   - siwe:       Sign-In With Ethereum (EIP-4361) — binds a wallet to the
  *                 user row and recovers ENS names + avatars via viem.
  *   - admin:      Self-hosted admin — roles, ban/unban, impersonation, user management.

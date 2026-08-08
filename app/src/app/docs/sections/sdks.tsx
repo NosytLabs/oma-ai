@@ -37,9 +37,7 @@ const response = await client.chat.completions.create({
  ],
  temperature: 0.7,
  max_tokens: 256,
-});
-
- // console.log(response.choices[0].message.content);`;
+});`;
 
 	const curlChatCode = `curl https://api.oma-ai.com/v1/chat/completions \\
  -H "Authorization: Bearer oma_sk_your_key_here" \\
@@ -207,7 +205,7 @@ const client = new OpenAI({
 
 const models = await client.models.list();
 for (const model of models.data) {
- // console.log(model.id);
+ // Do something with model.id
 }`;
 
 	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
@@ -381,9 +379,7 @@ const oma = createOpenAI({
 const { text } = await generateText({
  model: oma('llama-3.3-70b'),
  prompt: 'Explain quantum computing in one sentence.',
-});
-
- // console.log(text);`}
+});`}
 					lang="javascript"
 				/>
 			</div>

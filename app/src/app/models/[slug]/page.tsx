@@ -225,9 +225,7 @@ const response = await client.chat.completions.create({
  ],
  max_tokens: 150,
  temperature: 0.7
-});
-
-// console.log(response.choices[0].message.content);`;
+});`;
 
  return (
  <div className="min-h-screen bg-void">
@@ -495,9 +493,7 @@ const response = await client.chat.completions.create({
  ],
  max_tokens: 150,
  temperature: 0.7
-});
-
-// console.log(response.choices[0].message.content);`;
+});`;
 
  return (
  <div className="min-h-screen bg-void">

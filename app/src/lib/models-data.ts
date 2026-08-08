@@ -141,7 +141,7 @@ export const PROVIDER_COLORS: Record<
  *  (lowercase, vendor name, or alias) onto the canonical `Provider`. */
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
-	if (!s) return "Venice";
+	if (!s) return "OMA-AI";
 	// Catalog + UI labels: "OMA-AI"/"OpenBroker" upstream names now branded as OMA-AI
 	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk")) {
 		return "OMA-AI";
@@ -151,7 +151,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 	}
 	if (s.includes("surplus")) return "Surplus";
 	if (s.includes("venice")) return "Venice";
-	return "Venice";
+	return "OMA-AI";
 }
 
 /** Distinct providers actually surfaced in a list of models — used to
@@ -159,7 +159,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["Venice", "OMA-AI", "Surplus"] as Provider[]).filter((p) =>
+	return (["OMA-AI", "Venice", "Surplus"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }
@@ -194,6 +194,7 @@ export const TIER_COLORS: Record<
 	},
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
 
 // ---------------------------------------------------------------------------
@@ -440,6 +441,7 @@ export async function loadModels(): Promise<Model[]> {
 			if (!res.ok) throw new Error(`API returned ${res.status}`);
 			const json: ApiModelsResponse = await res.json();
 			const models: Model[] = json.data
+				.filter((entry: ApiModelEntry) => entry.category !== "video")
 				.map((entry: ApiModelEntry) => {
 					const name = normalizeDisplayName(entry.id, entry.display_name);
 					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");

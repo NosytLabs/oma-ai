@@ -31,8 +31,7 @@ const response = await client.chat.completions.create({
  ],
 });
 
- // console.log(response.choices[0].message.content);
-// → billed in USDC, settled on Base, no subscription`;
+ // → billed in USDC, settled on Base, no subscription`;
 }
 
 export function CodeExample({ modelCount }: CodeExampleProps) {
