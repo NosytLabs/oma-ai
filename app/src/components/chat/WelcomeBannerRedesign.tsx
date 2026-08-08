@@ -350,7 +350,7 @@ export function WelcomeBanner({
   >
   <span className="text-accent font-bold">TIP:</span>{""}
   <TypewriterText
-  text="Try MiniMax M2.7 for coding, or Kimi K2.6 for long context. Both are free — no sign-in required."
+  text="Try Gemini 3 Flash for coding, or Kimi K3 for long context. Both are free — no sign-in required."
   delay={900}
   />
   </m.div>

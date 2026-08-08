@@ -350,4 +350,4 @@ mediaRouter.get("/v1/videos/retrieve", async (c) => {
 });
 
 // Keep config referenced so TS doesn't prune the import if envs change.
-export const _mediaConfig = config;
+void config;

@@ -414,7 +414,7 @@ export default function CapabilitiesPage() {
 									{
 										name: "OMA-AI (OMA-AI)",
 										privacy: "Aggregator",
-										routes: "Budget chat (MiniMax M2.7, Kimi K2.6)",
+										routes: "Budget chat (Gemini 3 Flash, Kimi K3)",
 										fallback: "Auto-reroute to Venice",
 										status: "active",
 									},

@@ -5,7 +5,7 @@
 // Keep admin requests same-origin so the HttpOnly Better Auth cookie is
 // included in local development and production alike. The Next catch-all
 // proxy forwards `/api/v1/*` to the Hono backend.
-export const ADMIN_BASE = "/api";
+const ADMIN_BASE = "/api";
 
 export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${ADMIN_BASE}${path}`, {

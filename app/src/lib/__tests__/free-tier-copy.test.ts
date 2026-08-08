@@ -51,8 +51,8 @@ describe("free-tier copy accuracy", () => {
 
 	it("WelcomeBanner tip names free OMA-AI models, not Venice", () => {
 		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
-		expect(src).toMatch(/MiniMax M2\.7/);
-		expect(src).toMatch(/Kimi K2\.6/);
+		expect(src).toMatch(/Gemini 3 Flash/);
+		expect(src).toMatch(/Kimi K3/);
 		expect(src).not.toMatch(/DeepSeek V4 Flash.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});

@@ -145,18 +145,19 @@ chatRoutes.post(
       ? `idem-${userId}-${idempotencyKey}`.slice(0, 200)
       : `chatcmpl-${crypto.randomUUID()}`;
 
-    if (idempotencyKey && userId) {
-      const prior = await db
-        .select()
-        .from(usageRecords)
-        .where(
-          and(
-            eq(usageRecords.userId, userId),
-            eq(usageRecords.requestId, requestId),
-            eq(usageRecords.status, "completed"),
-          ),
-        )
-        .limit(1);
+    try {
+      if (idempotencyKey && userId) {
+        const prior = await db
+          .select()
+          .from(usageRecords)
+          .where(
+            and(
+              eq(usageRecords.userId, userId),
+              eq(usageRecords.requestId, requestId),
+              eq(usageRecords.status, "completed"),
+            ),
+          )
+          .limit(1);
       if (prior.length > 0) {
         // Cache hit — return a minimal replay. Streaming replays would
         // require storing the full response body which we don't
@@ -188,8 +189,7 @@ chatRoutes.post(
     // has no usable credit balance. The ledger remains the final atomic guard
     // after the provider returns, but this avoids serving obviously unpaid
     // requests and gives the client a useful 402 response.
-    try {
-      if (userId && !isFreeWebsiteChat) {
+    if (userId && !isFreeWebsiteChat) {
         await assertSufficientBalance(userId, getModelPricing(model), promptTokens, max_tokens);
       }
 

@@ -210,7 +210,7 @@ export function ChatToolbar({
 		>
 			{/* Left: model + params (shrinks on mobile) */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
-				{/* Compact model badge — replaces the previous "OMA · MiniMax 2.7" pill
+				{/* Compact model badge — replaces the previous "OMA · Gemini 3 Flash" pill
 				 that was duplicating the navbar brand. Now just shows the current
 				 model with tier color so the active selection is always visible. */}
 				<div className="min-w-0 w-[clamp(7rem,36vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">

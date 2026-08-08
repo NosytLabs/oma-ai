@@ -194,7 +194,7 @@ export const TIER_COLORS: Record<
 	},
 };
 
-export const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
+const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
 
 // ---------------------------------------------------------------------------
 // Catalog ingestion
@@ -314,7 +314,7 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 /**
  * Display-name overrides applied on top of whatever the upstream API returns.
  * We use this to canonicalise names whose API string is wrong or low-quality
- * (e.g. "Minimax M2" → "MiniMax 2.7") without forking the SSR fallback.
+ * (e.g. "Google Gemini 3" → "Gemini 3 Flash") without forking the SSR fallback.
  * Keyed by lower-cased model id.
  */
 const DISPLAY_NAME_OVERRIDES: Record<string, string> = {};

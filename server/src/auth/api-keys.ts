@@ -297,19 +297,7 @@ export async function listApiKeys(userId: string, includeRevoked = false) {
     .where(and(eq(apiKeys.userId, userId), eq(apiKeys.active, true)));
 }
 
-export async function getApiKey(userId: string, keyId: string) {
-  const [result] = await db.select({
-    id: apiKeys.id,
-    keyPrefix: apiKeys.keyPrefix,
-    name: apiKeys.name,
-    active: apiKeys.active,
-    lastUsedAt: apiKeys.lastUsedAt,
-    expiresAt: apiKeys.expiresAt,
-    createdAt: apiKeys.createdAt,
-    allowedModels: apiKeys.allowedModels,
-  }).from(apiKeys).where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId))).limit(1);
-  return result || null;
-}
+
 
 export async function revokeApiKey(userId: string, keyId: string) {
   const result = await db.update(apiKeys).set({ active: false }).where(
@@ -344,19 +332,7 @@ export function createApiKeyCookieHeader(apiKey: string): string {
   return cookie;
 }
 
-export async function updateModelAllowlist(
-  keyId: string,
-  userId: string,
-  models: string[],
-): Promise<{ id: string; allowedModels: string[] | null } | null> {
-  const normalized = models.length > 0 ? models.filter((m) => typeof m === "string" && m.length > 0) : [];
-  const [result] = await db
-    .update(apiKeys)
-    .set({ allowedModels: normalized.length > 0 ? normalized : null })
-    .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
-    .returning({ id: apiKeys.id, allowedModels: apiKeys.allowedModels });
-  return result ?? null;
-}
+
 
 export function createLogoutCookieHeader(): string {
   const isDev = config.NODE_ENV === "development";

@@ -28,7 +28,7 @@ const KNOWN_MISSING_SLUGS = new Set<string>([
  "deepseek",
  "moonshotai",
  "alibabacloud",
- "minimax",
+
  "xiaomi",
  "x",
  "venice",
@@ -106,10 +106,7 @@ const LOGO_MAP: Record<string, string> = {
  "qwen-3-7-plus": "alibabacloud",
  "qwen-3-6-plus": "alibabacloud",
 
- // MiniMax 2.7
- "minimax": "minimax",
- "minimax-m2.7": "minimax",
- "minimax-m3-preview": "minimax",
+ // We do not have minimax logos anymore, using default for unknown
 
  // Xiaomi MiMo
  "xiaomi": "xiaomi",
@@ -146,7 +143,7 @@ const LOCAL_PROVIDER_ICONS: Record<string, string> = {
  xai: "/logos/providers/xai.svg",
  moonshotai: "/logos/providers/moonshot.svg",
  alibabacloud: "/logos/providers/alibaba.svg",
- minimax: "/logos/providers/minimax.svg",
+
  xiaomi: "/logos/providers/xiaomi.svg",
  zhipuai: "/logos/providers/zai.svg",
  zai: "/logos/providers/zai.svg",
@@ -166,7 +163,7 @@ const PROVIDER_COLORS: Record<string, string> = {
  xai: "1d9bf0",
  moonshotai: "6366f1",
  alibabacloud: "ff6a00",
- minimax: "7c3aed",
+
  xiaomi: "ff6900",
  zhipuai: "818cf8",
  zai: "818cf8",
@@ -186,7 +183,7 @@ function getProviderFromModelId(modelId: string): string {
  if (lower.includes("grok") || lower.includes("xai")) return "xai";
  if (lower.includes("kimi") || lower.includes("moonshot")) return "moonshotai";
  if (lower.includes("qwen")) return "alibabacloud";
- if (lower.includes("minimax")) return "minimax";
+
  if (lower.includes("xiaomi") || lower.includes("mimo")) return "xiaomi";
  if (lower.includes("glm") || lower.includes("zhipu")) return "zhipuai";
  if (lower.includes("mercury")) return "inception";

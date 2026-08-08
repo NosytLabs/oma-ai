@@ -29,7 +29,7 @@ const BATCH_INTERVAL_MS = 250;
  * 2. Consecutive same-role messages — a send that 401/402'd (e.g. paid model
  *    without an API key) leaves its user message in history with no assistant
  *    reply, so the next send creates two user messages in a row. Providers
- *    either reject this or (as observed with MiniMax 2.7) answer the earlier,
+ *    either reject this or (as observed with old providers) answer the earlier,
  *    stale question. Keep only the last message of each run.
  */
 export function sanitizeHistory(messages: Message[]): Message[] {
@@ -420,7 +420,7 @@ export function useStreamingChat(
 
 				let sseBuffer = "";
 				const SSE_BUFFER_MAX_BYTES = 1024 * 1024; // 1 MB cap to prevent unbounded growth
-				// State machine for routing content tokens. Some models (MiniMax 2.7,
+				// State machine for routing content tokens. Some models (OMA-AI/Gonka,
 				// DeepSeek R1, Qwen QwQ) wrap their reasoning inside  and 
 				// tags inside the `content` field rather than emitting a separate
 				// `reasoning_content` delta. We watch for those tags and route the
@@ -507,7 +507,7 @@ export function useStreamingChat(
 							flushToState();
 						}
 						// Reasoning models (DeepSeek R1, Claude extended thinking) emit
-						// `reasoning_content` separately from `content`. MiniMax 2.7
+						// `reasoning_content` separately from `content`. Some models
 						// emits it as `reasoning`. Capture both so the thinking phase
 						// is visible in the collapsible "Thinking" section instead of
 						// showing blank while the model reasons.

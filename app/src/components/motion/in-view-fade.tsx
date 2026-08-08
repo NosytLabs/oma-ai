@@ -54,7 +54,7 @@ interface InViewFadeProps {
 }
 
 /** Headless / slow-IO fallback before permanent blank (ms). */
-export const IN_VIEW_FADE_SAFETY_MS = 400;
+const IN_VIEW_FADE_SAFETY_MS = 250;
 
 export function InViewFade({
 	children,

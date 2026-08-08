@@ -31,7 +31,7 @@ vi.mock("next/link", () => ({
 
 const baseProps = {
 	variant: "chat" as const,
-	model: "minimax-m2.7",
+	model: "gemini-3-flash-preview",
 	setModel: vi.fn(),
 	paramsOpen: false,
 	setParamsOpen: vi.fn(),

@@ -54,7 +54,7 @@ type LiveModelDetail = {
  * humanization used by the /models listing for long-tail entries). */
 function liveDisplayName(id: string): string {
  return id
- .replace(/^(openai|minimax|together|deepinfra)\//i, "")
+ .replace(/^(openai|minimax|together|deepinfra|venice)\//i, "")
  .split(/[-_]/)
  .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
  .filter(Boolean)

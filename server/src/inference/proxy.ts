@@ -540,7 +540,7 @@ export function createStreamingProxy(
             const obj = JSON.parse(payload);
             const choice = obj.choices?.[0];
             // Handle both "content" and "reasoning"/"reasoning_content" deltas.
-            // OMA-AI/OpenBroker uses "reasoning" for MiniMax chain-of-thought;
+            // OMA-AI/Gonka uses "reasoning" for chain-of-thought;
             // Venice uses "reasoning_content". Both count as output tokens.
             const delta = choice?.delta?.content ?? choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
             if (typeof delta === "string" && delta.length > 0) {

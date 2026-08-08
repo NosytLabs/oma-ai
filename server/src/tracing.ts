@@ -53,7 +53,7 @@ export async function withSpan<T>(
 /**
  * LLM-specific span attribute keys following OpenTelemetry semantic conventions
  */
-export const LLM_ATTRS = {
+const LLM_ATTRS = {
   MODEL: "llm.model",
   PROVIDER: "llm.provider",
   USER_ID: "llm.user_id",
@@ -71,21 +71,6 @@ export const LLM_ATTRS = {
 } as const;
 
 /**
- * Provider error types for categorization
- */
-export const PROVIDER_ERROR_TYPES = {
-  CONNECTION_ERROR: "connection_error",
-  TIMEOUT_ERROR: "timeout_error",
-  RATE_LIMIT_ERROR: "rate_limit_error",
-  AUTHENTICATION_ERROR: "authentication_error",
-  PERMISSION_ERROR: "permission_error",
-  INVALID_REQUEST_ERROR: "invalid_request_error",
-  NOT_FOUND_ERROR: "not_found_error",
-  PAYMENT_REQUIRED_ERROR: "payment_required_error",
-  INTERNAL_ERROR: "internal_error",
-  SERVER_ERROR: "server_error",
-  CIRCUIT_BREAKER: "circuit_breaker",
-  UNKNOWN_ERROR: "unknown_error",
 } as const;
 
 /**

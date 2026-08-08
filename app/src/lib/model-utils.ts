@@ -33,7 +33,7 @@ export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
 /**
  * Live-API display-name overrides. The upstream `/v1/models` endpoint returns
- * low-quality names for some entries (e.g. "Minimax M2" instead of "MiniMax 2.7").
+ * low-quality names for some entries (e.g. "Google Gemini 3" instead of "Gemini 3 Flash").
  * This map canonicalises them on the client without touching the server
  * catalog.
  */

@@ -24,7 +24,7 @@ export type ServerQuotaPayload = {
 	code?: string | null;
 };
 
-export function todayUtc(): string {
+function todayUtc(): string {
 	return new Date().toISOString().slice(0, 10);
 }
 

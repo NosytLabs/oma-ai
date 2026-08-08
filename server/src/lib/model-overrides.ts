@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export const MODEL_OVERRIDES_FILENAME = "models-overrides.json";
+const MODEL_OVERRIDES_FILENAME = "models-overrides.json";
 
 export interface ModelPricingOverride {
   inputPricePer1M: number;

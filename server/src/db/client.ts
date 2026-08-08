@@ -50,7 +50,7 @@ function createNodePgDb(dbUrl: string): AppDb {
 	return drizzleNode(_pgPool, { schema });
 }
 
-export function getDb(): AppDb {
+function getDb() {
 	if (_dbInitFailed) {
 		if (process.env.NODE_ENV === "test") {
 			return null as unknown as AppDb;
@@ -148,11 +148,4 @@ export const db = new Proxy(createMockDrizzle(), {
 	},
 }) as AppDb;
 
-export function resetDbState(): void {
-	if (_pgPool) {
-		void _pgPool.end().catch(() => {});
-		_pgPool = null;
-	}
-	_db = null;
-	_dbInitFailed = false;
-}
+
