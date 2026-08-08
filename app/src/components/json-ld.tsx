@@ -6,6 +6,10 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
+function safeJsonStringify(data: any) {
+	return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
 export function OrganizationJsonLd() {
 	const data = {
 		"@context": "https://schema.org",
@@ -27,7 +31,7 @@ export function OrganizationJsonLd() {
 	return (
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
 		/>
 	);
 }
@@ -53,7 +57,7 @@ export function SoftwareApplicationJsonLd() {
 	return (
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
 		/>
 	);
 }
@@ -78,7 +82,7 @@ export function BreadcrumbListJsonLd({
 	return (
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
 		/>
 	);
 }
@@ -111,7 +115,7 @@ export function ProductJsonLd({
 	return (
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
 		/>
 	);
 }
@@ -138,7 +142,7 @@ export function FAQPageJsonLd({
 	return (
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
 		/>
 	);
 }
