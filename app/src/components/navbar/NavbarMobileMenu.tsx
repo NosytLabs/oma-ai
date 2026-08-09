@@ -70,7 +70,7 @@ export function NavbarMobileMenu({
 	const visibleGroups = mobileGroups
 		.map((group) => ({
 			...group,
-			links: group.links.filter((l) => !l.adminOnly || isAdmin),
+			links: group.links,
 		}))
 		.filter((group) => group.links.length > 0);
 

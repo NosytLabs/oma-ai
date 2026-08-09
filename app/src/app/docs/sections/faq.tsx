@@ -15,7 +15,7 @@ export function FAQSection() {
 				id="faq"
 				icon={<HelpCircle className="h-5 w-5 text-accent" />}
 				title="Questions answered in plain language"
-				subtitle="Beginner-friendly Q&A and an alphabetized glossary live on their own pages — kept in sync with the developer reference."
+				subtitle="Beginner-friendly Q&A and an alphabetized glossary live on their own pages — kept in sync with the API reference."
 			/>
 
 			<div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -29,7 +29,7 @@ export function FAQSection() {
 							FAQ
 						</p>
 						<p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
-							Plain-language answers for first-time users and developers —
+							Plain-language answers for first-time users —
 							accounts, API keys, USDC, x402, tokens, models, privacy, and
 							how to start.
 						</p>

@@ -42,7 +42,7 @@ export async function addToDlq(provider: string, rawBody: string, errorMessage: 
   if (!redis) {
     // Skip logging the error in test environment
     if (process.env.NODE_ENV !== 'test') {
-      if (process.env.NODE_ENV !== "test") logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
+      logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
     }
     return;
   }

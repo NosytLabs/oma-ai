@@ -1,122 +1,213 @@
-# OMA AI Gateway
+# OMA-AI
 
-[![Website](https://img.shields.io/badge/website-oma--ai.com-07090a?style=flat&labelColor=0d1110&color=46d39a)](https://oma-ai.com)
-[![Version](https://img.shields.io/badge/version-2.1.0-07090a?style=flat&labelColor=0d1110&color=46d39a)](#)
-[![Status](https://img.shields.io/badge/status-local_dev_(pre--launch)-07090a?style=flat&labelColor=0d1110&color=46d39a)](#)
-
-Self-hosted AI inference gateway featuring an OpenAI-compatible API, multi-model chat playground, credit system supporting cards and USDC, and `x402` pay-per-request billing for autonomous agents.
+[![Website](https://img.shields.io/badge/website-oma--ai.com-0d1117?style=flat&labelColor=0d1117&color=46d39a)](https://oma-ai.com)
+[![Version](https://img.shields.io/badge/version-2.1.0-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
+[![License](https://img.shields.io/badge/license-MIT-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
+[![Status](https://img.shields.io/badge/status-active_development-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
 
 > **One gateway. Every model. No lock-in.**
->
-> OMA AI acts as a curated, privacy-first multi-provider inference gateway. It offers OpenAI and Anthropic-compatible APIs, a free guest chat experience powered by OMA-AI models, paid access to the Venice catalog, and integrated card/USDC/x402 payment systems. OMA AI guarantees 100% data privacy: zero logs, zero training, zero tracking. 
-> 
-> By switching to OMA AI, you get access to the best models without managing multiple API keys, subscriptions, or navigating complex provider billing, at lower costs than direct usage. Try our generous free tier and upgrade when you are ready to scale.
+
+OMA-AI is an open-source, privacy-first multi-provider AI inference gateway. It exposes an OpenAI-compatible API, routes requests across curated model providers with automatic fallback, and handles billing—including crypto-native x402 micropayments—so developers and agents can build without managing scattered API keys or subscriptions.
 
 ---
 
-## Repository Layout
+## What is OMA-AI?
 
-```text
-app/                 Next.js 15 frontend (marketing, chat, dashboard, docs UI)
-server/              Hono API (inference proxy, auth, billing, x402)
-scripts/
-  dev/               start-dev, local-db, chrome debug
-  ops/               deploy, start-prod, launch validate, wallets, seed
-  audit/             axe / visual / UX capture tools
-deploy/              Coolify / compose snippets
-docker-compose*.yml  Local / prod compose
-BRAND.md             Design tokens, voice, logo rules
-SECURITY.md          Security policy
-```
+OMA-AI stands for **Open Model Access**. It is a single API endpoint that unifies access to the best AI models across multiple providers.
 
-### Public Product Surfaces (App Routes)
+| Need | OMA-AI Solution |
+|------|-----------------|
+| OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
+| Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
+| Multi-model routing | Automatic failover and load balancing across providers |
+| Agent billing | x402 USDC micropayments + Polar card credits |
+| Privacy | Zero logs, zero training, zero tracking |
 
-| Path | Purpose |
-| :--- | :--- |
-| `/` | Landing page — product value proposition, primary CTAs |
-| `/models` | Curated model catalog and pricing details |
-| `/chat` | Interactive playground (chat, image, and video generation) |
-| `/pricing` · `/deposit` | Pricing model and credit funding interface |
-| `/docs` · `/getting-started` | API documentation and developer quickstart |
-| `/docs#integrations` | Integration guides for OpenCode, Claude Code, Cursor, and Continue |
-| `/dashboard` · `/settings` | User account overview, API key management, and usage analytics |
-| `/capabilities` · `/compare` · `/faq` · `/glossary` | Educational product guides |
-| `/about` · `/contact` · `/privacy` · `/terms` | Trust, contact, and legal documentation |
-
-- **Agent-facing public files:** `app/public/llms.txt`, `app/public/agent-skill.md`
-- **Machine-readable API:** `GET https://api.oma-ai.com/openapi.json` (also available at `/v1/openapi.json`)
+By switching to OMA-AI, you get access to the best models at wholesale rates, without managing multiple API keys, subscriptions, or navigating complex provider billing. Try our generous free tier and upgrade when you are ready to scale.
 
 ---
 
-## Features
+## Core Features
 
-### Payments & Billing
-- **Card Credits (Polar):** Purchase credit tiers via Visa, Mastercard, or Apple Pay. Upgrade to Hobby ($10), Builder ($50), or Scale ($250) plans to remove rate limits and access premium models.
-- **USDC on Base:** Fund accounts with direct 1:1 USD deposits with zero markup.
-- **x402 Micropayments:** Agent-native pay-per-request billing using EIP-3009 for automated workloads.
-- **Unbeatable Value:** Only pay for what you use. We negotiate wholesale rates and pass the savings to you. See `/pricing` for details.
+### 🪄 Magic Link Auth
+Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethereum) wallet authentication. Get an API key in seconds—no credit card required for the free tier.
 
-### Developer API & Proxy
-- **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation. Drop-in replacement for any OpenAI SDK.
-- **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers. Drop-in replacement for any Anthropic SDK.
-- **Curated Model Registry:** 12 vetted chat models across Venice and OMA-AI providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives like on Zyloo.io.
-- **Free Guest Chat:** Budget-friendly, sign-in-free chat via OMA-AI models (e.g. `gemini-3-flash-preview`, `zai-org-glm-5-1`, `qwen-3-7-plus`) with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
-- **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms. Enterprise-grade reliability out of the box.
-- **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins. Privacy-first onboarding with no tracking.
+### 💳 x402 USDC Crypto Billing
+Agent-native, pay-per-request billing powered by EIP-3009. Autonomous agents can settle inference costs in USDC on Base with zero markup. No subscriptions, no minimums.
+
+### 🛡️ Fallback Routing & Circuit Breakers
+Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI seamlessly routes traffic to the next best available model—so your app stays up.
+
+### 📊 Developer Dashboard
+Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
+
+### 🤖 OpenAI & Anthropic Compatible
+Drop-in replacement for any OpenAI or Anthropic SDK. Support for chat completions, image generation, and video generation through a single, unified API surface.
+
+### 🎯 Curated Model Registry
+Twelve vetted chat models across Venice and OMA-AI providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
+
+### 🆓 Free Guest Chat
+Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 15, React 19, Tailwind CSS v4 |
+| **Backend** | Hono (Bun/Node), TypeScript |
+| **Database** | PostgreSQL (Neon-ready) + Drizzle ORM |
+| **Cache / Queue** | Redis |
+| **Auth** | Better Auth + SIWE (Ethereum wallets) |
+| **Billing** | Polar.sh (cards) + x402 / EIP-3009 (USDC) |
+| **Testing** | Vitest, Playwright |
+| **Package Manager** | pnpm (monorepo) |
 
 ---
 
 ## Quick Start
 
-1. **Configure Environment:** Copy the template environment files:
-   ```bash
-   cp .env.example .env
-   # Set up the server environment if needed
-   cp server/.env.example server/.env
-   ```
-2. **Start Local Database:** Initialize and run the local Postgres/Redis database:
-   ```bash
-   ./scripts/dev/local-db-up.sh
-   ```
-3. **Launch the Development Stack:** Run the full application and server stack:
-   ```bash
-   ./scripts/dev/start-dev.sh
-   ```
-4. **Run Validation:** Run the validation suite to verify code health:
-   ```bash
-   npm run validate
-   ```
-   *(This executes TypeScript checks, ESLint linting, and Vitest test suites across `app/` and `server/`)*
+Get OMA-AI running locally in under 2 minutes.
+
+### Prerequisites
+
+- **Node.js** ≥ 20
+- **pnpm** ≥ 9
+- **PostgreSQL** 16 (local or Docker)
+- **Redis** (local or Docker)
+- **Bun** (for hot-reload server dev)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/NosytLabs/oma-ai.git
+cd oma-ai
+pnpm install
+```
+
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+cp server/.env.example server/.env
+```
+
+Edit `server/.env` and add your upstream provider keys (`ZYLOO_API_KEY`, `VENICE_API_KEY`, etc.). For local development, the defaults will work out of the box.
+
+### 3. Start Local Database
+
+```bash
+./scripts/dev/local-db-up.sh
+```
+
+This boots local Postgres 16 + Redis, creates the `oma` role/database, and prints the connection strings.
+
+### 4. Launch the Dev Stack
+
+```bash
+./scripts/dev/start-dev.sh
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend (Next.js) | http://localhost:3000 |
+| API (Hono) | http://localhost:3001 |
+| Health Check | http://localhost:3001/health |
+
+### 5. Verify
+
+```bash
+pnpm validate
+```
+
+Runs type checking, linting, and tests across `app/` and `server/`.
 
 ---
 
-## Testing & QA
+## Project Structure
 
-- **Unit & Integration Testing:** Managed via Vitest inside `app/` and `server/`.
-- **Continuous Integration Gate:** Checked automatically via `npm run validate`.
-- **Manual Audits:** Leverage dedicated scripts documented in [scripts/README.md](scripts/README.md) (e.g., `axe-audit`, `visual-audit`, `validate-launch`).
-- **Shipping Policy:** Always write a corresponding test when adding a new endpoint or shipping a critical UI flow.
+```
+oma-ai/
+├── app/                    # Next.js 15 frontend
+│   ├── src/
+│   │   ├── app/           # App Router pages
+│   │   ├── components/    # Shared React components
+│   │   └── lib/           # Utilities, hooks, data
+│   └── public/            # Static assets, logos, agent docs
+├── server/                 # Hono API (Bun/Node)
+│   ├── src/
+│   │   ├── routes/        # API route handlers
+│   │   ├── inference/     # Model routing, providers, failover
+│   │   └── db/            # Drizzle schema + migrations
+│   └── .env.example
+├── scripts/
+│   ├── dev/               # Local dev helpers (DB, Chrome debug)
+│   └── ops/               # Deploy, prod launch, wallets, seed
+├── deploy/                 # Coolify / Docker Compose snippets
+├── docker-compose*.yml     # Local / production compose
+├── BRAND.md               # Design tokens, voice, logo rules
+├── SECURITY.md            # Security policy
+└── README.md
+```
 
 ---
 
-## Brand & Documentation
+## Testing
 
-- **[BRAND.md](BRAND.md):** Defines design tokens, logo assets, visual identity, and brand voice guidelines.
-- **Asset Directories:**
-  - `app/public/logos/` contains live application logos.
-  - `brand-kit/` houses high-quality press assets.
-  - `providers/` provides model provider tile graphics.
-- **Legal & Compliance:** [SECURITY.md](SECURITY.md), `LICENSE`, and [LICENSE-THIRD-PARTY.md](LICENSE-THIRD-PARTY.md).
-- **Agent Integration:** `app/public/agent-skill.md` and integration guides at `/docs#integrations`.
-- **Machine API Contract:** `app/public/llms.txt` and OpenAPI schema defined in `server/src/routes/openapi.ts`.
+| Command | Scope |
+|---------|-------|
+| `pnpm validate` | Full CI gate: typecheck + lint + test (app + server) |
+| `pnpm validate:app` | Frontend only |
+| `pnpm validate:server` | Backend only |
+| `pnpm validate:test` | All unit / integration tests (~399 vitest suites) |
+
+Always run `pnpm validate` locally before opening a pull request.
+
+---
+
+## Public Surfaces
+
+| Path | Purpose |
+|------|---------|
+| `/` | Landing page — product value, primary CTAs |
+| `/models` | Curated model catalog + pricing |
+| `/chat` | Interactive playground (text, image, video) |
+| `/pricing` · `/deposit` | Plans + credit / USDC funding |
+| `/docs` · `/getting-started` | API docs + developer quickstart |
+| `/dashboard` · `/settings` | API keys, usage analytics, preferences |
+| `/capabilities` · `/compare` · `/faq` · `/glossary` | Educational guides |
+
+- **Agent docs:** `app/public/llms.txt`, `app/public/agent-skill.md`
+- **OpenAPI:** `https://api.oma-ai.com/openapi.json` (also `/v1/openapi.json`)
 
 ---
 
 ## Contributing
 
-- **Animations:** Custom visual primitives reside in `app/src/lib/animation`.
-- **Catalog Synchronization:**
-  - Frontend static catalog data is defined in `app/src/lib/models-data.ts`.
-  - Backend runtime catalog is defined in `server/src/inference/models.ts`.
-  - Ensure catalog configurations are kept in sync manually.
-- **Pull Request Checklist:** Always run `npm run validate` locally and fix any errors before submitting a pull request.
+OMA-AI is MIT-licensed and open to contributions.
+
+1. **Fork & branch** from `main`
+2. **Install deps:** `pnpm install`
+3. **Make changes** and add tests
+4. **Validate:** `pnpm validate`
+5. **Open a PR** with a clear description
+
+### Key Contribution Notes
+
+- **Catalog sync:** Frontend static catalog lives in `app/src/lib/models-data.ts`; backend runtime catalog lives in `server/src/inference/models.ts`. Keep them in sync.
+- **Animations:** Custom visual primitives are in `app/src/lib/animation/`.
+- **Security:** See `SECURITY.md` for responsible disclosure policy.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Built with ❤️ by <a href="https://github.com/NosytLabs">NosytLabs</a>
+</p>

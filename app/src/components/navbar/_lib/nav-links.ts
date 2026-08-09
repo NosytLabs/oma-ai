@@ -19,8 +19,6 @@ export interface NavItem {
 	label: string;
 	icon: LucideIcon;
 	desc?: string;
-	/** When true, only admins see this link. */
-	adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -91,13 +89,6 @@ export const toolsLinks: NavItem[] = [
 		label: "Agent skill file",
 		icon: Bot,
 		desc: "Copy into your agent instructions",
-	},
-	{
-		href: "/admin",
-		label: "Admin",
-		icon: ShieldCheck,
-		desc: "Operator dashboard",
-		adminOnly: true,
 	},
 ];
 

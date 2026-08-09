@@ -138,6 +138,10 @@ export async function settlePaymentAsync(
               receipt,
               settledAt: new Date(settledAt),
             });
+            logger.info(
+              { txHash, amount, networkId, payee, attempt },
+              "[FACILITATOR] Settlement persisted to DB",
+            );
             result = { settled: true, receipt };
             break;
           } catch (err) {

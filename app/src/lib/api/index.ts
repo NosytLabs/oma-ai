@@ -12,12 +12,12 @@ import { health } from "./inference.js";
 import { auth } from "./auth.js";
 
 export {
-  BackendUnavailableError,
-  isSuspendedAccountError,
-  isPaymentRequiredError,
-  isQuotaError,
-  extractQuotaInfo,
-  request,
+	BackendUnavailableError,
+	request,
+	isSuspendedAccountError,
+	isPaymentRequiredError,
+	isQuotaError,
+	extractQuotaInfo,
 } from "./client.js";
 
 export type {

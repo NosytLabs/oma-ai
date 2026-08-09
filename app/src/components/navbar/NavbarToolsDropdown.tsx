@@ -32,7 +32,7 @@ export function NavbarToolsDropdown({
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
 	const { isAdmin } = useAuth();
-	const visibleLinks = toolsLinks.filter((l) => !l.adminOnly || isAdmin);
+	const visibleLinks = toolsLinks;
 	const isToolsActive = visibleLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
 
 	useClickOutside(containerRef, open, () => onOpenChange(false));

@@ -383,7 +383,7 @@ export async function verifyEip3009Payment(
     }
   } catch (simErr) {
     logger.warn(
-      { err: simErr, from: auth.from, to: auth.to, nonce: auth.nonce },
+      { err: simErr, from: auth.from, to: auth.to, noncePrefix: auth.nonce.slice(0, 8) },
       "[FACILITATOR] EIP-3009 simulation failed (likely nonce already used or insufficient balance)",
     );
     return { valid: false, error: `EIP-3009 simulation failed: ${simErr instanceof Error ? simErr.message : String(simErr)}` };

@@ -171,10 +171,6 @@ if (payReq.ok) {
 							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
 							Base mainnet (USDC)
 						</li>
-						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
-							Base Sepolia (USDC, dev only)
-						</li>
 					</ul>
 				</div>
 			</div>

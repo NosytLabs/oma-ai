@@ -165,13 +165,11 @@ function DocsContent() {
 								home
 							</Link>
 							<span className="opacity-50">/</span>
-							<span className="text-text-secondary">dev</span>
-							<span className="opacity-50">/</span>
 							<span className="text-text">docs</span>
 						</nav>
 						<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
 							<div>
-								<span className="page-kicker">Developer reference</span>
+								<span className="page-kicker">API reference</span>
 								<h1 className="display-headline mt-4 text-text-bright">
 									API Documentation
 								</h1>
