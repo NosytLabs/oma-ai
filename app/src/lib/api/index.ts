@@ -14,12 +14,10 @@ import { auth } from "./auth.js";
 export {
   BackendUnavailableError,
   request,
-  type RequestOptions,
 } from "./client.js";
 
 export type {
   CreditTransaction,
-  CreditTransactionsResponse,
 } from "./credits.js";
 
 export * from "./types.js";

@@ -59,8 +59,5 @@ export {
 
 // Type re-export: types resolved via src/types/framer-motion.d.ts module declaration
 export type {
-	Easing,
-	MotionProps,
-	Transition,
 	Variants,
 } from "framer-motion";

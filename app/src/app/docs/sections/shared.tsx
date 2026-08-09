@@ -8,7 +8,7 @@ import { MODEL_COUNT, MODELS, type Model } from "@/lib/models-data";
 import { SyntaxHighlighter } from "../_components/SyntaxHighlighter";
 
 export { MODEL_COUNT, MODELS };
-export type { Model };
+
 
 /* ==================== TYPES ==================== */
 
