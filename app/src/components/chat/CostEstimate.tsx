@@ -39,7 +39,7 @@ export function CostEstimate({
 	// Credit math: 1 credit = $0.01 (1 cent). The server deducts
 	// `balanceCents` for every request, so USD costs from the catalog
 	// (which are in dollars) need to be multiplied by 100 to express
-	// them in credits. This matches the Polar tier math: $10 buys
+	// them in credits. This matches the  tier math: $10 buys
 	// 1,000 credits (100 credits per dollar). Display 4 decimals so
 	// sub-cent micro-costs on the cheapest models still show.
 	const inputCostUsd = (inputTokens / 1_000_000) * inputPer1M;

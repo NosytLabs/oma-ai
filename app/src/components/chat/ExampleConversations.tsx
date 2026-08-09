@@ -306,13 +306,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 						>
 							<button
 								type="button"
-								onClick={() => {
-									if (isExpanded) {
-										onSelect(example);
-									} else {
-										setExpandedId(isExpanded ? null : example.id);
-									}
-								}}
+								onClick={() => onSelect(example)}
 								onMouseEnter={() => setExpandedId(example.id)}
 								onMouseLeave={() => setExpandedId(null)}
 								className="group w-full text-left p-5 rounded-[var(--radius-lg)] border border-border bg-void hover:border-success/40 hover:bg-surface hover:shadow-lg transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-ring"

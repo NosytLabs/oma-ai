@@ -11,6 +11,7 @@ import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { db } from "../db/client.js";
 import { usageRecords } from "../db/schema.js";
 import { sql, eq, and, gte } from "drizzle-orm";
+import { logger } from "../lib/logger.js";
 
 export const dailyUsageRoutes = new Hono<OmaEnv>();
 
@@ -59,7 +60,7 @@ dailyUsageRoutes.get("/v1/usage/today", optionalAuth, async (c) => {
         resetMs,
       });
     } catch (err) {
-      console.error("[daily-usage] DB query failed", err);
+      logger.error({ err }, "[daily-usage] DB query failed");
       return c.json({
         used: 0,
         limit: DAILY_LIMIT_REGISTERED,
@@ -104,7 +105,7 @@ dailyUsageRoutes.get("/v1/usage/today", optionalAuth, async (c) => {
       resetMs,
     });
   } catch (err) {
-    console.error("[daily-usage] Redis query failed", err);
+    logger.error({ err }, "[daily-usage] Redis query failed");
     return c.json({
       used: 0,
       limit: DAILY_LIMIT_ANONYMOUS,

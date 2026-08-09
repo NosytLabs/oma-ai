@@ -23,10 +23,11 @@ export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
  */
 export const FREE_CHAT_MODEL_IDS = new Set([
 	"gemini-3.1-pro-preview",
-	"gemini-3-pro-preview",
 	"gemini-3-flash-preview",
 	"gpt-4.1",
 	"gpt-4o",
+	"kimi-k2-6",
+	"minimax-m2-7",
 ]);
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */

@@ -29,7 +29,7 @@ export function ChatSystemPromptPanel({
 					<span
 						className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
 					/>
-					Instructions{""}
+					Instructions{" "}
 					{systemPrompt.trim() ? "· Active" : "· Optional"}
 				</span>
 				{systemPromptOpen ? (

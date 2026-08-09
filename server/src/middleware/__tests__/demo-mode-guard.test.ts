@@ -127,8 +127,8 @@ describe("demoModeGuard", () => {
 			return next();
 		});
 		app.use("/v1/*", demoModeGuard);
-		app.post("/webhooks/polar", (c) => c.json({ ok: true }));
-		const res = await app.request("/webhooks/polar", {
+		app.post("/webhooks/example", (c) => c.json({ ok: true }));
+		const res = await app.request("/webhooks/example", {
 			method: "POST",
 			headers: { Cookie: "oma-demo=1" },
 		});

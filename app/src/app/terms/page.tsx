@@ -441,7 +441,7 @@ export default function TermsPage() {
 								],
 								[
 									"Card billing",
-									"One-time card purchases via Polar appear as 'NOSYT' on your statement.",
+									"One-time card purchases via  appear as 'NOSYT' on your statement.",
 								],
 							].map(([title, body], i) => (
 								<li

@@ -383,9 +383,9 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 	/**
 	 * Interface matching the OpenAI-style models returned by GET /v1/models.
-	 * The live API returns the curated chat catalog (20 models — see
-	 * `MODEL_COUNT`) with pricing, category, and context_length but NOT
-	 * displayName, description, or capabilities — those are derived here.
+	 * The live API returns the curated chat catalog (18 models — see
+	 * `MODEL_COUNT`) with user-facing pricing, category, and context_length
+	 * but NOT description or capabilities — those are derived here.
 	 */
 interface ApiModelEntry {
 	id: string;
@@ -502,44 +502,63 @@ const tier: Tier =
 /**
  * Static fallback catalog. Used as a build-time-safe SSR fallback for
  * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
- * curated server catalog (20 models) — keep in sync with
- * server/src/inference/models.ts.
+ * curated server catalog (18 models) — keep in sync with
+ * server/src/inference/models.ts. Prices are USER-FACING per-1M rates
+ * (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
+ * as returned by GET /v1/models.
  */
 const FALLBACK_CATALOG: RawCatalog = {
 	MODEL_CATALOG: {
-
+		// ── Venice (wholesale × 1.25 markup = user-facing) ───────────────
 		"openai-gpt-56-sol": {
 			id: "openai-gpt-56-sol",
 			displayName: "GPT-5.6 Sol",
 			provider: "Venice",
 			category: "frontier",
 			maxTokens: 16384,
-			inputPricePer1M: 6.25,
-			outputPricePer1M: 37.5,
+			inputPricePer1M: 7.8125,
+			outputPricePer1M: 46.875,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
-
-
 		"kimi-k3": {
 			id: "kimi-k3",
 			displayName: "Kimi K3",
 			provider: "Venice",
 			category: "premium",
 			maxTokens: 16384,
-			inputPricePer1M: 3.75,
-			outputPricePer1M: 18.75,
+			inputPricePer1M: 4.6875,
+			outputPricePer1M: 23.4375,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
-
 		"zai-org-glm-5-2": {
 			id: "zai-org-glm-5-2",
 			displayName: "GLM 5.2",
 			provider: "Venice",
 			category: "premium",
 			maxTokens: 16384,
-			inputPricePer1M: 1.4,
-			outputPricePer1M: 4.4,
+			inputPricePer1M: 1.75,
+			outputPricePer1M: 5.5,
 			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"deepseek-v4-pro": {
+			id: "deepseek-v4-pro",
+			displayName: "DeepSeek V4 Pro",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 2.0625,
+			outputPricePer1M: 4.1263,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"qwen-3-8-max": {
+			id: "qwen-3-8-max",
+			displayName: "Qwen 3.8 Max",
+			provider: "Venice",
+			category: "premium",
+			maxTokens: 16384,
+			inputPricePer1M: 3.125,
+			outputPricePer1M: 9.375,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
@@ -547,8 +566,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "Venice",
 			category: "mid",
 			maxTokens: 8192,
-			inputPricePer1M: 0.7,
-			outputPricePer1M: 2.8,
+			inputPricePer1M: 0.875,
+			outputPricePer1M: 3.5,
 			capabilities: ["chat", "tools"],
 		},
 		"zai-org-glm-5-1": {
@@ -557,8 +576,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "Venice",
 			category: "mid",
 			maxTokens: 16384,
-			inputPricePer1M: 1.54,
-			outputPricePer1M: 4.84,
+			inputPricePer1M: 1.925,
+			outputPricePer1M: 6.05,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"qwen-3-7-plus": {
@@ -567,9 +586,19 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "Venice",
 			category: "mid",
 			maxTokens: 16384,
-			inputPricePer1M: 0.5,
-			outputPricePer1M: 2.0,
+			inputPricePer1M: 0.625,
+			outputPricePer1M: 2.5,
 			capabilities: ["chat", "reasoning", "tools"],
+		},
+		"hermes-3-llama-3.1-405b": {
+			id: "hermes-3-llama-3.1-405b",
+			displayName: "Hermes 3 405B",
+			provider: "Venice",
+			category: "mid",
+			maxTokens: 8192,
+			inputPricePer1M: 1.375,
+			outputPricePer1M: 3.75,
+			capabilities: ["chat", "reasoning"],
 		},
 		"xiaomi-mimo-v2-5": {
 			id: "xiaomi-mimo-v2-5",
@@ -577,11 +606,31 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "Venice",
 			category: "budget",
 			maxTokens: 16384,
-			inputPricePer1M: 0.14,
-			outputPricePer1M: 0.28,
+			inputPricePer1M: 0.175,
+			outputPricePer1M: 0.35,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
-		// ── OMA-AI (OpenBroker) Resale - Branded as OMA-AI ────────────────
+		"deepseek-v4-flash-0731": {
+			id: "deepseek-v4-flash-0731",
+			displayName: "DeepSeek V4 Flash",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 16384,
+			inputPricePer1M: 0.2188,
+			outputPricePer1M: 0.4375,
+			capabilities: ["chat", "reasoning", "fast"],
+		},
+		"mistral-small-2603": {
+			id: "mistral-small-2603",
+			displayName: "Mistral Small 4",
+			provider: "Venice",
+			category: "budget",
+			maxTokens: 16384,
+			inputPricePer1M: 0.2344,
+			outputPricePer1M: 0.9375,
+			capabilities: ["chat", "tools", "fast"],
+		},
+		// ── OMA-AI resale (markup built-in = user-facing) ────────────────
 		"gemini-3.1-pro-preview": {
 			id: "gemini-3.1-pro-preview",
 			displayName: "Gemini 3.1 Pro",
@@ -592,15 +641,35 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 5.0,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
-		"gemini-3-pro-preview": {
-			id: "gemini-3-pro-preview",
-			displayName: "Gemini 3 Pro",
+		"gpt-4.1": {
+			id: "gpt-4.1",
+			displayName: "GPT-4.1",
+			provider: "OMA-AI",
+			category: "frontier",
+			maxTokens: 16384,
+			inputPricePer1M: 2.0,
+			outputPricePer1M: 8.0,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+		},
+		"gpt-4o": {
+			id: "gpt-4o",
+			displayName: "GPT-4o",
+			provider: "OMA-AI",
+			category: "premium",
+			maxTokens: 8192,
+			inputPricePer1M: 2.5,
+			outputPricePer1M: 10.0,
+			capabilities: ["chat", "fast", "tools"],
+		},
+		"kimi-k2-6": {
+			id: "kimi-k2-6",
+			displayName: "Kimi K2.6",
 			provider: "OMA-AI",
 			category: "premium",
 			maxTokens: 16384,
-			inputPricePer1M: 1.7,
-			outputPricePer1M: 9.0,
-			capabilities: ["chat", "reasoning", "tools"],
+			inputPricePer1M: 0.6,
+			outputPricePer1M: 2.5,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gemini-3-flash-preview": {
 			id: "gemini-3-flash-preview",
@@ -612,24 +681,14 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 1.5,
 			capabilities: ["chat", "fast", "tools"],
 		},
-		"gpt-4.1": {
-			id: "gpt-4.1",
-			displayName: "GPT-4.1",
+		"minimax-m2-7": {
+			id: "minimax-m2-7",
+			displayName: "MiniMax M2.7",
 			provider: "OMA-AI",
-			category: "premium",
+			category: "budget",
 			maxTokens: 16384,
-			inputPricePer1M: 1.5,
-			outputPricePer1M: 7.5,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"gpt-4o": {
-			id: "gpt-4o",
-			displayName: "GPT-4o",
-			provider: "OMA-AI",
-			category: "premium",
-			maxTokens: 16384,
-			inputPricePer1M: 0.8,
-			outputPricePer1M: 4.0,
+			inputPricePer1M: 0.3,
+			outputPricePer1M: 1.2,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 	},
@@ -666,6 +725,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 23 curated chat models (18 Venice + 5 OMA-AI).
+// `GET /v1/models` count — 18 curated chat models (12 Venice + 6 OMA-AI).
 // Keep in sync with `server/src/inference/models.ts` defaultCatalog().
-export const MODEL_COUNT = 23;
+export const MODEL_COUNT = 18;

@@ -77,7 +77,7 @@ export function QuickStartSection() {
 				id="quickstart"
 				icon={<Play className="h-5 w-5" />}
 				title="Quick Start"
-				subtitle="Get up and running with the OMA API in under a minute."
+				subtitle="Get up and running with the OMA API in under a minute. Drop-in replacement for OpenAI with zero vendor lock-in."
 			/>
 
 			<div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -85,7 +85,7 @@ export function QuickStartSection() {
 					<div
 						key={step.n}
 						id={step.id}
-						className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 scroll-mt-24"
+						className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 scroll-mt-24 transition-colors hover:border-accent/40"
 					>
 						<div className="mb-3 flex h-8 w-8 items-center justify-center rounded-[var(--radius-lg)] bg-accent/10 text-accent text-sm font-bold font-mono">
 							{step.n}

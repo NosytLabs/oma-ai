@@ -480,7 +480,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 											<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">Choose card or USDC.</p>
 										</div>
 										<span className="rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2.5 py-1 text-[9.5px] font-mono font-bold uppercase tracking-wider text-accent shadow-[0_0_10px_-2px_var(--color-accent-glow)] shrink-0">
-											Polar + USDC
+											 + USDC
 										</span>
 									</div>
 									<div className="mt-8 flex flex-col gap-3">

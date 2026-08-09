@@ -26,16 +26,14 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
   VENICE_API_KEY: z.string().min(1).optional(),
   VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
-  // OMA-AI decentralized provable-inference broker (optional).
-  // PRIMARY PATH (2026-07-16): api.openbroker.oma-ai.gg — your dedicated broker
-  // account, devshard-backed, GNK-settled, ~$0.0000008 per 500-token request.
-  // Falls back to proxy.oma-ai.gg (open community proxy) if API key missing.
-  // Override via ZYLOO_API_URL env var to point at a different community broker.
-  // OPENBROKER_* aliases are optional — if both set, ZYLOO_* wins.
+  // OMA-AI resale upstreams (both branded "oma-ai" to users):
+  //   ZYLOO_*      → api.zyloo.io — gemini-*, gpt-* models (verified 2026-08-08)
+  //   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, Kimi-K2.6
+  // These are two DISTINCT upstreams, not aliases.
   ZYLOO_API_KEY: z.string().min(1).optional(),
-  ZYLOO_API_URL: z.string().url().optional().default("https://api.openbroker.oma-ai.gg"),
+  ZYLOO_API_URL: z.string().url().optional().default("https://api.zyloo.io"),
   OPENBROKER_API_KEY: z.string().min(1).optional(),
-  OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.oma-ai.gg"),
+  OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.
@@ -66,7 +64,7 @@ const envSchema = z.object({
   // SECURITY (A14): No placeholder default. Must be explicitly set in
   // production. The production startup guard below rejects known placeholders.
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  PORT: z.coerce.number().default(3001),
+  PORT: z.coerce.number().default(3002),
   // Better Auth owns session signing and CSRF protection; we just need to provide a
   // 32+ char secret. Generate one per environment with `openssl rand -hex 32`.
   BETTER_AUTH_SECRET: z.string().min(32).default("dev-better-auth-secret-change-me-in-prod-32ch"),
@@ -166,36 +164,18 @@ const envSchema = z.object({
   POLAR_HOBBY_PRODUCT_ID: z.string().min(1).optional(),
   POLAR_BUILDER_PRODUCT_ID: z.string().min(1).optional(),
   POLAR_SCALE_PRODUCT_ID: z.string().min(1).optional(),
-  /**
-   * Optional Polar Meter ID for usage-based billing. When set, every
-   * successful chat completion sends an event to Polar Meters so the
-   * customer can be billed for what they actually used. Leave unset
-   * (or `metr_…` placeholder) to disable usage tracking. See
-   * `inference/polar-usage.ts` for the event shape.
-   *
-   * Important: Polar TOS forbids reselling COMPUTE on Polar. Treat this
-   * as subscription-bundled credits (customers buy a plan, use credits
-   * inside the plan's allocation), NOT pure-usage metering.
-   */
-  POLAR_USAGE_METER_ID: z.string().min(1).optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;
 
 // Parse, then fold QuickNode RPC aliases into CHAIN_RPC_URL so every consumer
-// only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK. Similarly, fold
-// the OPENBROKER_API_URL alias into ZYLOO_API_URL (explicit ZYLOO_* wins).
+// only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK.
 const _parsed = envSchema.parse(process.env);
 export const config: Config = {
   ..._parsed,
   CHAIN_RPC_URL: _parsed.QUICKNODE_RPC_URL ?? _parsed.CHAIN_RPC_URL,
   CHAIN_RPC_URL_FALLBACK:
     _parsed.QUICKNODE_RPC_URL_FALLBACK ?? _parsed.CHAIN_RPC_URL_FALLBACK,
-  ZYLOO_API_URL: process.env.ZYLOO_API_URL
-    ? _parsed.ZYLOO_API_URL
-    : process.env.OPENBROKER_API_URL
-      ? _parsed.OPENBROKER_API_URL
-      : _parsed.ZYLOO_API_URL,
   // Prefer explicit USDC_DEPOSIT_ADDRESS; otherwise reuse the Base treasury
   // so local/prod setups with only TREASURY_BASE_ADDRESS still accept deposits.
   USDC_DEPOSIT_ADDRESS:

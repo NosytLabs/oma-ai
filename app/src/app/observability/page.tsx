@@ -14,14 +14,14 @@ import {
 	CheckCircle2,
 	Clock,
 	Cpu,
-	GitBranch,
+	Database,
 	Server,
 	TrendingUp,
 	Zap,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { api, request } from "@/lib/api";
+import { request } from "@/lib/api";
 import { InViewFade } from "@/components/motion/in-view-fade";
 
 /** Revalidate live health/metrics every 30s */
@@ -101,39 +101,18 @@ function Bar({ value, max = 100, color = "var(--color-accent)" }: { value: numbe
 	);
 }
 
-const REQUEST_VOLUME_24H = [
+/* Illustrative time-series shape only — no historical store exists yet. */
+const SAMPLE_VOLUME_24H = [
 	12, 18, 14, 22, 28, 24, 31, 42, 38, 47, 56, 62, 71, 68, 79, 85, 92,
 	88, 76, 81, 73, 64, 58, 49,
 ];
 
-const LATENCY_HISTORY = [
-	340, 320, 310, 305, 298, 302, 308, 295, 285, 280, 275, 268, 262, 258,
-];
-
-const PROVIDERS = [
-	{
-		name: "Venice",
-		role: "primary",
-		status: "healthy" as const,
-		p95ms: 268,
-		errRate: 0.12,
-		share: 95,
-	},
-	{
-		name: "OMA-AI",
-		role: "free-tier",
-		status: "healthy" as const,
-		p95ms: 340,
-		errRate: 0.35,
-		share: 5,
-	},
-];
-
-const TOP_ROUTES = [
-	{ route: "/v1/chat/completions", requests: 14823, p95ms: 282, errRate: 0.18 },
-	{ route: "/v1/images/generations", requests: 3182, p95ms: 4120, errRate: 0.42 },
-	{ route: "/v1/videos/generations", requests: 412, p95ms: 28400, errRate: 0.21 },
-	{ route: "/v1/models", requests: 712, p95ms: 18, errRate: 0.0 },
+/* Illustrative per-provider shape. Real per-provider latency/error stats
+ * require production telemetry that does not exist yet. */
+const SAMPLE_PROVIDERS = [
+	{ name: "Venice", role: "primary", status: "healthy" as const, share: 70 },
+	{ name: "Zyloo", role: "frontier", status: "healthy" as const, share: 20 },
+	{ name: "OpenBroker", role: "open-models", status: "healthy" as const, share: 10 },
 ];
 
 const STATUS_STYLES = {
@@ -159,8 +138,8 @@ const STATUS_STYLES = {
 
 export default async function ObservabilityPage() {
 	const live = await fetchOpsSnapshotInline();
-	const errorBudgetRemaining = 99.4; // target — not a live metric
-	const sampleVolume = REQUEST_VOLUME_24H.reduce((a, b) => a + b, 0);
+	const errorBudgetRemaining = 99.4; // SLO target — not a live metric
+	const sampleVolume = SAMPLE_VOLUME_24H.reduce((a, b) => a + b, 0);
 	const liveOk = live.apiStatus === "ok";
 
 	return (
@@ -194,15 +173,12 @@ export default async function ObservabilityPage() {
 						</h1>
 
 						<p className="mt-6 max-w-2xl text-[15px] sm:text-base text-text leading-relaxed">
-							Live gateway health from{""}
+							Live gateway health and real request/token counters from{""}
 							<code className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 text-accent">
-								/health
-							</code>{""}
-							+{""}
-							<code className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 text-accent">
-								/metrics
+								/v1/ops/snapshot
 							</code>
-							. Charts below show the operator-dashboard shape (sample data).
+							. The trend panels below are an illustrative operator-dashboard
+							shape and are labelled as such.
 						</p>
 
 						<div className="mt-6 flex flex-wrap items-center gap-2">
@@ -217,14 +193,14 @@ export default async function ObservabilityPage() {
 									className={`h-1.5 w-1.5 rounded-full ${liveOk ? "bg-success pulse-ring" : "bg-error"}`}
 									aria-hidden="true"
 								/>
-								{liveOk ? "API live" : "API unreachable"}
+								{liveOk ? "API live" : "API degraded"}
 								{live.version !== "—" ? ` · v${live.version}` : ""}
-								{live.uptimeSec != null
+								{live.uptimeSec > 0
 									? ` · up ${formatUptimeInline(live.uptimeSec)}`
 									: ""}
 							</div>
 							<div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/50 px-3 py-1.5 text-[11px] font-mono text-text-muted">
-								charts · sample shape
+								trend charts · illustrative
 							</div>
 						</div>
 						</InViewFade>
@@ -235,6 +211,9 @@ export default async function ObservabilityPage() {
 						aria-label="Live gateway counters"
 						className="container-page pb-8"
 					>
+						<p className="mb-3 text-[10px] font-mono uppercase tracking-widest text-text-muted">
+							Live · HTTP since process start, chat last 24h
+						</p>
 						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 							{[
 								{
@@ -246,16 +225,16 @@ export default async function ObservabilityPage() {
 									value: live.httpErrorsTotal.toLocaleString(),
 								},
 								{
-									label: "Chat completions",
+									label: "Chat completions · 24h",
 									value: live.chatCompletionsTotal.toLocaleString(),
 								},
 								{
-									label: "Tokens",
+									label: "Tokens · 24h",
 									value: live.chatTokensTotal.toLocaleString(),
 								},
 								{
-									label: "Rate-limit hits",
-									value: live.rateLimitHits.toLocaleString(),
+									label: "Chat errors · 24h",
+									value: live.chatErrors24h.toLocaleString(),
 								},
 								{
 									label: "DB latency",
@@ -303,7 +282,7 @@ export default async function ObservabilityPage() {
 									{(sampleVolume / 1000).toFixed(1)}k
 								</p>
 								<div className="mt-3">
-									<Sparkline values={REQUEST_VOLUME_24H} />
+									<Sparkline values={SAMPLE_VOLUME_24H} />
 								</div>
 								<div className="mt-2 flex justify-between text-[10px] font-mono tabular-nums text-text-tertiary">
 									<span>00:00</span>
@@ -317,16 +296,21 @@ export default async function ObservabilityPage() {
 							<article className="border border-border rounded-[var(--radius-lg)] bg-surface/40 p-5">
 								<header className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-text-muted mb-2">
 									<Clock className="h-3 w-3" aria-hidden="true" />
-									p95 latency
+									chat p95 · 24h
 								</header>
 								<p className="font-display text-3xl sm:text-4xl font-bold text-text-bright tabular-nums">
-									258<span className="text-base text-text-muted ml-1">ms</span>
+									{live.chatP95Ms != null ? (
+										<>
+											{live.chatP95Ms}
+											<span className="text-base text-text-muted ml-1">ms</span>
+										</>
+									) : (
+										<span className="text-text-muted">—</span>
+									)}
 								</p>
-								<div className="mt-3">
-									<Sparkline values={LATENCY_HISTORY} color="var(--color-info)" />
-								</div>
-								<p className="mt-2 text-[10px] font-mono tabular-nums text-success">
-									↓ 8% from last 7d
+								<p className="mt-3 text-[10px] font-mono tabular-nums text-text-tertiary leading-relaxed">
+									from recorded usage latency. Blank when no
+									latency-tagged requests in the window.
 								</p>
 							</article>
 
@@ -343,42 +327,41 @@ export default async function ObservabilityPage() {
 									<Bar value={errorBudgetRemaining} color="var(--color-success)" />
 								</div>
 								<p className="mt-2 text-[10px] font-mono text-text-tertiary">
-									of 99.9% target SLO remaining
+									SLO target · not a live metric
 								</p>
 							</article>
 						</div>
 					</section>
 
-					{/* ===== PROVIDER HEALTH ===== */}
+					{/* ===== UPSTREAM PROVIDERS (illustrative) ===== */}
 					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
-								Upstream health
+								Upstream routing · illustrative
 							</p>
 							<h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright">
-								Provider circuit-breakers
+								Provider fan-out
 							</h2>
 							<p className="mt-3 text-[14px] sm:text-base text-text-secondary leading-relaxed">
-								Each upstream runs through a circuit breaker. Closed = healthy.
-								Half-open = recovering. Open = fail-fast until cooldown.
+								The gateway fans out to these upstreams. The status and traffic
+								share below are a sample shape — live per-provider telemetry
+								ships with production monitoring.
 							</p>
 						</header>
 
 						<div className="border border-border rounded-[var(--radius-lg)] bg-surface/40 overflow-hidden">
-							<div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-4 px-4 py-2.5 border-b border-border bg-surface text-[10px] font-mono uppercase tracking-widest text-text-muted">
+							<div className="hidden sm:grid grid-cols-[2fr_1fr_2fr] gap-4 px-4 py-2.5 border-b border-border bg-surface text-[10px] font-mono uppercase tracking-widest text-text-muted">
 								<span>Provider</span>
 								<span>Status</span>
-								<span className="text-right">p95</span>
-								<span className="text-right">Err/s</span>
-								<span className="text-right">Share</span>
+								<span className="text-right">Traffic share (sample)</span>
 							</div>
 							<ul className="divide-y divide-border list-none p-0">
-								{PROVIDERS.map((p) => {
+								{SAMPLE_PROVIDERS.map((p) => {
 									const style = STATUS_STYLES[p.status];
 									return (
 										<li
 											key={p.name}
-											className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
+											className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_2fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
 										>
 											<div className="min-w-0">
 												<div className="flex items-center gap-2">
@@ -401,16 +384,6 @@ export default async function ObservabilityPage() {
 													{p.status}
 												</span>
 											</div>
-											<p className="hidden sm:block text-right text-[13px] font-mono tabular-nums text-text">
-												{p.p95ms}
-												<span className="text-text-muted ml-0.5 text-[10px]">ms</span>
-											</p>
-											<p
-												className={`hidden sm:block text-right text-[13px] font-mono tabular-nums ${p.errRate > 1 ? "text-warning" : "text-text"}`}
-											>
-												{p.errRate.toFixed(2)}
-												<span className="text-text-muted ml-0.5 text-[10px]">%</span>
-											</p>
 											<div className="hidden sm:flex items-center gap-3">
 												<Bar value={p.share} color="var(--color-accent)" />
 												<span className="text-[11px] font-mono tabular-nums text-text-muted w-9 text-right">
@@ -424,14 +397,14 @@ export default async function ObservabilityPage() {
 						</div>
 					</section>
 
-					{/* ===== TOP ROUTES ===== */}
+					{/* ===== TOP ROUTES (live) ===== */}
 					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
-								Traffic
+								Traffic · live
 							</p>
 							<h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright">
-								Top routes · last 24h
+								Top routes · since process start
 							</h2>
 						</header>
 
@@ -442,39 +415,49 @@ export default async function ObservabilityPage() {
 								<span className="text-right">p95</span>
 								<span className="text-right">Err rate</span>
 							</div>
-							<ul className="divide-y divide-border list-none p-0">
-								{TOP_ROUTES.map((r) => (
-									<li
-										key={r.route}
-										className="grid grid-cols-2 sm:grid-cols-[3fr_1.5fr_1fr_1fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
-									>
-										<code className="text-[12.5px] font-mono text-text truncate">
-											{r.route}
-										</code>
-										<p className="text-right text-[13px] font-mono tabular-nums text-text">
-											{r.requests.toLocaleString()}
-										</p>
-										<p className="hidden sm:block text-right text-[13px] font-mono tabular-nums text-text">
-											{r.p95ms}
-											<span className="text-text-muted ml-0.5 text-[10px]">ms</span>
-										</p>
-										<p
-											className={`hidden sm:block text-right text-[13px] font-mono tabular-nums ${r.errRate > 1 ? "text-warning" : r.errRate > 0.5 ? "text-text" : "text-success"}`}
-										>
-											{r.errRate.toFixed(2)}
-											<span className="text-text-muted ml-0.5 text-[10px]">%</span>
-										</p>
-									</li>
-								))}
-							</ul>
+							{live.topRoutes.length === 0 ? (
+								<p className="px-4 py-6 text-[12px] font-mono text-text-tertiary">
+									No route traffic recorded yet this process.
+								</p>
+							) : (
+								<ul className="divide-y divide-border list-none p-0">
+									{live.topRoutes.map((r) => {
+										const errRate =
+											r.requests > 0 ? (r.errors / r.requests) * 100 : 0;
+										return (
+											<li
+												key={r.route}
+												className="grid grid-cols-2 sm:grid-cols-[3fr_1.5fr_1fr_1fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
+											>
+												<code className="text-[12.5px] font-mono text-text truncate">
+													{r.route}
+												</code>
+												<p className="text-right text-[13px] font-mono tabular-nums text-text">
+													{r.requests.toLocaleString()}
+												</p>
+												<p className="hidden sm:block text-right text-[13px] font-mono tabular-nums text-text">
+													{r.p95ms}
+													<span className="text-text-muted ml-0.5 text-[10px]">ms</span>
+												</p>
+												<p
+													className={`hidden sm:block text-right text-[13px] font-mono tabular-nums ${errRate > 1 ? "text-warning" : errRate > 0.5 ? "text-text" : "text-success"}`}
+												>
+													{errRate.toFixed(2)}
+													<span className="text-text-muted ml-0.5 text-[10px]">%</span>
+												</p>
+											</li>
+										);
+									})}
+								</ul>
+							)}
 						</div>
 					</section>
 
-					{/* ===== SYSTEM ===== */}
+					{/* ===== GATEWAY RUNTIME (live) ===== */}
 					<section className="container-page py-12 sm:py-16 border-t border-border">
 						<header className="mb-8 max-w-2xl">
 							<p className="text-xs font-mono uppercase tracking-widest text-text-muted mb-3">
-								Runtime
+								Runtime · live
 							</p>
 							<h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-text-bright">
 								Gateway internals
@@ -485,31 +468,31 @@ export default async function ObservabilityPage() {
 							{[
 								{
 									icon: Cpu,
-									label: "Active workers",
-									value: "12 / 16",
-									sub: "75% utilization",
+									label: "Heap used",
+									value: `${live.heapUsedMb}`,
+									sub: "MiB · V8 heap",
 									color: "text-accent",
 								},
 								{
 									icon: Server,
-									label: "Memory",
-									value: "1.4 / 2.0",
-									sub: "GiB allocated",
+									label: "RSS",
+									value: `${live.rssMb}`,
+									sub: "MiB resident",
 									color: "text-info",
 								},
 								{
-									icon: GitBranch,
-									label: "Circuit breakers",
-									value: "0 open",
-									sub: "1 half-open (recovering)",
-									color: "text-warning",
+									icon: Database,
+									label: "DB round-trip",
+									value: live.dbLatencyMs != null ? `${live.dbLatencyMs}` : "—",
+									sub: live.dbLatencyMs != null ? "ms · select 1" : "unreachable",
+									color: live.dbLatencyMs != null ? "text-success" : "text-error",
 								},
 								{
 									icon: Zap,
-									label: "Cache hit rate",
-									value: "94.2%",
-									sub: "quote cache · 5min TTL",
-									color: "text-success",
+									label: "Uptime",
+									value: formatUptimeInline(live.uptimeSec),
+									sub: `env · ${live.env}`,
+									color: "text-warning",
 								},
 							].map((s) => {
 								const Icon = s.icon;
@@ -533,6 +516,38 @@ export default async function ObservabilityPage() {
 									</div>
 								);
 							})}
+						</div>
+
+						<div className="mt-6 border border-border rounded-[var(--radius-lg)] bg-surface/40 overflow-hidden">
+							<div className="hidden sm:grid grid-cols-[3fr_1.5fr_1.5fr] gap-4 px-4 py-2.5 border-b border-border bg-surface text-[10px] font-mono uppercase tracking-widest text-text-muted">
+								<span>Model · last 24h</span>
+								<span className="text-right">Requests</span>
+								<span className="text-right">Tokens</span>
+							</div>
+							{live.topModels.length === 0 ? (
+								<p className="px-4 py-6 text-[12px] font-mono text-text-tertiary">
+									No chat completions recorded in the last 24h.
+								</p>
+							) : (
+								<ul className="divide-y divide-border list-none p-0">
+									{live.topModels.map((m) => (
+										<li
+											key={m.model}
+											className="grid grid-cols-2 sm:grid-cols-[3fr_1.5fr_1.5fr] gap-3 sm:gap-4 items-center px-4 py-3 hover:bg-surface/30 transition-colors duration-200 ease-out"
+										>
+											<code className="text-[12.5px] font-mono text-text truncate">
+												{m.model}
+											</code>
+											<p className="text-right text-[13px] font-mono tabular-nums text-text">
+												{m.requests.toLocaleString()}
+											</p>
+											<p className="text-right text-[13px] font-mono tabular-nums text-text">
+												{m.tokens.toLocaleString()}
+											</p>
+										</li>
+									))}
+								</ul>
+							)}
 						</div>
 					</section>
 
@@ -607,71 +622,103 @@ export default async function ObservabilityPage() {
 	);
 }
 
-/**
- * Inline helpers that replaced the deleted @/lib/ops-snapshot module.
- * Same shapes — fetchOpsSnapshot hits /v1/ops/snapshot if the server
- * exposes it, else falls back to /health + /ready.
- */
-async function fetchOpsSnapshotInline(): Promise<{
+interface OpsRoute {
+	route: string;
+	requests: number;
+	errors: number;
+	p95ms: number;
+}
+
+interface OpsModel {
+	model: string;
+	requests: number;
+	tokens: number;
+}
+
+interface OpsSnapshotView {
 	apiStatus: string;
-	uptimeSec: number;
 	version: string;
-	checks: Record<string, { status: string; latency?: number }>;
+	env: string;
+	uptimeSec: number;
 	httpRequestsTotal: number;
 	httpErrorsTotal: number;
 	chatCompletionsTotal: number;
 	chatTokensTotal: number;
-	rateLimitHits: number;
-	dbLatencyMs: number;
-}> {
-	const base = {
-		apiStatus: "unknown" as string,
+	chatErrors24h: number;
+	chatP95Ms: number | null;
+	dbLatencyMs: number | null;
+	heapUsedMb: number;
+	rssMb: number;
+	topRoutes: OpsRoute[];
+	topModels: OpsModel[];
+	error?: string;
+}
+
+/**
+ * Fetch the real operational snapshot from GET /v1/ops/snapshot. That
+ * endpoint aggregates in-process HTTP counters, the trailing-24h
+ * usage_records, and live process/runtime facts. Falls back to an
+ * empty shape if the backend is unreachable so the page still renders.
+ */
+async function fetchOpsSnapshotInline(): Promise<OpsSnapshotView> {
+	const base: OpsSnapshotView = {
+		apiStatus: "unknown",
+		version: "—",
+		env: "—",
 		uptimeSec: 0,
-		version: "dev",
-		checks: {} as Record<string, { status: string; latency?: number }>,
 		httpRequestsTotal: 0,
 		httpErrorsTotal: 0,
 		chatCompletionsTotal: 0,
 		chatTokensTotal: 0,
-		rateLimitHits: 0,
-		dbLatencyMs: 0,
+		chatErrors24h: 0,
+		chatP95Ms: null,
+		dbLatencyMs: null,
+		heapUsedMb: 0,
+		rssMb: 0,
+		topRoutes: [],
+		topModels: [],
 	};
 	try {
-		const health = await request<{
+		const snap = await request<{
 			status?: string;
 			version?: string;
-			uptime?: number;
+			env?: string;
 			uptimeSec?: number;
-			dbLatencyMs?: number;
-			httpRequestsTotal?: number;
-			httpErrorsTotal?: number;
-			chatCompletionsTotal?: number;
-			chatTokensTotal?: number;
-			rateLimitHits?: number;
-			checks?: Record<string, { status?: string; latencyMs?: number; latency?: number }>;
-		}>("/ready").catch(() => null);
-		if (!health) return base;
+			runtime?: { heapUsedMb?: number; rssMb?: number; dbLatencyMs?: number | null };
+			http?: {
+				requestsTotal?: number;
+				errorsTotal?: number;
+				topRoutes?: OpsRoute[];
+			};
+			chat24h?: {
+				completions?: number;
+				totalTokens?: number;
+				errors?: number;
+				p95LatencyMs?: number | null;
+				topModels?: OpsModel[];
+			};
+		}>("/v1/ops/snapshot").catch(() => null);
+		if (!snap) return { ...base, error: "backend unreachable" };
 		return {
-			apiStatus: health.status ?? "ok",
-			uptimeSec: health.uptimeSec ?? health.uptime ?? 0,
-			version: health.version ?? "dev",
-			checks: Object.fromEntries(
-				Object.entries(health.checks ?? {}).map(([k, v]) => [
-					k,
-					{ status: v.status ?? "ok", latency: v.latencyMs ?? v.latency },
-				]),
-			),
-			httpRequestsTotal: health.httpRequestsTotal ?? 0,
-			httpErrorsTotal: health.httpErrorsTotal ?? 0,
-			chatCompletionsTotal: health.chatCompletionsTotal ?? 0,
-			chatTokensTotal: health.chatTokensTotal ?? 0,
-			rateLimitHits: health.rateLimitHits ?? 0,
-			dbLatencyMs: health.dbLatencyMs ?? 0,
+			apiStatus: snap.status ?? "unknown",
+			version: snap.version ?? "—",
+			env: snap.env ?? "—",
+			uptimeSec: snap.uptimeSec ?? 0,
+			httpRequestsTotal: snap.http?.requestsTotal ?? 0,
+			httpErrorsTotal: snap.http?.errorsTotal ?? 0,
+			chatCompletionsTotal: snap.chat24h?.completions ?? 0,
+			chatTokensTotal: snap.chat24h?.totalTokens ?? 0,
+			chatErrors24h: snap.chat24h?.errors ?? 0,
+			chatP95Ms: snap.chat24h?.p95LatencyMs ?? null,
+			dbLatencyMs: snap.runtime?.dbLatencyMs ?? null,
+			heapUsedMb: snap.runtime?.heapUsedMb ?? 0,
+			rssMb: snap.runtime?.rssMb ?? 0,
+			topRoutes: snap.http?.topRoutes ?? [],
+			topModels: snap.chat24h?.topModels ?? [],
 		};
 	} catch {
-		return base;
+		return { ...base, error: "snapshot fetch failed" };
 	}
-	void api;
 }
 
 function formatUptimeInline(seconds: number): string {

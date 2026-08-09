@@ -12,7 +12,6 @@
  *   - adminConfig / rateLimitOverrides      (config moved to env)
  *   - depositRecoveries / depositNotifications / withdrawals (not wired)
  *   - byokKeys                              (BYOK was never launched)
- *   - polar* (4 tables)                      (Polar billing parked)
  *   - twoFactorBackupCodes                  (Better Auth 2FA plugin when needed)
  *   - signingKeys                           (pinning scheme was experimental)
  *   - audit_action enum removed twoFactor enum (kept the rest)

@@ -62,13 +62,13 @@ export function Navbar() {
  const section = sectionLabelFor(pathname ?? "/");
 
  return (
- <header
- className={`sticky top-0 left-0 right-0 z-50 border-b font-mono transition-colors duration-300 ${
- scrolled
- ? "glass-strong border-border-bright"
- : "border-border bg-void/95 backdrop-blur-md"
- }`}
- >
+		<header
+			className={`sticky top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 font-mono ${
+				scrolled
+					? "border-b border-border-bright bg-[color-mix(in_srgb,var(--color-void)_85%,transparent)] backdrop-blur-xl shadow-sm"
+					: "border-b border-border bg-void/90 backdrop-blur-md"
+			}`}
+		>
  <nav aria-label="Main navigation" className="w-full">
  <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
  {/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
@@ -259,24 +259,20 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
 		</div>
 	)}
 
- {/* Mobile toggle */}
- <button
- ref={mobileToggleRef}
- type="button"
- onClick={() => setMobileOpen(!mobileOpen)}
- className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ring-accent/70 ring-offset-2 md:hidden"
- aria-label={
- mobileOpen ? "Close navigation menu" : "Open navigation menu"
- }
- aria-expanded={mobileOpen}
- aria-controls="mobile-menu"
- >
- {mobileOpen ? (
- <X className="h-4 w-4" aria-hidden="true" />
- ) : (
- <Menu className="h-4 w-4" aria-hidden="true" />
- )}
- </button>
+						{/* Mobile toggle */}
+						<button
+							ref={mobileToggleRef}
+							type="button"
+							onClick={() => setMobileOpen(!mobileOpen)}
+							className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface-elevated border border-border text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
+							aria-label={
+								mobileOpen ? "Close navigation menu" : "Open navigation menu"
+							}
+							aria-expanded={mobileOpen}
+							aria-controls="mobile-menu"
+						>
+							<Menu className="h-4 w-4" aria-hidden="true" />
+						</button>
  </div>
  </div>
 

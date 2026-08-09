@@ -15,7 +15,7 @@ import { extractClientIp } from "./rate-limit/utils.js";
 import { getModelById } from "../inference/models.js";
 
 const DAILY_LIMIT_ANONYMOUS = 20;
-const DAILY_LIMIT_REGISTERED = 200;
+const DAILY_LIMIT_REGISTERED = 100;
 
 interface DailyUsageResult {
   allowed: boolean;

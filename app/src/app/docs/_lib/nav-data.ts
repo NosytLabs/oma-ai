@@ -112,10 +112,8 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "ep-magic-link", label: "Magic link" },
 			{ id: "ep-balance", label: "Credit balance" },
 			{ id: "ep-deposit-usdc", label: "USDC deposit" },
-			{ id: "ep-checkout", label: "Polar checkout" },
 			{ id: "ep-usage-today", label: "Daily usage" },
 			{ id: "ep-usage", label: "Usage history" },
-			{ id: "ep-polar-webhook", label: "Polar webhook" },
 		],
 	},
 	{

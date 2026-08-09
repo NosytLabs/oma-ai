@@ -18,9 +18,9 @@
  * - Reduced padding on small screens
  */
 
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
+import { m } from "@/lib/framer-motion-client";
 import { BorderBeam } from "border-beam";
-import { Loader2, Search, Send, Sparkles } from "lucide-react";
+import { Loader2, Search, Send, Wand2 } from "lucide-react";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import { Magnetic, EASE_SPRING } from "@/lib/animation";
@@ -45,15 +45,10 @@ interface MessageInputProps {
 	/** Web-search toggle rendered inside the composer (primary location). */
 	webSearchEnabled?: boolean;
 	setWebSearchEnabled?: (v: boolean) => void;
+	/** UI-mode toggle (A2UI) rendered inside the composer next to WEB. */
+	uiMode?: boolean;
+	setUiMode?: (v: boolean) => void;
 }
-
-const INPUT_HINTS = [
-	{ key: "Enter", action: "Send" },
-	{ key: "Shift+Enter", action: "New line" },
-	{ key: "?", action: "Shortcuts" },
-];
-
-const HINTS_KEY = "oma-chat-input-hints-seen";
 
 export const MessageInputRedesigned = forwardRef<
 	HTMLTextAreaElement,
@@ -70,16 +65,11 @@ export const MessageInputRedesigned = forwardRef<
 		disabledReason,
 		webSearchEnabled = false,
 		setWebSearchEnabled,
+		uiMode = false,
+		setUiMode,
 	},
 	forwardedRef,
 ) {
-	const [showHints, setShowHints] = useState(() => {
-		try {
-			return localStorage.getItem(HINTS_KEY) !== "1";
-		} catch {
-			return false;
-		}
-	});
 	const [focused, setFocused] = useState(false);
 	const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -90,16 +80,6 @@ export const MessageInputRedesigned = forwardRef<
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
 	}, []);
-
-	// Auto-dismiss hints after first interaction
-	useEffect(() => {
-		if (input.length > 0 && showHints) {
-			try {
-				localStorage.setItem(HINTS_KEY, "1");
-			} catch {}
-			setShowHints(false);
-		}
-	}, [input, showHints]);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -154,9 +134,9 @@ export const MessageInputRedesigned = forwardRef<
 				className="w-full"
 			>
 			<div
-				className={`bg-surface relative flex items-end gap-0.5 rounded-[var(--radius-lg)] px-2 py-2 transition-[border-color,box-shadow,background-color] duration-200 ease-out chat-scrollbar border shadow-sm ${
+				className={`bg-surface relative flex items-end gap-0.5 rounded-[var(--radius-lg)] px-2 py-1.5 transition-[border-color,box-shadow,background-color] duration-200 ease-out chat-scrollbar border shadow-sm ${
 					focused
-						? "border-accent/60 shadow-[0_0_32px_-4px_var(--color-accent-glow)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white_10%)] scale-[1.01]"
+						? "border-accent/60 shadow-[0_0_32px_-4px_var(--color-accent-glow)] bg-[color-mix(in_srgb,var(--color-surface)_90%,white_10%)]"
 						: "border-border shadow-sm hover:border-border-hi"
 				}`}
 				role="group"
@@ -180,11 +160,38 @@ export const MessageInputRedesigned = forwardRef<
 					maxLength={100 * 1024}
 					inputMode="text"
 					enterKeyHint="send"
-					className="min-h-[56px] flex-1 resize-none bg-transparent px-4 py-4 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:px-5"
+					className="min-h-[44px] flex-1 resize-none bg-transparent px-4 py-3 font-sans text-[15px] leading-relaxed text-text-bright placeholder-text-muted outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:px-5"
 					disabled={loading}
-					style={{ minHeight: "56px", maxHeight: "200px" }}
+					style={{ minHeight: "44px", maxHeight: "200px" }}
 					onInput={handleInput}
 				/>
+
+				{setUiMode && (
+					<div className="flex items-center self-end p-2 shrink-0">
+						<button
+							type="button"
+							onClick={() => setUiMode(!uiMode)}
+							aria-pressed={uiMode}
+							aria-label="Toggle UI mode — model can render interactive interfaces"
+							title={
+								uiMode
+									? "UI mode on — model can render interactive interfaces"
+									: "UI mode off — turn on to let the model build interactive UIs"
+							}
+							className={`flex h-[42px] min-h-[42px] items-center justify-center gap-2 rounded-full px-4 font-mono text-[11px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
+								uiMode
+									? "border border-[var(--color-accent)]/40 bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] shadow-[0_0_16px_-6px_var(--color-accent-glow)]"
+									: "border border-[var(--color-border)] bg-[var(--color-void)] text-text-muted hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] hover:text-[var(--color-text-primary)]"
+							}`}
+						>
+							<Wand2
+								className={`h-4 w-4 ${uiMode ? "text-[var(--color-accent)]" : ""}`}
+								aria-hidden="true"
+							/>
+							<span>UI</span>
+						</button>
+					</div>
+				)}
 
 				{setWebSearchEnabled && (
 					<div className="flex items-center self-end p-2 shrink-0">
@@ -282,37 +289,6 @@ export const MessageInputRedesigned = forwardRef<
 				</div>
 			</div>
 			</BorderBeam>
-
-			{/* ─── Input hints (first visit) ─── */}
-			<AnimatePresence>
-				{showHints && !loading && (
-					<m.div
-						initial={{ opacity: 0, y: -4 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -4 }}
-						className="absolute bottom-full left-0 right-0 mb-2 px-2 hidden md:flex"
-					>
-						<div className="flex items-center gap-3 mx-auto px-3 py-1.5 bg-[var(--color-surface)]/80 rounded-[var(--radius-lg)] border border-[var(--color-border)]/40 backdrop-blur-sm">
-							<Sparkles className="w-3 h-3 text-[var(--color-accent)]/60" />
-							{INPUT_HINTS.map((hint, i) => (
-								<span
-									key={i}
-									className="flex items-center gap-1 text-[9px] font-mono text-text-muted"
-								>
-									<kbd className="px-1.5 py-0.5 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-text-secondary text-[9px]">
-										{hint.key}
-									</kbd>
-									{hint.action}
-								</span>
-							))}
-						</div>
-					</m.div>
-				)}
-			</AnimatePresence>
-
-			<span id="message-hint" className="sr-only">
-				Shift+Enter for new line, Enter to send
-			</span>
 		</div>
 	);
 });

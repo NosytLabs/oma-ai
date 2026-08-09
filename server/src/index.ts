@@ -15,6 +15,7 @@ import { authRoutes } from "./routes/auth.js";
 import { modelRoutes } from "./routes/models.js";
 import { healthRoutes } from "./routes/health.js";
 import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
+import { opsRoutes } from "./routes/ops.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
 import { mediaRouter } from "./routes/media.js";
@@ -27,7 +28,6 @@ import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { polarRoutes } from "./routes/polar.js";
-// import { adminRoutes } from "./routes/admin/index.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { rateLimit } from "./middleware/rate-limit.js";
@@ -196,6 +196,7 @@ app.use("/v1/*", demoModeGuard);
 // Public operational routes.
 app.route("/", healthRoutes);
 app.route("/", metricsRoutes);
+app.route("/", opsRoutes);
 app.route("/", openapiRoutes);
 
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
@@ -278,9 +279,6 @@ polarRoutes.post("/api/webhook/polar", async (c) => {
   const body = await res.text();
   return new Response(body, { status: res.status, headers: { "content-type": res.headers.get("content-type") ?? "application/json" } });
 });
-
-// Admin / operator dashboard endpoints.
-// app.route("/", adminRoutes);
 
 app.notFound((c) =>
   c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),

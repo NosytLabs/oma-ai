@@ -113,12 +113,12 @@ const PAYMENT_RAILS: Array<{
 }> = [
 	{
 		id: "card",
-		name: "Card credits (Polar)",
+		name: "Card credits ()",
 		icon: CreditCard,
 		eyebrow: "Easiest",
-		body: "Buy credits with Visa, Mastercard, or Apple Pay. Powered by Polar — your card never touches OMA. Three plans: Hobby $10 / Builder $50 / Scale $250.",
+		body: "Buy credits with Visa, Mastercard, or Apple Pay. Powered by  — your card never touches OMA. Three plans: Hobby $10 / Builder $50 / Scale $250.",
 		cta: { label: "Buy credits", href: "/deposit?method=card" },
-		highlights: ["No wallet", "Apple Pay", "Instant settlement", "Powered by Polar"],
+		highlights: ["No wallet", "Apple Pay", "Instant settlement", "Powered by "],
 	},
 	{
 		id: "usdc",

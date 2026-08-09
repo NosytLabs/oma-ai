@@ -6,9 +6,9 @@
  * route through the same provider selection, streaming, billing, and
  * usage-recording pipeline.
  */
-import { getModelById } from "./models.js";
+import { getModelById, type ModelDef } from "./models.js";
 import { getModelPricing } from "./billing-service.js";
-import { trackPolarUsage } from "./polar-usage.js";
+
 import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { creditBalances, usageRecords } from "../db/schema.js";
@@ -38,11 +38,29 @@ class ProviderError extends Error {
   }
 }
 
-function resolveProvider(provider: string, _omaAiId?: string): ProviderRoute {
+function resolveProvider(provider: string, modelDef?: ModelDef): ProviderRoute {
   if (provider === "oma-ai") {
+    // Two resale upstreams, both branded "oma-ai" to users:
+    //   zyloo      → api.zyloo.io        (gemini-*, gpt-*)
+    //   openbroker → api.openbroker.gonka.gg (MiniMax-M2.7, Kimi-K2.6)
+    if (modelDef?.upstream === "openbroker") {
+      if (!config.OPENBROKER_API_KEY) {
+        throw new ProviderError(
+          "OpenBroker API key not configured (set OPENBROKER_API_KEY in the server env).",
+          503,
+        );
+      }
+      return {
+        baseUrl: `${config.OPENBROKER_API_URL}/v1`,
+        apiKey: config.OPENBROKER_API_KEY,
+        upstreamModel: (id, gid) => gid ?? id,
+        extraBody: (body) => body, // OpenAI-compatible — pass through
+        providerLabel: "oma-ai",
+      };
+    }
     if (!config.ZYLOO_API_KEY) {
       throw new ProviderError(
-        "OMA-AI/OpenBroker API key not configured (set ZYLOO_API_KEY in the server env).",
+        "Zyloo API key not configured (set ZYLOO_API_KEY in the server env).",
         503,
       );
     }
@@ -133,7 +151,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
   let route: ProviderRoute;
   try {
     const provider = providerOverride ?? modelDef.provider;
-    route = resolveProvider(provider, modelDef.omaAiId);
+    route = resolveProvider(provider, modelDef);
   } catch (err) {
     if (err instanceof ProviderError) {
       throw err;
@@ -203,25 +221,31 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 export const FALLBACK_MAP: Record<string, string[]> = {
   // Frontier
   "openai-gpt-56-sol": ["kimi-k3", "gemini-3.1-pro-preview"],
-  "gemini-3.1-pro-preview": ["gemini-3-pro-preview", "openai-gpt-56-sol"],
+  "gemini-3.1-pro-preview": ["gpt-4.1", "openai-gpt-56-sol"],
 
   // Premium
-  "kimi-k3": ["zai-org-glm-5-2", "gemini-3-pro-preview"],
-  "zai-org-glm-5-2": ["kimi-k3", "gemini-3-pro-preview"],
-  "gemini-3-pro-preview": ["gemini-3.1-pro-preview", "gpt-4.1"],
-  "gpt-4.1": ["gpt-4o", "gemini-3-pro-preview"],
+  "kimi-k3": ["zai-org-glm-5-2", "kimi-k2-6"],
+  "zai-org-glm-5-2": ["kimi-k3", "kimi-k2-6"],
+  "kimi-k2-6": ["kimi-k3", "zai-org-glm-5-2"],
+  "deepseek-v4-pro": ["qwen-3-8-max", "kimi-k3"],
+  "qwen-3-8-max": ["deepseek-v4-pro", "kimi-k3"],
+  "gpt-4.1": ["gpt-4o", "gemini-3.1-pro-preview"],
   "gpt-4o": ["gpt-4.1", "gemini-3-flash-preview"],
 
   // Mid
   "llama-3.3-70b": ["qwen-3-7-plus", "zai-org-glm-5-1"],
   "zai-org-glm-5-1": ["qwen-3-7-plus", "llama-3.3-70b"],
   "qwen-3-7-plus": ["zai-org-glm-5-1", "llama-3.3-70b"],
+  "hermes-3-llama-3.1-405b": ["llama-3.3-70b", "qwen-3-7-plus"],
 
   // Budget
-  "xiaomi-mimo-v2-5": ["gemini-3-flash-preview", "llama-3.3-70b"],
+  "xiaomi-mimo-v2-5": ["gemini-3-flash-preview", "minimax-m2-7"],
+  "minimax-m2-7": ["xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
+  "deepseek-v4-flash-0731": ["xiaomi-mimo-v2-5", "mistral-small-2603"],
+  "mistral-small-2603": ["deepseek-v4-flash-0731", "xiaomi-mimo-v2-5"],
 
-  // OMA-AI Free Models (OpenBroker) — prefer oma-ai peers first, then budget Venice
-  "gemini-3-flash-preview": ["gemini-3-pro-preview", "gpt-4o", "xiaomi-mimo-v2-5"],
+  // OMA-AI free default — prefer oma-ai peers first, then budget Venice
+  "gemini-3-flash-preview": ["minimax-m2-7", "gpt-4o", "xiaomi-mimo-v2-5"],
 };
 
 /**
@@ -375,7 +399,7 @@ export async function assertSufficientBalance(
   }
 }
 
-/** Record usage, deduct credits, emit audit log, and send Polar meter event. */
+/** Record usage, deduct credits, and emit an audit log entry. */
 async function recordUsage(args: RecordUsageArgs): Promise<void> {
   const {
     userId,
@@ -462,18 +486,6 @@ async function recordUsage(args: RecordUsageArgs): Promise<void> {
         status,
       },
     });
-    if (status === "completed" && !isAnonymous) {
-      void trackPolarUsage({
-        externalCustomerId: userId,
-        requestId,
-        model,
-        provider,
-        promptTokens,
-        outputTokens,
-        totalTokens,
-        costCents: userCostCents,
-      });
-    }
   } catch (err) {
     logger.error({ err, requestId }, "[proxy] usage record failed");
   }

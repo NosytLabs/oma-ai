@@ -14,6 +14,7 @@
  *   GET  /v1/deposit/status   → user's deposit history (pending +
  *                                 completed).
  *   GET  /v1/balance          → user's current credit balance.
+ *   GET  /v1/site-settings    → public rail/config status for the frontend.
  */
 import { Hono } from "hono";
 import { z } from "zod";
@@ -267,6 +268,36 @@ depositAddress,
     }
   },
 );
+
+// ─── GET /v1/site-settings ───────────────────────────────────────────────────
+// Public. Lets the frontend render honest rail statuses instead of
+// discovering a 503 after the user picks a rail.
+
+depositRoutes.get("/v1/site-settings", async (c) => {
+  try {
+    const [settings] = await db.select().from(siteSettings).limit(1);
+    const polarConfigured =
+      Boolean(config.POLAR_ACCESS_TOKEN) &&
+      Boolean(
+        config.POLAR_HOBBY_PRODUCT_ID ||
+          config.POLAR_BUILDER_PRODUCT_ID ||
+          config.POLAR_SCALE_PRODUCT_ID,
+      );
+    return c.json({
+      maintenanceMode: settings?.maintenanceMode ?? false,
+      cardPaymentsEnabled: settings?.cardPaymentsEnabled ?? true,
+      cryptoPaymentsEnabled: settings?.cryptoPaymentsEnabled ?? true,
+      usdcDepositConfigured: Boolean(config.USDC_DEPOSIT_ADDRESS),
+      polarConfigured,
+    });
+  } catch (err) {
+    logger.error({ err }, "[deposit] site-settings fetch failed");
+    return c.json(
+      { error: { message: "Failed to fetch site settings", type: "server_error" } },
+      500,
+    );
+  }
+});
 
 // ─── GET /v1/deposit/status ──────────────────────────────────────────────────
 

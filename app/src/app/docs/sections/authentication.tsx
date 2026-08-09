@@ -53,8 +53,7 @@ func main() {
 					) — e.g. <code className="text-accent font-mono text-xs">gemini-3-flash-preview</code>,{" "}
 					<code className="text-accent font-mono text-xs">gpt-4o</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{""}
-					without sign-in, API key, or wallet. Rate limits still apply. Venice and
-					other paid models require an account (API key or wallet) and credits.
+					without sign-in, API key, or wallet. Rate limits still apply. Upgrade to a paid plan to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 				</p>
 				<p className="text-sm text-text-muted">
 					Programmatic API access to free models still works with a key if you
@@ -119,7 +118,7 @@ func main() {
 						<li>Enter your email address on the login page</li>
 						<li>Click the link sent to your inbox within 5 minutes</li>
 						<li>Your API key is generated automatically on first sign-in</li>
-						<li>Credits can be added via card (Polar) or USDC (Base) in your dashboard</li>
+						<li>Credits can be added via card or USDC (Base) in your dashboard</li>
 					</ol>
 				</div>
 			</div>

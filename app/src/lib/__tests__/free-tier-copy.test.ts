@@ -19,9 +19,10 @@ describe("free-tier copy accuracy", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual([
 			"gemini-3.1-pro-preview",
 			"gemini-3-flash-preview",
-			"gemini-3-pro-preview",
 			"gpt-4.1",
 			"gpt-4o",
+			"kimi-k2-6",
+			"minimax-m2-7",
 		].sort());
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});

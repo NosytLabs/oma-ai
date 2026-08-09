@@ -1,5 +1,6 @@
 import { CACHE_TTL_MS } from "../constants.js";
 import type { PaymentPayload, PaymentResponse, SettlementRecord } from "./types.js";
+import { logger } from "../lib/logger.js";
 
 // ============================================================
 // Settlement Cache (Thread-safe LRU with max size)
@@ -36,7 +37,7 @@ export function atomicCacheSet(cacheKey: string, record: SettlementRecord): void
       try {
         atomicCacheSet(cacheKey, record);
       } catch (err) {
-        console.error("atomicCacheSet timeout failed", err);
+        logger.error({ err }, "atomicCacheSet timeout failed");
       }
     }, 0);
     return;

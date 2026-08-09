@@ -1,9 +1,34 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
-import { ensureCatalogLoaded, listAllModels } from "../inference/models.js";
+import {
+  ensureCatalogLoaded,
+  listAllModels,
+  userFacingPrices,
+  type ModelDef,
+} from "../inference/models.js";
 import { readModelPricingOverrides } from "../lib/model-overrides.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
+
+/**
+ * User-facing per-1M prices for a model: admin overrides are final
+ * user-facing prices; otherwise catalog base * (1 + markup/100).
+ * Displayed prices must always match what billing deducts.
+ */
+function facingPrices(
+  m: ModelDef,
+  overrides: ReturnType<typeof readModelPricingOverrides>,
+): { prompt: number; completion: number } {
+  const override = overrides[m.id];
+  if (override) {
+    return {
+      prompt: override.inputPricePer1M,
+      completion: override.outputPricePer1M,
+    };
+  }
+  const facing = userFacingPrices(m);
+  return { prompt: facing.inputPer1M, completion: facing.outputPer1M };
+}
 
 // OpenAI-compatible /v1/models
 modelRoutes.get("/v1/models", async (c) => {
@@ -13,10 +38,9 @@ modelRoutes.get("/v1/models", async (c) => {
   return c.json({
     object: "list",
     data: models.map((m) => {
-      // Admin-set pricing override wins over the catalog default so that
-      // dashboards, chat cost pills, and billing all see the same number
-      // as the admin's pricing editor.
-      const override = allOverrides[m.id];
+      // Prices are user-facing (markup applied) so dashboards, chat cost
+      // pills, and billing all show the same number the customer is charged.
+      const prices = facingPrices(m, allOverrides);
       return {
         id: m.id,
         object: "model",
@@ -29,8 +53,8 @@ modelRoutes.get("/v1/models", async (c) => {
         supports_streaming: m.supportsStreaming,
         supports_tools: m.capabilities?.includes("tools") ?? false,
         pricing: {
-          prompt: override?.inputPricePer1M ?? m.inputPricePer1M,
-          completion: override?.outputPricePer1M ?? m.outputPricePer1M,
+          prompt: prices.prompt,
+          completion: prices.completion,
         },
       };
     }),
@@ -49,7 +73,7 @@ modelRoutes.get("/v1/models/:id", async (c) => {
     );
   }
   const allOverrides = readModelPricingOverrides();
-  const override = allOverrides[m.id];
+  const prices = facingPrices(m, allOverrides);
   return c.json({
     id: m.id,
     object: "model",
@@ -62,8 +86,8 @@ modelRoutes.get("/v1/models/:id", async (c) => {
     supports_streaming: m.supportsStreaming,
     supports_tools: m.capabilities?.includes("tools") ?? false,
     pricing: {
-      prompt: override?.inputPricePer1M ?? m.inputPricePer1M,
-      completion: override?.outputPricePer1M ?? m.outputPricePer1M,
+      prompt: prices.prompt,
+      completion: prices.completion,
     },
   });
 });

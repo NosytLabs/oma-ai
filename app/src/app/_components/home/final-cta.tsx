@@ -37,7 +37,7 @@ export function FinalCTA() {
  <span className="gradient-text-accent">Call any model.</span>
  </h2>
  <p className="max-w-xl text-base leading-relaxed text-text-secondary sm:text-lg">
- Fund credits with card (Polar) or USDC on Base. Use x402 when
+ Fund credits with card () or USDC on Base. Use x402 when
  agents need to pay per request. One OpenAI-compatible surface.
  </p>
  </div>

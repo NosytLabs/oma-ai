@@ -16,8 +16,8 @@ describe("FALLBACK_MAP (inference router)", () => {
 		}
 	});
 
-	it("covers OpenBroker OMA-AI free models with oma-ai-first peers", () => {
-		for (const id of ["gemini-3-flash-preview", "gemini-3-pro-preview"] as const) {
+	it("covers OMA-AI resale models with oma-ai-first peers", () => {
+		for (const id of ["gemini-3-flash-preview", "minimax-m2-7"] as const) {
 			const chain = FALLBACK_MAP[id];
 			expect(chain, `no FALLBACK_MAP entry for ${id}`).toBeTruthy();
 			expect(chain!.length).toBeGreaterThan(0);

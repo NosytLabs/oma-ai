@@ -384,7 +384,7 @@ function BrandPitch() {
 		{
 			Icon: Coins,
 			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. x402 pay-per-request for agents — wallet-based, no card needed.",
+			body: "Credits in USDC on Base. x402 pay-per-request for agents — wallet-based.",
 		},
 	];
 	return (
@@ -396,8 +396,7 @@ function BrandPitch() {
 					<span className="text-[var(--color-accent)] ml-2">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
-					One OpenAI-compatible gateway. Magic link or wallet, credits by card
-					or USDC on Base, x402 for agents.
+					One OpenAI-compatible gateway. Magic link or wallet, credits by USDC on Base, x402 for agents.
 				</p>
 				<ul className="mt-6 space-y-4">
 					{items.map(({ Icon, title, body }) => (

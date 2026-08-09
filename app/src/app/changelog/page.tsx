@@ -62,9 +62,8 @@ const KIND_STYLES: Record<ChangeKind, { label: string; color: string; icon: type
 	deprecation: { label: "deprecation", color: "bg-error/10 text-error border-error/30", icon: Wrench },
 };
 
-// Hand-curated releases. Auto-generated entries from `scripts/generate-changelog.mjs`
-// (regenerated at build time) are prepended so the most recent commits always
-// appear first.
+// Hand-curated releases. Auto-generated entries from `@/data/auto-changelog.json`
+// are prepended so the most recent commits always appear first.
 const RELEASES: Release[] = [
 	...((AUTO_RELEASES as unknown as Release[]) ?? []),
 	{

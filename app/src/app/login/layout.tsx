@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Sign in",
 	description:
-		"Sign in with a passwordless email link or SIWE on Base. Buy AI inference credits by card through Polar (1 credit = $0.01) or deposit USDC.",
+		"Sign in with a passwordless email link or SIWE on Base. Buy AI inference credits by card through  (1 credit = $0.01) or deposit USDC.",
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 };

@@ -65,8 +65,8 @@ import {
 const messageVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.95,
-    y: 10,
+    scale: 0.985,
+    y: 8,
   },
   visible: {
     opacity: 1,
@@ -76,8 +76,8 @@ const messageVariants: Variants = {
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
-    y: -10,
+    scale: 0.985,
+    y: -6,
     transition: springs.soft,
   },
 };
@@ -399,17 +399,18 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
         {/* ─── METADATA ROW ─── */}
         <div
           className={`
- mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary font-mono
+ mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary font-mono
  ${isUser ? "flex-row-reverse" : "flex-row"} select-none
  `}
         >
           <span className="text-text-secondary">{time}</span>
-          {(msg.outputTokens ??
-            (msg.content ? estimateTokens(msg.content) : 0)) > 0 && (
-            <span className="px-1.5 py-0.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[10px] text-text-secondary">
-              TK:{msg.outputTokens ?? estimateTokens(msg.content)}
-            </span>
-          )}
+          {!isUser &&
+            (msg.outputTokens ??
+              (msg.content ? estimateTokens(msg.content) : 0)) > 0 && (
+              <span className="px-1.5 py-0.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[10px] text-text-secondary">
+                TK:{msg.outputTokens ?? estimateTokens(msg.content)}
+              </span>
+            )}
           {msg.latency && (
             <span className="flex items-center gap-1 opacity-60">
               <Clock className="w-3 h-3" />

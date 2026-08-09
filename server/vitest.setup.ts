@@ -20,7 +20,6 @@ process.env.NODE_ENV = 'development';
 delete process.env.VENICE_API_KEY;
 delete process.env.OPENAI_API_KEY;
 delete process.env.ANTHROPIC_API_KEY;
-delete process.env.OPENROUTER_API_KEY;
 
 // Surplus wallet key - required for SURPLUS_ENABLED to be true in tests
 if (!process.env.SURPLUS_WALLET_PRIVATE_KEY) {

@@ -88,7 +88,7 @@ Before a production deployment, ensure the following core assets are correctly v
 ### 3. Decentralized Payments
 > *"Crypto-friendly credits. Pay with crypto, build with one API."*
 >
-> Instantly fund developer credits using USDC on Base or utilize low-overhead `x402` micropayments for autonomous agents. *(Note: Multi-chain rails via LI.FI and CCTP are planned; current production support is limited to USDC on Base).*
+> Instantly fund developer credits using USDC on Base or utilize low-overhead `x402` micropayments for autonomous agents.
 
 ---
 

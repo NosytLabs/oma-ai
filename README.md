@@ -8,7 +8,9 @@ Self-hosted AI inference gateway featuring an OpenAI-compatible API, multi-model
 
 > **One gateway. Every model. No lock-in.**
 >
-> OMA AI acts as a curated, privacy-first multi-provider inference gateway (not an unbounded 100+ model marketplace). It offers OpenAI and Anthropic-compatible APIs, a free guest chat experience powered by OMA-AI models, paid access to the Venice catalog, and integrated card/USDC/x402 payment systems.
+> OMA AI acts as a curated, privacy-first multi-provider inference gateway. It offers OpenAI and Anthropic-compatible APIs, a free guest chat experience powered by OMA-AI models, paid access to the Venice catalog, and integrated card/USDC/x402 payment systems. OMA AI guarantees 100% data privacy: zero logs, zero training, zero tracking. 
+> 
+> By switching to OMA AI, you get access to the best models without managing multiple API keys, subscriptions, or navigating complex provider billing, at lower costs than direct usage. Try our generous free tier and upgrade when you are ready to scale.
 
 ---
 
@@ -49,17 +51,18 @@ SECURITY.md          Security policy
 ## Features
 
 ### Payments & Billing
-- **Card Credits (Polar):** Purchase credit tiers via Visa, Mastercard, or Apple Pay.
-- **USDC on Base:** Fund accounts with direct 1:1 USD deposits.
-- **x402 Micropayments:** Agent-native pay-per-request billing using EIP-3009.
+- **Card Credits (Polar):** Purchase credit tiers via Visa, Mastercard, or Apple Pay. Upgrade to Hobby ($10), Builder ($50), or Scale ($250) plans to remove rate limits and access premium models.
+- **USDC on Base:** Fund accounts with direct 1:1 USD deposits with zero markup.
+- **x402 Micropayments:** Agent-native pay-per-request billing using EIP-3009 for automated workloads.
+- **Unbeatable Value:** Only pay for what you use. We negotiate wholesale rates and pass the savings to you. See `/pricing` for details.
 
 ### Developer API & Proxy
-- **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation.
-- **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers.
-- **Curated Model Registry:** 12 vetted chat models across Venice and OMA-AI (free-tier budget) providers.
-- **Free Guest Chat:** Budget-friendly, sign-in-free chat via OMA-AI models (e.g. `gemini-3-flash-preview`, `zai-org-glm-5-1`, `qwen-3-7-plus`) with a daily limit for anonymous visitors.
-- **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms.
-- **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins.
+- **OpenAI-Compatible API:** Support for `/v1/chat/completions`, image generation, and video generation. Drop-in replacement for any OpenAI SDK.
+- **Anthropic-Compatible Messages:** Support for `/v1/messages` using `Bearer` or `x-api-key` headers. Drop-in replacement for any Anthropic SDK.
+- **Curated Model Registry:** 12 vetted chat models across Venice and OMA-AI providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives like on Zyloo.io.
+- **Free Guest Chat:** Budget-friendly, sign-in-free chat via OMA-AI models (e.g. `gemini-3-flash-preview`, `zai-org-glm-5-1`, `qwen-3-7-plus`) with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
+- **Robust Infrastructure:** Built-in API keys, granular rate limiting, and circuit-breaker failover mechanisms. Enterprise-grade reliability out of the box.
+- **Identity & Auth:** SIWE (Sign-In with Ethereum) wallet authentication alongside magic-link email sign-ins. Privacy-first onboarding with no tracking.
 
 ---
 

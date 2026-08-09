@@ -46,14 +46,14 @@ OMA AI utilizes a cohesive, split cookie/bearer authentication framework powered
             ┌────────────────┴────────────────┐
             ▼                                 ▼
    ┌─────────────────┐               ┌─────────────────┐
-   │  Card Checkout  │               │  USDC on Base   │
-   │   (Polar.sh)    │               │  (Direct EOA)   │
+   │  USDC on Base   │               │  USDC on Base   │
+   │  (Direct EOA)   │               │  (Direct EOA)   │
    └────────┬────────┘               └────────┬────────┘
             │                                 │
             ▼                                 ▼
    ┌─────────────────┐               ┌─────────────────┐
-   │ Webhook Handler │               │ Deposit Recovery│
-   │ /webhooks/polar │               │  Watcher Daemon │
+   │ Deposit Recovery│               │ Deposit Recovery│
+   │  Watcher Daemon │               │  Watcher Daemon │
    └────────┬────────┘               └────────┬────────┘
             │                                 │
             └───────────────┬─────────────────┘
@@ -67,9 +67,8 @@ OMA AI utilizes a cohesive, split cookie/bearer authentication framework powered
 
 The gateway exposes three independent, auditable payment rails:
 
-1. **Polar Checkout (Cards):** Card Top-Ups create Polar checkout sessions. Once Polar triggers webhooks for `order.paid` or `order.refunded`, the Hono server verifies the webhook signature using `timingSafeEqual` HMAC-SHA256 and adjusts the user's ledger balance.
-2. **USDC Direct Deposits (Base):** Direct wallet top-ups generate unique user transaction instructions (USDC contracts on Base mainnet, min/max limits, and `oma-${userId}` custom memo payloads). An asynchronous block-indexing daemon (`deposit-recovery.ts`) monitors logs, processes transaction inputs, handles memo/user mapping, and updates database records safely.
-3. **x402 Micropayments (Gasless):** Supports HTTP 402 Pay-Per-Request headers. When an agent calls an endpoint, OMA AI checks for EIP-3009 signed authorizations. Valid requests are either processed in gasless mode via the QuickNode Hosted Facilitator, or simulated locally for preview setups.
+1. **USDC Direct Deposits (Base):** Direct wallet top-ups generate unique user transaction instructions (USDC contracts on Base mainnet, min/max limits, and `oma-${userId}` custom memo payloads). An asynchronous block-indexing daemon (`deposit-recovery.ts`) monitors logs, processes transaction inputs, handles memo/user mapping, and updates database records safely.
+2. **x402 Micropayments (Gasless):** Supports HTTP 402 Pay-Per-Request headers. When an agent calls an endpoint, OMA AI checks for EIP-3009 signed authorizations. Valid requests are either processed in gasless mode via the QuickNode Hosted Facilitator, or simulated locally for preview setups.
 
 ---
 

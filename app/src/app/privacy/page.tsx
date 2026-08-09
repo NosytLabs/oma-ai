@@ -565,7 +565,7 @@ export default function PrivacyPage() {
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
 								["Resend", "Email delivery", "transactional magic link emails"],
-								["Polar", "Payment processing", "credit card checkout and subscription management"],
+								["", "Payment processing", "credit card checkout and subscription management"],
 							].map(([name, role, note]) => (
 								<li
 									key={name}

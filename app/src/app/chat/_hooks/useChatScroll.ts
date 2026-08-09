@@ -42,13 +42,21 @@ export function useChatScroll(
 	// Auto-scroll only when the user is already near the bottom — never
 	// yank them back down if they've scrolled up to read history. During
 	// streaming we use 'auto' (instant) so smooth-scroll animations don't
-	// queue up and stutter on the 250ms batched updates.
+	// queue up and stutter on the 250ms batched updates. Keyed off the
+	// last message's content length so the view follows growing content
+	// on every batched update, not just loading transitions.
+	const lastContentLen = (() => {
+		const last = _deferredMessages[_deferredMessages.length - 1] as
+			| { content?: string }
+			| undefined;
+		return last?.content?.length ?? 0;
+	})();
 	useEffect(() => {
 		if (!isNearBottomRef.current) return;
 		messagesEndRef.current?.scrollIntoView({
 			behavior: loading ? "auto" : "smooth",
 		});
-	}, [loading]);
+	}, [loading, lastContentLen]);
 
 	// On mount with restored history, snap to the latest message so
 	// returning users aren't anchored at the top of a long thread. The

@@ -46,13 +46,6 @@ node scripts/audit/ux-audit-pages.mjs  # authenticated UX captures → $TMPDIR/o
 Screenshot dumps (`.visual-audit/`, `app/public/screenshots-ux/`, etc.) are gitignored.
 Set `VISUAL_AUDIT_OUT=/path` to redirect `visual-audit.mjs` output.
 
-## App-local scripts
-
-Frontend-only generators live under `app/scripts/`:
-
-- `generate-changelog.mjs` — runs on `predev` / `prebuild`
-- `generate-brand-assets.mjs` — raster exports from SVG (`npm run brand:generate` in `app/`)
-
 ## Root monorepo
 
 From repo root:

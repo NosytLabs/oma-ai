@@ -178,8 +178,7 @@ function DocsContent() {
 								<p className="page-intro mt-4 max-w-2xl">
 									OpenAI-compatible AI inference with wallet auth, x402
 									pay-per-request flows, and a catalog of{""}
-									{MODEL_COUNT}+ models behind one endpoint. Buy credits
-									with card via Polar, or pay per call with USDC on Base.
+									{MODEL_COUNT}+ models behind one endpoint. Add credits via card, or pay per call with USDC on Base.
 								</p>
 							</div>
 							<div className="flex flex-col gap-3 lg:min-w-[15rem] lg:items-end">

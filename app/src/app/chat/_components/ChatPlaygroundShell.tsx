@@ -629,23 +629,7 @@ function ShellContent({
 					aria-label="Chat messages"
 					className="flex-1 flex flex-col min-w-0 relative"
 				>
-					{!isAuthenticated && (
-						<div
-							role="status"
-							className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 py-2 bg-accent/10 border-b border-accent/25 text-xs text-accent font-mono"
-						>
-							<span className="tracking-wide">
-								Free OMA-AI chat works without sign-in. Sign in for paid models,
-								higher limits, and saved conversations.
-							</span>
-							<Link
-								href="/login?next=/chat"
-								className="shrink-0 px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent-bright transition-colors duration-200 ease-out"
-							>
-								Sign in →
-							</Link>
-						</div>
-					)}
+
 						{isLowBalance && (
 							<div
 								role="status"
@@ -702,32 +686,10 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 						<div
-							className="flex-none px-4 pt-4 pb-6 sm:px-6 sm:pt-6 sm:pb-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
-							style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
+							style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
 						>
 							<div className="max-w-4xl mx-auto">
-								<div className="flex items-center gap-3 mb-4 flex-wrap">
-									<button
-										type="button"
-										onClick={() => setUiMode(!uiMode)}
-										aria-pressed={uiMode}
-										aria-label="Toggle UI mode — let models render interactive interfaces (A2UI)"
-										className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-[colors,box-shadow,transform] duration-200 ease-out focus-ring active:scale-[0.97] ${
-											uiMode
-												? "border-accent bg-accent/15 text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
-												: "border-border-hi text-text-muted hover:border-accent/50 hover:text-text"
-										}`}
-									>
-										<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-										{uiMode ? "UI mode on" : "UI mode"}
-									</button>
-								<span className="hidden sm:inline text-[11px] font-mono text-text-muted tracking-wide opacity-80 select-none">
-										{uiMode
-											? "Models can render buttons, forms & cards inline — clickable, like Claude's artifacts"
-											: "Ask \u201cbuild me a form\u201d with UI mode on to get interactive UI"}
-									</span>
-								</div>
-
 								<ChatErrorBanner
 									error={error}
 									onDismiss={() => setError(null)}
@@ -751,18 +713,19 @@ function ShellContent({
 									disabled={false}
 									webSearchEnabled={webSearchEnabled}
 									setWebSearchEnabled={setWebSearchEnabled}
+									uiMode={uiMode}
+									setUiMode={setUiMode}
 								/>
 
-								<div className="mt-4 flex flex-col items-stretch gap-2 px-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
+								<div className="mt-2 flex flex-col items-stretch gap-2 px-2 sm:mt-2.5 sm:flex-row sm:items-center sm:justify-between">
 									<p
 										id="message-hint"
 										className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words sm:shrink-0 select-none"
 									>
-										<span className="hidden sm:inline">Enter send · Shift+Enter newline</span>
-										<span className="sm:hidden">Tap send · hold for newline</span>
+										Enter send · Shift+Enter newline
 										{!isAuthenticated && (
 											<span className="text-accent/80 font-semibold">
-												{""}
+												{" "}
 												· {freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
 												left
 											</span>

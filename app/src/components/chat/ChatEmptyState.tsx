@@ -87,7 +87,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				initial={{ y: 16, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ delay: 0.1, ...springs.soft }}
-				className="mb-2.5 text-2xl font-semibold tracking-tight text-text-bright"
+				className="mb-2.5 text-2xl font-mono tracking-tight text-text-bright"
 			>
 				Chat with any model
 			</m.h2>
@@ -184,7 +184,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				className="mt-6 flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider"
 			>
 				<Coins className="h-3.5 w-3.5 text-[var(--color-accent)] opacity-80" aria-hidden="true" />
-				Starters route to budget models — cost stays tiny
+				Free tier: 20 requests/day · no card needed
 			</m.div>
 		</div>
 	);
