@@ -36,21 +36,21 @@ function getOverrides(): Record<string, ModelPricingOverride> {
 }
 
 export function getModelPricing(modelId: string): ModelPricing {
-  const m = getModelById(modelId);
-  if (!m) {
-    return { inputPer1M: 0, outputPer1M: 0, markup: 25 };
-  }
-  const override = getOverrides()[modelId];
-  if (override) {
-    return {
-      inputPer1M: override.inputPricePer1M,
-      outputPer1M: override.outputPricePer1M,
-      markup: 0,
-    };
-  }
-  return {
-    inputPer1M: m.inputPricePer1M,
-    outputPer1M: m.outputPricePer1M,
-    markup: m.markupPercent,
-  };
+	const m = getModelById(modelId);
+	if (!m) {
+		throw new Error(`Model ${modelId} not found in catalog`);
+	}
+	const override = getOverrides()[modelId];
+	if (override) {
+		return {
+			inputPer1M: override.inputPricePer1M,
+			outputPer1M: override.outputPricePer1M,
+			markup: 0,
+		};
+	}
+	return {
+		inputPer1M: m.inputPricePer1M,
+		outputPer1M: m.outputPricePer1M,
+		markup: m.markupPercent,
+	};
 }

@@ -75,6 +75,70 @@ export function isAuthError(err: unknown): boolean {
   return anyErr?.status === 401 || anyErr?.status === 403;
 }
 
+/**
+ * True when an error represents a suspended account (HTTP 403 +
+ * code "account_suspended").
+ */
+export function isSuspendedAccountError(err: unknown): boolean {
+  if (err instanceof ApiError) {
+    const body = err.body as { error?: { code?: string } } | null | undefined;
+    return err.status === 403 && body?.error?.code === "account_suspended";
+  }
+  const anyErr = err as { status?: number; body?: unknown } | null | undefined;
+  if (anyErr?.status === 403 && anyErr.body) {
+    const body = anyErr.body as { error?: { code?: string } } | null | undefined;
+    return body?.error?.code === "account_suspended";
+  }
+  return false;
+}
+
+/**
+ * True when an error represents a payment requirement (HTTP 402).
+ */
+export function isPaymentRequiredError(err: unknown): boolean {
+  if (err instanceof ApiError) return err.status === 402;
+  const anyErr = err as { status?: number } | null | undefined;
+  return anyErr?.status === 402;
+}
+
+/**
+ * True when an error represents daily quota exhaustion (HTTP 429 +
+ * code "daily_limit_exceeded").
+ */
+export function isQuotaError(err: unknown): boolean {
+  if (err instanceof ApiError) {
+    const body = err.body as { error?: { code?: string } } | null | undefined;
+    return err.status === 429 && body?.error?.code === "daily_limit_exceeded";
+  }
+  const anyErr = err as { status?: number; body?: unknown } | null | undefined;
+  if (anyErr?.status === 429 && anyErr.body) {
+    const body = anyErr.body as { error?: { code?: string } } | null | undefined;
+    return body?.error?.code === "daily_limit_exceeded";
+  }
+  return false;
+}
+
+/**
+ * Extract quota info (remaining, limit, resetMs) from a daily_limit_exceeded
+ * error body.
+ */
+export function extractQuotaInfo(
+  err: unknown,
+): { remaining: number; limit: number; resetMs?: number } | undefined {
+  let body: { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined = null;
+  if (err instanceof ApiError) {
+    body = err.body as { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined;
+  } else {
+    const anyErr = err as { body?: unknown } | null | undefined;
+    if (anyErr?.body) body = anyErr.body as { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined;
+  }
+  if (!body?.error) return undefined;
+  const remaining = typeof body.error.remaining === "number" ? Math.max(0, body.error.remaining) : 0;
+  const limit = typeof body.error.limit === "number" && body.error.limit > 0 ? body.error.limit : 20;
+  const resetMs = typeof body.error.reset_ms === "number" ? body.error.reset_ms : undefined;
+  return { remaining, limit, resetMs };
+}
+
 /** Get a cached entry by key. Returns null if missing or beyond STALE_TTL. */
 export function getCached<T>(key: string): T | null {
   const entry = cache.get(key);

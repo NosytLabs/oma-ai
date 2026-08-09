@@ -26,31 +26,31 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
  primary: cn(
- "btn-primary border border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]",
- "bg-[linear-gradient(135deg,var(--color-accent),var(--color-accent-hover))] text-[var(--color-accent-fg)] font-semibold",
- " hover:shadow-[0_14px_30px_-10px_var(--color-accent-glow)] hover:brightness-105",
- "active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
- "shadow-[0_10px_26px_-16px_var(--color-accent-glow)]",
+	"btn-primary border border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]",
+	"bg-[linear-gradient(135deg,var(--color-accent),var(--color-accent-hover))] text-[var(--color-accent-fg)] font-semibold",
+	" hover:shadow-[0_14px_30px_-10px_var(--color-accent-glow)] hover:brightness-105 hover:-translate-y-0.5",
+	"active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
+	"shadow-[0_10px_26px_-16px_var(--color-accent-glow)]",
  ),
  secondary: cn(
- "btn-secondary bg-[color-mix(in_srgb,var(--color-surface-elevated)_90%,transparent)] text-text-primary border border-[color-mix(in_srgb,var(--color-border-bright)_48%,var(--color-border))]",
- " hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] hover:shadow-[0_12px_28px_-18px_rgba(70,211,154,0.3)]",
- "active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
+	"btn-secondary bg-[color-mix(in_srgb,var(--color-surface-elevated)_90%,transparent)] text-text-primary border border-[color-mix(in_srgb,var(--color-border-bright)_48%,var(--color-border))]",
+	" hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] hover:shadow-[0_12px_28px_-18px_rgba(70,211,154,0.3)] hover:-translate-y-0.5",
+	"active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
  ),
  ghost: cn(
- "bg-transparent text-text-secondary transition-[background-color,color,transform]",
- "hover:text-text-primary hover:bg-[var(--color-surface)]",
- "active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed",
+	"bg-transparent text-text-secondary transition-[background-color,color,transform,opacity]",
+	"hover:text-text-primary hover:bg-[var(--color-surface)]",
+	"active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed",
  ),
  outline: cn(
- "bg-transparent text-text-primary border border-border-bright",
- " hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] hover:shadow-[0_8px_20px_-10px_rgba(70,211,154,0.25)]",
- "active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
+	"bg-transparent text-text-primary border border-border-bright",
+	" hover:border-accent hover:text-accent hover:bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] hover:shadow-[0_8px_20px_-10px_rgba(70,211,154,0.25)] hover:-translate-y-0.5",
+	"active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
  ),
  destructive: cn(
- "bg-[color-mix(in_srgb,var(--color-error)_15%,transparent)] text-error border border-[color-mix(in_srgb,var(--color-error)_30%,transparent)]",
- "hover:bg-[color-mix(in_srgb,var(--color-error)_22%,transparent)] hover:border-error hover:shadow-[0_8px_20px_-10px_rgba(248,113,113,0.3)]",
- "active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
+	"bg-[color-mix(in_srgb,var(--color-error)_15%,transparent)] text-error border border-[color-mix(in_srgb,var(--color-error)_30%,transparent)]",
+	"hover:bg-[color-mix(in_srgb,var(--color-error)_22%,transparent)] hover:border-error hover:shadow-[0_8px_20px_-10px_rgba(248,113,113,0.3)]",
+	"active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none",
  ),
 };
 

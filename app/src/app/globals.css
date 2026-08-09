@@ -562,13 +562,10 @@
 	}
 	.btn-primary:disabled,
 	.btn-primary[aria-disabled="true"] {
-		opacity: 0.65;
+		opacity: 0.5;
 		cursor: not-allowed;
 		transform: none;
 		box-shadow: none;
-		background: var(--color-surface-elevated);
-		border-color: var(--color-border-hi);
-		color: var(--color-text-muted);
 	}
 	.btn-primary:disabled::before,
 	.btn-primary[aria-disabled="true"]::before {
@@ -599,8 +596,8 @@
 		transform: translateY(-0.125rem);
 		border-color: var(--color-accent);
 		color: var(--color-accent);
-		background: var(--color-surface);
-		box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.8);
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+		box-shadow: 0 12px 28px -18px rgba(70, 211, 154, 0.3);
 	}
 	.btn-secondary:active {
 		transform: scale(0.97);
@@ -661,7 +658,7 @@
 		color: var(--color-text-secondary);
 		border: 1px solid transparent;
 		transition: background-color 200ms ease-out, border-color 200ms ease-out,
-			color 200ms ease-out;
+			color 200ms ease-out, transform 200ms ease-out, opacity 200ms ease-out;
 		cursor: pointer;
 		text-decoration: none;
 		white-space: nowrap;
@@ -669,6 +666,15 @@
 	.btn-ghost:hover {
 		background: var(--color-surface);
 		color: var(--color-text-primary);
+	}
+	.btn-ghost:active {
+		transform: scale(0.97);
+	}
+	.btn-ghost:disabled,
+	.btn-ghost[aria-disabled="true"] {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none;
 	}
 
 	.btn-outline {
@@ -696,9 +702,10 @@
 		border-color: var(--color-accent);
 		color: var(--color-accent);
 		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+		box-shadow: 0 8px 20px -10px rgba(70, 211, 154, 0.25);
 	}
 	.btn-outline:active {
-		transform: scale(0.98);
+		transform: scale(0.97);
 	}
 	.btn-outline:disabled,
 	.btn-outline[aria-disabled="true"] {
@@ -730,9 +737,10 @@
 	.btn-destructive:hover {
 		background: color-mix(in srgb, var(--color-error) 22%, transparent);
 		border-color: var(--color-error);
+		box-shadow: 0 8px 20px -10px rgba(248, 113, 113, 0.3);
 	}
 	.btn-destructive:active {
-		transform: scale(0.98);
+		transform: scale(0.97);
 	}
 	.btn-destructive:disabled,
 	.btn-destructive[aria-disabled="true"] {

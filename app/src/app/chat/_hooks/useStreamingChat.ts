@@ -584,8 +584,19 @@ export function useStreamingChat(
 				}
 				} else {
 					const data = await response.json();
-					const content = data.choices?.[0]?.message?.content || "";
-					const reasoning = data.choices?.[0]?.message?.reasoning_content || "";
+					let content = data.choices?.[0]?.message?.content || "";
+					let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
+					// Non-streaming fallback: some models (DeepSeek V4 / R1-style)
+					// emit `<think>...</think>` inline inside `content` rather than as a
+					// separate `reasoning_content` field. Strip those tags so the user
+					// sees a clean collapsible "Reasoning" block instead of raw markup.
+					if (!content.trim() && !reasoning.trim()) {
+						const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/i);
+						if (thinkMatch) {
+							reasoning = thinkMatch[1].trim();
+							content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+						}
+					}
 					const usage = data.usage;
 					setMsgs((prev) => {
 						const updated = [...prev];

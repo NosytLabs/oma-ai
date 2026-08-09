@@ -193,7 +193,7 @@ export function ModelSelector({
 				onClick={() => setOpen(!open)}
 				aria-expanded={open}
 				aria-haspopup="listbox"
-				aria-label={`Select AI model — ${selectedName || "SELECT MODEL"}`}
+				aria-label={`Select AI model — ${selectedName || "Choose model"}`}
 				className={`
  flex items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
  hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
@@ -279,7 +279,7 @@ export function ModelSelector({
 													e.stopPropagation();
 													setTierFilter(tier);
 												}}
-												aria-label={`Filter by ${tier} tier`}
+												aria-label={`Filter models by ${tier} tier`}
 												aria-pressed={isActive}
 												className={`
  px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider

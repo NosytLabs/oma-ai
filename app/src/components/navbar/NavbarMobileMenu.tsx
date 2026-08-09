@@ -182,7 +182,7 @@ export function NavbarMobileMenu({
 												isCardActive ? "border-accent/40" : "border-border"
 											}`}
 										>
-											<div className="mb-2 flex items-baseline justify-between px-1">
+											<div className="mb-2 flex items-baseline justify-between px-3">
 												<p className="text-[11px] sm:text-xs uppercase tracking-widest text-accent font-semibold flex items-center gap-2">
 													{group.title}
 													{isCardActive && (
@@ -230,7 +230,7 @@ export function NavbarMobileMenu({
 									);
 								})}
 
-								{/* Account card */}
+							{/* Account card */}
 								<m.div
 									initial="hidden"
 									animate="show"
@@ -239,7 +239,7 @@ export function NavbarMobileMenu({
 										isAccountCardActive ? "border-accent/40" : "border-border"
 									}`}
 								>
-									<div className="mb-2 flex items-baseline justify-between px-1">
+									<div className="mb-2 flex items-baseline justify-between px-3">
 										<p className="text-[11px] sm:text-xs uppercase tracking-widest text-accent font-semibold flex items-center gap-2">
 											account
 											{isAccountCardActive && (

@@ -170,7 +170,7 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
  </div>
 
  {/* RIGHT: actions */}
- <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+ <div className="flex shrink-0 items-center gap-2">
  <m.a
  href="https://github.com/NosytLabs"
  target="_blank"
@@ -179,7 +179,7 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
  whileHover={prefersReduced ? undefined : { y: -1 }}
  whileTap={prefersReduced ? undefined : { scale: 0.94 }}
  transition={EASE_SPRING}
- className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+ className="hidden md:inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
  >
  <svg
  className="h-4 w-4"
@@ -204,7 +204,7 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
  <Link
  href="/settings"
  aria-label="Settings"
- className="inline-flex h-9 w-9 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+ className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
  >
  <Settings className="h-4 w-4" aria-hidden="true" />
  </Link>
@@ -230,14 +230,14 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
 		<div className="flex items-center gap-1.5 sm:gap-2">
 			<Link
 				href="/login"
-				className="hidden sm:inline-flex h-9 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				className="hidden sm:inline-flex h-11 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 			>
 				Sign in
 			</Link>
 			<Magnetic strength={6}>
 				<Link
 					href="/login"
-					className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-4 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-4 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Get started
 					<svg
@@ -264,7 +264,7 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
 							ref={mobileToggleRef}
 							type="button"
 							onClick={() => setMobileOpen(!mobileOpen)}
-							className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface-elevated border border-border text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
+							className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface-elevated border border-border text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
 							aria-label={
 								mobileOpen ? "Close navigation menu" : "Open navigation menu"
 							}

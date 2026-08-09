@@ -9,6 +9,7 @@ import {
 	RefreshCw,
 	Settings,
 	Zap,
+	AlertCircle,
 } from "lucide-react";
 import { m } from "framer-motion";
 import { springs } from "@/lib/animation";

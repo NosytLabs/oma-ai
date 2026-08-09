@@ -88,7 +88,7 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 										<Icon className="h-5 w-5" aria-hidden="true" />
 									</div>
 									<ArrowUpRight
-										className="ml-auto h-4 w-4 text-text-muted opacity-0 transition-[background-color,border-color,box-shadow,color,transform] duration-200 group-hover:opacity-100 group- group-hover:translate-x-0.5 group-hover:text-accent"
+										className="ml-auto h-4 w-4 text-text-muted opacity-0 transition-[background-color,border-color,box-shadow,color,transform] duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:text-accent"
 										aria-hidden="true"
 									/>
 								</div>

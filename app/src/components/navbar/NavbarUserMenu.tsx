@@ -82,7 +82,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 				type="button"
 				onClick={() => setOpen(!open)}
 				title={triggerTitle}
-				className={`inline-flex h-9 items-center gap-2 rounded-sm border bg-surface px-3 text-xs text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+				className={`inline-flex h-11 items-center gap-2 rounded-sm border bg-surface px-3 text-xs text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 					open
 						? "border-accent/60 bg-panel"
 						: "border-border hover:border-accent/60 hover:bg-panel"

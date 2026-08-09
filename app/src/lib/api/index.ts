@@ -13,6 +13,10 @@ import { auth } from "./auth.js";
 
 export {
   BackendUnavailableError,
+  isSuspendedAccountError,
+  isPaymentRequiredError,
+  isQuotaError,
+  extractQuotaInfo,
   request,
 } from "./client.js";
 

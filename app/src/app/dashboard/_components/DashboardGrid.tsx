@@ -31,6 +31,7 @@ import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
+import { AutoReloadCard } from "./AutoReloadCard";
 
 const tabContentVariants = {
 	hidden: { opacity: 0, y: 8 },
@@ -173,7 +174,7 @@ const LazyCreatedKeyModal = dynamic(
 
 /** Wraps a lazy component in a mini error boundary so one failing widget
  * doesn't crater the whole dashboard. */
-function WidgetErrorBoundary({
+export function WidgetErrorBoundary({
 	children,
 	title,
 }: {
@@ -383,6 +384,36 @@ export function DashboardGrid(props: DashboardGridProps) {
 									</div>
 								</div>
 							</>
+						) : error.includes("suspended") ? (
+							<>
+								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-error" />
+								<span>
+									<span className="font-medium text-error">
+										Account suspended
+									</span>{""}
+									<span className="text-text-muted">. Contact support to appeal this action.</span>
+								</span>
+							</>
+						) : error.includes("payment required") ? (
+							<>
+								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning" />
+								<span>
+									<span className="font-medium text-warning">
+										Payment required
+									</span>{""}
+									<span className="text-text-muted">. You have reached a block requiring a paid wallet transaction.</span>
+								</span>
+							</>
+						) : error.includes("limit exceeded") || error.includes("quota") ? (
+							<>
+								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning" />
+								<span>
+									<span className="font-medium text-warning">
+										Quota exceeded
+									</span>{""}
+									<span className="text-text-muted">. Your free tier daily usage limit was reached. Deposit credits to continue.</span>
+								</span>
+							</>
 						) : (
 							<>
 								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-error animate-pulse" />
@@ -406,13 +437,20 @@ export function DashboardGrid(props: DashboardGridProps) {
 								Retry
 							</button>
 						)}
-						<button
-							type="button"
-							onClick={() => setErrorDismissed(true)}
-							className="rounded-[var(--radius-lg)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-colors duration-200 ease-out hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-						>
-							Dismiss
-						</button>
+						{!(
+							error?.includes("suspended") ||
+							error?.includes("limit exceeded") ||
+							error?.includes("quota") ||
+							error?.includes("payment required")
+						) && (
+							<button
+								type="button"
+								onClick={() => setErrorDismissed(true)}
+								className="rounded-[var(--radius-lg)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-colors duration-200 ease-out hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							>
+								Dismiss
+							</button>
+						)}
 					</div>
 				</div>
 			)}
@@ -454,6 +492,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 									loading={loading}
 									recentUsage={usage}
 								/>
+							</WidgetErrorBoundary>
+							<WidgetErrorBoundary title="Auto reload">
+								<AutoReloadCard />
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Today's stats">
 								<QuickStatsCard
