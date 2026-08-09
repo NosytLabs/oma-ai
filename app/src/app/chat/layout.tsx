@@ -4,7 +4,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "API Chat playground",
+	title: "API Chat Playground",
 	description:
 		"Interactive AI chat playground. Test models, compare responses, stream completions. Pay per use with card or crypto.",
 	alternates: { canonical: "/chat" },

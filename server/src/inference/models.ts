@@ -21,6 +21,7 @@
  * Add a new provider by extending `resolveProvider()` in proxy.ts and
  * adding matching entries here.
  */
+import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
 export interface ModelDef {
@@ -382,4 +383,30 @@ export function userFacingPrices(m: ModelDef): {
     inputPer1M: m.inputPricePer1M * factor,
     outputPer1M: m.outputPricePer1M * factor,
   };
+}
+
+/**
+ * Whether a model's backing provider has a configured API key. Venice
+ * models report unavailable when VENICE_API_KEY is missing or a known
+ * placeholder so clients can grey them out instead of surfacing a raw
+ * upstream 401. OMA-AI models check their specific upstream key.
+ */
+export function providerAvailable(m: ModelDef): boolean {
+  if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
+  if (m.provider === "oma-ai") {
+    const key =
+      m.upstream === "openbroker"
+        ? config.OPENBROKER_API_KEY
+        : config.ZYLOO_API_KEY;
+    return isConfiguredKey(key);
+  }
+  return false;
+}
+
+function isConfiguredKey(key: string | undefined): boolean {
+  if (!key || key.length < 16) return false;
+  if (/^(placeholder|plch|your-|dev-|zyloo_|openbroker_|venice_)/i.test(key)) {
+    return false;
+  }
+  return true;
 }

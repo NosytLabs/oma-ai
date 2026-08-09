@@ -122,7 +122,7 @@ export function ChatToolbar({
 					href="/deposit"
 					aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Click to add credits.`}
 					data-state={isLowBalance ? "low" : "ok"}
-					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10`}
+					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Credit balance — click to add credits"
 				>
 					{isLowBalance ? (
@@ -136,7 +136,7 @@ export function ChatToolbar({
 				</Link>
 			) : (
 				<span
-					className={`${btnBase} shrink-0 opacity-60`}
+					className={`${btnBase} shrink-0 opacity-60 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					aria-label="Loading credit balance"
 					title="Loading credits…"
 				>
@@ -162,10 +162,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("text")}
 					aria-selected={mediaMode === "text"}
 					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<MessageSquare className="h-4 w-4" />
-					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Chat</span>
+					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Chat</span>
 				</button>
 				<button
 					type="button"
@@ -173,10 +173,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("image")}
 					aria-selected={mediaMode === "image"}
 					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<ImageIcon className="h-4 w-4" />
-					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Image</span>
+					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Image</span>
 				</button>
 				<button
 					type="button"
@@ -184,10 +184,10 @@ export function ChatToolbar({
 					onClick={() => setMediaMode("video")}
 					aria-selected={mediaMode === "video"}
 					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-[36px] min-w-[40px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<Film className="h-4 w-4" />
-					<span className="hidden sm:inline text-[12px] font-medium tracking-wide">Video</span>
+					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Video</span>
 				</button>
 			</div>
 		) : null;
@@ -198,14 +198,14 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="grid h-14 min-w-0 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-void/95 px-3 sm:gap-3 sm:px-6 z-20"
+			className="flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1 gap-y-1.5 border-b border-border bg-void/95 px-2 py-1.5 sm:gap-x-3 sm:px-6 z-20 md:h-14 md:flex-nowrap md:py-0"
 		>
 			{/* Left: model + params (shrinks on mobile) */}
-			<div className="flex min-w-0 items-center gap-1 sm:gap-2 justify-self-start">
+			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
 				{/* Compact model badge — replaces the previous "OMA · Gemini 3 Flash" pill
 				 that was duplicating the navbar brand. Now just shows the current
 				 model with tier color so the active selection is always visible. */}
-				<div className="min-w-0 w-[clamp(7rem,36vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">
+				<div className="min-w-0 w-[clamp(5rem,24vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">
 					<LazyModelSelector
 						model={model}
 						setModel={setModel}
@@ -219,16 +219,23 @@ export function ChatToolbar({
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-[36px] min-w-[36px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
 				>
-					<Settings2 className="h-3.5 w-3.5" />
-					<span className="hidden lg:inline">PARAMS</span>
+					<Settings2 className="h-4 w-4" />
+					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
+						PARAMS
+					</span>
 				</button>
 			</div>
 
-			{/* Primary actions always visible (mobile + desktop) */}
-			<div className="flex shrink-0 items-center gap-1">
+			{/* Primary actions — media tabs take their own row on mobile to
+			 avoid overlap; inline on md+ */}
+			<div
+				className={`flex min-w-0 items-center justify-center gap-1 order-last w-full md:order-none md:w-auto md:shrink-0 ${
+					searching ? "md:flex-none" : ""
+				}`}
+			>
 				{mediaTabs}
 				{searching && (
 					<div
@@ -244,7 +251,7 @@ export function ChatToolbar({
 			</div>
 
 			{/* Secondary actions — credits always visible, rest hidden on mobile */}
-			<div className="flex min-w-0 items-center gap-1 sm:gap-2 justify-self-end">
+			<div className="flex shrink-0 items-center gap-1 sm:gap-2 justify-self-end">
 				<div className="hidden shrink-0 xl:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>
@@ -255,12 +262,14 @@ export function ChatToolbar({
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} hidden shrink-0 sm:flex min-h-[36px] min-w-[36px] transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} hidden shrink-0 sm:flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
-					<Columns2 className="h-3.5 w-3.5" />
-					<span className="hidden xl:inline">COMPARE</span>
+					<Columns2 className="h-4 w-4" />
+					<span className="hidden xl:inline text-[11px] font-semibold tracking-wider">
+						COMPARE
+					</span>
 				</button>
 
 				<button
@@ -268,32 +277,33 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} max-xl:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success xl:inline-flex`}
+					className={`${btnBase} max-xl:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success xl:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
 					{shareStatus === "success" ? (
-						<CheckCircle2 className="h-3.5 w-3.5" />
+						<CheckCircle2 className="h-4 w-4" />
 					) : shareStatus === "error" ? (
-						<AlertCircle className="h-3.5 w-3.5" />
+						<AlertCircle className="h-4 w-4" />
 					) : (
-						<Share2 className="h-3.5 w-3.5" />
+						<Share2 className="h-4 w-4" />
 					)}
-					<span className="hidden xl:inline">SHARE</span>
+					<span className="hidden xl:inline text-[11px] font-semibold tracking-wider">
+						SHARE
+					</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} max-sm:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex`}
+					className={`${btnBase} max-sm:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Keyboard shortcuts (?)"
 					aria-label="? — show keyboard shortcuts"
 				>
-					<Keyboard className="h-3.5 w-3.5" />
-					<span className="hidden lg:inline">?</span>
+					<Keyboard className="h-4 w-4" />
 				</button>
 
-				{messageCount > 0 && (
+				{messageCount > 0 && variant === "chat" && (
 					<div className="flex shrink-0 items-center gap-1">
 						<button
 							type="button"
@@ -301,25 +311,25 @@ export function ChatToolbar({
 							disabled={exportStatus === "loading"}
 							data-state={exportStatus}
 							aria-label="Export conversation to JSON"
-							className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent`}
+							className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 							title="Export conversation (JSON)"
 						>
 							{exportStatus === "success" ? (
-								<CheckCircle2 className="h-3.5 w-3.5" />
+								<CheckCircle2 className="h-4 w-4" />
 							) : exportStatus === "error" ? (
-								<AlertCircle className="h-3.5 w-3.5" />
+								<AlertCircle className="h-4 w-4" />
 							) : (
-								<Download className="h-3.5 w-3.5" />
+								<Download className="h-4 w-4" />
 							)}
 						</button>
 						<button
 							type="button"
 							onClick={clearChat}
 							aria-label="Clear conversation and local history"
-							className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring`}
+							className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 							title="Clear chat (also clears browser local history)"
 						>
-							<Trash2 className="h-3.5 w-3.5" />
+							<Trash2 className="h-4 w-4" />
 						</button>
 					</div>
 				)}

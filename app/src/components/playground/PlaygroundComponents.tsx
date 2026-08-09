@@ -4,12 +4,7 @@ import type { Message } from "@/components/chat";
 import { MODELS } from "@/lib/models-data";
 
 export const btnBase =
-	"relative inline-flex items-center justify-center gap-2 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out border rounded-full " +
-	"bg-void border-border text-text-muted " +
-	"hover:bg-surface hover:text-text hover:brightness-125 " +
-	"focus-visible:outline focus-visible:outline-2 focus-visible:outline-success/50 focus-visible:outline-offset-1 focus-visible:bg-surface " +
-	"active:translate-y-[1px] " +
-	"disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-void disabled:hover:border-border disabled:hover:text-text-muted disabled:active:translate-y-0 " +
+	"inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-transparent bg-transparent px-2.5 py-1 text-[11px] font-mono tracking-wider text-text-muted transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out hover:bg-surface hover:text-text-primary active:bg-surface-elevated disabled:pointer-events-none disabled:opacity-50 " +
 	"data-[state=loading]:text-transparent data-[state=loading]:pointer-events-none " +
 	"data-[state=error]:border-pink/30 data-[state=error]:text-pink data-[state=error]:bg-pink/10 " +
 	"data-[state=success]:border-success/30 data-[state=success]:text-success data-[state=success]:bg-success/10";

@@ -317,7 +317,8 @@ export function ModelSelector({
 									const name = displayName(modelItem.id, modelItem.name);
 									const isSelected = modelItem.id === model;
 									const free = isFreeModel(modelItem);
-									const locked = !isAuthenticated && !free;
+const locked = !isAuthenticated && !free;
+										const blocked = locked;
 									const tierStyle =
 										tierStyles[modelItem.category as TierFilter] ||
 										tierStyles.all;
@@ -349,7 +350,7 @@ export function ModelSelector({
  ${
 													isSelected
 															? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
-															: locked
+															: blocked
 																? "hover:bg-[var(--color-surface)]/40 text-text-muted/60"
 																: "hover:bg-[var(--color-surface)]/80 text-text-secondary"
 													}

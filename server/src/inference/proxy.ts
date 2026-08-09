@@ -207,6 +207,23 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
       "[proxy] upstream returned non-2xx",
     );
     const safeStatus = status >= 500 ? 502 : status;
+    // 401 from an upstream means the provider key is rejected (invalid,
+    // expired, or out of credits). Surface an actionable message instead
+    // of the raw upstream body, which is often just `{"error":"Authentication failed"}`.
+    if (status === 401) {
+      throw new ProviderError(
+        "Model provider authentication failed (provider API key invalid or out of credits). Contact support.",
+        401,
+      );
+    }
+    // 429 = upstream rate-limited / concurrency cap. Raw upstream bodies
+    // are noise for end users; keep the detail in the server log instead.
+    if (status === 429) {
+      throw new ProviderError(
+        "Inference provider is rate-limited. Try again in a few seconds.",
+        429,
+      );
+    }
     throw new ProviderError(
       status >= 500
         ? "Inference provider temporarily unavailable"
@@ -259,6 +276,7 @@ export async function routeRequestWithFallback(
   const fallbacks = [modelId, ...(FALLBACK_MAP[modelId] || [])];
 
   let lastError: unknown = null;
+  const errorLog: unknown[] = [];
 
   /** Narrow an `unknown` thrown value to the error fields we actually use. */
   function readError(e: unknown): { status?: number; message?: string; name?: string } {
@@ -297,6 +315,7 @@ export async function routeRequestWithFallback(
       } catch (err) {
         attempt++;
         lastError = err;
+        errorLog.push(err);
         const e = readError(err);
         const message = e.message ?? String(err);
 
@@ -335,9 +354,35 @@ export async function routeRequestWithFallback(
     }
   }
 
-  // If all fallbacks failed, throw the last observed error
-  if (lastError) throw lastError;
+  // If all fallbacks failed, report the last observed error. If several
+  // providers failed, surface the combination so users aren't misled into
+  // thinking one provider alone broke the request.
+  if (lastError) {
+    const seen = new Map<string, string>();
+    for (const err of errorLog) {
+      const e = readError(err);
+      const status = e.status ?? "network";
+      const label = e.status === undefined ? "network/unreachable" : String(status);
+      if (!seen.has(label)) seen.set(label, `${label} (${statusLabel(e.status, e.message)})`);
+    }
+    if (seen.size > 1) {
+      throw new ProviderError(
+        `All model providers failed: ${[...seen.values()].join(", ")}. Try another model or try again later.`,
+        502,
+      );
+    }
+    throw lastError;
+  }
   throw new ProviderError("Model routing failed on all fallback attempts", 502);
+}
+
+function statusLabel(status: number | undefined, message?: string): string {
+  if (status === undefined) return "unreachable";
+  if (status === 401) return "auth failed";
+  if (status === 429) return "rate-limited";
+  if (status >= 500) return "unavailable";
+  if (typeof message === "string" && message.trim()) return message.slice(0, 80);
+  return String(status);
 }
 
 export interface RecordUsageArgs {

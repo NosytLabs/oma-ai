@@ -327,9 +327,9 @@ export function VideoGenerationPanel() {
 				</div>
 				<h1 className="h1-utility text-text-bright">Video Generation</h1>
 				<p className="mt-3 text-lg text-text-bright">
-					Generate videos from text prompts. Powered by Seedance 2.0 and Kling
+					Generate videos from text prompts. Powered by Seedream 2.0 and Kling
 					V3 Pro. Priced per generation —{""}
-					<span className="text-accent">from $0.90</span>.
+					<span className="text-accent">from $0.44</span>.
 				</p>
 			</div>
 

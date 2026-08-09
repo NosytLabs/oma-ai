@@ -19,6 +19,8 @@ export interface ModelOption {
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
+	/** false when the serving provider key is missing/placeholder (server-reported) */
+	available?: boolean;
 }
 
 type TierFilter =

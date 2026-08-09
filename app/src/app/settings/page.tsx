@@ -224,21 +224,15 @@ function SettingsPageContent() {
 						))}
 					</ul>
 
-					<div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-						<Link
-							href="/login?next=/settings"
-							className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-						>
-							Sign in →
-						</Link>
-						<Link
-							href="/dashboard"
-							className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors duration-200 ease-out hover:text-text"
-						>
-							<Sparkles className="h-3 w-3" aria-hidden="true" />
-							Back to dashboard
-						</Link>
-					</div>
+					<div className="flex flex-col items-center justify-center gap-2">
+  <Link
+    href="/login?next=/settings"
+    className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+    aria-label="Sign in to manage your account"
+  >
+    Sign in →
+  </Link>
+</div>
 					{evmAddress && (
 						<p className="mt-4 text-center text-[10px] font-mono text-text-muted">
 							Connected wallet: {evmAddress}

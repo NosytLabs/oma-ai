@@ -717,28 +717,23 @@ function ShellContent({
 									setUiMode={setUiMode}
 								/>
 
-								<div className="mt-2 flex flex-col items-stretch gap-2 px-2 sm:mt-2.5 sm:flex-row sm:items-center sm:justify-between">
-									<p
-										id="message-hint"
-										className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words sm:shrink-0 select-none"
-									>
-										Enter send · Shift+Enter newline
+								<div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 sm:mt-2.5 sm:px-2">
+									<p className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words select-none">
 										{!isAuthenticated && (
 											<span className="text-accent/80 font-semibold">
-												{" "}
-												· {freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
+												{freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
 												left
 											</span>
 										)}
+										{isLowBalance && (
+											<Link
+												href="/deposit"
+												className="text-warning hover:underline"
+											>
+												Low credits — top up for paid models →
+											</Link>
+										)}
 									</p>
-									{isLowBalance && (
-										<Link
-											href="/deposit"
-											className="text-[11px] text-warning hover:underline font-mono tracking-wide"
-										>
-											Low credits — top up for paid models →
-										</Link>
-									)}
 									<LazyCostEstimate
 										inputText={input}
 										model={model}

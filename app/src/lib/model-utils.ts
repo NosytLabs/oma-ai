@@ -164,6 +164,8 @@ export interface LiveModelRaw {
 	category?: string;
 	context_length?: number;
 	provider?: string;
+	/** false when the provider's API key is missing/placeholder server-side */
+	available?: boolean;
 	pricing?: { prompt?: string; completion?: string };
 }
 
@@ -197,6 +199,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
 		category: cat,
 		provider,
+		available: m.available !== false,
 		inputPer1M: m.pricing?.prompt
 			? parseFloat(m.pricing.prompt)
 			: 0,

@@ -42,7 +42,7 @@ export async function addToDlq(provider: string, rawBody: string, errorMessage: 
   if (!redis) {
     // Skip logging the error in test environment
     if (process.env.NODE_ENV !== 'test') {
-      logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
+      if (process.env.NODE_ENV !== "test") logger.error({ provider }, "[DLQ] Failed to connect to Redis. Could not save DLQ entry");
     }
     return;
   }
@@ -70,7 +70,7 @@ export async function addSettlementToDlq(
 ): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) {
-    logger.error({ orderId }, "[DLQ] Failed to connect to Redis. Could not save settlement DLQ entry");
+    if (process.env.NODE_ENV !== "test") logger.error({ orderId }, "[DLQ] Failed to connect to Redis. Could not save settlement DLQ entry");
     return;
   }
 

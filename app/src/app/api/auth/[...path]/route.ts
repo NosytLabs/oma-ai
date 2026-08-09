@@ -1,126 +1,87 @@
+import { NextRequest, NextResponse } from 'next/server';
+
 /**
- * Better Auth proxy — forwards /api/auth/* from Next.js (the public
- * surface where magic-link emails point) to the Hono backend.
+ * Proxy for Better Auth — handles all /api/auth/* requests, forwarding to the real backend.
+ * This route keeps session cookies/headers so client and SSR flows both work.
  *
- * Critical details:
- *
- *   - Forwards all headers both ways, including Set-Cookie. The session
- *     cookie's domain is set by the backend; we pass it through
- *     unchanged so the browser stores it on the Next.js origin
- *     (localhost:3000) and sends it back on every subsequent request.
- *
- *   - Preserves the request body via `duplex: "half"` so streaming
- *     requests (Better Auth uses these for some endpoints) work.
- *
- *   - Uses `force-dynamic` so Next.js never caches the proxy result.
- *
- *   - Reads the upstream body as ArrayBuffer and rebuilds the Response.
- *     This prevents the `ERR_CONTENT_DECODING_FAILED` browser error
- *     that occurs when a streamed fetch() forwards `Content-Encoding:
- *     gzip` from upstream while undici auto-decompresses only when
- *     the body is consumed via `.text()` / `.json()` / `.arrayBuffer()`
- *     — a raw `Response.body` ReadableStream bypasses that path.
- *
- * If the backend is offline the request returns 502 with a clear
- * error message — never silently fails.
+ * Configured from env:
+ *  - NEXT_PUBLIC_AUTH_BASE_URL (preferred)
+ *  - NEXT_PUBLIC_API_URL (fallback)
+ *  - default: http://localhost:3001
  */
-import { type NextRequest } from "next/server";
+const resolveAuthBackend = () => {
+  return (
+    process.env.NEXT_PUBLIC_AUTH_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:3001'
+  ).replace(/\/$/, '');
+};
 
-const BACKEND_URL =
-	process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-async function proxyAuth(request: NextRequest): Promise<Response> {
-	const url = new URL(request.url);
-	const target = `${BACKEND_URL}/api/auth${url.pathname.replace(/^\/api\/auth/, "")}${url.search}`;
-	const init: RequestInit = {
-		method: request.method,
-		headers: stripHopByHop(request.headers),
-		redirect: "manual",
-		// Streaming bodies (POST/PUT) need duplex half on Node fetch.
-		// @ts-expect-error — `duplex` is part of the undici RequestInit
-		// surface; the DOM type doesn't include it yet.
-		duplex: "half",
-	};
-	if (request.method !== "GET" && request.method !== "HEAD") {
-		init.body = await request.blob();
-	}
-	let upstream: Response;
-	try {
-		upstream = await fetch(target, init);
-	} catch (_err) {
-		return new Response(
-			JSON.stringify({
-				error: {
-					message: `Auth backend unreachable at ${BACKEND_URL}. Is the API server running?`,
-					type: "upstream_unreachable",
-				},
-			}),
-			{
-				status: 502,
-				headers: { "content-type": "application/json" },
-			},
-		);
-	}
-
-	// Read the upstream body fully so undici transparently decompresses
-	// gzipped/br responses. We rebuild a fresh Response with the decoded
-	// bytes and a sanitized header set (no `Content-Encoding` / `Content-Length`).
-	const body = await upstream.arrayBuffer();
-
-	const outHeaders = new Headers();
-	for (const [k, v] of upstream.headers.entries()) {
-		const lk = k.toLowerCase();
-		if (HOP_BY_HOP.has(lk)) continue;
-		if (RESPONSE_DECODED_HEADERS.has(lk)) continue;
-		outHeaders.append(k, v);
-	}
-	if (!outHeaders.has("content-length")) {
-		outHeaders.set("content-length", String(body.byteLength));
-	}
-	// Ensure the browser accepts Set-Cookie from the proxy response.
-	outHeaders.set("access-control-allow-credentials", "true");
-	return new Response(body, {
-		status: upstream.status,
-		statusText: upstream.statusText,
-		headers: outHeaders,
-	});
+export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
+  return proxyToAuth(req, params);
 }
 
-const HOP_BY_HOP = new Set([
-	"connection",
-	"keep-alive",
-	"proxy-authenticate",
-	"proxy-authorization",
-	"te",
-	"trailers",
-	"transfer-encoding",
-	"upgrade",
-	"host",
-	"content-length",
-]);
-
-// Headers that describe a decoded representation and must not be forwarded
-// after we materialize the upstream body (we already produced plain bytes).
-const RESPONSE_DECODED_HEADERS = new Set([
-	"content-encoding",
-	"content-length",
-]);
-
-function stripHopByHop(headers: Headers): Headers {
-	const out = new Headers();
-	for (const [k, v] of headers.entries()) {
-		if (HOP_BY_HOP.has(k.toLowerCase())) continue;
-		out.append(k, v);
-	}
-	return out;
+export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
+  return proxyToAuth(req, params);
 }
 
-export const GET = proxyAuth;
-export const POST = proxyAuth;
-export const PUT = proxyAuth;
-export const PATCH = proxyAuth;
-export const DELETE = proxyAuth;
-export const OPTIONS = proxyAuth;
+export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
+  return proxyToAuth(req, params);
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) {
+  return proxyToAuth(req, params);
+}
+
+async function proxyToAuth(req: NextRequest, params: { path: string[] }) {
+  const base = resolveAuthBackend();
+  const path = params?.path ?? [];
+  const endpoint = `${base}/${path.join('/')}`;
+  const search = req.nextUrl.search ? req.nextUrl.search : '';
+  const url = endpoint + search;
+
+  // Build proxy request: method, body, headers, cookies
+  const headers: Record<string, string> = {};
+  req.headers.forEach((val, key) => {
+    if (key === 'host') return; // never forward host
+    headers[key] = val;
+  });
+
+  // Forward cookies manually
+  if (req.headers.has('cookie')) {
+    headers['cookie'] = req.headers.get('cookie')!;
+  }
+
+  let body = undefined;
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    body = await req.text();
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: req.method,
+      headers,
+      body,
+      redirect: 'manual',
+    });
+
+    // Forward all status, content-type, etc.
+    const proxyRes = new NextResponse(resp.body, {
+      status: resp.status,
+      headers: resp.headers,
+    });
+
+    // Set cookies from auth backend
+    const setCookieHeader = resp.headers.get('set-cookie');
+    if (setCookieHeader) {
+      proxyRes.headers.set('set-cookie', setCookieHeader);
+    }
+
+    return proxyRes;
+  } catch (e: any) {
+    return NextResponse.json(
+      { error: 'Auth backend unavailable', detail: e?.message || String(e) },
+      { status: 502 }
+    );
+  }
+}

@@ -3,6 +3,7 @@ import type { OmaEnv } from "../types.js";
 import {
   ensureCatalogLoaded,
   listAllModels,
+  providerAvailable,
   userFacingPrices,
   type ModelDef,
 } from "../inference/models.js";
@@ -52,6 +53,7 @@ modelRoutes.get("/v1/models", async (c) => {
         context_length: m.contextWindow ?? 0,
         supports_streaming: m.supportsStreaming,
         supports_tools: m.capabilities?.includes("tools") ?? false,
+        available: providerAvailable(m),
         pricing: {
           prompt: prices.prompt,
           completion: prices.completion,
@@ -85,6 +87,7 @@ modelRoutes.get("/v1/models/:id", async (c) => {
     context_length: m.contextWindow ?? 0,
     supports_streaming: m.supportsStreaming,
     supports_tools: m.capabilities?.includes("tools") ?? false,
+    available: providerAvailable(m),
     pricing: {
       prompt: prices.prompt,
       completion: prices.completion,

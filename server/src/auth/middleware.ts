@@ -160,6 +160,7 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 
   let apiKey: ApiKey | null;
   try {
+    if (!rawKey) throw new Error("Missing key");
     apiKey = (await singleflight(`apikey:${rawKey}`, () =>
       validateApiKey(rawKey!),
     )) as ApiKey | null;

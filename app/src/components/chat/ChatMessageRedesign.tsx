@@ -34,11 +34,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Clock,
   Copy,
-  RefreshCw,
   Search,
   User,
+  RotateCcw,
+  Clock,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -301,8 +301,8 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
           style={{
             // Asymmetric border-radius for visual interest
             borderRadius: isUser
-              ? "var(--radius-xl) 0 var(--radius-xl) var(--radius-xl)"
-              : "0 var(--radius-xl) var(--radius-xl) var(--radius-xl)",
+              ? "var(--radius-xl) var(--radius-sm) var(--radius-xl) var(--radius-xl)"
+              : "var(--radius-sm) var(--radius-xl) var(--radius-xl) var(--radius-xl)",
             // Subtle depth on assistant messages
             boxShadow: isUser
               ? "0 0 0 1px rgba(70,211,154,0.05), 0 4px 16px -8px var(--color-accent-glow)"
@@ -311,9 +311,9 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
         >
           {/* Ambient glow line along the inner edge */}
           <div
-            className="absolute top-0 h-full w-[2px]"
+            className="absolute top-0 h-full w-[2px] rounded-full"
             style={{
-              opacity: isUser ? 0.4 : 0.5,
+              opacity: isUser ? 0.2 : 0.25,
               [isUser ? "right" : "left"]: 0,
               background: `linear-gradient(
  to bottom,
@@ -433,19 +433,18 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
                 onClick={handleCopy}
                 aria-label={copied ? "Copied to clipboard" : "Copy message"}
                 className="
- flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
- opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+ flex items-center justify-center gap-1  opacity-100 sm:opacity-0 sm:group-hover:opacity-100
  hover:text-success transition-[opacity,color,transform] duration-200 ease-out active:scale-[0.97]
  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
  focus-visible:ring-offset-2 focus-visible:ring-offset-surface
+ min-h-9 min-w-9 sm:min-h-10 sm:min-w-10
  "
               >
                 {copied ? (
-                  <Check className="w-3 h-3 text-success" />
+                  <Check className="w-4 h-4 text-success" />
                 ) : (
-                  <Copy className="w-3 h-3" />
+                  <Copy className="w-4 h-4" />
                 )}
-                {copied ? "COPIED" : "COPY"}
               </button>
               {isLastAssistant && onRegenerate && (
                 <button
@@ -453,17 +452,14 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
                   onClick={onRegenerate}
                   aria-label="Regenerate response"
                   className="
- flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2 py-1
- opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+ flex items-center justify-center gap-1  opacity-100 sm:opacity-0 sm:group-hover:opacity-100
  hover:text-accent transition-[opacity,color,transform] duration-200 ease-out active:scale-[0.97]
  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
  focus-visible:ring-offset-2 focus-visible:ring-offset-surface
+ min-h-9 min-w-9 sm:min-h-10 sm:min-w-10
  "
                 >
-                  <RefreshCw className="w-3 h-3" aria-hidden="true" />
-                  <span className="text-[10px] uppercase tracking-wide">
-                    Retry
-                  </span>
+                  <RotateCcw className="w-4 h-4" />
                 </button>
               )}
             </>
@@ -643,7 +639,7 @@ function CodeBlock({
         onClick={handleCopy}
         aria-label={copied ? "Copied" : "Copy code"}
         className="
- absolute top-2 right-2 p-2 min-h-[44px] min-w-[44px]
+ absolute top-2 right-2 p-2 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10
  flex items-center justify-center rounded-[var(--radius-sm)]
  bg-[var(--color-surface-elevated)] text-text-muted hover:text-text-primary
  opacity-0 group-hover:opacity-100 transition-[opacity,transform,color] duration-200 ease-out active:scale-[0.97]
@@ -652,9 +648,9 @@ function CodeBlock({
  "
       >
         {copied ? (
-          <Check className="w-3.5 h-3.5 text-[var(--color-success)]" />
+          <Check className="w-4 h-4 text-[var(--color-success)]" />
         ) : (
-          <Copy className="w-3.5 h-3.5" />
+          <Copy className="w-4 h-4" />
         )}
       </button>
     </div>
