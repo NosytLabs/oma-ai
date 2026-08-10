@@ -318,7 +318,9 @@ function ShellContent({
 			storedCid = genConversationId();
 			try {
 				localStorage.setItem(conversationIdKey, storedCid);
-			} catch {}
+			} catch (e) {
+				console.error('Failed to parse search config:', e)
+			}
 		}
 		setConversationId(storedCid);
 	}, [isChat, conversationIdKey]);
@@ -565,7 +567,9 @@ function ShellContent({
 				setConversationId(cid);
 				try {
 					localStorage.setItem(conversationIdKey, cid);
-				} catch {}
+				} catch (e) {
+					console.error('Failed to parse search config:', e)
+				}
 			}
 			const userMessageCount = messages.filter((m) => m.role === "user").length;
 			const url = `${origin}/chat?cid=${encodeURIComponent(cid ?? "")}&msgs=${userMessageCount}&model=${encodeURIComponent(model)}`;

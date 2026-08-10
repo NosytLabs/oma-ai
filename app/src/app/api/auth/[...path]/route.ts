@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildAuthEndpoint, resolveAuthBackend } from '@/lib/auth-proxy';
 
 /**
  * Proxy for Better Auth — handles all /api/auth/* requests, forwarding to the real backend.
@@ -9,34 +10,28 @@ import { NextRequest, NextResponse } from 'next/server';
  *  - NEXT_PUBLIC_API_URL (fallback)
  *  - default: http://localhost:3001
  */
-const resolveAuthBackend = () => {
-  return (
-    process.env.NEXT_PUBLIC_AUTH_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'http://localhost:3001'
-  ).replace(/\/$/, '');
-};
 
-export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return proxyToAuth(req, params);
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+	return proxyToAuth(req, { params });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return proxyToAuth(req, params);
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+	return proxyToAuth(req, { params });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return proxyToAuth(req, params);
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+	return proxyToAuth(req, { params });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return proxyToAuth(req, params);
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+	return proxyToAuth(req, { params });
 }
 
-async function proxyToAuth(req: NextRequest, params: { path: string[] }) {
-  const base = resolveAuthBackend();
-  const path = params?.path ?? [];
-  const endpoint = `${base}/${path.join('/')}`;
+async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+	const base = resolveAuthBackend();
+	const resolvedParams = await params;
+	const path = resolvedParams?.path ?? [];
+	const endpoint = buildAuthEndpoint(base, path);
   const search = req.nextUrl.search ? req.nextUrl.search : '';
   const url = endpoint + search;
 
@@ -65,10 +60,17 @@ async function proxyToAuth(req: NextRequest, params: { path: string[] }) {
       redirect: 'manual',
     });
 
-    // Forward all status, content-type, etc.
+    // Forward status + headers, but strip transfer-encoding metadata:
+    // the backend gzips via hono/compress, and undici auto-decompresses
+    // the body — forwarding `content-encoding: gzip` makes the browser
+    // try to gunzip already-plain bytes (ERR_CONTENT_DECODING_FAILED).
+    const proxyHeaders = new Headers(resp.headers);
+    for (const h of ["content-encoding", "content-length", "transfer-encoding"]) {
+      proxyHeaders.delete(h);
+    }
     const proxyRes = new NextResponse(resp.body, {
       status: resp.status,
-      headers: resp.headers,
+      headers: proxyHeaders,
     });
 
     // Set cookies from auth backend
@@ -78,9 +80,10 @@ async function proxyToAuth(req: NextRequest, params: { path: string[] }) {
     }
 
     return proxyRes;
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
-      { error: 'Auth backend unavailable', detail: e?.message || String(e) },
+      { error: 'Auth backend unavailable', detail: errorMsg },
       { status: 502 }
     );
   }

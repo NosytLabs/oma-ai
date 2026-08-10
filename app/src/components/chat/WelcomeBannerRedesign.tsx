@@ -183,7 +183,9 @@ export function WelcomeBanner({
  const handleDismiss = useCallback(() => {
  try {
  localStorage.setItem(STORAGE_KEY, "1");
- } catch {}
+ } catch (e) {
+	 console.error('Failed to parse saved active models:', e)
+ }
  setDismissed(true);
  setVisible(false);
  if (!userInitiatedDismissRef.current) {
@@ -223,7 +225,9 @@ export function WelcomeBanner({
   const dismissTips = () => {
   try {
   localStorage.setItem(TIPS_KEY, "1");
-  } catch {}
+ } catch (e) {
+	 console.error('Failed to parse active providers:', e)
+ }
   setShowTips(false);
   };
 

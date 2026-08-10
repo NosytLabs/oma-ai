@@ -70,7 +70,9 @@ export function useChatPersistence({
 						setMessages(valid);
 					}
 				}
-			} catch {}
+			} catch (e) {
+				console.error('Failed to persist chat session:', e)
+			}
 		}
 		const storedPrompt = localStorage.getItem(systemPromptKey);
 		if (storedPrompt) {
@@ -92,7 +94,9 @@ export function useChatPersistence({
 			} else {
 				localStorage.removeItem(systemPromptKey);
 			}
-		} catch {}
+		} catch (e) {
+			console.error('Failed to fetch user models:', e)
+		}
 		// systemPromptKey is a module constant for chat; for playground it can vary
 		// per-mount but only on first render (when initial localStorage hydrates),
 		// so we intentionally don't re-fire on every change to avoid write loops.
