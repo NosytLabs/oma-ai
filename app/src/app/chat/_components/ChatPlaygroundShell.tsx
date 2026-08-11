@@ -37,6 +37,7 @@ import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
 import { AuthPromptModal } from "@/components/chat/AuthPromptModal";
+import { exportChatHistory } from "@/lib/chat-export";
 import { ChatErrorBanner } from "./ChatErrorBanner";
 import { ChatSettingsPanel } from "./ChatSettingsPanel";
 import { ChatSystemPromptPanel } from "./ChatSystemPromptPanel";
@@ -395,18 +396,6 @@ function ShellContent({
 		gatedSendRef.current = gatedSend;
 	}, [gatedSend]);
 
-	useChatShortcuts({
-		sendMessageRef: gatedSendRef,
-		input,
-		loading,
-		shortcutsOpen,
-		setShortcutsOpen,
-		paramsOpen,
-		setParamsOpen,
-		compareMode,
-		setCompareMode,
-	});
-
 	const stopGeneration = useCallback(() => {
 		abortRef.current?.abort();
 	}, [abortRef]);
@@ -498,38 +487,23 @@ function ShellContent({
 	const handleRegenerate = useCallback(() => {
 		if (loading) return;
 		const current = messagesRef.current;
-		if (current.length === 0) return;
+		const lastAss = current.findLast((m) => m.role === "assistant");
+		if (!lastAss) return;
+		const assIdx = current.lastIndexOf(lastAss);
+		const pairUser = current[assIdx - 1];
+		if (!pairUser || pairUser.role !== "user") return;
 
-		let end = current.length;
-		// Drop trailing empty/failed assistant if present
-		if (current[end - 1]?.role === "assistant") {
-			end -= 1;
-		}
-		// Pair: previous user message becomes the re-send prompt
-		const lastUser = current[end - 1];
-		if (!lastUser || lastUser.role !== "user" || !lastUser.content.trim()) {
-			return;
-		}
-		const prompt = lastUser.content;
-		// Remove user + any following assistant so sendMessage re-appends both
-		const truncated = current.slice(0, end - 1);
-		messagesRef.current = truncated;
+		// Truncate up to but EXCLUDING the matched user prompt (we re-send it).
+		const truncated = current.slice(0, assIdx - 1);
 		setMessages(truncated);
-		setError(null);
-		void gatedSend(prompt);
-	}, [loading, gatedSend, setMessages, setError]);
+		messagesRef.current = truncated;
+		void gatedSendRef.current(pairUser.content);
+	}, [loading, setMessages]);
 
-	const exportConversation = useCallback(() => {
+	const exportConversation = useCallback((format: "json" | "txt" | "md" = "json") => {
 		setExportStatus("loading");
 		try {
-			const data = JSON.stringify(messages, null, 2);
-			const blob = new Blob([data], { type: "application/json" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `oma-export-${Date.now()}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
+			exportChatHistory(messages, format, conversationId);
 			setExportStatus("success");
 			setTimeout(() => setExportStatus("default"), 2000);
 		} catch (err) {
@@ -537,7 +511,34 @@ function ShellContent({
 			setExportStatus("error");
 			setTimeout(() => setExportStatus("default"), 2000);
 		}
-	}, [messages, setExportStatus]);
+	}, [messages, setExportStatus, conversationId]);
+
+	const importConversation = useCallback((importedMessages: Message[]) => {
+		setMessages(importedMessages);
+		setConversationId(genConversationId());
+		toast.success("Conversation imported successfully");
+	}, [setMessages, setConversationId]);
+
+	const newConversation = useCallback(() => {
+		setMessages([]);
+		setCompareMessages([]);
+		setError(null);
+		setConversationId(genConversationId());
+		setTimeout(() => inputRef.current?.focus(), 100);
+	}, [setMessages, setCompareMessages, setError, setConversationId]);
+
+	useChatShortcuts({
+		sendMessageRef: gatedSendRef,
+		input,
+		loading,
+		shortcutsOpen,
+		setShortcutsOpen,
+		paramsOpen,
+		setParamsOpen,
+		compareMode,
+		setCompareMode,
+		newConversation,
+	});
 
 	const shareConversation = useCallback(async () => {
 		if (messages.length === 0) return;
@@ -621,6 +622,8 @@ function ShellContent({
 				shareConversation={shareConversation}
 				exportStatus={exportStatus}
 				exportConversation={exportConversation}
+				importConversation={importConversation}
+				newConversation={newConversation}
 				clearChat={clearChat}
 				messagesLength={messages.length}
 				deferredMessages={deferredMessages}

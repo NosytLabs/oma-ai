@@ -13,6 +13,7 @@ export interface UseChatShortcutsOptions {
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
+	newConversation?: () => void;
 }
 
 /**
@@ -40,6 +41,7 @@ export function useChatShortcuts({
 	setParamsOpen,
 	compareMode,
 	setCompareMode,
+	newConversation,
 }: UseChatShortcutsOptions): void {
 	useEffect(() => {
 		const isMac =
@@ -65,6 +67,14 @@ export function useChatShortcuts({
 				if (shortcutsOpen) setShortcutsOpen(false);
 				else if (paramsOpen) setParamsOpen(false);
 				else if (compareMode) setCompareMode(false);
+				return;
+			}
+
+			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "n") {
+				e.preventDefault();
+				if (newConversation) {
+					newConversation();
+				}
 				return;
 			}
 

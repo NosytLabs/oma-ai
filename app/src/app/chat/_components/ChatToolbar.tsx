@@ -7,6 +7,11 @@ import {
 	Coins,
 	Columns2,
 	Download,
+	Upload,
+	FileDown,
+	FileText,
+	FileJson,
+	PlusCircle,
 	Film,
 	Image as ImageIcon,
 	Keyboard,
@@ -17,8 +22,8 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { memo, useState, useRef, useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { memo } from "react";
 import type { Message } from "@/components/chat";
 import { formatCreditsShort } from "@/components/chat/useBalance";
 import { btnBase } from "@/components/playground/PlaygroundComponents";
@@ -59,7 +64,9 @@ export interface ChatToolbarProps {
 	shareStatus: "default" | "success" | "error";
 	shareConversation: () => void;
 	exportStatus: "default" | "loading" | "success" | "error";
-	exportConversation: () => void;
+	exportConversation: (format?: "json" | "txt" | "md") => void;
+	importConversation?: (messages: Message[]) => void;
+	newConversation?: () => void;
 	clearChat: () => void;
 	/**
 	 * `messages.length` rather than the `Message[]` itself. The toolbar
@@ -104,6 +111,8 @@ export function ChatToolbar({
 	shareConversation,
 	exportStatus,
 	exportConversation,
+	importConversation,
+	newConversation,
 	clearChat,
 	messagesLength,
 	deferredMessages,
@@ -114,6 +123,20 @@ export function ChatToolbar({
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
+	const [exportMenuOpen, setExportMenuOpen] = useState(false);
+	const exportMenuRef = useRef<HTMLDivElement>(null);
+
+	// Close export menu when clicking outside
+	useEffect(() => {
+		if (!exportMenuOpen) return;
+		function handleClickOutside(e: MouseEvent) {
+			if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+				setExportMenuOpen(false);
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [exportMenuOpen]);
 
 	const creditsPill =
 		isChat && isAuthenticated ? (
@@ -302,37 +325,93 @@ export function ChatToolbar({
 				>
 					<Keyboard className="h-4 w-4" />
 				</button>
-
-				{messageCount > 0 && variant === "chat" && (
-					<div className="flex shrink-0 items-center gap-1">
-						<button
-							type="button"
-							onClick={exportConversation}
-							disabled={exportStatus === "loading"}
-							data-state={exportStatus}
-							aria-label="Export conversation to JSON"
-							className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=loading]:bg-accent/20 data-[state=loading]:text-accent min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-							title="Export conversation (JSON)"
-						>
-							{exportStatus === "success" ? (
-								<CheckCircle2 className="h-4 w-4" />
-							) : exportStatus === "error" ? (
-								<AlertCircle className="h-4 w-4" />
-							) : (
-								<Download className="h-4 w-4" />
-							)}
-						</button>
-						<button
-							type="button"
-							onClick={clearChat}
-							aria-label="Clear conversation and local history"
-							className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-							title="Clear chat (also clears browser local history)"
-						>
-							<Trash2 className="h-4 w-4" />
-						</button>
-					</div>
+				
+				{newConversation && (
+					<button
+						type="button"
+						onClick={newConversation}
+						aria-label="New Conversation (Cmd/Ctrl+N)"
+						className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-success/20 hover:!bg-success/10 hover:!text-success min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+						title="New Conversation (Cmd/Ctrl+N)"
+					>
+						<PlusCircle className="h-4 w-4" />
+					</button>
 				)}
+
+				<div className="flex shrink-0 items-center gap-1">
+					{importConversation && (
+						<label
+							className={`${btnBase} focus-ring cursor-pointer transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+							title="Import conversation (JSON, MD, TXT)"
+						>
+							<Upload className="h-4 w-4" />
+							<input 
+								type="file" 
+								className="hidden" 
+								accept=".json,.md,.txt" 
+								onChange={async (e) => {
+									const file = e.target.files?.[0];
+									if (!file) return;
+									try {
+										const { parseImportedChat } = await import("@/lib/chat-export");
+										const msgs = await parseImportedChat(file);
+										importConversation(msgs);
+									} catch (err: unknown) {
+										const msg = err instanceof Error ? err.message : String(err);
+										alert("Failed to import: " + msg);
+									}
+									e.target.value = "";
+								}} 
+							/>
+						</label>
+					)}
+					{messageCount > 0 && variant === "chat" && (
+						<>
+							<div className="relative" ref={exportMenuRef}>
+								<button
+									type="button"
+									onClick={() => setExportMenuOpen(!exportMenuOpen)}
+									aria-label="Export conversation"
+									className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 ${exportMenuOpen ? "bg-accent/10 text-accent border-accent/20" : ""}`}
+									title="Export conversation"
+								>
+									<Download className="h-4 w-4" />
+								</button>
+								{exportMenuOpen && (
+									<div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-lg z-[100] animate-in fade-in zoom-in duration-200">
+										<button
+											onClick={() => { exportConversation("json"); setExportMenuOpen(false); }}
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+										>
+											<FileJson className="h-4 w-4" /> JSON
+										</button>
+										<button
+											onClick={() => { exportConversation("md"); setExportMenuOpen(false); }}
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+										>
+											<FileDown className="h-4 w-4" /> Markdown
+										</button>
+										<button
+											onClick={() => { exportConversation("txt"); setExportMenuOpen(false); }}
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+										>
+											<FileText className="h-4 w-4" /> Text
+										</button>
+									</div>
+								)}
+							</div>
+							<button
+								type="button"
+								onClick={clearChat}
+								aria-label="Clear conversation and local history"
+								className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+								title="Clear chat (also clears browser local history)"
+							>
+								<Trash2 className="h-4 w-4" />
+							</button>
+						</>
+					)}
+				</div>
 			</div>
 		</header>
 	);
