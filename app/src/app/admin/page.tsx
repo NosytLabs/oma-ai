@@ -244,7 +244,7 @@ export default function AdminPage() {
 
 			{snap && (
 				<section
-					className="grid grid-cols-2 gap-3 md:grid-cols-4"
+					className="grid grid-cols-2 gap-3 md:grid-cols-5"
 					aria-label="Chat traffic 24h"
 				>
 					<StatCard label="Completions 24h" value={String(snap.chat24h.completions)} />
@@ -262,10 +262,41 @@ export default function AdminPage() {
 						label="p95 latency"
 						value={fmtMs(snap.chat24h.p95LatencyMs)}
 					/>
+					<StatCard
+						label="Active Models"
+						value={String(snap.chat24h.topModels.length)}
+					/>
 				</section>
 			)}
 
-			<div className="grid gap-3 md:grid-cols-2">
+			<div className="grid gap-3 md:grid-cols-3">
+				{snap && (
+					<section className="rounded-[var(--radius-lg)] border border-border bg-surface p-4" aria-label="Top routes">
+						<h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-text-muted">
+							Top HTTP Routes
+						</h2>
+						{snap.http.topRoutes.length === 0 ? (
+							<p className="text-xs text-text-muted">No route traffic recorded yet.</p>
+						) : (
+							<ul className="flex flex-col gap-1.5">
+								{snap.http.topRoutes.map((r) => (
+									<li
+										key={r.route}
+										className="flex items-center justify-between gap-3 text-xs"
+									>
+										<span className="min-w-0 truncate font-mono text-text-secondary" title={r.route}>
+											{r.route}
+										</span>
+										<span className="shrink-0 tabular-nums text-text-muted">
+											{r.requests} req · {r.errors} err · {fmtMs(r.p95ms)}
+										</span>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+				)}
+
 				{snap && (
 					<section className="rounded-[var(--radius-lg)] border border-border bg-surface p-4" aria-label="Top models">
 						<h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-text-muted">

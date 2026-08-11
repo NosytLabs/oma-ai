@@ -73,12 +73,6 @@ export const toolsLinks: NavItem[] = [
 		desc: "5-minute walkthrough",
 	},
 	{
-		href: "/observability",
-		label: "Observability",
-		icon: Activity,
-		desc: "Live system metrics",
-	},
-	{
 		href: "/changelog",
 		label: "Changelog",
 		icon: Newspaper,

@@ -14,10 +14,6 @@ import { auth } from "./auth.js";
 export {
 	BackendUnavailableError,
 	request,
-	isSuspendedAccountError,
-	isPaymentRequiredError,
-	isQuotaError,
-	extractQuotaInfo,
 } from "./client.js";
 
 export type {

@@ -142,7 +142,11 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "I got a 402 error — what now?",
-				a: "A 402 means payment is required: either your credits ran out (top up at /deposit), or you hit the x402 pay-per-request flow (sign the payment and retry — docs: /docs#x402).",
+				a: "A 402 means payment is required: either your credits ran out (top up at /deposit), or you hit the x402 pay-per-request flow (sign the payment and retry — docs: /docs#x402). If you keep getting 402s on x402, ensure your wallet has enough USDC on Base, that you have approved the deposit, and that you are signing the exact transaction details the API returned.",
+			},
+			{
+				q: "How do I troubleshoot x402 errors?",
+				a: "Common x402 issues: 1) Wrong network: ensure you are on Base. 2) Insufficient USDC allowance: you must approve the EIP-3009 transfer. 3) Signature mismatch: verify you are signing the exact payload returned by the API (no extra fields or trailing spaces). 4) Stale nonce: if you parallelize requests, handle nonces carefully.",
 			},
 		],
 	},

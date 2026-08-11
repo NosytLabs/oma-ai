@@ -207,6 +207,12 @@ export function DashboardHeader({
 								{modelsAvailable} MODEL{modelsAvailable !== 1 ? "S" : ""} ONLINE
 							</span>
 						)}
+						{hasAnyData && lastUpdated && (
+							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex" title={`Last data timestamp: ${lastUpdated.toLocaleString()}`}>
+								<Activity className="h-3 w-3" aria-hidden="true" />
+								LATEST: {lastUpdated.toLocaleTimeString()}
+							</span>
+						)}
 						{hasAnyData && autoRefreshCountdown > 0 && (
 							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex">
 								<Clock className="h-3 w-3" aria-hidden="true" />

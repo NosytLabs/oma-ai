@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { user, session as sessionTable, usageRecords, auditLogs } from "../db/schema.js";
+import {
+  user,
+  session as sessionTable,
+  usageRecords,
+  auditLogs,
+} from "../db/schema.js";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
@@ -92,13 +97,19 @@ authRoutes.get("/sessions", sessionAuth, async (c) => {
 authRoutes.delete("/sessions/:id", sessionAuth, async (c) => {
   const userId = c.get("userId");
   const currentSession = c.get("session");
-  const id = c.req.param("id");
-  if (!id) {
+  const parsed = z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{8,64}$/)
+    .safeParse(c.req.param("id"));
+  if (!parsed.success) {
     return c.json(
-      { error: { message: "Missing session id", type: "invalid_request_error" } },
+      {
+        error: { message: "Invalid session id", type: "invalid_request_error" },
+      },
       400,
     );
   }
+  const id = parsed.data;
   if (currentSession?.id && id === currentSession.id) {
     return c.json(
       {
@@ -179,9 +190,9 @@ authRoutes.delete("/account", async (c) => {
   }
   const userId = session.user.id;
   const ipAddress =
-    c.req.header("x-real-ip")
-    ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? undefined;
+    c.req.header("x-real-ip") ??
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+    undefined;
   const userAgent = c.req.header("user-agent") ?? undefined;
   // Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
   // so post-delete logs would lose the userId. The "requested" row
@@ -359,16 +370,29 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
 // cookie on the current response. Used by the dashboard after minting
 // a key, so the browser's SSE chat can authenticate against the Hono
 // backend directly without re-issuing the key as an Authorization header.
-authRoutes.post(
-  "/v1/keys/install",
-  rateLimit({ windowMs: 60_000, maxRequests: 30 }),
-  sessionAuth,
-  async (c) => {
-    const body = await c.req.json().catch(() => null);
-    const parsed = z.object({ key: z.string().min(20) }).safeParse(body);
-    if (!parsed.success) {
+  authRoutes.post(
+    "/v1/keys/install",
+    rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+    sessionAuth,
+    async (c) => {
+      const body = await c.req.json().catch(() => null);
+      const parsed = z
+        .object({
+          key: z
+            .string()
+            .min(20)
+            .max(100)
+            .regex(/^[a-zA-Z0-9_-]+$/, "Invalid character in API key"),
+        })
+        .safeParse(body);
+      if (!parsed.success) {
       return c.json(
-        { error: { message: "Missing or invalid key", type: "invalid_request_error" } },
+        {
+          error: {
+            message: "Missing or invalid key",
+            type: "invalid_request_error",
+          },
+        },
         400,
       );
     }
@@ -379,7 +403,11 @@ authRoutes.post(
 
 // POST /v1/keys/logout — clear the HttpOnly API key cookie (does NOT
 // touch the Better Auth session; use Better Auth sign-out for that).
-authRoutes.post("/v1/keys/logout", sessionAuth, async (c) => {
+authRoutes.post(
+  "/v1/keys/logout",
+  rateLimit({ windowMs: 60_000, maxRequests: 20 }),
+  sessionAuth,
+  async (c) => {
   c.header("Set-Cookie", createLogoutCookieHeader());
   return c.json({ success: true });
 });

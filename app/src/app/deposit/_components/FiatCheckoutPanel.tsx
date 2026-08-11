@@ -179,14 +179,15 @@ export function FiatCheckoutPanel() {
 				})}
 			</fieldset>
 
-			<AnimatePresence>
+			<AnimatePresence mode="wait">
 				{error && (
 					<m.div
+						key="fiat-error"
 						role="alert"
-						initial={{ opacity: 0, y: -4 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -4 }}
-						className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning"
+						initial={{ opacity: 0, y: -4, height: 0 }}
+						animate={{ opacity: 1, y: 0, height: "auto" }}
+						exit={{ opacity: 0, y: -4, height: 0 }}
+						className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning overflow-hidden"
 					>
 						{error}
 					</m.div>

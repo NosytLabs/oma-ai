@@ -1,6 +1,12 @@
 
 
+import type { Metadata } from "next";
 import { ExportDataButton } from "../_components/ExportDataButton";
+
+export const metadata: Metadata = {
+	title: "Export Data · OMA",
+	robots: { index: false, follow: false },
+};
 
 /**
  * Standalone export page — surfaces OMA's usage/deposit export

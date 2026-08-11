@@ -87,7 +87,7 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 						? "border-accent/60 bg-panel"
 						: "border-border hover:border-accent/60 hover:bg-panel"
 				}`}
-				aria-label={`User menu: ${triggerTitle}`}
+				aria-label={`Account menu: ${triggerTitle}`}
 				aria-expanded={open}
 				aria-haspopup="menu"
 				aria-controls="user-menu"

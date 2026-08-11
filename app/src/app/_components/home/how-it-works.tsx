@@ -6,7 +6,7 @@
  * Numbered indicators use mono tabular numerals.
  */
 
-import { Key, Rocket, Wallet } from "lucide-react";
+import { Key, Rocket, Wallet, Terminal } from "lucide-react";
 import {
  Reveal,
  RevealStagger,
@@ -47,6 +47,13 @@ const STEPS: Step[] = [
  "Buy credits by card through , deposit USDC on Base, or let an agent settle each request with x402.",
  icon: Rocket,
  },
+ {
+ n: "04",
+ title: "Add MCP Agent Tools",
+ description:
+ "Extend your agents with Model Context Protocol. Provide custom tools directly in your workspace.",
+ icon: Terminal,
+ },
 ];
 
 export function HowItWorks() {
@@ -61,18 +68,18 @@ export function HowItWorks() {
  id="how-it-works-headline"
  headline={
  <>
- Three steps
+ Four steps
  <br />
  <span className="gradient-text-accent">to first request.</span>
  </>
  }
- subhead="Sign in, create a key, fund credits (or use x402). Point your OpenAI SDK at OMA and call."
+ subhead="Sign in, create a key, fund credits (or use x402), and setup MCP. Point your OpenAI SDK at OMA and call."
  />
  </Reveal>
 
  <RevealStagger
  as="ol"
- className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative"
+ className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 relative"
  amount={0.2}
  >
  {STEPS.map((step, idx) => (

@@ -132,7 +132,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "MCP",
-		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA supports MCP-style tool calls in chat completions.",
+		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA supports MCP-style tool calls in chat completions. To use MCP with OMA, configure your MCP client (like Trae or Claude Desktop) to use an SSE transport connecting to https://api.oma-ai.com/v1/mcp.",
 	},
 	{
 		term: "A2A",

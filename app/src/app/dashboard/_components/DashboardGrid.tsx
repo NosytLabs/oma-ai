@@ -181,6 +181,8 @@ export function WidgetErrorBoundary({
 	children: React.ReactNode;
 	title?: string;
 }) {
+	const [showDetails, setShowDetails] = useState(false);
+
 	return (
 		<ErrorBoundary
 			fallback={
@@ -188,7 +190,20 @@ export function WidgetErrorBoundary({
 					<p className="text-xs text-error font-medium">
 						{title ?? "Widget"} failed to load
 					</p>
-					<p className="text-[10px] text-text-muted mt-1">
+					<button 
+						type="button" 
+						onClick={() => setShowDetails(!showDetails)}
+						className="text-[10px] text-text-muted mt-1 hover:text-text-secondary underline underline-offset-2"
+					>
+						{showDetails ? "Hide details" : "Show details"}
+					</button>
+					{showDetails && (
+						<div className="mt-3 text-left bg-void border border-border p-2 rounded text-[10px] text-text-muted overflow-auto max-h-32">
+							<p>Check the console for full stack trace.</p>
+							<p className="mt-1">Usually indicates a network or API response issue.</p>
+						</div>
+					)}
+					<p className="text-[10px] text-text-muted mt-3">
 						Refresh the page to retry
 					</p>
 				</div>
@@ -458,14 +473,16 @@ export function DashboardGrid(props: DashboardGridProps) {
 			<AnimatePresence mode="wait">
 				{/* Overview Tab */}
 				{activeTab === "overview" && (
-					// No opacity-0 entrance on overview — first paint must never be a
-					// blank void while data is still syncing (looked broken in screenshots).
-					<div
+					<m.div
 						key="overview"
 						id="panel-overview"
 						role="tabpanel"
 						aria-labelledby="tab-overview"
 						aria-label="Overview"
+						variants={tabContentVariants}
+						initial="hidden"
+						animate="visible"
+						exit="exit"
 					>
 						{/* Onboarding checklist for new users */}
 						{!loading && (
@@ -485,7 +502,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</div>
 						)}
 
-						<div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem]">
+						<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem] p-6">
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
@@ -533,7 +550,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 											Card
 										</Link>
 										<Link
-											href="/deposit"
+											href="/deposit?method=crypto"
 											className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97] gap-2.5"
 										>
 											<Coins className="h-4 w-4" aria-hidden="true" />
@@ -557,7 +574,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						<QuickActions />
 
 						<RecentTransactions transactions={transactions} />
-					</div>
+					</m.div>
 				)}
 
 				{/* Usage Tab */}

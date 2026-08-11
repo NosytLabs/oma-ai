@@ -199,7 +199,14 @@ function getInitials(modelId: string): string {
 }
 
 function getProviderColor(slug: string): string {
- return PROVIDER_COLORS[slug] ?? "6366f1";
+	return PROVIDER_COLORS[slug] ?? "6366f1";
+}
+
+function lighten(hex: string, amount: number): string {
+	const n = parseInt(hex.slice(1), 16);
+	const mix = (c: number) => Math.round(c + (255 - c) * amount);
+	const h = (v: number) => v.toString(16).padStart(2, "0");
+	return `#${h(mix((n >> 16) & 0xff))}${h(mix((n >> 8) & 0xff))}${h(mix(n & 0xff))}`;
 }
 
 export function ModelLogo({
@@ -251,10 +258,12 @@ export function ModelLogo({
  );
  }
 
- // Fallback: styled initials badge
- const initials = getInitials(modelId);
- const bgColor = color ? `#${color}20` : "var(--color-accent-dim)";
- const textColor = color ? `#${color}` : "var(--color-accent)";
+// Fallback: styled initials badge
+	const initials = getInitials(modelId);
+	const bgColor = color ? `#${color}20` : "var(--color-accent-dim)";
+	// Lighten the brand color so the monogram meets 4.5:1 contrast on the
+	// tinted badge (bare provider hex on the dark tint was ~3.8:1).
+	const textColor = color ? lighten(color, 0.35) : "var(--color-accent)";
 
  return (
  <span

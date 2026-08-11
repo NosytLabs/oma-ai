@@ -255,13 +255,13 @@ function DashboardPageInner() {
 				<div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
 					<Link
 						href="/login?next=/dashboard"
-						className="btn-primary inline-flex h-10 items-center px-4 text-sm"
+						className="btn-primary inline-flex h-10 items-center px-4 text-sm focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-transform duration-200"
 					>
 						Sign in →
 					</Link>
 					<Link
 						href="/deposit"
-						className="btn-secondary inline-flex h-10 items-center px-4 text-sm"
+						className="btn-secondary inline-flex h-10 items-center px-4 text-sm focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97] transition-transform duration-200"
 					>
 						Deposit USDC
 					</Link>

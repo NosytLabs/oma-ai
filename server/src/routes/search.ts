@@ -30,6 +30,10 @@ const querySchema = z.object({
 
 export const searchRoutes = new Hono();
 
+// Parse optional auth BEFORE rate limiting so authenticated requests are
+// keyed by apiKey/userId (their own budget) instead of the shared IP bucket.
+searchRoutes.use("/v1/search", optionalAuth);
+
 // Modest anonymous budget so DDG isn't hammered from a single IP.
 searchRoutes.use(
 	"/v1/search",
@@ -249,7 +253,7 @@ async function runWebSearch(query: string): Promise<{
 	}
 }
 
-searchRoutes.get("/v1/search", optionalAuth, async (c) => {
+searchRoutes.get("/v1/search", async (c) => {
 	const parsed = querySchema.safeParse(c.req.query());
 	if (!parsed.success) {
 		return c.json(

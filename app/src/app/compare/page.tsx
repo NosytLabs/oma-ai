@@ -379,8 +379,8 @@ Portkey is enterprise-grade but requires a credit card, account
 							</p>
 							<p className="text-sm text-text-secondary">
 								<strong className="text-text-muted">Portkey wins on:</strong>{""}
-								enterprise features (SSO, audit logs, RBAC), observability
-								depth, on-prem deployment.
+								enterprise features (SSO, audit logs, RBAC),
+								on-prem deployment.
 							</p>
 						</div>
 

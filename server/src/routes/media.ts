@@ -180,7 +180,7 @@ mediaRouter.post("/v1/images/generations", async (c) => {
   const userId = c.get("userId");
   const apiKey = c.get("apiKey");
 
-  const parsed = imageGenerationSchema.safeParse(await c.req.json());
+  const parsed = imageGenerationSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { model, prompt, n, size } = parsed.data;
   const imageCount = n ?? 1;
@@ -230,7 +230,7 @@ mediaRouter.post("/v1/images/generations", async (c) => {
 });
 
 mediaRouter.post("/v1/videos/quote", async (c) => {
-  const parsed = videoGenerationSchema.safeParse(await c.req.json());
+  const parsed = videoGenerationSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { model, prompt, duration, aspect_ratio, resolution, image_url } =
     parsed.data;
@@ -270,7 +270,7 @@ mediaRouter.post("/v1/videos/generations", async (c) => {
   const userId = c.get("userId");
   const apiKey = c.get("apiKey");
 
-  const parsed = videoGenerationSchema.safeParse(await c.req.json());
+  const parsed = videoGenerationSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json(validationError(parsed.error), 400);
   const { model, prompt, duration, aspect_ratio, resolution, image_url } =
     parsed.data;
@@ -318,15 +318,25 @@ mediaRouter.post("/v1/videos/generations", async (c) => {
   }
 });
 
+const videoRetrieveQuerySchema = z.object({
+  queue_id: z.string().min(1).max(512),
+  model: z.string().trim().min(1).max(128).optional(),
+});
+
 mediaRouter.get("/v1/videos/retrieve", async (c) => {
-  const queueId = c.req.query("queue_id");
-  const model = c.req.query("model");
-  if (!queueId) {
+  const parsed = videoRetrieveQuerySchema.safeParse(c.req.query());
+  if (!parsed.success) {
     return c.json(
-      { error: { message: "queue_id required", type: "invalid_request_error" } },
+      {
+        error: {
+          message: "Invalid queue_id",
+          type: "invalid_request_error",
+        },
+      },
       400,
     );
   }
+  const { queue_id: queueId, model } = parsed.data;
 
   try {
     const result = await retrieveVideo(queueId, model || undefined);

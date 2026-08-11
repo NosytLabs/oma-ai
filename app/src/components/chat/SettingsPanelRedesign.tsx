@@ -130,9 +130,13 @@ function GlowToggle({
 	onChange: (v: boolean) => void;
 	label: string;
 }) {
+	const labelId = useId();
 	return (
 		<div className="flex items-center justify-between">
-			<label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+			<label
+				id={labelId}
+				className="text-xs font-mono text-text-muted uppercase tracking-wider"
+			>
 				{label}
 			</label>
 			<button
@@ -140,7 +144,7 @@ function GlowToggle({
 				onClick={() => onChange(!checked)}
 				role="switch"
 				aria-checked={checked}
-				aria-label={label}
+				aria-labelledby={labelId}
 				className={`
  relative w-10 h-5 rounded-full transition-[background-color,box-shadow] duration-200 ease-out
  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]

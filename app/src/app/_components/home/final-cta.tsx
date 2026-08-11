@@ -48,12 +48,12 @@ export function FinalCTA() {
   borderRadius="9999px"
   borderWidth={1}
   color="var(--color-accent)"
-  className="electric-border-host !rounded-full transition-[transform] duration-200 ease-out hover:scale-[1.01] active:scale-[0.97] "
+  className="electric-border-host !rounded-full transition-[transform] duration-200 ease-out hover:scale-[1.01] active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-accent"
   style={{ animationDuration: "3s" }}
   >
 						<Link
 							href="/login"
-							className="inline-flex h-11 items-center justify-center rounded-md bg-accent px-8 font-mono text-sm font-bold text-void transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] hover:bg-accent-bright focus-ring"
+							className="inline-flex h-11 items-center justify-center rounded-md bg-accent px-8 font-mono text-sm font-bold text-void transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] hover:bg-accent-bright focus-visible:ring-2 focus-visible:ring-void focus-ring"
 						>
   Get API key
   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -61,7 +61,7 @@ export function FinalCTA() {
   </ElectricBorder>
 						<Link
 							href="/pricing"
-							className="inline-flex h-11 items-center justify-center rounded-md border border-border-hi bg-surface px-8 font-mono text-sm font-medium text-text-primary transition-[border-color,transform] duration-200 ease-out active:scale-[0.97] hover:border-accent/50 focus-ring"
+							className="inline-flex h-11 items-center justify-center rounded-md border border-border-hi bg-surface px-8 font-mono text-sm font-medium text-text-primary transition-[border-color,transform] duration-200 ease-out active:scale-[0.97] hover:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent focus-ring"
 						>
   View pricing
   </Link>

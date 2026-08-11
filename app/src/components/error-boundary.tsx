@@ -49,13 +49,15 @@ export class ErrorBoundary extends Component<Props, State> {
 			return (
 				<div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4">
 					<div
-						className="flex h-16 w-16 items-center justify-center rounded-full border border-red/30 bg-red/10"
+						className="flex h-16 w-16 items-center justify-center rounded-full border border-red/30 bg-red/10 text-red"
 						role="img"
 						aria-label="System fault warning"
 					>
-						<span aria-hidden="true" className="text-3xl leading-none text-red">
-							⚠
-						</span>
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8" aria-hidden="true">
+							<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+							<path d="M12 9v4"/>
+							<path d="M12 17h.01"/>
+						</svg>
 					</div>
 					<div className="text-center">
 						<h2 className="font-mono text-text text-lg mb-2">System Fault</h2>
@@ -68,9 +70,10 @@ export class ErrorBoundary extends Component<Props, State> {
 						onClick={this.handleReset}
 						className="btn-primary flex items-center gap-2 active:scale-[0.97]"
 					>
-						<span aria-hidden="true" className="text-base leading-none">
-							↻
-						</span>
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+							<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+							<path d="M21 3v5h-5"/>
+						</svg>
 						Retry
 					</button>
 				</div>

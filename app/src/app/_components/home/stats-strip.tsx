@@ -90,7 +90,7 @@ export function StatsStrip() {
  {/* Ledger index */}
  <span
  aria-hidden="true"
- className="absolute right-4 top-4 font-mono text-[10px] tabular-nums text-text-muted/50"
+ className="absolute right-4 top-4 font-mono text-[10px] tabular-nums text-text-muted"
  >
  0{i + 1}
  </span>

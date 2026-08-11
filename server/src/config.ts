@@ -7,6 +7,7 @@ const INSECURE_DEFAULTS = [
   "secret",
   "jwt-secret",
   "dev-receipt-hmac-placeholder",
+  "placeholder_hmac_secret_32_chars_min",
   "dev-encryption-key-change-me-in-prod-32ch",
 ];
 
@@ -64,7 +65,7 @@ const envSchema = z.object({
   // SECURITY (A14): No placeholder default. Must be explicitly set in
   // production. The production startup guard below rejects known placeholders.
   TREASURY_BASE_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
-  PORT: z.coerce.number().default(3002),
+  PORT: z.coerce.number().default(3001),
   // Better Auth owns session signing and CSRF protection; we just need to provide a
   // 32+ char secret. Generate one per environment with `openssl rand -hex 32`.
   BETTER_AUTH_SECRET: z.string().min(32).default("dev-better-auth-secret-change-me-in-prod-32ch"),
@@ -77,7 +78,7 @@ const envSchema = z.object({
   RESEND_FROM: z.string().min(1).optional(),
   ENCRYPTION_KEY: z.string().min(32).default("dev-encryption-key-change-me-in-prod-32ch"),
   // Browser clients run on the Next app origin, not the API port.
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  CORS_ORIGIN: z.string().default("http://localhost:3000,http://localhost:3003"),
   // Canonical production domain. Used as the SIWE `domain` bind target
   // and as the default for sign-in message headers. Set in production; tests
   // and dev default to a permissive value.
@@ -91,7 +92,7 @@ const envSchema = z.object({
   // trustedOrigins and as the baseURL fallback for session cookie domain.
   // Falls back to localhost in dev.
   PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
-  RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("dev-receipt-hmac-placeholder"),
+  RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("placeholder_hmac_secret_32_chars_min"),
   NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
   // Log level for the server logger (trace, debug, info, warn, error, fatal)
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
@@ -262,7 +263,7 @@ if (isProductionEnv && INSECURE_DEFAULTS.includes(config.RECEIPT_HMAC_SECRET)) {
   process.exit(1);
 }
 
-if (config.NODE_ENV !== "test" && !isProductionEnv && config.RECEIPT_HMAC_SECRET === "dev-receipt-hmac-placeholder") {
+if (config.NODE_ENV !== "test" && !isProductionEnv && config.RECEIPT_HMAC_SECRET === "placeholder_hmac_secret_32_chars_min") {
   console.warn("[oma-config] WARNING: RECEIPT_HMAC_SECRET is the development placeholder. Set a strong secret before deploying to production (NODE_ENV=production/staging/preview).");
 }
 

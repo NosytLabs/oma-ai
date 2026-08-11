@@ -22,7 +22,7 @@ const spec = {
 	},
 	servers: [
 		{ url: config.PUBLIC_API_URL, description: "Production" },
-		{ url: config.PUBLIC_API_URL.replace(/^https?:\/\//, "http://").replace(/:\d+/, ":3002"), description: "Local dev" },
+		{ url: config.PUBLIC_API_URL.replace(/^https?:\/\//, "http://").replace(/:\d+/, ":3001"), description: "Local dev" },
 	],
 	components: {
 		securitySchemes: {

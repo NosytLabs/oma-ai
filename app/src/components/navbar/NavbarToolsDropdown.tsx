@@ -65,7 +65,7 @@ export function NavbarToolsDropdown({
 					aria-haspopup="menu"
 					aria-expanded={open}
 					aria-controls="tools-menu"
-					aria-label="Tools menu"
+					aria-label="tools menu"
 					className={`relative inline-flex h-9 items-center gap-2 rounded-sm px-3 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 						isToolsActive
 							? "text-accent"

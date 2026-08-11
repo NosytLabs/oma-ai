@@ -22,7 +22,7 @@
  *     future swap to pino / otel / Datadog is a one-file change.
  *
  * Client-side observability:
- *   - `lib/api/admin/observability/log` (a Next.js API route) already
+ *   - `lib/api/admin/ops/log` (a Next.js API route) already
  *     accepts client-emitted events into a server-side ring buffer
  *     readable by the M6.3 admin ledger console. Callers that want to
  *     forward client errors to that endpoint should POST to it directly

@@ -64,7 +64,7 @@ export interface MetricsSnapshot {
 /**
  * Aggregate view of the in-process counters, sorted by request volume.
  * Used by the /metrics route (Prometheus text) and the /v1/ops/snapshot
- * endpoint (JSON) that backs the public observability page.
+ * endpoint (JSON).
  */
 export function getMetricsSnapshot(): MetricsSnapshot {
   let totalRequests = 0;

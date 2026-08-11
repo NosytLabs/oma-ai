@@ -38,10 +38,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							className="mt-0.5 shadow-sm rounded-[var(--radius-lg)]"
 						/>
 						<div className="min-w-0 flex-1">
-							<p className="text-[15px] font-semibold tracking-tight text-text-bright truncate">
+							<p className="text-[15px] font-semibold tracking-tight text-text-bright line-clamp-2 leading-tight">
 								{model.name ?? "Unknown"}
 							</p>
-							<p className="text-[11px] text-text-muted mt-1 font-mono truncate">
+							<p className="text-[11px] text-text-muted mt-1.5 font-mono truncate">
 								{model.id}
 							</p>
 						</div>

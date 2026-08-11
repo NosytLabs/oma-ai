@@ -80,7 +80,6 @@ const TOOLS: FooterSection = {
 	title: "Tools",
 	links: [
 		{ label: "API Reference", href: "/docs#endpoints", icon: Network },
-		{ label: "Observability", href: "/observability", icon: Activity },
 		{ label: "Changelog", href: "/changelog", icon: Newspaper },
 	],
 };

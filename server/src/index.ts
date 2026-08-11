@@ -110,7 +110,7 @@ const corsOptions = {
       try {
         const allowedUrl = new URL(allowed);
         const originUrl = new URL(origin);
-        if (allowedUrl.origin === originUrl.origin) return origin;
+        if (allowed === origin || allowedUrl.origin === originUrl.origin) return origin;
       } catch {
         // ignore
       }

@@ -93,16 +93,16 @@ const RELEASES: Release[] = [
 		date: "2026-07-14",
 		codename: "Site Hardening",
 		summary:
-			"Marketing/product honesty pass: SEO sitemap cleanup, agent session demos, live observability counters, and retirement of the dead swap surface.",
+			"Marketing/product honesty pass: SEO sitemap cleanup, agent session demos, live metrics counters, and retirement of the dead swap surface.",
 		highlights: [
 			"Public sitemap lists marketing routes only (no auth soft-404s)",
 			"Agent session demo on homepage + docs (terminal UI for OpenAI baseURL story)",
-			"Observability page shows live /health + /metrics counters",
+			"Live metrics page shows /health + /metrics counters",
 			"Retired /swap → /deposit (direct USDC funding)",
 		],
 		changes: [
 			{ kind: "feature", text: "AgentSessionDemo marketing block (brainless-inspired, OMA-themed)" },
-			{ kind: "feature", text: "Live ops snapshot on /observability from Prometheus /metrics" },
+			{ kind: "feature", text: "Live ops snapshot on /ops from Prometheus /metrics" },
 			{ kind: "feature", text: "About + Contact trust pages; sub-processor disclosure in Privacy" },
 			{ kind: "fix", text: "Anonymous /api/user returns 204 (no console 401 spam)" },
 			{ kind: "fix", text: "CSP frame-ancestors none; prod drops unsafe-eval" },
@@ -118,12 +118,12 @@ const RELEASES: Release[] = [
 		highlights: [
 			`${MODEL_COUNT}+ models available across the current public catalog`,
 			"Four-theme palette (Emerald, Amber, Mono, Synth) — one-click switcher in the navbar",
-			"New `/observability` page — per-route latency, error budget, request volume",
+			"New `/ops` page — per-route latency, error budget, request volume",
 			"New `/changelog` page (you are here) — monthly release notes",
 		],
 		changes: [
 			{ kind: "feature", text: "Four-theme palette system with persisted localStorage" },
-			{ kind: "feature", text: "Observability dashboard at /observability" },
+			{ kind: "feature", text: "Ops dashboard at /ops" },
 			{ kind: "feature", text: "MCP server (Model Context Protocol) — `npx @oma-ai/mcp`" },
 			{ kind: "feature", text: "Agent card at /.well-known/agent-card.json" },
 			{ kind: "feature", text: "Webhooks for deposit, credit-low, and request-failed events" },

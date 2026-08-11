@@ -42,7 +42,7 @@ import {
 	Zap,
 	type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 
 const A2UI_VERSION = "0.9.1";
 
@@ -314,6 +314,7 @@ function IconGlyph({ name }: { name: string }) {
 
 function TextFieldInput({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) {
 	const data = ctx.surface.dataModel;
+	const fieldId = useId();
 	const label = String(node.label ?? "");
 	const bound = resolveBinding(node.value, data, runLocalCall);
 	const initial = typeof bound === "string" ? bound : typeof bound === "number" ? String(bound) : "";
@@ -340,12 +341,12 @@ function TextFieldInput({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) 
 	return (
 		<div className="mb-2">
 			{label && (
-				<label htmlFor={node.id} className="block text-[10px] font-mono uppercase tracking-wider text-text-muted mb-1">
+				<label htmlFor={fieldId} className="block text-[10px] font-mono uppercase tracking-wider text-text-muted mb-1">
 					{label}
 				</label>
 			)}
 			<input
-				id={node.id}
+				id={fieldId}
 				type="text"
 				value={value}
 				onChange={(e) => {

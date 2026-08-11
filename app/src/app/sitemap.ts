@@ -43,7 +43,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		entry("/glossary", 0.6, "monthly"),
 		entry("/compare", 0.75, "weekly"),
 		entry("/about", 0.6, "monthly"),
-		entry("/observability", 0.5, "monthly"),
 		entry("/changelog", 0.55, "weekly"),
 		entry("/contact", 0.4, "yearly"),
 		// Legal

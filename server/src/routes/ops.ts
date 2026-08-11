@@ -1,6 +1,6 @@
 /**
- * GET /v1/ops/snapshot — public operational snapshot for the
- * /observability page. Aggregates only; no per-user data is exposed.
+ * GET /v1/ops/snapshot — public operational snapshot.
+ * Aggregates only; no per-user data is exposed.
  *
  * Combines three real sources:
  *   1. In-process HTTP counters (request volume, errors, per-route p95)

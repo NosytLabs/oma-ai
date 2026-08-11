@@ -210,8 +210,9 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
  </Link>
  </m.div>
  )}
+ </div>
 
- <div className="hidden xl:flex items-center">
+ <div className="hidden xl:flex items-center ml-3 mr-1">
  <ApiStatus />
  </div>
 
@@ -259,34 +260,37 @@ className="absolute inset-0 rounded-sm bg-accent-dim"
 		</div>
 	)}
 
-						{/* Mobile toggle */}
-						<button
-							ref={mobileToggleRef}
-							type="button"
-							onClick={() => setMobileOpen(!mobileOpen)}
-							className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface-elevated border border-border text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
-							aria-label={
-								mobileOpen ? "Close navigation menu" : "Open navigation menu"
-							}
-							aria-expanded={mobileOpen}
-							aria-controls="mobile-menu"
-						>
-							<Menu className="h-4 w-4" aria-hidden="true" />
-						</button>
- </div>
- </div>
+	{/* Mobile toggle */}
+	<button
+		ref={mobileToggleRef}
+		type="button"
+		onClick={() => setMobileOpen(!mobileOpen)}
+		className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface-elevated border border-border text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
+		aria-label={
+			mobileOpen ? "Close navigation menu" : "Open navigation menu"
+		}
+		aria-expanded={mobileOpen}
+		aria-controls="mobile-menu"
+	>
+		{mobileOpen ? (
+			<X className="h-4 w-4" aria-hidden="true" />
+		) : (
+			<Menu className="h-4 w-4" aria-hidden="true" />
+		)}
+	</button>
+</div>
 
- {/* Mobile menu — extracted component */}
- <NavbarMobileMenu
- open={mobileOpen}
- onOpenChange={setMobileOpen}
- toggleRef={mobileToggleRef}
- isConnected={isAuthenticated && !isDemo}
- section={section}
- build={build}
- onDisconnect={signOut}
- />
- </nav>
- </header>
- );
+{/* Mobile menu — extracted component */}
+<NavbarMobileMenu
+	open={mobileOpen}
+	onOpenChange={setMobileOpen}
+	toggleRef={mobileToggleRef}
+	isConnected={isAuthenticated && !isDemo}
+	section={section}
+	build={build}
+	onDisconnect={signOut}
+/>
+</nav>
+</header>
+);
 }

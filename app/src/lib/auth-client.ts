@@ -33,13 +33,14 @@ function resolveBaseUrl(): string {
 	if (typeof window !== "undefined") {
 		return `${window.location.origin}/api/auth`;
 	}
-	// SSR — fall back to the explicit API URL env (defaults to localhost:3001).
-	// NEXT_PUBLIC_AUTH_BASE_URL can override for unusual deploys.
+	// SSR — call the backend's /api/auth/* directly (same path the
+	// same-origin proxy forwards to). The backend serves auth under
+	// /api/auth, so the suffix must be appended or every call 404s.
 	const envBase =
 		process.env.NEXT_PUBLIC_AUTH_BASE_URL ??
 		process.env.NEXT_PUBLIC_API_URL ??
 		"http://localhost:3001";
-	return envBase.replace(/\/$/, "");
+	return `${envBase.replace(/\/$/, "")}/api/auth`;
 }
 
 export const authClient = createAuthClient({
