@@ -19,6 +19,8 @@ import {
 	Settings2,
 	Share2,
 	Trash2,
+	MessageSquarePlus,
+	Bug,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -334,9 +336,19 @@ export function ChatToolbar({
 						className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-success/20 hover:!bg-success/10 hover:!text-success min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 						title="New Conversation (Cmd/Ctrl+N)"
 					>
-						<PlusCircle className="h-4 w-4" />
+						<MessageSquarePlus className="h-4 w-4" />
 					</button>
 				)}
+
+				<button
+					type="button"
+					onClick={() => window.open('mailto:support@oma-ai.com?subject=OMA AI App Feedback', '_blank')}
+					className={`${btnBase} shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					title="Provide Feedback / Report Bug"
+					aria-label="Provide Feedback"
+				>
+					<Bug className="h-4 w-4" />
+				</button>
 
 				<div className="flex shrink-0 items-center gap-1">
 					{importConversation && (
