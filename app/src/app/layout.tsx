@@ -26,7 +26,7 @@ const body = Geist({
 	subsets: ["latin"],
 	variable: "--font-body",
 	display: "swap",
-	preload: false,
+	preload: true,
 });
 
 const mono = Geist_Mono({
@@ -91,6 +91,7 @@ export const metadata: Metadata = {
 		],
 		apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
 	},
+	manifest: "/manifest.webmanifest",
 	applicationName: "OMA AI",
 	keywords: [
 		"AI API",
