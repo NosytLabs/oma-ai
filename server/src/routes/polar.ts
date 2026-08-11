@@ -296,7 +296,7 @@ async function drainUser(userId: string, credits: number): Promise<void> {
  * /api/webhook/polar so operators can point the Polar dashboard at either
  * URL without breaking delivery.
  */
-async function polarWebhookHandler(c: Context<OmaEnv>) {
+export async function polarWebhookHandler(c: Context<OmaEnv>) {
   if (!config.POLAR_WEBHOOK_SECRET) {
     return c.json({ error: "webhook secret not configured" }, 503);
   }
