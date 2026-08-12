@@ -21,6 +21,12 @@ describe("ModelLogo — local provider tiles", () => {
 		expect(img?.getAttribute("src")).toBe("/logos/providers/deepseek.svg");
 	});
 
+	it("uses local minimax tile for minimax-m2-7", () => {
+		const { container } = render(<ModelLogo modelId="minimax-m2-7" />);
+		const img = container.querySelector("img") as HTMLImageElement | null;
+		expect(img?.getAttribute("src")).toBe("/logos/providers/minimax.svg");
+	});
+
 	it("falls back to initials badge for unknown brands without crashing", () => {
 		const { container } = render(<ModelLogo modelId="totally-unknown-model-xyz" />);
 		expect(container.querySelector("img")).toBeNull();

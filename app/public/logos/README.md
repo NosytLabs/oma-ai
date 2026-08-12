@@ -3,9 +3,8 @@
 Canonical visual identity for **OMA · Open Model Access**.
 Full voice and token rules: repo-root `BRAND.md`.
 
-Source kit (SVG geometry + Imagine-polished rasters for press/export):
-**`brand-kit/`** — see `brand-kit/README.md`. Prefer editing kit sources, then
-copying sized outputs into this directory and `app/public/` favicon paths.
+Marketing-only extras (promo JPGs, lockup stills): **`brand-kit/`**.
+Do not duplicate live vectors into `brand-kit/` — edit the files listed below.
 
 ## Mark
 
@@ -27,7 +26,7 @@ Do not redraw it, close the ring, recolor it, or place it on a busy background.
 
 | File | Use |
 | --- | --- |
-| `oma-icon.svg` | Master mark (vector) |
+| `oma-icon.svg` | Master mark (vector) — source for `brand:generate` |
 | `oma-icon-192.png` / `512` / `1024` | PWA / press |
 | `oma-logo.svg` | Horizontal lockup (mark + oma + tagline) |
 | `oma-wordmark.svg` / `.png` | Same lockup as `oma-logo.svg` (alias for consumers) |
@@ -48,7 +47,6 @@ Inline React mark: `src/components/ui/oma-logo.tsx` (theme tokens at runtime).
 
 - Keep aspect ratio and clear space of at least one signal-dot diameter.
 - Prefer SVG for web UI; PNG for social and app metadata.
-
 - The public Open Graph image remains `/og-image.webp`; the brand card is the downloadable press/social variant.
 
 The inline React logo at `src/components/ui/oma-logo.tsx` intentionally shares this same geometry while inheriting runtime theme tokens.

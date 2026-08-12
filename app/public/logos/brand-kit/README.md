@@ -1,18 +1,24 @@
-# OMA brand kit (canonical)
+# OMA brand kit — marketing extras
 
-**Vector geometry** lives in the SVGs (`oma-icon.svg`, `favicon.svg`, `oma-logo.svg`,
-`oma-brand-card.svg`) — used by the site UI where crisp scaling matters.
+**Live site vectors and PWA icons** live one level up (`../`) and in `app/public/`
+favicons — those are the single source of truth:
 
-**Raster marketing / favicon assets** are produced with Imagine (image edit from the
-canonical icon PNG), not freeform regeneration:
+| Live path | Use |
+| --- | --- |
+| `../oma-icon.svg` + `oma-icon-*.png` | App icon / PWA (also `npm run brand:generate`) |
+| `../oma-logo.svg` | Horizontal lockup (mark + wordmark + tagline) |
+| `../oma-wordmark.svg` / `.png` | Alias of the lockup for external consumers |
+| `../oma-brand-card.svg` / `.png` | Press / social SVG card |
+| `../../favicon.svg` + `favicon-*.png` | Browser tab |
+
+This folder only holds **marketing rasters** that are not used by the app UI:
 
 | Asset | Use |
-|-------|-----|
-| `oma-icon.svg` + `oma-icon-*.png` | App icon / PWA |
-| `favicon.svg` + `favicon-*.png` | Browser tab |
-| `oma-icon-promo.jpg` | Imagine-polished icon (source for PNG sizes) |
-| `oma-lockup-horizontal.jpg` / `.png` | Horizontal lockup |
-| `oma-brand-card.svg` / `.png` | Marketing / OG-style card |
+| --- | --- |
+| `oma-icon-promo.jpg` | Imagine-polished icon stills |
+| `oma-lockup-horizontal.jpg` / `.png` | Horizontal lockup for decks / social |
+| `oma-brand-card.png` | Higher-res marketing card raster |
 
 Do **not** re-export SVG geometry via image models. Prefer `image_edit` from the
-existing icon PNG when refreshing rasters.
+existing icon PNG when refreshing rasters. After regenerating live SVGs/PNGs,
+run `cd app && npm run brand:generate` (needs `rsvg-convert`).

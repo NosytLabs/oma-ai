@@ -41,9 +41,10 @@ Our browser favicon features a transparent background with a hairline void keyli
 | **Raster Favicons** | `app/public/favicon-16x16.png`, `favicon-32x32.png` | Standard browser tab fallback graphics |
 | **App Icons** | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` | Manifest assets generated directly from `oma-icon.svg` |
 | **Lockup Logo** | `app/public/logos/oma-logo.svg` | Formal horizontal logo lockup with wordmark |
+| **Wordmark Alias** | `app/public/logos/oma-wordmark.svg` | Same lockup as `oma-logo.svg` (stable URL for external consumers) |
 | **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
 | **Open Graph Card** | `app/public/og-image.webp` | 1280×720 branding image (includes slogan, no raw hex codes) |
-| **Brand Kit Directory**| `app/public/logos/brand-kit/` | Package of clean vector SVGs and polished rasters |
+| **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
 
 > **Raster Editing Note:** Use Imagine `image_edit` derived from the existing icon PNG files. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
 
