@@ -382,8 +382,8 @@ const response = await client.chat.completions.create({
 					<p className="text-xs text-text-muted mt-2">
 						Use this ID in the <code className="font-mono">model</code> field of
 						your <code className="font-mono">/v1/chat/completions</code>
-						{""}
-						request, or pass{""}
+						{" "}
+						request, or pass{" "}
 						<code className="font-mono">?model={model.id}</code> in the chat
 						URL.
 					</p>
@@ -688,7 +688,7 @@ const response = await client.chat.completions.create({
 					<p className="text-xs text-text-muted mt-2">
 						Use this ID in the <code className="font-mono">model</code> field of
 						your <code className="font-mono">/v1/chat/completions</code>
-						{""}
+						{" "}
 						request, or pass <code className="font-mono">?model={slug}</code> in
 						the chat URL.
 					</p>
@@ -801,7 +801,7 @@ function RelatedModels({ current }: { current: Model }) {
 								{m.name}
 							</div>
 							<div className="text-xs text-text-muted mt-1 font-mono tabular-nums">
-								{m.provider} · {formatPrice(m.inputPricePer1M)}/M in ·{""}
+								{m.provider} · {formatPrice(m.inputPricePer1M)}/M in ·{" "}
 								{formatPrice(m.outputPricePer1M)}/M out
 							</div>
 						</Link>

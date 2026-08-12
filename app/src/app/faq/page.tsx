@@ -235,7 +235,7 @@ export default function FAQPage() {
 				<p className="page-intro mt-4 max-w-2xl">
 					Plain-language answers for people who have never used an AI API —
 					and links for developers who want the deep detail. New to all of
-					this? Start at <Link href="/getting-started" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">getting started</Link> or the{""}
+					this? Start at <Link href="/getting-started" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">getting started</Link> or the{" "}
 					<Link href="/glossary" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">glossary</Link>.
 				</p>
 
@@ -277,8 +277,8 @@ export default function FAQPage() {
 					<p className="font-semibold text-text-bright mb-1">Still stuck?</p>
 					<p>
 						Reach us at <Link href="/contact" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">/contact</Link> — real
-						humans, no bots. The{""}
-						<Link href="/docs" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">API docs</Link> and{""}
+						humans, no bots. The{" "}
+						<Link href="/docs" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">API docs</Link> and{" "}
 						<Link href="/pricing" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">pricing</Link> pages have the
 						technical detail.
 					</p>

@@ -62,7 +62,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 					</div>
 					<p className="text-[13.5px] font-semibold tracking-wide text-text-bright mt-2">No transactions yet</p>
 					<p className="text-[11px] text-text-muted max-w-[280px] leading-relaxed">
-						Deposits, usage, and refunds will appear here.{""}
+						Deposits, usage, and refunds will appear here.{" "}
 						<Link
 							href="/deposit"
 							className="text-accent hover:text-accent-hover hover:underline transition-colors duration-200 ease-out block mt-2 font-medium"

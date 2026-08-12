@@ -81,16 +81,16 @@ if (payReq.ok) {
 						<p className="mt-1 text-sm text-text-muted">
 							Agents can call chat completions with no account and no
 							pre-funded credits. An unauthenticated request returns HTTP 402
-							with a{""}
-							<code className="text-accent font-mono">PAYMENT-REQUIRED</code>{""}
-							header carrying the flat per-request price. Sign a USDC{""}
+							with a{" "}
+							<code className="text-accent font-mono">PAYMENT-REQUIRED</code>{" "}
+							header carrying the flat per-request price. Sign a USDC{" "}
 							<code className="text-accent font-mono">
 								transferWithAuthorization
-							</code>{""}
+							</code>{" "}
 							(EIP-3009) on Base — gasless, the facilitator pays gas — and
-							retry with the{""}
-							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>{""}
-							envelope per the{""}
+							retry with the{" "}
+							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>{" "}
+							envelope per the{" "}
 							<a
 								href="https://x402.org"
 								target="_blank"
@@ -101,14 +101,14 @@ if (payReq.ok) {
 							</a>
 							. The server verifies, settles on-chain, and serves the
 							completion — no human in the loop. Spec v2 transport is also
-							supported: the 402 body carries an{""}
+							supported: the 402 body carries an{" "}
 							<code className="text-accent font-mono">accepts</code> array
 							(CAIP-2 <code className="text-accent font-mono">eip155:8453</code>
-							, atomic units) and payments can be sent as a base64{""}
+							, atomic units) and payments can be sent as a base64{" "}
 							<code className="text-accent font-mono">X-PAYMENT</code> header;
-							settled requests return{""}
+							settled requests return{" "}
 							<code className="text-accent font-mono">X-PAYMENT-RESPONSE</code>.
-							The same envelope also powers instant credit top-ups via{""}
+							The same envelope also powers instant credit top-ups via{" "}
 							<code className="text-accent font-mono">POST /x402/verify</code>.
 						</p>
 					</div>
@@ -125,20 +125,20 @@ if (payReq.ok) {
 			<div id="x402-code" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">For AI Agents</h3>
 				<p className="text-sm text-text-muted mb-4">
-					Use <code className="text-accent font-mono">viem</code> or{""}
+					Use <code className="text-accent font-mono">viem</code> or{" "}
 					<code className="text-accent font-mono">ethers</code> directly to
 					sign USDC payment authorizations. No first-party SDK is required.
 					An agent holding a funded Base wallet can top up its own credits and
 					keep working — no human in the loop.
 				</p>
 				<p className="text-sm text-text-muted mb-4">
-					Setting up an agent (Claude Code, Cursor, custom script)? Give it{""}
+					Setting up an agent (Claude Code, Cursor, custom script)? Give it{" "}
 					<a
 						href="/agent-skill.md"
 						className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
 					>
 						agent-skill.md
-					</a>{""}
+					</a>{" "}
 					— a copy-paste instruction file that teaches your agent to use OMA
 					autonomously (API key flow, x402 pay-per-request, and cost
 					guidance), including an optional self-verification step.
@@ -151,15 +151,15 @@ if (payReq.ok) {
 					<h3 className="mb-2 font-semibold text-text">Benefits</h3>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Gasless USDC deposits (EIP-3009)
 						</li>
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Wallet-based, no card or bank account needed
 						</li>
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Standard x402 protocol envelope
 						</li>
 					</ul>
@@ -168,7 +168,7 @@ if (payReq.ok) {
 					<h3 className="mb-2 font-semibold text-text">Supported Networks</h3>
 					<ul className="space-y-1.5 text-sm text-text-muted">
 						<li className="flex items-start gap-2">
-							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{""}
+							<CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />{" "}
 							Base mainnet (USDC)
 						</li>
 					</ul>

@@ -190,7 +190,7 @@ export default function CapabilitiesPage() {
 				<InViewFade>
 					<p className="page-kicker">Capabilities</p>
 					<h1 className="h1-page mt-4 text-text-bright">
-						Every model. Every rail.{""}
+						Every model. Every rail.{" "}
 						<span className="text-accent italic-accent">One endpoint.</span>
 					</h1>
 					<p className="page-intro mt-5 max-w-3xl">
@@ -235,10 +235,10 @@ export default function CapabilitiesPage() {
 							Three modalities, one auth header.
 						</h2>
 						<p className="mt-3 max-w-2xl text-text-secondary">
-							Each one speaks the OpenAI wire format, so the same{""}
+							Each one speaks the OpenAI wire format, so the same{" "}
 							<code className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 font-mono text-[12px] text-accent">
 								Authorization: Bearer $OMA_KEY
-							</code>{""}
+							</code>{" "}
 							works everywhere.
 						</p>
 					</InViewFade>

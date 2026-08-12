@@ -48,17 +48,17 @@ func main() {
 					Free OMA-AI models (website chat)
 				</h3>
 				<p className="text-sm text-text-muted mb-2">
-					Models routed via OMA-AI (OpenBroker /{""}
+					Models routed via OMA-AI (OpenBroker /{" "}
 					<code className="text-accent font-mono text-xs">provider: oma-ai</code>
 					) — e.g. <code className="text-accent font-mono text-xs">gemini-3-flash-preview</code>,{" "}
 					<code className="text-accent font-mono text-xs">gpt-4o</code> — can be
-					used on <code className="text-accent font-mono text-xs">/chat</code>{""}
+					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 					without sign-in, API key, or wallet. Rate limits still apply. Upgrade to a paid plan to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 				</p>
 				<p className="text-sm text-text-muted">
 					Programmatic API access to free models still works with a key if you
-					prefer; unauthenticated requests to{""}
-					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{""}
+					prefer; unauthenticated requests to{" "}
+					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
 					are accepted only for free OMA-AI model ids.
 				</p>
 			</div>
@@ -66,7 +66,7 @@ func main() {
 			<div id="auth-key" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 mb-6 scroll-mt-24">
 				<div className="mb-3 text-sm text-text-muted">Authorization Header (paid API)</div>
 				<div className="rounded-[var(--radius-lg)] bg-surface/80 border border-border/50 p-3 font-mono text-sm">
-					<span className="text-warning">Authorization:</span>{""}
+					<span className="text-warning">Authorization:</span>{" "}
 					<span className="text-accent">Bearer oma_sk_...</span>
 				</div>
 			</div>
@@ -93,7 +93,7 @@ func main() {
 					<div>
 						<h3 className="font-semibold text-warning">API Key Security</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Keys use the{""}
+							Keys use the{" "}
 							<code className="text-warning font-mono">oma_sk_</code> prefix.
 							Only the SHA-256 hash is stored. Keep your key secret and never
 							commit it to version control.

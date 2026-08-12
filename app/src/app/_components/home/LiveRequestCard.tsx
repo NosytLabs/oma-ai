@@ -222,21 +222,21 @@ Content-Type: application/json`;
  if (line.startsWith("Host:"))
  return (
  <span key={idx} className="block">
- <span className="text-text-muted">Host:</span>{""}
+ <span className="text-text-muted">Host:</span>{" "}
  <span className="text-info">api.oma-ai.com</span>
  </span>
  );
  if (line.startsWith("Authorization:"))
  return (
  <span key={idx} className="block">
- <span className="text-text-muted">Authorization:</span>{""}
+ <span className="text-text-muted">Authorization:</span>{" "}
  <span className="text-secondary">Bearer $OMA_KEY</span>
  </span>
  );
  if (line.startsWith("Content-Type:"))
  return (
  <span key={idx} className="block">
- <span className="text-text-muted">Content-Type:</span>{""}
+ <span className="text-text-muted">Content-Type:</span>{" "}
  <span className="text-info">application/json</span>
  </span>
  );

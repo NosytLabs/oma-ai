@@ -319,15 +319,15 @@ function LoginInner() {
 						</div>
 					</div>
 					<p className="mt-6 text-center text-xs text-text-muted">
-						By signing in you accept the{""}
+						By signing in you accept the{" "}
 						<Link href="/terms" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Terms
 						</Link>
-						,{""}
+						,{" "}
 						<Link href="/privacy" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Privacy Policy
 						</Link>
-						, and{""}
+						, and{" "}
 						<Link href="/terms#acceptable-use" className="text-[var(--color-accent)] underline decoration-[var(--color-accent)] opacity-60 underline-offset-2 hover:decoration-[var(--color-accent)]">
 							Acceptable Use Policy
 						</Link>
@@ -392,7 +392,7 @@ function BrandPitch() {
 			<div className="surface-card p-8">
 				<OmaWordmark size="md" />
 				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
-					Sign in once.{""}
+					Sign in once.{" "}
 					<span className="text-[var(--color-accent)] ml-2">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
@@ -437,10 +437,10 @@ function X402Callout() {
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Call chat completions with no account; on 402, retry with a signed{""}
+						Call chat completions with no account; on 402, retry with a signed{" "}
 						<code className="font-mono text-text-secondary">
 							PAYMENT-SIGNATURE
-						</code>{""}
+						</code>{" "}
 						envelope (EIP-3009 USDC on Base). Flat rate per request — wallet-based,
 						no card needed, gas paid by the facilitator.
 					</p>

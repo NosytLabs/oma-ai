@@ -203,7 +203,7 @@ export default function TermsPage() {
 									<p className="text-[13px] sm:text-[14px] text-text-secondary leading-relaxed">
 										<span className="font-semibold text-warning">
 											Important:
-										</span>{""}
+										</span>{" "}
 										By using OMA you agree to these Terms. If you do not agree,
 										please don&apos;t use the service.
 									</p>
@@ -247,7 +247,7 @@ export default function TermsPage() {
 									))}
 								</dl>
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
-									Questions?{""}
+									Questions?{" "}
 									<a
 										href="mailto:hi@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
@@ -531,14 +531,14 @@ export default function TermsPage() {
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">
-								Questions about these Terms?{""}
+								Questions about these Terms?{" "}
 								<a
 									href="mailto:hi@nosytlabs.com"
 									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
 								>
 									hi@nosytlabs.com
 								</a>
-								, or reach us via{""}
+								, or reach us via{" "}
 								<Link
 									href="/docs"
 									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"

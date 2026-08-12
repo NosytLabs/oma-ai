@@ -310,7 +310,7 @@ func main() {
 					Streaming
 				</h3>
 				<p className="mb-4 text-sm text-text-muted">
-					Real-time token-by-token responses via Server-Sent Events. Add{""}
+					Real-time token-by-token responses via Server-Sent Events. Add{" "}
 					<code className="font-mono text-accent">&quot;stream&quot;: true</code> to your request.
 				</p>
 				<TabbedCode

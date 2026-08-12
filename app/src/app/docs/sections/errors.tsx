@@ -35,10 +35,10 @@ for attempt in range(5):
 			<div id="err-format" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">Response Format</h3>
 				<p className="mb-3 text-sm text-text-muted">
-					Every error returns a JSON body with an{""}
-					<code className="font-mono text-accent">error</code> object carrying{""}
-					<code className="font-mono text-accent">message</code>,{""}
-					<code className="font-mono text-accent">type</code>, and{""}
+					Every error returns a JSON body with an{" "}
+					<code className="font-mono text-accent">error</code> object carrying{" "}
+					<code className="font-mono text-accent">message</code>,{" "}
+					<code className="font-mono text-accent">type</code>, and{" "}
 					<code className="font-mono text-accent">code</code>.
 				</p>
 				<CodeBlock code={errorFormatCode} lang="json" />

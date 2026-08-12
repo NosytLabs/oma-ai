@@ -328,7 +328,7 @@ export default function PricingPage() {
 								Base.
 							</p>
 							<p className="mt-3 text-xs leading-relaxed text-text-muted">
-								x402 pay-per-request also supported for agents —{""}
+								x402 pay-per-request also supported for agents —{" "}
 								<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center">
 									see below →
 								</Link>

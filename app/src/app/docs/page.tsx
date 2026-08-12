@@ -175,7 +175,7 @@ function DocsContent() {
 								</h1>
 								<p className="page-intro mt-4 max-w-2xl">
 									OpenAI-compatible AI inference with wallet auth, x402
-									pay-per-request flows, and a catalog of{""}
+									pay-per-request flows, and a catalog of{" "}
 									{MODEL_COUNT}+ models behind one endpoint. Add credits via card, or pay per call with USDC on Base.
 								</p>
 							</div>

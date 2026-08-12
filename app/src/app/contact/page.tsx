@@ -74,7 +74,7 @@ export default function ContactPage() {
 				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed">
 					We are a lean team. Email is the fastest channel. We typically reply
 					within five business days for privacy requests and sooner for outages.
-					OMA AI / Open Model Access is operated by{""}
+					OMA AI / Open Model Access is operated by{" "}
 					<a
 						href="https://www.nosytlabs.com"
 						target="_blank"
@@ -118,18 +118,18 @@ export default function ContactPage() {
 				</ul>
 
 				<p className="mt-12 text-sm text-text-muted">
-					Prefer self-serve? Read the{""}
+					Prefer self-serve? Read the{" "}
 					<Link href="/docs" className="text-accent underline underline-offset-2">
 						API docs
 					</Link>
-					,{""}
+					,{" "}
 					<Link
 						href="/privacy"
 						className="text-accent underline underline-offset-2"
 					>
 						privacy policy
 					</Link>
-					, or{""}
+					, or{" "}
 					<Link href="/terms" className="text-accent underline underline-offset-2">
 						terms
 					</Link>

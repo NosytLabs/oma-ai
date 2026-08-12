@@ -38,7 +38,7 @@ const STEPS = [
 		title: "Sign in with email or wallet",
 		body: (
 			<>
-				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{""}
+				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
 				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
 				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT}+ frontier models like GPT-4o and Gemini, saved conversations, and higher rate limits.
 			</>
@@ -121,9 +121,9 @@ export default function GettingStartedPage() {
 				<span className="page-kicker">First time here?</span>
 				<h1 className="display-headline mt-3 text-text-bright">How to use OMA — 5 minutes, no jargon</h1>
 				<p className="page-intro mt-4 max-w-2xl">
-					OMA is one account for {MODEL_COUNT}+ AI models from many providers, paid your way. You do{""}
+					OMA is one account for {MODEL_COUNT}+ AI models from many providers, paid your way. You do{" "}
 					<em className="text-text-bright">not</em> need to be a developer or a crypto person to start.
-					This is the whole site, in order. Developers: the{""}
+					This is the whole site, in order. Developers: the{" "}
 					<Link href="/docs" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">API docs</Link> are your fast lane.
 				</p>
 

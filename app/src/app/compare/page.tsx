@@ -349,12 +349,12 @@ export default function ComparePage() {
 				{/* Footnotes */}
 				<section className="mt-8 text-sm text-text-muted space-y-2">
 					<p>
-						<span className="font-semibold text-text-primary">Pricing source:</span>{""}
+						<span className="font-semibold text-text-primary">Pricing source:</span>{" "}
 						budget tier input cost per 1M tokens, August 2026. Subject to provider
 						changes.
 					</p>
 					<p>
-						<span className="font-semibold text-text-primary">Feature audit:</span>{""}
+						<span className="font-semibold text-text-primary">Feature audit:</span>{" "}
 						based on each product&apos;s public docs as of 2026-08. If you find
 						an error, please open a PR.
 					</p>
@@ -378,7 +378,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								crypto-native billing, free tier, no card signup.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-text-muted">Portkey wins on:</strong>{""}
+								<strong className="text-text-muted">Portkey wins on:</strong>{" "}
 								enterprise features (SSO, audit logs, RBAC),
 								on-prem deployment.
 							</p>
@@ -398,7 +398,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								infrastructure, payment rails, free tier, account privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-text-muted">LiteLLM wins on:</strong>{""}
+								<strong className="text-text-muted">LiteLLM wins on:</strong>{" "}
 								data sovereignty (your hardware), 100+ provider support,
 								deep customization.
 							</p>
@@ -419,7 +419,7 @@ Portkey is enterprise-grade but requires a credit card, account
 								x402, price, account model.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-text-muted">OpenRouter wins on:</strong>{""}
+								<strong className="text-text-muted">OpenRouter wins on:</strong>{" "}
 								provider breadth, ecosystem integrations, market share.
 							</p>
 						</div>
@@ -435,11 +435,11 @@ Portkey is enterprise-grade but requires a credit card, account
 								and OMA-AI cost-effective Together can&apos;t match.
 							</p>
 							<p className="text-sm text-text-secondary mb-3">
-								<strong className="text-accent">OMA wins on:</strong>{""}
+								<strong className="text-accent">OMA wins on:</strong>{" "}
 								multi-provider, failover, free tier, privacy.
 							</p>
 							<p className="text-sm text-text-secondary">
-								<strong className="text-text-muted">Together wins on:</strong>{""}
+								<strong className="text-text-muted">Together wins on:</strong>{" "}
 								direct GPU access, fine-tuning, dedicated capacity, raw speed.
 							</p>
 						</div>

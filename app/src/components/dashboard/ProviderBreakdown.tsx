@@ -87,7 +87,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 					Provider breakdown
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
-					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{""}
+					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{" "}
 					· ${totalCost.toFixed(2)} total cost
 				</p>
 			</div>

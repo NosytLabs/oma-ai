@@ -187,7 +187,7 @@ export default function GlossaryPage() {
 				<p className="page-intro mt-4 max-w-2xl">
 					Every term you&apos;ll meet on OMA, explained without jargon — from
 					tokens and context windows to USDC and x402. New here? Pair this
-					with the <Link href="/faq" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">FAQ</Link> and{""}
+					with the <Link href="/faq" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">FAQ</Link> and{" "}
 					<Link href="/getting-started" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">getting started</Link> guide.
 				</p>
 

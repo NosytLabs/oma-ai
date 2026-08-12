@@ -56,9 +56,14 @@ function normalizeHealth(raw: ReadyResponse): HealthResponse {
 			};
 		}
 	} else if (raw.dbLatencyMs != null || raw.status) {
-		// Fallback: plain /health-style payload → single database check
-		checks.database = {
-			status: raw.status === "ok" ? "ok" : "degraded",
+		// Fallback: plain /ready or /health payload without a checks map.
+		// Treat "ok" / "ready" / "healthy" as operational.
+		const ok =
+			raw.status === "ok" ||
+			raw.status === "ready" ||
+			raw.status === "healthy";
+		checks.api = {
+			status: ok ? "ok" : "degraded",
 			latency: raw.dbLatencyMs,
 		};
 	}

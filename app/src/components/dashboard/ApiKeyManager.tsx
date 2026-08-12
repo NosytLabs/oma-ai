@@ -214,7 +214,7 @@ function ApiKeyManagerComponent({
   id="revoke-dialog-description"
   className="mb-6 text-sm text-text-secondary leading-relaxed"
   >
-  You are about to revoke the key{""}
+  You are about to revoke the key{" "}
   <strong className="font-semibold text-text-bright px-1 py-0.5 bg-surface rounded-[var(--radius-sm)] border border-border">
   {keyToRevoke.name}
   </strong>

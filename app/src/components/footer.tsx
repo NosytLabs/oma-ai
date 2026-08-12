@@ -280,9 +280,9 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 				<div className="border-t border-border-subtle">
 					<div className="flex flex-col gap-3 py-5 text-[11px] text-text-muted sm:flex-row sm:items-center sm:justify-between">
 						<p className="font-mono tabular-nums">
-							<span className="text-text-secondary">©</span>{""}
-							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{""}
-							<span className="text-text-tertiary">·</span>{""}
+							<span className="text-text-secondary">©</span>{" "}
+							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{" "}
+							<span className="text-text-tertiary">·</span>{" "}
 							<span>
 								<a
 									href="https://www.nosytlabs.com"
@@ -292,14 +292,14 @@ className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -
 								>
 									by nosytlabs.com
 								</a>
-							</span>{""}
-							<span className="text-text-tertiary">·</span>{""}
-							<span>MIT licensed</span>{""}
-							<span className="text-text-tertiary">·</span>{""}
-							<span>base mainnet</span>{""}
-							<span className="text-text-tertiary">·</span>{""}
+							</span>{" "}
+							<span className="text-text-tertiary">·</span>{" "}
+							<span>MIT licensed</span>{" "}
+							<span className="text-text-tertiary">·</span>{" "}
+							<span>base mainnet</span>{" "}
+							<span className="text-text-tertiary">·</span>{" "}
 							<span>
-								build{""}
+								build{" "}
 								<span
 									suppressHydrationWarning
 									className="text-text-secondary"

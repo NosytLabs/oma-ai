@@ -242,7 +242,7 @@ export default function ChangelogPage() {
 							className="h1-page text-text-bright"
 							style={{ textWrap: "balance" }}
 						>
-							<span className="block">Every release,{""}</span>
+							<span className="block">Every release,{" "}</span>
 							<span className="block text-accent">every shipped change.</span>
 						</h1>
 

@@ -205,11 +205,11 @@ export function DangerZoneSection({
 										</span>
 									</div>
 									<p className="mb-3 text-xs text-text-secondary">
-										Type{""}
+										Type{" "}
 										<code className="rounded-[var(--radius-sm)] bg-[var(--color-void)] px-1.5 py-0.5 font-mono text-[var(--color-error)] border border-[var(--color-error)]/30">
 											DELETE
 										</code>
-										{""}
+										{" "}
 										below to confirm. All data will be permanently destroyed.
 									</p>
 									<input

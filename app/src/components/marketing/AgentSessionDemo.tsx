@@ -208,7 +208,7 @@ export function AgentSessionDemo({ className }: { className?: string }) {
 
  <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-void/60 px-3 py-2.5">
  <p className="text-[11px] text-text-muted">
- Agents speak OpenAI. Point them at{""}
+ Agents speak OpenAI. Point them at{" "}
  <code className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 font-mono text-accent">
  api.oma-ai.com/v1
  </code>

@@ -130,7 +130,7 @@ export function ModelComparePanel({
 										</p>
 										{msg.tokens !== undefined && msg.tokens > 0 && (
 											<div className="text-[10px] font-mono text-text-muted mt-2">
-												TK:{msg.tokens}{""}
+												TK:{msg.tokens}{" "}
 												{msg.latency ? `· ${msg.latency}ms` : ""}
 											</div>
 										)}

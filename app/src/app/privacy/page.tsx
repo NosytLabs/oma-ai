@@ -242,7 +242,7 @@ export default function PrivacyPage() {
 									))}
 								</dl>
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
-									Questions?{""}
+									Questions?{" "}
 									<a
 										href="mailto:support@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
@@ -532,7 +532,7 @@ export default function PrivacyPage() {
 						<p className="mt-4 text-[11px] text-text-muted">
 							<span className="text-accent" aria-hidden="true">
 								~
-							</span>{""}
+							</span>{" "}
 							We do not sell, rent, or share any personal data with advertisers
 							or analytics services.
 						</p>
@@ -550,13 +550,13 @@ export default function PrivacyPage() {
 						</h3>
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							Vendors that process limited operational data on our behalf. None
-							receive prompt or completion content. Contact{""}
+							receive prompt or completion content. Contact{" "}
 							<a
 								href="mailto:support@nosytlabs.com"
 								className="text-accent underline underline-offset-2"
 							>
 								support@nosytlabs.com
-							</a>{""}
+							</a>{" "}
 							for a signed DPA.
 						</p>
 						<ul className="border border-border bg-surface divide-y divide-border">
@@ -645,7 +645,7 @@ export default function PrivacyPage() {
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">
-								Questions?{""}
+								Questions?{" "}
 								<a
 									href="mailto:support@nosytlabs.com"
 									className="text-accent hover:underline underline-offset-2"

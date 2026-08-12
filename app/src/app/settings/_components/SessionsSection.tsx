@@ -204,7 +204,7 @@ export function SessionsSection({
 				)}
 			</div>
 			<p className="mt-5 text-[11px] leading-relaxed text-text-muted border-t border-border/50 pt-4">
-				Revoking a remote session signs that device out immediately. Use{""}
+				Revoking a remote session signs that device out immediately. Use{" "}
 				<span className="font-semibold text-text-secondary">Sign out</span> on
 				this device to end the current browser session.
 			</p>

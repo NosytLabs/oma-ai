@@ -26,34 +26,34 @@ export function IntegrationsSection() {
 				<p className="font-medium text-text-bright mb-1">One key, one base URL</p>
 				<ul className="list-disc pl-5 space-y-1">
 					<li>
-						Base URL:{""}
+						Base URL:{" "}
 						<code className="font-mono text-accent text-xs">{baseUrl}</code>
 					</li>
 					<li>
-						API key: create at{""}
+						API key: create at{" "}
 						<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
 							/dashboard → API keys
-						</Link>{""}
+						</Link>{" "}
 						(<code className="font-mono text-xs">oma_sk_…</code>)
 					</li>
 					<li>
-						Default sample model:{""}
-						<code className="font-mono text-xs">{model}</code> (see{""}
+						Default sample model:{" "}
+						<code className="font-mono text-xs">{model}</code> (see{" "}
 						<Link href="/models" className="text-accent underline-offset-2 hover:underline">
 							/models
 						</Link>
 						)
 					</li>
 					<li>
-						Claude Code / Anthropic SDK: also use{""}
+						Claude Code / Anthropic SDK: also use{" "}
 						<code className="font-mono text-xs">POST /v1/messages</code>
 					</li>
 					<li>
-						Playground{""}
+						Playground{" "}
 						<Link href="/chat" className="text-accent underline-offset-2 hover:underline">
 							WEB search
 						</Link>
-						: DuckDuckGo via{""}
+						: DuckDuckGo via{" "}
 						<code className="font-mono text-xs">GET /v1/search</code> (no extra key)
 					</li>
 				</ul>
@@ -80,9 +80,9 @@ export OPENAI_MODEL="${model}"
 # Then run OpenCode as usual — it will hit OMA for chat completions.`}
 				/>
 				<p className="mt-3 mb-3 text-xs text-text-muted">
-					If your OpenCode build uses{""}
-					<code className="font-mono">OPENAI_API_BASE</code> instead of{""}
-					<code className="font-mono">OPENAI_BASE_URL</code>, set that to the same{""}
+					If your OpenCode build uses{" "}
+					<code className="font-mono">OPENAI_API_BASE</code> instead of{" "}
+					<code className="font-mono">OPENAI_BASE_URL</code>, set that to the same{" "}
 					<code className="font-mono">{baseUrl}</code> value.
 				</p>
 				<p className="mb-2 text-sm text-text-secondary font-medium">
@@ -108,7 +108,7 @@ export OPENAI_MODEL="${model}"
 }`}
 				/>
 				<p className="mt-2 text-xs text-text-muted">
-					Create the key at{""}
+					Create the key at{" "}
 					<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
 						/dashboard → API keys
 					</Link>
@@ -122,7 +122,7 @@ export OPENAI_MODEL="${model}"
 					Claude Code
 				</h3>
 				<p className="mb-3 text-sm text-text-muted">
-					Claude Code talks the Anthropic Messages API. OMA exposes a compatible{""}
+					Claude Code talks the Anthropic Messages API. OMA exposes a compatible{" "}
 					<code className="font-mono text-xs">POST /v1/messages</code> that rewrites to the
 					same catalog. Configure a custom Anthropic base URL + key:
 				</p>
@@ -157,7 +157,7 @@ curl https://api.oma-ai.com/v1/messages \\
  -d '{"model":"kimi-k3","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
 				/>
 				<p className="mt-3 text-xs text-text-muted">
-					Prefer one auth style consistently. Streaming: set{""}
+					Prefer one auth style consistently. Streaming: set{" "}
 					<code className="font-mono">stream: true</code> — OMA returns Anthropic-shaped SSE.
 					List models: <code className="font-mono">GET /v1/models</code> with the same key.
 				</p>

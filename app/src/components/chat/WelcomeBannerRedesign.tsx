@@ -352,7 +352,7 @@ export function WelcomeBanner({
   transition={{ delay: 0.55 }}
   className="text-[11px] text-text-secondary font-mono"
   >
-  <span className="text-accent font-bold">TIP:</span>{""}
+  <span className="text-accent font-bold">TIP:</span>{" "}
   <TypewriterText
   text="Try Gemini 3 Flash for coding, or GPT-4o for everything. Both are free — no sign-in required."
   delay={900}
@@ -370,7 +370,7 @@ export function WelcomeBanner({
   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/20 text-[10px] text-accent font-bold">i</span>
   <div className="flex-1 text-left">
   <span className="block text-xs font-semibold text-text-bright">New to OMA? Here is a quick tip</span>
-  <span className="block text-[11px] text-text-secondary leading-normal mt-0.5">You can switch models anytime from the model selector in the top toolbar or press CMD+K! Starter credits are applied to your balance automatically so you can try premium models for free.</span>
+  <span className="block text-[11px] text-text-secondary leading-normal mt-0.5">You can switch models anytime from the model selector in the top toolbar or press <kbd className="font-mono text-[10px] text-accent">Cmd+K</kbd>. Guest free tier covers OMA-AI models — deposit credits for Venice-routed and premium traffic.</span>
   </div>
   </m.div>
   )}

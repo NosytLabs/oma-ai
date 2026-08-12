@@ -25,9 +25,11 @@ const DEFAULT_STALE_MS = 25_000;
 export function useHealthQuery(options: UseHealthQueryOptions = {}) {
   const { refetchInterval, staleTime = DEFAULT_STALE_MS, enabled = true } = options;
   return useQuery({
-    // Shared key with `useApiHealth` so the navbar/login banner and the
-    // dashboard widget can't disagree about the API state.
-    queryKey: ["health", "ready-v2"],
+    // Deep readiness payload (checks map) — NOT the navbar liveness key.
+    // useApiHealth uses ["health", "ready-v2"] for a boolean online/offline
+    // ping; sharing that key left the dashboard stuck on "Checking readiness"
+    // because the string "online" has no `.checks`.
+    queryKey: ["health", "ready-detail"],
     queryFn: async () => {
       try {
         const res = await api.health();

@@ -117,7 +117,7 @@ export function MobileStatsBar({
 					<span className="bg-surface px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-border">
 						{totalTokens >= 1000
 							? `${(totalTokens / 1000).toFixed(1)}k`
-							: totalTokens}{""}
+							: totalTokens}{" "}
 						tok
 					</span>
 					<span className="bg-success-dim text-success px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-success/30">

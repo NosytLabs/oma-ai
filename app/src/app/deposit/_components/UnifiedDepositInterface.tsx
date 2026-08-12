@@ -352,7 +352,7 @@ export function UnifiedDepositInterface({
 										)}
 										<p className="mt-2 text-[11px] text-text-muted tabular-nums">
 											Min ${(instructions.minDepositCents / 100).toFixed(2)} ·
-											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={""}
+											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={" "}
 											{instructions.creditsPerCent * 100} credits
 										</p>
 									</div>
@@ -391,7 +391,7 @@ export function UnifiedDepositInterface({
 											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 										/>
 										<p className="mt-2 text-[11px] text-text-muted">
-											Find this on{""}
+											Find this on{" "}
 											<a
 												href={`https://basescan.io/address/${instructions.depositAddress}`}
 												target="_blank"

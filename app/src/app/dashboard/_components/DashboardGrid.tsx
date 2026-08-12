@@ -405,7 +405,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								<span>
 									<span className="font-medium text-error">
 										Account suspended
-									</span>{""}
+									</span>{" "}
 									<span className="text-text-muted">. Contact support to appeal this action.</span>
 								</span>
 							</>
@@ -415,7 +415,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								<span>
 									<span className="font-medium text-warning">
 										Payment required
-									</span>{""}
+									</span>{" "}
 									<span className="text-text-muted">. You have reached a block requiring a paid wallet transaction.</span>
 								</span>
 							</>
@@ -425,7 +425,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								<span>
 									<span className="font-medium text-warning">
 										Quota exceeded
-									</span>{""}
+									</span>{" "}
 									<span className="text-text-muted">. Your free tier daily usage limit was reached. Deposit credits to continue.</span>
 								</span>
 							</>
@@ -435,7 +435,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								<span>
 									<span className="font-medium text-error">
 										Something went wrong.
-									</span>{""}
+									</span>{" "}
 									<span className="text-text-muted">{error}</span>
 								</span>
 							</>
